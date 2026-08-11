@@ -33,7 +33,7 @@
       "commandType": "module",
       "moduleName": "ATAP.Utilities.BuildTooling.ProGet.PowerShell",
       "commandName": "Register-ATAPParityScheduledTasks",
-      "minimumModuleVersion": "0.1.8",
+      "minimumModuleVersion": "0.1.15",
       "trustedModuleRoots": [
         "C:\\Program Files\\PowerShell\\Modules"
       ],

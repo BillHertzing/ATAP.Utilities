@@ -30,13 +30,93 @@ function Register-ATAPParityScheduledTasks {
     }
     $dispatcherDirectory = Join-Path $brokerModuleRoot 'dispatchers'
     $backupDirectory = Join-Path 'C:\ProgramData\ATAP\ElevationBroker\backups' ("parity-tasks-{0}-{1}" -f $hostName, [guid]::NewGuid().ToString('N'))
-    $taskPolicy = switch ($hostName) {
-      'utat01' { @([pscustomobject]@{ Name = 'ATAP-ParityAudit'; Script = 'Invoke-ParityScheduledAuditTask.ps1'; LogonType = 'S4U'; RunLevel = 'Limited' }) }
-      'utat022' { @(
-          [pscustomobject]@{ Name = 'ATAP-ParityAudit'; Script = 'Invoke-ParityScheduledAuditTask.ps1'; LogonType = 'Password'; RunLevel = 'HighestAvailable' },
-          [pscustomobject]@{ Name = 'ATAP-ParityCompare'; Script = 'Invoke-ParityScheduledCompareTask.ps1'; LogonType = 'Password'; RunLevel = 'HighestAvailable' }
-        ) }
-      default { throw "Host '$hostName' is not an approved parity-task target." }
+    if ($hostName -ne 'utat01') {
+      throw "Host '$hostName' is held from parity-task action updates. Only the UTAT01 S4U audit task is approved."
+    }
+    $taskPolicy = @(
+      [pscustomobject]@{
+        Name = 'ATAP-ParityAudit'
+        Script = 'Invoke-ParityScheduledAuditTask.ps1'
+        LogonType = 'S4U'
+        RunLevel = 'Limited'
+      }
+    )
+
+    $getInvariant = {
+      param(
+        [Parameter(Mandatory = $true)] $RegisteredTask,
+        [Parameter(Mandatory = $true)] [xml] $TaskXml
+      )
+
+      $execActions = @($TaskXml.Task.Actions.ChildNodes | Where-Object NodeType -eq 'Element')
+      if ($execActions.Count -ne 1 -or $execActions[0].LocalName -ne 'Exec') {
+        throw "Task '$($RegisteredTask.Name)' must have exactly one Exec action."
+      }
+
+      [pscustomobject]@{
+        Principal = $TaskXml.Task.Principals.OuterXml
+        Triggers = $TaskXml.Task.Triggers.OuterXml
+        Settings = $TaskXml.Task.Settings.OuterXml
+        TaskVersion = [string] $TaskXml.Task.version
+        ActionId = [string] $execActions[0].Id
+        ActionWorkingDirectory = [string] $execActions[0].WorkingDirectory
+        SecurityDescriptor = [string] $RegisteredTask.GetSecurityDescriptor(7) # OWNER, GROUP, DACL
+      }
+    }
+
+    $compareInvariant = {
+      param(
+        [Parameter(Mandatory = $true)] $Before,
+        [Parameter(Mandatory = $true)] $After
+      )
+
+      @($Before.PSObject.Properties.Name | Where-Object { $Before.$_ -cne $After.$_ })
+    }
+
+    $invokeTaskActionChange = {
+      param(
+        [Parameter(Mandatory = $true)] [string] $TaskPath,
+        [Parameter(Mandatory = $true)] [string] $TaskRun
+      )
+
+      if ($TaskRun.Length -gt 261) {
+        throw "Approved task action exceeds the schtasks /TR limit: $($TaskRun.Length)."
+      }
+
+      $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+      $startInfo.FileName = Join-Path $env:SystemRoot 'System32\schtasks.exe'
+      $startInfo.UseShellExecute = $false
+      $startInfo.CreateNoWindow = $true
+      $startInfo.RedirectStandardOutput = $true
+      $startInfo.RedirectStandardError = $true
+      foreach ($argument in @('/Change', '/TN', $TaskPath, '/TR', $TaskRun)) {
+        $null = $startInfo.ArgumentList.Add($argument)
+      }
+
+      $process = [System.Diagnostics.Process]::new()
+      $process.StartInfo = $startInfo
+      $null = $process.Start()
+      $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+      $stderrTask = $process.StandardError.ReadToEndAsync()
+      $timeout = [System.Threading.CancellationTokenSource]::new([TimeSpan]::FromSeconds(30))
+      try {
+        $process.WaitForExitAsync($timeout.Token).GetAwaiter().GetResult()
+      }
+      catch [System.OperationCanceledException] {
+        try { $process.Kill($true) } catch { }
+        $null = $stdoutTask.GetAwaiter().GetResult()
+        $null = $stderrTask.GetAwaiter().GetResult()
+        throw "Timed out changing the approved action for '$TaskPath'."
+      }
+      finally {
+        $timeout.Dispose()
+      }
+
+      $stdout = $stdoutTask.GetAwaiter().GetResult()
+      $stderr = $stderrTask.GetAwaiter().GetResult()
+      if ($process.ExitCode -ne 0) {
+        throw "Task Scheduler refused action update for '$TaskPath' (exit $($process.ExitCode)): $($stdout.Trim()) $($stderr.Trim())"
+      }
     }
   }
 
@@ -99,39 +179,40 @@ function Register-ATAPParityScheduledTasks {
       if ($null -eq $action -or $action.Command -ne $pwshPath -or (-not $directScriptMatch -and -not $dispatcherMatch)) {
         throw "Task '$($policy.Name)' does not reference its approved parity script."
       }
+      $beforeInvariant = & $getInvariant -RegisteredTask $task -TaskXml $xml
+      $originalTaskRun = "`"$($action.Command)`" $($action.Arguments)".Trim()
       $backupPath = Join-Path $backupDirectory "$($policy.Name).before.xml"
       $task.Xml | Set-Content -LiteralPath $backupPath -Encoding utf8
       $scriptPath = Join-Path $moduleRoot (Join-Path 'scripts' $policy.Script)
       $dispatcherPath = Join-Path $dispatcherDirectory "$($policy.Name).ps1"
-      $dispatcherInvocation = if ($policy.Name -eq 'ATAP-ParityCompare') {
-        "& '$scriptPath' -LeftStatePath '$statePath' -RightStatePath '\\utat01\ParityState' -LeftHostName 'utat022' -RightHostName 'utat01' -ExpectedCadenceDays 1 -StaleMultiplier 1.5 -PackageManagerProfilesPath '$profilesPath'"
-      }
-      else {
-        "& '$scriptPath' -StatePath '$statePath' -HostName '$hostName' -PackageManagerProfilesPath '$profilesPath'"
-      }
+      $dispatcherInvocation = "& '$scriptPath' -StatePath '$statePath' -HostName '$hostName' -PackageManagerProfilesPath '$profilesPath'"
       Set-Content -LiteralPath $dispatcherPath -Value "`$ErrorActionPreference = 'Stop'`r`n$dispatcherInvocation`r`nexit `$LASTEXITCODE" -Encoding utf8NoBOM
       if ($PSCmdlet.ShouldProcess("\\ATAP\\$($policy.Name)", "repoint approved action to $ModuleVersion")) {
-        # TASK_UPDATE preserves the existing Password/S4U principal and its stored secret;
-        # only the Exec action is changed. schtasks.exe can block indefinitely under S4U.
-        $definition = $task.Definition
-        $execAction = $definition.Actions.Item(1)
-        $execAction.Path = $pwshPath
-        $execAction.Arguments = "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$dispatcherPath`""
-        $taskUpdate = 4 # TASK_UPDATE
-        if ($policy.LogonType -eq 'Password') {
-          $credentialSecretName = "SvcParityAudit.$hostName"
-          $taskPassword = [string](Get-SecretATAP -SecretName $credentialSecretName -SecretField 'password' -ErrorAction Stop)
-          if ([string]::IsNullOrWhiteSpace($taskPassword)) {
-            throw "Required task credential '$credentialSecretName' resolved to an empty value."
+        $taskPath = "\ATAP\$($policy.Name)"
+        $expectedArguments = "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$dispatcherPath`""
+        $taskRun = "`"$pwshPath`" $expectedArguments"
+        & $invokeTaskActionChange -TaskPath $taskPath -TaskRun $taskRun
+
+        $updatedTask = $folder.GetTask($policy.Name)
+        $updatedXml = [xml] $updatedTask.Xml
+        $afterInvariant = & $getInvariant -RegisteredTask $updatedTask -TaskXml $updatedXml
+        $changedInvariantFields = @(& $compareInvariant -Before $beforeInvariant -After $afterInvariant)
+        $updatedAction = $updatedXml.Task.Actions.Exec
+        $actionMatches = $updatedAction.Command -ceq $pwshPath -and $updatedAction.Arguments -ceq $expectedArguments
+        if ($changedInvariantFields.Count -gt 0 -or -not $actionMatches) {
+          $failure = if ($changedInvariantFields.Count -gt 0) {
+            "Preserved task fields changed: $($changedInvariantFields -join ', ')."
           }
-          $taskUserId = "$($env:COMPUTERNAME)\SvcParityAudit"
-          $taskLogonPassword = 1 # TASK_LOGON_PASSWORD
-          $null = $folder.RegisterTaskDefinition($policy.Name, $definition, $taskUpdate, $taskUserId, $taskPassword, $taskLogonPassword, $null)
-        }
-        else {
-          $taskLogonS4U = 2 # TASK_LOGON_S4U
-          $taskUserId = "$($env:COMPUTERNAME)\SvcParityAudit"
-          $null = $folder.RegisterTaskDefinition($policy.Name, $definition, $taskUpdate, $taskUserId, $null, $taskLogonS4U, $null)
+          else {
+            'The postflight action did not match the approved executable and arguments.'
+          }
+          try {
+            & $invokeTaskActionChange -TaskPath $taskPath -TaskRun $originalTaskRun
+          }
+          catch {
+            throw "$failure Automatic action rollback also failed: $($_.Exception.Message)"
+          }
+          throw "$failure The original action was restored."
         }
       }
       [pscustomobject]@{ TaskName = $policy.Name; BackupPath = $backupPath; ModuleVersion = $ModuleVersion; ExitStatus = 0; ErrorText = $null }

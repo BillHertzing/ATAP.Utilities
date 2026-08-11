@@ -86,13 +86,13 @@ Describe 'Elevation broker artifacts' {
     $entry.commandType | Should -Be 'module'
     $entry.moduleName | Should -Be 'ATAP.Utilities.BuildTooling.ProGet.PowerShell'
     $entry.commandName | Should -Be 'Register-ATAPParityScheduledTasks'
-    $entry.minimumModuleVersion | Should -Be '0.1.8'
+    $entry.minimumModuleVersion | Should -Be '0.1.15'
     @($entry.allowedParameters).Count | Should -Be 1
     $entry.allowedParameters[0].name | Should -Be 'ModuleVersion'
     $entry.allowedParameters[0].pattern | Should -Be '^\d+\.\d+\.\d+(\.\d+)?$'
   }
 
-  It 'recognizes an approved parity script path containing one Windows path separator' {
+  It 'changes only the approved UTAT01 audit action through the task-only scheduler surface' {
     # Regression guard for 0.1.8: PowerShell does not use backslash as a string escape,
     # so "scripts\\$name" required two literal path separators and rejected every task.
     $installerPath = Join-Path $script:ModuleRoot 'public\Register-ATAPParityScheduledTasks.ps1'
@@ -104,13 +104,17 @@ Describe 'Elevation broker artifacts' {
     $installerText | Should -Not -Match [regex]::Escape('scripts\\$($policy.Script)')
     $installerText | Should -Match '\$dispatcherDirectory = Join-Path \$brokerModuleRoot ''dispatchers'''
     $installerText | Should -Match 'Dispatcher root.*writable by an untrusted identity'
-    $installerText | Should -Match ([regex]::Escape('$credentialSecretName = "SvcParityAudit.$hostName"'))
-    $installerText | Should -Match ([regex]::Escape("Get-SecretATAP -SecretName `$credentialSecretName -SecretField 'password' -ErrorAction Stop"))
-    $installerText | Should -Match ([regex]::Escape('$taskLogonPassword = 1 # TASK_LOGON_PASSWORD'))
-    $installerText | Should -Match ([regex]::Escape('$taskLogonS4U = 2 # TASK_LOGON_S4U'))
-    $installerText | Should -Match ([regex]::Escape('$folder.RegisterTaskDefinition($policy.Name, $definition, $taskUpdate, $taskUserId, $taskPassword, $taskLogonPassword, $null)'))
-    $installerText | Should -Match ([regex]::Escape('$folder.RegisterTaskDefinition($policy.Name, $definition, $taskUpdate, $taskUserId, $null, $taskLogonS4U, $null)'))
-    $installerText | Should -Not -Match '& schtasks\.exe'
+    $installerText | Should -Match ([regex]::Escape("if (`$hostName -ne 'utat01')"))
+    $installerText | Should -Not -Match 'ATAP-ParityCompare'
+    $installerText | Should -Not -Match 'Get-SecretATAP|RegisterTaskDefinition'
+    $installerText | Should -Match ([regex]::Escape("@('/Change', '/TN', `$TaskPath, '/TR', `$TaskRun)"))
+    $installerText | Should -Match ([regex]::Escape('$RegisteredTask.GetSecurityDescriptor(7)'))
+    foreach ($field in 'Principal', 'Triggers', 'Settings', 'TaskVersion', 'ActionId', 'ActionWorkingDirectory', 'SecurityDescriptor') {
+      $installerText | Should -Match "(?m)^\s+$field\s*="
+    }
+    $installerText | Should -Match 'Automatic action rollback also failed'
+    $installerText.IndexOf('$stdoutTask = $process.StandardOutput.ReadToEndAsync()') |
+      Should -BeLessThan $installerText.IndexOf('$process.WaitForExitAsync($timeout.Token)')
   }
 
   It 'never lets a request name what runs' {

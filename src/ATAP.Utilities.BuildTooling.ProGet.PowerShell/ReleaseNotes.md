@@ -1,5 +1,26 @@
 # Release notes
 
+## 0.1.15
+
+- Moved parity version selection out of the scheduled task definition and into a fixed,
+  version-independent dispatcher under `C:\Program Files\ATAP\ParityDispatchers`. Repointing a
+  parity version now rewrites that dispatcher instead of mutating a registered task, so it needs
+  no run-as password and no Task Scheduler permission. The privileged task mutation is a one-time
+  migration per host.
+- The dispatcher root is deliberately outside this module's versioned directory; the previous
+  location would have forced a fresh privileged task mutation on every broker release.
+- Restored the two-host policy: `utat01` audit (S4U/Limited/AuditOnly) and `utat022`
+  audit + compare (Password/Highest/AuditAndCompare). A host or task outside that table is refused.
+- The Password-logon one-time migration re-supplies the run-as credential through
+  `RegisterTaskDefinition`, resolved in-broker by canonical SecretName `SvcParityAudit.<host>`.
+  It is never accepted from a request and never reaches the result record or transcript. Requires
+  a BWS ReadOnly token for the broker service account (operator decision, 2026-08-11).
+- `schtasks` invocations now close stdin before waiting. An open stdin let a Password-logon
+  credential prompt hang the broker indefinitely.
+- Dispatcher ACL guard now also rejects `AppendData`, `TakeOwnership`, and `ChangePermissions`.
+- Contract, validation matrix, and threat model recorded in
+  `_Planning/InformationForTheFuture/Parity/ParityTaskInstaller-Contract.md`.
+
 ## 0.1.8
 
 - Add the narrowly typed `register-atap-parity-tasks` elevation-broker installer. It accepts only an exact installed SystemParityMonitor version and may repoint only the approved local parity tasks.

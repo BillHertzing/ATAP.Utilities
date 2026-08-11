@@ -1,5 +1,14 @@
 BeforeAll {
-    . "$PSScriptRoot\Install-ATAPModule-AllUsers.ps1"
+    # The installer ships as a broker resource, not as a test fixture. Resolving it from
+    # $PSScriptRoot silently pointed at a path that has never existed, so this whole
+    # container failed at load and its nine tests were counted as failures rather than
+    # as coverage. Resolve it where the module actually keeps it.
+    $script:ModuleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+    $script:InstallerScript = Join-Path $script:ModuleRoot 'Resources\ElevationBroker\Install-ATAPModule-AllUsers.ps1'
+    if (-not (Test-Path -LiteralPath $script:InstallerScript -PathType Leaf)) {
+        throw "The broker installer resource '$script:InstallerScript' is missing."
+    }
+    . $script:InstallerScript
 }
 
 Describe 'Get-ATAPModuleFileHash' {
@@ -82,7 +91,10 @@ Describe 'Get-ATAPModuleDownloadCandidateUris' {
     It 'prefers localhost over the utat01 hostname' {
         # Session evidence: the localhost endpoint is reachable when the host name is not.
         $uris = @(Get-ATAPModuleDownloadCandidateUris -BaseFeedUrl 'http://utat01:50000/nuget/powershellget-stable' -ModuleName $script:Name -RequiredVersion $script:Version)
-        $uris[0] | Should -Match '^https://utat022:50000/'
+        # The rewrite substitutes the HOST only; it must not silently change the scheme,
+        # or a caller pinned to plain http would be redirected somewhere it did not ask for.
+        $uris[0] | Should -Match '^http://localhost:50000/'
+        # The original hostname stays in the candidate list as a fallback.
         ($uris | Where-Object { $_ -match '^http://utat01:50000/' }).Count | Should -BeGreaterThan 0
     }
 

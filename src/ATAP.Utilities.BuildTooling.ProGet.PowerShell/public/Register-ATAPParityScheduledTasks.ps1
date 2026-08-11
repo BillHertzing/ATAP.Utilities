@@ -111,16 +111,14 @@ function Register-ATAPParityScheduledTasks {
       }
       Set-Content -LiteralPath $dispatcherPath -Value "`$ErrorActionPreference = 'Stop'`r`n$dispatcherInvocation`r`nexit `$LASTEXITCODE" -Encoding utf8NoBOM
       if ($PSCmdlet.ShouldProcess("\\ATAP\\$($policy.Name)", "repoint approved action to $ModuleVersion")) {
-        # schtasks /Change /TR changes only the action, preserving the current logon
-        # token, principal, triggers, and settings. Re-registering XML would require
-        # the existing Password-logon secret on UTAT022 and risks changing S4U policy.
-        $taskPath = "\ATAP\$($policy.Name)"
-        $taskRun = "`"$pwshPath`" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$dispatcherPath`""
-        if ($taskRun.Length -gt 261) { throw "Approved task action exceeds the schtasks /TR limit: $($taskRun.Length)." }
-        $taskSchedulerOutput = @(& schtasks.exe /Change /TN $taskPath /TR $taskRun 2>&1)
-        if ($LASTEXITCODE -ne 0) {
-          throw "Task Scheduler refused action update for '$taskPath' (exit $LASTEXITCODE): $($taskSchedulerOutput -join [Environment]::NewLine)"
-        }
+        # TASK_UPDATE preserves the existing Password/S4U principal and its stored secret;
+        # only the Exec action is changed. schtasks.exe can block indefinitely under S4U.
+        $definition = $task.Definition
+        $execAction = $definition.Actions.Item(1)
+        $execAction.Path = $pwshPath
+        $execAction.Arguments = "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$dispatcherPath`""
+        $taskUpdate = 4 # TASK_UPDATE
+        $null = $folder.RegisterTaskDefinition($policy.Name, $definition, $taskUpdate, $null, $null, 0, $null)
       }
       [pscustomobject]@{ TaskName = $policy.Name; BackupPath = $backupPath; ModuleVersion = $ModuleVersion; ExitStatus = 0; ErrorText = $null }
     }

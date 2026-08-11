@@ -1,5 +1,9 @@
 # Release notes
 
+## 0.1.8
+
+- Add the narrowly typed `register-atap-parity-tasks` elevation-broker installer. It accepts only an exact installed SystemParityMonitor version and may repoint only the approved local parity tasks.
+
 ## 0.1.1
 
 - Corrected the ProGet administration boundary test to use Pester mocks when

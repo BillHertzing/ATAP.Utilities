@@ -28,6 +28,24 @@
   "schemaVersion": "2.0.0",
   "installers": [
     {
+      "id": "register-atap-parity-tasks",
+      "description": "Narrowly typed local parity-task version repointing (Task 14.72).",
+      "commandType": "module",
+      "moduleName": "ATAP.Utilities.BuildTooling.ProGet.PowerShell",
+      "commandName": "Register-ATAPParityScheduledTasks",
+      "minimumModuleVersion": "0.1.8",
+      "trustedModuleRoots": [
+        "C:\\Program Files\\PowerShell\\Modules"
+      ],
+      "allowedParameters": [
+        {
+          "name": "ModuleVersion",
+          "required": true,
+          "pattern": "^\\d+\\.\\d+\\.\\d+(\\.\\d+)?$"
+        }
+      ]
+    },
+    {
       "id": "install-atap-module-allusers",
       "description": "Canonical validated AllUsers module installer (plan Task 2.1, promoted by Task 13.76.c).",
       "commandType": "module",

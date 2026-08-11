@@ -33,6 +33,7 @@ Export-ModuleMember -Function @(
   'Publish-PSModuleToProGetFeed'
   'Publish-UniversalPackageToProGet'
   'Register-ElevationBrokerTask'
+  'Register-ATAPParityScheduledTasks'
   'Register-ProGetFeedSet'
   'Remove-ProGetApiKeys'
   'Remove-ProGetFeeds'

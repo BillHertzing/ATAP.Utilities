@@ -9,11 +9,13 @@
 
 BeforeAll {
   $script:Here = $PSScriptRoot
-  $script:BrokerScript = Join-Path $script:Here 'Invoke-ElevationBrokerRequest.ps1'
-  $script:ClientScript = Join-Path $script:Here 'Request-ElevatedInstall.ps1'
-  $script:TaskXml = Join-Path $script:Here 'ATAP-ElevatedInstallBroker.xml'
-  $script:ConfigTemplate = Join-Path $script:Here 'ElevationBroker-config.template.json'
-  $script:Installer = Join-Path $script:Here 'Install-ATAPModule-AllUsers.ps1'
+  $script:ModuleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+  $script:ResourceRoot = Join-Path $script:ModuleRoot 'Resources\ElevationBroker'
+  $script:BrokerScript = Join-Path $script:ResourceRoot 'Invoke-ElevationBrokerRequest.ps1'
+  $script:ClientScript = Join-Path $script:ModuleRoot 'public\Request-ElevatedInstall.ps1'
+  $script:TaskXml = Join-Path $script:ResourceRoot 'ATAP-ElevatedInstallBroker.xml'
+  $script:ConfigTemplate = Join-Path $script:ResourceRoot 'ElevationBroker-config.template.json'
+  $script:Installer = Join-Path $script:ResourceRoot 'Install-ATAPModule-AllUsers.ps1'
 
   # The broker's main body throws when not elevated, so load only its function
   # definitions. This keeps the suite runnable unelevated while still exercising the
@@ -32,7 +34,7 @@ BeforeAll {
   )
 
   $script:Config = Get-Content -LiteralPath $script:ConfigTemplate -Raw | ConvertFrom-Json
-  $script:Allowed = $script:Config.installers[0].allowedParameters
+  $script:Allowed = ($script:Config.installers | Where-Object id -eq 'install-atap-module-allusers').allowedParameters
 }
 
 Describe 'Elevation broker artifacts' {
@@ -41,15 +43,16 @@ Describe 'Elevation broker artifacts' {
     @{ Name = 'Request-ElevatedInstall.ps1' }
   ) {
     $errors = $null
+    $artifactPath = if ($Name -eq 'Invoke-ElevationBrokerRequest.ps1') { $script:BrokerScript } else { $script:ClientScript }
     [void][System.Management.Automation.Language.Parser]::ParseFile(
-      (Join-Path $script:Here $Name), [ref]$null, [ref]$errors)
+      $artifactPath, [ref]$null, [ref]$errors)
     $errors.Count | Should -Be 0
   }
 
   It 'registers the scheduled task with highest privileges and a drain-and-exit action' {
     $xml = [xml](Get-Content -LiteralPath $script:TaskXml -Raw)
     $xml.Task.Principals.Principal.RunLevel | Should -Be 'HighestAvailable'
-    $xml.Task.Triggers.TimeTrigger.Repetition.Interval | Should -Be 'PT1M'
+    $xml.Task.Triggers.BootTrigger.Enabled | Should -Be 'true'
     $xml.Task.Actions.Exec.Command | Should -Be 'pwsh.exe'
     # -Once matters: without it an elevated process would sit resident indefinitely.
     $xml.Task.Actions.Exec.Arguments | Should -Match '-Once'
@@ -61,7 +64,7 @@ Describe 'Elevation broker artifacts' {
     # so the template no longer pins a script hash. The module form's integrity control is
     # the trusted root plus the version floor, both of which must be present and sane.
     $config = Get-Content -LiteralPath $script:ConfigTemplate -Raw | ConvertFrom-Json
-    $entry = $config.installers[0]
+    $entry = $config.installers | Where-Object id -eq 'install-atap-module-allusers'
 
     $entry.commandType | Should -Be 'module'
     $entry.moduleName | Should -Be 'ATAP.Utilities.BuildTooling.ProGet.PowerShell'
@@ -76,11 +79,24 @@ Describe 'Elevation broker artifacts' {
     $entry.PSObject.Properties.Name | Should -Not -Contain 'sha256'
   }
 
+  It 'ships the parity-task installer with only an exact module-version request field' {
+    $config = Get-Content -LiteralPath $script:ConfigTemplate -Raw | ConvertFrom-Json
+    $entry = $config.installers | Where-Object id -eq 'register-atap-parity-tasks'
+
+    $entry.commandType | Should -Be 'module'
+    $entry.moduleName | Should -Be 'ATAP.Utilities.BuildTooling.ProGet.PowerShell'
+    $entry.commandName | Should -Be 'Register-ATAPParityScheduledTasks'
+    $entry.minimumModuleVersion | Should -Be '0.1.8'
+    @($entry.allowedParameters).Count | Should -Be 1
+    $entry.allowedParameters[0].name | Should -Be 'ModuleVersion'
+    $entry.allowedParameters[0].pattern | Should -Be '^\d+\.\d+\.\d+(\.\d+)?$'
+  }
+
   It 'never lets a request name what runs' {
     # The whole trust model: executables live only in the admin-owned config.
     $clientText = Get-Content -LiteralPath $script:ClientScript -Raw
     $clientText | Should -Not -Match '(?m)^\s*\[string\]\s*\$(ScriptPath|InstallerPath|Path)\b'
-    $names = @($script:Config.installers[0].allowedParameters.name)
+    $names = @($script:Config.installers | ForEach-Object { $_.allowedParameters.name })
     foreach ($forbidden in 'ScriptPath', 'Path', 'CommandName', 'ModulePath') {
       $names | Should -Not -Contain $forbidden
     }
@@ -95,7 +111,7 @@ Describe 'Elevation broker artifacts' {
     #
     # Skipped, with a stated reason, when the promoted module is not installed on this host --
     # there is nothing to compare against then, and a silent pass would be misleading.
-    $entry = $script:Config.installers[0]
+    $entry = $script:Config.installers | Where-Object id -eq 'install-atap-module-allusers'
     $module = Get-Module -ListAvailable -Name $entry.moduleName -ErrorAction SilentlyContinue |
       Sort-Object Version -Descending | Select-Object -First 1
     if (-not $module) {
@@ -167,8 +183,8 @@ Describe 'Get-BrokerConfig' {
     $p = Join-Path $TestDrive 'good.json'
     Copy-Item -LiteralPath $script:ConfigTemplate -Destination $p
     $config = Get-BrokerConfig -Path $p
-    @($config.installers).Count | Should -Be 1
-    $config.installers[0].id | Should -Be 'install-atap-module-allusers'
+    @($config.installers).Count | Should -Be 2
+    @($config.installers.id) | Should -Contain 'install-atap-module-allusers'
   }
 
   Context 'module-kind entries (Task 13.76.c)' {

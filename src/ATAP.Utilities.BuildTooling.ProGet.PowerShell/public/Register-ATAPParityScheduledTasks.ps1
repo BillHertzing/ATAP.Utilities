@@ -118,7 +118,21 @@ function Register-ATAPParityScheduledTasks {
         $execAction.Path = $pwshPath
         $execAction.Arguments = "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$dispatcherPath`""
         $taskUpdate = 4 # TASK_UPDATE
-        $null = $folder.RegisterTaskDefinition($policy.Name, $definition, $taskUpdate, $null, $null, 0, $null)
+        if ($policy.LogonType -eq 'Password') {
+          $credentialSecretName = "SvcParityAudit.$hostName"
+          $taskPassword = [string](Get-SecretATAP -SecretName $credentialSecretName -SecretField 'password' -ErrorAction Stop)
+          if ([string]::IsNullOrWhiteSpace($taskPassword)) {
+            throw "Required task credential '$credentialSecretName' resolved to an empty value."
+          }
+          $taskUserId = "$($env:COMPUTERNAME)\SvcParityAudit"
+          $taskLogonPassword = 1 # TASK_LOGON_PASSWORD
+          $null = $folder.RegisterTaskDefinition($policy.Name, $definition, $taskUpdate, $taskUserId, $taskPassword, $taskLogonPassword, $null)
+        }
+        else {
+          $taskLogonS4U = 2 # TASK_LOGON_S4U
+          $taskUserId = "$($env:COMPUTERNAME)\SvcParityAudit"
+          $null = $folder.RegisterTaskDefinition($policy.Name, $definition, $taskUpdate, $taskUserId, $null, $taskLogonS4U, $null)
+        }
       }
       [pscustomobject]@{ TaskName = $policy.Name; BackupPath = $backupPath; ModuleVersion = $ModuleVersion; ExitStatus = 0; ErrorText = $null }
     }

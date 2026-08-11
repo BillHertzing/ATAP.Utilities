@@ -104,7 +104,12 @@ Describe 'Elevation broker artifacts' {
     $installerText | Should -Not -Match [regex]::Escape('scripts\\$($policy.Script)')
     $installerText | Should -Match '\$dispatcherDirectory = Join-Path \$brokerModuleRoot ''dispatchers'''
     $installerText | Should -Match 'Dispatcher root.*writable by an untrusted identity'
-    $installerText | Should -Match ([regex]::Escape('$folder.RegisterTaskDefinition($policy.Name, $definition, $taskUpdate, $null, $null, 0, $null)'))
+    $installerText | Should -Match ([regex]::Escape('$credentialSecretName = "SvcParityAudit.$hostName"'))
+    $installerText | Should -Match ([regex]::Escape("Get-SecretATAP -SecretName `$credentialSecretName -SecretField 'password' -ErrorAction Stop"))
+    $installerText | Should -Match ([regex]::Escape('$taskLogonPassword = 1 # TASK_LOGON_PASSWORD'))
+    $installerText | Should -Match ([regex]::Escape('$taskLogonS4U = 2 # TASK_LOGON_S4U'))
+    $installerText | Should -Match ([regex]::Escape('$folder.RegisterTaskDefinition($policy.Name, $definition, $taskUpdate, $taskUserId, $taskPassword, $taskLogonPassword, $null)'))
+    $installerText | Should -Match ([regex]::Escape('$folder.RegisterTaskDefinition($policy.Name, $definition, $taskUpdate, $taskUserId, $null, $taskLogonS4U, $null)'))
     $installerText | Should -Not -Match '& schtasks\.exe'
   }
 

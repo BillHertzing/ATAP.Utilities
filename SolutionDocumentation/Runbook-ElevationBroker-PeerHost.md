@@ -25,10 +25,11 @@ absent.
 - `SvcAnsibleAdmin` local account exists.
 - Bitwarden secret `SvcAnsibleAdmin.<hostname>` resolves through `Get-SecretATAP` — for
   example `SvcAnsibleAdmin.utat01`, `SvcAnsibleAdmin.utat022`, `SvcAnsibleAdmin.ncat040`.
-  This document previously named `SvcAnsibleAdmin.Login.<hostname>`, which does not exist
-  in the vault; resolving it fails with "No Bitwarden Secrets Manager secret found with
-  key ... in the BWS token's granted projects." Corrected 2026-08-12 against the live key
-  list.
+  This document previously named `SvcAnsibleAdmin.Login.<hostname>`, which does not exist;
+  resolving it fails with "No Bitwarden Secrets Manager secret found with key ... in the
+  BWS token's granted projects." Corrected 2026-08-12 by enumerating the live vault: **none
+  of the 66 keys contains `.Login.`**, so the service-account form is
+  `<ServiceAccount>.<hostname>` everywhere, not just for `SvcAnsibleAdmin`.
 - ProGet feeds reachable, including `powershellget-stable`.
 - A synced clone of `ATAP.Utilities`.
 - PowerShell 7 with profiles loading (`$global:settings` populated). Do not use

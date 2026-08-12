@@ -312,7 +312,10 @@ Before installing SQL Server, create a dedicated Windows service account for run
 
 > **Prerequisites:**
 >
-> 1. Ensure a Bitwarden secret named `SvcSQLServer.Login.<lowercase-hostname>` exists in Bitwarden Secrets Manager with:
+> 1. Ensure a Bitwarden secret named `SvcSQLServer.<lowercase-hostname>` exists in Bitwarden Secrets Manager with:
+>    (Corrected 2026-08-12: the name has no `.Login.` middle field. None of the 66 live keys
+>    contains `.Login.`, so `SvcSQLServer.Login.<lowercase-hostname>` does not resolve. The
+>    existing keys are `SvcSQLServer.utat01` and `SvcSQLServer.utat022`.)
 >    - Username: `SvcSQLServer`
 >    - Password: the service account password
 > 2. Ensure `ATAP.Utilities.PowerShell` module is loaded, which provides `New-LocalServiceAccount`:
@@ -336,7 +339,7 @@ New-LocalServiceAccount `
 
 Expected result: `Status = Success`, `UserCreated = True`, `SeServiceLogonRight = True`.
 
-**Bitwarden record requirement:** Ensure `SvcSQLServer.Login.<lowercase-hostname>` remains available in Bitwarden Secrets Manager for SQL Server service maintenance.
+**Bitwarden record requirement:** Ensure `SvcSQLServer.<lowercase-hostname>` remains available in Bitwarden Secrets Manager for SQL Server service maintenance.
 
 ---
 

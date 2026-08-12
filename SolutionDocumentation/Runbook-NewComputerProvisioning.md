@@ -45,10 +45,11 @@ These apply to every stream and are not restated per-step.
 - **Claims are separable from evidence.** Every exit condition below is either tagged with
   the command that proves it or marked plainly as asserted.
 - **SecretName only.** Callers reference secrets by `SecretName` and resolve through
-  `Get-SecretATAP`. Use the dotted `<ServiceName>.<Purpose>.<HostName>` form for
-  host-specific Bitwarden items; for example, `SvcSQLServer.Login.ncat040` and
-  `SvcProGet.Login.ncat040`. No API-key environment variables, no connection strings in
-  files.
+  `Get-SecretATAP`. Use the dotted `<ServiceAccount>.<HostName>` form for host-specific
+  service-account items; for example, `SvcSQLServer.utat022` and `SvcProGet.utat022`.
+  There is no middle "purpose" field: verified 2026-08-12, none of the 66 live keys
+  contains `.Login.`, so a name such as `SvcSQLServer.Login.ncat040` does not resolve.
+  No API-key environment variables, no connection strings in files.
 - **PowerShell 7 with profiles.** Never `-NoProfile` except where a step is explicitly
   auditing no-profile resolution (Steps 4.4 and 4.6 do exactly that, on purpose).
 
@@ -198,15 +199,38 @@ and what it must never do.
 
 - **Entry:** O1 (host name is fixed).
 - **Execute:** create in the `ComputerLogins` collection, each with username and password:
-  `SvcSQLServer.Login.<hostname>`, `SvcProGet.Login.<hostname>`,
-  `SvcBuildMaster.Login.<hostname>`, plus `SvcAnsibleAdmin.<hostname>` if the
-  elevated install broker will run on this host. The first field is the service name, the
-  middle field is the credential purpose, and the final field is the host name.
-  **`SvcAnsibleAdmin` does not carry the middle field.** The live vault keys are
-  `SvcAnsibleAdmin.utat01`, `SvcAnsibleAdmin.utat022`, and `SvcAnsibleAdmin.ncat040`;
-  `SvcAnsibleAdmin.Login.<hostname>` does not exist and fails to resolve. Corrected
-  2026-08-12 against the live key list. The three `*.Login.<hostname>` names above were
-  not re-verified in that pass — confirm each against the vault before relying on it.
+  `SvcSQLServer.<hostname>`, `SvcProGet.<hostname>`, `SvcBuildMaster.<hostname>`, plus
+  `SvcAnsibleAdmin.<hostname>` if the elevated install broker will run on this host. The
+  SecretName is `<ServiceAccount>.<hostname>` — the service-account name and the host name,
+  with nothing between them.
+
+  > **Corrected 2026-08-12 against the live vault.** This step previously specified
+  > `SvcSQLServer.Login.<hostname>`, `SvcProGet.Login.<hostname>`, and
+  > `SvcBuildMaster.Login.<hostname>`, describing a middle "credential purpose" field.
+  > **No such field exists.** Enumerating all 66 Bitwarden Secrets Manager keys returned
+  > zero containing `.Login.`, so every one of those names fails to resolve with
+  > "No Bitwarden Secrets Manager secret found with key ... in the BWS token's granted
+  > projects."
+
+  The service-account keys that actually exist:
+
+  | Service account | `utat01` | `utat022` | `ncat040` |
+  | --- | --- | --- | --- |
+  | `SvcSQLServer` | yes | yes | **absent** |
+  | `SvcProGet` | yes | yes | **absent** |
+  | `SvcBuildMaster` | yes | yes | **absent** |
+  | `SvcAnsibleAdmin` | yes | yes | yes |
+  | `SvcParityAudit` | yes | yes | **absent** |
+  | `SvcSeq` | yes | yes | **absent** |
+  | `SvcAceOutpost` | yes | yes | **absent** |
+
+  Two things to watch when creating items for a new host:
+
+  - Only `SvcAnsibleAdmin` currently has an `ncat040` key. Every other service account
+    exists for `utat01` and `utat022` only, so a new host needs its full set created here.
+  - Casing is inconsistent in the vault today: the per-host keys use `SvcBuildMaster`
+    (capital `M`), while the unrelated `SvcBuildmaster.Access.Token` uses a lowercase `m`.
+    Match the existing per-host casing exactly rather than inferring it from that token.
 - **Exit:** each item resolves by `SecretName` through `Get-SecretATAP` from an authorized
   identity. _(Evidence: resolution succeeded, value discarded.)_
 

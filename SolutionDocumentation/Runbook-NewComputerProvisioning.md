@@ -199,9 +199,14 @@ and what it must never do.
 - **Entry:** O1 (host name is fixed).
 - **Execute:** create in the `ComputerLogins` collection, each with username and password:
   `SvcSQLServer.Login.<hostname>`, `SvcProGet.Login.<hostname>`,
-  `SvcBuildMaster.Login.<hostname>`, plus `SvcAnsibleAdmin.Login.<hostname>` if the
+  `SvcBuildMaster.Login.<hostname>`, plus `SvcAnsibleAdmin.<hostname>` if the
   elevated install broker will run on this host. The first field is the service name, the
   middle field is the credential purpose, and the final field is the host name.
+  **`SvcAnsibleAdmin` does not carry the middle field.** The live vault keys are
+  `SvcAnsibleAdmin.utat01`, `SvcAnsibleAdmin.utat022`, and `SvcAnsibleAdmin.ncat040`;
+  `SvcAnsibleAdmin.Login.<hostname>` does not exist and fails to resolve. Corrected
+  2026-08-12 against the live key list. The three `*.Login.<hostname>` names above were
+  not re-verified in that pass — confirm each against the vault before relying on it.
 - **Exit:** each item resolves by `SecretName` through `Get-SecretATAP` from an authorized
   identity. _(Evidence: resolution succeeded, value discarded.)_
 

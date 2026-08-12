@@ -23,11 +23,35 @@ absent.
 ## Prerequisites on the peer host
 
 - `SvcAnsibleAdmin` local account exists.
-- Bitwarden secret `SvcAnsibleAdmin.Login.<hostname>` resolves through `Get-SecretATAP`.
+- Bitwarden secret `SvcAnsibleAdmin.<hostname>` resolves through `Get-SecretATAP` — for
+  example `SvcAnsibleAdmin.utat01`, `SvcAnsibleAdmin.utat022`, `SvcAnsibleAdmin.ncat040`.
+  This document previously named `SvcAnsibleAdmin.Login.<hostname>`, which does not exist
+  in the vault; resolving it fails with "No Bitwarden Secrets Manager secret found with
+  key ... in the BWS token's granted projects." Corrected 2026-08-12 against the live key
+  list.
 - ProGet feeds reachable, including `powershellget-stable`.
 - A synced clone of `ATAP.Utilities`.
 - PowerShell 7 with profiles loading (`$global:settings` populated). Do not use
   `-NoProfile`.
+
+### Provisioning a BWS token for the broker account
+
+Only needed when the broker must resolve secrets itself, as the constrained parity-task
+installer does for a Password-logon task's run-as credential.
+
+**DPAPI is profile-bound as well as user-bound, so this cannot be done over remoting.**
+Running `Initialize-BWSAccessToken` inside an explicit-credential PowerShell session fails
+with "Error occurred during a cryptographic operation", because a network logon loads no
+user profile and therefore no DPAPI master key. It must run as the owning account **in a
+process that has a profile** — a Password-logon batch process. A temporary one-shot
+scheduled task registered as `SvcAnsibleAdmin` with `LogonType` `Password`, run once and
+then deleted, is the working pattern.
+
+`Initialize-BWSCredentialDirectory` must run first: `Initialize-BWSAccessToken` does not
+create the per-account credential directory and fails if it is absent.
+
+Verify by reading the token back and resolving one real SecretName **as that account**, not
+from an administrator session.
 
 ## Step 1: Code
 

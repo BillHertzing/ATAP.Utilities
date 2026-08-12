@@ -1,5 +1,12 @@
 # Release Notes — ATAP.Utilities.SystemParityMonitor.PowerShell
 
+## 0.1.21
+
+- Grant non-inheriting read-and-execute access on validated package-profile
+  ancestors. Node's `realpathSync` requires directory read access when the approved
+  machine npm prefix is an NVM symbolic link into the developer profile; the grant
+  remains non-inheriting and does not expose sibling contents recursively.
+
 ## 0.1.20
 
 - Preserve a bounded, single-line native-command diagnostic when a package-manager

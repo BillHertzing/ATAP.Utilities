@@ -283,10 +283,10 @@ function Set-ParityAuditReadAccess {
           @{ Path = $_; Rights = '(OI)(CI)(RX)'; Surface = 'PackageManagerProfile' }
         }
       ) + @($packageManagerAncestorPaths | Sort-Object | ForEach-Object {
-          # npm performs lstat while walking to its configured prefix. Non-inheriting
-          # ReadAttributes plus Execute permits that walk without directory listing or
-          # inherited access to sibling content.
-          @{ Path = $_; Rights = '(X,RA)'; Surface = 'PackageManagerProfileAncestor' }
+          # Node performs realpath/lstat while walking to an NVM-backed npm prefix.
+          # Non-inheriting read-and-execute permits that exact ancestor walk without
+          # granting inherited access to sibling contents.
+          @{ Path = $_; Rights = '(RX)'; Surface = 'PackageManagerProfileAncestor' }
         }
       )) {
       $target = $pathGrant.Path

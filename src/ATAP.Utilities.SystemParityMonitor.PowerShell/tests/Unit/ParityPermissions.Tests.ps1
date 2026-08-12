@@ -96,7 +96,7 @@ Describe 'Set-ParityAuditReadAccess safety contract' {
     Assert-MockCalled Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
   }
 
-  It 'plans non-inheriting attribute-read and traversal access on validated user-profile ancestors' {
+  It 'plans non-inheriting read-and-execute access on validated user-profile ancestors' {
     $parameters = $validParameters.Clone()
     $parameters.PackageManagerProfiles = @(
       [pscustomobject]@{
@@ -117,7 +117,7 @@ Describe 'Set-ParityAuditReadAccess safety contract' {
       'C:\Users\whertzing\AppData\Roaming\Python',
       'C:\Users\whertzing\AppData\Roaming\Python\Python311'
     )
-    @($ancestorResults.Access | Sort-Object -Unique) | Should -Be @('(X,RA)')
+    @($ancestorResults.Access | Sort-Object -Unique) | Should -Be @('(RX)')
     Assert-MockCalled Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
   }
 

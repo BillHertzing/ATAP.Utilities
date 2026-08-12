@@ -228,9 +228,11 @@ and what it must never do.
 
   - Only `SvcAnsibleAdmin` currently has an `ncat040` key. Every other service account
     exists for `utat01` and `utat022` only, so a new host needs its full set created here.
-  - Casing is inconsistent in the vault today: the per-host keys use `SvcBuildMaster`
-    (capital `M`), while the unrelated `SvcBuildmaster.Access.Token` uses a lowercase `m`.
-    Match the existing per-host casing exactly rather than inferring it from that token.
+  - `BuildMaster` is the canonical casing, with a capital `M`, everywhere. The vault was
+    briefly inconsistent — `SvcBuildmaster.Access.Token` carried a lowercase `m` while the
+    per-host keys used `SvcBuildMaster` — and was corrected to
+    `SvcBuildMaster.Access.Token` on 2026-08-12. BWS keys are case-sensitive, so use the
+    canonical casing exactly when creating new items.
 - **Exit:** each item resolves by `SecretName` through `Get-SecretATAP` from an authorized
   identity. _(Evidence: resolution succeeded, value discarded.)_
 

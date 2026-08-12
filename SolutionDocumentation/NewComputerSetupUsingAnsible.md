@@ -333,7 +333,7 @@ New-LocalServiceAccount `
     -AccountName              SvcSQLServer `
     -FullName                 'SQL Server Service Identity' `
     -Description              'Dedicated Windows service account for SQL Server Database Engine' `
-    -SecretNameServiceAccountLoginCredentials "SvcSQLServer.Login.$($env:COMPUTERNAME.ToLowerInvariant())" `
+    -SecretNameServiceAccountLoginCredentials "SvcSQLServer.$($env:COMPUTERNAME.ToLowerInvariant())" `
     -GrantSeServiceLogonRight
 ```
 
@@ -470,7 +470,7 @@ New-LocalServiceAccount `
     -AccountName              SvcProGet `
     -FullName                 'ProGet Service Identity' `
     -Description              'Dedicated Windows service account for Inedo ProGet' `
-    -SecretNameServiceAccountLoginCredentials "SvcProGet.Login.$($env:COMPUTERNAME.ToLowerInvariant())" `
+    -SecretNameServiceAccountLoginCredentials "SvcProGet.$($env:COMPUTERNAME.ToLowerInvariant())" `
     -GrantSeServiceLogonRight
 ```
 
@@ -487,7 +487,7 @@ New-LocalServiceAccount `
     -AccountName              SvcBuildMaster `
     -FullName                 'BuildMaster Service Identity' `
     -Description              'Dedicated Windows service account for Inedo BuildMaster' `
-    -SecretNameServiceAccountLoginCredentials "SvcBuildMaster.Login.$($env:COMPUTERNAME.ToLowerInvariant())" `
+    -SecretNameServiceAccountLoginCredentials "SvcBuildMaster.$($env:COMPUTERNAME.ToLowerInvariant())" `
     -GrantSeServiceLogonRight
 ```
 

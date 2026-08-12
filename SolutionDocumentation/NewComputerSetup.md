@@ -368,6 +368,52 @@ dotnet --list-sdks
 bw --version
 ```
 
+### 2.0 Register the PowerShell 7 remoting endpoint before any remote connection
+
+After PowerShell 7 is installed, use an elevated **local console** PowerShell 7
+session to register its WinRM endpoint before attempting any ATAP remote action.
+This is a prerequisite for bounded identity probes, credential rotation, and
+all other approved remoting: every normal remote connection must name
+`-ConfigurationName 'PowerShell.7'`.
+
+```powershell
+Enable-PSRemoting -Force
+$winRm = Get-Service -Name 'WinRM' -ErrorAction Stop
+Set-Service -Name 'WinRM' -StartupType Automatic
+if ($winRm.Status -ne 'Running') {
+  Start-Service -Name 'WinRM'
+}
+$winRm.WaitForStatus('Running', [TimeSpan]::FromSeconds(30))
+Test-WSMan -ComputerName 'localhost' -ErrorAction Stop | Out-Null
+Get-PSSessionConfiguration -Name 'PowerShell.7' -ErrorAction Stop |
+  Select-Object Name, PSVersion, Enabled
+```
+
+`Enable-PSRemoting` can reconfigure WinRM and interrupt an in-flight bootstrap
+connection. Treat the local service-health check above as a required completion
+barrier: WinRM must be `Running`, configured for automatic startup, and answer
+`Test-WSMan localhost` before an operator considers the endpoint registered.
+If it does not reach that state within 30 seconds, stop and repair the local
+WinRM service; do not infer success from a disconnected remote bootstrap call.
+
+Verify from an approved peer only after that local service-health and endpoint
+verification succeeds. The probe must return metadata only and must not fall
+back to the unnamed Windows PowerShell endpoint:
+
+```powershell
+Invoke-Command -ComputerName '<host>' -ConfigurationName 'PowerShell.7' -ScriptBlock {
+  [pscustomobject]@{
+    ComputerName = $env:COMPUTERNAME
+    UserName = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+    PSVersion = $PSVersionTable.PSVersion.ToString()
+  }
+}
+```
+
+If the endpoint is absent, repair it through the local console or a separately
+approved recovery operation. Do not silently use the default endpoint as a
+substitute for ordinary administration.
+
 Install **Dropbox first and manually** (download from
 [dropbox.com/install](https://www.dropbox.com/install)). Chocolatey is not yet available at
 this stage, and organization scripts, PowerShell modules, and the Chocolatey package
@@ -505,6 +551,78 @@ subject, issuer, and thumbprint are the direct ATAP Foundation values recorded i
 `ATAP.IAC\Windows\AnsibleHostInventory\All\PKI-TLS-ATAP-Foundation.example.yml`, not an
 `Avast Web/Mail Shield` certificate. A successful HTTP status alone is insufficient PKI
 evidence because an intercepting certificate can still produce HTTP 200.
+
+### 2.3.2 Install the deterministic C# package build toolchain
+
+Production C# packages require a stable NuGet implementation that honors
+deterministic pack. Install the **stable** Visual Studio Build Tools 2026 channel
+with these components:
+
+- `Microsoft.VisualStudio.Workload.MSBuildTools`
+- `Microsoft.VisualStudio.Component.NuGet.BuildTools`
+- `Microsoft.NetCore.Component.SDK` (the .NET SDK resolver for full MSBuild)
+
+The minimum supported baseline is Visual Studio Build Tools/MSBuild 18.8 and
+NuGet Pack 7.8. The verified UTAT022 baseline on 2026-08-11 is Visual Studio
+Build Tools 18.9.0 RTW, MSBuild 18.9.1.35102, .NET SDK 10.0.400, and NuGet Pack
+7.9.0.38015.
+
+Run from an elevated PowerShell 7 session. Some non-interactive shells omit
+`WINDIR`; this process-only assignment prevents Visual Studio Installer WPF
+initialization failure without changing the machine environment.
+
+```powershell
+$env:WINDIR = $env:SystemRoot
+$installer = Join-Path $env:TEMP 'vs_buildtools.exe'
+Invoke-WebRequest 'https://aka.ms/vs/18/stable/vs_buildtools.exe' -OutFile $installer
+$signature = Get-AuthenticodeSignature -LiteralPath $installer
+if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notmatch 'Microsoft Corporation') {
+  throw 'The Visual Studio Build Tools bootstrapper signature is not valid.'
+}
+
+& $installer `
+  --installPath 'C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools' `
+  --add Microsoft.VisualStudio.Workload.MSBuildTools `
+  --add Microsoft.VisualStudio.Component.NuGet.BuildTools `
+  --add Microsoft.NetCore.Component.SDK `
+  --quiet --wait --norestart
+if ($LASTEXITCODE -notin 0, 3010) {
+  throw "Visual Studio Build Tools installation failed with exit code $LASTEXITCODE."
+}
+```
+
+Verify the stable installation and the exact pack task that MSBuild will load.
+Do not add the `vswhere -prerelease` switch.
+
+```powershell
+$vswhere = 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe'
+$installPath = & $vswhere -latest `
+  -products Microsoft.VisualStudio.Product.BuildTools `
+  -requires Microsoft.VisualStudio.Workload.MSBuildTools `
+  -requires Microsoft.VisualStudio.Component.NuGet.BuildTools `
+  -requires Microsoft.NetCore.Component.SDK `
+  -property installationPath
+if (-not $installPath) { throw 'The stable deterministic package toolchain is incomplete.' }
+
+$msbuild = Join-Path $installPath 'MSBuild\Current\Bin\MSBuild.exe'
+& $msbuild -version
+$sdkVersion = (& dotnet --version).Trim() # Must match repository global.json.
+$dotnetRoot = Split-Path -Parent (Get-Command dotnet -ErrorAction Stop).Source
+$packTask = Join-Path $dotnetRoot "sdk\$sdkVersion\Sdks\Microsoft.NET.Sdk\tools\net472\NuGet.Build.Tasks.Pack.dll"
+[Reflection.AssemblyName]::GetAssemblyName($packTask).Version
+```
+
+The repository pins stable SDK 10.0.400 with `allowPrerelease=false`. BuildMaster
+uses `dotnet build`, but production pack uses Visual Studio MSBuild `/t:Pack`
+with `Deterministic=true` and `DeterministicTimestamp` derived from the Git
+`HEAD` commit epoch. Do not substitute `dotnet pack`: an older SDK feature band
+can silently load NuGet 7.6, where deterministic pack is disabled.
+
+Before publishing to an immutable feed, pack twice from the same commit into
+isolated roots and require identical `.nupkg` SHA-256 hashes. Record every
+installation or upgrade in the local parity journal, including Visual Studio,
+MSBuild, SDK, and NuGet Pack versions; require the peer host to install the same
+stable components and repeat the two-pack gate. Never journal credentials.
 
 ### 2.4 Install Python (for Manim or Copilot code execution)
 
@@ -939,11 +1057,21 @@ with the exact Java executable selected by the gate.
 Create these Bitwarden items in the `ComputerLogins` collection before installing any
 third-party service. Each item must contain a username and password field.
 
-| Bitwarden item name                          | Local Windows account | Used by                                         |
-| -------------------------------------------- | --------------------- | ----------------------------------------------- |
-| `SvcSQLServer.Login.<COMPUTERNAME>`   | `SvcSQLServer`   | SQL Server Database Engine and SQL Server Agent |
-| `SvcProGet.Login.<COMPUTERNAME>`      | `SvcProGet`      | ProGet service                                  |
-| `SvcBuildMaster.Login.<COMPUTERNAME>` | `SvcBuildMaster` | BuildMaster service                             |
+| Bitwarden item name                | Local Windows account | Used by                                         |
+| ---------------------------------- | --------------------- | ----------------------------------------------- |
+| `SvcSQLServer.<COMPUTERNAME>`      | `SvcSQLServer`        | SQL Server Database Engine and SQL Server Agent |
+| `SvcProGet.<COMPUTERNAME>`         | `SvcProGet`           | ProGet service                                  |
+| `SvcBuildMaster.<COMPUTERNAME>`    | `SvcBuildMaster`      | BuildMaster service                             |
+| `SvcAnsibleAdmin.<COMPUTERNAME>`   | `SvcAnsibleAdmin`     | Elevation broker, if it runs on this host       |
+
+> **Corrected 2026-08-12 against the live vault.** These names previously carried a
+> `.Login.` middle field. **No such field exists.** Enumerating all 66 Bitwarden Secrets
+> Manager keys returned zero containing `.Login.`, so every `<Service>.Login.<host>` name
+> fails to resolve with "No Bitwarden Secrets Manager secret found with key ... in the BWS
+> token's granted projects." The form is `<ServiceAccount>.<hostname>` throughout.
+>
+> Existing keys are `utat01` and `utat022` only, for every service account except
+> `SvcAnsibleAdmin`, which also has `ncat040`. A new host needs its full set created here.
 
 If this workstation must be brought online **before** an Ansible controller exists,
 use the manual bootstrap procedure in
@@ -958,19 +1086,19 @@ Import-Module ATAP.Utilities.PowerShell
 
 $serviceAccounts = @(
   @{
-    SecretName  = "SvcSQLServer.Login.$($env:COMPUTERNAME.ToLowerInvariant())"
+    SecretName  = "SvcSQLServer.$($env:COMPUTERNAME.ToLowerInvariant())"
     AccountName = 'SvcSQLServer'
     FullName    = 'SQL Server Service Identity'
     Description = 'Local service account for SQL Server Database Engine and Agent'
   },
   @{
-    SecretName  = "SvcProGet.Login.$($env:COMPUTERNAME.ToLowerInvariant())"
+    SecretName  = "SvcProGet.$($env:COMPUTERNAME.ToLowerInvariant())"
     AccountName = 'SvcProGet'
     FullName    = 'ProGet Service Identity'
     Description = 'Local service account for the Inedo ProGet service'
   },
   @{
-    SecretName  = "SvcBuildMaster.Login.$($env:COMPUTERNAME.ToLowerInvariant())"
+    SecretName  = "SvcBuildMaster.$($env:COMPUTERNAME.ToLowerInvariant())"
     AccountName = 'SvcBuildMaster'
     FullName    = 'BuildMaster Service Identity'
     Description = 'Local service account for Inedo BuildMaster service'
@@ -1465,8 +1593,8 @@ restore an application or Inedo database to establish parity.
 ```powershell
 Import-Module ATAP.Utilities.PowerShell
 
-$proGetPassword = Get-SecretATAP -SecretName "SvcProGet.Login.$($env:COMPUTERNAME.ToLowerInvariant())" -SecretField 'password'
-$bmPassword = Get-SecretATAP -SecretName "SvcBuildMaster.Login.$($env:COMPUTERNAME.ToLowerInvariant())" -SecretField 'password'
+$proGetPassword = Get-SecretATAP -SecretName "SvcProGet.$($env:COMPUTERNAME.ToLowerInvariant())" -SecretField 'password'
+$bmPassword = Get-SecretATAP -SecretName "SvcBuildMaster.$($env:COMPUTERNAME.ToLowerInvariant())" -SecretField 'password'
 
 $proGetCredential = New-Object System.Management.Automation.PSCredential(
   "$env:COMPUTERNAME\SvcProGet",
@@ -1658,7 +1786,7 @@ Critical notes:
 A common way to obtain a `SvcBuildMaster` shell from an admin login:
 
 ```powershell
-$bmPassword = Get-SecretATAP -SecretName "SvcBuildMaster.Login.$($env:COMPUTERNAME.ToLowerInvariant())" -SecretField 'password'
+$bmPassword = Get-SecretATAP -SecretName "SvcBuildMaster.$($env:COMPUTERNAME.ToLowerInvariant())" -SecretField 'password'
 $bmCred = New-Object System.Management.Automation.PSCredential(
   "$env:COMPUTERNAME\SvcBuildMaster",
   (ConvertTo-SecureString $bmPassword -AsPlainText -Force)
@@ -1887,24 +2015,30 @@ An administrator must complete this checklist on each participating host:
    acknowledgements, snapshots, whitelist, and task-results folders as specified by
    the parity runbook.
 5. Create the `\ATAP` Task Scheduler folder.
-6. Grant `SvcParityAudit` `SeBatchLogonRight` while preserving every existing right
+6. Grant the host-local `SvcAnsibleAdmin` account only `TASK_CHANGE` on the existing
+   `\ATAP\ATAP-ParityAudit` task. This is a native Task Scheduler DACL allow ACE
+   with access mask `0x2`; it is not an NTFS grant, a `\ATAP` folder grant, or a
+   grant on any other task. It allows the constrained elevation broker to replace the
+   approved task action, but does not grant task run, delete, security-descriptor, or
+   owner-management rights. Preserve all existing task ACEs.
+7. Grant `SvcParityAudit` `SeBatchLogonRight` while preserving every existing right
    holder. Confirm neither the account nor one of its governing policies assigns
    `SeDenyBatchLogonRight`. The guarded `secedit` pattern in §9.4.6.5 applies; add
    `SvcParityAudit` to the SID list.
-7. Confirm `SvcParityAudit` has no BWS token, Bitwarden credential directory,
+8. Confirm `SvcParityAudit` has no BWS token, Bitwarden credential directory,
    `bws` dependency, or `BW_SESSION`. The deployed 0.1.8 wrapper records
    `SecretAccessRequired = false`.
-8. Register `AuditAndCompare` on the primary host with Password logon when peer SMB
+9. Register `AuditAndCompare` on the primary host with Password logon when peer SMB
    access needs reusable credentials. Register `AuditOnly` on the peer with S4U and a
    limited run level. When the elevated administrator and S4U run-as identities differ,
    supply the run-as credential during registration; Task Scheduler uses it to
    authorize registration while preserving S4U/no stored password in the task.
-9. Run the peer audit, primary audit, and primary comparison in that order; require
+10. Run the peer audit, primary audit, and primary comparison in that order; require
    successful task-result JSON, fresh snapshots, a drift report, and no secret values
    in evidence.
-10. Do not start the clean-month clock until SQL and package collection is trustworthy
-    on both hosts. Then run Daily for one verified clean month before re-registering as
-    BiWeekly; the earlier blind period does not count.
+11. Do not start the clean-month clock until SQL and package collection is trustworthy
+   on both hosts. Then run Daily for one verified clean month before re-registering as
+   BiWeekly; the earlier blind period does not count.
 
 The required but not-yet-granted least-privilege baseline is: Chocolatey machine-path
 read/execute; SQL `VIEW ANY DEFINITION` and `VIEW SERVER STATE`; an `msdb` user in

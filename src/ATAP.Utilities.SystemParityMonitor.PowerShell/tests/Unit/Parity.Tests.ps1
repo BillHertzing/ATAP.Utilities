@@ -512,6 +512,22 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' -Tag 'Unit', 'Pa
     (Get-Content -LiteralPath $reportPath -Raw) | Should -Match 'utat01/Services: Missing'
   }
 
+  It 'preserves bounded package-manager output when inventory exits nonzero' {
+    InModuleScope 'ATAP.Utilities.SystemParityMonitor.PowerShell' {
+      Mock Get-Command { [pscustomobject]@{ Source = "$Name.exe" } }
+      Mock Invoke-ParityNativeCommand {
+        if ([IO.Path]::GetFileNameWithoutExtension($Command) -eq 'npm') {
+          return [pscustomobject]@{ ExitCode = 1; Output = @('npm ERR! code ELSPROBLEMS', 'invalid: package@1.0.0') }
+        }
+        [pscustomobject]@{ ExitCode = 0; Output = @() }
+      }
+      $profiles = @([pscustomobject]@{ Identity='ATAP\Developer'; PipPath=''; NpmPrefix='C:\Profiles\Developer\npm'; NuGetToolPath='' })
+      $status = Get-PackageManagerParitySurfaces -HostName utat022 -PackageManagerProfiles $profiles |
+        Where-Object Item -eq 'ATAP\Developer/npm'
+      $status.Value | Should -Be 'AuditError=npm exited with code 1. Output: npm ERR! code ELSPROBLEMS invalid: package@1.0.0'
+    }
+  }
+
   It 'resolves a static SQL TCP port before a dynamic port and supports dynamic-only instances' {
     InModuleScope 'ATAP.Utilities.SystemParityMonitor.PowerShell' {
       (Resolve-ParitySqlTcpPort -TcpPort '50020' -TcpDynamicPorts '57384') | Should -Be 50020

@@ -99,7 +99,10 @@ function Get-PackageManagerParitySurfaces {
         }
 
         if ($result.ExitCode -ne 0) {
-          throw "$($definition.Name) exited with code $($result.ExitCode)."
+          $diagnostic = ((@($result.Output) -join ' ') -replace '\s+', ' ').Trim()
+          if ($diagnostic.Length -gt 512) { $diagnostic = $diagnostic.Substring(0, 512) + '...' }
+          $diagnosticSuffix = if ([string]::IsNullOrWhiteSpace($diagnostic)) { '' } else { " Output: $diagnostic" }
+          throw "$($definition.Name) exited with code $($result.ExitCode).$diagnosticSuffix"
         }
 
         $managerPackages = switch ($definition.Name) {

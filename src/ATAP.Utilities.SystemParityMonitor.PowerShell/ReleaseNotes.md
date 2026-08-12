@@ -1,5 +1,11 @@
 # Release Notes — ATAP.Utilities.SystemParityMonitor.PowerShell
 
+## 0.1.20
+
+- Preserve a bounded, single-line native-command diagnostic when a package-manager
+  inventory exits nonzero. Scheduled audits remain fail-closed while reporting the
+  actionable npm error instead of only its exit code.
+
 ## 0.1.19
 
 - Express the non-inheriting ancestor rights in the canonical order emitted by

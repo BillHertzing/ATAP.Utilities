@@ -283,9 +283,10 @@ function Set-ParityAuditReadAccess {
           @{ Path = $_; Rights = '(OI)(CI)(RX)'; Surface = 'PackageManagerProfile' }
         }
       ) + @($packageManagerAncestorPaths | Sort-Object | ForEach-Object {
-          # Non-inheriting traverse-only access exposes no sibling content and is the
-          # minimum required to reach a validated profile root below a private user tree.
-          @{ Path = $_; Rights = '(X)'; Surface = 'PackageManagerProfileAncestor' }
+          # npm performs lstat while walking to its configured prefix. Non-inheriting
+          # ReadAttributes plus Execute permits that walk without directory listing or
+          # inherited access to sibling content.
+          @{ Path = $_; Rights = '(RA,X)'; Surface = 'PackageManagerProfileAncestor' }
         }
       )) {
       $target = $pathGrant.Path

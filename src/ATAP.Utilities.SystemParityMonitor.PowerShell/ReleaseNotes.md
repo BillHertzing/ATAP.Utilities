@@ -1,5 +1,12 @@
 # Release Notes — ATAP.Utilities.SystemParityMonitor.PowerShell
 
+## 0.1.18
+
+- Grant non-inheriting `ReadAttributes` plus `Execute` on validated user-profile
+  ancestors. npm uses `lstat` while walking to its configured prefix, so execute-only
+  traversal is insufficient even though no directory listing or inherited access is
+  required.
+
 ## 0.1.17
 
 - Grant non-inheriting traverse-only access on validated user-profile ancestors so the

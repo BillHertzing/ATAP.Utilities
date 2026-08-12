@@ -117,7 +117,7 @@ Describe 'Set-ParityAuditReadAccess safety contract' {
       'C:\Users\whertzing\AppData\Roaming\Python',
       'C:\Users\whertzing\AppData\Roaming\Python\Python311'
     )
-    @($ancestorResults.Access | Sort-Object -Unique) | Should -Be @('(RA,X)')
+    @($ancestorResults.Access | Sort-Object -Unique) | Should -Be @('(X,RA)')
     Assert-MockCalled Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
   }
 

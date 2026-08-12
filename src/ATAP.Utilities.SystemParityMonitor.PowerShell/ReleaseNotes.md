@@ -1,5 +1,11 @@
 # Release Notes — ATAP.Utilities.SystemParityMonitor.PowerShell
 
+## 0.1.19
+
+- Express the non-inheriting ancestor rights in the canonical order emitted by
+  `icacls` (`X,RA`), so post-grant verification recognizes the exact effective
+  rights instead of rejecting the equivalent input ordering.
+
 ## 0.1.18
 
 - Grant non-inheriting `ReadAttributes` plus `Execute` on validated user-profile

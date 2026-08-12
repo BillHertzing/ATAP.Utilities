@@ -286,7 +286,7 @@ function Set-ParityAuditReadAccess {
           # npm performs lstat while walking to its configured prefix. Non-inheriting
           # ReadAttributes plus Execute permits that walk without directory listing or
           # inherited access to sibling content.
-          @{ Path = $_; Rights = '(RA,X)'; Surface = 'PackageManagerProfileAncestor' }
+          @{ Path = $_; Rights = '(X,RA)'; Surface = 'PackageManagerProfileAncestor' }
         }
       )) {
       $target = $pathGrant.Path

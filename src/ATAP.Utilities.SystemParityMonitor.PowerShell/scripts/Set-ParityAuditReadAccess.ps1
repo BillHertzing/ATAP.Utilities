@@ -191,6 +191,20 @@ function Set-ParityAuditReadAccess {
     $approvedMachineNpmPrefix = [System.IO.Path]::GetFullPath('C:\Program Files\nodejs').TrimEnd('\')
     $profileIdentities = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
     $packageManagerPaths = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    $packageManagerAncestorPaths = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    $addApprovedUserPath = {
+      param([Parameter(Mandatory)] [string] $Path)
+
+      [void] $packageManagerPaths.Add($Path)
+      $ancestor = [System.IO.Path]::GetDirectoryName($Path)
+      while (-not [string]::IsNullOrWhiteSpace($ancestor) -and
+        ($ancestor.Equals($approvedUserRoot, [System.StringComparison]::OrdinalIgnoreCase) -or
+          $ancestor.StartsWith($approvedUserRootPrefix, [System.StringComparison]::OrdinalIgnoreCase))) {
+        [void] $packageManagerAncestorPaths.Add($ancestor)
+        if ($ancestor.Equals($approvedUserRoot, [System.StringComparison]::OrdinalIgnoreCase)) { break }
+        $ancestor = [System.IO.Path]::GetDirectoryName($ancestor)
+      }
+    }
     $requiredProfileFields = @('Identity', 'PipPath', 'NpmPrefix', 'NuGetToolPath')
     foreach ($profile in $PackageManagerProfiles) {
       if ($null -eq $profile) { throw 'PackageManagerProfiles cannot contain a null profile.' }
@@ -226,7 +240,30 @@ function Set-ParityAuditReadAccess {
         if (-not $isUnderApprovedUserRoot -and -not $isExactMachineNpmPrefix) {
           throw "PackageManagerProfiles $pathField for '$identity' must remain under '$approvedUserRootPrefix'; NpmPrefix alone may instead equal '$approvedMachineNpmPrefix'."
         }
-        [void] $packageManagerPaths.Add($normalizedPath)
+        if ($isUnderApprovedUserRoot) {
+          & $addApprovedUserPath -Path $normalizedPath
+        }
+        else {
+          [void] $packageManagerPaths.Add($normalizedPath)
+          if (Test-Path -LiteralPath $normalizedPath -PathType Container) {
+            $npmPrefixItem = Get-Item -LiteralPath $normalizedPath -Force -ErrorAction Stop
+            $linkTargets = @($npmPrefixItem.Target | Where-Object { -not [string]::IsNullOrWhiteSpace([string] $_) })
+            if ($linkTargets.Count -gt 1) {
+              throw "Approved machine NpmPrefix '$normalizedPath' has multiple link targets; refusing an ambiguous permission grant."
+            }
+            if ($linkTargets.Count -eq 1) {
+              $linkTarget = [string] $linkTargets[0]
+              if (-not [System.IO.Path]::IsPathFullyQualified($linkTarget) -or $linkTarget.StartsWith('\\')) {
+                throw "Approved machine NpmPrefix '$normalizedPath' must resolve to one fully-qualified local target."
+              }
+              $normalizedTarget = [System.IO.Path]::GetFullPath($linkTarget).TrimEnd('\')
+              if (-not $normalizedTarget.StartsWith($approvedUserRootPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+                throw "Approved machine NpmPrefix '$normalizedPath' resolves outside '$approvedUserRootPrefix'; refusing the target grant."
+              }
+              & $addApprovedUserPath -Path $normalizedTarget
+            }
+          }
+        }
       }
     }
 
@@ -245,6 +282,11 @@ function Set-ParityAuditReadAccess {
           # npm, pip, or dotnet descends into it under the service identity.
           @{ Path = $_; Rights = '(OI)(CI)(RX)'; Surface = 'PackageManagerProfile' }
         }
+      ) + @($packageManagerAncestorPaths | Sort-Object | ForEach-Object {
+          # Non-inheriting traverse-only access exposes no sibling content and is the
+          # minimum required to reach a validated profile root below a private user tree.
+          @{ Path = $_; Rights = '(X)'; Surface = 'PackageManagerProfileAncestor' }
+        }
       )) {
       $target = $pathGrant.Path
       if (-not $PSCmdlet.ShouldProcess("${ComputerName}:$target", "Add $($pathGrant.Rights) for $AccountName")) {
@@ -260,7 +302,7 @@ function Set-ParityAuditReadAccess {
         if ($verifyResult.ExitCode -ne 0 -or
           $verificationText -notmatch [regex]::Escape($AccountName) -or
           $verificationText -notmatch [regex]::Escape($pathGrant.Rights)) {
-          throw 'icacls verification did not find the requested account and exact read rights.'
+          throw 'icacls verification did not find the requested account and exact rights.'
         }
         $surface = if ($pathGrant.Surface) { $pathGrant.Surface } else { 'FileSystem' }
         $results.Add([pscustomobject]@{ Surface = $surface; Target = $target; Account = $AccountName; Access = $pathGrant.Rights; Changed = $true; WhatIf = $false })

@@ -521,6 +521,19 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' -Tag 'Unit', 'Pa
     }
   }
 
+  It 'reports SQL path nonconformance instead of throwing when registry defaults are absent' {
+    InModuleScope 'ATAP.Utilities.SystemParityMonitor.PowerShell' {
+      Test-ParitySqlPathsConform `
+        -DefaultData $null `
+        -DefaultLog '' `
+        -BackupDirectory 'C:\Sql\Backup' `
+        -ExpectedData 'C:\LocalDBs\INTEGRATION\Data' `
+        -ExpectedLog 'C:\LocalDBs\INTEGRATION\Log' `
+        -ExpectedBackup 'C:\LocalDBs\INTEGRATION\Backup' `
+        -DatabaseFiles @() | Should -BeFalse
+    }
+  }
+
   It 'uses the SQLAgentReaderRole-compatible Agent Jobs metadata view' {
     $collectorPath = Join-Path $PSScriptRoot '..\..\private\Get-SqlParitySurfaces.ps1'
     $collectorSource = Get-Content -LiteralPath $collectorPath -Raw

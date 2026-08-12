@@ -1,5 +1,17 @@
 # Release Notes — ATAP.Utilities.SystemParityMonitor.PowerShell
 
+## 0.1.17
+
+- Grant non-inheriting traverse-only access on validated user-profile ancestors so the
+  parity identity can reach configured package roots without gaining inherited access to
+  sibling content.
+- When the approved machine npm prefix is a symbolic link, grant the resolved target only
+  when it remains beneath the approved developer user root; reject ambiguous, remote, or
+  out-of-root targets.
+- Treat missing SQL default-data/default-log registry values as path nonconformance rather
+  than an audit exception. This preserves the complete Integration instance surface while
+  reporting `FilesConform=False`.
+
 ## 0.1.16
 
 - Fail audit and comparison coverage closed when any collector emits an explicit

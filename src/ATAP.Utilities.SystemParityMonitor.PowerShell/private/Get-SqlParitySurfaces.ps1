@@ -71,10 +71,14 @@ SELECT physical_name FROM sys.master_files ORDER BY database_id,file_id;
         $reader.Close()
       } finally { $connection.Close() }
 
-      $pathsConform = $defaults.DefaultData.TrimEnd('\') -ieq $expectedData -and
-        $defaults.DefaultLog.TrimEnd('\') -ieq $expectedLog -and
-        $defaults.BackupDirectory.TrimEnd('\') -ieq $expectedBackup -and
-        @($files | Where-Object { $_ -notlike "$expectedData\*" -and $_ -notlike "$expectedLog\*" }).Count -eq 0
+      $pathsConform = Test-ParitySqlPathsConform `
+        -DefaultData ([string] $defaults.DefaultData) `
+        -DefaultLog ([string] $defaults.DefaultLog) `
+        -BackupDirectory ([string] $defaults.BackupDirectory) `
+        -ExpectedData $expectedData `
+        -ExpectedLog $expectedLog `
+        -ExpectedBackup $expectedBackup `
+        -DatabaseFiles @($files)
       foreach ($row in @(
           @{ Item = "$prefix/Version"; Value = $version; Source = 'SERVERPROPERTY' }
           @{ Item = "$prefix/Logins"; Value = ($logins -join ';'); Source = 'sys.server_principals' }

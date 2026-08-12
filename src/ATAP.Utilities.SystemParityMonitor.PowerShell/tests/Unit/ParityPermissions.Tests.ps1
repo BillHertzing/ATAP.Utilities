@@ -96,6 +96,31 @@ Describe 'Set-ParityAuditReadAccess safety contract' {
     Assert-MockCalled Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
   }
 
+  It 'plans non-inheriting traverse-only access on validated user-profile ancestors' {
+    $parameters = $validParameters.Clone()
+    $parameters.PackageManagerProfiles = @(
+      [pscustomobject]@{
+        Identity = 'Interactive'
+        PipPath = 'C:\Users\whertzing\AppData\Roaming\Python\Python311\site-packages'
+        NpmPrefix = ''
+        NuGetToolPath = ''
+      }
+    )
+
+    $result = @(Set-ParityAuditReadAccess @parameters -WhatIf)
+
+    $ancestorResults = @($result | Where-Object Surface -eq 'PackageManagerProfileAncestor')
+    @($ancestorResults.Target | Sort-Object) | Should -Be @(
+      'C:\Users\whertzing',
+      'C:\Users\whertzing\AppData',
+      'C:\Users\whertzing\AppData\Roaming',
+      'C:\Users\whertzing\AppData\Roaming\Python',
+      'C:\Users\whertzing\AppData\Roaming\Python\Python311'
+    )
+    @($ancestorResults.Access | Sort-Object -Unique) | Should -Be @('(X)')
+    Assert-MockCalled Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
+  }
+
   It 'rejects duplicate package-manager identities before native or WMI work' {
     $parameters = $validParameters.Clone()
     $parameters.PackageManagerProfiles = @(

@@ -1,5 +1,18 @@
 # Release Notes — ATAP.Utilities.SystemParityMonitor.PowerShell
 
+## 0.1.16
+
+- Fail audit and comparison coverage closed when any collector emits an explicit
+  `AuditError` row, and preserve the precise category/item path in diagnostic snapshots
+  and drift reports. A row count can no longer conceal an incomplete collection.
+- Support SQL named instances that use a dynamic TCP port by preferring a valid static
+  `TcpPort` and otherwise using `TcpDynamicPorts` for the connection.
+- Collect SQL Agent job names through `msdb.dbo.sysjobs_view`, matching the deployed
+  `SQLAgentReaderRole` least-privilege grant instead of requiring direct table access.
+- Grant read-and-traverse, rather than read alone, on configured package-manager profile
+  roots so npm, pip, and dotnet can descend through those inventories under the scheduled
+  service identity.
+
 ## 0.1.15
 
 - Service and SQL engine discovery move from `Get-Service` back to `Win32_Service`, the surface

@@ -240,7 +240,10 @@ function Set-ParityAuditReadAccess {
         @{ Path = $resolvedChocolateyPath; Rights = '(OI)(CI)(RX)' },
         @{ Path = $resolvedLocalDatabasesPath; Rights = '(OI)(CI)(R)' }
       ) + @($packageManagerPaths | Sort-Object | ForEach-Object {
-          @{ Path = $_; Rights = '(OI)(CI)(R)'; Surface = 'PackageManagerProfile' }
+          # Inventory commands must traverse directories beneath the configured profile
+          # root. Read without execute/traverse can enumerate the root yet still fail when
+          # npm, pip, or dotnet descends into it under the service identity.
+          @{ Path = $_; Rights = '(OI)(CI)(RX)'; Surface = 'PackageManagerProfile' }
         }
       )) {
       $target = $pathGrant.Path

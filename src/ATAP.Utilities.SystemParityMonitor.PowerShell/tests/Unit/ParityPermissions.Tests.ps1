@@ -87,7 +87,7 @@ Describe 'Set-ParityAuditReadAccess safety contract' {
 
     $profileResults = @($result | Where-Object Surface -eq 'PackageManagerProfile')
     $profileResults | Should -HaveCount 3
-    @($profileResults.Access | Sort-Object -Unique) | Should -Be @('(OI)(CI)(R)')
+    @($profileResults.Access | Sort-Object -Unique) | Should -Be @('(OI)(CI)(RX)')
     @($profileResults.Target | Sort-Object) | Should -Be @(
       'C:\Users\whertzing\.dotnet\tools\nuget.exe',
       'C:\Users\whertzing\AppData\Roaming\npm',
@@ -120,7 +120,7 @@ Describe 'Set-ParityAuditReadAccess safety contract' {
     Assert-MockCalled Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
   }
 
-  It 'accepts exact Program Files nodejs only as NpmPrefix with inherited read' {
+  It 'accepts exact Program Files nodejs only as NpmPrefix with inherited read and traverse' {
     $parameters = $validParameters.Clone()
     $parameters.PackageManagerProfiles = @(
       @{ Identity = 'MachineNpm'; PipPath = ''; NpmPrefix = 'C:\Program Files\nodejs'; NuGetToolPath = '' }
@@ -131,7 +131,7 @@ Describe 'Set-ParityAuditReadAccess safety contract' {
     $profileResult = @($result | Where-Object Surface -eq 'PackageManagerProfile')
     $profileResult | Should -HaveCount 1
     $profileResult[0].Target | Should -Be 'C:\Program Files\nodejs'
-    $profileResult[0].Access | Should -Be '(OI)(CI)(R)'
+    $profileResult[0].Access | Should -Be '(OI)(CI)(RX)'
     Assert-MockCalled Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
   }
 

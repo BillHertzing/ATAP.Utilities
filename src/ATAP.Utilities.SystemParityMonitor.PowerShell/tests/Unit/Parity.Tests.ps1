@@ -512,6 +512,94 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' -Tag 'Unit', 'Pa
     (Get-Content -LiteralPath $reportPath -Raw) | Should -Match 'utat01/Services: Missing'
   }
 
+  It 'resolves a static SQL TCP port before a dynamic port and supports dynamic-only instances' {
+    InModuleScope 'ATAP.Utilities.SystemParityMonitor.PowerShell' {
+      (Resolve-ParitySqlTcpPort -TcpPort '50020' -TcpDynamicPorts '57384') | Should -Be 50020
+      (Resolve-ParitySqlTcpPort -TcpPort '' -TcpDynamicPorts '57384') | Should -Be 57384
+      { Resolve-ParitySqlTcpPort -TcpPort '' -TcpDynamicPorts '0' } | Should -Throw '*neither a valid static TcpPort nor a valid TcpDynamicPorts*'
+      { Resolve-ParitySqlTcpPort -TcpPort 'not-a-port' -TcpDynamicPorts '' } | Should -Throw '*neither a valid static TcpPort nor a valid TcpDynamicPorts*'
+    }
+  }
+
+  It 'uses the SQLAgentReaderRole-compatible Agent Jobs metadata view' {
+    $collectorPath = Join-Path $PSScriptRoot '..\..\private\Get-SqlParitySurfaces.ps1'
+    $collectorSource = Get-Content -LiteralPath $collectorPath -Raw
+
+    $collectorSource | Should -Match 'FROM msdb\.dbo\.sysjobs_view'
+    $collectorSource | Should -Not -Match 'FROM msdb\.dbo\.sysjobs ORDER BY'
+  }
+
+  It 'Compare-ParityAudits treats explicit collector AuditError rows as coverage failures' {
+    $leftSnapshotPath = Join-Path $leftState 'ParityAudit.utat022.audit-error.fixture.json'
+    $rightSnapshotPath = Join-Path $rightState 'ParityAudit.utat01.audit-error.fixture.json'
+    $reportPath = Join-Path $leftState 'DriftReport.audit-error.fixture.md'
+    $nowUtc = (Get-Date).ToUniversalTime().ToString('o')
+
+    foreach ($snapshot in @(
+        [pscustomobject]@{
+          Path = $leftSnapshotPath
+          HostName = 'utat022'
+          Surfaces = @(
+            [pscustomobject]@{ Category = 'SQL'; Item = 'Instance/INTEGRATION/AuditError'; Value = 'fixture provider failure' }
+          )
+        },
+        [pscustomobject]@{
+          Path = $rightSnapshotPath
+          HostName = 'utat01'
+          Surfaces = @(
+            [pscustomobject]@{ Category = 'SQL'; Item = 'Instance/INTEGRATION/Version'; Value = '16.0' }
+          )
+        }
+      )) {
+      [pscustomobject]@{
+        SchemaVersion = 1
+        HostName = $snapshot.HostName
+        CapturedAtUtc = $nowUtc
+        Surfaces = $snapshot.Surfaces
+      } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $snapshot.Path -Encoding utf8
+    }
+
+    $comparison = Compare-ParityAudits `
+      -LeftStatePath $leftState `
+      -RightStatePath $rightState `
+      -LeftHostName 'utat022' `
+      -RightHostName 'utat01' `
+      -LeftSnapshotPath $leftSnapshotPath `
+      -RightSnapshotPath $rightSnapshotPath `
+      -ReportPath $reportPath `
+      -ExpectedSurfaceMinimumCounts @{ SQL = 1 }
+
+    $comparison.HasSurfaceCoverageFailure | Should -BeTrue
+    @($comparison.SurfaceCoverageFailures | Where-Object Classification -eq 'AuditError') | Should -HaveCount 1
+    (Get-Content -LiteralPath $reportPath -Raw) | Should -Match 'utat022/SQL/Instance/INTEGRATION/AuditError: AuditError'
+  }
+
+  It 'Invoke-ParityAudit fails closed when a collector emits an AuditError status row' {
+    $snapshotPath = Join-Path $leftState 'ParityAudit.utat022.audit-error.fixture.json'
+    $moduleName = 'ATAP.Utilities.SystemParityMonitor.PowerShell'
+    Mock -CommandName Get-SqlParitySurfaces -ModuleName $moduleName -MockWith {
+      [pscustomobject]@{ Category = 'SQL'; Item = 'Instance/INTEGRATION/AuditError'; Value = 'fixture provider failure'; Source = 'fixture' }
+    }
+    Mock -CommandName Get-PackageManagerParitySurfaces -ModuleName $moduleName -MockWith {
+      [pscustomobject]@{ Category = 'PackageManager'; Item = 'Machine/Chocolatey/git'; Value = '2.46'; Source = 'fixture' }
+    }
+
+    {
+      Invoke-ParityAudit `
+        -StatePath $leftState `
+        -HostName 'utat022' `
+        -OutputPath $snapshotPath `
+        -ExpectedSurfaceMinimumCounts @{ SQL = 1; PackageManager = 1 }
+    } | Should -Throw '*SQL/Instance/INTEGRATION/AuditError=AuditError*'
+
+    $snapshot = Get-Content -LiteralPath $snapshotPath -Raw | ConvertFrom-Json -Depth 16
+    @($snapshot.Surfaces | Where-Object {
+        $_.Category -eq 'AuditCoverageFinding' -and
+        $_.Item -eq 'SQL/Instance/INTEGRATION/AuditError' -and
+        $_.Value -match '^AuditError;'
+      }) | Should -HaveCount 1
+  }
+
   It 'Invoke-ParityAudit falls back to Win32_Share when Get-SmbShare is unavailable' {
     $snapshotPath = Join-Path $leftState 'ParityAudit.utat022.win32-share.fixture.json'
     $moduleName = 'ATAP.Utilities.SystemParityMonitor.PowerShell'

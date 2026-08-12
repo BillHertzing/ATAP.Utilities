@@ -42,7 +42,10 @@ Multiplier applied to ExpectedCadence to determine the stale threshold.
 
 .PARAMETER ExpectedSurfaceMinimumCounts
 Expected minimum row count by surface category. A category with no rows is
-reported as Missing; a category below its minimum is reported as Thin.
+reported as Missing; a category below its minimum is reported as Thin. Any
+collector surface whose value begins with AuditError, or whose item ends in
+/AuditError, is reported as a coverage failure even when the category minimum is
+satisfied.
 
 .OUTPUTS
 PSCustomObject.
@@ -141,27 +144,11 @@ reported as undeclared drift for human escalation.
           [pscustomobject]@{ HostName = $LeftHostName.ToLowerInvariant(); Surfaces = @($leftSnapshot.Surfaces) },
           [pscustomobject]@{ HostName = $RightHostName.ToLowerInvariant(); Surfaces = @($rightSnapshot.Surfaces) }
         )) {
-        foreach ($expectedCategory in @($ExpectedSurfaceMinimumCounts.Keys | Sort-Object)) {
-          if ([string]::IsNullOrWhiteSpace([string]$expectedCategory)) {
-            throw 'Expected surface minimum category keys must be non-empty.'
-          }
-          $minimumCount = 0
-          if (-not [int]::TryParse([string]$ExpectedSurfaceMinimumCounts[$expectedCategory], [ref]$minimumCount) -or $minimumCount -lt 1) {
-            throw "Expected minimum count for category '$expectedCategory' must be at least one."
-          }
-
-          $actualCount = @($snapshotCandidate.Surfaces | Where-Object { $_.Category -eq $expectedCategory }).Count
-          if ($actualCount -ge $minimumCount) {
-            continue
-          }
-
-          $coverageFailures.Add([pscustomobject]@{
-              HostName = $snapshotCandidate.HostName
-              Category = [string]$expectedCategory
-              Classification = if ($actualCount -eq 0) { 'Missing' } else { 'Thin' }
-              ActualCount = $actualCount
-              ExpectedMinimumCount = $minimumCount
-            })
+        foreach ($coverageFailure in @(Get-ParitySurfaceCoverageFindings `
+            -Surfaces $snapshotCandidate.Surfaces `
+            -ExpectedSurfaceMinimumCounts $ExpectedSurfaceMinimumCounts `
+            -HostName $snapshotCandidate.HostName)) {
+          $coverageFailures.Add($coverageFailure)
         }
       }
       $allKeys = @($leftMap.Keys + $rightMap.Keys) | Sort-Object -Unique
@@ -303,7 +290,12 @@ reported as undeclared drift for human escalation.
         $reportLines += '- None'
       } else {
         foreach ($failure in $coverageFailures) {
-          $reportLines += "- $($failure.HostName)/$($failure.Category): $($failure.Classification); ActualCount=$($failure.ActualCount); ExpectedMinimumCount=$($failure.ExpectedMinimumCount)"
+          $failurePath = if ($failure.Classification -eq 'AuditError') {
+            "$($failure.HostName)/$($failure.Category)/$($failure.Item)"
+          } else {
+            "$($failure.HostName)/$($failure.Category)"
+          }
+          $reportLines += "- $failurePath`: $($failure.Classification); ActualCount=$($failure.ActualCount); ExpectedMinimumCount=$($failure.ExpectedMinimumCount)"
         }
       }
 

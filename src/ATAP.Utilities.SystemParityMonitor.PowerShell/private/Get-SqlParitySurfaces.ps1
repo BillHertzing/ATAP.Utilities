@@ -35,7 +35,7 @@ function Get-SqlParitySurfaces {
       $tcpKey = "$serverKey\SuperSocketNetLib\Tcp\IPAll"
       $defaults = Get-ItemProperty $serverKey -ErrorAction Stop
       $tcp = Get-ItemProperty $tcpKey -ErrorAction Stop
-      $port = [int]$tcp.TcpPort
+      $port = Resolve-ParitySqlTcpPort -TcpPort ([string] $tcp.TcpPort) -TcpDynamicPorts ([string] $tcp.TcpDynamicPorts)
       $expectedRoot = "C:\LocalDBs\$instanceName"
       $expectedData = "$expectedRoot\Data"
       $expectedLog = "$expectedRoot\Log"
@@ -55,7 +55,7 @@ SELECT member.name MemberName, rolep.name RoleName FROM sys.server_role_members 
  JOIN sys.server_principals member ON member.principal_id=rm.member_principal_id ORDER BY member.name,rolep.name;
 SELECT grantee.name Grantee, permission_name, state_desc FROM sys.server_permissions permission
  JOIN sys.server_principals grantee ON grantee.principal_id=permission.grantee_principal_id ORDER BY grantee.name,permission_name,state_desc;
-SELECT name FROM msdb.dbo.sysjobs ORDER BY name;
+SELECT name FROM msdb.dbo.sysjobs_view ORDER BY name;
 SELECT name, type_desc, state_desc FROM sys.endpoints WHERE endpoint_id >= 2 ORDER BY name;
 SELECT physical_name FROM sys.master_files ORDER BY database_id,file_id;
 '@
@@ -80,9 +80,9 @@ SELECT physical_name FROM sys.master_files ORDER BY database_id,file_id;
           @{ Item = "$prefix/Logins"; Value = ($logins -join ';'); Source = 'sys.server_principals' }
           @{ Item = "$prefix/ServerRoles"; Value = ($roles -join ';'); Source = 'sys.server_role_members' }
           @{ Item = "$prefix/ServerPermissions"; Value = ($permissions -join ';'); Source = 'sys.server_permissions' }
-          @{ Item = "$prefix/AgentJobs"; Value = ($jobs -join ';'); Source = 'msdb.dbo.sysjobs' }
+          @{ Item = "$prefix/AgentJobs"; Value = ($jobs -join ';'); Source = 'msdb.dbo.sysjobs_view' }
           @{ Item = "$prefix/Endpoints"; Value = ($endpoints -join ';'); Source = 'sys.endpoints' }
-          @{ Item = "$prefix/Tcp"; Value = "Port=$port|Dynamic=$($tcp.TcpDynamicPorts)"; Source = 'Registry' }
+          @{ Item = "$prefix/Tcp"; Value = "Port=$($tcp.TcpPort)|Dynamic=$($tcp.TcpDynamicPorts)|ConnectionPort=$port"; Source = 'Registry' }
           @{ Item = "$prefix/Paths"; Value = "Data=$($defaults.DefaultData)|Log=$($defaults.DefaultLog)|Backup=$($defaults.BackupDirectory)|FilesConform=$pathsConform"; Source = 'Registry+sys.master_files' }
         )) {
         $surfaces.Add([pscustomobject]@{ Category = 'SQL'; Item = $row.Item; Value = $row.Value; Source = $row.Source })

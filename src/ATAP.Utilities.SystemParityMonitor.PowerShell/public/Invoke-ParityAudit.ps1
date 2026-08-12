@@ -29,7 +29,10 @@ identity running the audit.
 .PARAMETER ExpectedSurfaceMinimumCounts
 Minimum required row count by category. The default requires OS, PowerShell,
 three service rows, SQL, PackageManager, Shares, and ParityState. Missing or thin coverage is written into the
-diagnostic snapshot as AuditCoverageFinding rows before the audit throws.
+  diagnostic snapshot as AuditCoverageFinding rows before the audit throws. Any
+  collector surface whose value begins with AuditError, or whose item ends in
+  /AuditError, is also a coverage failure even when the category's minimum row
+  count is otherwise satisfied.
 
 .OUTPUTS
 PSCustomObject.
@@ -159,29 +162,23 @@ Invoke-ParityAudit -StatePath C:\ProgramData\ATAP\ParityState -HostName utat022
         throw 'ExpectedSurfaceMinimumCounts must contain at least one category.'
       }
 
-      $coverageFindings = [System.Collections.Generic.List[object]]::new()
-      foreach ($expectedCategory in @($ExpectedSurfaceMinimumCounts.Keys | Sort-Object)) {
-        if ([string]::IsNullOrWhiteSpace([string]$expectedCategory)) {
-          throw 'Expected surface minimum category keys must be non-empty.'
-        }
-        $minimumCount = 0
-        if (-not [int]::TryParse([string]$ExpectedSurfaceMinimumCounts[$expectedCategory], [ref]$minimumCount) -or $minimumCount -lt 1) {
-          throw "Expected minimum count for category '$expectedCategory' must be at least one."
-        }
-
-        $actualCount = @($surfaces | Where-Object { $_.Category -eq $expectedCategory }).Count
-        if ($actualCount -ge $minimumCount) {
-          continue
-        }
-
-        $classification = if ($actualCount -eq 0) { 'Missing' } else { 'Thin' }
+      $coverageFindings = @(
+        Get-ParitySurfaceCoverageFindings `
+          -Surfaces @($surfaces) `
+          -ExpectedSurfaceMinimumCounts $ExpectedSurfaceMinimumCounts `
+          -HostName $HostName.ToLowerInvariant()
+      )
+      foreach ($coverageFinding in $coverageFindings) {
         $finding = [pscustomobject]@{
           Category = 'AuditCoverageFinding'
-          Item = [string]$expectedCategory
-          Value = "$classification;ActualCount=$actualCount;ExpectedMinimumCount=$minimumCount"
+          Item = if ($coverageFinding.Classification -eq 'AuditError') {
+            "$($coverageFinding.Category)/$($coverageFinding.Item)"
+          } else {
+            [string]$coverageFinding.Category
+          }
+          Value = "$($coverageFinding.Classification);ActualCount=$($coverageFinding.ActualCount);ExpectedMinimumCount=$($coverageFinding.ExpectedMinimumCount)"
           Source = 'ExpectedSurfaceMinimumCounts'
         }
-        $coverageFindings.Add($finding)
         $surfaces.Add($finding)
       }
 
@@ -198,7 +195,14 @@ Invoke-ParityAudit -StatePath C:\ProgramData\ATAP\ParityState -HostName utat022
       }
 
       if ($coverageFindings.Count -gt 0) {
-        $coverageSummary = @($coverageFindings | ForEach-Object { "$($_.Item)=$($_.Value)" }) -join '; '
+        $coverageSummary = @($coverageFindings | ForEach-Object {
+            $findingPath = if ($_.Classification -eq 'AuditError') {
+              "$($_.Category)/$($_.Item)"
+            } else {
+              [string]$_.Category
+            }
+            "$findingPath=$($_.Classification);ActualCount=$($_.ActualCount);ExpectedMinimumCount=$($_.ExpectedMinimumCount)"
+          }) -join '; '
         throw "Parity audit surface coverage is inadequate. Diagnostic snapshot: '$OutputPath'. Findings: $coverageSummary"
       }
 

@@ -1,5 +1,20 @@
 # Release notes
 
+## 0.1.19
+
+- **Breaking for callers that relied on the old default.** The broker task's default folder is
+  now `\ATAP-Broker\` rather than `\ATAP\`, in `Request-ElevatedInstall -BrokerTaskPath`,
+  `Register-ElevationBrokerTask -TaskPath`, `Grant-ElevationBrokerStartRights -TaskPath`, and the
+  task template's `<URI>`. The broker task was relocated on 2026-08-11 so that granting it
+  folder-level create/update on `\ATAP` — which `ITaskFolder.RegisterTaskDefinition` requires to
+  manage the parity tasks — cannot also let it rewrite its own definition.
+- Until this shipped, every caller using the default got
+  `broker-unreachable ... The system cannot find the file specified (0x80070002)`.
+- A contract test now pins all three defaults and the template URI together, so they cannot drift
+  apart again.
+- Hosts whose broker task still sits in `\ATAP` must either be re-registered with
+  `Register-ElevationBrokerTask` or have `-BrokerTaskPath '\ATAP\'` passed explicitly.
+
 ## 0.1.18
 
 - `utat01`'s `ATAP-ParityAudit` policy is now Password logon, matching `utat022`. S4U task

@@ -86,7 +86,7 @@ Describe 'Elevation broker artifacts' {
     $entry.commandType | Should -Be 'module'
     $entry.moduleName | Should -Be 'ATAP.Utilities.BuildTooling.ProGet.PowerShell'
     $entry.commandName | Should -Be 'Register-ATAPParityScheduledTasks'
-    $entry.minimumModuleVersion | Should -Be '0.1.18'
+    $entry.minimumModuleVersion | Should -Be '0.1.19'
     @($entry.allowedParameters).Count | Should -Be 1
     $entry.allowedParameters[0].name | Should -Be 'ModuleVersion'
     $entry.allowedParameters[0].pattern | Should -Be '^\d+\.\d+\.\d+(\.\d+)?$'
@@ -308,6 +308,28 @@ Describe 'Elevation broker artifacts' {
       $taskRun = "`"$pwshPath`" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$dispatcher`""
       $taskRun.Length | Should -BeLessThan 261
     }
+  }
+
+  It 'defaults every broker task path to the folder the broker does NOT control' {
+    # The broker holds folder-level create/update on \ATAP so it can manage the parity tasks.
+    # If its own task lived there too, it could rewrite its own definition -- a self-escalation
+    # path. It therefore lives in \ATAP-Broker, where it has no rights. All three entry points
+    # must agree on that, and the task XML's URI must match, or callers get 'broker-unreachable'
+    # (which is exactly what happened on 2026-08-11 after the move).
+    $expected = '\ATAP-Broker\'
+    $defaults = @{
+      'public\Request-ElevatedInstall.ps1'        = 'BrokerTaskPath'
+      'public\Register-ElevationBrokerTask.ps1'   = 'TaskPath'
+      'public\Grant-ElevationBrokerStartRights.ps1' = 'TaskPath'
+    }
+    foreach ($file in $defaults.Keys) {
+      $text = Get-Content -LiteralPath (Join-Path $script:ModuleRoot $file) -Raw
+      $text | Should -Match ([regex]::Escape("`$$($defaults[$file]) = '$expected'")) -Because "$file must default to $expected"
+      $text | Should -Not -Match ([regex]::Escape("`$$($defaults[$file]) = '\ATAP\'")) -Because "$file must not default to the folder the broker controls"
+    }
+
+    $xml = [xml](Get-Content -LiteralPath $script:TaskXml -Raw)
+    $xml.Task.RegistrationInfo.URI | Should -Be '\ATAP-Broker\ATAP-ElevatedInstallBroker'
   }
 
   It 'never lets a request name what runs' {

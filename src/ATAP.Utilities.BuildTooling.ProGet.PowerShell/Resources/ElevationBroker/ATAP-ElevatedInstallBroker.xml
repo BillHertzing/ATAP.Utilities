@@ -48,7 +48,7 @@
 <Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <RegistrationInfo>
     <Description>ATAP elevated install broker. Executes hash-pinned canonical installers requested by unelevated agents via C:\ProgramData\ATAP\ElevationBroker\requests. Task 13.76.g.</Description>
-    <URI>\ATAP\ATAP-ElevatedInstallBroker</URI>
+    <URI>\ATAP-Broker\ATAP-ElevatedInstallBroker</URI>
   </RegistrationInfo>
   <Triggers>
     <!--

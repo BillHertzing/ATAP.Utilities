@@ -4,22 +4,30 @@ function Get-SqlParitySurfaces {
 
   $surfaces = [System.Collections.Generic.List[object]]::new()
   $localAccountPrefix = [regex]::Escape("$env:COMPUTERNAME\")
-  # `SvcParityAudit` has only the approved root\cimv2 Enable/RemoteEnable ACE. That
-  # is intentionally insufficient for the Win32_Service query on the deployed hosts.
-  # Service Control Manager status queries provide the identity with the required
-  # engine discovery without widening the WMI namespace to method execution.
-  $engineServices = @(Get-Service -Name 'MSSQL$*' -ErrorAction SilentlyContinue |
-      Where-Object Name -ne 'MSSQLSERVER' | Sort-Object Name)
+  # Engine discovery goes through Win32_Service, the surface the least-privilege matrix names.
+  #
+  # An earlier revision used Get-Service instead, on the belief that the approved root\cimv2
+  # ACE was insufficient for Win32_Service. Measured on both hosts 2026-08-11, that reasoning
+  # was half right and the substitute was no better: the namespace ACE (Enable+RemoteEnable,
+  # 0x21) is fine and other cimv2 classes query happily, but BOTH Win32_Service and Get-Service
+  # were denied, because the Win32_Service provider calls Service Control Manager underneath.
+  # The fix was read-only SCM plus per-service query rights (Task 14.72), which unblocks both.
+  # CIM is kept because it is the documented surface and needs no second permission model.
+  $engineServices = @(Get-CimInstance -ClassName Win32_Service -ErrorAction SilentlyContinue |
+      Where-Object { $_.Name -like 'MSSQL$*' -and $_.Name -ne 'MSSQLSERVER' } | Sort-Object Name)
   $instanceNames = @($engineServices | ForEach-Object { $_.Name.Substring(6) })
   $surfaces.Add([pscustomobject]@{
-      Category = 'SQL'; Item = 'InstanceNames'; Value = ($instanceNames -join ';'); Source = 'Get-Service'
+      Category = 'SQL'; Item = 'InstanceNames'; Value = ($instanceNames -join ';'); Source = 'Win32_Service'
     })
 
   foreach ($service in $engineServices) {
     $instanceName = $service.Name.Substring(6)
     $prefix = "Instance/$instanceName"
+    # Value shape is deliberately unchanged. Win32_Service could fill the two <not-collected>
+    # placeholders with StartName and StartMode, but that would alter every engine row and
+    # perturb the Task 14.73 drift baseline. Populating them is a separate, deliberate change.
     $surfaces.Add([pscustomobject]@{
-        Category = 'SQL'; Item = "$prefix/EngineService"; Value = "$($service.Status)|<not-collected>|<not-collected>"; Source = 'Get-Service'
+        Category = 'SQL'; Item = "$prefix/EngineService"; Value = "$($service.State)|<not-collected>|<not-collected>"; Source = 'Win32_Service'
       })
     try {
       $instanceId = (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\Instance Names\SQL' -ErrorAction Stop).$instanceName

@@ -90,13 +90,18 @@ Invoke-ParityAudit -StatePath C:\ProgramData\ATAP\ParityState -HostName utat022
           Source = 'PSVersionTable'
         })
 
+      # Win32_Service, not Get-Service: it is the surface the least-privilege matrix names, and
+      # both were equally denied until Task 14.72 granted read-only SCM plus per-service query
+      # rights. Enumerate once rather than querying per name, so one denial cannot silently
+      # degrade a single row to '<missing>' while the others succeed.
+      $services = @(Get-CimInstance -ClassName Win32_Service -ErrorAction SilentlyContinue)
       foreach ($serviceName in @('W32Time', 'WinRM', 'sshd')) {
-        $service = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
+        $service = $services | Where-Object Name -eq $serviceName | Select-Object -First 1
         $surfaces.Add([pscustomobject] @{
             Category = 'Services'
             Item = $serviceName
-            Value = if ($service) { [string] $service.Status } else { '<missing>' }
-            Source = 'Get-Service'
+            Value = if ($service) { [string] $service.State } else { '<missing>' }
+            Source = 'Win32_Service'
           })
       }
 

@@ -63,8 +63,20 @@ missing read right and a separately approved, host-specific change is recorded.
 | SQL metadata, on every in-scope instance | Windows login; `VIEW ANY DEFINITION`; `VIEW SERVER STATE` | No data write, `ALTER`, control-server, or `sysadmin` | Granted across all five instances on both hosts (Task 14.72) |
 | SQL Agent metadata | `msdb` user plus `SQLAgentReaderRole` | No job create, update, start, stop, or ownership change | Granted across all five instances on both hosts (Task 14.72) |
 | SQL path conformance | NTFS read on `C:\LocalDBs` and each instance's `Data`, `Log`, and `Backup` directories | No create, modify, delete, or ACL ownership | Granted on both hosts (Task 14.72) |
-| Service discovery | WMI/CIM read on `root\cimv2` sufficient for `Win32_Service` | No WMI method execution or namespace write | Pre-existing non-inheriting ACE verified, deliberately not broadened (Task 14.72) |
+| Service discovery — namespace | WMI/CIM read on `root\cimv2` (`Enable`+`RemoteEnable`, mask `0x21`) | No WMI method execution or namespace write | Pre-existing non-inheriting ACE; verified sufficient and NOT broadened (Task 14.72) |
+| Service discovery — SCM | `SC_MANAGER_CONNECT`, `ENUMERATE_SERVICE`, `QUERY_LOCK_STATUS`, `READ_CONTROL` (`CCLCRPRC`) | No create service, lock, or modify-boot-config | Granted on both hosts 2026-08-11 (Task 14.72) |
+| Service discovery — per service | `QUERY_CONFIG`, `QUERY_STATUS`, `ENUMERATE_DEPENDENTS`, `INTERROGATE`, `READ_CONTROL` (`CCLCSWLORC`) on `W32Time`, `WinRM`, `sshd`, and each `MSSQL$<instance>` | No start, stop, pause/continue, change-config, delete, or write-DAC | Granted on both hosts 2026-08-11 (Task 14.72) |
 | Parity state | Modify only the local parity state/task-results tree; read the peer share for comparison | No write to the peer share by the comparison task | Existing topology; ACL independently verified |
+
+Service discovery takes three rows because the WMI namespace grant alone is not sufficient, and
+that cost days of misdiagnosis. Measured on both hosts 2026-08-11: `SvcParityAudit` could query
+`Win32_OperatingSystem`, `Win32_ComputerSystem`, `Win32_Process`, and `Win32_LogicalDisk` from
+`root\cimv2` without trouble, yet `Win32_Service` returned `Access denied` and `Get-Service`
+returned `Cannot open Service Control Manager` — because the `Win32_Service` provider calls SCM
+underneath. Switching between CIM and `Get-Service` therefore changes nothing on its own; both
+need SCM. Service *running state* has no registry equivalent (the registry carries start type
+only), so the SCM and per-service grants are the minimum for that surface. Every right above is
+read-only: no start, stop, config change, or ownership.
 
 ## Next-release identity-explicit package paths
 

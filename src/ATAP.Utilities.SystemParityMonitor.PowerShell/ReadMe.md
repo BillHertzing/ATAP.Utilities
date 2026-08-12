@@ -101,10 +101,17 @@ Set-ParityPrimaryRole `
   password. This is the deployed peer audit topology now that the wrapper has no
   per-user DPAPI or vault dependency. Version `0.1.2` could incorrectly persist a
   Password principal on the peer and must not be used for new S4U registrations.
-- Version `0.1.8` is the deployed token-free baseline. The identity-explicit package
-  collection and event-threshold changes described below are source-only, unreleased
-  behavior until a later immutable version is published, installed, and its tasks are
-  re-registered.
+- The elevation-broker identity, `SvcAnsibleAdmin`, is not a parity-task runtime
+  identity. Grant it only native Task Scheduler `TASK_CHANGE` (`0x2`) on the existing
+  `\ATAP\ATAP-ParityAudit` task on each host. Do not grant it access to the `\ATAP`
+  folder, other tasks, task deletion, task execution, or task security changes. The
+  current folder-level re-registration installer requires broader folder access and
+  therefore cannot consume this deliberately narrow grant; it must be replaced by a
+  direct action-only update path before broker-based repointing is used.
+- Version `0.1.10` is the deployed token-free baseline. Its scheduled actions use the
+  installed immutable module root and a package-manager profile-configuration path.
+  Source version `0.1.12` remains a release candidate and is not a claim about the
+  installed tasks.
 - The next-release collector accepts explicit records containing `Identity` plus
   `PipPath`, `NpmPrefix`, and `NuGetToolPath`. It never derives those paths from the
   `SvcParityAudit` profile. Rows are identity-qualified; an omitted path produces a
@@ -118,10 +125,10 @@ Set-ParityPrimaryRole `
 - `Daily` cadence restarts only after package and SQL collection is trustworthy on
   both hosts. Re-register as `BiWeekly` only after a verified clean month; the prior
   blind period does not count.
-- Approved D-6 source behavior writes Windows Application events on the second
+- The deployed D-6 behavior writes Windows Application events on the second
   consecutive audit/compare failure and immediately for stale or missing/thin
-  comparison coverage. Windows event-source registration and SEQ forwarding have not
-  been verified or deployed by this documentation change.
+  comparison coverage. Windows event-source registration and SEQ forwarding remain
+  independently unverified.
 - BuildMaster: consolidated application `ATAP.Utilities-PowerShell` (see the reviewed
   module map in the ATAP.IAC BuildMaster HostSettings fragment).
 - Packaging preserves the `scripts\` and `Documentation\` folders below the installed

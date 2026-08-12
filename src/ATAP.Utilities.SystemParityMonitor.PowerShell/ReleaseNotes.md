@@ -1,5 +1,24 @@
 # Release Notes — ATAP.Utilities.SystemParityMonitor.PowerShell
 
+## 0.1.15
+
+- Service and SQL engine discovery move from `Get-Service` back to `Win32_Service`, the surface
+  the least-privilege matrix names. A previous change had moved the other way on the belief that
+  the approved `root\cimv2` ACE could not serve `Win32_Service`; measured on both hosts
+  2026-08-11 that was wrong twice over. The namespace ACE (`Enable`+`RemoteEnable`, `0x21`) is
+  fine — `Win32_OperatingSystem`, `Win32_ComputerSystem`, `Win32_Process`, and
+  `Win32_LogicalDisk` all queried successfully — while BOTH `Win32_Service` and `Get-Service`
+  were denied, because the `Win32_Service` provider calls Service Control Manager underneath.
+  This was the cause of the long-standing `InvalidOperationException` that stopped the audit
+  before it collected anything, on both hosts.
+- Unblocking it required read-only SCM access plus per-service query rights (Task 14.72), not a
+  code change; the move to CIM keeps collection on one documented permission surface.
+- The audit now enumerates services once rather than querying per name, so a single denial
+  cannot silently degrade one row to `<missing>` while others succeed.
+- Recorded value shapes are deliberately unchanged, including the two `<not-collected>`
+  placeholders on engine rows. `Win32_Service` could populate them with `StartName` and
+  `StartMode`, but that would alter every engine row and perturb the Task 14.73 drift baseline.
+
 ## 0.1.13 release candidate (unreleased)
 
 - Persist a scheduled-task failure's exception message and fully qualified error identifier in the task-result JSON, so S4U failures can be diagnosed without interactive logon.

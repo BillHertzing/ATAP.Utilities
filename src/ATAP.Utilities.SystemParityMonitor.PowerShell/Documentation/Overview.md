@@ -142,15 +142,27 @@ and does not store the password. Version `0.1.3` supplies that registration cred
 while retaining the S4U/Limited saved principal. Re-register tasks when the module's
 on-disk location changes.
 
+For an elevation-broker action update, `SvcAnsibleAdmin` has exactly one native Task
+Scheduler permission: `TASK_CHANGE` (`0x2`) on the existing
+`\ATAP\ATAP-ParityAudit` task, per host. It has no grant on the `\ATAP` folder, any
+other task, task execution, deletion, ownership, or task-security management. A
+folder-level `RegisterTaskDefinition` implementation cannot use this narrow task-only
+right; use a direct action-only task-update implementation instead. Password-logon
+registration on `utat022` remains separately subject to its in-memory credential
+resolution boundary.
+
 The `0.1.1` package installed on both live hosts omitted `scripts\` and
 `Documentation\`; `scripts\` was copied manually as a temporary Task 12.38.e recovery.
 Version `0.1.2` stages both folders into the package. SC-0266 owns the incomplete
 Windows 10 WinRM `PSModulePath` plus a PowerShell 7 endpoint.
 
 The resilience work formerly described here as unreleased `0.1.4` is historical source
-context. Version `0.1.8` is now the deployed token-free baseline on both hosts. It removes
-the BWS probe and records `SecretAccessRequired = false`; `SvcParityAudit` must not receive
-a BWS token or credential directory.
+context. Version `0.1.10` is the deployed baseline on both hosts; its scheduled actions
+point to the installed immutable module root and carry the package-manager profile
+configuration path. It retains the token-free behavior introduced in `0.1.8`: it removes
+the BWS probe and records `SecretAccessRequired = false`; `SvcParityAudit` must not
+receive a BWS token or credential directory. Source version `0.1.12` is a later release
+candidate and is not a claim about the installed tasks.
 
 Current next-release source adds resilience for the associated Windows 10 surface:
 when `Get-SmbShare` is unavailable, audit collection falls back to `Win32_Share`.
@@ -163,13 +175,13 @@ period does not count. The compare wrapper passes the expected cadence and
 `1.5` stale multiplier into `Compare-ParityAudits`, so stale snapshots are reported as
 their own drift-report line.
 
-Approved D-6 source behavior uses the Windows Application log source
-`ATAP.SystemParityMonitor`: event `12380` or `12381` on the second consecutive audit or
+The deployed wrappers maintain failure state and implement the D-6 Windows Application-log
+contract for source `ATAP.SystemParityMonitor`: event `12380` or `12381` on the second
+consecutive audit or
 compare failure, and warning event `12382` immediately when comparison finds stale
-snapshots or missing/thin required coverage. This behavior is source-only until a later
-immutable release is deployed and tasks are re-registered. Event-source registration on
-both hosts and forwarding into SEQ remain unverified; no paging claim follows from the
-presence of source code alone.
+snapshots or missing/thin required coverage. Event-source registration on both hosts and
+forwarding into SEQ remain independently unverified; no paging claim follows from the
+presence of the deployed wrapper or source code alone.
 
 ## Related documentation
 

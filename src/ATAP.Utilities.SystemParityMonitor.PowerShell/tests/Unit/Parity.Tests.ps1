@@ -52,24 +52,37 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' -Tag 'Unit', 'Pa
     $snapshot.SnapshotPath | Should -Be $snapshotPath
   }
 
-  It 'discovers SQL engine services through SCM without querying Win32_Service' {
+  It 'discovers SQL engine services through Win32_Service, never Get-Service' {
+    # This test previously asserted the exact opposite -- that SCM/Get-Service was used and
+    # Win32_Service must NOT be queried -- on the belief that the approved root\cimv2 ACE could
+    # not serve Win32_Service. Measured on both hosts 2026-08-11, that was wrong twice over: the
+    # namespace ACE is fine, and BOTH surfaces were denied because the Win32_Service provider
+    # calls SCM underneath. Task 14.72 granted read-only SCM plus per-service query rights, and
+    # collection moved to the surface the least-privilege matrix actually names.
     InModuleScope 'ATAP.Utilities.SystemParityMonitor.PowerShell' {
-      Mock -CommandName Get-Service -ParameterFilter { $Name -eq 'MSSQL$*' } -MockWith {
+      Mock -CommandName Get-CimInstance -ParameterFilter { $ClassName -eq 'Win32_Service' } -MockWith {
         @(
-          [pscustomobject]@{ Name = 'MSSQL$PRODUCTION'; Status = 'Running' }
-          [pscustomobject]@{ Name = 'MSSQL$QA'; Status = 'Stopped' }
+          [pscustomobject]@{ Name = 'MSSQL$PRODUCTION'; State = 'Running' }
+          [pscustomobject]@{ Name = 'MSSQL$QA'; State = 'Stopped' }
+          # Must be excluded: the default instance is not an named-instance engine surface.
+          [pscustomobject]@{ Name = 'MSSQLSERVER'; State = 'Running' }
+          # Must be ignored: not an engine service at all.
+          [pscustomobject]@{ Name = 'W32Time'; State = 'Running' }
         )
       }
-      Mock -CommandName Get-CimInstance -MockWith { throw 'Win32_Service must not be queried for SQL engine discovery.' }
+      Mock -CommandName Get-Service -MockWith { throw 'Get-Service must not be used for SQL engine discovery.' }
 
       $surfaces = @(Get-SqlParitySurfaces)
 
-      ($surfaces | Where-Object { $_.Item -eq 'InstanceNames' }).Source | Should -Be 'Get-Service'
+      ($surfaces | Where-Object { $_.Item -eq 'InstanceNames' }).Source | Should -Be 'Win32_Service'
       ($surfaces | Where-Object { $_.Item -eq 'InstanceNames' }).Value | Should -Be 'PRODUCTION;QA'
       ($surfaces | Where-Object { $_.Item -eq 'Instance/PRODUCTION/EngineService' }).Value |
         Should -Be 'Running|<not-collected>|<not-collected>'
-      Assert-MockCalled -CommandName Get-Service -Times 1 -Exactly -ParameterFilter { $Name -eq 'MSSQL$*' }
-      Assert-MockCalled -CommandName Get-CimInstance -Times 0 -Exactly
+      ($surfaces | Where-Object { $_.Item -eq 'Instance/QA/EngineService' }).Value |
+        Should -Be 'Stopped|<not-collected>|<not-collected>'
+      # The value shape stays three-part: filling the placeholders would perturb the Task 14.73
+      # drift baseline and is a separate, deliberate change.
+      Assert-MockCalled -CommandName Get-Service -Times 0 -Exactly
     }
   }
 

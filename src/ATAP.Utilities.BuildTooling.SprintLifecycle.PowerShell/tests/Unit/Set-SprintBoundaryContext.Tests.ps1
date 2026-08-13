@@ -51,6 +51,9 @@ Describe 'Set-SprintBoundaryContext [public]' {
     Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-PowerShell7ProfileSymlink {
       [PSCustomObject]@{ Ok = $true; Failures = @(); Links = @(); DryRun = $false }
     }
+    Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-ServiceAccountGitSafeDirectory {
+      [PSCustomObject]@{ Success = $true; SelectedPaths = @($WorktreePaths); Added = @(); Removed = @(); Unchanged = @(); Before = @(); After = @() }
+    }
     Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-SprintBoundaryUserProfiles {
       [PSCustomObject]@{
         Ok = $true
@@ -703,6 +706,60 @@ Describe 'Set-SprintBoundaryContext [public]' {
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-PowerShell7ProfileSymlink -Times 0 -Exactly -Scope It
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-SprintBoundaryUserProfiles -Times 0 -Exactly -Scope It
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Sync-SprintBoundaryPrimaryRoleMarker -Times 0 -Exactly -Scope It
+    }
+  }
+
+  Context 'SC-0321 service-account Git trust lifecycle' {
+    It 'Start delegates exact worktree paths to the service-account trust helper' {
+      $configPath = Join-Path $script:gitRoot 'SvcBuildmaster.start.gitconfig'
+
+      $result = Set-SprintBoundaryContext -Boundary Start `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -WorktreePaths @($script:worktree) `
+        -GitRoot $script:gitRoot `
+        -ServiceAccountGitConfigPath $configPath `
+        -SkipSharedVSCodeSettings `
+        -SkipProfileSymlinks `
+        -SkipAIAdapterLifecycle `
+        -ProfiledRemotingPolicy Disabled
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell `
+        Set-ServiceAccountGitSafeDirectory -Times 1 -Exactly -Scope It `
+        -ParameterFilter {
+          $Boundary -eq 'Start' -and
+          $GitConfigPath -eq $configPath -and
+          $WorktreePaths.Count -eq 1 -and
+          $WorktreePaths[0] -eq $script:worktree
+        }
+      $concern = $result.Concerns | Where-Object Concern -EQ 'ServiceAccountGitSafeDirectory'
+      $concern.Succeeded | Should -BeTrue
+      @($result.Errors | Where-Object { $_ -match 'Service-account Git safe.directory' }).Count | Should -Be 0
+    }
+
+    It 'End delegates the same exact outgoing worktree paths for removal' {
+      $configPath = Join-Path $script:gitRoot 'SvcBuildmaster.end.gitconfig'
+
+      $result = Set-SprintBoundaryContext -Boundary End `
+        -SharedVSCodeWorktreePath $script:svStable `
+        -WorktreePaths @($script:worktree) `
+        -GitRoot $script:gitRoot `
+        -ServiceAccountGitConfigPath $configPath `
+        -SkipSharedVSCodeSettings `
+        -SkipProfileSymlinks `
+        -SkipAIAdapterLifecycle `
+        -ProfiledRemotingPolicy Disabled
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell `
+        Set-ServiceAccountGitSafeDirectory -Times 1 -Exactly -Scope It `
+        -ParameterFilter {
+          $Boundary -eq 'End' -and
+          $GitConfigPath -eq $configPath -and
+          $WorktreePaths.Count -eq 1 -and
+          $WorktreePaths[0] -eq $script:worktree
+        }
+      $concern = $result.Concerns | Where-Object Concern -EQ 'ServiceAccountGitSafeDirectory'
+      $concern.Succeeded | Should -BeTrue
+      @($result.Errors | Where-Object { $_ -match 'Service-account Git safe.directory' }).Count | Should -Be 0
     }
   }
 }

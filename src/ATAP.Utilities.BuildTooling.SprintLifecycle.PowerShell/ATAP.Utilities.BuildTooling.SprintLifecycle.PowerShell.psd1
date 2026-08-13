@@ -89,7 +89,7 @@ FunctionsToExport = @(
   'New-SprintStage2Result', 'Remove-OverviewSprintWorkspace', 'Remove-SprintWorktreeSafely',
   'Restore-SprintHistoryArtifacts', 'Save-CopilotCheckpoint', 'Save-SprintEndSessionTail',
   'Save-SprintHistoryArtifacts', 'Save-SprintRetrospectiveSnapshot', 'Save-SprintWorkSession',
-  'Set-SprintBoundaryContext', 'Set-SprintBoundaryUserProfiles', 'Sync-SprintBoundaryPrimaryRoleMarker',
+  'Set-ServiceAccountGitSafeDirectory', 'Set-SprintBoundaryContext', 'Set-SprintBoundaryUserProfiles', 'Sync-SprintBoundaryPrimaryRoleMarker',
   'Test-SprintCheckpointCoverage', 'Test-SprintEndBoundaryState', 'Test-SprintEndCommandSurface',
   'Test-SprintEndPullOverlap', 'Test-SprintEndWorktreeState', 'Test-SprintEndWriteTarget',
   'Test-SprintInfrastructureHealth',

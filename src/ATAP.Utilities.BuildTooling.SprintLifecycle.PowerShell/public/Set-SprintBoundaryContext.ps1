@@ -112,6 +112,15 @@ function Set-SprintBoundaryContext {
   .PARAMETER CheckpointConfirmed
     Confirms the sprint session has been checkpointed before user-global settings
     files are updated.
+  .PARAMETER ServiceAccountGitConfigPath
+    Explicit Git configuration file for the BuildMaster service account. Defaults
+    to C:\Users\SvcBuildmaster\.gitconfig.
+  .PARAMETER ServiceAccountGitTrustRepositoryNames
+    Repository names whose exact sprint worktrees are lifecycle-managed in the
+    service-account safe.directory list. Defaults to Ace and ATAP.Utilities.
+  .PARAMETER SkipServiceAccountGitTrust
+    Skip SC-0321 service-account Git trust processing. Intended only for isolated
+    diagnostics and tests.
   .PARAMETER ProfiledRemotingPolicy
     Controls the local ATAP.PS7.Profiled endpoint concern. Disabled never probes or
     registers it. Auto, the safe default, treats a host with no remoting surface and
@@ -193,6 +202,14 @@ function Set-SprintBoundaryContext {
 
     [switch]$CheckpointConfirmed,
 
+    [ValidateNotNullOrEmpty()]
+    [string]$ServiceAccountGitConfigPath = 'C:\Users\SvcBuildmaster\.gitconfig',
+
+    [ValidateNotNullOrEmpty()]
+    [string[]]$ServiceAccountGitTrustRepositoryNames = @('Ace', 'ATAP.Utilities'),
+
+    [switch]$SkipServiceAccountGitTrust,
+
     [ValidateSet('Disabled', 'Auto', 'Required')]
     [string]$ProfiledRemotingPolicy = 'Auto',
 
@@ -215,6 +232,13 @@ function Set-SprintBoundaryContext {
         if (Test-Path -LiteralPath $privateHelperPath) {
           . $privateHelperPath
         }
+      }
+    }
+
+    if (-not (Get-Command -Name 'Set-ServiceAccountGitSafeDirectory' -CommandType Function -ErrorAction SilentlyContinue)) {
+      $serviceAccountGitTrustHelperPath = Join-Path $PSScriptRoot 'Set-ServiceAccountGitSafeDirectory.ps1'
+      if (Test-Path -LiteralPath $serviceAccountGitTrustHelperPath) {
+        . $serviceAccountGitTrustHelperPath
       }
     }
 
@@ -518,6 +542,39 @@ function Set-SprintBoundaryContext {
           Error          = $null
         })
     }
+
+    # ------------------------------------------------------------------
+    # Service-account Git trust (SC-0321). Only exact Ace and ATAP.Utilities
+    # sprint worktree paths are selected by the helper. Start adds missing
+    # values idempotently; End removes only those exact values.
+    # ------------------------------------------------------------------
+    $serviceAccountGitTrustOk = $true
+    $serviceAccountGitTrustError = $null
+    $serviceAccountGitTrustResult = $null
+    try {
+      if (-not $SkipServiceAccountGitTrust -and $WorktreePaths.Count -gt 0) {
+        $serviceAccountGitTrustResult = Set-ServiceAccountGitSafeDirectory `
+          -Boundary $Boundary `
+          -WorktreePaths $WorktreePaths `
+          -GitConfigPath $ServiceAccountGitConfigPath `
+          -RepositoryNames $ServiceAccountGitTrustRepositoryNames `
+          -Confirm:$false `
+          -WhatIf:$WhatIfPreference
+      }
+    } catch {
+      $serviceAccountGitTrustOk = $false
+      $serviceAccountGitTrustError = "Service-account Git safe.directory lifecycle failed: $($_.Exception.Message)"
+      $errors.Add($serviceAccountGitTrustError)
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $serviceAccountGitTrustError
+    }
+    $concerns.Add([PSCustomObject]@{
+        Concern        = 'ServiceAccountGitSafeDirectory'
+        Action         = ($SkipServiceAccountGitTrust ? 'Skipped' : "Set-ServiceAccountGitSafeDirectory ($Boundary)")
+        StableByDesign = $false
+        Succeeded      = $serviceAccountGitTrustOk
+        Error          = $serviceAccountGitTrustError
+        Result         = $serviceAccountGitTrustResult
+      })
 
     # ------------------------------------------------------------------
     # Machine-global concern: SharedVSCode settings symlinks (once)

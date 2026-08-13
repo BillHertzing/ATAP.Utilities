@@ -54,7 +54,7 @@ Secret values must never be placed in journal entries.
     [string] $HostName = $env:COMPUTERNAME,
 
     [Parameter(Mandatory = $true)]
-    [ValidateSet('OS', 'Packages', 'PowerShellModules', 'WindowsFeatures', 'Services', 'Registry', 'Files', 'Shares', 'Firewall', 'SQL', 'Runbook', 'Other')]
+    [ValidateSet('OS', 'Packages', 'PackageManager', 'PackageManagerStatus', 'PowerShellModules', 'WindowsFeatures', 'Services', 'Registry', 'Files', 'Shares', 'Firewall', 'SQL', 'Runbook', 'Other')]
     [string] $Category,
 
     [Parameter(Mandatory = $true)]

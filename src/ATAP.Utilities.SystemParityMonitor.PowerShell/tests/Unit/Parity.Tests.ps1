@@ -351,6 +351,26 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' -Tag 'Unit', 'Pa
     Test-Path -LiteralPath $reportPath | Should -BeTrue
   }
 
+  It 'Add-ParityChangeEntry accepts the package-manager categories emitted by parity audits' {
+    foreach ($category in @('PackageManager', 'PackageManagerStatus')) {
+      {
+        Add-ParityChangeEntry `
+          -StatePath $leftState `
+          -HostName 'utat022' `
+          -PeerHostName 'utat01' `
+          -Category $category `
+          -Item "fixture/$category" `
+          -OldValue '<missing>' `
+          -NewValue 'present' `
+          -PeerActionKind 'Manual' | Out-Null
+      } | Should -Not -Throw
+    }
+
+    $entries = @(Get-Content -LiteralPath (Join-Path $leftState 'ChangeJournal.utat022.jsonl') | ForEach-Object { $_ | ConvertFrom-Json })
+    @($entries | Where-Object Category -eq 'PackageManager') | Should -HaveCount 1
+    @($entries | Where-Object Category -eq 'PackageManagerStatus') | Should -HaveCount 1
+  }
+
   It 'Compare-ParityAudits flags stale snapshots when cadence is exceeded' {
     $leftSnapshotPath = Join-Path $leftState 'ParityAudit.utat022.fixture.json'
     $rightSnapshotPath = Join-Path $rightState 'ParityAudit.utat01.fixture.json'

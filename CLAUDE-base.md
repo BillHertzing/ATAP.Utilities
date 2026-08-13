@@ -39,7 +39,7 @@ which exists for the duration of a work sprint. Sprint worktrees' root paths mat
 | Repository     | Root Path                                  | Role                                                                 |
 | -------------- | ------------------------------------------ | -------------------------------------------------------------------- |
 | \_Planning     | C:/Dropbox/whertzing/github/\_Planning     | Planning information for this shared workspace                       |
-| AceCommander   | C:/Dropbox/whertzing/github/AceCommander   | Multi-tenant .NET server, Blazor WASM UI, ETW streaming              |
+| Ace            | C:/Dropbox/whertzing/github/Ace            | Multi-tenant .NET server, Blazor WASM UI, ETW streaming              |
 |                |                                            | on Windows platfor, Also Android and iOS apps                        |
 | ATAP.Utilities | C:/Dropbox/whertzing/github/ATAP.Utilities | Reusable C# library, schema framework, DB/API utilities              |
 | SharedVSCode   | C:/Dropbox/whertzing/github/SharedVSCode   | Shared VS Code config, source of AiAgent configuration surfaces      |
@@ -62,7 +62,7 @@ Sprint (`${SPRINT_WORKTREE_PATH_*}`) placeholders — the active sprint branch w
 - `${SPRINT_WORKTREE_PATH_ATAP_UTILITIES}` — ATAP.Utilities sprint worktree path.
 - `${SPRINT_WORKTREE_PATH_ATAP_IAC}` — ATAP.IAC (Infrastructure-as-Code) sprint worktree path.
 - `${SPRINT_WORKTREE_PATH_ATAP_PLANNING}` — _Planning sprint worktree path.
-- `${SPRINT_WORKTREE_PATH_ACECOMMANDER}` — AceCommander sprint worktree path.
+- `${SPRINT_WORKTREE_PATH_ACECOMMANDER}` — Ace repository sprint worktree path.
 - `${SPRINT_WORKTREE_PATH_EPHEMERAL}` — Abstract sprint worktree path (used in examples not tied to a specific repository).
 
 Stable (`${STABLE_WORKTREE_PATH_*}`) placeholders — the permanent stable-branch worktree for a
@@ -236,6 +236,13 @@ All agents operate on **Windows** inside **Visual Studio Code**. Use **PowerShel
 - When running Pester, NEVER use `-NoProfile`. Always allow PowerShell profiles:
   `pwsh -Command "Invoke-Pester -Path '<path>' -Output Detailed"`
 - For ATAP repository work, do not pass `-NoProfile` unless the task is explicitly auditing no-profile behavior. PowerShell profiles populate `$global:settings`, and BuildTooling resolves host/user configuration through `Get-PVal`; stripping profiles changes configuration resolution and can create misleading failures.
+- **PowerShell 7 inter-host remoting (R-39):** Every PowerShell remoting connection
+  between hosts in the ATAP organization must explicitly select the PowerShell 7
+  endpoint with `-ConfigurationName 'PowerShell.7'` (for example on
+  `New-PSSession`, `Invoke-Command`, or `Enter-PSSession`). Never silently fall back
+  to the default Windows PowerShell endpoint. If `PowerShell.7` is unavailable, fail
+  closed and repair or register that endpoint through a separately approved
+  administrative action before continuing.
 - If requirements are ambiguous, ask from one to five clarifying question before generating commands
 - **Bash tool override (R-01):** If `tools.bash.command` is configurable, set it to `pwsh`.
   In the Bash/terminal tool, ALL commands must be PowerShell. Never send bare PowerShell

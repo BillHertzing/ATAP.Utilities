@@ -13,6 +13,16 @@ param(
   # When set the Publish task logs the plan but does not push to ProGet (T-44).
   [switch] $SkipPublish,
 
+  # Local source validation may skip signing only when publication is skipped.
+  [switch] $SkipSigning,
+
+  # Public identity of the code-signing certificate. The private key remains in
+  # the Windows certificate store and is never passed to the build.
+  [string] $CodeSigningCertificateThumbprint,
+
+  # Authenticode timestamp service used for durable signatures.
+  [uri] $TimestampServerUri,
+
   # Folder containing the PowerShell module being built (must hold <Name>.psm1
   # and <Name>.psd1 whose BaseName matches the folder name). Defaults to
   # $BuildRoot for legacy callers that symlink module.build.ps1 into the module
@@ -78,6 +88,8 @@ $script:_bootstrapCmdlets = @(
   'Test-FailureAcknowledgedGate'
   'Test-CodeCoverageGate'
   'Publish-PSModuleToProGetFeed'
+  'Set-PSModuleFileSignature'
+  'Test-PSModulePackageSignature'
   'Compress-PSModuleArtifacts'
 )
 
@@ -93,6 +105,8 @@ $script:_bootstrapModuleByCommand = @{
   'Compress-PSModuleArtifacts' = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'
   'Test-FailureAcknowledgedGate' = 'ATAP.Utilities.BuildTooling.AiRendering.PowerShell'
   'Publish-PSModuleToProGetFeed' = 'ATAP.Utilities.BuildTooling.ProGet.PowerShell'
+  'Set-PSModuleFileSignature' = 'ATAP.Utilities.BuildTooling.ProGet.PowerShell'
+  'Test-PSModulePackageSignature' = 'ATAP.Utilities.BuildTooling.ProGet.PowerShell'
 }
 
 foreach ($cmdletName in $script:_bootstrapCmdlets) {
@@ -372,13 +386,10 @@ Task BuildManifest {
 }
 
 # ---------------------------------------------------------------------------
-# T-43  Package — produce a .nupkg under _generated/…/packages/
+# Stream E  StageContent — copy optional static payload before signing.
 # ---------------------------------------------------------------------------
-Task Package BuildPSM1, BuildManifest, {
-  # The generated PSM1 and manifest replace source implementation files, but
-  # optional static module content remains source-owned and must be staged
-  # explicitly before Publish-PSResource packages the directory.
-  $moduleContentDirectories = @('scripts', 'Documentation', 'Profiles')
+Task StageContent BuildPSM1, BuildManifest, {
+  $moduleContentDirectories = @('scripts', 'Documentation', 'Profiles', 'CertificateRequestConfigurations')
   foreach ($contentDirectoryName in $moduleContentDirectories) {
     $sourceContentDirectory = Join-Path $script:ModuleRoot $contentDirectoryName
     if (Test-Path -LiteralPath $sourceContentDirectory -PathType Container) {
@@ -387,6 +398,69 @@ Task Package BuildPSM1, BuildManifest, {
     }
   }
 
+  Write-PSFMessage -Level Important -Message 'StageContent — copied optional static module payload.'
+}
+
+# ---------------------------------------------------------------------------
+# Stream E  Sign — Authenticode-sign the exact staged files that are packed.
+# ---------------------------------------------------------------------------
+Task Sign StageContent, {
+  if ($SkipSigning) {
+    if (-not $SkipPublish) {
+      throw '-SkipSigning is permitted only with -SkipPublish. Published packages must be signed.'
+    }
+    Write-PSFMessage -Level Important -Message 'Sign — skipped for a local non-publishing build.'
+    return
+  }
+
+  $effectiveThumbprint = $CodeSigningCertificateThumbprint
+  if ([string]::IsNullOrWhiteSpace($effectiveThumbprint)) {
+    $effectiveThumbprint = [Environment]::GetEnvironmentVariable(
+      'ATAP_CODESIGNING_CERTIFICATE_THUMBPRINT',
+      [EnvironmentVariableTarget]::User
+    )
+  }
+  if ([string]::IsNullOrWhiteSpace($effectiveThumbprint)) {
+    throw 'A CodeSigningCertificateThumbprint or User-scope ATAP_CODESIGNING_CERTIFICATE_THUMBPRINT is required.'
+  }
+
+  $effectiveTimestampServerUri = $TimestampServerUri
+  if ($null -eq $effectiveTimestampServerUri) {
+    $timestampValue = [Environment]::GetEnvironmentVariable(
+      'ATAP_CODESIGNING_TIMESTAMP_SERVER_URI',
+      [EnvironmentVariableTarget]::User
+    )
+    if (-not [string]::IsNullOrWhiteSpace($timestampValue)) {
+      $effectiveTimestampServerUri = [uri]$timestampValue
+    }
+  }
+  if ($null -eq $effectiveTimestampServerUri -or -not $effectiveTimestampServerUri.IsAbsoluteUri) {
+    throw 'An absolute TimestampServerUri or User-scope ATAP_CODESIGNING_TIMESTAMP_SERVER_URI is required.'
+  }
+
+  $signingWorkerPath = Join-Path $resolvedModulePath 'ATAP.Utilities.BuildTooling.ProGet.PowerShell\scripts\Invoke-PSModuleFileSigningWorker.ps1'
+  if (-not (Test-Path -LiteralPath $signingWorkerPath -PathType Leaf)) {
+    throw "The Authenticode signing worker was not found at '$signingWorkerPath'."
+  }
+  $workerOutput = @(& pwsh -File $signingWorkerPath `
+      -Path $script:PackageSrcDir `
+      -CertificateThumbprint $effectiveThumbprint `
+      -TimestampServerUri $effectiveTimestampServerUri.AbsoluteUri 2>&1)
+  if ($LASTEXITCODE -ne 0) {
+    throw "Authenticode signing worker failed: $($workerOutput -join [Environment]::NewLine)"
+  }
+  $resultLine = $workerOutput | Where-Object { [string]$_ -like 'ATAP_SIGNING_RESULT:*' } | Select-Object -Last 1
+  if ($null -eq $resultLine) {
+    throw 'Authenticode signing worker did not return structured signing metadata.'
+  }
+  $script:SigningResult = ([string]$resultLine).Substring('ATAP_SIGNING_RESULT:'.Length) | ConvertFrom-Json
+  Write-PSFMessage -Level Important -Message "Sign — signed $($script:SigningResult.SignedCount) staged PowerShell files."
+}
+
+# ---------------------------------------------------------------------------
+# T-43  Package — produce a .nupkg under _generated/…/packages/
+# ---------------------------------------------------------------------------
+Task Package Sign, {
   $localRepoName = "LocalBuild_$($script:ModuleName)"
   $localRepoUri = $script:PackagesDir
 
@@ -413,6 +487,13 @@ Task Package BuildPSM1, BuildManifest, {
 
   if (-not $script:NupkgPath) {
     throw "Package — no .nupkg found under '$($script:PackagesDir)' after Publish-PSResource."
+  }
+  if (-not $SkipSigning) {
+    $signatureResultsPath = Join-Path $script:OutputRoot 'signature-verification'
+    $script:PackageSignatureResult = Test-PSModulePackageSignature `
+      -NupkgPath $script:NupkgPath `
+      -ResultsPath $signatureResultsPath `
+      -RequireTimestamp
   }
   Write-PSFMessage -Level Important -Message "Package — created '$($script:NupkgPath)'"
 }

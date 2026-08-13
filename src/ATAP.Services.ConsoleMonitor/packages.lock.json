@@ -400,7 +400,6 @@
           "MedallionShell": "[1.6.2, )",
           "ServiceStack.Text": "[5.12.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -415,8 +414,9 @@
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Hardware.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -425,12 +425,14 @@
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Hardware.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Philote": "[1.0.0, )",
           "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Philote.Models": "[1.0.0, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )",
           "MedallionShell": "[1.6.2, )",
           "ServiceStack.Text": "[5.12.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -456,7 +458,6 @@
           "MedallionShell": "[1.6.2, )",
           "ServiceStack.Text": "[5.12.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -482,7 +483,6 @@
           "ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ComputerInventory.Software.Interfaces": "[0.1.0-Alpha, )",
           "MedallionShell": "[1.6.2, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -508,7 +508,6 @@
           "MedallionShell": "[1.6.2, )",
           "ServiceStack.Text": "[5.12.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -527,6 +526,22 @@
           "Microsoft.Extensions.Localization": "[9.0.0, )",
           "Microsoft.Extensions.Logging": "[9.0.0, )"
         }
+      },
+      "atap.utilities.datetime.interfaces": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.datetime.model": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.datetime.stringconstants": {
+        "type": "Project"
       },
       "atap.utilities.enumeration": {
         "type": "Project"
@@ -548,6 +563,7 @@
       "atap.utilities.persistence.extensions": {
         "type": "Project",
         "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )",
           "ATAP.Utilities.Persistence.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.Persistence.Model": "[0.1.0-Alpha, )",
           "ServiceStack.OrmLite": "[5.12.0, )"
@@ -570,8 +586,19 @@
       "atap.utilities.philote.interfaces": {
         "type": "Project",
         "dependencies": {
+          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.Model": "[1.0.0, )",
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.philote.models": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.Model": "[1.0.0, )",
+          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )"
+          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )"
         }
       },
       "atap.utilities.reactive.extensions": {
@@ -583,6 +610,12 @@
       },
       "atap.utilities.stronglytypedid.interfaces": {
         "type": "Project"
+      },
+      "atap.utilities.stronglytypedid.models": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+        }
       },
       "consolemonitor.interfaces": {
         "type": "Project",
@@ -688,12 +721,6 @@
         "dependencies": {
           "ServiceStack.Text": "5.0.0"
         }
-      },
-      "TimePeriodLibrary.NET": {
-        "type": "CentralTransitive",
-        "requested": "[2.1.5, )",
-        "resolved": "2.1.5",
-        "contentHash": "2QFqfYDl7/4wQd6Bsi1Z4fZlOurnJ2OQln5YK+TlIS6c5R0AM2Tn1EEfpWob/sOe0c0luUR01r0kZE4vruX8mw=="
       },
       "UnitsNet": {
         "type": "CentralTransitive",
@@ -1169,7 +1196,6 @@
           "MedallionShell": "[1.6.2, )",
           "ServiceStack.Text": "[5.12.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -1184,8 +1210,9 @@
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Hardware.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -1194,12 +1221,14 @@
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Hardware.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Philote": "[1.0.0, )",
           "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Philote.Models": "[1.0.0, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )",
           "MedallionShell": "[1.6.2, )",
           "ServiceStack.Text": "[5.12.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -1225,7 +1254,6 @@
           "MedallionShell": "[1.6.2, )",
           "ServiceStack.Text": "[5.12.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -1251,7 +1279,6 @@
           "ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ComputerInventory.Software.Interfaces": "[0.1.0-Alpha, )",
           "MedallionShell": "[1.6.2, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -1277,7 +1304,6 @@
           "MedallionShell": "[1.6.2, )",
           "ServiceStack.Text": "[5.12.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -1296,6 +1322,22 @@
           "Microsoft.Extensions.Localization": "[9.0.0, )",
           "Microsoft.Extensions.Logging": "[9.0.0, )"
         }
+      },
+      "atap.utilities.datetime.interfaces": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.datetime.model": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.datetime.stringconstants": {
+        "type": "Project"
       },
       "atap.utilities.enumeration": {
         "type": "Project"
@@ -1317,6 +1359,7 @@
       "atap.utilities.persistence.extensions": {
         "type": "Project",
         "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )",
           "ATAP.Utilities.Persistence.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.Persistence.Model": "[0.1.0-Alpha, )",
           "ServiceStack.OrmLite": "[5.12.0, )"
@@ -1339,8 +1382,19 @@
       "atap.utilities.philote.interfaces": {
         "type": "Project",
         "dependencies": {
+          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.Model": "[1.0.0, )",
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.philote.models": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.Model": "[1.0.0, )",
+          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )"
+          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )"
         }
       },
       "atap.utilities.reactive.extensions": {
@@ -1352,6 +1406,12 @@
       },
       "atap.utilities.stronglytypedid.interfaces": {
         "type": "Project"
+      },
+      "atap.utilities.stronglytypedid.models": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+        }
       },
       "consolemonitor.interfaces": {
         "type": "Project",
@@ -1466,12 +1526,6 @@
           "System.IO.Pipelines": "9.0.0",
           "System.Text.Encodings.Web": "9.0.0"
         }
-      },
-      "TimePeriodLibrary.NET": {
-        "type": "CentralTransitive",
-        "requested": "[2.1.5, )",
-        "resolved": "2.1.5",
-        "contentHash": "2QFqfYDl7/4wQd6Bsi1Z4fZlOurnJ2OQln5YK+TlIS6c5R0AM2Tn1EEfpWob/sOe0c0luUR01r0kZE4vruX8mw=="
       },
       "UnitsNet": {
         "type": "CentralTransitive",
@@ -1938,7 +1992,6 @@
           "MedallionShell": "[1.6.2, )",
           "ServiceStack.Text": "[5.12.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -1953,8 +2006,9 @@
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Hardware.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -1963,12 +2017,14 @@
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Hardware.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Philote": "[1.0.0, )",
           "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Philote.Models": "[1.0.0, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )",
           "MedallionShell": "[1.6.2, )",
           "ServiceStack.Text": "[5.12.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -1994,7 +2050,6 @@
           "MedallionShell": "[1.6.2, )",
           "ServiceStack.Text": "[5.12.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -2020,7 +2075,6 @@
           "ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ComputerInventory.Software.Interfaces": "[0.1.0-Alpha, )",
           "MedallionShell": "[1.6.2, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -2046,7 +2100,6 @@
           "MedallionShell": "[1.6.2, )",
           "ServiceStack.Text": "[5.12.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -2065,6 +2118,22 @@
           "Microsoft.Extensions.Localization": "[9.0.0, )",
           "Microsoft.Extensions.Logging": "[9.0.0, )"
         }
+      },
+      "atap.utilities.datetime.interfaces": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.datetime.model": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.datetime.stringconstants": {
+        "type": "Project"
       },
       "atap.utilities.enumeration": {
         "type": "Project"
@@ -2086,6 +2155,7 @@
       "atap.utilities.persistence.extensions": {
         "type": "Project",
         "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )",
           "ATAP.Utilities.Persistence.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.Persistence.Model": "[0.1.0-Alpha, )",
           "ServiceStack.OrmLite": "[5.12.0, )"
@@ -2108,8 +2178,19 @@
       "atap.utilities.philote.interfaces": {
         "type": "Project",
         "dependencies": {
+          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.Model": "[1.0.0, )",
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.philote.models": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.Model": "[1.0.0, )",
+          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )"
+          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )"
         }
       },
       "atap.utilities.reactive.extensions": {
@@ -2121,6 +2202,12 @@
       },
       "atap.utilities.stronglytypedid.interfaces": {
         "type": "Project"
+      },
+      "atap.utilities.stronglytypedid.models": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+        }
       },
       "consolemonitor.interfaces": {
         "type": "Project",
@@ -2224,12 +2311,6 @@
         "dependencies": {
           "ServiceStack.Text": "5.0.0"
         }
-      },
-      "TimePeriodLibrary.NET": {
-        "type": "CentralTransitive",
-        "requested": "[2.1.5, )",
-        "resolved": "2.1.5",
-        "contentHash": "2QFqfYDl7/4wQd6Bsi1Z4fZlOurnJ2OQln5YK+TlIS6c5R0AM2Tn1EEfpWob/sOe0c0luUR01r0kZE4vruX8mw=="
       },
       "UnitsNet": {
         "type": "CentralTransitive",

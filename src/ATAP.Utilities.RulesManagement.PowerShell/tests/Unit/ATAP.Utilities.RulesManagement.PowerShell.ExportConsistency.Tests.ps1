@@ -27,7 +27,7 @@ BeforeAll {
   $script:declared = @((Import-PowerShellDataFile $script:manifestPath).FunctionsToExport) | Sort-Object
 }
 
-Describe 'ATAP.Utilities.RulesManagement.PowerShell module export consistency' {
+Describe 'ATAP.Utilities.RulesManagement.PowerShell module export consistency' -Tag 'Unit' {
 
   Context 'Every declared export resolves to a defined public function' {
     It 'has no phantom export (declared name with no backing function)' {

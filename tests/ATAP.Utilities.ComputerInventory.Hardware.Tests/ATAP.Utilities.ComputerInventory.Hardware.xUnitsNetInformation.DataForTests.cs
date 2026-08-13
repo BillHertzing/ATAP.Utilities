@@ -8,7 +8,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
 
 
   //ToDo add validation tests to ensure illegal values are not allowed.  This applies to all XxTestDataGenerator classes
-  public class UnitsNetInformationTestData : TestData<UnitsNet.Information>
+  public class UnitsNetInformationTestData : SerializedTestData<UnitsNet.Information>
   {
     public UnitsNetInformationTestData(UnitsNet.Information objTestData, string serializedTestData) : base(objTestData, serializedTestData)
     {

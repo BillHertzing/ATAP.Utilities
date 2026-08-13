@@ -1,6 +1,16 @@
 # Rules Compendium — C# (CSharp)
 
-This file contains an overview of the C#-specific Rules used within the ATAP.Utilities libraries and the Ace Commander application built from these rules.
+<!-- METADATA
+  Language: C#
+  Created: pre-existing; normalized 2026-08-02
+  Kind Count: 1
+  Primitive Count: 18
+  Template version: 1.0
+  Source skill: .claude/skills/new-rule-kind/SKILL.md
+-->
+
+This file documents C# Rule Primitives, Rules, and Rule Sets used within the
+ATAP.Utilities libraries and the Ace Commander application.
 
 ## Philote Identity Convention
 
@@ -30,9 +40,66 @@ Unless there is a compelling reason to target an older version, all C# code shou
 
 As of this writing, the latest stable version is C# 14.0, released in November 2025 alongside .NET 10. C# 15 is in active preview, targeting .NET 11 (currently in preview as of early 2026). If new features in C# 15 arebeneficial, consider adopting them, but document and alert the user if features from versions in development are used.
 
-## Rule Primitives
+## Part I — Grammar Specification
+
+*This section is written once when the Kind is defined. Update only on grammar revision.*
+*The grammar below is authored at `grammers/CSharp.grammar.ebnf`; its rendered `docs/`
+*copy remains deferred until grammar artifacts become database-stored.*
+
+<!-- rule-grammar-start -->
+
+### Kind: CSharp
+
+**Philote ID:** Not allocated in the current corpus; the retained-kind decision is
+recorded by GRAMMAR-01 and the baseline seed gate must allocate the Kind identity.
+
+**Grammar file:** `grammers/CSharp.grammar.ebnf`
+
+**DB record:** No authoritative current `PrimitiveLanguageKind` row is asserted by
+this normalization; database conformance is a later gated baseline activity.
+
+**Description:** Deterministic C# source-file rendering from the retained CSharp
+Rule Primitives.
+
+#### Grammar
+
+<!-- EMBEDDED from grammers/CSharp.grammar.ebnf -->
+```ebnf
+cs-source-file = { file-element } ;
+file-element = using-directive | namespace-block-declaration | type-declaration |
+               single-line-comment | block-comment | new-line ;
+type-declaration = interface-declaration | class-declaration | record-declaration ;
+```
+<!-- END EMBEDDED -->
+
+#### Composition Constraints
+
+- A rendered source file is an ordered sequence of `file-element` values.
+- A namespace body may contain using directives, type declarations, comments, and new lines.
+- A type declaration resolves to an interface, class, or record declaration in this retained subset.
+- Every documented Rule Primitive maps to at least one non-terminal in
+  `grammers/CSharp.grammar.ebnf`.
+
+#### Valid Expression Examples
+
+```csharp
+namespace Example;
+public interface IWidget { string Name { get; } }
+```
+
+```csharp
+public sealed record Widget(Guid Id, string Name);
+```
+
+<!-- rule-grammar-end -->
+
+---
+
+## Part II — Rule Primitives
 
 Rule Primitives are the atomic building blocks from which a Rule is constructed. Each primitive maps to a single BNF non-terminal in the C# grammar. When a primitive is instantiated, its inputs are bound to specific values; the rendered output is the exact C# text that corresponds to that non-terminal node in the parse tree.
+
+<!-- rule-primitives-start -->
 
 ---
 
@@ -643,6 +710,17 @@ Attribution:
 
 ---
 
+<!-- rule-primitives-end -->
+
+---
+
+## Part III — Rule Repository
+
+*This section grows as Rules are written using this Kind. The existing Rule
+entries below preserve their stable Philote IDs and source references.*
+
+<!-- rule-repository-start -->
+
 ## A Single Rule Definition
 
 Each Rule is a named composition of Rule Primitives with bound input values. The Primitive Composition Table lists the primitives in render order and the inputs applied. Rendering each primitive in order produces the final C# source file for that Rule.
@@ -755,13 +833,13 @@ The Rule below renders `IPhilote.cs` from the primitives defined above.
 <cs-source-file>
 ├── <using-directive> → using System;
 ├── <using-directive> → using ATAP.Utilities.StronglyTypedId;
-├── <using-directive> → using Itenso.TimePeriod;
+├── <using-directive> → using ATAP.Utilities.DateTime.Interfaces;
 ├── <using-directive> → using System.Collections.Generic;
-├── <using-directive> → using System.Collections.Concurrent;
+├── <using-directive> → using ATAP.Utilities.DateTime.Model;
 └── <namespace-block-declaration> → namespace ATAP.Utilities.Philote { ... }
   ├── <interface-declaration> → public interface IGuidPhilote<TId> : IAbstractPhilote<TId, Guid> where TId : IAbstractStronglyTypedId<Guid>, new() { }
   ├── <interface-declaration> → public interface IIntPhilote<TId> : IAbstractPhilote<TId, int> where TId : IAbstractStronglyTypedId<int>, new() { }
-  └── <interface-declaration> → public interface IAbstractPhilote<TId, TValue> where TId : IAbstractStronglyTypedId<TValue>, new() where TValue : notnull { TId Id { get; } ConcurrentDictionary<string, IAbstractStronglyTypedId<TValue>>? AdditionalIds { get; } IEnumerable<ITimeBlock>? TimeBlocks { get; } }
+  └── <interface-declaration> → public interface IAbstractPhilote<TId, TValue> where TId : IAbstractStronglyTypedId<TValue>, new() where TValue : notnull { TId Id { get; } IReadOnlyDictionary<string, IAbstractStronglyTypedId<TValue>> AdditionalIds { get; } IReadOnlyList<ITemporalValidityPeriod> ValidityPeriods { get; } bool IsValidAt(UtcInstant instant); }
 ```
 
 **Primitive Composition Table**
@@ -771,20 +849,21 @@ The Rule below renders `IPhilote.cs` from the primitives defined above.
 | 1   | `<cs-source-file>`              | `4f6dbde9-52f2-4d3f-82a1-7b9f3a6c4d85` | File container                                        | `Elements = [2,3,4,5,6,7]`                                                                                                                                                       |
 | 2   | `<using-directive>`             | `8b9e0f19-5272-4c1f-90db-e1e6b0c5d3f2` | Import System                                         | `DirectiveKind = Namespace`; `NamespaceName = "System"`                                                                                                                          |
 | 3   | `<using-directive>`             | `8b9e0f19-5272-4c1f-90db-e1e6b0c5d3f2` | Import StronglyTypedId                                | `DirectiveKind = Namespace`; `NamespaceName = "ATAP.Utilities.StronglyTypedId"`                                                                                                  |
-| 4   | `<using-directive>`             | `8b9e0f19-5272-4c1f-90db-e1e6b0c5d3f2` | Import Itenso.TimePeriod                              | `DirectiveKind = Namespace`; `NamespaceName = "Itenso.TimePeriod"`                                                                                                               |
+| 4   | `<using-directive>`             | `8b9e0f19-5272-4c1f-90db-e1e6b0c5d3f2` | Import DateTime interfaces                            | `DirectiveKind = Namespace`; `NamespaceName = "ATAP.Utilities.DateTime.Interfaces"`                                                                                              |
 | 5   | `<using-directive>`             | `8b9e0f19-5272-4c1f-90db-e1e6b0c5d3f2` | Import Collections.Generic                            | `DirectiveKind = Namespace`; `NamespaceName = "System.Collections.Generic"`                                                                                                      |
-| 6   | `<using-directive>`             | `8b9e0f19-5272-4c1f-90db-e1e6b0c5d3f2` | Import Collections.Concurrent                         | `DirectiveKind = Namespace`; `NamespaceName = "System.Collections.Concurrent"`                                                                                                   |
+| 6   | `<using-directive>`             | `8b9e0f19-5272-4c1f-90db-e1e6b0c5d3f2` | Import DateTime model                                 | `DirectiveKind = Namespace`; `NamespaceName = "ATAP.Utilities.DateTime.Model"`                                                                                                   |
 | 7   | `<namespace-block-declaration>` | `d3f0f6b9-1eae-4a8d-9a6f-5d8f2410c8a4` | Namespace wrapper                                     | `NamespaceName = "ATAP.Utilities.Philote"`; `BodyElements = [8,9,10]`                                                                                                            |
 | 8   | `<interface-declaration>`       | `6a972b5b-5da7-4a73-b5d6-564e1b305a0b` | `IGuidPhilote<TId>`                                   | `AccessModifier = "public"`; `InterfaceName = "IGuidPhilote"`; `TypeParameters = <TId>`; `BaseTypes = [: IAbstractPhilote<TId, Guid>]`; `TypeConstraints = [8a]`; `Members = []` |
 | 8a  | `<type-constraint-clause>`      | `8ad77df8-8366-40f8-99b5-ff2a2a8d5da9` | `where TId : IAbstractStronglyTypedId<Guid>, new()`   | `TypeParameterName = "TId"`; `Constraints = ["IAbstractStronglyTypedId<Guid>", "new()"]`                                                                                         |
 | 9   | `<interface-declaration>`       | `6a972b5b-5da7-4a73-b5d6-564e1b305a0b` | `IIntPhilote<TId>`                                    | `AccessModifier = "public"`; `InterfaceName = "IIntPhilote"`; `TypeParameters = <TId>`; `BaseTypes = [: IAbstractPhilote<TId, int>]`; `TypeConstraints = [9a]`; `Members = []`   |
 | 9a  | `<type-constraint-clause>`      | `8ad77df8-8366-40f8-99b5-ff2a2a8d5da9` | `where TId : IAbstractStronglyTypedId<int>, new()`    | `TypeParameterName = "TId"`; `Constraints = ["IAbstractStronglyTypedId<int>", "new()"]`                                                                                          |
-| 10  | `<interface-declaration>`       | `6a972b5b-5da7-4a73-b5d6-564e1b305a0b` | `IAbstractPhilote<TId, TValue>`                       | `AccessModifier = "public"`; `InterfaceName = "IAbstractPhilote"`; `TypeParameters = <TId, TValue>`; `TypeConstraints = [10a,10b]`; `Members = [10c,10d,10e]`                    |
+| 10  | `<interface-declaration>`       | `6a972b5b-5da7-4a73-b5d6-564e1b305a0b` | `IAbstractPhilote<TId, TValue>`                       | `AccessModifier = "public"`; `InterfaceName = "IAbstractPhilote"`; `TypeParameters = <TId, TValue>`; `TypeConstraints = [10a,10b]`; `Members = [10c,10d,10e,10f]`                |
 | 10a | `<type-constraint-clause>`      | `8ad77df8-8366-40f8-99b5-ff2a2a8d5da9` | `where TId : IAbstractStronglyTypedId<TValue>, new()` | `TypeParameterName = "TId"`; `Constraints = ["IAbstractStronglyTypedId<TValue>", "new()"]`                                                                                       |
 | 10b | `<type-constraint-clause>`      | `8ad77df8-8366-40f8-99b5-ff2a2a8d5da9` | `where TValue : notnull`                              | `TypeParameterName = "TValue"`; `Constraints = ["notnull"]`                                                                                                                      |
 | 10c | `<property-declaration>`        | `6d2e4c24-4f59-487f-9e6d-2e65f97a6dd0` | `Id` property                                         | `PropertyType = "TId"`; `PropertyName = "Id"`; `Accessors = [get]`                                                                                                               |
-| 10d | `<property-declaration>`        | `6d2e4c24-4f59-487f-9e6d-2e65f97a6dd0` | `AdditionalIds` property                              | `PropertyType = "ConcurrentDictionary<string, IAbstractStronglyTypedId<TValue>>?"`; `PropertyName = "AdditionalIds"`; `Accessors = [get]`                                        |
-| 10e | `<property-declaration>`        | `6d2e4c24-4f59-487f-9e6d-2e65f97a6dd0` | `TimeBlocks` property                                 | `PropertyType = "IEnumerable<ITimeBlock>?"`; `PropertyName = "TimeBlocks"`; `Accessors = [get]`                                                                                  |
+| 10d | `<property-declaration>`        | `6d2e4c24-4f59-487f-9e6d-2e65f97a6dd0` | `AdditionalIds` property                              | `PropertyType = "IReadOnlyDictionary<string, IAbstractStronglyTypedId<TValue>>"`; `PropertyName = "AdditionalIds"`; `Accessors = [get]`                                         |
+| 10e | `<property-declaration>`        | `6d2e4c24-4f59-487f-9e6d-2e65f97a6dd0` | `ValidityPeriods` property                            | `PropertyType = "IReadOnlyList<ITemporalValidityPeriod>"`; `PropertyName = "ValidityPeriods"`; `Accessors = [get]`                                                              |
+| 10f | `<method-declaration>`          | `5c1f93b8-6db5-4aaf-94ef-7b3d8b8a9d3a` | point-in-time validity                                | `ReturnType = "bool"`; `MethodName = "IsValidAt"`; `Parameters = [UtcInstant instant]`                                                                                           |
 
 **Constraint details (items 8a, 9a, 10a, 10b):**
 
@@ -795,19 +874,20 @@ The Rule below renders `IPhilote.cs` from the primitives defined above.
 | `TId` (abstract) | `IAbstractStronglyTypedId<TValue>`, `new()` |
 | `TValue`         | `notnull`                                   |
 
-**Member details for `IAbstractPhilote<TId, TValue>` (items 10c–10e):**
+**Member details for `IAbstractPhilote<TId, TValue>` (items 10c–10f):**
 
-| Member          | Type                                                              | Accessors |
-| --------------- | ----------------------------------------------------------------- | --------- |
-| `Id`            | `TId`                                                             | `get;`    |
-| `AdditionalIds` | `ConcurrentDictionary<string, IAbstractStronglyTypedId<TValue>>?` | `get;`    |
-| `TimeBlocks`    | `IEnumerable<ITimeBlock>?`                                        | `get;`    |
+| Member | Type | Accessors / signature |
+| --- | --- | --- |
+| `Id` | `TId` | `get;` |
+| `AdditionalIds` | `IReadOnlyDictionary<string, IAbstractStronglyTypedId<TValue>>` | `get;` |
+| `ValidityPeriods` | `IReadOnlyList<ITemporalValidityPeriod>` | `get;` |
+| `IsValidAt` | `bool` | `(UtcInstant instant)` |
 
 **Inputs to the Rule:**
 
 | Input                   | Value                                                                                                                          |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `UsingNamespaces`       | `["System","ATAP.Utilities.StronglyTypedId","Itenso.TimePeriod","System.Collections.Generic","System.Collections.Concurrent"]` |
+| `UsingNamespaces`       | `["System","System.Collections.Generic","ATAP.Utilities.DateTime.Interfaces","ATAP.Utilities.DateTime.Model","ATAP.Utilities.StronglyTypedId"]` |
 | `NamespaceName`         | `"ATAP.Utilities.Philote"`                                                                                                     |
 | `GuidInterfaceName`     | `"IGuidPhilote"`                                                                                                               |
 | `IntInterfaceName`      | `"IIntPhilote"`                                                                                                                |
@@ -815,9 +895,10 @@ The Rule below renders `IPhilote.cs` from the primitives defined above.
 
 **Processing notes:**
 
-- The `?` on `AdditionalIds` and `TimeBlocks` assumes nullable reference types are enabled.
+- `AdditionalIds` and `ValidityPeriods` are non-null immutable/read-only views.
 - `new()` constraints are required because implementations may need to construct `TId` instances at runtime.
-- `ITimeBlock` originates from the Itenso.TimePeriod library; the using directive ensures resolution.
+- `IsValidAt` applies the DateTime contract's half-open interval semantics.
+- No third-party temporal type appears in the public Philote interface.
 
 Attribution:
 
@@ -901,7 +982,7 @@ The Rule below renders `Philote.cs` (concrete Philote records built on strongly-
 
 **Philote ID:** `"5a2a7d5f-017d-4c89-98c5-7d4ab0f4ec3b"`
 
-**Purpose:** Generate `AbstractPhilote<TId, TValue>`, `IntPhilote<TId>`, and `GuidPhilote<TId>` record implementations.
+**Purpose:** Generate `AbstractPhilote<TId, TValue>`, `IntPhilote<TId>`, and `GuidPhilote<TId>` immutable class implementations.
 
 **Source file:** [src/ATAP.Utilities.Philote/ATAP.Utilities.Philote.CSharp/Philote.cs](src/ATAP.Utilities.Philote/ATAP.Utilities.Philote.CSharp/Philote.cs#L1-L120)
 
@@ -911,9 +992,9 @@ The Rule below renders `Philote.cs` (concrete Philote records built on strongly-
 <cs-source-file>
 ├── <using-directive> ×6
 └── <namespace-block-declaration> → namespace ATAP.Utilities.Philote { ... }
-  ├── <record-declaration> → abstract AbstractPhilote<TId, TValue> : IAbstractPhilote<TId, TValue> where TId : AbstractStronglyTypedId<TValue>, new() where TValue : notnull { ... }
-  ├── <record-declaration> → IntPhilote<TId> : AbstractPhilote<TId, int>, IIntPhilote<TId> where TId : IntStronglyTypedId, new() { ... }
-  └── <record-declaration> → GuidPhilote<TId> : AbstractPhilote<TId, Guid>, IGuidPhilote<TId> where TId : GuidStronglyTypedId, new() { ... }
+  ├── <class-declaration> → abstract AbstractPhilote<TId, TValue> : IAbstractPhilote<TId, TValue> where TId : AbstractStronglyTypedId<TValue>, new() where TValue : notnull { ... }
+  ├── <class-declaration> → sealed IntPhilote<TId> : AbstractPhilote<TId, int>, IIntPhilote<TId> where TId : IntStronglyTypedId, new() { ... }
+  └── <class-declaration> → sealed GuidPhilote<TId> : AbstractPhilote<TId, Guid>, IGuidPhilote<TId> where TId : GuidStronglyTypedId, new() { ... }
 ```
 
 **Primitive Composition Highlights**
@@ -931,13 +1012,13 @@ The Rule below renders `Philote.cs` (concrete Philote records built on strongly-
 
 | Type              | Parameters (primitive `<parameter-list>`)                                                                                                                                   | Initializer                | Body summary                                         |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- | ---------------------------------------------------- |
-| `AbstractPhilote` | `(TId iD = default, ConcurrentDictionary<string, IAbstractStronglyTypedId<TValue>>? additionalIds = default, IEnumerable<ITimeBlock>? timeBlocks = default)`                | none                       | Assigns `Id`, copies dictionaries, sets `TimeBlocks` |
-| `IntPhilote`      | `()`; `(TId iD)`; `(TId iD = default, ConcurrentDictionary<string, IAbstractStronglyTypedId<int>>? additionalIds = default, IEnumerable<ITimeBlock>? timeBlocks = default)` | `: base(...)` as in source | Delegates to base, overrides `ToString()`            |
-| `GuidPhilote`     | same shapes as `IntPhilote`, with `Guid` types                                                                                                                              | `: base(...)`              | Delegates to base, overrides `ToString()`            |
+| `AbstractPhilote` | `(TId? id = default, IEnumerable<KeyValuePair<string, IAbstractStronglyTypedId<TValue>>>? additionalIds = default, IEnumerable<TemporalValidityPeriod>? validityPeriods = default)` | none | Copies identity metadata and validates an immutable period set. |
+| `IntPhilote` | `()`; `(TId id)`; `(TId? id, IEnumerable<KeyValuePair<string, IAbstractStronglyTypedId<int>>>? additionalIds, IEnumerable<TemporalValidityPeriod>? validityPeriods)` | `: base(...)` | Delegates to base and exposes immutable validity transitions. |
+| `GuidPhilote` | same shapes as `IntPhilote`, with `Guid` types | `: base(...)` | Delegates to base and exposes immutable validity transitions. |
 
 **Inputs to the Rule:**
 
-- `UsingNamespaces = ["System","System.Collections.Generic","System.Collections.Concurrent","System.Linq","System.Reflection","ATAP.Utilities.StronglyTypedId","Itenso.TimePeriod"]`
+- `UsingNamespaces = ["System","System.Collections.Generic","System.Collections.Immutable","System.Linq","ATAP.Utilities.DateTime.Interfaces","ATAP.Utilities.DateTime.Model","ATAP.Utilities.StronglyTypedId"]`
 - `NamespaceName = "ATAP.Utilities.Philote"`
 - Record names and constraints as shown above.
 
@@ -1040,23 +1121,25 @@ Attribution:
 2. Source file linked above
 ```
 
-### Philote System.Text.Json Converters (placeholder)
+### Philote System.Text.Json Converters
 
 #### Rule: PhiloteJsonConverterSystemTextJson
 
 **Philote ID:** "7d1a3b4c-2f5e-4c9f-9a64-5c7d8e9f0a1b"
 
-**Purpose:** Capture current Philote JsonConverter factory scaffold for System.Text.Json.
+**Purpose:** Generate the Philote converter factory and closed generic converter
+that implement the canonical identity and temporal-validity JSON contract.
 
-**Source file:** [src/ATAP.Utilities.Philote/JsonConverter.Shim.SystemTextJson/JsonConverter.Shim.SystemTextJson.cs](src/ATAP.Utilities.Philote/JsonConverter.Shim.SystemTextJson/JsonConverter.Shim.SystemTextJson.cs#L1-L92)
+**Source file:** [src/ATAP.Utilities.Philote/JsonConverter.Shim.SystemTextJson/JsonConverter.Shim.SystemTextJson.cs](../src/ATAP.Utilities.Philote/JsonConverter.Shim.SystemTextJson/JsonConverter.Shim.SystemTextJson.cs)
 
 **Top-level derivation (condensed):**
 
 ```text
 <cs-source-file>
-├── <using-directive> ×7
+├── <using-directive> ×9
 └── <namespace-block-declaration> → ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson { ... }
-  └── <class-declaration> → PhiloteConverterFactory : JsonConverterFactory { Cache field, CanConvert, CreateConverter stubs }
+  ├── <class-declaration> → PhiloteConverterFactory : JsonConverterFactory { cache, CanConvert, CreateConverter }
+  └── <class-declaration> → PhiloteJsonConverter<TPhilote,TId,TValue> : JsonConverter<TPhilote> { Read, Write, validation helpers }
 ```
 
 **Primitive Composition Highlights**
@@ -1064,9 +1147,15 @@ Attribution:
 | #   | Primitive                       | Philote ID                             | Role                                             | Bound Inputs (high level)                                                                                 |
 | --- | ------------------------------- | -------------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
 | 1   | `<cs-source-file>`              | `4f6dbde9-52f2-4d3f-82a1-7b9f3a6c4d85` | File container                                   | `Elements = [usings, ns]`                                                                                 |
-| 2   | `<using-directive>`             | `8b9e0f19-5272-4c1f-90db-e1e6b0c5d3f2` | Imports StronglyTypedId, TimePeriod, Json        | 7 namespace imports                                                                                       |
-| 3   | `<namespace-block-declaration>` | `d3f0f6b9-1eae-4a8d-9a6f-5d8f2410c8a4` | Namespace wrapper                                | `NamespaceName = "ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson"; Body=[4]`                    |
-| 4   | `<class-declaration>`           | `5c1f93b8-6db5-4aaf-94ef-7b3d8b8a9d3a` | `PhiloteConverterFactory` : JsonConverterFactory | Contains cache field, `CanConvert` guard on generic args, `CreateConverter` placeholder returning default |
+| 2   | `<using-directive>`             | `8b9e0f19-5272-4c1f-90db-e1e6b0c5d3f2` | Imports JSON, DateTime, identity, and collections | 9 namespace imports |
+| 3   | `<namespace-block-declaration>` | `d3f0f6b9-1eae-4a8d-9a6f-5d8f2410c8a4` | Namespace wrapper | `NamespaceName = "ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson"; Body=[4,5]` |
+| 4   | `<class-declaration>`           | `5c1f93b8-6db5-4aaf-94ef-7b3d8b8a9d3a` | `PhiloteConverterFactory` : `JsonConverterFactory` | Finds the closed Philote interface, creates and caches the generic converter. |
+| 5   | `<class-declaration>`           | `5c1f93b8-6db5-4aaf-94ef-7b3d8b8a9d3a` | `PhiloteJsonConverter<TPhilote,TId,TValue>` | Reads/writes `id`, `additionalIds`, and `validityPeriods`; rejects duplicate canonical and retired temporal properties. |
+
+The writer emits validity periods in their validated order. Each period uses
+`validFromUtc` and `validToUtc`; a null end is open-ended. The reader delegates
+period-set validation to `TemporalValidityPeriodSet`, so overlapping intervals,
+duplicate starts, and multiple or non-final open ends fail closed.
 
 Attribution:
 
@@ -1074,3 +1163,19 @@ Attribution:
 1. https://learn.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonconverterfactory
 2. Source file linked above
 ```
+
+<!-- rule-repository-end -->
+
+---
+
+## Part IV — Rule Sets
+
+*No formal C# Rule Set is defined in the retained corpus. This section is
+intentionally empty until a Rule Set and its stable Philote ID are authored.*
+
+<!-- rule-sets-start -->
+<!-- rule-sets-end -->
+
+---
+
+*Last updated: 2026-08-09 | Maintained by: `.claude/skills/new-rule-kind/SKILL.md`*

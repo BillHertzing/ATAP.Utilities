@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IsPackable>false</IsPackable>
+    <Nullable>enable</Nullable>
+    <DisableFody>true</DisableFody>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="TimePeriodLibrary.NET" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.DateTime.Interfaces\ATAP.Utilities.DateTime.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.DateTime.StringConstants\ATAP.Utilities.DateTime.StringConstants.csproj" />
+  </ItemGroup>
+
+</Project>

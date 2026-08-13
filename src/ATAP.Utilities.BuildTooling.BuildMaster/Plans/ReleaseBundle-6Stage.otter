@@ -1,6 +1,25 @@
 ##########################################################################
 # ReleaseBundle-6Stage - BuildMaster OtterScript Plan
 #
+# !! EDITING THIS FILE IS NOT ENOUGH - SYNC IT TO THE RAFT !!
+#   BuildMaster executes the copy of this plan stored in its raft, NOT this
+#   file. Committing a change here does nothing until you run:
+#       Sync-BuildMasterPlans -Path <thisFile>
+#   The paired runner scripts - New-ReleaseBundleBuildMasterPackage.ps1,
+#   Promote-ReleaseBundleBuildMasterPackage.ps1,
+#   Publish-ReleaseBundleDistribution.ps1, and
+#   Invoke-ReleaseBundleFlywayRehearsal.ps1 - ARE read from disk at run time,
+#   so a commit that changes both leaves the raft passing the OLD argument
+#   list to the NEW parameter block. When the missing argument is a
+#   [Parameter(Mandatory)] one, PowerShell prompts a console that nobody can
+#   answer and the stage HANGS FOREVER with no error - build stuck 'active',
+#   log ending at "Executing pwsh...", near-zero CPU, and no
+#   _generated/buildmaster/<BuildMasterBuildId>/ directory.
+#   This plan drives four runners, so it has four chances to drift.
+#   This cost a release cycle on 2026-08-03 in the PowerShellModule pipeline.
+#   Root cause, triage checklist, and fail-fast guidance:
+#       SolutionDocumentation/BuildMaster-Plan-Raft-Sync-Requirement.md
+#
 # Purpose: Build a Release Bundle once, promote that same Universal Package
 #          through the immutable releasebundle-* ProGet feeds, then publish
 #          the Production bundle to Chocolatey and WinGet.
@@ -11,7 +30,7 @@
 #   $ReleaseTag                            - e.g. "v1.4.0" for release cuts
 #   $Branch                                - branch fallback when ReleaseTag is empty
 #   $SourcePath                            - absolute path to the product worktree
-#   $ProGetUrl                             - e.g. "http://localhost:50000"
+#   $ProGetUrl                             - e.g. "https://utat022:50000"
 #   ProGet API key    - Arguments carry only ProGet.BuildMaster.API.Key as a
 #                       SecretName. Authenticated leaves resolve it through
 #                       Get-SecretATAP; no environment fallback is permitted.

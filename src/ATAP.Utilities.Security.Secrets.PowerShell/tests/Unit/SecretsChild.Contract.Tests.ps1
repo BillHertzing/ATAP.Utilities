@@ -1,16 +1,18 @@
 #requires -Modules Pester
 
-Describe 'ATAP.Utilities.Security.Secrets.PowerShell module contract' {
+Describe 'ATAP.Utilities.Security.Secrets.PowerShell module contract' -Tag 'Unit' {
 
   # Pester 5 expands -ForEach during DISCOVERY, before BeforeAll runs. Data used by -ForEach
   # must therefore be defined in BeforeDiscovery, not BeforeAll.
   BeforeDiscovery {
     $ExpectedFunctions = @(
+      'Get-CredentialFile'
       'Get-BitWardenCredential'
       'Invoke-RotateSecretsATAP'
       'List-BitwardenSecrets'
       'Load-BitwardenBackup'
       'New-BitwardenBackup'
+      'Set-CredentialFile'
       'Set-BitWardenSecret'
       'Sync-BitWardenDedicatedSecrets'
     )
@@ -28,11 +30,13 @@ Describe 'ATAP.Utilities.Security.Secrets.PowerShell module contract' {
     $script:ModuleRoot = Join-Path $PSScriptRoot '..\..'
 
     $script:ExpectedFunctions = @(
+      'Get-CredentialFile'
       'Get-BitWardenCredential'
       'Invoke-RotateSecretsATAP'
       'List-BitwardenSecrets'
       'Load-BitwardenBackup'
       'New-BitwardenBackup'
+      'Set-CredentialFile'
       'Set-BitWardenSecret'
       'Sync-BitWardenDedicatedSecrets'
     )
@@ -219,6 +223,11 @@ Describe 'ATAP.Utilities.Security.Secrets.PowerShell module contract' {
       # Rule 11 debt fixed in Task 12.55.c: this Get- function backs up, creates a directory, and
       # writes two Export-Clixml files. A -WhatIf that silently wrote them would be worse than none.
       (Get-Command 'Get-BitWardenCredential' -Module $script:ModuleName).Parameters.Keys |
+        Should -Contain 'WhatIf'
+    }
+
+    It 'Set-CredentialFile supports ShouldProcess, because it creates or replaces a DPAPI file' {
+      (Get-Command 'Set-CredentialFile' -Module $script:ModuleName).Parameters.Keys |
         Should -Contain 'WhatIf'
     }
 

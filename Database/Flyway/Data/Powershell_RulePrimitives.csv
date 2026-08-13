@@ -1,3 +1,0 @@
-"PhiloteId","PrimitiveLanguageKindId","Name","Description"
-"e1a2b3c4-d5e6-4f78-9012-a3b4c5d6e7f8","2","<complete-powershell-cmdlet>","Holds an entire PowerShell cmdlet as a single text block"
-"f2b3c4d5-e6f7-4089-a123-b4c5d6e7f8a9","2","<composed-powershell-cmdlet>","Container into which PowerShell cmdlet sections (param, begin, process, end) are inserted via BNF derivation"

@@ -1,0 +1,47 @@
+(*
+  AgentText grammar contract for RRSBS rendering.
+  Authority: SolutionDocumentation/grammers per GRAMMAR-01 (2026-08-01).
+  Scope: the deterministic AgentText document subset represented by the retained
+  AgentText Rule Primitives. This is not a grammar for Markdown, TOML, JSON
+  Schema, or any native AI-harness adapter format.
+*)
+
+agent-text-document = agent-identity, instruction-body, [ tool-surface ],
+                      { runbook-step }, { guardrail }, [ return-contract ],
+                      { adapter-target }, round-trip-policy ;
+
+agent-identity = "agent", whitespace, identifier, { whitespace, metadata } ;
+instruction-body = markdown-block | toml-block | text-block ;
+tool-surface = "tools", whitespace, "[", [ tool-name, { ",", whitespace, tool-name } ], "]" ;
+runbook-step = "step", whitespace, sequence-key, ":", whitespace, markdown-block ;
+guardrail = "guardrail", ":", whitespace, markdown-block ;
+return-contract = "returns", whitespace, json-schema-reference ;
+adapter-target = "target", whitespace, tool-name, whitespace, path,
+                 whitespace, materialization-mode, [ whitespace, rendered-hash ] ;
+round-trip-policy = "roundtrip", whitespace, ( "byte-for-byte" | "semantic" ) ;
+
+metadata = identifier, "=", quoted-string ;
+identifier = letter, { letter | digit | "-" | "_" | "." } ;
+tool-name = identifier, [ "/", identifier ] ;
+sequence-key = digit, { digit } ;
+path = quoted-string ;
+materialization-mode = "copy" | "symlink" | "junction" | "generated-wrapper" ;
+rendered-hash = "sha256:", hex-octet, hex-octet, hex-octet, hex-octet,
+                hex-octet, hex-octet, hex-octet, hex-octet ;
+json-schema-reference = quoted-string ;
+markdown-block = fenced-markdown | quoted-string ;
+toml-block = fenced-toml | quoted-string ;
+text-block = quoted-string ;
+fenced-markdown = "```markdown", new-line, text-content, "```" ;
+fenced-toml = "```toml", new-line, text-content, "```" ;
+quoted-string = "\"", { string-character | escape-sequence }, "\"" ;
+escape-sequence = "\\\"" | "\\\\" | "\\n" | "\\r" | "\\t" ;
+string-character = ? any Unicode scalar value except quotation mark, reverse solidus, carriage return, or line feed ? ;
+text-content = { ? any Unicode scalar value ? } ;
+whitespace = " " | "\t" ;
+new-line = "\r\n" | "\n" ;
+letter = "A"…"Z" | "a"…"z" ;
+digit = "0"…"9" ;
+hex-digit = digit | "A"…"F" | "a"…"f" ;
+hex-octet = hex-digit, hex-digit, hex-digit, hex-digit,
+             hex-digit, hex-digit, hex-digit, hex-digit ;

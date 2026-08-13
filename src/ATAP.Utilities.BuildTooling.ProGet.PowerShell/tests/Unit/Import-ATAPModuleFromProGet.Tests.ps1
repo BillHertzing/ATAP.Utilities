@@ -19,7 +19,7 @@ BeforeAll {
 
       [PSCustomObject]@{
         FeedName = 'powershellget-stable'
-        Uri      = 'http://localhost:50000/nuget/powershellget-stable/'
+        Uri      = 'https://utat022:50000/nuget/powershellget-stable/'
       }
     }
   }
@@ -122,7 +122,7 @@ Describe 'Import-ATAPModuleFromProGet [private]' -Tag 'Unit', 'PromotedModuleHos
     Import-ATAPModuleFromProGet -ModuleName 'ATAP.Utilities.Security.Powershell' -RequiredCommand 'Get-BitWardenCredential'
 
     Assert-MockCalled Register-PSRepository -Times 1 -Exactly -Scope It -ParameterFilter {
-      $Name -eq 'powershellget-stable' -and $SourceLocation -eq 'http://localhost:50000/nuget/powershellget-stable/'
+      $Name -eq 'powershellget-stable' -and $SourceLocation -eq 'https://utat022:50000/nuget/powershellget-stable/'
     }
   }
 }

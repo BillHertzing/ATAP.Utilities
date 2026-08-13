@@ -54,7 +54,11 @@ Describe 'AiRendering child module contract' -Tag 'Unit' {
   It 'has stable-release NBGV metadata' {
     $metadata = Get-Content -LiteralPath (Join-Path $script:moduleRoot 'version.json') -Raw |
       ConvertFrom-Json
-    $metadata.version | Should -Be '0.1.2'
+    $manifestUnderTest = [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'Process')
+    $metadata.version | Should -Match '^\d+\.\d+\.\d+$'
+    if (-not [string]::IsNullOrWhiteSpace($manifestUnderTest)) {
+      $metadata.version | Should -Be ([string](Import-PowerShellDataFile -LiteralPath $manifestUnderTest).ModuleVersion)
+    }
     @($metadata.publicReleaseRefSpec) | Should -Contain '.*'
   }
 }

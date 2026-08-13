@@ -262,20 +262,28 @@ Describe 'Set-SprintBoundaryContext [public]' {
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Reset-DownstreamToSharedVSCodeMain -Times 0 -Exactly -Scope It
     }
 
-    It 'Retargets both settings symlinks to the sprint worktree and re-renders shared settings' {
+    It 'uses one authoritative shared lifecycle for user-global registration and preserves the gates' {
       Set-SprintBoundaryContext -Boundary Start `
         -WorktreePaths @($script:worktree) `
         -SharedVSCodeWorktreePath $script:svSprint `
-        -GitRoot $script:gitRoot
+        -GitRoot $script:gitRoot `
+        -AllowUserGlobalWrite `
+        -CheckpointConfirmed
 
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-UserSettingsSymlink -Times 1 -Exactly -Scope It `
         -ParameterFilter { $SharedVSCodeWorktreePath -eq $script:svSprint }
-      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-ClaudeSettingsSymlink -Times 1 -Exactly -Scope It `
-        -ParameterFilter { $SharedVSCodeWorktreePath -eq $script:svSprint }
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-ClaudeSettingsSymlink -Times 0 -Exactly -Scope It
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Invoke-SprintAIAdapterLifecycle -Times 1 -Exactly -Scope It `
-        -ParameterFilter { $Boundary -eq 'Start' -and $TargetRoot -eq $script:svSprint }
+        -ParameterFilter {
+          $Boundary -eq 'Start' -and $TargetRoot -eq $script:svSprint -and
+          [bool]$AllowUserGlobalWrite -and [bool]$CheckpointConfirmed -and
+          -not [bool]$OmitSprintWorktrees
+        }
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Invoke-SprintAIAdapterLifecycle -Times 1 -Exactly -Scope It `
-        -ParameterFilter { $Boundary -eq 'Start' -and $TargetRoot -eq $script:worktree }
+        -ParameterFilter {
+          $Boundary -eq 'Start' -and $TargetRoot -eq $script:worktree -and
+          -not [bool]$AllowUserGlobalWrite -and -not [bool]$CheckpointConfirmed
+        }
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Invoke-SprintAIAdapterLifecycle -Times 0 -Exactly -Scope It `
         -ParameterFilter { [bool]$OmitSprintWorktrees }
     }
@@ -533,20 +541,31 @@ Describe 'Set-SprintBoundaryContext [public]' {
         -ParameterFilter { $WorktreePath -eq $script:worktree }
     }
 
-    It 'projects stable adapters into each sprint branch and shared settings with OmitSprintWorktrees while keeping the outgoing audit unomitted' {
+    It 'uses End deregistration plus one authoritative gated shared lifecycle, while stable projections remain user-global-free' {
       Set-SprintBoundaryContext -Boundary End `
         -WorktreePaths @($script:worktree) `
         -SharedVSCodeWorktreePath $script:svStable `
-        -GitRoot $script:gitRoot
+        -GitRoot $script:gitRoot `
+        -AllowUserGlobalWrite `
+        -CheckpointConfirmed
 
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Invoke-SprintAIAdapterLifecycle -Times 1 -Exactly -Scope It `
         -ParameterFilter { $Boundary -eq 'End' -and $TargetRoot -eq $script:worktree -and -not [bool]$OmitSprintWorktrees }
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Invoke-SprintAIAdapterLifecycle -Times 1 -Exactly -Scope It `
-        -ParameterFilter { $Boundary -eq 'Start' -and $TargetRoot -eq $script:worktree -and [bool]$OmitSprintWorktrees }
+        -ParameterFilter {
+          $Boundary -eq 'Start' -and $TargetRoot -eq $script:worktree -and
+          [bool]$OmitSprintWorktrees -and -not [bool]$AllowUserGlobalWrite -and
+          -not [bool]$CheckpointConfirmed
+        }
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Invoke-SprintAIAdapterLifecycle -Times 0 -Exactly -Scope It `
         -ParameterFilter { $TargetRoot -eq $script:stableRepo }
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Invoke-SprintAIAdapterLifecycle -Times 1 -Exactly -Scope It `
-        -ParameterFilter { $Boundary -eq 'Start' -and $TargetRoot -eq $script:svStable -and [bool]$OmitSprintWorktrees }
+        -ParameterFilter {
+          $Boundary -eq 'Start' -and $TargetRoot -eq $script:svStable -and
+          [bool]$OmitSprintWorktrees -and [bool]$AllowUserGlobalWrite -and
+          [bool]$CheckpointConfirmed
+        }
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-ClaudeSettingsSymlink -Times 0 -Exactly -Scope It
     }
   }
 

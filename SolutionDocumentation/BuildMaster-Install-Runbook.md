@@ -150,14 +150,14 @@ BuildMaster build is triggered. Both are owned by
 [NewComputerSetup.md](NewComputerSetup.md) — this runbook only points at the
 canonical sections so a divergent copy cannot drift here:
 
-- **Git `safe.directory` for `SvcBuildmaster`** — see
+- **Git `safe.directory` for `SvcBuildMaster`** — see
   [NewComputerSetup.md § 9.4](NewComputerSetup.md). Without this, NBGV
   height computation and `Get-BuildContext` fail with `fatal: detected
-dubious ownership in repository`. Must be run **as `SvcBuildmaster`**, not
+dubious ownership in repository`. Must be run **as `SvcBuildMaster`**, not
   as the interactive developer login.
 - **Machine-wide NBGV install** — see
   [NewComputerSetup.md § 4.4](NewComputerSetup.md). A per-user
-  `dotnet tool install --global nbgv` is invisible to `SvcBuildmaster`;
+  `dotnet tool install --global nbgv` is invisible to `SvcBuildMaster`;
   install to `C:\ProgramData\dotnet\tools` and confirm the machine
   PowerShell profile prepends that path. Failure mode:
   `The 'nbgv' CLI was not found on PATH` during the Experimental stage.
@@ -165,7 +165,7 @@ dubious ownership in repository`. Must be run **as `SvcBuildmaster`**, not
 Confirm both are in place before continuing:
 
 ```powershell
-# As SvcBuildmaster
+# As SvcBuildMaster
 git config --global --get-all safe.directory   # must include C:/Dropbox/whertzing/GitHub
 pwsh -NoProfile -Command "Get-Command nbgv"    # must resolve from machine PATH
 ```
@@ -399,7 +399,7 @@ Build-scope variables supplied when creating a build:
 | `ReleaseBundleQAFeedName`                         | `releasebundle-qa`                                    | No        | Universal Package feed.                                                                                                         |
 | `ReleaseBundleProductionFeedName`                 | `releasebundle-production`                            | No        | Universal Package feed.                                                                                                         |
 | `PreviousProductionBackupPath`                    | Approved `.bak` path                                  | No        | Required for Integration Flyway rehearsal.                                                                                      |
-| `IntegrationDatabaseDBConnectionStringSecretName` | `dbConnectionString-AceCommander-utat022-Integration` | No        | Used by `Invoke-FlywayRehearsal`.                                                                                               |
+| `IntegrationDatabaseDBConnectionStringSecretName` | `dbConnectionString.AceCommander.utat022.Integration` | No        | Used by `Invoke-FlywayRehearsal`.                                                                                               |
 
 ### 8.5 Automation call
 

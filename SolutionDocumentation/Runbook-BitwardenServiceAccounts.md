@@ -15,6 +15,13 @@ interactive users. The supported runtime pattern is:
 4. Store the required BWS access token slots as DPAPI-protected CLIXML files by running `Initialize-BWSAccessToken` as the owning Windows account: `ReadOnly` for every account that reads secrets, plus optional `ReadWrite` only for trusted maintainer or provisioning accounts that create, update, delete, or rotate secrets.
 5. Read secrets at runtime through `Get-SecretATAP` with the `BitwardenSecretsManager` provider.
 
+This pattern applies only to identities whose workload actually requires secrets.
+The approved current allowlist is `SvcBuildMaster`, `SvcProGet`, and `SvcSQLServer`,
+plus explicitly authorized interactive maintainers. `SvcSeq` and `SvcParityAudit` are
+managed-profile-only identities: do not create a BWS credential directory, provision a
+ReadOnly token, or add a `bws`/`BW_SESSION` dependency for either one. The deployed
+SystemParityMonitor 0.1.8 wrappers are token-free.
+
 Do not persist `BWS_ACCESS_TOKEN` as a long-lived Machine/User environment variable. It may exist only in Process scope while `bws` is being called. DPAPI-protected token files are bound to both the Windows identity and the host, so they cannot be copied to another user profile or another machine and still decrypt.
 
 ## Parity journal requirement
@@ -53,7 +60,7 @@ Example value shape:
 
 ```json
 {
-  "username": "SvcBuildmaster",
+  "username": "SvcBuildMaster",
   "password": "<redacted>",
   "token": "<redacted>",
   "connectionString": "<redacted>"
@@ -80,9 +87,7 @@ bws --version
 $serviceAccountNames = @(
   'SvcBuildMaster',
   'SvcProGet',
-  'SvcSeq',
-  'SvcSQLServer',
-  'SvcParityAudit'
+  'SvcSQLServer'
 )
 
 Initialize-BWSCredentialDirectory
@@ -135,22 +140,23 @@ ReadWrite` operation only when such authority is required.
 
 ## Current Finding
 
-### Completed ReadOnly DPAPI baseline — 2026-07-10
+### Historical ReadOnly DPAPI baseline — 2026-07-10
 
 The operator completed the folder-ACL and `CommonCIForBitwardenReadOnly` DPAPI token
 file provisioning on both hosts for every identity below. This records file presence
 and ACL provisioning only; it records no token value, no password, and no secret
 content.
 
-| Host      | Interactive user | Service accounts with protected folder and ReadOnly DPAPI file            |
+| Host      | Interactive user | Historical service accounts with protected folder and ReadOnly DPAPI file |
 | --------- | ---------------- | ------------------------------------------------------------------------- |
 | `utat01`  | `whertzing`      | `SvcBuildMaster`, `SvcProGet`, `SvcSeq`, `SvcSQLServer`, `SvcParityAudit` |
 | `utat022` | `whertzing`      | `SvcBuildMaster`, `SvcProGet`, `SvcSeq`, `SvcSQLServer`, `SvcParityAudit` |
 
-This removes the DPAPI-file prerequisite for the Sprint 0012 BWS read-path tasks on
-both hosts. It does not by itself prove that each identity can invoke `bws`, decrypt
-the token, or access every required project; perform the no-secret validation in
-SA-04 before declaring live access healthy.
+This table records historical file presence, not current authorization. The later
+policy correction removed secret material for `SvcSeq` and `SvcParityAudit`; do not
+recreate those files. For the three currently approved service identities, file
+presence still does not prove `bws`, decryption, or project access; perform SA-04
+without exposing values before declaring live access healthy.
 
 ### Rotation implementation deferred
 
@@ -275,6 +281,31 @@ replace the task definitions. The resulting `ATAP-ParityAudit` and
 `ATAP-ParityCompare` tasks must both show `Password` logon. Do not use an S4U task for
 the primary compare workload: S4U has no reusable network credential for the peer SMB
 share.
+
+### Broker permission boundary for parity task registration
+
+`SvcAnsibleAdmin` is the elevation-broker identity, not the `SvcParityAudit` runtime
+identity. The supported installer uses Task Scheduler's folder-level
+`RegisterTaskDefinition` operation because the task-only update path is unsatisfiable:
+`schtasks /Change` demands a run-as password even for an S4U task, while Task Scheduler
+COM requires folder create/update rights to register or update a definition.
+
+Grant `SvcAnsibleAdmin` the constrained create/update access on `\ATAP` required by the
+typed `register-atap-parity-tasks` broker operation, preserving every pre-existing folder
+and task ACE. Keep the broker's own scheduled task under `\ATAP-Broker`, where
+`SvcAnsibleAdmin` has no folder rights, so the grant cannot be used to replace or
+reconfigure the broker itself. Do not substitute an NTFS grant on
+`C:\Windows\System32\Tasks` for the Task Scheduler DACL, and do not grant task execution,
+deletion, ownership, or security-descriptor rights beyond the reviewed installer
+contract.
+
+Task-definition mutation is a one-time migration onto fixed, administrator-owned
+dispatchers below `C:\Program Files\ATAP\ParityDispatchers`. Subsequent approved module
+version repoints rewrite only the applicable dispatcher file; they do not re-register a
+task or require its run-as credential. When the one-time migration targets a
+Password-logon task, the broker resolves the exact `SvcParityAudit.<host>` credential
+in memory; the request, result, and transcript must never carry that credential or a
+secret value.
 
 #### Peer host — `utat01`
 

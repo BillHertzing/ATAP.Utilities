@@ -9,6 +9,10 @@ BeforeAll {
     . (Join-Path $publicDir 'Move-ProGetPackageInterTier.ps1')
     . (Join-Path $publicDir 'Promote-ProGetPackage.ps1')
 
+    function global:Assert-ProGetPowerShellPackageSignature {
+        param([Parameter(ValueFromRemainingArguments = $true)]$Arguments)
+    }
+
     # Suppress PSFramework noise in tests when the module is not loaded.
     if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
         function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
@@ -46,6 +50,9 @@ BeforeAll {
 }
 
 Describe 'Promote-ProGetPackage' -Tag 'Unit', 'PromotedModuleHostSensitive' {
+    BeforeEach {
+        Mock Assert-ProGetPowerShellPackageSignature { [pscustomobject]@{ Valid = $true } }
+    }
 
     BeforeEach {
         Mock Move-ProGetPackageInterTier {
@@ -143,11 +150,29 @@ Describe 'Promote-ProGetPackage' -Tag 'Unit', 'PromotedModuleHostSensitive' {
             Promote-ProGetPackage -Name 'pkg' -Version '1.0.0' `
                 -FromFeed 'powershellget-development' -ToFeed 'powershellget-integration' `
                 -Reason 'integration gate' -CeilingTier 'Integration' `
-                -ProGetBaseUrl 'http://localhost:50000' -ProGetApiKeySecretName 'Test.ProGet.API.Key' | Out-Null
+                -ProGetBaseUrl 'https://localhost:50000' -ProGetApiKeySecretName 'Test.ProGet.API.Key' | Out-Null
 
             Assert-MockCalled Move-ProGetPackageInterTier -Times 1 -Exactly -Scope It -ParameterFilter {
-                $ProGetBaseUrl -eq 'http://localhost:50000' -and $ProGetApiKeySecretName -eq 'Test.ProGet.API.Key'
+                $ProGetBaseUrl -eq 'https://localhost:50000' -and $ProGetApiKeySecretName -eq 'Test.ProGet.API.Key'
             }
+        }
+
+        It 'forwards the build-scoped evidence root to signature verification' {
+            $source = Get-Content -LiteralPath (Join-Path $publicDir 'Promote-ProGetPackage.ps1') -Raw
+
+            $source | Should -Match '-EvidenceRoot \$EvidenceRoot'
+        }
+
+        It 'rejects an unsigned PowerShell package before invoking the promotion API' {
+            Mock Assert-ProGetPowerShellPackageSignature { throw 'PowerShell package signature verification failed: NotSigned' }
+
+            { Promote-ProGetPackage -Name 'ATAP.Utilities.Foo.PowerShell' -Version '1.0.0' `
+                -FromFeed 'powershellget-development' -ToFeed 'powershellget-integration' `
+                -Reason 'reject unsigned' -CeilingTier 'Integration' `
+                -ProGetBaseUrl 'https://localhost:50000' -ProGetApiKeySecretName 'Test.ProGet.API.Key' } |
+                Should -Throw '*signature verification failed*'
+
+            Assert-MockCalled Move-ProGetPackageInterTier -Times 0 -Exactly -Scope It
         }
 
         It 'Allows promotion when the destination tier is within CeilingTier' {

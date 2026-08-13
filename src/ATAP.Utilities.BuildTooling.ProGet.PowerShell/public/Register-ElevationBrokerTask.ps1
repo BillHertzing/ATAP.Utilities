@@ -80,7 +80,9 @@ function Register-ElevationBrokerTask {
     [string]$RequesterPrincipal = [Security.Principal.WindowsIdentity]::GetCurrent().Name,
 
     [Parameter(Mandatory = $false)]
-    [string]$TaskPath = '\ATAP\',
+    # \ATAP-Broker, not \ATAP: the broker must not live in a folder it holds rights over.
+    # See Request-ElevatedInstall's -BrokerTaskPath note (2026-08-11, Task 14.72).
+    [string]$TaskPath = '\ATAP-Broker\',
 
     [Parameter(Mandatory = $false)]
     [string]$TaskName = 'ATAP-ElevatedInstallBroker',

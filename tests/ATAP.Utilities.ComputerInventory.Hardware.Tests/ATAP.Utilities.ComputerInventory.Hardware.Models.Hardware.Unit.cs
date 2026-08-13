@@ -10,7 +10,6 @@ using ServiceStack.Text;
 using ATAP.Utilities.ComputerInventory;
 using ATAP.Utilities.ComputerInventory.Hardware;
 using ATAP.Utilities.Testing;
-using Itenso.TimePeriod;
 
 namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
 {

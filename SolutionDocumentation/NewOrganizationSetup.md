@@ -121,7 +121,7 @@ future projects when those systems go live.
 
 | Machine account | Project access | Consumed by (Windows service accounts) |
 | --- | --- | --- |
-| `SvcBuildMaster` | `BuildMaster-Core`, `CI-Shared` (read) | `SvcBuildmaster` |
+| `SvcBuildMaster` | `BuildMaster-Core`, `CI-Shared` (read) | `SvcBuildMaster` |
 | `SvcInfraShared` | `ProGet-Core`, `CI-Shared` (read) | `SvcProGet`, future Jenkins/Ansible agents |
 | `AceCommander` | `AceCommander-Core` (read) | AceCommander service / IIS impersonation |
 
@@ -180,7 +180,7 @@ Identity                       Bitwarden identity        Access path
 Developer1 (you)           ->  PM User 1                 bw, interactive
 Windows user DeveloperTwo  ->  PM User 2                 bw login/unlock (9.4.1-9.4.9 pattern)
 
-SvcBuildmaster (service)   ->  BWS machine SvcBuildMaster -> BuildMaster-Core, CI-Shared
+SvcBuildMaster (service)   ->  BWS machine SvcBuildMaster -> BuildMaster-Core, CI-Shared
 SvcProGet (service)        ->  BWS machine SvcInfraShared -> ProGet-Core, CI-Shared
 AceCommander svc / IIS     ->  BWS machine AceCommander   -> AceCommander-Core
 future Jenkins/Ansible     ->  BWS machine SvcInfraShared -> their *-Core (+CI-Shared)

@@ -1,0 +1,22 @@
+RulePrimitiveInputId,RulePrimitiveId,InputName,InputType,InputDescription,DefaultValue,IsRequired,Ordinal
+47cec849-5612-4a83-b916-a5ba8d36692b,36696ed7-e4f2-4305-b83e-5deaddd4a279,PathType,enum(UNC|Absolute|Relative|Extended),Determines which path variant to render,,1,0
+1a7ecff0-b6f4-4481-a9a0-81f298f42cc0,36696ed7-e4f2-4305-b83e-5deaddd4a279,PathContent,RulePrimitive,Provides the actual path structure selected by PathType,,1,1
+7ef564cd-32dd-4319-aeb7-17a02c8a4f0f,8263f648-2607-452e-ad69-5e4566354cc9,Server,<server>,Provides the network server name or IP address,,1,0
+cb3af1f3-e2c1-49fc-9376-a2b3dd41eff5,8263f648-2607-452e-ad69-5e4566354cc9,Share,<share>,Provides the shared resource name on the server,,1,1
+bd8f280b-e7a0-45b0-b8cc-ace4cf3ada0e,8263f648-2607-452e-ad69-5e4566354cc9,PathTail,<path-tail>,Provides the optional directory or file path within the share,,0,2
+84a7a08e-152d-4e4c-8bff-71791d16fef8,f8a27327-cb7a-46f4-bc53-5a2a9945784d,Drive,<drive>,Provides the optional drive letter and colon,,0,0
+4680c930-c04b-47df-9c86-36d4b0c576c5,f8a27327-cb7a-46f4-bc53-5a2a9945784d,PathTail,<path-tail>,Provides the optional directory or file hierarchy,,0,1
+0451e48e-5e94-47df-a94b-deaca7ea1675,03c6c7a1-f6f8-4fcc-a1aa-9239dc96109a,PathTail,<path-tail>,Provides the relative directory or file hierarchy,,1,0
+f37f15bc-683e-4ebe-a3aa-e293df4b2542,9c967a82-098f-4a38-bac5-2be34529ed54,PathVariant,enum(Local|UNC),Determines whether the extended path is local or UNC,,1,0
+50b2f135-8b28-4ede-840b-e90871124e3e,9c967a82-098f-4a38-bac5-2be34529ed54,AbsolutePath,<absolute-path>,Provides the absolute path for the Local variant,,0,1
+9a74bda5-18cb-420b-b08c-f6db62777474,9c967a82-098f-4a38-bac5-2be34529ed54,Server,<server>,Provides the network server component for the UNC variant,,0,2
+f5ae0c3c-eb4e-4d5d-b2ab-dc80468115c1,9c967a82-098f-4a38-bac5-2be34529ed54,Share,<share>,Provides the shared resource component for the UNC variant,,0,3
+e4cb67dd-7db9-42ec-9914-0f98232a4ee3,9c967a82-098f-4a38-bac5-2be34529ed54,PathTail,<path-tail>,Provides the optional directory or file path for the UNC variant,,0,4
+fd545856-9bc3-418f-b729-3b170e440230,250e84cb-abd3-4823-875d-e0e75d88cee3,Letter,<letter>,Provides one alphabetic drive letter,,1,0
+105da8b3-6365-46cf-8231-31126df64b69,c810abaf-010a-426e-afda-d6881831a9e6,Name,<name>,Provides the first directory or file name,,1,0
+6d6731ab-f47f-4fd6-b6e9-8d9a69711a6a,c810abaf-010a-426e-afda-d6881831a9e6,RestOfPath,<path-tail>,Provides the optional remainder of the path hierarchy,,0,1
+18ee327e-0f41-406b-bfac-b99904739e82,197c9963-55d3-4d80-9e39-23f30bf6c57e,NameChars,list(<namechar>),Provides the ordered characters composing the name,,1,0
+32318390-c6ac-4f58-ba39-b542d1b3dd87,fa3311ee-3e7c-415a-9eb6-b458c793a675,Character,char,Provides the single path character to validate and render,,1,0
+6847251f-24e9-453c-8848-5d43cc529dcf,520ade57-f639-45e1-b7de-e5dc3142655c,ServerIdentifier,<name>|IPAddressString,Provides the server name or IP address,,1,0
+1b3ca37b-f095-47e7-9f96-8dd5f4735079,9b2a48bc-7c85-48cd-ac0d-a09d4b621b0a,ShareName,<name>,Provides the shared resource name,,1,0
+ff932d94-61a4-4274-99a7-84229acbfb5b,9c8077ce-7abf-4d9a-969b-75631589a220,LetterChar,char,Provides one alphabetic character from A through Z or a through z,,1,0

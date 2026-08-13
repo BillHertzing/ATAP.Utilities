@@ -452,7 +452,7 @@ PSCall module.build.ps1
     Branch: $Branch,
     VersionLabel: $PrereleaseLabel,
     TargetFeed: $TargetFeed,
-    BitWardenApiKeySecretName: ProGet_BuildMaster_API_Key
+    BitWardenApiKeySecretName: ProGet.BuildMaster.API.Key
 );
 ```
 

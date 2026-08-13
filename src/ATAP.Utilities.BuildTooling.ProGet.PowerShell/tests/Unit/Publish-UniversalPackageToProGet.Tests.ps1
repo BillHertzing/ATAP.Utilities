@@ -99,7 +99,7 @@ Describe 'Publish-UniversalPackageToProGet' -Tag 'Unit', 'PromotedModuleHostSens
 
         It 'Falls back to local default when settings lacks a Universal feed entry' {
             $result = Publish-UniversalPackageToProGet -Path $script:fakeUpack
-            $result.FeedUri | Should -Match 'http://localhost:50000/upack/releasebundle-experimental/?$'
+            $result.FeedUri | Should -Match 'https://utat022:50000/upack/releasebundle-experimental/?$'
         }
 
         It 'Uses env var PROGET_RELEASEBUNDLE_<TIER>_URI when present' {

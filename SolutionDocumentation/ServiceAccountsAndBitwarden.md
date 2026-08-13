@@ -22,13 +22,13 @@ The current documentation baseline is "read everywhere, write only where justifi
 12.54.a remains the live-review gate for which identities actually receive the optional
 `ReadWrite` slot on a given host.
 
-### Task 12.49 approved profile and Bitwarden scope
+### Current approved profile and Bitwarden scope
 
-The complete service-account set that requires both a managed PowerShell profile
-and Bitwarden Secrets Manager ReadOnly access is `SvcBuildMaster`, `SvcProGet`,
-`SvcSeq`, `SvcSQLServer`, and `SvcParityAudit`. Registry discovery is an
-inventory input; it must not expand this approved provisioning scope without a
-new user decision.
+The managed-profile set is broader than the secret-bearing set. `SvcBuildMaster`,
+`SvcProGet`, and `SvcSQLServer` require managed profiles and Bitwarden Secrets Manager
+ReadOnly access. `SvcSeq` and `SvcParityAudit` require managed profiles but no secret
+material. Registry discovery is an inventory input; it must not expand secret
+provisioning without a new user decision.
 
 ### Recommended identity matrix
 
@@ -36,9 +36,9 @@ new user decision.
 | --- | --- | --- | --- |
 | `SvcBuildMaster` | Yes | Only if BuildMaster on that host creates or rotates BWS secrets | Default runtime/build reads |
 | `SvcProGet` | Yes | No by default | Runtime/package-feed reads only |
-| `SvcSeq` | Yes | No by default | SEQ runtime/configuration reads only |
+| `SvcSeq` | No | No | Managed profile only; no secret material |
 | `SvcSQLServer` | Yes | No by default | SQL Server runtime/configuration reads only |
-| `SvcParityAudit` | Yes | No by default | Parity-audit automation reads only |
+| `SvcParityAudit` | No | No | Managed profile only; deployed parity wrappers are token-free |
 | Trusted maintainer developer workstation | Yes | Optional | Provision `ReadWrite` only when that workstation performs secret maintenance |
 | Non-maintainer developer workstation | Yes | No | Normal development and validation only |
 
@@ -69,9 +69,10 @@ Several ATAP ecosystem services run as dedicated Windows service accounts:
 | SQL Server              | `SvcSQLServer`          |
 | Parity audit            | `SvcParityAudit`        |
 
-These five services need to read secrets from Bitwarden — for example, database
-connection credentials, API keys, and inter-service authentication tokens. They
-are also the complete Task 12.49 user-scope-profile provisioning set.
+Only BuildMaster, ProGet, and SQL Server currently need non-interactive Bitwarden
+secrets. SEQ and the parity audit remain in the managed-profile set but must not receive
+BWS tokens or credential directories. The five-row table therefore describes process
+identities, not a five-identity secret allowlist.
 
 ### Existing Infrastructure
 
@@ -246,8 +247,8 @@ Exit codes:
 
 Windows DPAPI (`Export-Clixml` / `Import-Clixml`) encrypts data using a key derived from
 the **current Windows user's credentials** and is bound to the **current computer**.
-A credential file created while running as `SvcBuildmaster` on `utat022` can only be
-decrypted by `SvcBuildmaster` **on that same host**. This is a hard cryptographic
+A credential file created while running as `SvcBuildMaster` on `utat022` can only be
+decrypted by `SvcBuildMaster` **on that same host**. This is a hard cryptographic
 guarantee — no other user account, even a local administrator, can read the plaintext.
 
 This means:
@@ -283,7 +284,7 @@ The default credential directory is `C:\Dropbox\Security\Credentials`. This path
 **unsuitable for service accounts** because:
 
 1. Dropbox synchronization software does not run under Windows service accounts
-   (`SvcBuildmaster`, `SvcProGet`, etc.).
+   (`SvcBuildMaster`, `SvcProGet`, etc.).
 2. Service accounts typically do not have a Dropbox folder.
 3. NTFS ACLs on `C:\Dropbox\` may not grant access to service accounts.
 
@@ -317,7 +318,7 @@ Practical provisioning methods:
 
 | Method                                                          | Notes                                                                                  |
 | --------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `PsExec -u SvcBuildmaster -p <pwd> pwsh -File Provision-...ps1` | Requires the service account password. Works from a privileged admin session.          |
+| `PsExec -u SvcBuildMaster -p <pwd> pwsh -File Provision-...ps1` | Requires the service account password. Works from a privileged admin session.          |
 | Task Scheduler (Run As service account, trigger once)           | Clean; runs in the service account context. Requires planting the provisioning script. |
 | Ansible `win_scheduled_task` + `win_command`                    | Idempotent; integrates with existing IAC. Preferred for fleet deployments.             |
 
@@ -352,8 +353,8 @@ interactive logon by a human.
 #### Why This Gives the Smallest Possible Blast Radius
 
 Windows DPAPI binds the encryption key to the tuple `(Windows user identity, computer
-identity)`. A credential file created as `SvcBuildmaster` on host `HOST-A` can only be
-decrypted by `SvcBuildmaster` **on `HOST-A`**. The file is cryptographically useless on
+identity)`. A credential file created as `SvcBuildMaster` on host `HOST-A` can only be
+decrypted by `SvcBuildMaster` **on `HOST-A`**. The file is cryptographically useless on
 any other host, and useless to any other user account on `HOST-A`.
 
 Contrast this with alternative approaches:
@@ -362,7 +363,7 @@ Contrast this with alternative approaches:
 | ------------------------------------- | ------------------------------------------------------------------------------------- |
 | Machine-scope `BW_SESSION` env var    | All processes on the machine can read the token                                       |
 | Single admin DPAPI file, shared path  | Any process running as that admin can decrypt and unlock                              |
-| `ansibleAdmin`-provisioned DPAPI file | Only the specific service account (`SvcBuildmaster`) on the specific host can decrypt |
+| `ansibleAdmin`-provisioned DPAPI file | Only the specific service account (`SvcBuildMaster`) on the specific host can decrypt |
 | Bitwarden Secrets Manager token       | Single machine account token — if leaked, all secrets accessible to that account      |
 
 The `ansibleAdmin` first-boot provisioning model gives **per-(host, service-account)
@@ -374,18 +375,18 @@ blast radius** — the tightest possible scope for DPAPI-based credentials.
 sequenceDiagram
     participant AC as Central Ansible Controller
     participant AA as ansibleAdmin (new host)
-    participant SA as SvcBuildmaster (new host)
+    participant SA as SvcBuildMaster (new host)
     participant BW as Bitwarden Cloud
 
     AC->>AA: Run playbook via WinRM / SSH
     Note over AA: Running as ansibleAdmin on the new host
-    AA->>AA: Create SvcBuildmaster account if not present
-    AA->>AA: Register scheduled task to run as SvcBuildmaster
+    AA->>AA: Create SvcBuildMaster account if not present
+    AA->>AA: Register scheduled task to run as SvcBuildMaster
     AA->>SA: Task runs Provision-ServiceAccountBWCredential.ps1
-    Note over SA: Running in SvcBuildmaster security context
+    Note over SA: Running in SvcBuildMaster security context
     SA->>BW: bw login + bw unlock (credentials passed as params)
-    SA->>SA: Export-Clixml → COMPUTERNAME_SvcBuildmaster_BW_*.xml
-    Note over SA: File encrypted by DPAPI: only SvcBuildmaster@this-host can decrypt
+    SA->>SA: Export-Clixml → COMPUTERNAME_SvcBuildMaster_BW_*.xml
+    Note over SA: File encrypted by DPAPI: only SvcBuildMaster@this-host can decrypt
     SA-->>AA: Task complete
     AA->>AA: Verify ACLs on credential directory
     AA-->>AC: Provisioning complete
@@ -663,13 +664,13 @@ Windows DPAPI protects credential files at the user account level:
 Recommended ACL policy for `C:\ProgramData\ATAP\BitwardenCredentials\<ServiceAccount>\`:
 
 ```powershell
-$acl = Get-Acl 'C:\ProgramData\ATAP\BitwardenCredentials\SvcBuildmaster'
+$acl = Get-Acl 'C:\ProgramData\ATAP\BitwardenCredentials\SvcBuildMaster'
 $acl.SetAccessRuleProtection($true, $false)  # disable inheritance
 $rule = New-Object System.Security.AccessControl.FileSystemAccessRule(
-    'SvcBuildmaster', 'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow')
+    'SvcBuildMaster', 'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow')
 $acl.AddAccessRule($rule)
 # Add SYSTEM and local Admins for manageability, no other accounts
-Set-Acl 'C:\ProgramData\ATAP\BitwardenCredentials\SvcBuildmaster' $acl
+Set-Acl 'C:\ProgramData\ATAP\BitwardenCredentials\SvcBuildMaster' $acl
 ```
 
 ### Logging and Audit Requirements
@@ -847,7 +848,7 @@ Bitwarden Secrets Manager remains a future improvement path, not the current des
 
 ## Setting Up Credentials for Services without Ansible
 
-The manual (no-Ansible) provisioning runbook for `SvcBuildmaster` and
+The manual (no-Ansible) provisioning runbook for `SvcBuildMaster` and
 `SvcProGet` lives in the new-computer setup document so the workstation onboarding
 flow has a single linear sequence:
 

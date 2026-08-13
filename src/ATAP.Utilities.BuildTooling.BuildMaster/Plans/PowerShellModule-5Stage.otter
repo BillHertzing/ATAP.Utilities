@@ -1,6 +1,21 @@
 ##########################################################################
 # PowerShellModule-5Stage - BuildMaster OtterScript Plan
 #
+# !! EDITING THIS FILE IS NOT ENOUGH - SYNC IT TO THE RAFT !!
+#   BuildMaster executes the copy of this plan stored in its raft, NOT this
+#   file. Committing a change here does nothing until you run:
+#       Sync-BuildMasterPlans -Path <thisFile>
+#   The paired stage runner (Invoke-PowerShellModuleBuildMasterStage.ps1) IS
+#   read from disk at run time, so a commit that changes both leaves the raft
+#   passing the OLD argument list to the NEW parameter block. When the missing
+#   argument is a [Parameter(Mandatory)] one, PowerShell prompts a console that
+#   nobody can answer and the stage HANGS FOREVER with no error - build stuck
+#   'active', log ending at "Executing pwsh...", near-zero CPU, and no
+#   _generated/buildmaster/<BuildMasterBuildId>/ directory.
+#   This cost a release cycle on 2026-08-03 (signing args from dfa333ecc).
+#   Root cause, triage checklist, and fail-fast guidance:
+#       SolutionDocumentation/BuildMaster-Plan-Raft-Sync-Requirement.md
+#
 # Variables (Application Variables - set in BuildMaster Application config):
 #   $ApplicationName  - BuildMaster application name, e.g. "ATAP.Utilities-PowerShell"
 #   $Branch           - source branch name supplied by monitor/poller
@@ -12,6 +27,9 @@
 #                       $ProGetApiKeySecretName (host-suffixed, e.g.
 #                       ProGet.BuildMaster.API.Key.utat01 per SC-0288/13.66.b);
 #                       no environment fallback is permitted.
+#   $CodeSigningCertificateThumbprint - public SHA-1 identity of the signing
+#                       certificate in LocalMachine\My on the build host
+#   $TimestampServerUri - absolute Authenticode timestamp service URI
 #   BuildMaster stage - passed explicitly from $PipelineStageName so deployment
 #                       targets do not depend on agent environment variables
 #   $BuildMasterBuildId - runtime value from $BuildMasterId(build), used to
@@ -52,7 +70,7 @@ set $BuildMasterExecutionId = $ExecutionId;
 Exec
 (
     FileName: pwsh,
-    Arguments: >>-NoProfile -File "$InvokePowerShellModuleStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -ModuleName "$ModuleName" -PackageName "$PackageName" -ModulePath "$ModulePath" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName">>,
+    Arguments: >>-NoProfile -File "$InvokePowerShellModuleStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -ModuleName "$ModuleName" -PackageName "$PackageName" -ModulePath "$ModulePath" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName" -CodeSigningCertificateThumbprint "$CodeSigningCertificateThumbprint" -TimestampServerUri "$TimestampServerUri">>,
     WorkingDirectory: $SourcePath,
     SuccessExitCode: 0
 );

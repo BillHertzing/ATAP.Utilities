@@ -8,6 +8,13 @@ Sprint 0012 Task 12.38.e registration attempt on Windows 11 `utat022` and Window
 The architecture overview is in [Overview.md](Overview.md). The workstation-level
 entry point is `SolutionDocumentation\NewComputerSetup.md`.
 
+Version `0.1.14` is the installed token-free baseline on both hosts, and is the version the
+approved dispatchers target. Scheduled actions resolve the installed immutable module root
+and the profile-configuration path through a fixed dispatcher rather than naming a version
+directly; see "Repointing tasks to a new module version". Sections explicitly marked
+**next-release source** describe approved but unreleased behavior and are not claims about
+the installed tasks.
+
 ## Intended topology
 
 | Host role | Example host | Scheduled tasks | Task logon |
@@ -33,7 +40,67 @@ peer's `ParityState` SMB share.
   task arguments, journals, evidence, or documentation.
 - A `PSCredential` supplied during task registration is a Windows logon credential
   only. It is not passed to the wrapper and does not authorize vault access.
+- The vault prohibition applies to `SvcParityAudit`, the identity the tasks RUN AS. It
+  does not apply to `SvcAnsibleAdmin`, the elevation-broker service account, which by
+  the 2026-08-11 operator decision holds a BWS ReadOnly token so the constrained
+  installer can re-supply a Password-logon task's stored credential during its one-time
+  dispatcher migration. The two identities are distinct and must not be conflated.
+- Never change the parity task definitions by hand or by editing
+  `C:\Windows\System32\Tasks`. Version repointing goes through the constrained broker
+  installer only; see "Repointing tasks to a new module version".
 - Record each machine-state change with `Add-ParityChangeEntry` before applying it.
+
+## Required least-privilege matrix
+
+Granted 2026-08-11 under Task 14.72 after explicit security approval. Every grant is
+read-only. Never substitute local Administrator, SQL `sysadmin`, write, or `ALTER`
+rights; if collection fails, widen nothing until the failure is diagnosed as a genuine
+missing read right and a separately approved, host-specific change is recorded.
+
+| Surface | Required minimum | Explicit exclusions | Current state |
+| --- | --- | --- | --- |
+| Chocolatey | Resolve `choco.exe` from machine `PATH`; read and execute on `C:\ProgramData\chocolatey\bin`, `lib`, and `choco.exe` | No package install, update, uninstall, or directory write | Granted on both hosts (Task 14.72) |
+| SQL metadata, on every in-scope instance | Windows login; `VIEW ANY DEFINITION`; `VIEW SERVER STATE` | No data write, `ALTER`, control-server, or `sysadmin` | Granted across all five instances on both hosts (Task 14.72) |
+| SQL Agent metadata | `msdb` user plus `SQLAgentReaderRole` | No job create, update, start, stop, or ownership change | Granted across all five instances on both hosts (Task 14.72) |
+| SQL path conformance | NTFS read on `C:\LocalDBs` and each instance's `Data`, `Log`, and `Backup` directories | No create, modify, delete, or ACL ownership | Granted on both hosts (Task 14.72) |
+| Service discovery — namespace | WMI/CIM read on `root\cimv2` (`Enable`+`RemoteEnable`, mask `0x21`) | No WMI method execution or namespace write | Pre-existing non-inheriting ACE; verified sufficient and NOT broadened (Task 14.72) |
+| Service discovery — SCM | `SC_MANAGER_CONNECT`, `ENUMERATE_SERVICE`, `QUERY_LOCK_STATUS`, `READ_CONTROL` (`CCLCRPRC`) | No create service, lock, or modify-boot-config | Granted on both hosts 2026-08-11 (Task 14.72) |
+| Service discovery — per service | `QUERY_CONFIG`, `QUERY_STATUS`, `ENUMERATE_DEPENDENTS`, `INTERROGATE`, `READ_CONTROL` (`CCLCSWLORC`) on `W32Time`, `WinRM`, `sshd`, and each `MSSQL$<instance>` | No start, stop, pause/continue, change-config, delete, or write-DAC | Granted on both hosts 2026-08-11 (Task 14.72) |
+| Parity state | Modify only the local parity state/task-results tree; read the peer share for comparison | No write to the peer share by the comparison task | Existing topology; ACL independently verified |
+
+Service discovery takes three rows because the WMI namespace grant alone is not sufficient, and
+that cost days of misdiagnosis. Measured on both hosts 2026-08-11: `SvcParityAudit` could query
+`Win32_OperatingSystem`, `Win32_ComputerSystem`, `Win32_Process`, and `Win32_LogicalDisk` from
+`root\cimv2` without trouble, yet `Win32_Service` returned `Access denied` and `Get-Service`
+returned `Cannot open Service Control Manager` — because the `Win32_Service` provider calls SCM
+underneath. Switching between CIM and `Get-Service` therefore changes nothing on its own; both
+need SCM. Service *running state* has no registry equivalent (the registry carries start type
+only), so the SCM and per-service grants are the minimum for that surface. Every right above is
+read-only: no start, stop, config change, or ownership.
+
+## Next-release identity-explicit package paths
+
+The next-release `Invoke-ParityAudit` accepts `PackageManagerProfiles`. Each record has
+an `Identity` and may specify `PipPath`, `NpmPrefix`, and `NuGetToolPath`. These are
+fully qualified paths for the profile whose packages are being inventoried; they are
+not paths under `SvcParityAudit` unless that identity is intentionally in scope.
+
+- pip is invoked with `--path <PipPath>`.
+- npm is invoked with `--prefix <NpmPrefix>` and global/depth-zero options.
+- `dotnet tool list` is invoked with `--tool-path <NuGetToolPath>`.
+- Package and status rows include the configured identity.
+- An omitted manager path produces `<profile-path-not-configured>` for that identity.
+- Supplying no profile records produces `<profile-paths-not-configured>` for pip, npm,
+  and NuGet and does not query those executables.
+- Chocolatey remains machine-scoped.
+
+The default next-release audit minima are one SQL row and one `PackageManager` row.
+Missing or thin coverage is written as `AuditCoverageFinding` in the diagnostic
+snapshot, and then the audit throws. A `PackageManagerStatus` error remains a distinct
+collector result and does not satisfy the required `PackageManager` inventory count.
+The deployed 0.1.10 scheduled actions receive the profile-configuration path. The live
+comparison evidence has no surface-coverage failure, but that does not substitute for the
+two fresh, zero-unexplained-drift comparisons required to close Task 14.74.
 
 ## Deployment contract
 
@@ -77,12 +144,13 @@ promoted package that does not contain them, then correct the module build and p
 contract, publish a new immutable version, install that exact version, and verify it
 from a fresh shell.
 
-Live exception recorded 2026-07-11: version `0.1.1` was promoted and installed for
+Historical exception recorded 2026-07-11: version `0.1.1` was promoted and installed for
 AllUsers on `utat022` and `utat01`, but the package omitted both static folders. The
 operator manually copied `scripts\` into the PowerShell 7 module roots on both hosts to
 unblock Task 12.38.e. Treat those hosts as manually repaired, not reproducibly deployed;
-do not use that exception as the normal installation procedure. `Documentation\` remains
-available from source until version `0.1.2` is installed and verified.
+do not use that exception as the normal installation procedure. Version `0.1.10` is the
+current deployed token-free baseline; always verify static folders in the installed
+immutable package rather than relying on this historical repair.
 
 ## Prerequisites on every host
 
@@ -93,13 +161,20 @@ available from source until version `0.1.2` is installed and verified.
 4. Create `C:\ProgramData\ATAP\ParityState`, its journal/ack/snapshot structure, and
    the host-owned SMB share/ACL configuration described in Task 12.38.c.
 5. Create the Task Scheduler folder `\ATAP`.
-6. Grant `SvcParityAudit` `SeBatchLogonRight` without replacing existing right
+6. Grant the host-local `SvcAnsibleAdmin` account only native Task Scheduler
+   `TASK_CHANGE` (`0x2`) on the existing `\ATAP\ATAP-ParityAudit` task. Do not grant
+   the `\ATAP` folder, another task, task execution, deletion, or task-security rights.
+   This is a scheduler DACL ACE, not an NTFS ACL on
+   `C:\Windows\System32\Tasks`. The current folder-level re-registration installer
+   cannot use that intentionally narrow right; it requires a direct action-only update
+   implementation.
+7. Grant `SvcParityAudit` `SeBatchLogonRight` without replacing existing right
    holders. Use the guarded procedure in `SolutionDocumentation\NewComputerSetup.md`.
-7. Verify the installed audit and compare wrappers contain no `Get-BWSAccessToken`,
+8. Verify the installed audit and compare wrappers contain no `Get-BWSAccessToken`,
    `bws`, token-purpose, or credential-directory dependency.
-8. Verify the task-result directory is writable by `SvcParityAudit`; no Bitwarden
+9. Verify the task-result directory is writable by `SvcParityAudit`; no Bitwarden
    credential directory is created or required.
-9. Maintain the Sysinternals Suite baseline with the pinned WinGet command
+10. Maintain the Sysinternals Suite baseline with the pinned WinGet command
    `winget install -e --id Microsoft.Sysinternals.Suite --version 2026-07-09`.
    `utat01` has the suite at `C:\Program Files\SysinternalsSuite` as of 2026-07-28;
    install and verify the identical path on `utat022` during the return procedure, then
@@ -178,6 +253,89 @@ $folder.Path
 ```
 
 Expected output is `\ATAP`.
+
+## Repointing tasks to a new module version (Task 14.72)
+
+Do **not** hand-register the parity tasks to pick up a new module version, and do not edit
+`C:\Windows\System32\Tasks` directly — that desynchronizes Task Scheduler's own state. Use
+the constrained elevation-broker installer.
+
+### Task principals (changed 2026-08-11)
+
+| Host | Task | Logon type | Run level |
+| --- | --- | --- | --- |
+| `utat01` | `ATAP-ParityAudit` | Password | Limited |
+| `utat022` | `ATAP-ParityAudit` | Password | HighestAvailable |
+| `utat022` | `ATAP-ParityCompare` | Password | HighestAvailable |
+
+`utat01` ran S4U until 2026-08-11. S4U task registration is refused on that host for every
+caller — including `NT AUTHORITY\SYSTEM` holding `SeTcbPrivilege`, and equally for a brand-new
+S4U task in an empty folder — so an S4U task there can never be updated. It was converted to
+Password logon by operator decision to restore manageability. `utat01` keeps `Limited`: only
+`utat022` needs `HighestAvailable`, for its compare task's peer SMB read. Do not raise
+`utat01` to Highest.
+
+### How version selection works
+
+The scheduled task definitions are **immutable and carry no version**. Each task's action is
+a fixed, version-independent dispatcher:
+
+```text
+C:\Program Files\ATAP\ParityDispatchers\ATAP-ParityAudit.ps1
+C:\Program Files\ATAP\ParityDispatchers\ATAP-ParityCompare.ps1
+```
+
+Repointing to a new module version rewrites that dispatcher file. It does not touch Task
+Scheduler, needs no run-as password, and depends on no scheduler ACL. The privileged task
+mutation is a **one-time migration per host**; after that, every version repoint is an
+ordinary admin-owned file write.
+
+### Requesting a repoint
+
+```powershell
+$result = Request-ElevatedInstall -InstallerId 'register-atap-parity-tasks' -Parameters @{
+    ModuleVersion = '0.1.14'
+}
+if ($result.status -ne 'succeeded') {
+    throw "Parity repoint failed: $($result.error). Transcript: $($result.transcriptPath)"
+}
+```
+
+`ModuleVersion` is the **only** accepted field. The installer derives task names, executable,
+scripts, arguments, identity, and state paths from a compiled host policy. A request cannot
+name a task, a path, a command line, an identity, or a secret; the broker rejects any
+unrecognized property. See
+`_Planning/InformationForTheFuture/Parity/ParityTaskInstaller-Contract.md` for the full
+schema, validation matrix, and threat model.
+
+### Immutable package-version requirement
+
+The requested version must already be installed at
+`C:\Program Files\PowerShell\Modules\ATAP.Utilities.SystemParityMonitor.PowerShell\<version>`
+by the separately hash-pinned `install-atap-module-allusers` installer. ProGet feed versions
+are immutable, so a corrected build always ships under a new version — never re-point at a
+version expecting different content than when it was published.
+
+### Backup and rollback artifacts
+
+Before any task mutation the installer exports the current definition to:
+
+```text
+C:\ProgramData\ATAP\ElevationBroker\backups\parity-tasks-<host>-<utc-timestamp>\<TaskName>.before.xml
+```
+
+After the update it compares the principal, triggers, settings, task version, action id,
+working directory, and security descriptor against the pre-update values. Any drift, or an
+action that does not match the approved value, triggers an automatic rollback of the action.
+If the rollback itself fails, the error names the backup XML for manual restore.
+
+### What this installer will never do
+
+It cannot create or delete a task, change a principal, trigger, setting, or security
+descriptor, touch any task other than `\ATAP\ATAP-ParityAudit` and `\ATAP\ATAP-ParityCompare`,
+run on a host other than `utat01` or `utat022`, or install a module. **Generic privileged
+execution through the broker is prohibited**; extending this installer's reach is a new
+security review, not a patch.
 
 ## Register tasks
 
@@ -328,7 +486,7 @@ Audit and compare results are written below:
 C:\ProgramData\ATAP\ParityState\TaskResults
 ```
 
-Require all of the following before closing Task 12.38.e:
+Require all of the following before declaring a trustworthy current baseline:
 
 - task result JSON has `Success = true`;
 - `IdentityName` is the intended `SvcParityAudit` account;
@@ -338,10 +496,36 @@ Require all of the following before closing Task 12.38.e:
 - immediate first-run `StaleSnapshotCount` is zero;
 - undeclared drift is zero or is explicitly investigated and dispositioned;
 - no secret values appear in the evidence.
+- SQL and `PackageManager` surfaces meet their configured minimums, with no
+  `AuditCoverageFinding` rows;
+- every intended developer identity has explicit, readable pip/npm/NuGet paths;
+- installed ATAP PowerShell module versions are checked separately because the parity
+  audit collects `PSVersion`, not installed module inventory.
 
-Use Daily cadence during the first clean month. Re-register with `BiWeekly` afterward;
-the default 14-day expected cadence and `1.5` multiplier make the stale threshold 21
-days.
+Start or restart `Daily` cadence only after the collection checks above pass on both
+hosts. Re-register with `BiWeekly` only after one verified clean month; the earlier
+period in which SQL and package surfaces were absent does not count. The default
+14-day expected cadence and `1.5` multiplier make the stale threshold 21 days.
+
+## D-6 Windows event thresholds
+
+The deployed wrappers record failure state under `<StatePath>\TaskState` and implement
+the following Windows Application-log contract for source `ATAP.SystemParityMonitor`:
+
+| Condition | Event | Timing |
+| --- | --- | --- |
+| Audit task failure | Error `12380` | Exactly when the persisted consecutive failure count reaches two |
+| Compare task failure | Error `12381` | Exactly when the persisted consecutive failure count reaches two |
+| Stale snapshot, missing/thin surface coverage, or both | Warning `12382` | Immediately on the comparison that detects it |
+
+A successful task resets its consecutive failure count. Failure to persist the counter
+does not justify fabricating a second-failure alert. Event writing itself returns
+structured success/failure metadata so the primary task error remains visible.
+
+Event-source registration still needs host-specific verification. Forwarding these events to SEQ is the
+approved channel where forwarding is configured, but no SEQ forwarding rule, ingestion,
+notification, or page has been verified. Until all of those checks pass, inspect Task
+Scheduler results, task-result JSON, and the Windows Application log directly.
 
 ## Troubleshooting matrix
 

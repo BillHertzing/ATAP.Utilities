@@ -91,16 +91,23 @@ Each service follows the pattern: `Interfaces` project + implementation project.
 
 #### 2.4 SQL Server Database (`Database/`)
 
-The `ATAPUtilities` database uses a **Philote-based identity system** where every significant entity is backed by a `Philote` row (GUID-based stable identity with time blocks and additional IDs). The core schema includes:
+The `ATAPUtilities` database uses a **Philote-based identity system** where each
+significant entity is backed by a stable GUID Philote. Business-valid identity
+existence is stored as a half-open predecessor chain. The consolidated core
+schema contains:
 
-- **Philote foundation**: `Philote`, `PhiloteAdditionalId`, `PhiloteTimeBlock`
-- **Rule primitives**: `RulePrimitive`, `RulePrimitiveInput`, `PrimitiveLanguageKind` (CSharp, PowerShell, SQL, MSBuild)
-- **Rules**: `Rule`, `RulePrimitiveComposition` (ordered composition of primitives)
-- **Rule sets**: `RuleSet`, `RuleSetMember`
-- **Instantiations**: `RuleInstantiation`, `RuleInstantiationBinding`
-- **AceCommander schema**: User tables and views (cross-schema)
+- **Philote foundation**: `Philote`, `PhiloteValidityPeriod`
+- **Rule primitives**: `RuleKind`, `RulePrimitive`, `RulePrimitiveInput`
+- **Rules**: `Rule`
+- **Rule sets**: `RuleSet`, `RuleSetRule`
+- **Build sets**: `BuildSet`, `BuildSetRuleSet`
+- **Instantiations**: `Instantiation`
 
-Managed by **Flyway** migrations (`Database/Flyway/SQL/`) with CSV seed data (`Database/Flyway/Data/`). PowerShell cmdlets in `Database/Powershell/public/` handle migration execution, database rebuilds, and rule export.
+The active `ATAPUtilities.Database` `0.1.0` source is one Flyway `V00010`
+migration under `Database/Flyway/SQL` plus eleven CSV inputs under
+`Database/Flyway/Data`. Archived lineages are not active migration inputs.
+PowerShell cmdlets under `Database/Powershell/public` handle separately
+authorized migration execution, database rebuilds, and Rule export.
 
 See: [Database/Documentation/FolderStructure.md](../Database/Documentation/FolderStructure.md), [Database/Documentation/CoreSchema_Overview.puml](../Database/Documentation/CoreSchema_Overview.puml)
 

@@ -15,7 +15,7 @@ carry the per-file detail.
 | BuildMaster / ProGet Infrastructure   | `Production-and-Tooling-Overview.md`           | BuildMaster-Pipeline-Topology, BuildMaster-Install-Runbook, Runbook-BuildMasterConfiguration, BuildMaster-Run-State-Runbook, ProGet-Install-Runbook                                                                                                                                                                                                                                                                      |
 | Database & Flyway                     | `Database-Change-Unit-and-Flyway-Promotion.md` | `ATAPUtilities-Database-0.1.3-Release-Record.md` (BuildMaster/ProGet live release, checksum-repair backup, final tier proof), Database-Package-\* decisions, Database-MultiDB-Future-Requirements, Developer-SqlServerInstances-Runbook, ATAPUtilities-Instantiation-Tables; machine provisioning, settings-backed `C:\LocalDBs\<INSTANCE>\{Data,Log,Backup}\` topology, and the five-tier `SvcBuildMaster` deployment-database grant: `NewComputerSetup.md` / `NewComputerSetupUsingAnsible.md`; module: `src\ATAP.Utilities.DatabaseManagement.Powershell` |
 | RRSBS & Rules Compendiums             | `Rules Compendium.md`                          | Rules Compendium.{CSharp,SQL,PowerShell,MSBuild,Snippet,Manim,Path,OtterScript,AgentText,Markdown}, Rules-Compendium-Template, Example.RuleInstantiation.HelloWorld; module: `src\ATAP.Utilities.RulesManagement.PowerShell`                                                                                                                                                                                             |
-| Secrets & Security                    | `Security Shift-Left.md`                       | ServiceAccountsAndBitwarden(+AlternativesConsidered), Runbook-BitwardenServiceAccounts, SecretName-HostSuffix-Convention (SC-0288: every ProGet/BuildMaster SecretName is `<BaseName>.<placement-host>`, derived from ServicePlacementMap and fail-closed), SecretsPluginArchitecture, GenericPluginArchitecture; modules: `src\ATAP.Utilities.Security.Powershell` (umbrella, re-export mode), `src\ATAP.Utilities.Security.Secrets.PowerShell` (Bitwarden pilot child, Sprint 0012 Task 12.55.b)                                                                                           |
+| Secrets & Security                    | `Security Shift-Left.md`                       | Security-PowerShell-Module-Architecture, ServiceAccountsAndBitwarden(+AlternativesConsidered), Runbook-BitwardenServiceAccounts, SecretName-HostSuffix-Convention, SecretsPluginArchitecture, GenericPluginArchitecture; modules: `src\ATAP.Utilities.Security.Powershell` (umbrella), `src\ATAP.Utilities.Security.Secrets.PowerShell` (Secrets compatibility), `src\ATAP.Utilities.Security.PKI.PowerShell` (PKI child; 0.1.2 source adds PKCS#12 creation, multi-host trust, and Windows signing issuance)                                                                                           |
 | Environment / Workstation Setup       | `NewComputerSetup.md`                          | NewComputerSetupUsingAnsible, NewOrganizationSetup, DevEnvironment, WSL2Setup, VisualStudioExtensions, ConfigRootKeys-and-HostSettings, IAC-Windows-Scripts-Migration, `src\ATAP.Utilities.SystemParityMonitor.PowerShell\Documentation\Overview.md` and `InstallationAndTroubleshooting.md` (host-pair parity architecture plus Windows 10/11 install, credential-backed S4U registration, WinRM/PSModulePath recovery, and static-payload packaging limitations; journal every `utat022`/`utat01` machine-state change before execution, Task 12.38.f; moved from ATAP.IAC 2026-07-07); modules: `src\ATAP.Utilities.ConfigRootKeys.Powershell`, `src\ATAP.Utilities.IAC.Ansible.Powershell`, `src\ATAP.Utilities.SystemParityMonitor.PowerShell` |
 | Sprint & Worktree Infrastructure      | `Sprint-Boundary-Retargeting.md`               | Worktree-Source-of-Truth-Inventory, SprintInfrastructure-Naming, Sprint-Planning references                                                                                                                                                                                                                                                                                                                              |
 | Testing                               | `TestingMethodology.md`                        | CSharp-Packages-Test-Process, PowerShell-Modules-Test-Process                                                                                                                                                                                                                                                                                                                                                            |
@@ -87,13 +87,23 @@ _Teach / Tell how to create software._
   The second half (the bulk of the 700+-line document) is an end-to-end
   **build-server provisioning runbook**: SQL Server Express install with a
   PRODUCTION named instance on port 50001; creation of `SvcSQLServer`,
-  `SvcProGet`, and `SvcBuildmaster` service accounts via
+  `SvcProGet`, and `SvcBuildMaster` service accounts via
   `New-LocalServiceAccount`; Inedo Hub installation; eight-step ProGet install
   including `Initialize-ProGetSqlServiceLogin`, `Initialize-SqlServiceLogin`,
   ProGet.config symlinking, EncryptionKey retrieval from Bitwarden, API-key
   registration; and a build of the `aaronontheweb/mssql-mcp` MCP server.
 - [New Computer Setup Using Ansible](NewComputerSetupUsingAnsible.md) —
   Alternate draft of workstation and build-host bootstrap guidance.
+- [New Computer Provisioning Runbook](Runbook-NewComputerProvisioning.md) —
+  Execution plan for `NewComputerSetup.md`, expressed as parallelizable streams with
+  declared owners: organizational work (O1–O5), human-manual/console-bound work (H1–H5),
+  and agent-automated work (A1–A8), joined by four gates (Authorized to build, Clean
+  baseline, Tooling operational, Ready State). Records what may run concurrently and what
+  must not (profiles before repo integrity, broker before module install, SQL before
+  service accounts). Appendix A carries the `ncat040` instance plan: Mission 1 clean-host
+  validation stopping at Gate 1 with a one-task-per-restore-cycle image discipline, then
+  Mission 2 as a DPOM and testing host. Does not restate procedure — `NewComputerSetup.md`
+  remains canonical for every step.
 - [Sprint-Boundary Retargeting](Sprint-Boundary-Retargeting.md) — V4-H03 source of
   truth for the `Set-SprintBoundaryContext` orchestrator: which concern (machine
   links, SharedVSCode settings, downstream contexts, registry-backed AI adapters)
@@ -213,7 +223,7 @@ _Teach / Tell how to create software (with two "describe" entries noted)._
 - [Service Accounts and Bitwarden](ServiceAccountsAndBitwarden.md) —
   Sprint-0007 design and implementation guide for service accounts used by
   BuildMaster, ProGet, and other automation processes to access Bitwarden
-  secrets. Covers `SvcBuildmaster` and `SvcProGet` service account setup,
+  secrets. Covers `SvcBuildMaster` and `SvcProGet` service account setup,
   Bitwarden API key provisioning, and the `Get-SecretATAP` integration pattern
   for non-interactive service contexts.
 - [Bitwarden Secrets Manager Access Token Runbook](Runbook-BitwardenServiceAccounts.md) —
@@ -248,16 +258,20 @@ _Teach / Tell how to create software._
   build issues.
 - [C# Central Package Management](CSharp-Central-Package-Management.md) —
   Central package-management conventions and migration guidance for C# projects.
+- [ADR: ZSandbox Ownership and Disposition](ADR-ZSandbox-Ownership-And-Disposition.md) —
+  Accepted ownership and project-boundary decision for retained experimental code.
 - [C# Packages — Build Process](CSharp-Packages-Build-Process.md) —
   Step-by-step C# package build flow. Also names the separate
   `Build\Invoke-RepoHealthGate.ps1` RepoHealth gate for shared MSBuild property
-  checks that must run after restore and before pack/publish.
+  checks that must run after restore and before pack/publish, and the stable
+  Visual Studio Build Tools 2026/MSBuild/NuGet deterministic pack prerequisite.
 - [C# Packages — Test Process](CSharp-Packages-Test-Process.md) —
   C# package testing process and expected test artifacts, including the
   repo-wide `tests\RepoHealth` Pester gate that is intentionally outside
   package/module test discovery.
 - [C# Packages — Pack and Push](CSharp-Packages-Pack-and-Push.md) —
-  Packaging and publishing flow for C# packages.
+  Packaging and publishing flow for C# packages, including the NuGet 7.8+
+  fail-closed gate, Git-derived deterministic timestamp, and two-pack hash proof.
 - [C# Packages — Versioning](CSharp-Packages-Versioning.md) —
   Versioning policy for C# packages across sprint and release promotion.
 - [PowerShell Modules — Build Process](PowerShell-Modules-Build-Process.md) —
@@ -280,6 +294,10 @@ _Teach / Tell how to create software._
   Runbook for rendering editable PlantUML, UML, and Draw.io sources into
   checked-in `_generated/diagrams` images with `Convert-DiagramsToImages`.
   Also records the PlantUML MCP relationship for interactive clients.
+- [Philote Temporal Residual-Reference Classification](Philote-Temporal-Reference-Classification.md) —
+  PTV-540 repository-wide classification of every retained vendor/retired
+  temporal-name hit, including the four Rule Export source defects that remain
+  outside the active Flyway package.
 - [BuildMaster Install Runbook](BuildMaster-Install-Runbook.md) —
   Comprehensive installation, verification, and ongoing-configuration guide for
   the BuildMaster server. Covers application setup, raft strategy, application
@@ -289,6 +307,20 @@ _Teach / Tell how to create software._
 - [BuildMaster Run-State Runbook](BuildMaster-Run-State-Runbook.md) —
   Operational guide for the build-id scoped `_generated/buildmaster/<BuildMasterBuildId>/`
   inter-stage state channel.
+- [BuildMaster Plan Raft Sync Requirement](BuildMaster-Plan-Raft-Sync-Requirement.md) —
+  Why a committed `.otter` change is not live until `Sync-BuildMasterPlans` runs, and how
+  a stale raft plan silently hangs a stage forever on a hidden mandatory-parameter prompt.
+  Includes the 2026-08-03 incident, a triage checklist, and fail-fast guidance.
+- [Authenticode Signing and the MAX_PATH Constraint](Authenticode-Signing-MAX_PATH-Constraint.md) —
+  Open defect: `Set-AuthenticodeSignature` fails with a misleading `UnknownError` on paths
+  over 260 characters regardless of `LongPathsEnabled`. Affects long-named modules built
+  from sprint worktrees.
+- [Feed Protocol HTTP to HTTPS Migration](Feed-Protocol-HTTP-to-HTTPS-Migration.md) —
+  Runbook for the ProGet/BuildMaster cutover to HTTPS after the `utat022` PKI change.
+  Covers the four independent client registration surfaces (PowerShellGet v2,
+  PSResourceGet, dotnet/NuGet sources, repo `NuGet.Config`), the required
+  `localhost` to `utat022` host change forced by the certificate SAN, all 20 server
+  feeds, strict-TLS verification, rollback, and the Avast TLS-interception caveat.
 - [PowerShell-Module Pipeline -NoProfile Runbook](PowerShellModule-Pipeline-NoProfile-Runbook.md) —
   V4-B02 audit + policy of record: every settings lookup in the PowerShell-module
   plan/runner resolves under `-NoProfile` via explicit parameter, env var, or
@@ -373,7 +405,7 @@ _Teach / Tell how to create software._
   and documents the reactivation procedure.
 - [Sprint Infrastructure Naming](SprintInfrastructure-Naming.md) —
   Naming conventions for sprint-scoped infrastructure resources, including
-  BWS-owned `dbConnectionString-*` keys for Development and Experimental
+  BWS-owned dotted `dbConnectionString.*` keys for Development and Experimental
   database connection strings.
 - [Production and Tooling Overview](Production-and-Tooling-Overview.md) —
   Cross-cut overview of production-facing flows and supporting tooling.

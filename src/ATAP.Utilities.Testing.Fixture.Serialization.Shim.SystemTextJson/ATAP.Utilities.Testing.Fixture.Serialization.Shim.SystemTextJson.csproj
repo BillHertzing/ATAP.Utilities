@@ -48,7 +48,6 @@
 
   <!-- Third-party libraries used in testing the Serialization Fixtures -->
   <ItemGroup>
-    <PackageReference Include="TimePeriodLibrary.NET" />
     <PackageReference Include="UnitsNet" />
   </ItemGroup>
 

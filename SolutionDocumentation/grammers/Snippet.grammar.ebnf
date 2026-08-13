@@ -1,0 +1,53 @@
+(*
+  Snippet grammar contract for RRSBS rendering.
+  Authority: SolutionDocumentation/grammers per GRAMMAR-01 (2026-08-01).
+  Scope: the deterministic VS Code JSON/JSONC snippet-file subset represented
+  by the retained Snippet Rule Primitives. This is not a replacement for the
+  full JSONC grammar or the complete VS Code snippet-syntax specification.
+*)
+
+snippet-file = "{", [ new-line ], { comment-line },
+               [ snippet-definition, { ",", [ new-line ], snippet-definition } ],
+               "}", [ new-line ] ;
+snippet-definition = quoted-string, [ whitespace ], ":", [ whitespace ], "{",
+                     [ new-line ], prefix-property, ",", [ new-line ], body-property,
+                     [ ",", [ new-line ], description-property ],
+                     [ ",", [ new-line ], scope-property ], [ new-line ], "}" ;
+
+prefix-property = "\"prefix\"", [ whitespace ], ":", [ whitespace ],
+                  ( quoted-string | string-array ) ;
+body-property = "\"body\"", [ whitespace ], ":", [ whitespace ],
+                ( quoted-string | string-array ) ;
+description-property = "\"description\"", [ whitespace ], ":", [ whitespace ],
+                       quoted-string ;
+scope-property = "\"scope\"", [ whitespace ], ":", [ whitespace ], quoted-string ;
+
+string-array = "[", [ quoted-string, { ",", [ whitespace ], quoted-string } ], "]" ;
+quoted-string = "\"", { json-character | escape-sequence }, "\"" ;
+json-character = ? JSON string character other than quotation mark, reverse solidus, or control character ? ;
+escape-sequence = "\\\"" | "\\\\" | "\\/" | "\\b" | "\\f" | "\\n" | "\\r" | "\\t" |
+                  "\\u", hex-digit, hex-digit, hex-digit, hex-digit ;
+
+snippet-body = { literal-text | tabstop | placeholder | choice | variable | transform } ;
+tabstop = "$", integer | "${", integer, "}" ;
+placeholder = "${", integer, ":", snippet-body, "}" ;
+choice = "${", integer, "|", choice-text, { ",", choice-text }, "|}" ;
+variable = "$", variable-name | "${", variable-name, "}" |
+           "${", variable-name, ":", snippet-body, "}" ;
+transform = "${", ( integer | variable-name ), "/", regular-expression, "/",
+            replacement-format, "/", option-flags, "}" ;
+integer = nonzero-digit, { digit } | "0" ;
+variable-name = letter, { letter | digit | "_" } ;
+
+comment-line = "//", { ? any character except a new-line ? }, new-line ;
+choice-text = { ? snippet choice character except comma, reverse solidus, or vertical bar ? } ;
+literal-text = ? snippet body text with required escaping ? ;
+regular-expression = ? VS Code snippet transform regular-expression text ? ;
+replacement-format = ? VS Code snippet transform replacement text ? ;
+option-flags = { letter } ;
+whitespace = " " | "\t" ;
+new-line = "\r\n" | "\n" ;
+letter = "A"…"Z" | "a"…"z" ;
+nonzero-digit = "1"…"9" ;
+digit = "0"…"9" ;
+hex-digit = digit | "A"…"F" | "a"…"f" ;

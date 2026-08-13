@@ -24,7 +24,6 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
-    <PackageReference Include="TimePeriodLibrary.NET" />
     <PackageReference Include="UnitsNet" />
   </ItemGroup>
 

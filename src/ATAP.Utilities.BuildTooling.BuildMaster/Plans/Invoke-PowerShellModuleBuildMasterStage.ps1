@@ -70,6 +70,13 @@
 .PARAMETER ProGetUrl
   Base URL of the ProGet server hosting the PowerShellGet feeds.
 
+.PARAMETER CodeSigningCertificateThumbprint
+  SHA-1 thumbprint of the code-signing certificate available to the BuildMaster
+  service identity in LocalMachine\My.
+
+.PARAMETER TimestampServerUri
+  Absolute Authenticode timestamp service URI used for durable signatures.
+
 .PARAMETER AllowExperimental
 .PARAMETER AllowDevelopment
 .PARAMETER AllowIntegration
@@ -167,6 +174,13 @@ param(
 
   [ValidateNotNullOrEmpty()]
   [string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key',
+
+  [Parameter(Mandatory)]
+  [ValidatePattern('^[0-9A-Fa-f]{40}$')]
+  [string]$CodeSigningCertificateThumbprint,
+
+  [Parameter(Mandatory)]
+  [uri]$TimestampServerUri,
 
   [AllowEmptyString()]
   [string]$AllowExperimental = '',
@@ -651,7 +665,18 @@ function Set-PSResourceRepositoryEnsured {
   }
 
   PROCESS {
+    $repositoryMutex = [System.Threading.Mutex]::new($false, 'ATAP.BuildMaster.PSResourceRepository')
+    $repositoryMutexAcquired = $false
     try {
+      try {
+        $repositoryMutexAcquired = $repositoryMutex.WaitOne([TimeSpan]::FromMinutes(2))
+      } catch [System.Threading.AbandonedMutexException] {
+        $repositoryMutexAcquired = $true
+      }
+      if (-not $repositoryMutexAcquired) {
+        throw "Timed out waiting for the cross-process PSResourceRepository update lock."
+      }
+
       $existing = Get-PSResourceRepository -Name $Name -ErrorAction SilentlyContinue
       if ($null -eq $existing) {
         if ($PSCmdlet.ShouldProcess($Name, 'Register-PSResourceRepository')) {
@@ -668,6 +693,10 @@ function Set-PSResourceRepositoryEnsured {
       throw
     }
     finally {
+      if ($repositoryMutexAcquired) {
+        $repositoryMutex.ReleaseMutex()
+      }
+      $repositoryMutex.Dispose()
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Ensure complete for '$Name'."
     }
   }
@@ -885,6 +914,8 @@ function Invoke-PowerShellModuleBuildMasterStage {
     [AllowEmptyString()][string]$NupkgPathFile = '',
     [Parameter(Mandatory)][string]$ProGetUrl,
     [ValidateNotNullOrEmpty()][string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key',
+    [Parameter(Mandatory)][ValidatePattern('^[0-9A-Fa-f]{40}$')][string]$CodeSigningCertificateThumbprint,
+    [Parameter(Mandatory)][uri]$TimestampServerUri,
     [string]$ExperimentalFeed = 'powershellget-experimental',
     [string]$DevelopmentFeed = 'powershellget-development',
     [string]$IntegrationFeed = 'powershellget-integration',
@@ -1050,7 +1081,15 @@ function Invoke-PowerShellModuleBuildMasterStage {
       -StateFiles $stateFiles `
       -AdditionalData @{ PipelineKind = 'PowerShellModule'; ModuleName = $ModuleName; PackageName = $PackageName } | Out-Null
 
-    $moduleBuildOutputRoot = Join-Path -Path $contextDirectory -ChildPath "psmodules/$ModuleName"
+    # MAX_PATH budget: Authenticode signing fails over 260 characters with a misleading
+    # "cannot find the path specified", regardless of LongPathsEnabled. module.build.ps1
+    # stages module files under <OutputRoot>/packages/<ModuleName>/ before packing, so
+    # putting $ModuleName in OutputRoot too spent it twice and pushed long-named modules
+    # past the limit from a sprint worktree. Keep $ModuleName out of OutputRoot.
+    # 'packages' is module.build.ps1's fixed output folder name - do not rename it here,
+    # or Find-LatestPowerShellModulePackage looks in a directory that is never created.
+    # See SolutionDocumentation/Authenticode-Signing-MAX_PATH-Constraint.md
+    $moduleBuildOutputRoot = Join-Path -Path $contextDirectory -ChildPath 'psmodules'
     $moduleBuildPackageOutputPath = Join-Path -Path $moduleBuildOutputRoot -ChildPath 'packages'
     if ([string]::IsNullOrWhiteSpace($PackageOutputPath)) {
       $PackageOutputPath = $moduleBuildPackageOutputPath
@@ -1152,6 +1191,7 @@ function Invoke-PowerShellModuleBuildMasterStage {
             -Reason "$Tier gate for $ApplicationName $PromotedPackageVersion on $Branch" `
             -ProGetBaseUrl $ProGetUrl `
             -ProGetApiKeySecretName $ProGetApiKeySecretName `
+            -EvidenceRoot (Join-Path -Path $contextDirectory -ChildPath 'promotion-signature-verification') `
             -CeilingTier $ceilingTier
         }
         catch {
@@ -1258,7 +1298,9 @@ function Invoke-PowerShellModuleBuildMasterStage {
                   -SkipPublish `
                   -MaxRetries 1 `
                   -BuildLogPath $buildLogPath `
-                  -OutputRoot $moduleBuildOutputRoot
+                  -OutputRoot $moduleBuildOutputRoot `
+                  -CodeSigningCertificateThumbprint $CodeSigningCertificateThumbprint `
+                  -TimestampServerUri $TimestampServerUri
               )
             }
             catch {
@@ -1361,6 +1403,8 @@ Invoke-PowerShellModuleBuildMasterStage `
   -NupkgPathFile $NupkgPathFile `
   -ProGetUrl $ProGetUrl `
   -ProGetApiKeySecretName $ProGetApiKeySecretName `
+  -CodeSigningCertificateThumbprint $CodeSigningCertificateThumbprint `
+  -TimestampServerUri $TimestampServerUri `
   -ExperimentalFeed $ExperimentalFeed `
   -DevelopmentFeed $DevelopmentFeed `
   -IntegrationFeed $IntegrationFeed `

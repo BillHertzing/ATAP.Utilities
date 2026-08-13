@@ -55,7 +55,7 @@ function Move-ProGetPackageIntraTier {
     Alias: Comments (legacy).
 
 .PARAMETER ProGetBaseUrl
-    The ProGet base URL (e.g., 'http://localhost:50000').
+    The ProGet base URL (e.g., 'https://utat022:50000').
     Falls back to: $global:settings via configRootKeys → $global:ProGetBaseUrl.
 
 .PARAMETER ProGetApiKeySecretName

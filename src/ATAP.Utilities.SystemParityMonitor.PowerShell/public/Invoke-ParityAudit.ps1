@@ -20,6 +20,20 @@ Host name to record in the snapshot.
 .PARAMETER OutputPath
 Optional explicit snapshot output path.
 
+.PARAMETER PackageManagerProfiles
+Explicit identity and profile-path records used to collect pip, npm, and NuGet
+tool inventories. Each record must contain Identity and may contain PipPath,
+NpmPrefix, and NuGetToolPath. The audit never derives these paths from the
+identity running the audit.
+
+.PARAMETER ExpectedSurfaceMinimumCounts
+Minimum required row count by category. The default requires OS, PowerShell,
+three service rows, SQL, PackageManager, Shares, and ParityState. Missing or thin coverage is written into the
+  diagnostic snapshot as AuditCoverageFinding rows before the audit throws. Any
+  collector surface whose value begins with AuditError, or whose item ends in
+  /AuditError, is also a coverage failure even when the category's minimum row
+  count is otherwise satisfied.
+
 .OUTPUTS
 PSCustomObject.
 
@@ -32,7 +46,19 @@ Invoke-ParityAudit -StatePath C:\ProgramData\ATAP\ParityState -HostName utat022
 
     [string] $HostName = $env:COMPUTERNAME,
 
-    [string] $OutputPath
+    [string] $OutputPath,
+
+    [object[]] $PackageManagerProfiles = @(),
+
+    [hashtable] $ExpectedSurfaceMinimumCounts = @{
+      OS = 1
+      PowerShell = 1
+      Services = 3
+      SQL = 1
+      PackageManager = 1
+      Shares = 1
+      ParityState = 1
+    }
   )
 
   begin {
@@ -67,13 +93,18 @@ Invoke-ParityAudit -StatePath C:\ProgramData\ATAP\ParityState -HostName utat022
           Source = 'PSVersionTable'
         })
 
+      # Win32_Service, not Get-Service: it is the surface the least-privilege matrix names, and
+      # both were equally denied until Task 14.72 granted read-only SCM plus per-service query
+      # rights. Enumerate once rather than querying per name, so one denial cannot silently
+      # degrade a single row to '<missing>' while the others succeed.
+      $services = @(Get-CimInstance -ClassName Win32_Service -ErrorAction SilentlyContinue)
       foreach ($serviceName in @('W32Time', 'WinRM', 'sshd')) {
-        $service = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
+        $service = $services | Where-Object Name -eq $serviceName | Select-Object -First 1
         $surfaces.Add([pscustomobject] @{
             Category = 'Services'
             Item = $serviceName
-            Value = if ($service) { [string] $service.Status } else { '<missing>' }
-            Source = 'Get-Service'
+            Value = if ($service) { [string] $service.State } else { '<missing>' }
+            Source = 'Win32_Service'
           })
       }
 
@@ -81,7 +112,7 @@ Invoke-ParityAudit -StatePath C:\ProgramData\ATAP\ParityState -HostName utat022
         $surfaces.Add($sqlSurface)
       }
 
-      foreach ($packageSurface in @(Get-PackageManagerParitySurfaces -HostName $HostName)) {
+      foreach ($packageSurface in @(Get-PackageManagerParitySurfaces -HostName $HostName -PackageManagerProfiles $PackageManagerProfiles)) {
         $surfaces.Add($packageSurface)
       }
 
@@ -124,6 +155,33 @@ Invoke-ParityAudit -StatePath C:\ProgramData\ATAP\ParityState -HostName utat022
           Source = 'Get-ChildItem'
         })
 
+      if ($null -eq $ExpectedSurfaceMinimumCounts) {
+        throw 'ExpectedSurfaceMinimumCounts cannot be null.'
+      }
+      if ($ExpectedSurfaceMinimumCounts.Count -eq 0) {
+        throw 'ExpectedSurfaceMinimumCounts must contain at least one category.'
+      }
+
+      $coverageFindings = @(
+        Get-ParitySurfaceCoverageFindings `
+          -Surfaces @($surfaces) `
+          -ExpectedSurfaceMinimumCounts $ExpectedSurfaceMinimumCounts `
+          -HostName $HostName.ToLowerInvariant()
+      )
+      foreach ($coverageFinding in $coverageFindings) {
+        $finding = [pscustomobject]@{
+          Category = 'AuditCoverageFinding'
+          Item = if ($coverageFinding.Classification -eq 'AuditError') {
+            "$($coverageFinding.Category)/$($coverageFinding.Item)"
+          } else {
+            [string]$coverageFinding.Category
+          }
+          Value = "$($coverageFinding.Classification);ActualCount=$($coverageFinding.ActualCount);ExpectedMinimumCount=$($coverageFinding.ExpectedMinimumCount)"
+          Source = 'ExpectedSurfaceMinimumCounts'
+        }
+        $surfaces.Add($finding)
+      }
+
       $snapshot = [pscustomobject] @{
         SchemaVersion = 1
         HostName = $HostName.ToLowerInvariant()
@@ -136,9 +194,21 @@ Invoke-ParityAudit -StatePath C:\ProgramData\ATAP\ParityState -HostName utat022
         $snapshot | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $OutputPath -Encoding utf8
       }
 
+      if ($coverageFindings.Count -gt 0) {
+        $coverageSummary = @($coverageFindings | ForEach-Object {
+            $findingPath = if ($_.Classification -eq 'AuditError') {
+              "$($_.Category)/$($_.Item)"
+            } else {
+              [string]$_.Category
+            }
+            "$findingPath=$($_.Classification);ActualCount=$($_.ActualCount);ExpectedMinimumCount=$($_.ExpectedMinimumCount)"
+          }) -join '; '
+        throw "Parity audit surface coverage is inadequate. Diagnostic snapshot: '$OutputPath'. Findings: $coverageSummary"
+      }
+
       $snapshot | Add-Member -NotePropertyName SnapshotPath -NotePropertyValue $OutputPath -PassThru
     } catch {
-      Write-ParityMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Failed to write parity audit snapshot. Exception: $($_.Exception.Message)"
+      Write-ParityMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Parity audit did not complete successfully. Exception: $($_.Exception.Message)"
       throw
     }
   }

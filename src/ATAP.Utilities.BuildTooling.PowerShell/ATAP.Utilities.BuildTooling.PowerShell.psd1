@@ -145,6 +145,7 @@
     'Promote-DatabaseChangePackage', 'Promote-ProGetPackage',
     'Publish-DatabaseChangePackageToProGet', 'Publish-NuGetPackageToProGet',
     'Publish-PSModuleToProGet', 'Publish-PSModuleToProGetFeed',
+    'Set-PSModuleFileSignature', 'Test-PSModulePackageSignature',
     'Publish-PSPackage', 'Publish-UniversalPackageToProGet',
     'Read-SourceAndCreateRules',
     'Register-ProGetFeedSet',

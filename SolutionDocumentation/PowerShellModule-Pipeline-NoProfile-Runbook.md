@@ -18,7 +18,7 @@ This design allows the runners to execute within a fast, hermetic `-NoProfile` s
 
 ## The Standalone Settings Loader (`Initialize-LocalHostSettings`)
 
-Rather than relying on the PowerShell SCM or service profile configuration (which is complex to set up securely for service accounts like `SvcBuildmaster`), the stage runners explicitly load host settings in memory:
+Rather than relying on the PowerShell SCM or service profile configuration (which is complex to set up securely for service accounts like `SvcBuildMaster`), the stage runners explicitly load host settings in memory:
 
 1. Dot-source [`BuildMasterRunContext.Common.ps1`](../src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/BuildMasterRunContext.Common.ps1).
 2. Call `Initialize-LocalHostSettings -SourcePath $SourcePath`.

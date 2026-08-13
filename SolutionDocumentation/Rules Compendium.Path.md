@@ -1,4 +1,13 @@
-# Rules Compendium — PATH
+# Rules Compendium — Path
+
+<!-- METADATA
+  Language: Path
+  Created: pre-existing; normalized 2026-08-02
+  Kind Count: 1
+  Primitive Count: 13
+  Template version: 1.0
+  Source skill: .claude/skills/new-rule-kind/SKILL.md
+-->
 
 This file contains an overview of the PATH-specific Rules used within the ATAP.Utilities databases and the Ace Commander application built from these rules.
 
@@ -33,9 +42,70 @@ Beyond the structural grammar, Windows imposes additional constraints that BNF a
 - **Trailing characters** — Names cannot end with a period `.` or a space
 - **Case insensitivity** — NTFS is case-insensitive by default (unlike Linux ext4, which is case-sensitive)
 
-## Rule Primitives
+## Part I — Grammar Specification
 
-Rule Primitives are the atomic building blocks from which a Rule is constructed. Each primitive maps to a single BNF non-terminal in the Windows Path EBNF Grammar. When a primitive is instantiated, its inputs are bound to specific values; the rendered output is the exact PATH text that corresponds to that non-terminal node in the parse tree.
+*This section is written once when the Kind is defined. Update only on grammar revision.*
+*The grammar below is authored at `grammers/Path.grammar.ebnf`; its rendered `docs/`
+*copy remains deferred until grammar artifacts become database-stored.*
+
+<!-- rule-grammar-start -->
+
+### Kind: Path
+
+**Philote ID:** Not allocated in the current corpus; the retained-kind decision
+is recorded by GRAMMAR-01 and the baseline seed gate must allocate the Kind identity.
+
+**Grammar file:** `grammers/Path.grammar.ebnf`
+
+**DB record:** No authoritative current `PrimitiveLanguageKind` row is asserted by
+this normalization; database conformance is a later gated baseline activity.
+
+**Description:** Deterministic Windows path rendering from the retained Path
+Rule Primitives, with filesystem-dependent validity enforced by the renderer.
+
+#### Grammar
+
+<!-- EMBEDDED from grammers/Path.grammar.ebnf -->
+```ebnf
+path = unc-path | absolute-path | relative-path | extended-path ;
+unc-path = "\\\\", server, "\\", share, [ "\\", path-tail ] ;
+absolute-path = drive, "\\", [ path-tail ] | "\\", path-tail ;
+relative-path = path-tail ;
+extended-path = "\\\\?\\", drive, "\\", [ path-tail ]
+              | "\\\\?\\UNC\\", server, "\\", share, [ "\\", path-tail ] ;
+```
+<!-- END EMBEDDED -->
+
+#### Composition Constraints
+
+- A `path` selects exactly one path form; a renderer must not infer the form.
+- `path-tail` is an ordered, non-empty sequence of `name` values separated by `\\`.
+- `extended-path` renders either a drive-rooted local path or an UNC path.
+- `namechar` validation rejects prohibited characters, terminal periods/spaces,
+  and reserved device names; these checks are semantic constraints, not EBNF tokens.
+
+#### Valid Expression Examples
+
+```text
+C:\\Repository\\SolutionDocumentation\\Rules Compendium.Path.md
+\\\\server\\share\\folder\\file.txt
+..\\_generated\\RRSBS-V2
+\\\\?\\C:\\LongPath\\artifact.txt
+```
+
+<!-- rule-grammar-end -->
+
+## Part II — Rule Primitives
+
+Rule Primitives are the atomic building blocks from which a Rule is constructed.
+The twelve grammar primitives each map to a single BNF non-terminal in the
+Windows Path EBNF Grammar. When a grammar primitive is instantiated, its inputs
+are bound to specific values; the rendered output is the exact PATH text that
+corresponds to that non-terminal node in the parse tree. The thirteenth retained
+primitive is the zero-input specialized
+`<atap-utilities-secrets-csproj-path>` identity documented below.
+
+<!-- rule-primitives-start -->
 
 ---
 
@@ -397,3 +467,49 @@ Attribution:
 ```
 
 ---
+
+### `<atap-utilities-secrets-csproj-path>` Rule Primitive
+
+**Philote ID:** `"8c3d6e7f-5a4b-4c9d-0e12-3c4d5e6f7081"`
+
+Description: Specialized absolute-path primitive for the
+`ATAP.Utilities.Secrets.csproj` file instantiation. This retained primitive is
+not a Path grammar production and does not amend the twelve-primitive grammar.
+
+Body: The complete rendered absolute path to `ATAP.Utilities.Secrets.csproj`.
+
+Inputs: None. The primitive has zero structured `RulePrimitiveInput` rows.
+
+Output: The rendered absolute path to the `ATAP.Utilities.Secrets.csproj` file.
+
+Processing: Resolves the specialized project-file path for its instantiation;
+the twelve grammar primitives remain responsible for general Path composition.
+
+Attribution:
+
+```text
+1. Retained RPRRSBSI Path catalog identity
+```
+
+---
+
+<!-- rule-primitives-end -->
+
+## Part III — Rule Repository
+
+<!-- rule-repository-start -->
+
+No formal Path Rules are present in the normalized corpus. The thirteen retained
+Rule Primitives are documented above: twelve grammar primitives and the
+zero-input specialized `<atap-utilities-secrets-csproj-path>` primitive. Rule
+composition remains a later baseline and database-conformance activity.
+
+<!-- rule-repository-end -->
+
+## Part IV — Rule Sets
+
+<!-- rule-sets-start -->
+
+No formal Path Rule Sets are present in the normalized corpus.
+
+<!-- rule-sets-end -->

@@ -1,156 +1,138 @@
 @startuml CoreSchema_Overview
-' ============================================================
-' ATAPUtilities Core Schema — Complete Overview
-' Source: V00.01.000010__Create_ATAPUtilities_Core_Schema.sql
-' ============================================================
+' ATAPUtilities consolidated RPRRSBSI V3 initial schema.
+' Source: Database/Flyway/SQL/V00010__Create_ATAPUtilities_Initial_Schema_And_Seed.sql
 
 skinparam linetype ortho
 skinparam roundcorner 5
 skinparam defaultFontName Segoe UI
-skinparam defaultFontSize 11
+skinparam defaultFontSize 10
 skinparam entity {
-    BackgroundColor #F0F4FF
-    BorderColor     #3366CC
-    FontColor       #1A1A2E
+  BackgroundColor #F0F4FF
+  BorderColor #3366CC
+  FontColor #1A1A2E
 }
 skinparam arrow {
-    Color           #3366CC
-    FontSize        9
+  Color #3366CC
+  FontSize 8
 }
 
-' ── Philote Foundation ────────────────────────────────────
 entity "Philote" as Philote <<table>> {
-    * PhiloteId  : UNIQUEIDENTIFIER <<PK>>
-    --
-    CreatedAt    : DATETIME2
+  * PhiloteId : uniqueidentifier <<PK>>
+  --
+  AdditionalIdsStub : nvarchar(max) [NULL]
 }
 
-entity "PhiloteAdditionalId" as PhiloteAddId <<table>> {
-    * PhiloteAdditionalIdId : INT <<PK, IDENTITY>>
-    --
-    PhiloteId   : UNIQUEIDENTIFIER <<FK>>
-    KeyName     : NVARCHAR(200)
-    ValueId     : UNIQUEIDENTIFIER
+entity "PhiloteValidityPeriod" as Validity <<table>> {
+  * PhiloteValidityPeriodId : uniqueidentifier <<PK>>
+  --
+  PhiloteId : uniqueidentifier <<FK>>
+  PreviousValidToUtc : datetime2(7) [NULL, FK]
+  ValidFromUtc : datetime2(7)
+  ValidToUtc : datetime2(7) [NULL]
 }
 
-entity "PhiloteTimeBlock" as PhiloteTimeBlock <<table>> {
-    * PhiloteTimeBlockId : INT <<PK, IDENTITY>>
-    --
-    PhiloteId   : UNIQUEIDENTIFIER <<FK>>
-    StartAt     : DATETIME2
-    EndAt       : DATETIME2 [NULL]
+entity "RuleKind" as RuleKind <<table>> {
+  * RuleKindId : uniqueidentifier <<PK>>
+  --
+  PhiloteId : uniqueidentifier <<FK>>
+  RuleKindCode : varchar(64)
+  RuleKindName : nvarchar(128)
 }
 
-' ── Classification Lookup ─────────────────────────────────
-entity "PrimitiveLanguageKind" as LangKind <<table>> {
-    * PrimitiveLanguageKindId : TINYINT <<PK>>
-    --
-    Name        : NVARCHAR(50)
-    Description : NVARCHAR(200) [NULL]
+entity "RulePrimitive" as Primitive <<table>> {
+  * RulePrimitiveId : uniqueidentifier <<PK>>
+  --
+  PhiloteId : uniqueidentifier <<FK>>
+  RuleKindId : uniqueidentifier <<FK>>
+  RulePrimitiveCode : nvarchar(128)
 }
 
-' ── Rule Primitives ───────────────────────────────────────
-entity "RulePrimitive" as RulePrimitive <<table>> {
-    * PhiloteId               : UNIQUEIDENTIFIER <<PK, FK>>
-    --
-    PrimitiveLanguageKindId   : TINYINT <<FK>>
-    Name                      : NVARCHAR(200)
-    Description               : NVARCHAR(MAX) [NULL]
-    BnfDefinition             : NVARCHAR(MAX) [NULL]
-    Attribution               : NVARCHAR(MAX) [NULL]
+entity "RulePrimitiveInput" as Input <<table>> {
+  * RulePrimitiveInputId : uniqueidentifier <<PK>>
+  --
+  RulePrimitiveId : uniqueidentifier <<FK>>
+  InputName : nvarchar(128)
+  InputType : nvarchar(256)
+  InputDescription : nvarchar(1024)
+  DefaultValue : nvarchar(4000) [NULL]
+  IsRequired : bit
+  Ordinal : int
 }
 
-entity "RulePrimitiveInput" as RulePrimInput <<table>> {
-    * RulePrimitiveInputId : INT <<PK, IDENTITY>>
-    --
-    PhiloteId     : UNIQUEIDENTIFIER <<FK>>
-    InputName     : NVARCHAR(200)
-    TypeName      : NVARCHAR(200) [NULL]
-    Description   : NVARCHAR(MAX) [NULL]
-    DefaultValue  : NVARCHAR(MAX) [NULL]
-    IsRequired    : BIT
-}
-
-' ── Rule Definitions ──────────────────────────────────────
 entity "Rule" as Rule <<table>> {
-    * PhiloteId               : UNIQUEIDENTIFIER <<PK, FK>>
-    --
-    PrimitiveLanguageKindId   : TINYINT <<FK>>
-    Name                      : NVARCHAR(200)
-    Purpose                   : NVARCHAR(MAX) [NULL]
-    SourceFileReference       : NVARCHAR(500) [NULL]
+  * RuleId : uniqueidentifier <<PK>>
+  --
+  PhiloteId : uniqueidentifier <<FK>>
+  RuleKindId : uniqueidentifier <<FK>>
+  RulePrimitiveId : uniqueidentifier <<FK>>
+  RuleCode : varchar(128)
+  RuleBody : nvarchar(max)
 }
 
-entity "RulePrimitiveComposition" as RulePC <<table>> {
-    * RulePrimitiveCompositionId : INT <<PK, IDENTITY>>
-    --
-    RulePhiloteId      : UNIQUEIDENTIFIER <<FK>>
-    SequenceKey        : NVARCHAR(20)
-    PrimitivePhiloteId : UNIQUEIDENTIFIER <<FK>>
-    BoundInputsJson    : NVARCHAR(MAX) [NULL]
-    Notes              : NVARCHAR(MAX) [NULL]
-}
-
-' ── Rule Sets ─────────────────────────────────────────────
 entity "RuleSet" as RuleSet <<table>> {
-    * PhiloteId   : UNIQUEIDENTIFIER <<PK, FK>>
-    --
-    Name          : NVARCHAR(200)
-    Description   : NVARCHAR(MAX) [NULL]
+  * RuleSetId : uniqueidentifier <<PK>>
+  --
+  PhiloteId : uniqueidentifier <<FK>>
+  RuleSetCode : varchar(128)
 }
 
-entity "RuleSetMember" as RuleSetMember <<table>> {
-    * RuleSetMemberId  : INT <<PK, IDENTITY>>
-    --
-    RuleSetPhiloteId   : UNIQUEIDENTIFIER <<FK>>
-    RulePhiloteId      : UNIQUEIDENTIFIER <<FK>>
-    SequenceNumber     : INT
-    Notes              : NVARCHAR(MAX) [NULL]
+entity "RuleSetRule" as RuleSetRule <<table>> {
+  * RuleSetId : uniqueidentifier <<PK, FK>>
+  * RuleId : uniqueidentifier <<PK, FK>>
+  --
+  Ordinal : int
 }
 
-' ── Rule Instantiations ───────────────────────────────────
-entity "RuleInstantiation" as RuleInst <<table>> {
-    * PhiloteId     : UNIQUEIDENTIFIER <<PK, FK>>
-    --
-    RulePhiloteId   : UNIQUEIDENTIFIER <<FK>>
-    CreatedAt       : DATETIME2
-    Notes           : NVARCHAR(MAX) [NULL]
+entity "BuildSet" as BuildSet <<table>> {
+  * BuildSetId : uniqueidentifier <<PK>>
+  --
+  PhiloteId : uniqueidentifier <<FK>>
+  BuildSetCode : varchar(128)
 }
 
-entity "RuleInstantiationBinding" as RuleInstBind <<table>> {
-    * RuleInstantiationBindingId : INT <<PK, IDENTITY>>
-    --
-    InstantiationPhiloteId : UNIQUEIDENTIFIER <<FK>>
-    InputName              : NVARCHAR(200)
-    InputValue             : NVARCHAR(MAX) [NULL]
+entity "BuildSetRuleSet" as BuildSetRuleSet <<table>> {
+  * BuildSetId : uniqueidentifier <<PK, FK>>
+  * RuleSetId : uniqueidentifier <<PK, FK>>
+  --
+  Ordinal : int
 }
 
-' ── Relationships ─────────────────────────────────────────
-' Philote foundation (one Philote row backs each keyed entity)
-Philote            ||--o{ PhiloteAddId      : "AdditionalIds"
-Philote            ||--o{ PhiloteTimeBlock  : "TimeBlocks"
-Philote            ||--o| RulePrimitive     : "is-a"
-Philote            ||--o| Rule              : "is-a"
-Philote            ||--o| RuleSet           : "is-a"
-Philote            ||--o| RuleInst          : "is-a"
+entity "Instantiation" as Instantiation <<table>> {
+  * InstantiationId : uniqueidentifier <<PK>>
+  --
+  PhiloteId : uniqueidentifier <<FK>>
+  BuildSetId : uniqueidentifier <<FK>>
+  InstantiationCode : varchar(128)
+}
 
-' Language kind lookup
-LangKind           ||--o{ RulePrimitive     : "classifies"
-LangKind           ||--o{ Rule              : "classifies"
+Philote ||--o{ Validity : "business-valid identity"
+Validity "0..1 successor" --> "0..1 predecessor" Validity : "previous end"
+Philote ||--o| RuleKind : "identity"
+Philote ||--o| Primitive : "identity"
+Philote ||--o| Rule : "identity"
+Philote ||--o| RuleSet : "identity"
+Philote ||--o| BuildSet : "identity"
+Philote ||--o| Instantiation : "identity"
 
-' Primitive inputs
-RulePrimitive      ||--o{ RulePrimInput     : "declares"
+RuleKind ||--o{ Primitive : "classifies"
+Primitive ||--o{ Input : "declares"
+RuleKind ||--o{ Rule : "classifies"
+Primitive ||--o{ Rule : "renders"
+RuleSet ||--o{ RuleSetRule : "contains"
+Rule ||--o{ RuleSetRule : "member"
+BuildSet ||--o{ BuildSetRuleSet : "contains"
+RuleSet ||--o{ BuildSetRuleSet : "member"
+BuildSet ||--o{ Instantiation : "selected by"
 
-' Rule composition (many primitives ordered inside a rule)
-Rule               ||--o{ RulePC            : "composes"
-RulePrimitive      ||--o{ RulePC            : "used-in"
+note right of Validity
+  [ValidFromUtc, ValidToUtc)
+  NULL end = open-ended
+  gaps allowed; overlaps rejected
+end note
 
-' Rule sets
-RuleSet            ||--o{ RuleSetMember     : "contains"
-Rule               ||--o{ RuleSetMember     : "member-of"
-
-' Instantiation
-Rule               ||--o{ RuleInst          : "instantiates"
-RuleInst           ||--o{ RuleInstBind      : "binds"
+note bottom of Philote
+  Every Philote-bearing entity uses the same GUID
+  for its entity primary key and PhiloteId.
+end note
 
 @enduml

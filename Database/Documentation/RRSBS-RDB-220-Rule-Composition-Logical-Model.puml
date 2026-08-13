@@ -1,0 +1,224 @@
+@startuml RRSBS_RDB_220_Logical_Model
+hide circle
+hide methods
+left to right direction
+skinparam linetype ortho
+skinparam defaultFontName Segoe UI
+skinparam shadowing false
+skinparam entity {
+  BackgroundColor #F7FAFC
+  BorderColor #34495E
+  FontColor #1F2937
+}
+
+title RDB-220 Rule and Recursive Composition Logical Model
+
+legend left
+  Design-only model; no SQL, seeds, or allocated identifiers.
+  <<entity-root>> durable RDB-200 Entity subtype
+  <<entity-version>> immutable published RDB-200 Entity subtype
+  Exact version FKs; no current/latest aliases or untyped binding shapes.
+endlegend
+
+package "Rule identity and publication" #EAF2F8 {
+  entity Rule <<entity-root>> {
+    * RuleId : bigint <<PK>>
+    * RulePhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * RuleKindId : bigint <<FK>>
+    * RuleCode : varchar
+    * CreatedAtUtc : datetime2
+    --
+    UQ (RuleId, RuleKindId)
+    UQ (RuleKindId, RuleCode)
+  }
+
+  entity RuleVersion <<entity-version>> {
+    * RuleVersionId : bigint <<PK>>
+    * RuleVersionPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * RuleId : bigint <<FK>>
+    * RuleKindId : bigint <<FK>>
+    * RuleKindVersionId : bigint <<FK>>
+    * RevisionSequence : int
+    o PredecessorRuleVersionId : bigint <<FK,UQ>>
+    * CompositionHashAlgorithmCode : varchar <<FK>>
+    * CompositionContentHash : binary
+    * PublishedAtUtc : datetime2
+    --
+    UQ (RuleId, RevisionSequence)
+  }
+
+  entity RuleKind <<external RDB-210>> {
+    * RuleKindId : bigint <<PK>>
+  }
+
+  entity RuleKindVersion <<external RDB-210>> {
+    * RuleKindVersionId : bigint <<PK>>
+    * RuleKindId : bigint <<FK>>
+  }
+}
+
+package "Recursive composition and bindings" #FDF2E9 {
+  entity RuleVersionNode <<entity-version>> {
+    * RuleVersionNodeId : bigint <<PK>>
+    * RuleVersionNodePhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * RuleVersionId : bigint <<FK>>
+    o ParentRuleVersionNodeId : bigint <<FK>>
+    * Ordinal : int
+    * PrimitiveVersionId : bigint <<FK>>
+    * MinOccurs : int
+    o MaxOccurs : int
+    o ChoiceDiscriminatorCode : varchar <<FK>>
+    o NodeLabel : nvarchar
+    --
+    UQ (RuleVersionId, ParentRuleVersionNodeId, Ordinal)
+  }
+
+  entity PrimitiveVersion <<external RDB-210>> {
+    * PrimitiveVersionId : bigint <<PK>>
+    * RuleKindVersionId : bigint <<FK>>
+  }
+
+  entity PrimitiveInputDefinition <<external RDB-210>> {
+    * PrimitiveInputDefinitionId : bigint <<PK>>
+    * PrimitiveVersionId : bigint <<FK>>
+    * ValueTypeVersionId : bigint <<FK>>
+  }
+
+  entity RuleVersionNodeInput <<binding>> {
+    * RuleVersionNodeInputId : bigint <<PK>>
+    * RuleVersionNodeId : bigint <<FK>>
+    * PrimitiveInputDefinitionId : bigint <<FK>>
+    * BindingShapeCode : varchar <<FK>>
+    * TargetValueTypeVersionId : bigint <<FK>>
+    o ConstantValueTypeVersionId : bigint <<FK>>
+    o RuleInputDefinitionId : bigint <<FK>>
+    o DerivationContractVersionId : bigint <<FK>>
+    o ConversionPolicyCode : varchar <<FK>>
+    * CanonicalValueHash : binary
+    --
+    UQ (RuleVersionNodeId, PrimitiveInputDefinitionId)
+    CHECK exactly one binding shape
+  }
+
+  entity BindingShape <<catalog>> {
+    * BindingShapeCode : varchar <<PK>>
+    * RequiresConstant : bit
+    * RequiresRuleInput : bit
+    * RequiresDerivation : bit
+  }
+
+  entity DerivationContractVersion <<future immutable contract>> {
+    * DerivationContractVersionId : bigint <<PK>>
+    * ExpressionLanguageCode : varchar <<FK>>
+    * ExpressionLanguageVersion : varchar
+    * SourceValueTypeVersionId : bigint <<FK>>
+    * TargetValueTypeVersionId : bigint <<FK>>
+    * ContractContentHash : binary
+  }
+}
+
+package "Public typed ports" #E8F8F5 {
+  entity RuleInputDefinition <<entity-version>> {
+    * RuleInputDefinitionId : bigint <<PK>>
+    * RuleInputDefinitionPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * RuleVersionId : bigint <<FK>>
+    * InputCode : varchar
+    * Ordinal : int
+    * ValueTypeVersionId : bigint <<FK>>
+    * MinCardinality : int
+    o MaxCardinality : int
+    * AllowsNullElement : bit
+    * ValidationContractCode : varchar <<FK>>
+    --
+    UQ (RuleVersionId, InputCode)
+    UQ (RuleVersionId, Ordinal)
+  }
+
+  entity RuleDefaultInputValue <<entity-version>> {
+    * RuleDefaultInputValueId : bigint <<PK>>
+    * RuleDefaultInputValuePhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * RuleInputDefinitionId : bigint <<FK,UQ>>
+    * ValueTypeVersionId : bigint <<FK>>
+    * CanonicalValueHash : binary
+    * RationaleEntityId : bigint <<FK>>
+    * RationaleEntityTypeId : bigint <<FK>>
+    * PublishedAtUtc : datetime2
+  }
+
+  entity RuleOutputDefinition <<entity-version>> {
+    * RuleOutputDefinitionId : bigint <<PK>>
+    * RuleOutputDefinitionPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * RuleVersionId : bigint <<FK>>
+    * OutputCode : varchar
+    * Ordinal : int
+    * ValueTypeVersionId : bigint <<FK>>
+    * MinCardinality : int
+    o MaxCardinality : int
+    * OutputDispositionCode : varchar <<FK>>
+    * MediaTypePolicyCode : varchar <<FK>>
+    * ArtifactLocatorPolicyCode : varchar <<FK>>
+    * HashExpectationPolicyCode : varchar <<FK>>
+    --
+    UQ (RuleVersionId, OutputCode)
+    UQ (RuleVersionId, Ordinal)
+  }
+
+  entity ValueTypeVersion <<external RDB-210>> {
+    * ValueTypeVersionId : bigint <<PK>>
+  }
+}
+
+RuleKind ||--o{ Rule : owns for life
+Rule ||--o{ RuleVersion : publishes
+RuleKindVersion ||--o{ RuleVersion : exact same-kind version
+RuleVersion |o--o| RuleVersion : predecessor
+
+RuleVersion ||--o{ RuleVersionNode : owns tree
+RuleVersionNode |o--o{ RuleVersionNode : parent / children
+PrimitiveVersion ||--o{ RuleVersionNode : exact primitive
+PrimitiveInputDefinition ||--o{ RuleVersionNodeInput : declared target
+RuleVersionNode ||--o{ RuleVersionNodeInput : binds input
+BindingShape ||--o{ RuleVersionNodeInput : exactly one shape
+DerivationContractVersion |o--o{ RuleVersionNodeInput : versioned derivation
+
+RuleVersion ||--o{ RuleInputDefinition : exposes
+RuleInputDefinition ||--o| RuleDefaultInputValue : immutable default
+RuleInputDefinition |o--o{ RuleVersionNodeInput : explicit source
+RuleVersion ||--o{ RuleOutputDefinition : declares
+ValueTypeVersion ||--o{ RuleInputDefinition : exact input type
+ValueTypeVersion ||--o{ RuleDefaultInputValue : exact default type
+ValueTypeVersion ||--o{ RuleOutputDefinition : exact output type
+ValueTypeVersion ||--o{ RuleVersionNodeInput : source / target type
+
+note bottom of RuleVersion
+  Composite FKs prove Rule.RuleKindId =
+  RuleKindVersion.RuleKindId. Published
+  rows are immutable and version-exact.
+end note
+
+note bottom of RuleVersionNode
+  Exactly one root; no cycles; all nodes reachable.
+  Child ordinals are gap-free under one parent.
+  PrimitiveVersion.RuleKindVersionId must equal
+  RuleVersion.RuleKindVersionId.
+end note
+
+note bottom of RuleVersionNodeInput
+  Exactly one: constant | rule-input | derivation.
+  No free-form JSON/text mapping. Secrets remain
+  opaque SecretName values and never resolve here.
+end note
+
+@enduml

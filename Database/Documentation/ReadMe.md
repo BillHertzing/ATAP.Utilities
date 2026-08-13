@@ -7,6 +7,13 @@ diagrams, and operator references that callers and contributors need when
 working on database change packages, migrations, seed loaders, and the
 BuildMaster/ProGet pipeline that promotes them.
 
+The current RPRRSBSI V3 source is `ATAPUtilities.Database` `0.1.0`: one active
+`V00010` migration and eleven approved CSV inputs. The active temporal table is
+`PhiloteValidityPeriod`, using half-open predecessor-chain semantics. Older V3
+and pre-V3 sources under `Database/Flyway/Archive` are historical evidence only.
+Gate PTV-G4 accepts the source and documentation boundary; publication,
+promotion, installation, permanent-database work, and deployment remain gated.
+
 > **Note on scope.** Process and release documentation lives in
 > `SolutionDocumentation/` at the repo root. This folder is for
 > implementation-level material that is too detailed (or too schema-
@@ -23,8 +30,14 @@ BuildMaster/ProGet pipeline that promotes them.
   entire `Database/` subtree.
 - [README.RRSBS.md](README.RRSBS.md) — Rules, Rule Sets, and Build Sets
   subsystem overview.
-- [README_RuleExport.md](README_RuleExport.md) — Rule Export utility
-  quick-start.
+- [RPRRSBSI-V3-Data-Dictionary.md](RPRRSBSI-V3-Data-Dictionary.md) — exact
+  physical schema and temporal query/mutation contract.
+- [RebuildDatabase.md](RebuildDatabase.md) — separately authorized exact-target
+  rebuild procedure.
+- [PROMOTION_SUMMARY.md](PROMOTION_SUMMARY.md) — package/source identity and
+  release boundary.
+- [RuleExport-Retirement.md](RuleExport-Retirement.md) — retirement boundary for
+  the superseded pre-V3 Rule Export feature.
 - PlantUML diagrams: schema (`CoreSchema_*.puml`) and pipeline
   (`DB-*.puml`); see [INDEX.md](INDEX.md) for the full list.
 
@@ -53,6 +66,9 @@ for the exact command and renderer prerequisites.
 
 | You need… | Look in… |
 | --- | --- |
+| Exact V3 physical contract | `RPRRSBSI-V3-Data-Dictionary.md` |
+| Philote validity diagram | `CoreSchema_Philote.puml` |
+| Exact-target rebuild runbook | `RebuildDatabase.md` |
 | Schema ER diagram for the Rules tables | `CoreSchema_Rules.puml` |
 | Component diagram of the .nupkg layout | `DB-PromotionPackage-Files.puml` |
 | Pipeline sequence diagram | `DB-PromotionPipeline-BuildMaster-ProGet.puml` |
@@ -60,7 +76,7 @@ for the exact command and renderer prerequisites.
 | Production backup → Integration/QA reseed | `DB-ProductionBackup-SprintInit.puml` |
 | Stable package build-once workflow | `DB-StablePackageBuildOnce.puml` |
 | Cross-schema view design | `CrossSchema_UserView_Design.md` |
-| Rule Export REST API spec | `API_Specification_RuleExport.md` |
+| Rule Export retirement status | `RuleExport-Retirement.md` |
 | Hello-World example walkthrough | `HelloWorld-Example-Remediation-Plan.md` |
 | Per-tier migration state (Integration/QA/Production) + 000302 collision disposition | `../../_generated/DatabaseLadder/Task-9.8-Flyway-Info-Report.md` (generated, local; regenerable via `flyway info`/`validate`) |
 | Drop+recreate of Integration/QA/Production from the consolidated set (Task 9.9 outcome + headless-build runbook) | `../../_generated/DatabaseLadder/Task-9.9-DropRecreate-Report.md` (generated, local; re-run `Powershell/public/Reset-DatabaseLadderTier.ps1` per tier) |

@@ -5,4 +5,4 @@
 | File                       | Description            |
 | -------------------------- | ---------------------- |
 | [ReadMe.md](ReadMe.md)     | Project documentation  |
-| [IPhilote.cs](IPhilote.cs) | Core Philote interface |
+| [IPhilote.cs](IPhilote.cs) | Core Philote identity and temporal-validity interfaces |

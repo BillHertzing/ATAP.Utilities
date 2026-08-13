@@ -133,6 +133,9 @@ function Set-CoreConfigRootKeys {
           # One role-to-host map drives ProGet, BuildMaster, and SQL-primary endpoint
           # resolution.  The host-specific value is owned by ATAP.IAC.
           'ServicePlacementMapConfigRootKey'                                                             = 'ServicePlacementMap'
+          # AceOutpostService listener configuration. PowerShell/IAC publishes this
+          # value for provisioning; the C# service consumes its own IConfigurationRoot.
+          'AceOutpostServicePortConfigRootKey'                                                           = 'AceOutpostServicePort'
           # Manim animation renderer executable path
           'ManimExePathConfigRootKey'                                                                    = 'MANIM_EXE_PATH'
           # Root directory holding cloned/forked open-source repositories (e.g. MCP servers).

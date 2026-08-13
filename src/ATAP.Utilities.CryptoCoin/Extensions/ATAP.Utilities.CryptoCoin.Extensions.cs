@@ -5,7 +5,7 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using Itenso.TimePeriod;
+using ATAP.Utilities.DateTime.Interfaces;
 using ATAP.Utilities.CryptoCoin.Enumerations;
 using ATAP.Utilities.CryptoCoin.Models;
 
@@ -20,7 +20,7 @@ namespace ATAP.Utilities.CryptoCoin.Extensions
 
   public class CryptoCoinNetworkInfoBuilder
   {
-    TimeBlock avgBlockTime;
+    TemporalDuration avgBlockTime;
     double blockRewardPerBlock;
     Coin coin;
     HashRate hashRate;
@@ -29,7 +29,7 @@ namespace ATAP.Utilities.CryptoCoin.Extensions
     {
     }
 
-    public CryptoCoinNetworkInfoBuilder AddAvgBlockTime(TimeBlock avgBlockTime)
+    public CryptoCoinNetworkInfoBuilder AddAvgBlockTime(TemporalDuration avgBlockTime)
     {
       this.avgBlockTime = avgBlockTime;
       return this;

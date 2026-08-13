@@ -9,7 +9,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
 {
 
   //ToDo add validation tests to ensure illegal values are not allowed.  This applies to all XxTestDataGenerator classes
-  public class MainBoardSignilTestData : TestData<MainBoardSignil>
+  public class MainBoardSignilTestData : SerializedTestData<MainBoardSignil>
   {
     public MainBoardSignilTestData(MainBoardSignil objTestData, string serializedTestData) : base(objTestData, serializedTestData) { }
   }
@@ -26,7 +26,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
         foreach (CPUSocketTestData[] socket in CPUSocketTestDataGenerator.TestData())
         {
           str.Clear();
-          str.Append($"{{\"MainBoardMaker\":{maker[0].SerializedMainBoardMaker},\"CPUSocket\":{socket[0].SerializedTestData},\"NumberOfX1SlotsMax\":6}}");
+          str.Append($"{{\"MainBoardMaker\":{maker[0].SerializedMainBoardMaker},\"CPUSocket\":{socket[0].TestData},\"NumberOfX1SlotsMax\":6}}");
           yield return new MainBoardSignilTestData[] {
             new MainBoardSignilTestData(
               new MainBoardSignil(

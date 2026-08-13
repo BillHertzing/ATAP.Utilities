@@ -107,7 +107,7 @@ function New-SprintStage1 {
     $ownerDefault = if (Get-Command -Name 'Get-GitHubOwnerFromWorkspace' -ErrorAction SilentlyContinue) {
       Get-GitHubOwnerFromWorkspace -GitRoot $gitRootForOwner -Fallback $env:USERNAME
     } else { $env:USERNAME }
-    $proGetBaseUrlDefault = 'http://localhost:50000'
+    $proGetBaseUrlDefault = 'https://utat022:50000'
 
     if ($getPValAvailable) {
       foreach ($spec in @(

@@ -1,4 +1,5 @@
 using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,10 +12,10 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
 
   public class FSEntityAbstract : IFSEntityAbstract
   {
-    public FSEntityAbstract() : this("", new Philote.Philote<IFSEntityAbstract>().Now(), null) { }
-    public FSEntityAbstract(string path) : this(path, new Philote.Philote<IFSEntityAbstract>().Now(), null) { }
-    public FSEntityAbstract(string path, IPhilote<IFSEntityAbstract> philote) : this(path, philote, null) { }
-    public FSEntityAbstract(string path, IPhilote<IFSEntityAbstract> philote, Exception? exception)
+    public FSEntityAbstract() : this("", NewPhilote(), null) { }
+    public FSEntityAbstract(string path) : this(path, NewPhilote(), null) { }
+    public FSEntityAbstract(string path, IGuidPhilote<GuidStronglyTypedId> philote) : this(path, philote, null) { }
+    public FSEntityAbstract(string path, IGuidPhilote<GuidStronglyTypedId> philote, Exception? exception)
     {
       Path = path ?? throw new ArgumentNullException(nameof(path));
       Philote = philote ?? throw new ArgumentNullException(nameof(philote));
@@ -22,18 +23,21 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
     }
 
     public string Path { get; set; }
-    public IPhilote<IFSEntityAbstract> Philote { get; set; }
+    public IGuidPhilote<GuidStronglyTypedId> Philote { get; set; }
     public Exception? Exception { get; set; }
+
+    protected static IGuidPhilote<GuidStronglyTypedId> NewPhilote() =>
+      new GuidPhilote<GuidStronglyTypedId>(new GuidStronglyTypedId(Guid.NewGuid()));
   }
 
 
   public class FSEntityDirectory : FSEntityAbstract, IFSEntityDirectory
   {
-    public FSEntityDirectory(string path, DirectoryInfo? directoryInfo, IPhilote<IFSEntityAbstract> philote, Exception? exception) : base(path, philote, exception)
+    public FSEntityDirectory(string path, DirectoryInfo? directoryInfo, IGuidPhilote<GuidStronglyTypedId> philote, Exception? exception) : base(path, philote, exception)
     {
       DirectoryInfo = directoryInfo;
     }
-    public FSEntityDirectory(string path) : this(path, null, new Philote.Philote<IFSEntityAbstract>().Now(), null) { }
+    public FSEntityDirectory(string path) : this(path, null, NewPhilote(), null) { }
     public DirectoryInfo? DirectoryInfo { get; set; }
   }
 
@@ -45,13 +49,13 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
 
     public string? Hash { get; set; }
 
-    public FSEntityFile(string path, FileInfo? fileInfo, string? hash, IPhilote<IFSEntityAbstract> philote, Exception? exception) : base(path, philote, exception)
+    public FSEntityFile(string path, FileInfo? fileInfo, string? hash, IGuidPhilote<GuidStronglyTypedId> philote, Exception? exception) : base(path, philote, exception)
     {
       FileInfo = fileInfo;
       Hash = hash;
     }
-    public FSEntityFile() : this("", null, null, new Philote.Philote<IFSEntityAbstract>().Now(), null) { }
-    public FSEntityFile(string path) : this(path, null, null, new Philote.Philote<IFSEntityAbstract>().Now(), null) { }
+    public FSEntityFile() : this("", null, null, NewPhilote(), null) { }
+    public FSEntityFile(string path) : this(path, null, null, NewPhilote(), null) { }
     //public FSEntityFile(string path, IPhilote<IFSEntityFile> philote) : this(path, philote, new List<Exception>()) { }
     //public FSEntityFile(string path, IPhilote<IFSEntityFile> philote, IList<Exception> exceptions) : this(path, null,null, philote , exceptions) { }
     //public FSEntityFile(FileInfo? fileInfo, string? hash) :base()
@@ -72,10 +76,10 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
   {
 
     public FSEntityArchiveFile(IFSEntityFile fSEntityFile) : this("", fSEntityFile.FileInfo, fSEntityFile.Hash, fSEntityFile.Philote, null) { }
-    public FSEntityArchiveFile() : this("", null, null, new Philote.Philote<IFSEntityAbstract>().Now(), null) { }
-    public FSEntityArchiveFile(string path) : this(path, null, null, new Philote.Philote<IFSEntityAbstract>().Now(), null) { }
+    public FSEntityArchiveFile() : this("", null, null, NewPhilote(), null) { }
+    public FSEntityArchiveFile(string path) : this(path, null, null, NewPhilote(), null) { }
 
-    public FSEntityArchiveFile(string path, FileInfo? fileInfo, string? hash, IPhilote<IFSEntityAbstract> philote, Exception? exception) : base(path, fileInfo, hash, philote, exception)
+    public FSEntityArchiveFile(string path, FileInfo? fileInfo, string? hash, IGuidPhilote<GuidStronglyTypedId> philote, Exception? exception) : base(path, fileInfo, hash, philote, exception)
     {
     }
   }

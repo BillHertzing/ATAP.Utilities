@@ -29,31 +29,11 @@
     <ProjectReference Include="..\..\src\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer\Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ZSandbox\ATAP.Utilities.ZSandbox.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\ATAP.Services.TcpWithResilience\ATAP.Services.TcpWithResilience.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!--
-    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory\Enumerations\ATAP.Utilities.ComputerInventory.Enumerations.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory\Extensions\ATAP.Utilities.ComputerInventory.Extensions.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory.Models.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.ConcurrentObservableCollections.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoCoin.Enumerations.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoCoin.Extensions.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoCoin.Models.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoMiner.Enumerations.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoMiner.Extensions.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoMiner.Models.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.DateTime.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Enumeration.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Http.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.String.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Services.TcpWithResilience.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.ZSandbox.csproj" />
-    -->
   </ItemGroup>
 
 </Project>

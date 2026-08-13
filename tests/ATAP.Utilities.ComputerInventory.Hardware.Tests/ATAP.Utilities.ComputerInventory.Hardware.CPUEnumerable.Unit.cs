@@ -1,6 +1,5 @@
 using ATAP.Utilities.Testing;
 using FluentAssertions;
-using Itenso.TimePeriod;
 using System.Collections.Generic;
 using Xunit;
 using Xunit.Abstractions;
@@ -19,9 +18,9 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
     {
       foreach (var itb in inTestData.E)
       {
-        var obj = Fixture.Serializer.Deserialize<IEnumerable<ITimeBlock>>(itb.SerializedTestData);
-        obj.Should().BeOfType(typeof(IEnumerable<ITimeBlock>));
-        Fixture.Serializer.Deserialize<IEnumerable<ITimeBlock>>(itb.SerializedTestData).Should().BeEquivalentTo(itb.ObjTestData);
+        var obj = Fixture.Serializer.Deserialize<ICPU>(itb.TestData);
+        obj.Should().BeAssignableTo<ICPU>();
+        obj.Should().BeEquivalentTo(itb.ObjTestData);
       }
 
       // ToDo loop over every element of the enumerable and test eah one
@@ -38,10 +37,10 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
       foreach (var e in inTestData.E)
       {
 #if DEBUG
-        TestOutput.WriteLine("SerializedTestData is:" + e.SerializedTestData);
+        TestOutput.WriteLine("SerializedTestData is:" + e.TestData);
         TestOutput.WriteLine("Serialized ObjTestData is:" + Fixture.Serializer.Serialize(e.ObjTestData));
 #endif
-        Fixture.Serializer.Serialize(e.ObjTestData).Should().Be(e.SerializedTestData);
+        Fixture.Serializer.Serialize(e.ObjTestData).Should().Be(e.TestData);
 #if DEBUG
         TestOutput.WriteLine("Ending " + nameof(CPUEnumerableSerializeToJSON));
 #endif

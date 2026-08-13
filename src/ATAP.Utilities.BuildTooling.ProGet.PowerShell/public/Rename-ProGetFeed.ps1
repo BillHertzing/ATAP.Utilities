@@ -27,7 +27,7 @@
     The new name to assign to the feed. Required.
 
 .PARAMETER ProGetBaseUrl
-    The ProGet server base URL (e.g., 'http://localhost:50000').
+    The ProGet server base URL (e.g., 'https://utat022:50000').
     Optional — resolved from $global:settings or environment if omitted.
 
 .PARAMETER ProGetApiKeySecretName
@@ -47,7 +47,7 @@
 
 .EXAMPLE
     Rename-ProGetFeed -OldFeedName 'old-feed' -NewFeedName 'new-feed' `
-        -ProGetBaseUrl 'http://localhost:50000' -ProGetApiKeySecretName 'ProGet.Admin.API.Key' -WhatIf
+        -ProGetBaseUrl 'https://utat022:50000' -ProGetApiKeySecretName 'ProGet.Admin.API.Key' -WhatIf
 
     Shows what would happen without contacting ProGet.
 

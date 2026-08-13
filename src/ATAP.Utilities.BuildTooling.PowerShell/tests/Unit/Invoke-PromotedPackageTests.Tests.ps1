@@ -166,12 +166,12 @@ Describe 'Invoke-PromotedPackageTests' -Tag 'Unit' {
 
         It 'Adds an explicit feed --source to the restore call when -ProGetUrl is supplied' {
             Invoke-PromotedPackageTests -Name 'pkg' -Version '1.0.0' -Feed 'nuget-development' `
-                -ResultsPath 'r' -ProGetUrl 'http://localhost:50000/' | Out-Null
+                -ResultsPath 'r' -ProGetUrl 'https://utat022:50000/' | Out-Null
 
             Assert-MockCalled dotnet -Times 1 -Exactly -Scope It -ParameterFilter {
                 $rest[0] -eq 'restore' -and
                 ($rest -contains '--source') -and
-                ($rest -contains 'http://localhost:50000/nuget/nuget-development/v3/index.json')
+                ($rest -contains 'https://utat022:50000/nuget/nuget-development/v3/index.json')
             }
         }
 

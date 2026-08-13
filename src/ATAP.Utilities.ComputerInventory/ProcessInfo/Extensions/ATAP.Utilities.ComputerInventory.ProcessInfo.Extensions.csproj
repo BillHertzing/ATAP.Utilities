@@ -25,7 +25,6 @@
 
   <ItemGroup>
     <PackageReference Include="MedallionShell" />
-    <PackageReference Include="TimePeriodLibrary.NET" />
     <PackageReference Include="UnitsNet" />
   </ItemGroup>
 

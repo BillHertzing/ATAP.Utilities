@@ -1,0 +1,207 @@
+@startuml RRSBS_RDB_240_Logical_Model
+hide circle
+hide methods
+left to right direction
+skinparam linetype ortho
+skinparam defaultFontName Segoe UI
+skinparam shadowing false
+skinparam entity {
+  BackgroundColor #F7FAFC
+  BorderColor #34495E
+  FontColor #1F2937
+}
+
+title RDB-240 Instantiation, InputBlock, and Authorization Logical Model
+
+legend left
+  Design-only model; no SQL, seeds, or allocated identifiers.
+  <<entity-root>> durable RDB-200 Entity subtype
+  <<entity-version>> immutable published RDB-200 Entity subtype
+  Opaque authority references never FK to AceCommander tables.
+endlegend
+
+package "Instantiation identity and deterministic occurrences" #EAF2F8 {
+  entity Instantiation <<entity-root>> {
+    * InstantiationId : bigint <<PK>>
+    * InstantiationPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * OwnerAuthorityReference : varchar
+    o ForkedFromInstantiationVersionId : bigint <<FK>>
+    * CreatedAtUtc : datetime2
+  }
+
+  entity InstantiationVersion <<entity-version>> {
+    * InstantiationVersionId : bigint <<PK>>
+    * InstantiationVersionPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * InstantiationId : bigint <<FK>>
+    * BuildSetVersionId : bigint <<FK>>
+    * RevisionSequence : int
+    o PredecessorInstantiationVersionId : bigint <<FK,UQ>>
+    * GraphInputContentHash : binary
+    * PublishedAtUtc : datetime2
+    --
+    UQ (InstantiationId, RevisionSequence)
+  }
+
+  entity BuildSetRuleOccurrence <<derived immutable relation>> {
+    * BuildSetRuleOccurrenceId : bigint <<PK>>
+    * BuildSetVersionId : bigint <<FK>>
+    * BuildSetMemberId : bigint <<FK>>
+    * RuleSetMemberId : bigint <<FK>>
+    * RuleVersionMemberId : bigint <<FK>>
+    * RuleVersionId : bigint <<FK>>
+    * OccurrenceKey : binary
+    --
+    UQ (BuildSetVersionId, OccurrenceKey)
+  }
+
+  entity InstantiationOccurrenceBinding <<durable editable scope>> {
+    * InstantiationOccurrenceBindingId : bigint <<PK>>
+    * InstantiationId : bigint <<FK>>
+    * BuildSetVersionId : bigint <<FK>>
+    * OccurrenceKey : binary <<FK>>
+    o BindingCompatibilityContractVersionId : bigint <<FK>>
+    --
+    UQ (InstantiationId, OccurrenceKey)
+  }
+
+  entity BindingResolution <<immutable decision>> {
+    * BindingResolutionId : bigint <<PK>>
+    * SuccessorBindingId : bigint <<FK>>
+    o PredecessorBindingId : bigint <<FK>>
+    * ResolutionVerbCode : varchar <<FK>>
+    * DecisionAuthorityReference : varchar
+    * DecidedAtUtc : datetime2
+  }
+}
+
+package "Editable input blocks and publication snapshot" #E8F8F5 {
+  entity InputBlock <<entity-root>> {
+    * InputBlockId : bigint <<PK>>
+    * InputBlockPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * InstantiationOccurrenceBindingId : bigint <<FK,UQ>>
+  }
+
+  entity InputBlockVersion <<entity-version>> {
+    * InputBlockVersionId : bigint <<PK>>
+    * InputBlockVersionPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * InputBlockId : bigint <<FK>>
+    * RevisionSequence : int
+    o PredecessorInputBlockVersionId : bigint <<FK,UQ>>
+    * SourceEditSessionId : bigint <<FK>>
+    * ContentHash : binary
+    * PublishedAtUtc : datetime2
+    --
+    UQ (InputBlockId, RevisionSequence)
+  }
+
+  entity InputValue <<typed immutable value>> {
+    * InputValueId : bigint <<PK>>
+    * InputBlockVersionId : bigint <<FK>>
+    * RuleInputDefinitionId : bigint <<FK>>
+    * ValueTypeVersionId : bigint <<FK>>
+    * CanonicalValueHash : binary
+    --
+    UQ (InputBlockVersionId, RuleInputDefinitionId)
+  }
+
+  entity InstantiationVersionInputBlock <<immutable selection>> {
+    * InstantiationVersionId : bigint <<FK>>
+    * InstantiationOccurrenceBindingId : bigint <<FK>>
+    * InputBlockVersionId : bigint <<FK>>
+    --
+    PK (InstantiationVersionId, InstantiationOccurrenceBindingId)
+    Composite FKs prove common Instantiation and occurrence
+  }
+}
+
+package "Authorization and editing" #FDF2E9 {
+  entity PermissionVerb <<closed catalog>> {
+    * PermissionVerbCode : varchar <<PK>>
+    --
+    view | edit | publish | fork
+    plan | execute | approve | read-artifacts
+  }
+
+  entity InstantiationPermissionGrant <<append-only audit>> {
+    * InstantiationPermissionGrantId : bigint <<PK>>
+    * InstantiationId : bigint <<FK>>
+    * AuthorityReference : varchar
+    * PermissionVerbCode : varchar <<FK>>
+    * EffectCode : varchar <<FK>>
+    * ScopeReference : varchar
+    * EffectiveFromUtc : datetime2
+    o EffectiveToUtc : datetime2
+    * DecisionAuditReference : varchar
+  }
+
+  entity EditSession <<mutable authoring lease>> {
+    * EditSessionId : bigint <<PK>>
+    * InstantiationId : bigint <<FK>>
+    * ActorAuthorityReference : varchar
+    * BaseInstantiationVersionId : bigint <<FK>>
+    * ConcurrencyToken : binary
+    * StateCode : varchar <<FK>>
+    o ProposedRevisionSequence : int
+    * StartedAtUtc : datetime2
+    o ClosedAtUtc : datetime2
+  }
+}
+
+entity BuildSetVersion <<external RDB-230>> {
+  * BuildSetVersionId : bigint <<PK>>
+}
+entity RuleInputDefinition <<external RDB-220>> {
+  * RuleInputDefinitionId : bigint <<PK>>
+}
+entity ValueTypeVersion <<external RDB-210>> {
+  * ValueTypeVersionId : bigint <<PK>>
+}
+
+Instantiation ||--o{ InstantiationVersion : publishes
+InstantiationVersion |o--o| InstantiationVersion : predecessor
+BuildSetVersion ||--o{ InstantiationVersion : selected exact version
+BuildSetVersion ||--o{ BuildSetRuleOccurrence : resolves paths
+Instantiation ||--o{ InstantiationOccurrenceBinding : owns
+BuildSetRuleOccurrence ||--o{ InstantiationOccurrenceBinding : exact occurrence
+InstantiationOccurrenceBinding ||--|| InputBlock : editable block
+InputBlock ||--o{ InputBlockVersion : snapshots
+InputBlockVersion |o--o| InputBlockVersion : predecessor
+InputBlockVersion ||--o{ InputValue : contains typed values
+RuleInputDefinition ||--o{ InputValue : declared input
+ValueTypeVersion ||--o{ InputValue : exact type
+InstantiationVersion ||--o{ InstantiationVersionInputBlock : selects
+InstantiationOccurrenceBinding ||--o{ InstantiationVersionInputBlock : one per binding
+InputBlockVersion ||--o{ InstantiationVersionInputBlock : exact snapshot
+InstantiationOccurrenceBinding ||--o{ BindingResolution : successor scope
+PermissionVerb ||--o{ InstantiationPermissionGrant : catalogued verb
+Instantiation ||--o{ InstantiationPermissionGrant : authorization history
+Instantiation ||--o{ EditSession : authoring lease
+InstantiationVersion ||--o{ EditSession : base snapshot
+EditSession ||--o{ InputBlockVersion : produces snapshot
+
+note bottom of BuildSetRuleOccurrence
+  OccurrenceKey derives from complete immutable
+  BuildSet-member / RuleSet-member / Rule-member path.
+  Repeated RuleVersions remain distinct occurrences.
+end note
+
+note bottom of InstantiationVersionInputBlock
+  Composite FKs prohibit selecting a block version
+  from another Instantiation, binding, occurrence,
+  or incompatible input contract.
+end note
+
+note bottom of InstantiationPermissionGrant
+  Opaque external authority refs only. Evaluation is
+  fail-closed; grants/revocations remain append-only.
+end note
+
+@enduml

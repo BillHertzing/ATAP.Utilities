@@ -1,92 +1,80 @@
 using System;
-using System.Collections.Generic;
-
+using Microsoft.Extensions.Configuration;
 using ServiceStack.Text;
 
-using static ATAP.Utilities.Collection.Extensions;
+namespace ATAP.Utilities.Serializer.Shim.ServiceStack;
 
-
-namespace ATAP.Utilities.Serializer.Shim.ServiceStack {
-  public class Serializer : ISerializerConfigurableAbstract {
-    private Config JsonSerializerOptionsCurrent { get; set; }
-    public Serializer() {
-      this.Configure();
-    }
-
-    public string Serialize(object obj) {
-      return this.Serialize(obj, JsonSerializerOptionsCurrent);
-    }
-
-    public string Serialize(object obj, ISerializerOptions options) {
-      var jsonSerializerOptions = ConvertOptions(options);
-      return this.Serialize(obj, jsonSerializerOptions);
-    }
-    public string Serialize(object obj, Config options) {
-      //ToDo: set servicestack options to the jsonSerializerOptions
-      return JsonSerializer.SerializeToString(obj);
-    }
-
-    public T Deserialize<T>(string str) {
-      return this.Deserialize<T>(str, JsonSerializerOptionsCurrent);
-    }
-
-    public T Deserialize<T>(string str, ISerializerOptions options) {
-      var jsonSerializerOptions = ConvertOptions(options);
-      return this.Deserialize<T>(str, jsonSerializerOptions);
-    }
-
-    public T Deserialize<T>(string str, Config options) {
-      // ToDo: update the servicestack config with options
-      return JsonSerializer.DeserializeFromString<T>(str);
-    }
-
-
-    public void Configure() {
-      JsonSerializerOptionsCurrent = new Config {
-        TextCase = TextCase.CamelCase,
-        TreatEnumAsInteger = true,
-        ExcludeDefaultValues = false,
-        IncludeNullValues = true,
-        ExcludeTypeInfo = true,
-        //    new EnumSerializerConfigurator()
-        //.WithAssemblies(AppDomain.CurrentDomain.GetAssemblies())
-        //.WithNamespaceFilter(ns => ns.StartsWith("ATAP"))
-      };
-    }
-    public void Configure(ISerializerOptions options) {
-      JsonSerializerOptionsCurrent = ConvertOptions(options);
-    }
-    public void Configure(
-        bool allowTrailingCommas = false
-      , bool writeIndented = false
-      , bool ignoreNullValues = false
-    ) {
-      JsonSerializerOptionsCurrent = ConvertOptions(allowTrailingCommas, writeIndented, ignoreNullValues);
-    }
-
-    private Config ConvertOptions(
-        bool allowTrailingCommas = false
-      , bool ignoreNullValues = false
-      , bool writeIndented = false
-    ) {
-      return new Config {
-        // AllowTrailingCommas = allowTrailingCommas,
-        IncludeNullValues = !ignoreNullValues,
-        //WriteIndented = writeIndented,
-      };
-    }
-    private Config ConvertOptions(ISerializerOptions options) {
-      return new Config {
-        //AllowTrailingCommas = options.AllowTrailingCommas,
-        IncludeNullValues = !options.IgnoreNullValues,
-        //WriteIndented = options.WriteIndented
-      };
-    }
+public class Serializer : SerializerConfigurableAbstract
+{
+  public Serializer()
+    : this(new SerializerOptions(), null)
+  {
   }
 
-  public class SerializerOptions : ISerializerOptions {
-    public bool AllowTrailingCommas { get; set; }
-    public bool WriteIndented { get; set; }
-    public bool IgnoreNullValues { get; set; }
+  public Serializer(IConfigurationRoot? configurationRoot)
+    : this(new SerializerOptions(), configurationRoot)
+  {
   }
+
+  public Serializer(ISerializerOptionsAbstract options)
+    : this(options, null)
+  {
+  }
+
+  public Serializer(
+    ISerializerOptionsAbstract options,
+    IConfigurationRoot? configurationRoot = default)
+    : base(options, configurationRoot)
+  {
+  }
+
+  public override string Serialize(object obj) =>
+    Serialize(obj, Options);
+
+  public override string Serialize(object obj, ISerializerOptionsAbstract options)
+  {
+    _ = GetConfig(options);
+    return JsonSerializer.SerializeToString(obj);
+  }
+
+  public override T Deserialize<T>(string str) =>
+    Deserialize<T>(str, Options);
+
+  public override T Deserialize<T>(string str, ISerializerOptionsAbstract options)
+  {
+    _ = GetConfig(options);
+    return JsonSerializer.DeserializeFromString<T>(str);
+  }
+
+  private static Config GetConfig(ISerializerOptionsAbstract options)
+  {
+    ArgumentNullException.ThrowIfNull(options);
+
+    return options.ShimSpecificOptions as Config
+      ?? throw new ArgumentException(
+        "ServiceStack serialization requires ServiceStack.Text.Config options.",
+        nameof(options));
+  }
+}
+
+public class SerializerOptions : SerializerOptionsAbstract
+{
+  public SerializerOptions()
+    : this(CreateDefaultConfig())
+  {
+  }
+
+  public SerializerOptions(Config config)
+    : base(config)
+  {
+  }
+
+  private static Config CreateDefaultConfig() => new()
+  {
+    TextCase = TextCase.CamelCase,
+    TreatEnumAsInteger = true,
+    ExcludeDefaultValues = false,
+    IncludeNullValues = true,
+    ExcludeTypeInfo = true,
+  };
 }

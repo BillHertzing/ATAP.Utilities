@@ -4,16 +4,12 @@
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
-
-<ItemGroup>
-    <PackageReference Include="TimePeriodLibrary.NET" />
-</ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\ATAP.Utilities.StronglyTypedId\Interfaces\ATAP.Utilities.StronglyTypedId.Interfaces.csproj" />
     <ProjectReference Include="..\Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.Serializer\Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
   </ItemGroup>
 
 

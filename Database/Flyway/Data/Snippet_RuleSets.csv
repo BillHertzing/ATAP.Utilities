@@ -1,4 +1,0 @@
-PhiloteId,Name,Description
-e8f9a0b1-2c3d-4e5f-6a7b-8c9d0e1f2a3b,PowerShell Cmdlet Development Rule Set,Complete workflow for developing repository-compliant PowerShell cmdlets following all conventions
-f9a0b1c2-3d4e-5f6a-7b8c-9d0e1f2a3b4c,Pester Test Development Rule Set,Complete workflow for developing data-driven Pester tests with external or inline data sources
-a0b1c2d3-4e5f-6a7b-8c9d-0e1f2a3b4c5d,Database Access Rule Set,Complete workflow for developing public/private database cmdlet pairs with separation of concerns

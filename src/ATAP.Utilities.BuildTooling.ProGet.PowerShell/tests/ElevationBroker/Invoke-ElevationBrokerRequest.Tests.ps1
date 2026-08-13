@@ -9,11 +9,13 @@
 
 BeforeAll {
   $script:Here = $PSScriptRoot
-  $script:BrokerScript = Join-Path $script:Here 'Invoke-ElevationBrokerRequest.ps1'
-  $script:ClientScript = Join-Path $script:Here 'Request-ElevatedInstall.ps1'
-  $script:TaskXml = Join-Path $script:Here 'ATAP-ElevatedInstallBroker.xml'
-  $script:ConfigTemplate = Join-Path $script:Here 'ElevationBroker-config.template.json'
-  $script:Installer = Join-Path $script:Here 'Install-ATAPModule-AllUsers.ps1'
+  $script:ModuleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+  $script:ResourceRoot = Join-Path $script:ModuleRoot 'Resources\ElevationBroker'
+  $script:BrokerScript = Join-Path $script:ResourceRoot 'Invoke-ElevationBrokerRequest.ps1'
+  $script:ClientScript = Join-Path $script:ModuleRoot 'public\Request-ElevatedInstall.ps1'
+  $script:TaskXml = Join-Path $script:ResourceRoot 'ATAP-ElevatedInstallBroker.xml'
+  $script:ConfigTemplate = Join-Path $script:ResourceRoot 'ElevationBroker-config.template.json'
+  $script:Installer = Join-Path $script:ResourceRoot 'Install-ATAPModule-AllUsers.ps1'
 
   # The broker's main body throws when not elevated, so load only its function
   # definitions. This keeps the suite runnable unelevated while still exercising the
@@ -32,7 +34,7 @@ BeforeAll {
   )
 
   $script:Config = Get-Content -LiteralPath $script:ConfigTemplate -Raw | ConvertFrom-Json
-  $script:Allowed = $script:Config.installers[0].allowedParameters
+  $script:Allowed = ($script:Config.installers | Where-Object id -eq 'install-atap-module-allusers').allowedParameters
 }
 
 Describe 'Elevation broker artifacts' {
@@ -41,15 +43,16 @@ Describe 'Elevation broker artifacts' {
     @{ Name = 'Request-ElevatedInstall.ps1' }
   ) {
     $errors = $null
+    $artifactPath = if ($Name -eq 'Invoke-ElevationBrokerRequest.ps1') { $script:BrokerScript } else { $script:ClientScript }
     [void][System.Management.Automation.Language.Parser]::ParseFile(
-      (Join-Path $script:Here $Name), [ref]$null, [ref]$errors)
+      $artifactPath, [ref]$null, [ref]$errors)
     $errors.Count | Should -Be 0
   }
 
   It 'registers the scheduled task with highest privileges and a drain-and-exit action' {
     $xml = [xml](Get-Content -LiteralPath $script:TaskXml -Raw)
     $xml.Task.Principals.Principal.RunLevel | Should -Be 'HighestAvailable'
-    $xml.Task.Triggers.TimeTrigger.Repetition.Interval | Should -Be 'PT1M'
+    $xml.Task.Triggers.BootTrigger.Enabled | Should -Be 'true'
     $xml.Task.Actions.Exec.Command | Should -Be 'pwsh.exe'
     # -Once matters: without it an elevated process would sit resident indefinitely.
     $xml.Task.Actions.Exec.Arguments | Should -Match '-Once'
@@ -61,7 +64,7 @@ Describe 'Elevation broker artifacts' {
     # so the template no longer pins a script hash. The module form's integrity control is
     # the trusted root plus the version floor, both of which must be present and sane.
     $config = Get-Content -LiteralPath $script:ConfigTemplate -Raw | ConvertFrom-Json
-    $entry = $config.installers[0]
+    $entry = $config.installers | Where-Object id -eq 'install-atap-module-allusers'
 
     $entry.commandType | Should -Be 'module'
     $entry.moduleName | Should -Be 'ATAP.Utilities.BuildTooling.ProGet.PowerShell'
@@ -76,11 +79,264 @@ Describe 'Elevation broker artifacts' {
     $entry.PSObject.Properties.Name | Should -Not -Contain 'sha256'
   }
 
+  It 'ships the parity-task installer with only an exact module-version request field' {
+    $config = Get-Content -LiteralPath $script:ConfigTemplate -Raw | ConvertFrom-Json
+    $entry = $config.installers | Where-Object id -eq 'register-atap-parity-tasks'
+
+    $entry.commandType | Should -Be 'module'
+    $entry.moduleName | Should -Be 'ATAP.Utilities.BuildTooling.ProGet.PowerShell'
+    $entry.commandName | Should -Be 'Register-ATAPParityScheduledTasks'
+    $entry.minimumModuleVersion | Should -Be '0.1.19'
+    @($entry.allowedParameters).Count | Should -Be 1
+    $entry.allowedParameters[0].name | Should -Be 'ModuleVersion'
+    $entry.allowedParameters[0].pattern | Should -Be '^\d+\.\d+\.\d+(\.\d+)?$'
+  }
+
+  It 'preserves every task field that is not the action, and drains output before waiting' {
+    $installerPath = Join-Path $script:ModuleRoot 'public\Register-ATAPParityScheduledTasks.ps1'
+    $installerText = Get-Content -LiteralPath $installerPath -Raw
+
+    # Regression guard for 0.1.8: PowerShell does not use backslash as a string escape,
+    # so "scripts\\$name" required two literal path separators and rejected every task.
+    $installerText | Should -Not -Match [regex]::Escape('scripts\\$($policy.Script)')
+
+    # The invariant set is the evidence that only the action moved. Dropping a field here
+    # would let a widened principal or security descriptor pass as a clean action swap.
+    $installerText | Should -Match ([regex]::Escape('$RegisteredTask.GetSecurityDescriptor(7)'))
+    foreach ($field in 'Principal', 'Triggers', 'Settings', 'TaskVersion', 'ActionId', 'ActionWorkingDirectory', 'SecurityDescriptor') {
+      $installerText | Should -Match "(?m)^\s+$field\s+="
+    }
+    $installerText | Should -Match 'Automatic action rollback ALSO FAILED'
+  }
+
+  It 'never shells out to schtasks for a task update' {
+    # schtasks /Change prompts for the run-as password even on an S4U task, which has no
+    # password. With stdin inherited it hung the broker; with stdin closed it failed with
+    # "Please enter the run as password for SvcParityAudit:" (both 2026-08-11). Task
+    # Scheduler COM is the only mechanism that can update either logon type.
+    $installerPath = Join-Path $script:ModuleRoot 'public\Register-ATAPParityScheduledTasks.ps1'
+    $installerText = Get-Content -LiteralPath $installerPath -Raw
+
+    $installerText | Should -Not -Match 'System32\\\\schtasks\.exe'
+    $installerText | Should -Not -Match "'/Change'"
+    $installerText | Should -Match 'RegisterTaskDefinition'
+    # Both logon types must be handled, and S4U must pass a null password.
+    $installerText | Should -Match '\$TASK_LOGON_S4U\s*=\s*2'
+    $installerText | Should -Match '\$TASK_LOGON_PASSWORD\s*=\s*1'
+    $installerText | Should -Match '\$TASK_CREATE_OR_UPDATE\s*=\s*4'
+  }
+
+  Context 'parity installer host policy (Task 14.72.c)' {
+    BeforeAll {
+      $script:InstallerPath = Join-Path $script:ModuleRoot 'public\Register-ATAPParityScheduledTasks.ps1'
+      . $script:InstallerPath
+
+      # Drive the real command's BEGIN-block policy resolution without touching Task Scheduler.
+      # -WhatIf stops before any write, so this exercises validation only.
+      $script:InvokeForHost = {
+        param([string] $HostName, [string] $Version = '0.1.14')
+        $original = $env:COMPUTERNAME
+        try {
+          $env:COMPUTERNAME = $HostName
+          Register-ATAPParityScheduledTasks -ModuleVersion $Version -WhatIf -ErrorAction Stop 2>&1
+        }
+        finally {
+          $env:COMPUTERNAME = $original
+        }
+      }
+    }
+
+    It 'refuses a host with no approved parity policy' {
+      { & $script:InvokeForHost -HostName 'SOMEOTHERHOST' } |
+        Should -Throw -ExpectedMessage '*has no approved parity-task policy*'
+    }
+
+    It 'refuses a malformed semantic version before doing anything' {
+      foreach ($bad in '0.1', 'latest', '0.1.14-beta', '../0.1.14', '0.1.14; whoami', '') {
+        { Register-ATAPParityScheduledTasks -ModuleVersion $bad -WhatIf -ErrorAction Stop } | Should -Throw
+      }
+    }
+
+    It 'refuses a version carrying traversal, UNC, or an alternate executable path' {
+      foreach ($bad in '..\..\Windows\System32', '\\evil\share\0.1.14', 'C:\Temp\0.1.14', '0.1.14\..\..\0.1.1') {
+        { Register-ATAPParityScheduledTasks -ModuleVersion $bad -WhatIf -ErrorAction Stop } | Should -Throw
+      }
+    }
+
+    It 'accepts only the two approved task names, per host' {
+      $text = Get-Content -LiteralPath $script:InstallerPath -Raw
+      # utat01 is audit-only; utat022 additionally runs the compare task.
+      $text | Should -Match "'utat01'\s*="
+      $text | Should -Match "'utat022'\s*="
+      $names = [regex]::Matches($text, "Name\s+=\s+'(ATAP-Parity\w+)'") | ForEach-Object { $_.Groups[1].Value }
+      @($names | Sort-Object -Unique) | Should -Be @('ATAP-ParityAudit', 'ATAP-ParityCompare')
+    }
+
+    It 'binds each host to its approved logon type and run level' {
+      $text = Get-Content -LiteralPath $script:InstallerPath -Raw
+      # Both hosts are Password logon since 2026-08-11: S4U registration is refused outright on
+      # utat01. Run level is the discriminator -- utat01 stays Limited and non-administrative;
+      # only utat022 runs Highest, for its compare task's peer SMB read.
+      $text | Should -Match "LogonType\s+=\s+'Password'"
+      $text | Should -Match "RunLevel\s+=\s+'Limited'"
+      $text | Should -Match "RunLevel\s+=\s+'HighestAvailable'"
+      # No policy entry may silently regress to S4U, which cannot be registered on utat01.
+      $text | Should -Not -Match "LogonType\s+=\s+'S4U'"
+      # A principal mismatch must abort BEFORE any privileged mutation.
+      $text | Should -Match 'policy requires'
+    }
+  }
+
+  Context 'parity installer credential handling (Task 14.72.c)' {
+    BeforeAll {
+      $script:InstallerText = Get-Content -LiteralPath (Join-Path $script:ModuleRoot 'public\Register-ATAPParityScheduledTasks.ps1') -Raw
+    }
+
+    It 'never exposes the run-as credential as a broker-supplied parameter' {
+      # TaskCredential exists for tests only. If it ever appears in allowedParameters, an
+      # unelevated caller could hand the broker a password and choose the run-as identity.
+      $entry = $script:Config.installers | Where-Object id -eq 'register-atap-parity-tasks'
+      @($entry.allowedParameters).Count | Should -Be 1
+      @($entry.allowedParameters.name) | Should -Not -Contain 'TaskCredential'
+    }
+
+    It 'resolves the credential only by canonical SecretName, never from a literal' {
+      $script:InstallerText | Should -Match ([regex]::Escape('"SvcParityAudit.$ForHost"'))
+      $script:InstallerText | Should -Match "Get-SecretATAP -SecretName \`$secretName -SecretStoreType 'BitwardenSecretsManager'"
+      # No password may be written into source under any guise.
+      $script:InstallerText | Should -Not -Match '(?i)(password|secret)\s*=\s*[''"][^''"$]{6,}[''"]'
+    }
+
+    It 'refuses to resolve a credential for any identity but the approved parity account' {
+      $script:InstallerText | Should -Match 'is not the approved parity identity'
+      $script:InstallerText | Should -Match ([regex]::Escape('$expectedAccount = "$($env:COMPUTERNAME)\SvcParityAudit"'))
+    }
+
+    It 'never returns or records the credential' {
+      # The emitted record is the only thing that reaches the broker result file and transcript.
+      $emitted = [regex]::Match($script:InstallerText, '(?s)\[pscustomobject\]@\{\s*TaskName.*?\}').Value
+      $emitted | Should -Not -Match '(?i)credential|password|secret'
+      $script:InstallerText | Should -Match ([regex]::Escape('$migrationCredential = $null'))
+    }
+
+    It 'resolves a credential only on the Password branch' {
+      # The S4U code path is retained for any future non-Password task and must stay
+      # credential-free; no vault read may sit outside the Password guard.
+      $script:InstallerText | Should -Match ([regex]::Escape("if (`$policy.LogonType -eq 'Password')"))
+      $credentialCall = $script:InstallerText.IndexOf('$resolveTaskCredential -RegisteredTaskXml')
+      $credentialCall | Should -BeGreaterThan 0
+      $credentialCall | Should -BeGreaterThan $script:InstallerText.IndexOf("if (`$policy.LogonType -eq 'Password')")
+      # Exactly one vault read site.
+      ([regex]::Matches($script:InstallerText, 'Get-SecretATAP')).Count | Should -Be 1
+    }
+
+    It 'still supports an S4U update without a credential if one is ever needed' {
+      # Retained capability: TASK_LOGON_S4U with a null password. No current host policy uses it.
+      $script:InstallerText | Should -Match '\$TASK_LOGON_S4U'
+      $script:InstallerText | Should -Match ([regex]::Escape('$TASK_LOGON_S4U, $null)'))
+    }
+  }
+
+  Context 'parity installer dispatcher trust (Task 14.72.c)' {
+    BeforeAll {
+      $script:InstallerText = Get-Content -LiteralPath (Join-Path $script:ModuleRoot 'public\Register-ATAPParityScheduledTasks.ps1') -Raw
+    }
+
+    It 'keeps the dispatcher root version-independent' {
+      # Putting the dispatcher under this module's versioned base would force a fresh privileged
+      # task mutation on every broker release -- the exact failure this design removes.
+      $script:InstallerText | Should -Match ([regex]::Escape("'C:\Program Files\ATAP\ParityDispatchers'"))
+      $script:InstallerText | Should -Not -Match ([regex]::Escape("Join-Path `$brokerModuleRoot 'dispatchers'"))
+    }
+
+    It 'refuses to write a dispatcher into a directory an untrusted identity can write' {
+      $script:InstallerText | Should -Match 'is writable by an untrusted identity'
+      foreach ($identity in 'Everyone', 'BUILTIN\\Users', 'NT AUTHORITY\\Authenticated Users', 'NT AUTHORITY\\INTERACTIVE') {
+        $script:InstallerText | Should -Match $identity
+      }
+      # AppendData and ChangePermissions are as good as write for this purpose.
+      foreach ($right in 'AppendData', 'ChangePermissions', 'TakeOwnership') {
+        $script:InstallerText | Should -Match $right
+      }
+    }
+
+    It 'refuses a task whose action is not an approved parity action' {
+      $script:InstallerText | Should -Match 'does not reference an approved parity action'
+    }
+
+    It 'launches the approved script with -File, never the call operator' {
+      # The parity scripts end in an &-proof dual-purpose guard:
+      #   if ($MyInvocation.InvocationName -ne '.' -and $MyInvocation.InvocationName -ne '&')
+      # so `& $script` returns exit 0 having collected NOTHING. A dispatcher that used the
+      # call operator would produce a permanently green task that never writes a snapshot.
+      $script:InstallerText | Should -Match ([regex]::Escape("-ExecutionPolicy Bypass -File '`$(`$scriptPath -replace"))
+      $script:InstallerText | Should -Not -Match ([regex]::Escape("`"& '`$(`$scriptPath -replace `"'`", `"''`")' `$quotedArguments`""))
+    }
+
+    It 'still guards every targetable parity script with the dual-purpose pattern' {
+      # The guard first shipped in SystemParityMonitor 0.1.9. Versions below that are not
+      # repoint targets, so only 0.1.9+ is asserted here; the boundary is recorded so a
+      # future reader knows why the dispatcher must use -File rather than the call operator.
+      $parityRoot = 'C:\Program Files\PowerShell\Modules\ATAP.Utilities.SystemParityMonitor.PowerShell'
+      if (-not (Test-Path -LiteralPath $parityRoot)) {
+        Set-ItResult -Skipped -Because 'SystemParityMonitor is not installed on this host.'
+        return
+      }
+      $guardIntroduced = [version] '0.1.9'
+      $targetable = @(Get-ChildItem -LiteralPath $parityRoot -Directory |
+          Where-Object { ($_.Name -as [version]) -and ([version] $_.Name) -ge $guardIntroduced })
+      if ($targetable.Count -eq 0) {
+        Set-ItResult -Skipped -Because 'No SystemParityMonitor 0.1.9+ is installed on this host.'
+        return
+      }
+      foreach ($versionDir in $targetable) {
+        foreach ($leaf in 'Invoke-ParityScheduledAuditTask.ps1', 'Invoke-ParityScheduledCompareTask.ps1') {
+          $parityScript = Join-Path $versionDir.FullName (Join-Path 'scripts' $leaf)
+          if (-not (Test-Path -LiteralPath $parityScript -PathType Leaf)) { continue }
+          (Get-Content -LiteralPath $parityScript -Raw) |
+            Should -Match ([regex]::Escape('$MyInvocation.InvocationName -ne')) -Because "$($versionDir.Name)\$leaf must keep the &-proof guard"
+        }
+      }
+    }
+
+    It 'keeps the task action short enough for any scheduler surface' {
+      # The 261-character schtasks /TR limit blocked the direct versioned-script action on
+      # 2026-08-11. COM has no such limit, but the dispatcher action stays well under it so
+      # the task remains editable by every scheduler tool, including schtasks and the GUI.
+      $pwshPath = 'C:\Program Files\PowerShell\7\pwsh.exe'
+      $dispatcher = 'C:\Program Files\ATAP\ParityDispatchers\ATAP-ParityCompare.ps1'
+      $taskRun = "`"$pwshPath`" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$dispatcher`""
+      $taskRun.Length | Should -BeLessThan 261
+    }
+  }
+
+  It 'defaults every broker task path to the folder the broker does NOT control' {
+    # The broker holds folder-level create/update on \ATAP so it can manage the parity tasks.
+    # If its own task lived there too, it could rewrite its own definition -- a self-escalation
+    # path. It therefore lives in \ATAP-Broker, where it has no rights. All three entry points
+    # must agree on that, and the task XML's URI must match, or callers get 'broker-unreachable'
+    # (which is exactly what happened on 2026-08-11 after the move).
+    $expected = '\ATAP-Broker\'
+    $defaults = @{
+      'public\Request-ElevatedInstall.ps1'        = 'BrokerTaskPath'
+      'public\Register-ElevationBrokerTask.ps1'   = 'TaskPath'
+      'public\Grant-ElevationBrokerStartRights.ps1' = 'TaskPath'
+    }
+    foreach ($file in $defaults.Keys) {
+      $text = Get-Content -LiteralPath (Join-Path $script:ModuleRoot $file) -Raw
+      $text | Should -Match ([regex]::Escape("`$$($defaults[$file]) = '$expected'")) -Because "$file must default to $expected"
+      $text | Should -Not -Match ([regex]::Escape("`$$($defaults[$file]) = '\ATAP\'")) -Because "$file must not default to the folder the broker controls"
+    }
+
+    $xml = [xml](Get-Content -LiteralPath $script:TaskXml -Raw)
+    $xml.Task.RegistrationInfo.URI | Should -Be '\ATAP-Broker\ATAP-ElevatedInstallBroker'
+  }
+
   It 'never lets a request name what runs' {
     # The whole trust model: executables live only in the admin-owned config.
     $clientText = Get-Content -LiteralPath $script:ClientScript -Raw
     $clientText | Should -Not -Match '(?m)^\s*\[string\]\s*\$(ScriptPath|InstallerPath|Path)\b'
-    $names = @($script:Config.installers[0].allowedParameters.name)
+    $names = @($script:Config.installers | ForEach-Object { $_.allowedParameters.name })
     foreach ($forbidden in 'ScriptPath', 'Path', 'CommandName', 'ModulePath') {
       $names | Should -Not -Contain $forbidden
     }
@@ -95,7 +351,7 @@ Describe 'Elevation broker artifacts' {
     #
     # Skipped, with a stated reason, when the promoted module is not installed on this host --
     # there is nothing to compare against then, and a silent pass would be misleading.
-    $entry = $script:Config.installers[0]
+    $entry = $script:Config.installers | Where-Object id -eq 'install-atap-module-allusers'
     $module = Get-Module -ListAvailable -Name $entry.moduleName -ErrorAction SilentlyContinue |
       Sort-Object Version -Descending | Select-Object -First 1
     if (-not $module) {
@@ -167,8 +423,8 @@ Describe 'Get-BrokerConfig' {
     $p = Join-Path $TestDrive 'good.json'
     Copy-Item -LiteralPath $script:ConfigTemplate -Destination $p
     $config = Get-BrokerConfig -Path $p
-    @($config.installers).Count | Should -Be 1
-    $config.installers[0].id | Should -Be 'install-atap-module-allusers'
+    @($config.installers).Count | Should -Be 2
+    @($config.installers.id) | Should -Contain 'install-atap-module-allusers'
   }
 
   Context 'module-kind entries (Task 13.76.c)' {
@@ -336,7 +592,7 @@ Describe 'Test-BrokerRequestParameters' {
           ModuleName = 'ATAP.Utilities.BuildTooling.PowerShell'
           RequiredVersion = '0.1.71'
           Repository = 'powershellget-stable'
-          FeedUrl = 'http://localhost:50000/nuget/powershellget-stable'
+          FeedUrl = 'https://utat022:50000/nuget/powershellget-stable'
           ExpectedSha256 = '8D97C6C46CD2282DD3DE78548BBE07E1617DFCD45994C681CFF831AA4BAC50A1'
         })
       $r.Count | Should -Be 5
@@ -355,7 +611,7 @@ Describe 'Test-BrokerRequestParameters' {
       # the broker names the missing value, the binder just says the command cannot process.
       { Test-BrokerRequestParameters -AllowedParameters $script:Allowed -RequestParameters ([pscustomobject]@{
             ModuleName = 'A'; RequiredVersion = '1.0.0'; Repository = 'powershellget-stable'
-            FeedUrl = 'http://localhost:50000/nuget/powershellget-stable' }) } |
+            FeedUrl = 'https://utat022:50000/nuget/powershellget-stable' }) } |
         Should -Throw -ExpectedMessage "*Required parameter 'ExpectedSha256' was not supplied*"
     }
 
@@ -364,7 +620,7 @@ Describe 'Test-BrokerRequestParameters' {
           ModuleName = 'ATAP.Utilities.PowerShell'
           RequiredVersion = '0.1.10'
           Repository = 'powershellget-stable'
-          FeedUrl = 'http://localhost:50000/nuget/powershellget-stable'
+          FeedUrl = 'https://utat022:50000/nuget/powershellget-stable'
           ExpectedSha256 = '8D97C6C46CD2282DD3DE78548BBE07E1617DFCD45994C681CFF831AA4BAC50A1'
         })
       $r.Count | Should -Be 5
@@ -373,7 +629,7 @@ Describe 'Test-BrokerRequestParameters' {
     It 'accepts a prerelease version' {
       $r = Test-BrokerRequestParameters -AllowedParameters $script:Allowed -RequestParameters ([pscustomobject]@{
           ModuleName = 'A'; RequiredVersion = '1.2.3-beta.1'; Repository = 'powershellget-experimental'
-          FeedUrl = 'http://localhost:50000/nuget/powershellget-experimental'
+          FeedUrl = 'https://utat022:50000/nuget/powershellget-experimental'
           ExpectedSha256 = ('C' * 64) })
       $r.RequiredVersion | Should -Be '1.2.3-beta.1'
     }

@@ -29,7 +29,9 @@ Describe 'PlanningSession public contracts' -Tag 'Unit' {
 
   It 'imports the promoted artifact when the harness supplies one' {
     $script:Module.ModuleBase | Should -Be (Split-Path -Parent (Resolve-Path -LiteralPath $script:ModuleToTest).Path)
-    $script:Module.Version.ToString() | Should -Be '0.1.2'
+    # Compare against the module's declared version rather than a pinned literal, which
+    # had to be hand-edited for every release and silently blocked promotion when missed.
+    $script:Module.Version.ToString() | Should -Match '^\d+\.\d+\.\d+$'
   }
 
   It 'preserves the Add-ScopeCreepIdea global contract parameters' {

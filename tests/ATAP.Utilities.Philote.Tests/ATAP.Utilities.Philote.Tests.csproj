@@ -3,6 +3,8 @@
   <PropertyGroup>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <Nullable>enable</Nullable>
     <!-- Assembly, File, and Package Information for this assembly-->
     <!-- Build and revision are created based on date-->
     <MajorVersion>0</MajorVersion>
@@ -39,6 +41,8 @@
   <ItemGroup Condition="'$(UsePackageReferenceForSUT)' == 'false'">
     <ProjectReference Include="..\..\src\ATAP.Utilities.Philote\DefaultConfiguration\ATAP.Utilities.Philote.DefaultConfiguration.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.Philote\Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Philote\Models\ATAP.Utilities.Philote.Models.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Philote\JsonConverter.Shim.SystemTextJson\ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj" />
   </ItemGroup>
 
@@ -49,25 +53,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer\Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.DateTime.Interfaces\ATAP.Utilities.DateTime.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.DateTime.Model\ATAP.Utilities.DateTime.Model.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.StronglyTypedId\Interfaces\ATAP.Utilities.StronglyTypedId.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.StronglyTypedId\Models\ATAP.Utilities.StronglyTypedId.Models.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="SerializationStrings.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>SerializationStrings.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Update="SerializationStrings.resx">
-      <Generator>PublicResXFileCodeGenerator</Generator>
-      <LastGenOutput>SerializationStrings.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-  </ItemGroup>
-
 
 </Project>

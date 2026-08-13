@@ -368,6 +368,52 @@ dotnet --list-sdks
 bw --version
 ```
 
+### 2.0 Register the PowerShell 7 remoting endpoint before any remote connection
+
+After PowerShell 7 is installed, use an elevated **local console** PowerShell 7
+session to register its WinRM endpoint before attempting any ATAP remote action.
+This is a prerequisite for bounded identity probes, credential rotation, and
+all other approved remoting: every normal remote connection must name
+`-ConfigurationName 'PowerShell.7'`.
+
+```powershell
+Enable-PSRemoting -Force
+$winRm = Get-Service -Name 'WinRM' -ErrorAction Stop
+Set-Service -Name 'WinRM' -StartupType Automatic
+if ($winRm.Status -ne 'Running') {
+  Start-Service -Name 'WinRM'
+}
+$winRm.WaitForStatus('Running', [TimeSpan]::FromSeconds(30))
+Test-WSMan -ComputerName 'localhost' -ErrorAction Stop | Out-Null
+Get-PSSessionConfiguration -Name 'PowerShell.7' -ErrorAction Stop |
+  Select-Object Name, PSVersion, Enabled
+```
+
+`Enable-PSRemoting` can reconfigure WinRM and interrupt an in-flight bootstrap
+connection. Treat the local service-health check above as a required completion
+barrier: WinRM must be `Running`, configured for automatic startup, and answer
+`Test-WSMan localhost` before an operator considers the endpoint registered.
+If it does not reach that state within 30 seconds, stop and repair the local
+WinRM service; do not infer success from a disconnected remote bootstrap call.
+
+Verify from an approved peer only after that local service-health and endpoint
+verification succeeds. The probe must return metadata only and must not fall
+back to the unnamed Windows PowerShell endpoint:
+
+```powershell
+Invoke-Command -ComputerName '<host>' -ConfigurationName 'PowerShell.7' -ScriptBlock {
+  [pscustomobject]@{
+    ComputerName = $env:COMPUTERNAME
+    UserName = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+    PSVersion = $PSVersionTable.PSVersion.ToString()
+  }
+}
+```
+
+If the endpoint is absent, repair it through the local console or a separately
+approved recovery operation. Do not silently use the default endpoint as a
+substitute for ordinary administration.
+
 Install **Dropbox first and manually** (download from
 [dropbox.com/install](https://www.dropbox.com/install)). Chocolatey is not yet available at
 this stage, and organization scripts, PowerShell modules, and the Chocolatey package
@@ -453,6 +499,130 @@ Record the installed version and resolved executable path in the parity journal.
 `utat01`, the existing direct-download installation is at
 `C:\Program Files\SysinternalsSuite`; verify the WinGet installation on `utat022`
 resolves to the same path before closing the return action.
+
+### 2.3.1 Configure Avast HTTPS inspection for browsers only
+
+Avast Web Guard (formerly Web Shield) installs a local trusted root and transparently
+intercepts TLS through its network-filter drivers. This is not a WinHTTP, WinINet, or
+environment-variable proxy: those proxy surfaces can all report direct access while a
+non-browser process still receives an Avast-issued certificate instead of the certificate
+presented by the destination service. That breaks PKI evidence and can disrupt PowerShell,
+`bws`, NuGet, ProGet, BuildMaster, and other development automation.
+
+Keep HTTPS inspection enabled for browsers, but restrict Web Guard to browser processes on
+developer and infrastructure hosts:
+
+1. Open Avast and select **Menu > Settings**.
+2. Select **Search**, enter `geek:area`, and open **Avast Geek**.
+3. Search for `well-known browser`.
+4. Enable **Scan traffic from well-known browser processes only**.
+5. Leave **Enable HTTPS scanning** enabled.
+
+Avast documents this control in
+[Using the Avast Geek settings area](https://support.avast.com/en-us/article/Use-Antivirus-Geek-settings).
+Do not replace this configuration with broad URL exceptions: an exception for an internal
+host also bypasses inspection when a browser visits that host. Do not treat `-NoProxy` as a
+permanent fix; it does not configure Avast and only happened to avoid one intercepted client
+path during diagnosis.
+
+Record the change with `Add-ParityChangeEntry` before applying it. The peer action is to
+enable the same browser-process-only setting on the other UTAT host and then acknowledge the
+journal entry.
+
+After applying the setting, verify all of the following:
+
+```powershell
+# Conventional proxy surfaces remain disabled.
+netsh winhttp show proxy
+Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' |
+  Select-Object ProxyEnable, ProxyServer, AutoConfigURL
+Get-ChildItem Env: | Where-Object Name -Match '^(HTTP|HTTPS|ALL|NO)_PROXY$'
+
+# Development traffic succeeds without a bypass switch.
+(Invoke-WebRequest 'https://utat022:50000/' -UseBasicParsing -TimeoutSec 20).StatusCode
+(Invoke-WebRequest 'https://utat022:50017/' -UseBasicParsing -TimeoutSec 20).StatusCode
+
+# Resolve a known metadata-safe test secret without printing its value.
+$null = Get-SecretATAP -SecretName '<approved-test-SecretName>' -ErrorAction Stop
+```
+
+In a browser, confirm Avast inspection remains active. From PowerShell, confirm the TLS leaf
+subject, issuer, and thumbprint are the direct ATAP Foundation values recorded in
+`ATAP.IAC\Windows\AnsibleHostInventory\All\PKI-TLS-ATAP-Foundation.example.yml`, not an
+`Avast Web/Mail Shield` certificate. A successful HTTP status alone is insufficient PKI
+evidence because an intercepting certificate can still produce HTTP 200.
+
+### 2.3.2 Install the deterministic C# package build toolchain
+
+Production C# packages require a stable NuGet implementation that honors
+deterministic pack. Install the **stable** Visual Studio Build Tools 2026 channel
+with these components:
+
+- `Microsoft.VisualStudio.Workload.MSBuildTools`
+- `Microsoft.VisualStudio.Component.NuGet.BuildTools`
+- `Microsoft.NetCore.Component.SDK` (the .NET SDK resolver for full MSBuild)
+
+The minimum supported baseline is Visual Studio Build Tools/MSBuild 18.8 and
+NuGet Pack 7.8. The verified UTAT022 baseline on 2026-08-11 is Visual Studio
+Build Tools 18.9.0 RTW, MSBuild 18.9.1.35102, .NET SDK 10.0.400, and NuGet Pack
+7.9.0.38015.
+
+Run from an elevated PowerShell 7 session. Some non-interactive shells omit
+`WINDIR`; this process-only assignment prevents Visual Studio Installer WPF
+initialization failure without changing the machine environment.
+
+```powershell
+$env:WINDIR = $env:SystemRoot
+$installer = Join-Path $env:TEMP 'vs_buildtools.exe'
+Invoke-WebRequest 'https://aka.ms/vs/18/stable/vs_buildtools.exe' -OutFile $installer
+$signature = Get-AuthenticodeSignature -LiteralPath $installer
+if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notmatch 'Microsoft Corporation') {
+  throw 'The Visual Studio Build Tools bootstrapper signature is not valid.'
+}
+
+& $installer `
+  --installPath 'C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools' `
+  --add Microsoft.VisualStudio.Workload.MSBuildTools `
+  --add Microsoft.VisualStudio.Component.NuGet.BuildTools `
+  --add Microsoft.NetCore.Component.SDK `
+  --quiet --wait --norestart
+if ($LASTEXITCODE -notin 0, 3010) {
+  throw "Visual Studio Build Tools installation failed with exit code $LASTEXITCODE."
+}
+```
+
+Verify the stable installation and the exact pack task that MSBuild will load.
+Do not add the `vswhere -prerelease` switch.
+
+```powershell
+$vswhere = 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe'
+$installPath = & $vswhere -latest `
+  -products Microsoft.VisualStudio.Product.BuildTools `
+  -requires Microsoft.VisualStudio.Workload.MSBuildTools `
+  -requires Microsoft.VisualStudio.Component.NuGet.BuildTools `
+  -requires Microsoft.NetCore.Component.SDK `
+  -property installationPath
+if (-not $installPath) { throw 'The stable deterministic package toolchain is incomplete.' }
+
+$msbuild = Join-Path $installPath 'MSBuild\Current\Bin\MSBuild.exe'
+& $msbuild -version
+$sdkVersion = (& dotnet --version).Trim() # Must match repository global.json.
+$dotnetRoot = Split-Path -Parent (Get-Command dotnet -ErrorAction Stop).Source
+$packTask = Join-Path $dotnetRoot "sdk\$sdkVersion\Sdks\Microsoft.NET.Sdk\tools\net472\NuGet.Build.Tasks.Pack.dll"
+[Reflection.AssemblyName]::GetAssemblyName($packTask).Version
+```
+
+The repository pins stable SDK 10.0.400 with `allowPrerelease=false`. BuildMaster
+uses `dotnet build`, but production pack uses Visual Studio MSBuild `/t:Pack`
+with `Deterministic=true` and `DeterministicTimestamp` derived from the Git
+`HEAD` commit epoch. Do not substitute `dotnet pack`: an older SDK feature band
+can silently load NuGet 7.6, where deterministic pack is disabled.
+
+Before publishing to an immutable feed, pack twice from the same commit into
+isolated roots and require identical `.nupkg` SHA-256 hashes. Record every
+installation or upgrade in the local parity journal, including Visual Studio,
+MSBuild, SDK, and NuGet Pack versions; require the peer host to install the same
+stable components and repeat the two-pack gate. Never journal credentials.
 
 ### 2.4 Install Python (for Manim or Copilot code execution)
 
@@ -615,7 +785,7 @@ Set-UserScopeProfile -AccountName 'whertzing' -AccountClass Developer `
 
 # Run this only after the local service account exists. Use an elevated shell
 # because a different user's profile directory is being written.
-Set-UserScopeProfile -AccountName 'SvcBuildmaster' -AccountClass ServiceAccount `
+Set-UserScopeProfile -AccountName 'SvcBuildMaster' -AccountClass ServiceAccount `
   -ATAPIACRoot $iacRoot -ATAPUtilitiesRoot $atapRoot -Confirm:$false
 ```
 
@@ -626,7 +796,7 @@ For the complete service-account and BWS-machine-token procedure, see
 
 Install the PowerShell Gallery dependencies before later steps import
 `ATAP.Utilities.BuildTooling.PowerShell`. Use `-Scope AllUsers` (not
-`CurrentUser`) so the BuildMaster service account (`SvcBuildmaster` on
+`CurrentUser`) so the BuildMaster service account (`SvcBuildMaster` on
 `utat022`) and any other local service identity can resolve these modules.
 A `CurrentUser` install only writes under the interactive developer profile
 and is invisible to service accounts — BuildMaster packing will fail
@@ -662,7 +832,7 @@ Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 
 ### 4.4 Install NBGV (Nerdbank.GitVersioning) machine-wide
 
-BuildMaster runs as a service account (`SvcBuildmaster` on `utat022`) and
+BuildMaster runs as a service account (`SvcBuildMaster` on `utat022`) and
 shells out to the `nbgv` CLI through `Get-BuildContext` during the
 Experimental stage. If `nbgv` is installed only as a per-user dotnet tool
 (for example, at `C:\Users\<dev>\.dotnet\tools\nbgv.exe`), the service
@@ -691,7 +861,7 @@ dotnet tool install --tool-path $machineToolPath nbgv
 `AllUsersAllHostsV7CoreProfile.ps1` (installed at
 `$PSHome\profile.ps1` in step 4.1) prepends `C:\ProgramData\dotnet\tools`
 to the process-scope `PATH` for every PowerShell 7 session — including the
-non-interactive session BuildMaster spawns under `SvcBuildmaster`. After
+non-interactive session BuildMaster spawns under `SvcBuildMaster`. After
 opening a new `pwsh` window, both of these must succeed:
 
 ```powershell
@@ -730,7 +900,7 @@ $PROFILE | Format-List *
 ### 4.6 Install the Bitwarden Secrets Manager CLI (`bws`) machine-wide
 
 `Get-SecretATAP` with the `BitwardenSecretsManager` provider shells out to the `bws`
-CLI to read runtime secrets (Step 9.4.10). The Inedo products run as `SvcBuildmaster`
+CLI to read runtime secrets (Step 9.4.10). The Inedo products run as `SvcBuildMaster`
 and `SvcProGet`, and those service / scheduled-task processes start with `-NoProfile`,
 so `bws` must resolve from the **machine** `PATH` — not from a per-user `winget` install
 under one developer's AppData, and not only from the ATAP profile's injected PATH (which
@@ -738,7 +908,7 @@ under one developer's AppData, and not only from the ATAP profile's injected PAT
 
 This is the same machine-wide-resolution requirement Step 4.4 documents for `nbgv`.
 Install `bws.exe` into a shared `Program Files` location and add that folder to the
-system `PATH` so every local account — `SvcBuildmaster`, `SvcProGet`, and every
+system `PATH` so every local account — `SvcBuildMaster`, `SvcProGet`, and every
 interactive developer — resolves the same binary.
 
 The `bws` CLI ships from the `bitwarden/sdk-sm` repository (it is **not** the same
@@ -818,7 +988,7 @@ PowerShell profile.
 
 A **Machine** `PATH` entry is account-independent, so the `-NoProfile` check above
 already proves the binary is resolvable for every account that starts after the change —
-including `SvcBuildmaster` and `SvcProGet` once their services are restarted. The
+including `SvcBuildMaster` and `SvcProGet` once their services are restarted. The
 following is an **optional** belt-and-suspenders confirmation that opens a one-shot
 `-NoProfile` shell _as_ the service account and prints the resolved path.
 
@@ -833,7 +1003,7 @@ couple this check to an unrelated dependency (a live `BW_SESSION` and `bw`'s net
 state) that can fail for reasons having nothing to do with `bws`.
 
 ```powershell
-$svc = 'SvcBuildmaster'   # repeat with 'SvcProGet'
+$svc = 'SvcBuildMaster'   # repeat with 'SvcProGet'
 $cred = Get-Credential -UserName "$env:COMPUTERNAME\$svc" `
   -Message "Windows password for $svc (PATH check only)"
 
@@ -887,11 +1057,21 @@ with the exact Java executable selected by the gate.
 Create these Bitwarden items in the `ComputerLogins` collection before installing any
 third-party service. Each item must contain a username and password field.
 
-| Bitwarden item name                          | Local Windows account | Used by                                         |
-| -------------------------------------------- | --------------------- | ----------------------------------------------- |
-| `<COMPUTERNAME>-SQLServerSrvAcct-Production` | `SQLServerSrvAcct`    | SQL Server Database Engine and SQL Server Agent |
-| `<COMPUTERNAME>-SvcProGet-Production`        | `SvcProGet`           | ProGet service                                  |
-| `<COMPUTERNAME>-SvcBuildmaster-Production`   | `SvcBuildmaster`      | BuildMaster service                             |
+| Bitwarden item name                | Local Windows account | Used by                                         |
+| ---------------------------------- | --------------------- | ----------------------------------------------- |
+| `SvcSQLServer.<COMPUTERNAME>`      | `SvcSQLServer`        | SQL Server Database Engine and SQL Server Agent |
+| `SvcProGet.<COMPUTERNAME>`         | `SvcProGet`           | ProGet service                                  |
+| `SvcBuildMaster.<COMPUTERNAME>`    | `SvcBuildMaster`      | BuildMaster service                             |
+| `SvcAnsibleAdmin.<COMPUTERNAME>`   | `SvcAnsibleAdmin`     | Elevation broker, if it runs on this host       |
+
+> **Corrected 2026-08-12 against the live vault.** These names previously carried a
+> `.Login.` middle field. **No such field exists.** Enumerating all 66 Bitwarden Secrets
+> Manager keys returned zero containing `.Login.`, so every `<Service>.Login.<host>` name
+> fails to resolve with "No Bitwarden Secrets Manager secret found with key ... in the BWS
+> token's granted projects." The form is `<ServiceAccount>.<hostname>` throughout.
+>
+> Existing keys are `utat01` and `utat022` only, for every service account except
+> `SvcAnsibleAdmin`, which also has `ncat040`. A new host needs its full set created here.
 
 If this workstation must be brought online **before** an Ansible controller exists,
 use the manual bootstrap procedure in
@@ -906,8 +1086,8 @@ Import-Module ATAP.Utilities.PowerShell
 
 $serviceAccounts = @(
   @{
-    SecretName  = "SQLServerSrvAcct.$($env:COMPUTERNAME.ToLowerInvariant())"
-    AccountName = 'SQLServerSrvAcct'
+    SecretName  = "SvcSQLServer.$($env:COMPUTERNAME.ToLowerInvariant())"
+    AccountName = 'SvcSQLServer'
     FullName    = 'SQL Server Service Identity'
     Description = 'Local service account for SQL Server Database Engine and Agent'
   },
@@ -918,8 +1098,8 @@ $serviceAccounts = @(
     Description = 'Local service account for the Inedo ProGet service'
   },
   @{
-    SecretName  = "SvcBuildmaster.$($env:COMPUTERNAME.ToLowerInvariant())"
-    AccountName = 'SvcBuildmaster'
+    SecretName  = "SvcBuildMaster.$($env:COMPUTERNAME.ToLowerInvariant())"
+    AccountName = 'SvcBuildMaster'
     FullName    = 'BuildMaster Service Identity'
     Description = 'Local service account for Inedo BuildMaster service'
   }
@@ -1012,8 +1192,8 @@ foreach ($role in @('PRODUCTION', 'QA', 'INTEGRATION')) {
 
 When the SQL installer prompts for service accounts:
 
-1. Configure the Database Engine to run as `SQLServerSrvAcct`.
-2. Configure SQL Server Agent to run as `SQLServerSrvAcct`.
+1. Configure the Database Engine to run as `SvcSQLServer`.
+2. Configure SQL Server Agent to run as `SvcSQLServer`.
 3. Set both services to automatic startup.
 4. Keep Windows authentication enabled.
 
@@ -1323,7 +1503,7 @@ Initialize-SqlServiceLogin `
 Initialize-SqlServiceLogin `
   -SqlInstance 'localhost\Production' `
   -DatabaseName 'BuildMaster' `
-  -ServiceAccount "$env:COMPUTERNAME\SvcBuildmaster" `
+  -ServiceAccount "$env:COMPUTERNAME\SvcBuildMaster" `
   -Encrypt Optional `
   -TrustServerCertificate
 ```
@@ -1413,8 +1593,8 @@ restore an application or Inedo database to establish parity.
 ```powershell
 Import-Module ATAP.Utilities.PowerShell
 
-$proGetPassword = Get-SecretATAP -SecretName "$env:COMPUTERNAME-SvcProGet-Production" -SecretField 'password'
-$bmPassword = Get-SecretATAP -SecretName "$env:COMPUTERNAME-SvcBuildmaster-Production" -SecretField 'password'
+$proGetPassword = Get-SecretATAP -SecretName "SvcProGet.$($env:COMPUTERNAME.ToLowerInvariant())" -SecretField 'password'
+$bmPassword = Get-SecretATAP -SecretName "SvcBuildMaster.$($env:COMPUTERNAME.ToLowerInvariant())" -SecretField 'password'
 
 $proGetCredential = New-Object System.Management.Automation.PSCredential(
   "$env:COMPUTERNAME\SvcProGet",
@@ -1422,7 +1602,7 @@ $proGetCredential = New-Object System.Management.Automation.PSCredential(
 )
 
 $buildMasterCredential = New-Object System.Management.Automation.PSCredential(
-  "$env:COMPUTERNAME\SvcBuildmaster",
+  "$env:COMPUTERNAME\SvcBuildMaster",
   (ConvertTo-SecureString $bmPassword -AsPlainText -Force)
 )
 
@@ -1559,7 +1739,7 @@ between accounts or hosts.
 ### 9.5 Bootstrap exact Git trust for the BuildMaster service account
 
 When a BuildMaster build agent runs as the BuildMaster service account
-(`SvcBuildmaster` on `utat022`) against a worktree under
+(`SvcBuildMaster` on `utat022`) against a worktree under
 `C:\Dropbox\whertzing\GitHub\`, git refuses to operate on the directory
 because it was created by a different user (the interactive developer
 account that owns the Dropbox sync). Symptom:
@@ -1575,13 +1755,13 @@ surfaces first during `dotnet restore` because of the
 `Directory.Build.props:36`, which triggers an NBGV evaluation that needs
 git.
 
-Run as `SvcBuildmaster` itself, not as the interactive developer. Add only the resolved
+Run as `SvcBuildMaster` itself, not as the interactive developer. Add only the resolved
 repository and worktree paths that this identity is authorized to build. Task 13.5 owns the
 idempotent ownership/trust automation; until that automation is deployed, review each exact
 path before adding it.
 
 ```powershell
-# Elevated pwsh running as SvcBuildmaster; repeat for each reviewed exact path.
+# Elevated pwsh running as SvcBuildMaster; repeat for each reviewed exact path.
 $authorizedWorktree = 'C:/Dropbox/whertzing/GitHub/ATAP.Utilities'
 git config --global --add safe.directory $authorizedWorktree
 ```
@@ -1594,7 +1774,7 @@ git config --global --get-all safe.directory
 
 Critical notes:
 
-1. **Run as `SvcBuildmaster`, not as your interactive login.** This entry
+1. **Run as `SvcBuildMaster`, not as your interactive login.** This entry
    lives in the running user's `~/.gitconfig`. Running it from your
    developer account writes to the wrong user's gitconfig and the dubious
    ownership error persists.
@@ -1603,12 +1783,12 @@ Critical notes:
 3. **Wildcards are not supported or acceptable here.** Add each authorized repository or
    worktree as an exact canonical path, and remove obsolete entries during return cleanup.
 
-A common way to obtain a `SvcBuildmaster` shell from an admin login:
+A common way to obtain a `SvcBuildMaster` shell from an admin login:
 
 ```powershell
-$bmPassword = Get-SecretATAP -SecretName "$env:COMPUTERNAME-SvcBuildmaster-Production" -SecretField 'password'
+$bmPassword = Get-SecretATAP -SecretName "SvcBuildMaster.$($env:COMPUTERNAME.ToLowerInvariant())" -SecretField 'password'
 $bmCred = New-Object System.Management.Automation.PSCredential(
-  "$env:COMPUTERNAME\SvcBuildmaster",
+  "$env:COMPUTERNAME\SvcBuildMaster",
   (ConvertTo-SecureString $bmPassword -AsPlainText -Force)
 )
 Start-Process pwsh -Credential $bmCred -ArgumentList '-NoExit', '-Command',
@@ -1616,7 +1796,7 @@ Start-Process pwsh -Credential $bmCred -ArgumentList '-NoExit', '-Command',
 ```
 
 Acceptance: the exact authorized paths appear in `safe.directory`, no parent-wide entry is
-present, and a fresh BuildMaster build under `SvcBuildmaster` completes `dotnet restore` and
+present, and a fresh BuildMaster build under `SvcBuildMaster` completes `dotnet restore` and
 `Get-BuildContext` without a `dubious ownership` error.
 
 ### 9.6 Keep the config files under source control
@@ -1661,8 +1841,8 @@ Install-ATAPModulesFromProGet
 Expected output (module base paths confirm `-Scope AllUsers`):
 
 ```text
-[HH:mm:ss][Install-ATAPModulesFromProGet] Feed URI: http://localhost:50000/nuget/powershellget-stable/
-[HH:mm:ss][Install-ATAPModulesFromProGet] Feed 'powershellget-stable' is reachable at http://localhost:50000/nuget/powershellget-stable/
+[HH:mm:ss][Install-ATAPModulesFromProGet] Feed URI: https://utat022:50000/nuget/powershellget-stable/
+[HH:mm:ss][Install-ATAPModulesFromProGet] Feed 'powershellget-stable' is reachable at https://utat022:50000/nuget/powershellget-stable/
 [HH:mm:ss][Install-ATAPModulesFromProGet] Installed 'ATAP.Utilities.PowerShell' v0.1.0 to 'C:\Program Files\PowerShell\Modules\ATAP.Utilities.Powershell\0.1.0'
 [HH:mm:ss][Install-ATAPModulesFromProGet] Installed 'ATAP.Utilities.BuildTooling.PowerShell' v0.1.0 to 'C:\Program Files\PowerShell\Modules\ATAP.Utilities.BuildTooling.PowerShell\0.1.0'
 
@@ -1689,8 +1869,8 @@ Unregister-PSRepository -Name powershellget-stable -ErrorAction SilentlyContinue
 
 Register-PSRepository `
   -Name              'powershellget-stable' `
-  -SourceLocation    'http://localhost:50000/nuget/powershellget-stable/' `
-  -PublishLocation   'http://localhost:50000/nuget/powershellget-stable/' `
+  -SourceLocation    'https://utat022:50000/nuget/powershellget-stable/' `
+  -PublishLocation   'https://utat022:50000/nuget/powershellget-stable/' `
   -InstallationPolicy Trusted
 
 Register-PSRepository `
@@ -1720,13 +1900,20 @@ package-provider state. Register both PowerShell repository stores so either
 
 Run in a normal PowerShell 7 session for the user who will install modules:
 
+> **Protocol note.** ProGet serves **HTTPS only** on `utat022:50000`; a plain `http://`
+> request fails rather than redirecting. The certificate's SAN covers only `utat022`, so
+> `localhost` is not a usable host name over TLS. Prefer driving these URIs from host
+> settings (`$settings['ProGetFeedPowerShellStableUri']` and siblings) rather than the
+> literals below. See
+> [Feed-Protocol-HTTP-to-HTTPS-Migration.md](Feed-Protocol-HTTP-to-HTTPS-Migration.md).
+
 ```powershell
 $feeds = @(
-  @{ Name = 'powershellget-experimental'; Uri = 'http://localhost:50000/nuget/powershellget-experimental/' },
-  @{ Name = 'powershellget-development';  Uri = 'http://localhost:50000/nuget/powershellget-development/' },
-  @{ Name = 'powershellget-integration';  Uri = 'http://localhost:50000/nuget/powershellget-integration/' },
-  @{ Name = 'powershellget-qa';           Uri = 'http://localhost:50000/nuget/powershellget-qa/' },
-  @{ Name = 'powershellget-stable';       Uri = 'http://localhost:50000/nuget/powershellget-stable/' }
+  @{ Name = 'powershellget-experimental'; Uri = 'https://utat022:50000/nuget/powershellget-experimental/' },
+  @{ Name = 'powershellget-development';  Uri = 'https://utat022:50000/nuget/powershellget-development/' },
+  @{ Name = 'powershellget-integration';  Uri = 'https://utat022:50000/nuget/powershellget-integration/' },
+  @{ Name = 'powershellget-qa';           Uri = 'https://utat022:50000/nuget/powershellget-qa/' },
+  @{ Name = 'powershellget-stable';       Uri = 'https://utat022:50000/nuget/powershellget-stable/' }
 )
 
 foreach ($feed in $feeds) {
@@ -1782,6 +1969,21 @@ in the repo `NuGet.Config` files. Confirm from a repo root with:
 dotnet nuget list source
 ```
 
+Two further families are registered as dotnet sources: the universal `releasebundle-*`
+feeds (top tier is `production`, not `stable`) and the `database-*` feeds used by the
+database-package pipeline. All must be `https://utat022:50000`. Confirm nothing remains on
+plain HTTP across all four registration surfaces:
+
+```powershell
+Get-PSRepository         | Where-Object SourceLocation -like 'http://*'
+Get-PSResourceRepository | Where-Object Uri            -like 'http://*'
+dotnet nuget list source | Select-String 'http://'
+```
+
+All three must return nothing. Note that `Get-PSRepository` (PowerShellGet v2) and
+`Get-PSResourceRepository` (PSResourceGet) are **separate stores** — migrating one leaves
+the other broken.
+
 ### 9.10 Configure SystemParityMonitor on Windows 10 and Windows 11
 
 Parity monitoring is a host-pair service, not merely a module import. The complete
@@ -1792,9 +1994,10 @@ intended to ship with the module at:
 $moduleRoot\Documentation\InstallationAndTroubleshooting.md
 ```
 
-Version `0.1.1` omitted `Documentation\`; until SC-0264 is implemented, use the
-canonical source copy under
-`src\ATAP.Utilities.SystemParityMonitor.PowerShell\Documentation`.
+Version `0.1.8` is the deployed token-free baseline. The canonical source copy under
+`src\ATAP.Utilities.SystemParityMonitor.PowerShell\Documentation` also describes
+approved next-release package-path, coverage, and alert behavior; do not mistake those
+source-only sections for installed behavior.
 
 An administrator must complete this checklist on each participating host:
 
@@ -1812,22 +2015,48 @@ An administrator must complete this checklist on each participating host:
    acknowledgements, snapshots, whitelist, and task-results folders as specified by
    the parity runbook.
 5. Create the `\ATAP` Task Scheduler folder.
-6. Grant `SvcParityAudit` `SeBatchLogonRight` while preserving every existing right
+6. Grant the host-local `SvcAnsibleAdmin` account only `TASK_CHANGE` on the existing
+   `\ATAP\ATAP-ParityAudit` task. This is a native Task Scheduler DACL allow ACE
+   with access mask `0x2`; it is not an NTFS grant, a `\ATAP` folder grant, or a
+   grant on any other task. It allows the constrained elevation broker to replace the
+   approved task action, but does not grant task run, delete, security-descriptor, or
+   owner-management rights. Preserve all existing task ACEs.
+7. Grant `SvcParityAudit` `SeBatchLogonRight` while preserving every existing right
    holder. Confirm neither the account nor one of its governing policies assigns
    `SeDenyBatchLogonRight`. The guarded `secedit` pattern in §9.4.6.5 applies; add
    `SvcParityAudit` to the SID list.
-7. As `SvcParityAudit` on that same host, provision and validate the
-   `CommonCIForBitwardenReadOnly` DPAPI token. Never copy the token from another host
-   or account, and never use `bw`/`BW_SESSION` in the scheduled path.
-8. Register `AuditAndCompare` on the primary host with Password logon when peer SMB
+8. Confirm `SvcParityAudit` has no BWS token, Bitwarden credential directory,
+   `bws` dependency, or `BW_SESSION`. The deployed 0.1.8 wrapper records
+   `SecretAccessRequired = false`.
+9. Register `AuditAndCompare` on the primary host with Password logon when peer SMB
    access needs reusable credentials. Register `AuditOnly` on the peer with S4U and a
    limited run level. When the elevated administrator and S4U run-as identities differ,
    supply the run-as credential during registration; Task Scheduler uses it to
    authorize registration while preserving S4U/no stored password in the task.
-9. Run the peer audit, primary audit, and primary comparison in that order; require
+10. Run the peer audit, primary audit, and primary comparison in that order; require
    successful task-result JSON, fresh snapshots, a drift report, and no secret values
    in evidence.
-10. Keep Daily cadence for the first clean month, then re-register as BiWeekly.
+11. Do not start the clean-month clock until SQL and package collection is trustworthy
+   on both hosts. Then run Daily for one verified clean month before re-registering as
+   BiWeekly; the earlier blind period does not count.
+
+The required but not-yet-granted least-privilege baseline is: Chocolatey machine-path
+read/execute; SQL `VIEW ANY DEFINITION` and `VIEW SERVER STATE`; an `msdb` user in
+`SQLAgentReaderRole`; NTFS read on `C:\LocalDBs` instance paths; and WMI/CIM read on
+`root\cimv2`. It explicitly excludes Administrator, SQL `sysadmin`, write, `ALTER`,
+job-control, WMI-method, and peer-share-write authority. Each grant is a separate
+security-approved host change, not an action authorized by this checklist.
+
+Next-release source accepts identity-explicit `PipPath`, `NpmPrefix`, and
+`NuGetToolPath` values. Missing configuration remains visible as package-manager status;
+the collector never substitutes the `SvcParityAudit` profile. Missing or thin SQL and
+package categories create diagnostic coverage findings and fail the audit. Installed
+ATAP PowerShell module versions remain outside parity scope; verify them separately.
+
+Approved D-6 next-release source writes Windows Application event `12380`/`12381` on
+the second consecutive audit/compare failure and warning `12382` immediately for stale
+or missing/thin comparison coverage. Host event-source registration and SEQ forwarding
+are not verified or deployed, so no human-notification claim is valid yet.
 
 Windows 10 can require the inbox `ScheduledTasks` manifest to be imported by full path
 from Windows PowerShell 5.1. The observed `utat01` endpoint omitted
@@ -1838,6 +2067,46 @@ the current recovery. SC-0266 tracks restoring a complete `PSModulePath` and add
 PowerShell 7 (`pwsh`) endpoint; WinRM profile loading is separate work. Windows 11
 normally exposes the cmdlets directly. The module runbook records the exact
 compatibility checks and these live findings:
+
+#### Add a new host to existing clients' TrustedHosts
+
+For a workgroup host, add the new host name to the WinRM client `TrustedHosts` list on
+every existing management host before using Negotiate authentication. Run the following
+in an elevated PowerShell session on each existing host. It preserves all existing entries,
+does not add duplicates, and intentionally does not use the insecure wildcard (`*`).
+
+```powershell
+$newHost = 'ncat040'
+$trustedHostsPath = 'WSMan:\localhost\Client\TrustedHosts'
+$oldValue = (Get-Item -Path $trustedHostsPath).Value
+$trustedHosts = @(
+  $oldValue -split ',' |
+    ForEach-Object { $_.Trim() } |
+    Where-Object { $_ }
+)
+
+if ($trustedHosts -notcontains $newHost) {
+  $newValue = @($trustedHosts + $newHost) -join ','
+  Set-Item -Path $trustedHostsPath -Value $newValue -Force
+}
+
+(Get-Item -Path $trustedHostsPath).Value
+```
+
+When this changes `utat022`, record the corresponding `utat01` work in the parity
+journal. Do not record passwords or any other secret values.
+
+```powershell
+Add-ParityChangeEntry `
+  -Category 'Other' `
+  -Item 'WinRM Client TrustedHosts' `
+  -OldValue '<previous TrustedHosts value>' `
+  -NewValue '<updated TrustedHosts value>' `
+  -PeerHostName 'utat01' `
+  -PeerActionKind Command `
+  -PeerAction "Add 'ncat040' to WSMan:\localhost\Client\TrustedHosts, preserving existing entries." `
+  -Reason 'Enable authenticated WinRM management of the new ncat040 host.'
+```
 
 - the registration script must be dot-sourced before calling
   `Register-ParityScheduledTasks`; invoking the file with `&` intentionally performs no
@@ -1911,6 +2180,48 @@ If global IPv6 addresses are dead, fix the host networking — do **not** edit
 
 Record the outcome with `Add-ParityChangeEntry` so the peer host shows a declared change
 rather than undeclared drift.
+
+### 9.10b Deploy the organization hosts file (name resolution)
+
+Every managed host resolves the organization's static host names (`utat022`, `utat01`,
+`ncat040`, printers, IoT devices, and so on) from a shared `hosts` file rather than from
+DNS. The canonical source is a single template that is deployed to each computer.
+
+**Canonical sources — do not hand-invent host names or IPs:**
+
+- **Host names and IP assignments** come from the organization's canonical compute
+  inventory (the `ansibleInventory` compute-inventory model). The concept is documented in
+  [NewOrganizationSetup.md](NewOrganizationSetup.md) Appendix A ("The organization's hosts
+  file (IP connectivity) is part of the package"); the machine-readable data lives in
+  `ATAP.IAC` (`ansible/inventory` and the host-settings fragments). Router DHCP reservations
+  must agree with these assignments before a name is added.
+- **The hosts-file contents** are the ATAP.IAC template
+  `Windows/NetworkResources/Hosts IP addresess.txt`. Per `ATAP.IAC/ReadMe.md` and
+  `IAC-Windows-Scripts-Migration.md`, this is the static hosts-file template for Ansible
+  deployment. Edit host entries **there**, never directly in a workstation's live file as
+  the primary change — the live file is a deployment target, not the source of truth.
+
+**Deploy the template to this workstation** (elevated; the target is a protected system
+file):
+
+```powershell
+# Source: the canonical ATAP.IAC template (adjust the repo root to the active worktree).
+$src = Join-Path $env:USERPROFILE 'Dropbox\whertzing\GitHub\ATAP.IAC\Windows\NetworkResources\Hosts IP addresess.txt'
+$dst = Join-Path $env:SystemRoot 'System32\drivers\etc\hosts'
+
+# Back up the current file first, then deploy the template verbatim.
+Copy-Item -LiteralPath $dst -Destination "$dst.bak-$(Get-Date -Format yyyyMMddHHmmss)" -Force
+Copy-Item -LiteralPath $src -Destination $dst -Force
+
+# Flush the resolver cache so new entries take effect immediately.
+Clear-DnsClientCache
+```
+
+Under the Ansible deployment model this copy is performed by the provisioning play rather
+than by hand; the manual copy above is the fallback for a host not yet (or not currently)
+driven by Ansible. Either way the template is the source, so a manual edit to a live
+`hosts` file must be mirrored back into `Hosts IP addresess.txt` (and, ultimately, the
+compute inventory) or it will be overwritten on the next deployment.
 
 ### 9.11 Junction AI agent memory to the Dropbox store
 
@@ -2184,34 +2495,42 @@ Restart VS Code after setting the token at user scope.
 
 ### 11.5 Data API Builder SQL MCP servers
 
-Install Data API Builder (DAB) as a user-global .NET tool and initialize its one
-secret-free shared configuration. The canonical AI adapter starts DAB on demand in
-MCP stdio mode; it does not create a long-lived HTTP listener.
+Install Data API Builder (DAB) as a user-global .NET tool and initialize separate
+secret-free read-only (RO) and read-write (RW) configurations. The canonical AI adapter
+starts DAB on demand in MCP stdio mode; it does not create a long-lived HTTP listener.
 
 ```powershell
 Import-Module ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell
 
 Initialize-DabMcpServer -Version '2.0.9'
-Add-DabMcpEntity -EntityName 'Instantiations' -EntitySource 'ATAPUtilities.Instantiation'
+Initialize-DabMcpConfiguration -ConfigPath "$env:APPDATA\ATAP\DataApiBuilder\ATAPUtilities\dab-ro-config.json" -ExposureMode AllEntitiesReadOnly
+Initialize-DabMcpConfiguration -ConfigPath "$env:APPDATA\ATAP\DataApiBuilder\ATAPUtilities\dab-rw-config.json" -ExposureMode AllEntitiesReadWrite
 Test-DabInstallation
 ```
 
-The DAB configuration is stored at
-`$env:APPDATA\ATAP\DataApiBuilder\ATAPUtilities\dab-config.json`. It contains only
-the `@env('DAB_ATAPUTILITIES_CONNECTION_STRING')` reference and the approved entity
-allow-list; it never contains a connection string or a `.env` file.
+The DAB configurations are stored at
+`$env:APPDATA\ATAP\DataApiBuilder\ATAPUtilities\dab-ro-config.json` and
+`$env:APPDATA\ATAP\DataApiBuilder\ATAPUtilities\dab-rw-config.json`. They contain
+only the `@env('DAB_ATAPUTILITIES_CONNECTION_STRING')` reference; they never contain a
+connection string or a `.env` file. Both autoentity configurations include every
+supported object in every schema of their database, with names formed as
+`{schema}_{object}`. For multiple Exp databases, provision one RO/RW configuration and
+one Bitwarden connection-string secret per database; DAB requires a separate data source
+configuration for each database.
 
-Codex and Claude Code receive five canonical, user-scope MCP registrations:
+Codex and Claude Code receive six canonical, user-scope MCP registrations:
 `dab-ataputilities-production`, `dab-ataputilities-qa`,
-`dab-ataputilities-integration`, `dab-ataputilities-dev`, and
-`dab-ataputilities-exp`. Each registration launches the same DAB stdio server with an
-explicit tier, so a request cannot silently fall through to a different SQL instance.
+`dab-ataputilities-integration`, `dab-ataputilities-dev`,
+`dab-RO-ataputilities-exp`, and `dab-RW-ataputilities-exp`. Each registration launches
+an explicit tier and role, so a request cannot silently fall through to a different SQL
+instance or privilege level.
 The registrations invoke the dedicated `Mcp/Start-DabMcpServer.ps1` launcher rather
 than importing the full DotnetBuild module: an MCP stdio process must reserve stdout
 for JSON-RPC, while unrelated module-import warnings corrupt the protocol. DAB starts
 Kestrel even in stdio mode, so the registrations also use separate loopback endpoints:
-Dev `5101`, Exp `5102`, Integration `5103`, Production `5104`, and QA `5105`. These
-ports must not be used by the normal DAB host or another MCP registration.
+Dev `5101`, Exp RO `5102`, Integration `5103`, Production `5104`, QA `5105`, and Exp
+RW `5106`. These ports must not be used by the normal DAB host or another MCP
+registration.
 
 At startup, the dedicated MCP launcher derives the local host's BWS SecretName with
 `Get-DbConnectionStringSecretDescriptor`, resolves it through
@@ -2229,11 +2548,15 @@ dbConnectionString.ATAPUtilities.<current-host>.Exp.<current-user>
 ```
 
 After the shared MCP catalog is rendered and the agent application is restarted, open
-the MCP status surface and confirm that all five DAB servers appear. Start with the
-Exp server. The DAB configuration grants `mcp-reader:read` only; add an entity only
-after reviewing its columns and least-privilege requirement. DAB's stdio mode requires
-`runtime.mcp.enabled` and keeps protocol messages on stdout; use `--LogLevel Error` as
-the canonical launcher does. See [DAB stdio transport](https://learn.microsoft.com/en-us/azure/data-api-builder/mcp/stdio-transport)
+the MCP status surface and confirm that all six DAB servers appear. Start with the RO
+Exp server. Its autoentity configuration grants `mcp-reader:read` only. The RW Exp
+configuration grants `mcp-writer:create,read,update,delete` and enables the corresponding
+MCP DML tools. DAB 2.0.9 rejects `execute` in autoentity permissions, so stored-procedure
+execution is deliberately not exposed by this server; it needs a separately designed,
+allow-listed MCP capability. Both roles are DAB exposure controls, not SQL permissions:
+until SC-0312 is delivered, the RW connection string uses Windows authentication with
+full database access. DAB's stdio mode requires `runtime.mcp.enabled` and keeps protocol
+messages on stdout; use `--LogLevel Error` as the canonical launcher does. See [DAB stdio transport](https://learn.microsoft.com/en-us/azure/data-api-builder/mcp/stdio-transport)
 and [DAB environment substitution](https://learn.microsoft.com/en-us/azure/data-api-builder/concept/config/env-function).
 
 ### 11.6 Mobile-host and Class A certification

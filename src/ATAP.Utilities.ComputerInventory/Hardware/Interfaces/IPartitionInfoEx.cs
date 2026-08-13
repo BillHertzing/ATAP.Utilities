@@ -1,4 +1,5 @@
 using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 using System.Collections.Generic;
 using UnitsNet;
 
@@ -10,7 +11,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
     PartitionFileSystem PartitionFileSystem { get; }
     Information Size { get; }
     IEnumerable<char>? DriveLetters { get; }
-    IPhilote<IPartitionInfoEx>? Philote { get; }
+    IGuidPhilote<GuidStronglyTypedId>? Philote { get; }
   }
 
 }

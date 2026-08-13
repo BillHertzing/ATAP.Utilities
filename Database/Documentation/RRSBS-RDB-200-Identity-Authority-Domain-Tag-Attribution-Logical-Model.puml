@@ -1,0 +1,390 @@
+@startuml RRSBS_RDB_200_Logical_Model
+hide circle
+hide methods
+skinparam linetype ortho
+skinparam defaultFontName Segoe UI
+skinparam shadowing false
+skinparam entity {
+  BackgroundColor #F7FAFC
+  BorderColor #34495E
+  FontColor #1F2937
+}
+
+title RDB-200 Identity, Authority, Domain, Tag, and Attribution Logical Model
+
+legend left
+  Design-only logical model; no SQL or allocated identifiers.
+  <<entity-root>> durable Entity-bearing root
+  <<entity-version>> immutable published Entity-bearing version
+  <<assertion>> immutable successor-based assertion
+  Every generic endpoint has both Entity and role-policy FKs.
+endlegend
+
+package "Typed Entity foundation" #EAF2F8 {
+  entity EntityType <<catalog>> {
+    * EntityTypeId : bigint <<PK>>
+    --
+    * EntityTypeCode : varchar <<UQ>>
+    * OwningSliceCode : varchar
+    * IsVersionType : bit
+  }
+
+  entity Entity <<supertype>> {
+    * EntityId : bigint <<PK>>
+    --
+    * EntityTypeId : bigint <<FK>>
+    * EntityPhiloteId : uniqueidentifier <<UQ>>
+    * CreatedAtUtc : datetime2
+    --
+    UQ (EntityId, EntityTypeId)
+    UQ (EntityId, EntityTypeId, EntityPhiloteId)
+  }
+
+  entity RelationshipRolePolicy <<catalog>> {
+    * RelationshipRolePolicyId : bigint <<PK>>
+    --
+    * RelationshipKindCode : varchar
+    * RelationshipRoleCode : varchar
+    * IsClassificationOnly : bit
+    * IsAuthorizationRole : bit = 0
+    --
+    UQ (RelationshipKindCode, RelationshipRoleCode)
+  }
+
+  entity RelationshipRoleEndpointEntityType <<policy>> {
+    * RelationshipRolePolicyId : bigint <<PK,FK>>
+    * EndpointCode : varchar <<PK>>
+    * EntityTypeId : bigint <<PK,FK>>
+  }
+}
+
+package "Local authority and expert identity" #FDF2E9 {
+  entity Authority <<entity-root>> {
+    * AuthorityId : bigint <<PK>>
+    * AuthorityPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * AuthorityCode : varchar <<UQ>>
+    * CreatedAtUtc : datetime2
+  }
+
+  entity AuthorityVersion <<entity-version>> {
+    * AuthorityVersionId : bigint <<PK>>
+    * AuthorityVersionPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * AuthorityId : bigint <<FK>>
+    * RevisionSequence : int
+    o PredecessorAuthorityVersionId : bigint <<FK>>
+    * AuthorityKindCode : varchar <<FK>>
+    * DisplayLabel : nvarchar
+    o Description : nvarchar
+    * PublishedAtUtc : datetime2
+    --
+    UQ (AuthorityId, RevisionSequence)
+    UQ (PredecessorAuthorityVersionId)
+  }
+
+  entity Expert <<entity-root>> {
+    * ExpertId : bigint <<PK>>
+    * ExpertPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * ExpertCode : varchar <<UQ>>
+    * CreatedAtUtc : datetime2
+  }
+
+  entity ExpertVersion <<entity-version>> {
+    * ExpertVersionId : bigint <<PK>>
+    * ExpertVersionPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * ExpertId : bigint <<FK>>
+    * RevisionSequence : int
+    o PredecessorExpertVersionId : bigint <<FK>>
+    * DisplayLabel : nvarchar
+    o NonSecretDescription : nvarchar
+    * PublishedAtUtc : datetime2
+    --
+    UQ (ExpertId, RevisionSequence)
+    UQ (PredecessorExpertVersionId)
+  }
+}
+
+package "Classification taxonomies" #E8F8F5 {
+  entity ExpertiseDomain <<entity-root>> {
+    * ExpertiseDomainId : bigint <<PK>>
+    * ExpertiseDomainPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * ExpertiseDomainCode : varchar <<UQ>>
+    * CreatedAtUtc : datetime2
+  }
+
+  entity ExpertiseDomainVersion <<entity-version>> {
+    * ExpertiseDomainVersionId : bigint <<PK>>
+    * ExpertiseDomainVersionPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * ExpertiseDomainId : bigint <<FK>>
+    * RevisionSequence : int
+    o PredecessorExpertiseDomainVersionId : bigint <<FK>>
+    o ParentExpertiseDomainVersionId : bigint <<FK>>
+    * DisplayLabel : nvarchar
+    o Description : nvarchar
+    * PublishedAtUtc : datetime2
+    --
+    UQ (ExpertiseDomainId, RevisionSequence)
+    UQ (PredecessorExpertiseDomainVersionId)
+  }
+
+  entity Tag <<entity-root>> {
+    * TagId : bigint <<PK>>
+    * TagPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * TagNamespaceCode : varchar
+    * TagCode : varchar
+    * CreatedAtUtc : datetime2
+    --
+    UQ (TagNamespaceCode, TagCode)
+  }
+
+  entity TagVersion <<entity-version>> {
+    * TagVersionId : bigint <<PK>>
+    * TagVersionPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * TagId : bigint <<FK>>
+    * RevisionSequence : int
+    o PredecessorTagVersionId : bigint <<FK>>
+    * DisplayLabel : nvarchar
+    o Description : nvarchar
+    * PublishedAtUtc : datetime2
+    --
+    UQ (TagId, RevisionSequence)
+    UQ (PredecessorTagVersionId)
+  }
+}
+
+package "Immutable relationship assertions" #F5EEF8 {
+  entity EntityAuthorityAssignment <<assertion>> {
+    * EntityAuthorityAssignmentId : bigint <<PK>>
+    * AssignmentPhiloteId : uniqueidentifier <<UQ>>
+    * AssignmentEntityId : bigint <<FK>>
+    * AssignmentEntityTypeId : bigint <<FK>>
+    * RelationshipRolePolicyId : bigint <<FK>>
+    * AuthorityEndpointCode : varchar = authority
+    * AuthorityEntityId : bigint <<FK>>
+    * AuthorityEntityTypeId : bigint <<FK>>
+    * SubjectEndpointCode : varchar = subject
+    * SubjectEntityId : bigint <<FK>>
+    * SubjectEntityTypeId : bigint <<FK>>
+    o SupersedesAssignmentId : bigint <<FK,UQ>>
+    * IsRetraction : bit
+    * ActorEndpointCode : varchar = actor
+    * AssertedByEntityId : bigint <<FK>>
+    * AssertedByEntityTypeId : bigint <<FK>>
+    * AssertedAtUtc : datetime2
+    * RecordedAtUtc : datetime2
+  }
+
+  entity EntityExpertiseDomainAssignment <<assertion>> {
+    * EntityExpertiseDomainAssignmentId : bigint <<PK>>
+    * AssignmentPhiloteId : uniqueidentifier <<UQ>>
+    * AssignmentEntityId : bigint <<FK>>
+    * AssignmentEntityTypeId : bigint <<FK>>
+    * RelationshipRolePolicyId : bigint <<FK>>
+    * DomainEndpointCode : varchar = domain
+    * DomainEntityId : bigint <<FK>>
+    * DomainEntityTypeId : bigint <<FK>>
+    * SubjectEndpointCode : varchar = subject
+    * SubjectEntityId : bigint <<FK>>
+    * SubjectEntityTypeId : bigint <<FK>>
+    o SupersedesAssignmentId : bigint <<FK,UQ>>
+    * IsRetraction : bit
+    * ActorEndpointCode : varchar = actor
+    * AssertedByEntityId : bigint <<FK>>
+    * AssertedByEntityTypeId : bigint <<FK>>
+    * AssertedAtUtc : datetime2
+    * RecordedAtUtc : datetime2
+  }
+
+  entity TagAssignment <<assertion>> {
+    * TagAssignmentId : bigint <<PK>>
+    * TagAssignmentPhiloteId : uniqueidentifier <<UQ>>
+    * AssignmentEntityId : bigint <<FK>>
+    * AssignmentEntityTypeId : bigint <<FK>>
+    * RelationshipRolePolicyId : bigint <<FK>>
+    * TagEndpointCode : varchar = tag
+    * TagEntityId : bigint <<FK>>
+    * TagEntityTypeId : bigint <<FK>>
+    * SubjectEndpointCode : varchar = subject
+    * SubjectEntityId : bigint <<FK>>
+    * SubjectEntityTypeId : bigint <<FK>>
+    o SupersedesTagAssignmentId : bigint <<FK,UQ>>
+    * IsRetraction : bit
+    * ActorEndpointCode : varchar = actor
+    * AssertedByEntityId : bigint <<FK>>
+    * AssertedByEntityTypeId : bigint <<FK>>
+    * AssertedAtUtc : datetime2
+    * RecordedAtUtc : datetime2
+  }
+
+  entity Attribution <<assertion>> {
+    * AttributionId : bigint <<PK>>
+    * AttributionPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * RelationshipRolePolicyId : bigint <<FK>>
+    * AttributedEndpointCode : varchar = attributed
+    * AttributedEntityId : bigint <<FK>>
+    * AttributedEntityTypeId : bigint <<FK>>
+    * SubjectEndpointCode : varchar = subject
+    * SubjectEntityId : bigint <<FK>>
+    * SubjectEntityTypeId : bigint <<FK>>
+    o EvidenceEndpointCode : varchar = evidence
+    o EvidenceEntityId : bigint <<FK>>
+    o EvidenceEntityTypeId : bigint <<FK>>
+    o SupersedesAttributionId : bigint <<FK,UQ>>
+    * IsRetraction : bit
+    * ActorEndpointCode : varchar = actor
+    * AssertedByEntityId : bigint <<FK>>
+    * AssertedByEntityTypeId : bigint <<FK>>
+    * AssertedAtUtc : datetime2
+    * RecordedAtUtc : datetime2
+    o ReasonReference : nvarchar
+  }
+}
+
+package "Attribution disputes" #FDEDEC {
+  entity AttributionDispute <<entity-root>> {
+    * AttributionDisputeId : bigint <<PK>>
+    * AttributionDisputePhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * AttributionId : bigint <<FK>>
+    * DisputeActorRolePolicyId : bigint <<FK>>
+    * RaisedByEndpointCode : varchar = raised-by
+    * RaisedByEntityId : bigint <<FK>>
+    * RaisedByEntityTypeId : bigint <<FK>>
+    * AuthorityEntityId : bigint <<FK>>
+    * AuthorityEntityTypeId : bigint <<FK>>
+    * RaisedAtUtc : datetime2
+    * RecordedAtUtc : datetime2
+    * ReasonReference : nvarchar
+  }
+
+  entity AttributionDisputeEvent <<append-only event>> {
+    * AttributionDisputeEventId : bigint <<PK>>
+    * AttributionDisputeEventPhiloteId : uniqueidentifier <<UQ>>
+    * AttributionDisputeId : bigint <<FK>>
+    * EventSequence : int
+    * StatusCode : varchar <<FK>>
+    o OutcomeCode : varchar <<FK>>
+    o CorrectedAttributionId : bigint <<FK>>
+    * EventActorRolePolicyId : bigint <<FK>>
+    * ActingEndpointCode : varchar = acting
+    * ActingEntityId : bigint <<FK>>
+    * ActingEntityTypeId : bigint <<FK>>
+    * AuthorityEntityId : bigint <<FK>>
+    * AuthorityEntityTypeId : bigint <<FK>>
+    * OccurredAtUtc : datetime2
+    * RecordedAtUtc : datetime2
+    * ReasonReference : nvarchar
+    --
+    UQ (AttributionDisputeId, EventSequence)
+  }
+}
+
+EntityType ||--o{ Entity : classifies
+RelationshipRolePolicy ||--o{ RelationshipRoleEndpointEntityType : permits
+EntityType ||--o{ RelationshipRoleEndpointEntityType : allowed type
+
+Entity ||--|| Authority : typed registration
+Authority ||--o{ AuthorityVersion : publishes
+Entity ||--|| AuthorityVersion : typed registration
+AuthorityVersion |o--o| AuthorityVersion : predecessor
+
+Entity ||--|| Expert : typed registration
+Expert ||--o{ ExpertVersion : publishes
+Entity ||--|| ExpertVersion : typed registration
+ExpertVersion |o--o| ExpertVersion : predecessor
+
+Entity ||--|| ExpertiseDomain : typed registration
+ExpertiseDomain ||--o{ ExpertiseDomainVersion : publishes
+Entity ||--|| ExpertiseDomainVersion : typed registration
+ExpertiseDomainVersion |o--o| ExpertiseDomainVersion : predecessor
+ExpertiseDomainVersion |o--o{ ExpertiseDomainVersion : exact parent version
+
+Entity ||--|| Tag : typed registration
+Tag ||--o{ TagVersion : publishes
+Entity ||--|| TagVersion : typed registration
+TagVersion |o--o| TagVersion : predecessor
+
+Entity ||--|| EntityAuthorityAssignment : typed registration
+RelationshipRolePolicy ||--o{ EntityAuthorityAssignment : controls role
+AuthorityVersion ||--o{ EntityAuthorityAssignment : authority endpoint
+Entity ||--o{ EntityAuthorityAssignment : subject / actor endpoints
+EntityAuthorityAssignment |o--o| EntityAuthorityAssignment : supersedes
+
+Entity ||--|| EntityExpertiseDomainAssignment : typed registration
+RelationshipRolePolicy ||--o{ EntityExpertiseDomainAssignment : classification role
+ExpertiseDomainVersion ||--o{ EntityExpertiseDomainAssignment : domain endpoint
+Entity ||--o{ EntityExpertiseDomainAssignment : subject / actor endpoints
+EntityExpertiseDomainAssignment |o--o| EntityExpertiseDomainAssignment : supersedes
+
+Entity ||--|| TagAssignment : typed registration
+RelationshipRolePolicy ||--o{ TagAssignment : classification role
+TagVersion ||--o{ TagAssignment : tag endpoint
+Entity ||--o{ TagAssignment : subject / actor endpoints
+TagAssignment |o--o| TagAssignment : supersedes
+
+Entity ||--|| Attribution : typed registration
+RelationshipRolePolicy ||--o{ Attribution : attribution role
+Entity ||--o{ Attribution : attributed / subject / evidence / actor
+Attribution |o--o| Attribution : supersedes
+
+Entity ||--|| AttributionDispute : typed registration
+Attribution ||--o{ AttributionDispute : disputed assertion
+RelationshipRolePolicy ||--o{ AttributionDispute : dispute actor role
+Entity ||--o{ AttributionDispute : raised-by actor
+AuthorityVersion ||--o{ AttributionDispute : governing authority
+AttributionDispute ||--o{ AttributionDisputeEvent : append-only history
+Attribution |o--o{ AttributionDisputeEvent : corrected result
+RelationshipRolePolicy ||--o{ AttributionDisputeEvent : event actor role
+Entity ||--o{ AttributionDisputeEvent : acting entity
+AuthorityVersion ||--o{ AttributionDisputeEvent : governing authority
+
+note right of RelationshipRoleEndpointEntityType
+  Relationship rows also FK:
+  (RolePolicyId, EndpointCode, EntityTypeId)
+  No wildcard EntityType is permitted.
+end note
+
+note bottom of EntityExpertiseDomainAssignment
+  Classification only.
+  Never permission or approval.
+end note
+
+note bottom of TagAssignment
+  Classification only.
+  Never permission or approval.
+end note
+
+note bottom of EntityAuthorityAssignment
+  Stewardship/provenance only.
+  Runtime permission remains external/default-deny.
+end note
+
+note bottom of Attribution
+  Immutable claim, not authorization.
+  Execution/hash provenance remains RDB-250.
+end note
+
+note bottom of AttributionDisputeEvent
+  Corrected outcome requires a successor
+  Attribution in the disputed lineage.
+end note
+
+@enduml

@@ -12,9 +12,9 @@
 > is specified in [SecretName-HostSuffix-Convention.md](SecretName-HostSuffix-Convention.md).
 >
 > Service-account bootstrap steps that used to be scattered here — the git
-> `safe.directory` entry that lets `SvcBuildmaster` operate on Dropbox-owned
+> `safe.directory` entry that lets `SvcBuildMaster` operate on Dropbox-owned
 > worktrees, and the machine-wide NBGV install required for
-> `Get-BuildContext` under `SvcBuildmaster` — are canonical in
+> `Get-BuildContext` under `SvcBuildMaster` — are canonical in
 > [NewComputerSetup.md § 9.4](NewComputerSetup.md) and
 > [NewComputerSetup.md § 4.4](NewComputerSetup.md). See
 > [BuildMaster-Install-Runbook.md § 4.3](BuildMaster-Install-Runbook.md) for
@@ -223,7 +223,7 @@ Source: `src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/ReleaseBundle-6Stage.
 | `ReleaseBundleQAFeedName`                         | `releasebundle-qa`                                    | No         | Universal Package feed.                                                                                                                  |
 | `ReleaseBundleProductionFeedName`                 | `releasebundle-production`                            | No         | Universal Package feed.                                                                                                                  |
 | `PreviousProductionBackupPath`                    | `<approved .bak path>`                                | No         | Required for Integration Flyway rehearsal traceability.                                                                                  |
-| `IntegrationDatabaseDBConnectionStringSecretName` | `dbConnectionString-AceCommander-utat022-Integration` | No         | Follows `SprintInfrastructure-Naming.md`; pass-through to `Invoke-FlywayRehearsal -DBConnectionStringSecretName`.                        |
+| `IntegrationDatabaseDBConnectionStringSecretName` | `dbConnectionString.AceCommander.utat022.Integration` | No         | Follows `SprintInfrastructure-Naming.md`; pass-through to `Invoke-FlywayRehearsal -DBConnectionStringSecretName`.                        |
 
 Execution notes:
 

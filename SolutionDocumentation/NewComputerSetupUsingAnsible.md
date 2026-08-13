@@ -10,12 +10,12 @@
 > `safe.directory`), prefer [NewComputerSetup.md](NewComputerSetup.md) —
 > it is the maintained canonical source. In particular:
 >
-> - Git `safe.directory` bootstrap for `SvcBuildmaster` —
+> - Git `safe.directory` bootstrap for `SvcBuildMaster` —
 >   [NewComputerSetup.md § 9.4](NewComputerSetup.md).
-> - Machine-wide NBGV install (so `SvcBuildmaster` can resolve `nbgv`) —
+> - Machine-wide NBGV install (so `SvcBuildMaster` can resolve `nbgv`) —
 >   [NewComputerSetup.md § 4.4](NewComputerSetup.md).
 > - PowerShell Gallery modules installed with `-Scope AllUsers` so
->   `SvcBuildmaster` can resolve `PSFramework` and `powershell-yaml` —
+>   `SvcBuildMaster` can resolve `PSFramework` and `powershell-yaml` —
 >   [NewComputerSetup.md § 4.3](NewComputerSetup.md).
 
 ## Parity journal requirement
@@ -313,6 +313,9 @@ Before installing SQL Server, create a dedicated Windows service account for run
 > **Prerequisites:**
 >
 > 1. Ensure a Bitwarden secret named `SvcSQLServer.<lowercase-hostname>` exists in Bitwarden Secrets Manager with:
+>    (Corrected 2026-08-12: the name has no `.Login.` middle field. None of the 66 live keys
+>    contains `.Login.`, so `SvcSQLServer.Login.<lowercase-hostname>` does not resolve. The
+>    existing keys are `SvcSQLServer.utat01` and `SvcSQLServer.utat022`.)
 >    - Username: `SvcSQLServer`
 >    - Password: the service account password
 > 2. Ensure `ATAP.Utilities.PowerShell` module is loaded, which provides `New-LocalServiceAccount`:
@@ -475,16 +478,16 @@ Expected result: `Status = Success`, `UserCreated = True`, `SeServiceLogonRight 
 
 **Store the password in Bitwarden:** Use `Get-SecretATAP` in your `LoginScript.ps1` to retrieve this at system startup, or record it in Bitwarden for safekeeping.
 
-##### Create SvcBuildmaster Account
+##### Create SvcBuildMaster Account
 
 Create this account **before** installing BuildMaster:
 
 ```powershell
 New-LocalServiceAccount `
-    -AccountName              SvcBuildmaster `
+    -AccountName              SvcBuildMaster `
     -FullName                 'BuildMaster Service Identity' `
     -Description              'Dedicated Windows service account for Inedo BuildMaster' `
-    -SecretNameServiceAccountLoginCredentials "SvcBuildmaster.$($env:COMPUTERNAME.ToLowerInvariant())" `
+    -SecretNameServiceAccountLoginCredentials "SvcBuildMaster.$($env:COMPUTERNAME.ToLowerInvariant())" `
     -GrantSeServiceLogonRight
 ```
 
@@ -589,7 +592,7 @@ See `Database\Powershell\public\Rebuild-All-AllInstances.ps1` for the full scrip
 > - ✅ SQL Server Community Edition installed with PRODUCTION named instance
 >   ✅ TCP enabled on the PRODUCTION instance
 >   ✅ Memory limits configured (10% of total RAM for dev hosts)
->   ✅ Service accounts SvcProGet and SvcBuildmaster created
+>   ✅ Service accounts SvcProGet and SvcBuildMaster created
 >
 > Now proceed with ProGet and BuildMaster installation.
 
@@ -618,7 +621,7 @@ Then reconfigure the ProGet Windows service to log on as `SvcProGet`:
 sc.exe config INEDOPROGETSVC obj= "$env:COMPUTERNAME\SvcProGet" password= '<password>'
 ```
 
-##### Grant SvcBuildmaster db_owner on BuildMaster Database
+##### Grant SvcBuildMaster db_owner on BuildMaster Database
 
 After BuildMaster is installed (see below), run:
 
@@ -626,15 +629,15 @@ After BuildMaster is installed (see below), run:
 Initialize-SqlServiceLogin `
     -SqlInstance              'localhost\PRODUCTION' `
     -DatabaseName             'BuildMaster' `
-    -ServiceAccount           "$env:COMPUTERNAME\SvcBuildmaster" `
+    -ServiceAccount           "$env:COMPUTERNAME\SvcBuildMaster" `
     -Encrypt                  Optional `
     -TrustServerCertificate
 ```
 
-Then reconfigure the BuildMaster Windows service to log on as `SvcBuildmaster`:
+Then reconfigure the BuildMaster Windows service to log on as `SvcBuildMaster`:
 
 ```powershell
-sc.exe config INEDOBUILDMASTERSVC obj= "$env:COMPUTERNAME\SvcBuildmaster" password= '<password>'
+sc.exe config INEDOBUILDMASTERSVC obj= "$env:COMPUTERNAME\SvcBuildMaster" password= '<password>'
 ```
 
 ---

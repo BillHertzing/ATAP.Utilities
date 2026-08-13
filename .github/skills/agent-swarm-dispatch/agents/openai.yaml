@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent Swarm Dispatch"
+  short_description: "Reserve and dispatch bounded agent work"
+  default_prompt: "Use $agent-swarm-dispatch to reserve and dispatch a bounded swarm work unit."

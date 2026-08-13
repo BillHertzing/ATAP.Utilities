@@ -16,11 +16,14 @@
 
   <ItemGroup>
     <ProjectReference Include="..\StringConstants\ATAP.Console.PluginDemo.StringConstants.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.Secrets\ATAP.Utilities.Secrets.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.Secrets\Shim\Bitwarden\ATAP.Utilities.Secrets.Shim.Bitwarden.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.Loader\ATAP.Utilities.Loader.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.Plugin\ATAP.Utilities.Plugin.csproj" />
+    <ProjectReference Include="..\..\..\src\ATAP.Utilities.Secrets\ATAP.Utilities.Secrets.csproj" />
+    <ProjectReference Include="..\..\..\src\ATAP.Utilities.Secrets\Shim\Bitwarden\ATAP.Utilities.Secrets.Shim.Bitwarden.csproj" />
+    <ProjectReference Include="..\..\..\src\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
+    <ProjectReference Include="..\..\..\src\ATAP.Utilities.FIleIO\ATAP.Utilities.FileIO.csproj" />
+    <ProjectReference Include="..\..\..\src\ATAP.Utilities.Loader\ATAP.Utilities.Loader.csproj" />
+    <ProjectReference Include="..\..\..\src\ATAP.Utilities.Loader\Interfaces\ATAP.Utilities.Loader.Interfaces.csproj" />
+    <ProjectReference Include="..\..\..\src\ATAP.Utilities.Loader\Model\ATAP.Utilities.Loader.Model.csproj" />
+    <ProjectReference Include="..\..\..\src\ATAP.Utilities.Plugin\ATAP.Utilities.Plugin.csproj" />
   </ItemGroup>
 
   <ItemGroup>

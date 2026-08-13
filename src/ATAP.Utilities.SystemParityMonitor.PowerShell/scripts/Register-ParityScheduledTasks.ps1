@@ -95,6 +95,151 @@ function Register-ParityScheduledTaskS4U {
   $null = $folder.RegisterTaskDefinition($TaskName, $definition, 6, $Credential.UserName, $Credential.GetNetworkCredential().Password, 2, $null)
 }
 
+function Assert-ParityPackageManagerProfiles {
+  [CmdletBinding()]
+  param(
+    [AllowEmptyCollection()]
+    [object[]] $Profiles = @()
+  )
+
+  $configuredIdentities = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+  foreach ($profile in @($Profiles)) {
+    $identity = [string] $profile.Identity
+    if ([string]::IsNullOrWhiteSpace($identity)) {
+      throw 'Every package-manager profile must specify a non-empty Identity.'
+    }
+    $identity = $identity.Trim()
+    if ($identity -match '[/|]') {
+      throw "Package-manager profile identity '$identity' cannot contain '/' or '|'."
+    }
+    if (-not $configuredIdentities.Add($identity)) {
+      throw "Package-manager profile identity '$identity' is configured more than once."
+    }
+
+    foreach ($pathProperty in @('PipPath', 'NpmPrefix', 'NuGetToolPath')) {
+      $profilePath = [string] $profile.$pathProperty
+      if (-not [string]::IsNullOrWhiteSpace($profilePath) -and -not [IO.Path]::IsPathFullyQualified($profilePath)) {
+        throw "$pathProperty for identity '$identity' must be a fully qualified path."
+      }
+    }
+  }
+}
+
+function Assert-ParityExpectedSurfaceMinimumCounts {
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory = $true)]
+    [hashtable] $MinimumCounts
+  )
+
+  if ($MinimumCounts.Count -eq 0) {
+    throw 'ExpectedSurfaceMinimumCounts must contain at least one category.'
+  }
+  foreach ($category in @($MinimumCounts.Keys)) {
+    if ([string]::IsNullOrWhiteSpace([string]$category)) {
+      throw 'Expected surface minimum category keys must be non-empty.'
+    }
+    $minimumCount = 0
+    if (-not [int]::TryParse([string]$MinimumCounts[$category], [ref]$minimumCount) -or $minimumCount -lt 1) {
+      throw "Expected minimum count for category '$category' must be an integer of at least one."
+    }
+  }
+}
+
+function Read-ParityPackageManagerProfilesRegistrationConfiguration {
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory = $true)]
+    [string] $Path
+  )
+
+  try {
+    $configuration = Get-Content -LiteralPath $Path -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+  } catch {
+    throw [InvalidOperationException]::new(
+      "Package-manager profile configuration at '$Path' could not be read as JSON. ErrorType=$($_.Exception.GetType().FullName)",
+      $_.Exception
+    )
+  }
+
+  if ([int] $configuration.SchemaVersion -ne 1) {
+    throw "Package-manager profile configuration at '$Path' has unsupported SchemaVersion '$($configuration.SchemaVersion)'; expected 1."
+  }
+  if (-not $configuration.PSObject.Properties['Profiles']) {
+    throw "Package-manager profile configuration at '$Path' must contain a Profiles array."
+  }
+  if ($configuration.Profiles -isnot [array]) {
+    throw "Package-manager profile configuration at '$Path' must contain Profiles as an array."
+  }
+  if (-not $configuration.PSObject.Properties['ExpectedSurfaceMinimumCounts'] -or
+    $null -eq $configuration.ExpectedSurfaceMinimumCounts) {
+    throw "Package-manager profile configuration at '$Path' must contain ExpectedSurfaceMinimumCounts."
+  }
+
+  [object[]] $profiles = @($configuration.Profiles)
+  Assert-ParityPackageManagerProfiles -Profiles $profiles
+  $minimumCounts = @{}
+  foreach ($property in @($configuration.ExpectedSurfaceMinimumCounts.PSObject.Properties)) {
+    $minimumCounts[$property.Name] = $property.Value
+  }
+  Assert-ParityExpectedSurfaceMinimumCounts -MinimumCounts $minimumCounts
+  return [pscustomobject]@{
+    SchemaVersion = 1
+    Profiles = $profiles
+    ExpectedSurfaceMinimumCounts = $minimumCounts
+  }
+}
+
+function Write-ParityPackageManagerProfilesConfiguration {
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory = $true)]
+    [string] $Path,
+
+    [AllowEmptyCollection()]
+    [object[]] $Profiles = @(),
+
+    [Parameter(Mandatory = $true)]
+    [hashtable] $ExpectedSurfaceMinimumCounts
+  )
+
+  if (-not [IO.Path]::IsPathFullyQualified($Path)) {
+    throw "Package-manager profile configuration path '$Path' must be fully qualified."
+  }
+  Assert-ParityPackageManagerProfiles -Profiles $Profiles
+  Assert-ParityExpectedSurfaceMinimumCounts -MinimumCounts $ExpectedSurfaceMinimumCounts
+  $orderedMinimumCounts = [ordered]@{}
+  foreach ($category in @($ExpectedSurfaceMinimumCounts.Keys | Sort-Object)) {
+    $orderedMinimumCounts[[string]$category] = [int]$ExpectedSurfaceMinimumCounts[$category]
+  }
+
+  $directory = Split-Path -Parent $Path
+  New-Item -ItemType Directory -Path $directory -Force | Out-Null
+  $temporaryPath = "$Path.$([guid]::NewGuid().ToString('N')).tmp"
+  $backupPath = "$Path.$([guid]::NewGuid().ToString('N')).bak"
+  try {
+    [ordered]@{
+      SchemaVersion = 1
+      Profiles = @($Profiles)
+      ExpectedSurfaceMinimumCounts = $orderedMinimumCounts
+    } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $temporaryPath -Encoding utf8 -ErrorAction Stop
+
+    $null = Read-ParityPackageManagerProfilesRegistrationConfiguration -Path $temporaryPath
+    if (Test-Path -LiteralPath $Path -PathType Leaf) {
+      [IO.File]::Replace($temporaryPath, $Path, $backupPath)
+    } else {
+      [IO.File]::Move($temporaryPath, $Path)
+    }
+  } finally {
+    if (Test-Path -LiteralPath $temporaryPath -PathType Leaf) {
+      Remove-Item -LiteralPath $temporaryPath -Force
+    }
+    if (Test-Path -LiteralPath $backupPath -PathType Leaf) {
+      Remove-Item -LiteralPath $backupPath -Force
+    }
+  }
+}
+
 function Register-ParityScheduledTasks {
   [CmdletBinding(SupportsShouldProcess)]
   param(
@@ -126,6 +271,13 @@ function Register-ParityScheduledTasks {
 
     [double] $StaleMultiplier = 1.5,
 
+    [AllowEmptyCollection()]
+    [object[]] $PackageManagerProfiles,
+
+    [hashtable] $ExpectedSurfaceMinimumCounts,
+
+    [string] $PackageManagerProfilesPath,
+
     [string] $TaskPath = '\ATAP\',
 
     # Dedicated local service account that owns the scheduled tasks but no vault token.
@@ -149,6 +301,57 @@ function Register-ParityScheduledTasks {
     $mn = 'ATAP.Utilities.SystemParityMonitor.PowerShell'
     $scriptRoot = $PSScriptRoot
     $pwshPath = (Get-Command -Name 'pwsh' -CommandType Application -ErrorAction Stop).Source
+    $packageManagerProfilesWereBound = $PSBoundParameters.ContainsKey('PackageManagerProfiles')
+    $minimumCountsWereBound = $PSBoundParameters.ContainsKey('ExpectedSurfaceMinimumCounts')
+    $defaultMinimumCounts = @{
+      OS = 1
+      PowerShell = 1
+      Services = 3
+      SQL = 1
+      PackageManager = 1
+      Shares = 1
+      ParityState = 1
+    }
+
+    if (-not $packageManagerProfilesWereBound -and -not $minimumCountsWereBound -and
+      $null -ne $global:settings -and $null -ne $global:configRootKeys) {
+      $sectionKey = $global:configRootKeys['SystemParityMonitorConfigRootKey']
+      $profilesKey = $global:configRootKeys['SystemParityMonitorPackageManagerProfilesConfigRootKey']
+      $minimumsKey = $global:configRootKeys['SystemParityMonitorExpectedSurfaceMinimumCountsConfigRootKey']
+      if (-not [string]::IsNullOrWhiteSpace([string]$sectionKey) -and
+        -not [string]::IsNullOrWhiteSpace([string]$profilesKey) -and
+        -not [string]::IsNullOrWhiteSpace([string]$minimumsKey) -and
+        $global:settings.ContainsKey($sectionKey)) {
+        $section = $global:settings[$sectionKey]
+        $PackageManagerProfiles = @($section[$profilesKey])
+        $ExpectedSurfaceMinimumCounts = @{}
+        foreach ($category in @($section[$minimumsKey].Keys)) {
+          $ExpectedSurfaceMinimumCounts[$category] = $section[$minimumsKey][$category]
+        }
+        $packageManagerProfilesWereBound = $true
+        $minimumCountsWereBound = $true
+      }
+    }
+
+    $configurationWasBound = $packageManagerProfilesWereBound -or $minimumCountsWereBound
+    if ($configurationWasBound) {
+      if (-not $packageManagerProfilesWereBound) {
+        $PackageManagerProfiles = @()
+      }
+      if (-not $minimumCountsWereBound) {
+        $ExpectedSurfaceMinimumCounts = $defaultMinimumCounts
+      }
+      if ([string]::IsNullOrWhiteSpace($PackageManagerProfilesPath)) {
+        $PackageManagerProfilesPath = Join-Path $StatePath 'Configuration\PackageManagerProfiles.v1.json'
+      }
+      if (-not [IO.Path]::IsPathFullyQualified($PackageManagerProfilesPath)) {
+        throw "PackageManagerProfilesPath '$PackageManagerProfilesPath' must be fully qualified."
+      }
+      Assert-ParityPackageManagerProfiles -Profiles $PackageManagerProfiles
+      Assert-ParityExpectedSurfaceMinimumCounts -MinimumCounts $ExpectedSurfaceMinimumCounts
+    } elseif (-not [string]::IsNullOrWhiteSpace($PackageManagerProfilesPath)) {
+      throw 'PackageManagerProfilesPath cannot be supplied unless profiles or expected minimum counts are also supplied for validated materialization.'
+    }
     if ([string]::IsNullOrWhiteSpace($UserId)) {
       $UserId = if ($Credential) {
         $Credential.UserName
@@ -180,6 +383,15 @@ function Register-ParityScheduledTasks {
 
   process {
     $auditArguments = "-StatePath `"$StatePath`" -HostName `"$HostName`""
+    if ($configurationWasBound) {
+      if ($PSCmdlet.ShouldProcess($PackageManagerProfilesPath, 'Write package-manager profile configuration')) {
+        Write-ParityPackageManagerProfilesConfiguration `
+          -Path $PackageManagerProfilesPath `
+          -Profiles $PackageManagerProfiles `
+          -ExpectedSurfaceMinimumCounts $ExpectedSurfaceMinimumCounts
+      }
+      $auditArguments += " -PackageManagerProfilesPath `"$PackageManagerProfilesPath`""
+    }
 
     $definitions = @(
       @{
@@ -192,6 +404,9 @@ function Register-ParityScheduledTasks {
 
     if ($TaskSet -eq 'AuditAndCompare') {
       $compareArguments = "-LeftStatePath `"$StatePath`" -RightStatePath `"$RightStatePath`" -LeftHostName `"$HostName`" -RightHostName `"$RightHostName`" -ExpectedCadenceDays $ExpectedCadenceDays -StaleMultiplier $StaleMultiplier"
+      if ($configurationWasBound) {
+        $compareArguments += " -PackageManagerProfilesPath `"$PackageManagerProfilesPath`""
+      }
 
       $definitions += @{
         TaskName = 'ATAP-ParityCompare'
@@ -207,17 +422,23 @@ function Register-ParityScheduledTasks {
         throw "Task-action script was not found at '$scriptPath'."
       }
 
-      $action = New-ScheduledTaskAction -Execute $pwshPath `
-        -Argument "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$scriptPath`" $($definition.Arguments)"
-      $trigger = New-ParityScheduledTaskTrigger -Cadence $Cadence -At $definition.At -BiWeeklyDaysOfWeek $BiWeeklyDaysOfWeek
-      $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable `
-        -AllowStartIfOnBatteries `
-        -DontStopIfGoingOnBatteries `
-        -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Hours 2)
-      $principal = New-ScheduledTaskPrincipal -UserId $UserId -LogonType $LogonType -RunLevel $RunLevel
+      # UTAT01's PowerShell 7 endpoint intentionally cannot discover the inbox
+      # ScheduledTasks module. Credential-backed S4U registration uses Task Scheduler
+      # COM exclusively, so do not resolve any ScheduledTasks cmdlet on that path.
+      $usesComS4URegistration = $LogonType -eq 'S4U' -and $null -ne $Credential
+      if (-not $usesComS4URegistration) {
+        $action = New-ScheduledTaskAction -Execute $pwshPath `
+          -Argument "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$scriptPath`" $($definition.Arguments)"
+        $trigger = New-ParityScheduledTaskTrigger -Cadence $Cadence -At $definition.At -BiWeeklyDaysOfWeek $BiWeeklyDaysOfWeek
+        $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable `
+          -AllowStartIfOnBatteries `
+          -DontStopIfGoingOnBatteries `
+          -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Hours 2)
+        $principal = New-ScheduledTaskPrincipal -UserId $UserId -LogonType $LogonType -RunLevel $RunLevel
+      }
 
       if ($PSCmdlet.ShouldProcess("$($definition.TaskName) -> $scriptPath", 'Register scheduled task')) {
-        if ($LogonType -eq 'S4U' -and $Credential) {
+        if ($usesComS4URegistration) {
           Register-ParityScheduledTaskS4U `
             -TaskName $definition.TaskName -TaskPath $TaskPath -PwshPath $pwshPath `
             -Arguments "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$scriptPath`" $($definition.Arguments)" `

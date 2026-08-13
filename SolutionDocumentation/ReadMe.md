@@ -79,7 +79,7 @@ ToDo: Insert diagram of CI/CD process
   boundary-time re-render of SharedVSCode settings, the managed developer/service
   PowerShell profile deployment, and the pre-teardown SprintEnd drift gate.
 - [Sprint Infrastructure Naming](./SprintInfrastructure-Naming.md) records the
-  sprint resource names, including BWS-owned `dbConnectionString-*` keys for
+  sprint resource names, including BWS-owned dotted `dbConnectionString.*` keys for
   Development and Experimental database connection strings.
 - [New Computer Setup](./NewComputerSetup.md) is the current workstation
   bootstrap and certification guide. Its Sprint 0013 reconciliation distinguishes

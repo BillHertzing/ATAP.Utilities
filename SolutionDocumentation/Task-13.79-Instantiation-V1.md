@@ -43,16 +43,22 @@ RuleInstantiations and RuleInstantiationVersions, one InstantiationVersion
 snapshot, 75 source-line rows, and five planned artifacts. No `Build` or
 `BuildVersion` entity is introduced.
 
-The rehearsal restored a copy of the UTAT022 Experimental database at schema
+The rehearsal restored a copy of the database assigned to the logical
+Experimental role on UTAT022 at schema
 `00.02.000040`, applied `000060` through `000110`, executed `000110` a second
 time, and ran the verifier. Both runs produced 75 source lines, eight snapshot
 members, and five planned artifacts. The verifier reconstructed the exact path
 and the 2,800-byte file with the frozen SHA-256. The temporary database and
 copy-only backup were removed.
 
+> **Instance-naming correction (2026-08-08):** `Experimental` is not a physical
+> SQL Server instance name. Developer-scoped instances follow
+> `Exp<DeveloperName>`; `ExpWhertzing` is the specific instance for developer
+> `whertzing`.
+
 ## Deployment state
 
 Task 13.79 is source-complete and rehearsal-verified. It does not deploy the
-migration to Experimental. Tasks 13.82 and 13.83 own immutable bundle rehearsal,
+migration to the logical Experimental role. Tasks 13.82 and 13.83 own immutable bundle rehearsal,
 hash approval, deployment, and the separately approved filesystem
 manifestation.

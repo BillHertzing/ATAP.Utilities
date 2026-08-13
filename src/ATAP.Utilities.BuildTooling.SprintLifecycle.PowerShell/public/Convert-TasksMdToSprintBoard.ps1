@@ -10,12 +10,21 @@ function Convert-TasksMdToSprintBoard {
   .PARAMETER TasksFilePath
     Path to the authoritative sprint TASKS.md file.
   .PARAMETER OutputPath
-    Optional path for the generated TASKS.html file. Defaults to a sibling
-    `TASKS.html` next to `TasksFilePath`.
+    Optional path for the generated HTML board. When omitted, empty, or
+    whitespace, the path is derived from `TasksFilePath` by replacing the file
+    extension with `.html` in the same directory, preserving the full base name:
+    `Tasks.Sprint0014.md` produces `Tasks.Sprint0014.html`, and a legacy
+    `TASKS.md` still produces `TASKS.html`.
   .OUTPUTS
     System.Management.Automation.PSCustomObject
   .EXAMPLE
-    Convert-TasksMdToSprintBoard -TasksFilePath 'C:\Dropbox\whertzing\GitHub\_Planning-wt-16-Sprint-0008-work-items\TASKS.md'
+    Convert-TasksMdToSprintBoard -TasksFilePath 'C:\Dropbox\whertzing\GitHub\_Planning-wt-33-Sprint-0014-work-items\Tasks.Sprint0014.md'
+
+    Writes the board to `Tasks.Sprint0014.html` beside the markdown source.
+  .EXAMPLE
+    Convert-TasksMdToSprintBoard -TasksFilePath '.\Tasks.Sprint0014.md' -OutputPath '.\_generated\Preview.html'
+
+    Writes the board to an explicit location instead of the derived sibling.
   .NOTES
     AI assisted using Powershell.instructions.md as guidelines
   #>
@@ -27,7 +36,7 @@ function Convert-TasksMdToSprintBoard {
     [string]$TasksFilePath,
 
     [Parameter()]
-    [ValidateNotNullOrEmpty()]
+    [AllowEmptyString()]
     [string]$OutputPath
   )
 
@@ -282,7 +291,17 @@ function Convert-TasksMdToSprintBoard {
     try {
       $resolvedTasksFilePath = (Resolve-Path -LiteralPath $TasksFilePath -ErrorAction Stop).ProviderPath
       if (-not $PSBoundParameters.ContainsKey('OutputPath') -or [string]::IsNullOrWhiteSpace($OutputPath)) {
-        $OutputPath = Join-Path (Split-Path -Path $resolvedTasksFilePath -Parent) 'TASKS.html'
+        # Derive the board name from the markdown name rather than a fixed 'TASKS.html'.
+        # Sprint artifacts are dotted (Tasks.Sprint0014.md -> Tasks.Sprint0014.html), and a
+        # fixed default silently wrote a stray file while leaving the real board stale.
+        # Backward compatible: a legacy TASKS.md still derives TASKS.html. (Task 14.14)
+        $tasksDirectory = Split-Path -Path $resolvedTasksFilePath -Parent
+        $tasksBaseName = [System.IO.Path]::GetFileNameWithoutExtension($resolvedTasksFilePath)
+        if ([string]::IsNullOrWhiteSpace($tasksBaseName)) {
+          # An input with no name before the extension leaves nothing to derive from.
+          $tasksBaseName = [System.IO.Path]::GetFileName($resolvedTasksFilePath)
+        }
+        $OutputPath = Join-Path $tasksDirectory ('{0}.html' -f $tasksBaseName)
       }
       $resolvedOutputPath = [System.IO.Path]::GetFullPath($OutputPath)
       $tasksFileName = [System.IO.Path]::GetFileName($resolvedTasksFilePath)

@@ -1,4 +1,4 @@
-Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' -Tag 'Unit' {
+Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' -Tag 'Unit', 'ParityCore' {
   BeforeAll {
     if (-not (Get-Module -Name 'ATAP.Utilities.SystemParityMonitor.PowerShell')) {
       $modulePath = Join-Path $PSScriptRoot '..\..\ATAP.Utilities.SystemParityMonitor.PowerShell.psd1'
@@ -52,6 +52,40 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' -Tag 'Unit' {
     $snapshot.SnapshotPath | Should -Be $snapshotPath
   }
 
+  It 'discovers SQL engine services through Win32_Service, never Get-Service' {
+    # This test previously asserted the exact opposite -- that SCM/Get-Service was used and
+    # Win32_Service must NOT be queried -- on the belief that the approved root\cimv2 ACE could
+    # not serve Win32_Service. Measured on both hosts 2026-08-11, that was wrong twice over: the
+    # namespace ACE is fine, and BOTH surfaces were denied because the Win32_Service provider
+    # calls SCM underneath. Task 14.72 granted read-only SCM plus per-service query rights, and
+    # collection moved to the surface the least-privilege matrix actually names.
+    InModuleScope 'ATAP.Utilities.SystemParityMonitor.PowerShell' {
+      Mock -CommandName Get-CimInstance -ParameterFilter { $ClassName -eq 'Win32_Service' } -MockWith {
+        @(
+          [pscustomobject]@{ Name = 'MSSQL$PRODUCTION'; State = 'Running' }
+          [pscustomobject]@{ Name = 'MSSQL$QA'; State = 'Stopped' }
+          # Must be excluded: the default instance is not an named-instance engine surface.
+          [pscustomobject]@{ Name = 'MSSQLSERVER'; State = 'Running' }
+          # Must be ignored: not an engine service at all.
+          [pscustomobject]@{ Name = 'W32Time'; State = 'Running' }
+        )
+      }
+      Mock -CommandName Get-Service -MockWith { throw 'Get-Service must not be used for SQL engine discovery.' }
+
+      $surfaces = @(Get-SqlParitySurfaces)
+
+      ($surfaces | Where-Object { $_.Item -eq 'InstanceNames' }).Source | Should -Be 'Win32_Service'
+      ($surfaces | Where-Object { $_.Item -eq 'InstanceNames' }).Value | Should -Be 'PRODUCTION;QA'
+      ($surfaces | Where-Object { $_.Item -eq 'Instance/PRODUCTION/EngineService' }).Value |
+        Should -Be 'Running|<not-collected>|<not-collected>'
+      ($surfaces | Where-Object { $_.Item -eq 'Instance/QA/EngineService' }).Value |
+        Should -Be 'Stopped|<not-collected>|<not-collected>'
+      # The value shape stays three-part: filling the placeholders would perturb the Task 14.73
+      # drift baseline and is a separate, deliberate change.
+      Assert-MockCalled -CommandName Get-Service -Times 0 -Exactly
+    }
+  }
+
   It 'collects package versions and flags normalized cross-manager ownership conflicts' {
     InModuleScope 'ATAP.Utilities.SystemParityMonitor.PowerShell' {
       Mock -CommandName Get-Command -ParameterFilter {
@@ -65,22 +99,167 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' -Tag 'Unit' {
         $output = switch ([IO.Path]::GetFileNameWithoutExtension($Command)) {
           'choco' { @('git|2.46.0', 'requests|1.0.0') }
           'python' { @('[{"name":"requests","version":"2.32.0"},{"name":"httpx","version":"0.28.0"}]') }
-          'npm' { @('{"dependencies":{"eslint":{"version":"9.0.0"}}}') }
+          'npm' { @('{"dependencies":{"requests":{"version":"9.0.0"}}}') }
           'dotnet' { @('Package Id      Version      Commands', '------------------------------------------', 'dotnet-ef       10.0.0       dotnet-ef') }
         }
 
         [pscustomobject]@{ ExitCode = 0; Output = $output }
       }
 
-      $surfaces = @(Get-PackageManagerParitySurfaces -HostName 'utat022')
+      $profiles = @(
+        [pscustomobject]@{
+          Identity = 'ATAP\Developer'
+          PipPath = 'C:\Profiles\Developer\pip-site-packages'
+          NpmPrefix = 'C:\Profiles\Developer\npm'
+          NuGetToolPath = 'C:\Profiles\Developer\.dotnet\tools'
+        }
+      )
+      $surfaces = @(Get-PackageManagerParitySurfaces -HostName 'utat022' -PackageManagerProfiles $profiles)
 
       @($surfaces | Where-Object Category -eq 'PackageManager') | Should -HaveCount 6
       @($surfaces | Where-Object Category -eq 'PackageManagerStatus') | Should -HaveCount 4
+      @($surfaces | Where-Object Item -eq 'ATAP\Developer/pip/requests') | Should -HaveCount 1
+      @($surfaces | Where-Object Item -eq 'ATAP\Developer/npm/requests') | Should -HaveCount 1
+      @($surfaces | Where-Object Item -eq 'ATAP\Developer/NuGet/dotnet-ef') | Should -HaveCount 1
+      Should -Invoke -CommandName Invoke-ParityNativeCommand -ParameterFilter {
+        $ArgumentList -contains 'C:\Profiles\Developer\pip-site-packages'
+      } -Times 1
+      Should -Invoke -CommandName Invoke-ParityNativeCommand -ParameterFilter {
+        $ArgumentList -contains 'C:\Profiles\Developer\npm'
+      } -Times 1
+      Should -Invoke -CommandName Invoke-ParityNativeCommand -ParameterFilter {
+        $ArgumentList -contains 'C:\Profiles\Developer\.dotnet\tools'
+      } -Times 1
       $conflicts = @($surfaces | Where-Object Category -eq 'PackageManagerConflict')
       $conflicts | Should -HaveCount 1
-      $conflicts[0].Item | Should -Be 'utat022/requests'
-      $conflicts[0].Value | Should -Match 'ACTION REQUIRED.*Chocolatey:requests@1.0.0.*pip:requests@2.32.0'
+      $conflicts[0].Item | Should -Be 'utat022/ATAP\Developer/requests'
+      $conflicts[0].Value | Should -Match 'ACTION REQUIRED.*npm:requests@9.0.0.*pip:requests@2.32.0'
     }
+  }
+
+  It 'does not infer pip npm or NuGet paths from the audit process identity' {
+    InModuleScope 'ATAP.Utilities.SystemParityMonitor.PowerShell' {
+      Mock -CommandName Get-Command -ParameterFilter { $Name -eq 'choco' } -MockWith {
+        [pscustomobject]@{ Source = 'choco.exe' }
+      }
+      Mock -CommandName Invoke-ParityNativeCommand -MockWith {
+        [pscustomobject]@{ ExitCode = 0; Output = @() }
+      }
+
+      $surfaces = @(Get-PackageManagerParitySurfaces -HostName 'utat022')
+
+      @($surfaces | Where-Object Value -eq '<profile-paths-not-configured>') | Should -HaveCount 3
+      @($surfaces | Where-Object Category -eq 'PackageManagerStatus') | Should -HaveCount 4
+      Should -Invoke -CommandName Get-Command -ParameterFilter {
+        $Name -in @('python', 'npm', 'dotnet')
+      } -Times 0
+    }
+  }
+
+  It 'reports an omitted path independently for each configured identity and manager' {
+    InModuleScope 'ATAP.Utilities.SystemParityMonitor.PowerShell' {
+      Mock -CommandName Get-Command -MockWith { $null }
+
+      $surfaces = @(Get-PackageManagerParitySurfaces -HostName 'utat022' -PackageManagerProfiles @(
+          [pscustomobject]@{ Identity = 'ATAP\Developer'; PipPath = 'C:\pip'; NpmPrefix = ''; NuGetToolPath = $null }
+        ))
+
+      @($surfaces | Where-Object Item -eq 'ATAP\Developer/npm' | Where-Object Value -eq '<profile-path-not-configured>') | Should -HaveCount 1
+      @($surfaces | Where-Object Item -eq 'ATAP\Developer/NuGet' | Where-Object Value -eq '<profile-path-not-configured>') | Should -HaveCount 1
+      @($surfaces | Where-Object Item -eq 'ATAP\Developer/pip' | Where-Object Value -eq '<not-installed>') | Should -HaveCount 1
+    }
+  }
+
+  It 'rejects a configured package-manager profile without an explicit identity' {
+    InModuleScope 'ATAP.Utilities.SystemParityMonitor.PowerShell' {
+      { Get-PackageManagerParitySurfaces -HostName 'utat022' -PackageManagerProfiles @([pscustomobject]@{ PipPath = 'C:\pip' }) } |
+        Should -Throw '*must specify a non-empty Identity*'
+    }
+  }
+
+  It 'rejects ambiguous duplicate identities and relative profile paths' {
+    InModuleScope 'ATAP.Utilities.SystemParityMonitor.PowerShell' {
+      { Get-PackageManagerParitySurfaces -HostName 'utat022' -PackageManagerProfiles @(
+          [pscustomobject]@{ Identity = 'ATAP\Developer'; PipPath = 'C:\pip' },
+          [pscustomobject]@{ Identity = 'atap\developer'; PipPath = 'D:\pip' }
+        ) } | Should -Throw '*configured more than once*'
+
+      { Get-PackageManagerParitySurfaces -HostName 'utat022' -PackageManagerProfiles @(
+          [pscustomobject]@{ Identity = 'ATAP\Developer'; PipPath = '.\pip' }
+        ) } | Should -Throw '*must be a fully qualified path*'
+
+      { Get-PackageManagerParitySurfaces -HostName 'utat022' -PackageManagerProfiles @(
+          [pscustomobject]@{ Identity = 'ATAP/Developer'; PipPath = 'C:\pip' }
+        ) } | Should -Throw "*cannot contain '/' or '|'*"
+    }
+  }
+
+  It 'does not report a cross-manager conflict when the managers belong to different identities' {
+    InModuleScope 'ATAP.Utilities.SystemParityMonitor.PowerShell' {
+      Mock -CommandName Get-Command -ParameterFilter { $Name -in @('choco', 'python', 'npm') } -MockWith {
+        [pscustomobject]@{ Source = "$Name.exe" }
+      }
+      Mock -CommandName Invoke-ParityNativeCommand -MockWith {
+        param($Command, $ArgumentList)
+        $output = if ([IO.Path]::GetFileNameWithoutExtension($Command) -eq 'python') {
+          @('[{"name":"requests","version":"2.32.0"}]')
+        } elseif ([IO.Path]::GetFileNameWithoutExtension($Command) -eq 'npm') {
+          @('{"dependencies":{"requests":{"version":"9.0.0"}}}')
+        } else {
+          @()
+        }
+        [pscustomobject]@{ ExitCode = 0; Output = $output }
+      }
+
+      $surfaces = @(Get-PackageManagerParitySurfaces -HostName 'utat022' -PackageManagerProfiles @(
+          [pscustomobject]@{ Identity = 'ATAP\PythonUser'; PipPath = 'C:\Profiles\Python\site-packages' },
+          [pscustomobject]@{ Identity = 'ATAP\NodeUser'; NpmPrefix = 'C:\Profiles\Node\npm' }
+        ))
+
+      @($surfaces | Where-Object Category -eq 'PackageManagerConflict') | Should -HaveCount 0
+      @($surfaces | Where-Object Item -eq 'ATAP\PythonUser/pip/requests') | Should -HaveCount 1
+      @($surfaces | Where-Object Item -eq 'ATAP\NodeUser/npm/requests') | Should -HaveCount 1
+    }
+  }
+
+  It 'Invoke-ParityAudit writes missing SQL and PackageManager findings before failing loudly' {
+    $snapshotPath = Join-Path $leftState 'ParityAudit.utat022.missing-coverage.fixture.json'
+    $moduleName = 'ATAP.Utilities.SystemParityMonitor.PowerShell'
+    Mock -CommandName Get-SqlParitySurfaces -ModuleName $moduleName -MockWith { @() }
+    Mock -CommandName Get-PackageManagerParitySurfaces -ModuleName $moduleName -MockWith { @() }
+
+    { Invoke-ParityAudit -StatePath $leftState -HostName 'utat022' -OutputPath $snapshotPath } |
+      Should -Throw '*surface coverage is inadequate*'
+
+    Test-Path -LiteralPath $snapshotPath | Should -BeTrue
+    $snapshot = Get-Content -LiteralPath $snapshotPath -Raw | ConvertFrom-Json
+    $findings = @($snapshot.Surfaces | Where-Object Category -eq 'AuditCoverageFinding')
+    $findings | Should -HaveCount 2
+    @($findings | Where-Object Item -eq 'SQL' | Where-Object Value -Like 'Missing;*') | Should -HaveCount 1
+    @($findings | Where-Object Item -eq 'PackageManager' | Where-Object Value -Like 'Missing;*') | Should -HaveCount 1
+  }
+
+  It 'Invoke-ParityAudit honors configurable minimums and preserves a thin finding' {
+    $snapshotPath = Join-Path $leftState 'ParityAudit.utat022.thin-coverage.fixture.json'
+    $moduleName = 'ATAP.Utilities.SystemParityMonitor.PowerShell'
+    Mock -CommandName Get-SqlParitySurfaces -ModuleName $moduleName -MockWith {
+      [pscustomobject]@{ Category = 'SQL'; Item = 'InstanceNames'; Value = 'PRODUCTION'; Source = 'fixture' }
+    }
+    Mock -CommandName Get-PackageManagerParitySurfaces -ModuleName $moduleName -MockWith {
+      [pscustomobject]@{ Category = 'PackageManager'; Item = 'Machine/Chocolatey/git'; Value = '2.46'; Source = 'fixture' }
+    }
+
+    { Invoke-ParityAudit `
+        -StatePath $leftState `
+        -HostName 'utat022' `
+        -OutputPath $snapshotPath `
+        -ExpectedSurfaceMinimumCounts @{ SQL = 2; PackageManager = 1 } } |
+      Should -Throw '*SQL=Thin;ActualCount=1;ExpectedMinimumCount=2*'
+
+    $snapshot = Get-Content -LiteralPath $snapshotPath -Raw | ConvertFrom-Json
+    $finding = @($snapshot.Surfaces | Where-Object Category -eq 'AuditCoverageFinding')
+    $finding | Should -HaveCount 1
+    $finding[0].Value | Should -Be 'Thin;ActualCount=1;ExpectedMinimumCount=2'
   }
 
   It 'surfaces package-manager conflicts in the drift report even when both hosts share the conflict' {
@@ -170,6 +349,26 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' -Tag 'Unit' {
     @($comparison.UndeclaredDrift) | Should -HaveCount 1
     @($comparison.ConflictedCopies) | Should -HaveCount 1
     Test-Path -LiteralPath $reportPath | Should -BeTrue
+  }
+
+  It 'Add-ParityChangeEntry accepts the package-manager categories emitted by parity audits' {
+    foreach ($category in @('PackageManager', 'PackageManagerStatus')) {
+      {
+        Add-ParityChangeEntry `
+          -StatePath $leftState `
+          -HostName 'utat022' `
+          -PeerHostName 'utat01' `
+          -Category $category `
+          -Item "fixture/$category" `
+          -OldValue '<missing>' `
+          -NewValue 'present' `
+          -PeerActionKind 'Manual' | Out-Null
+      } | Should -Not -Throw
+    }
+
+    $entries = @(Get-Content -LiteralPath (Join-Path $leftState 'ChangeJournal.utat022.jsonl') | ForEach-Object { $_ | ConvertFrom-Json })
+    @($entries | Where-Object Category -eq 'PackageManager') | Should -HaveCount 1
+    @($entries | Where-Object Category -eq 'PackageManagerStatus') | Should -HaveCount 1
   }
 
   It 'Compare-ParityAudits flags stale snapshots when cadence is exceeded' {
@@ -290,10 +489,175 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' -Tag 'Unit' {
     @($comparison.UndeclaredDrift) | Should -HaveCount 1
   }
 
+  It 'Compare-ParityAudits distinguishes wholly missing and thin expected categories' {
+    $leftSnapshotPath = Join-Path $leftState 'ParityAudit.utat022.coverage.fixture.json'
+    $rightSnapshotPath = Join-Path $rightState 'ParityAudit.utat01.coverage.fixture.json'
+    $reportPath = Join-Path $leftState 'DriftReport.coverage.fixture.md'
+    $nowUtc = (Get-Date).ToUniversalTime().ToString('o')
+
+    [pscustomobject]@{
+      SchemaVersion = 1
+      HostName = 'utat022'
+      CapturedAtUtc = $nowUtc
+      Surfaces = @(
+        [pscustomobject]@{ Category = 'Services'; Item = 'W32Time'; Value = 'Running' }
+      )
+    } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $leftSnapshotPath -Encoding utf8
+
+    [pscustomobject]@{
+      SchemaVersion = 1
+      HostName = 'utat01'
+      CapturedAtUtc = $nowUtc
+      Surfaces = @(
+        [pscustomobject]@{ Category = 'PackageManagerStatus'; Item = 'Machine/Chocolatey'; Value = 'Available;PackageCount=1' },
+        [pscustomobject]@{ Category = 'PackageManagerStatus'; Item = 'ATAP\Developer/pip'; Value = 'Available;PackageCount=1' }
+      )
+    } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $rightSnapshotPath -Encoding utf8
+
+    $comparison = Compare-ParityAudits `
+      -LeftStatePath $leftState `
+      -RightStatePath $rightState `
+      -LeftHostName 'utat022' `
+      -RightHostName 'utat01' `
+      -LeftSnapshotPath $leftSnapshotPath `
+      -RightSnapshotPath $rightSnapshotPath `
+      -ReportPath $reportPath `
+      -ExpectedSurfaceMinimumCounts @{ Services = 3; PackageManagerStatus = 4 }
+
+    $comparison.HasSurfaceCoverageFailure | Should -BeTrue
+    @($comparison.SurfaceCoverageFailures | Where-Object Classification -eq 'Missing') | Should -HaveCount 2
+    @($comparison.SurfaceCoverageFailures | Where-Object Classification -eq 'Thin') | Should -HaveCount 2
+    (Get-Content -LiteralPath $reportPath -Raw) | Should -Match 'Surface Coverage Failures'
+    (Get-Content -LiteralPath $reportPath -Raw) | Should -Match 'utat022/Services: Thin'
+    (Get-Content -LiteralPath $reportPath -Raw) | Should -Match 'utat01/Services: Missing'
+  }
+
+  It 'preserves bounded package-manager output when inventory exits nonzero' {
+    InModuleScope 'ATAP.Utilities.SystemParityMonitor.PowerShell' {
+      Mock Get-Command { [pscustomobject]@{ Source = "$Name.exe" } }
+      Mock Invoke-ParityNativeCommand {
+        if ([IO.Path]::GetFileNameWithoutExtension($Command) -eq 'npm') {
+          return [pscustomobject]@{ ExitCode = 1; Output = @('npm ERR! code ELSPROBLEMS', 'invalid: package@1.0.0') }
+        }
+        [pscustomobject]@{ ExitCode = 0; Output = @() }
+      }
+      $profiles = @([pscustomobject]@{ Identity='ATAP\Developer'; PipPath=''; NpmPrefix='C:\Profiles\Developer\npm'; NuGetToolPath='' })
+      $status = Get-PackageManagerParitySurfaces -HostName utat022 -PackageManagerProfiles $profiles |
+        Where-Object Item -eq 'ATAP\Developer/npm'
+      $status.Value | Should -Be 'AuditError=npm exited with code 1. Output: npm ERR! code ELSPROBLEMS invalid: package@1.0.0'
+    }
+  }
+
+  It 'resolves a static SQL TCP port before a dynamic port and supports dynamic-only instances' {
+    InModuleScope 'ATAP.Utilities.SystemParityMonitor.PowerShell' {
+      (Resolve-ParitySqlTcpPort -TcpPort '50020' -TcpDynamicPorts '57384') | Should -Be 50020
+      (Resolve-ParitySqlTcpPort -TcpPort '' -TcpDynamicPorts '57384') | Should -Be 57384
+      { Resolve-ParitySqlTcpPort -TcpPort '' -TcpDynamicPorts '0' } | Should -Throw '*neither a valid static TcpPort nor a valid TcpDynamicPorts*'
+      { Resolve-ParitySqlTcpPort -TcpPort 'not-a-port' -TcpDynamicPorts '' } | Should -Throw '*neither a valid static TcpPort nor a valid TcpDynamicPorts*'
+    }
+  }
+
+  It 'reports SQL path nonconformance instead of throwing when registry defaults are absent' {
+    InModuleScope 'ATAP.Utilities.SystemParityMonitor.PowerShell' {
+      Test-ParitySqlPathsConform `
+        -DefaultData $null `
+        -DefaultLog '' `
+        -BackupDirectory 'C:\Sql\Backup' `
+        -ExpectedData 'C:\LocalDBs\INTEGRATION\Data' `
+        -ExpectedLog 'C:\LocalDBs\INTEGRATION\Log' `
+        -ExpectedBackup 'C:\LocalDBs\INTEGRATION\Backup' `
+        -DatabaseFiles @() | Should -BeFalse
+    }
+  }
+
+  It 'uses the SQLAgentReaderRole-compatible Agent Jobs metadata view' {
+    $collectorPath = Join-Path $PSScriptRoot '..\..\private\Get-SqlParitySurfaces.ps1'
+    $collectorSource = Get-Content -LiteralPath $collectorPath -Raw
+
+    $collectorSource | Should -Match 'FROM msdb\.dbo\.sysjobs_view'
+    $collectorSource | Should -Not -Match 'FROM msdb\.dbo\.sysjobs ORDER BY'
+  }
+
+  It 'Compare-ParityAudits treats explicit collector AuditError rows as coverage failures' {
+    $leftSnapshotPath = Join-Path $leftState 'ParityAudit.utat022.audit-error.fixture.json'
+    $rightSnapshotPath = Join-Path $rightState 'ParityAudit.utat01.audit-error.fixture.json'
+    $reportPath = Join-Path $leftState 'DriftReport.audit-error.fixture.md'
+    $nowUtc = (Get-Date).ToUniversalTime().ToString('o')
+
+    foreach ($snapshot in @(
+        [pscustomobject]@{
+          Path = $leftSnapshotPath
+          HostName = 'utat022'
+          Surfaces = @(
+            [pscustomobject]@{ Category = 'SQL'; Item = 'Instance/INTEGRATION/AuditError'; Value = 'fixture provider failure' }
+          )
+        },
+        [pscustomobject]@{
+          Path = $rightSnapshotPath
+          HostName = 'utat01'
+          Surfaces = @(
+            [pscustomobject]@{ Category = 'SQL'; Item = 'Instance/INTEGRATION/Version'; Value = '16.0' }
+          )
+        }
+      )) {
+      [pscustomobject]@{
+        SchemaVersion = 1
+        HostName = $snapshot.HostName
+        CapturedAtUtc = $nowUtc
+        Surfaces = $snapshot.Surfaces
+      } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $snapshot.Path -Encoding utf8
+    }
+
+    $comparison = Compare-ParityAudits `
+      -LeftStatePath $leftState `
+      -RightStatePath $rightState `
+      -LeftHostName 'utat022' `
+      -RightHostName 'utat01' `
+      -LeftSnapshotPath $leftSnapshotPath `
+      -RightSnapshotPath $rightSnapshotPath `
+      -ReportPath $reportPath `
+      -ExpectedSurfaceMinimumCounts @{ SQL = 1 }
+
+    $comparison.HasSurfaceCoverageFailure | Should -BeTrue
+    @($comparison.SurfaceCoverageFailures | Where-Object Classification -eq 'AuditError') | Should -HaveCount 1
+    (Get-Content -LiteralPath $reportPath -Raw) | Should -Match 'utat022/SQL/Instance/INTEGRATION/AuditError: AuditError'
+  }
+
+  It 'Invoke-ParityAudit fails closed when a collector emits an AuditError status row' {
+    $snapshotPath = Join-Path $leftState 'ParityAudit.utat022.audit-error.fixture.json'
+    $moduleName = 'ATAP.Utilities.SystemParityMonitor.PowerShell'
+    Mock -CommandName Get-SqlParitySurfaces -ModuleName $moduleName -MockWith {
+      [pscustomobject]@{ Category = 'SQL'; Item = 'Instance/INTEGRATION/AuditError'; Value = 'fixture provider failure'; Source = 'fixture' }
+    }
+    Mock -CommandName Get-PackageManagerParitySurfaces -ModuleName $moduleName -MockWith {
+      [pscustomobject]@{ Category = 'PackageManager'; Item = 'Machine/Chocolatey/git'; Value = '2.46'; Source = 'fixture' }
+    }
+
+    {
+      Invoke-ParityAudit `
+        -StatePath $leftState `
+        -HostName 'utat022' `
+        -OutputPath $snapshotPath `
+        -ExpectedSurfaceMinimumCounts @{ SQL = 1; PackageManager = 1 }
+    } | Should -Throw '*SQL/Instance/INTEGRATION/AuditError=AuditError*'
+
+    $snapshot = Get-Content -LiteralPath $snapshotPath -Raw | ConvertFrom-Json -Depth 16
+    @($snapshot.Surfaces | Where-Object {
+        $_.Category -eq 'AuditCoverageFinding' -and
+        $_.Item -eq 'SQL/Instance/INTEGRATION/AuditError' -and
+        $_.Value -match '^AuditError;'
+      }) | Should -HaveCount 1
+  }
+
   It 'Invoke-ParityAudit falls back to Win32_Share when Get-SmbShare is unavailable' {
     $snapshotPath = Join-Path $leftState 'ParityAudit.utat022.win32-share.fixture.json'
     $moduleName = 'ATAP.Utilities.SystemParityMonitor.PowerShell'
-    Mock -CommandName Get-SqlParitySurfaces -ModuleName $moduleName -MockWith { @() }
+    Mock -CommandName Get-SqlParitySurfaces -ModuleName $moduleName -MockWith {
+      [pscustomobject]@{ Category = 'SQL'; Item = 'InstanceNames'; Value = 'PRODUCTION'; Source = 'fixture' }
+    }
+    Mock -CommandName Get-PackageManagerParitySurfaces -ModuleName $moduleName -MockWith {
+      [pscustomobject]@{ Category = 'PackageManager'; Item = 'Machine/Chocolatey/git'; Value = '2.46'; Source = 'fixture' }
+    }
 
     Mock -CommandName Get-Command -ModuleName $moduleName -ParameterFilter { $Name -eq 'Get-SmbShare' } -MockWith {
       $null

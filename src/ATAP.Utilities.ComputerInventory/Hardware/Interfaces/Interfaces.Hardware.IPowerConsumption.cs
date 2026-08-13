@@ -1,4 +1,3 @@
-using Itenso.TimePeriod;
 using System;
 using UnitsNet;
 

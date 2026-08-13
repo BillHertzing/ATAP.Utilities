@@ -184,7 +184,7 @@ Tier-specific DB validation (regardless of instance type):
 
 | Tier         | DB-related action in the pipeline                                                                                                                                |
 | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Experimental | Apply migrations against the empty Experimental SQL Server instance (`localhost\EXPWHERTZING` in this worktree); assert no errors; assert seed loaders complete. |
+| Experimental | Apply migrations against the empty database assigned to the logical Experimental role (`localhost\EXPWHERTZING` in this worktree); assert no errors; assert seed loaders complete. `Experimental` is not a physical instance name: developer instances follow `Exp<DeveloperName>`, and `EXPWHERTZING` is the instance for developer `whertzing`. |
 | Development  | Apply against a small dev fixture DB.                                                                                                                            |
 | Integration  | Apply against a snapshot of the **previous-prod** DB (taken at the last Production release). Assert no data corruption.                                          |
 | QA           | Apply against a "QA gold" DB (production-shaped, anonymized customer data). Run integration test suite against the result.                                       |
@@ -205,7 +205,7 @@ connection mode for the Integration rehearsal:
 `-DBConnectionStringSecretName $IntegrationDatabaseDBConnectionStringSecretName`. That BuildMaster
 Application variable stores the permanent Integration-tier Bitwarden item name
 from [SprintInfrastructure-Naming.md §4](SprintInfrastructure-Naming.md#4-bitwarden-connection-string-secret-naming),
-for example `dbConnectionString-AceCommander-utat022-Integration`; the plan does
+for example `dbConnectionString.AceCommander.utat022.Integration`; the plan does
 not pass `-DatabaseHost` / `-SqlInstance` for this rehearsal. The `-BackupPath`
 value is recorded for traceability; restoring the previous-production backup
 remains environment-specific.
@@ -473,7 +473,7 @@ Rehearse Flyway migrations against the previous-prod snapshot:
 Invoke-FlywayRehearsal `
   -Application AceCommander `
   -BuildId     1-4-0 `
-  -DBConnectionStringSecretName dbConnectionString-AceCommander-utat022-Integration `
+  -DBConnectionStringSecretName dbConnectionString.AceCommander.utat022.Integration `
   -BundlePath  ./_generated/release-bundle/AceCommander.1.4.0.upack `
   -BackupPath  C:\Dropbox\Backups\utat022\Production\AceCommander\latest.bak `
   -LogPath     ./_generated/flyway-rehearsal-1.4.0.log

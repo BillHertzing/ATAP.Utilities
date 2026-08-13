@@ -157,7 +157,7 @@ function Set-BuildMasterPipelineStageDeploymentStep {
     # Resolve BuildMaster base URL
     $BuildMasterBaseUrl = Get-PVal -ParameterName 'BuildMasterBaseUrl' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterBaseUrl
     if ([string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) {
-      $BuildMasterBaseUrl = 'http://localhost:50017'
+      $BuildMasterBaseUrl = 'https://utat022:50017'
     }
     $BuildMasterBaseUrl = $BuildMasterBaseUrl.TrimEnd('/')
     $nativeApiBaseUrl = "$BuildMasterBaseUrl/api/json"

@@ -1,19 +1,16 @@
-using ATAP.Utilities.Testing;
-using FluentAssertions;
-using Xunit;
-using Xunit.Abstractions;
+using System.Text.Json;
+using ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson;
 
-namespace ATAP.Utilities.Philote.Tests
+namespace ATAP.Utilities.Philote.Tests;
+
+public sealed class Fixture
 {
-  public class Fixture : DiFixture { }
-  public partial class PhiloteUnitTests001 : IClassFixture<Fixture>
+  public JsonSerializerOptions SerializerOptions { get; } = CreateOptions();
+
+  private static JsonSerializerOptions CreateOptions()
   {
-    protected Fixture Fixture { get; }
-    protected ITestOutputHelper TestOutput { get; }
-    public PhiloteUnitTests001(ITestOutputHelper testOutput, Fixture fixture)
-    {
-      Fixture = fixture;
-      TestOutput = testOutput;
-    }
+    var options = new JsonSerializerOptions();
+    options.Converters.Add(new PhiloteConverterFactory());
+    return options;
   }
 }

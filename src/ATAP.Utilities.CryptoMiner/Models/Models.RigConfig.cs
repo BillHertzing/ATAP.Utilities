@@ -1,4 +1,5 @@
-using Itenso.TimePeriod;
+using ATAP.Utilities.DateTime.Interfaces;
+using System;
 using ATAP.Utilities.CryptoCoin.Enumerations;
 using ATAP.Utilities.CryptoMiner.Enumerations;
 using ATAP.Utilities.ConcurrentObservableCollections;
@@ -12,7 +13,7 @@ namespace ATAP.Utilities.CryptoMiner.Models
   {
     public RigConfig(ITempAndFan cPUTempAndFan, IPowerConsumption powerConsumption, ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins),IMinerSWAbstract> minerSWs, ConcurrentObservableDictionary<int, IMinerGPU> minerGPUs)
     {
-      Moment = new TimeBlock();
+      Moment = new UtcInstant(DateTimeOffset.UtcNow);
       CPUTempAndFan = cPUTempAndFan;
       PowerConsumption = powerConsumption;
       MinerSWs = minerSWs;
@@ -21,7 +22,7 @@ namespace ATAP.Utilities.CryptoMiner.Models
 
     //ToDo make CPUTempAndFan an observable
     public ITempAndFan CPUTempAndFan { get; set; }
-    public ITimeBlock Moment { get; }
+    public UtcInstant Moment { get; }
 
     public ConcurrentObservableDictionary<int, IMinerGPU> MinerGPUs { get; set; }
     public ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), IMinerSWAbstract> MinerSWs { get; set; }

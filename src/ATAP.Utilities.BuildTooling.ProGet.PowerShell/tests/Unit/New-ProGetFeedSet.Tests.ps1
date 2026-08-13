@@ -52,7 +52,7 @@ Describe 'New-ProGetFeedSet' -Tag 'Unit', 'PromotedModuleHostSensitive' {
           FeedType        = 'universal'
           Tier            = 'experimental'
           ApiKeyName      = 'PROGET_APIKEY_RELEASEBUNDLE_EXPERIMENTAL'
-          Uri             = 'http://localhost:50000/upack/releasebundle-experimental/'
+          Uri             = 'https://utat022:50000/upack/releasebundle-experimental/'
           NuGetV3Uri      = $null
           Connectors      = @()
           RetentionPolicy = @{}
@@ -62,8 +62,8 @@ Describe 'New-ProGetFeedSet' -Tag 'Unit', 'PromotedModuleHostSensitive' {
           FeedType        = 'powershellget'
           Tier            = 'experimental'
           ApiKeyName      = 'PROGET_APIKEY_POWERSHELLGET_EXPERIMENTAL'
-          Uri             = 'http://localhost:50000/nuget/powershellget-experimental/'
-          NuGetV3Uri      = 'http://localhost:50000/nuget/powershellget-experimental/v3/index.json'
+          Uri             = 'https://utat022:50000/nuget/powershellget-experimental/'
+          NuGetV3Uri      = 'https://utat022:50000/nuget/powershellget-experimental/v3/index.json'
           Connectors      = @()
           RetentionPolicy = @{}
         }

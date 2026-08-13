@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 using ATAP.Utilities.ConcurrentObservableCollections;
 using ATAP.Utilities.CryptoCoin.Enumerations;
 using ATAP.Utilities.CryptoMiner.Enumerations;
-using Itenso.TimePeriod;
+using ATAP.Utilities.DateTime.Interfaces;
 using UnitsNet;
 using ATAP.Utilities.CryptoMiner.Interfaces;
 
@@ -66,7 +66,7 @@ namespace ATAP.Utilities.CryptoMiner.Models
             throw new ArgumentNullException(nameof(details)));
       }
     }
-    public ClaymoreMinerStatus(int iD, ClaymoreMinerStatusDetails minerStatusDetails, string statusQueryError, string version, TimeBlock moment) :
+    public ClaymoreMinerStatus(int iD, ClaymoreMinerStatusDetails minerStatusDetails, string statusQueryError, string version, UtcInstant moment) :
         base(iD, minerStatusDetails, statusQueryError, version, moment)
     {
     }
@@ -80,7 +80,7 @@ namespace ATAP.Utilities.CryptoMiner.Models
     {
 
       string version;
-      TimeBlock runningTime;
+      TemporalDuration runningTime;
       ConcurrentObservableDictionary<Coin, double> totalPerCoinHashRate = new ConcurrentObservableDictionary<Coin, double>();
       ConcurrentObservableDictionary<Coin, int> totalPerCoinShares = new ConcurrentObservableDictionary<Coin, int>();
       ConcurrentObservableDictionary<Coin, int> totalPerCoinRejectedShares = new ConcurrentObservableDictionary<Coin, int>();
@@ -104,8 +104,7 @@ namespace ATAP.Utilities.CryptoMiner.Models
         GroupCollection groups = match.Groups;
         version = groups["Version"].Value ??
             throw new ArgumentNullException(nameof(version));
-        if (groups["RunningTime"].Value is null) { throw new ArgumentNullException(nameof(runningTime)); }
-        runningTime = new TimeBlock(DateTime.Parse(groups["RunningTime"].Value));
+        runningTime = ClaymoreRunningTimeParser.ParseMinutes(groups["RunningTime"].Value);
         /*
 
         // Version = new Regex(@"(\d|\.)+", RegexOptions.IgnoreCase).Matches;
@@ -115,7 +114,7 @@ namespace ATAP.Utilities.CryptoMiner.Models
       }
     }
 
-    public ClaymoreMinerStatusDetails(ConcurrentObservableDictionary<int, Ratio> perGPUFanPct, ConcurrentObservableDictionary<int, ConcurrentObservableDictionary<Coin, double>> perGPUPerCoinHashRate, ConcurrentObservableDictionary<int, Power> perGPUPowerConsumption, ConcurrentObservableDictionary<int, Temperature> perGPUTemperature, string runningTime, ConcurrentObservableDictionary<Coin, double> totalPerCoinHashRate, ConcurrentObservableDictionary<Coin, int> totalPerCoinInvalidShares, ConcurrentObservableDictionary<Coin, int> totalPerCoinPoolSwitches, ConcurrentObservableDictionary<Coin, int> totalPerCoinRejectedShares, ConcurrentObservableDictionary<Coin, int> totalPerCoinShares, string version) : base(perGPUFanPct, perGPUPerCoinHashRate, perGPUPowerConsumption, perGPUTemperature, runningTime, totalPerCoinHashRate, totalPerCoinInvalidShares, totalPerCoinPoolSwitches, totalPerCoinRejectedShares, totalPerCoinShares, version)
+    public ClaymoreMinerStatusDetails(ConcurrentObservableDictionary<int, Ratio> perGPUFanPct, ConcurrentObservableDictionary<int, ConcurrentObservableDictionary<Coin, double>> perGPUPerCoinHashRate, ConcurrentObservableDictionary<int, Power> perGPUPowerConsumption, ConcurrentObservableDictionary<int, Temperature> perGPUTemperature, TemporalDuration runningTime, ConcurrentObservableDictionary<Coin, double> totalPerCoinHashRate, ConcurrentObservableDictionary<Coin, int> totalPerCoinInvalidShares, ConcurrentObservableDictionary<Coin, int> totalPerCoinPoolSwitches, ConcurrentObservableDictionary<Coin, int> totalPerCoinRejectedShares, ConcurrentObservableDictionary<Coin, int> totalPerCoinShares, string version) : base(perGPUFanPct, perGPUPerCoinHashRate, perGPUPowerConsumption, perGPUTemperature, runningTime, totalPerCoinHashRate, totalPerCoinInvalidShares, totalPerCoinPoolSwitches, totalPerCoinRejectedShares, totalPerCoinShares, version)
     {
     }
   }

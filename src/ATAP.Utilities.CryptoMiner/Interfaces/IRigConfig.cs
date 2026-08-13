@@ -1,4 +1,4 @@
-using Itenso.TimePeriod;
+using ATAP.Utilities.DateTime.Interfaces;
 using ATAP.Utilities.CryptoCoin.Enumerations;
 using ATAP.Utilities.CryptoMiner.Enumerations;
 using ATAP.Utilities.ConcurrentObservableCollections;
@@ -9,7 +9,7 @@ namespace ATAP.Utilities.CryptoMiner.Interfaces
   public interface IRigConfig
   {
     ITempAndFan CPUTempAndFan { get; }
-    ITimeBlock Moment { get; }
+    UtcInstant Moment { get; }
     ConcurrentObservableDictionary<int, IMinerGPU> MinerGPUs { get;  }
     ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), IMinerSWAbstract> MinerSWs { get;  }
     IPowerConsumption PowerConsumption { get;  }

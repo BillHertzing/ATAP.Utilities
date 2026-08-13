@@ -1,8 +1,0 @@
-PhiloteId,RulePhiloteId,Notes
-1939ccb3-057b-43d9-b15c-9392c1cba19e,f1f9a5d5-5e5a-4a44-8c48-1544a6d1c5ee,Instantiation of IStronglyTypedIds interfaces file
-0e09bbec-6d9d-4119-9006-c19ef9b7daed,a8e3b1d0-1c6f-4f6f-9c7b-3c5d72e1b944,Instantiation of IPhilote interfaces file
-de81d964-9afc-4b22-afbb-a2afc353937b,c4a4b59f-1f8e-4bdb-9c8d-7a23f3b3d6e2,Instantiation of StronglyTypedIds implementation file
-e45c66f3-2ad8-41fe-bf6d-f47a72ca0c4c,5a2a7d5f-017d-4c89-98c5-7d4ab0f4ec3b,Instantiation of Philote record implementations file
-08873a6e-201e-4529-b564-cecc24d6e927,01d7c067-65b8-4370-bacf-2abf5ca7f7b8,Instantiation of ActivatorReplacement helper file
-1d50fa71-644e-46de-838a-d27abe57c16a,6e7f54c4-0b7d-4f0a-8d57-5f1f96c4d7b8,Instantiation of StronglyTypedId System.Text.Json converter file
-9444a632-5fe6-4150-8c75-28dfab06f7db,7d1a3b4c-2f5e-4c9f-9a64-5c7d8e9f0a1b,Instantiation of Philote System.Text.Json converter file

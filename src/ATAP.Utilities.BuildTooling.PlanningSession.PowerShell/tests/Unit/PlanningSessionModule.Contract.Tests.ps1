@@ -43,7 +43,9 @@ Describe 'PlanningSession child scaffold contract' -Tag 'Unit' {
 
   It 'has stable-release NBGV metadata' {
     $metadata = Get-Content -LiteralPath (Join-Path $script:ModuleRoot 'version.json') -Raw | ConvertFrom-Json
-    $metadata.version | Should -Be '0.1.3'
+    # Assert the shape of a stable release, not a specific number. Pinning the literal
+    # version here made the test fail on every release that bumped version.json.
+    $metadata.version | Should -Match '^\d+\.\d+\.\d+$'
     @($metadata.publicReleaseRefSpec) | Should -Contain '.*'
   }
 }

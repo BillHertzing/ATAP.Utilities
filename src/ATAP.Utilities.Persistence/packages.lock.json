@@ -109,9 +109,13 @@
         "resolved": "4.7.0",
         "contentHash": "VybpaOQQhqE6siHppMktjfGBw1GCwvCqiufqmP8F1nj7fTUNtW35LOEt3UZTEsECfo+ELAl/9o9nJx3U91i7vA=="
       },
+      "atap.utilities.etw": {
+        "type": "Project"
+      },
       "atap.utilities.persistence.extensions": {
         "type": "Project",
         "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )",
           "ATAP.Utilities.Persistence.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.Persistence.Model": "[0.1.0-Alpha, )",
           "ServiceStack.OrmLite": "[5.12.0, )"
@@ -307,9 +311,13 @@
           "runtime.native.System.Data.SqlClient.sni": "4.7.0"
         }
       },
+      "atap.utilities.etw": {
+        "type": "Project"
+      },
       "atap.utilities.persistence.extensions": {
         "type": "Project",
         "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )",
           "ATAP.Utilities.Persistence.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.Persistence.Model": "[0.1.0-Alpha, )",
           "ServiceStack.OrmLite": "[5.12.0, )"
@@ -503,9 +511,13 @@
           "runtime.native.System.Data.SqlClient.sni": "4.7.0"
         }
       },
+      "atap.utilities.etw": {
+        "type": "Project"
+      },
       "atap.utilities.persistence.extensions": {
         "type": "Project",
         "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )",
           "ATAP.Utilities.Persistence.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.Persistence.Model": "[0.1.0-Alpha, )",
           "ServiceStack.OrmLite": "[5.12.0, )"

@@ -1,0 +1,152 @@
+@startuml RRSBS_RDB_230_Logical_Model
+hide circle
+hide methods
+left to right direction
+skinparam linetype ortho
+skinparam defaultFontName Segoe UI
+skinparam shadowing false
+skinparam entity {
+  BackgroundColor #F7FAFC
+  BorderColor #34495E
+  FontColor #1F2937
+}
+
+title RDB-230 RuleSet and BuildSet Logical Model
+
+legend left
+  Design-only model; no SQL, seeds, or allocated identifiers.
+  <<entity-root>> durable RDB-200 Entity subtype
+  <<entity-version>> immutable published RDB-200 Entity subtype
+  Occurrence keys are parent-scoped identity; ordinal is ordered position.
+endlegend
+
+package "RuleSet aggregate" #EAF2F8 {
+  entity RuleSet <<entity-root>> {
+    * RuleSetId : bigint <<PK>>
+    * RuleSetPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * RuleSetCode : varchar <<UQ>>
+    * CreatedAtUtc : datetime2
+  }
+
+  entity RuleSetVersion <<entity-version>> {
+    * RuleSetVersionId : bigint <<PK>>
+    * RuleSetVersionPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * RuleSetId : bigint <<FK>>
+    * RevisionSequence : int
+    o PredecessorRuleSetVersionId : bigint <<FK,UQ>>
+    * MembershipHashAlgorithmCode : varchar <<FK>>
+    * MembershipContentHash : binary
+    * PublishedAtUtc : datetime2
+    --
+    UQ (RuleSetId, RevisionSequence)
+  }
+
+  entity RuleSetVersionMember <<entity-version>> {
+    * RuleSetVersionMemberId : bigint <<PK>>
+    * RuleSetVersionMemberPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * RuleSetVersionId : bigint <<FK>>
+    * MemberOccurrenceKey : varchar
+    * Ordinal : int
+    * RuleVersionId : bigint <<FK>>
+    * MembershipRoleCode : varchar <<FK>>
+    o MembershipRationaleEntityId : bigint <<FK>>
+    o MembershipRationaleEntityTypeId : bigint <<FK>>
+    --
+    UQ (RuleSetVersionId, MemberOccurrenceKey)
+    UQ (RuleSetVersionId, Ordinal)
+  }
+
+  entity RuleVersion <<external RDB-220>> {
+    * RuleVersionId : bigint <<PK>>
+  }
+
+  entity RuleSetMembershipRole <<catalog>> {
+    * MembershipRoleCode : varchar <<PK>>
+    * AllowsRepeatedChild : bit
+  }
+}
+
+package "BuildSet aggregate" #E8F8F5 {
+  entity BuildSet <<entity-root>> {
+    * BuildSetId : bigint <<PK>>
+    * BuildSetPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * BuildSetCode : varchar <<UQ>>
+    * CreatedAtUtc : datetime2
+  }
+
+  entity BuildSetVersion <<entity-version>> {
+    * BuildSetVersionId : bigint <<PK>>
+    * BuildSetVersionPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * BuildSetId : bigint <<FK>>
+    * RevisionSequence : int
+    o PredecessorBuildSetVersionId : bigint <<FK,UQ>>
+    * MembershipHashAlgorithmCode : varchar <<FK>>
+    * MembershipContentHash : binary
+    * PublishedAtUtc : datetime2
+    --
+    UQ (BuildSetId, RevisionSequence)
+  }
+
+  entity BuildSetVersionMember <<entity-version>> {
+    * BuildSetVersionMemberId : bigint <<PK>>
+    * BuildSetVersionMemberPhiloteId : uniqueidentifier <<UQ>>
+    * EntityId : bigint <<FK>>
+    * EntityTypeId : bigint <<FK>>
+    * BuildSetVersionId : bigint <<FK>>
+    * MemberOccurrenceKey : varchar
+    * Ordinal : int
+    * RuleSetVersionId : bigint <<FK>>
+    * MembershipRoleCode : varchar <<FK>>
+    o MembershipRationaleEntityId : bigint <<FK>>
+    o MembershipRationaleEntityTypeId : bigint <<FK>>
+    --
+    UQ (BuildSetVersionId, MemberOccurrenceKey)
+    UQ (BuildSetVersionId, Ordinal)
+  }
+
+  entity BuildSetMembershipRole <<catalog>> {
+    * MembershipRoleCode : varchar <<PK>>
+    * AllowsRepeatedChild : bit
+  }
+}
+
+RuleSet ||--o{ RuleSetVersion : publishes
+RuleSetVersion |o--o| RuleSetVersion : predecessor
+RuleSetVersion ||--o{ RuleSetVersionMember : ordered occurrences
+RuleVersion ||--o{ RuleSetVersionMember : exact child version
+RuleSetMembershipRole ||--o{ RuleSetVersionMember : descriptive role
+
+BuildSet ||--o{ BuildSetVersion : publishes
+BuildSetVersion |o--o| BuildSetVersion : predecessor
+BuildSetVersion ||--o{ BuildSetVersionMember : ordered occurrences
+RuleSetVersion ||--o{ BuildSetVersionMember : exact child version
+BuildSetMembershipRole ||--o{ BuildSetVersionMember : descriptive role
+
+note bottom of RuleSetVersionMember
+  MemberOccurrenceKey is immutable parent-scoped
+  identity. Repeated RuleVersion children are valid.
+  Ordinal is gap-free order, not identity.
+end note
+
+note bottom of BuildSetVersionMember
+  Full RDB-240 occurrence path follows:
+  BuildSet member occurrence -> RuleSet member
+  occurrence -> exact RuleVersion.
+end note
+
+note bottom of BuildSetVersion
+  BuildSet is non-recursive: members are exact
+  RuleSetVersions only, never BuildSets or Rules.
+end note
+
+@enduml

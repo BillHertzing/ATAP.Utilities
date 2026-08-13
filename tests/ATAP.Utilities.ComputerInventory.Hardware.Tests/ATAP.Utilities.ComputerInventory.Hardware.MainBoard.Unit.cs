@@ -15,16 +15,16 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
     [MemberData(nameof(MainBoardTestDataGenerator.TestData), MemberType = typeof(MainBoardTestDataGenerator))]
     public void MainBoardDeserializeFromJSON(MainBoardTestData inTestData)
     {
-      var obj = Fixture.Serializer.Deserialize<MainBoard>(inTestData.SerializedTestData);
+      var obj = Fixture.Serializer.Deserialize<MainBoard>(inTestData.TestData);
       obj.Should().BeOfType(typeof(MainBoard));
-      Fixture.Serializer.Deserialize<MainBoard>(inTestData.SerializedTestData).Should().BeEquivalentTo(inTestData.ObjTestData);
+      Fixture.Serializer.Deserialize<MainBoard>(inTestData.TestData).Should().BeEquivalentTo(inTestData.ObjTestData);
     }
 
     [Theory]
     [MemberData(nameof(MainBoardTestDataGenerator.TestData), MemberType = typeof(MainBoardTestDataGenerator))]
     public void MainBoardSerializeToJSON(MainBoardTestData inTestData)
     {
-      Fixture.Serializer.Serialize(inTestData.ObjTestData).Should().BeEquivalentTo(inTestData.SerializedTestData);
+      Fixture.Serializer.Serialize(inTestData.ObjTestData).Should().BeEquivalentTo(inTestData.TestData);
     }
   }
 }

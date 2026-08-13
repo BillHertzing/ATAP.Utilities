@@ -40,7 +40,11 @@ Describe 'GitWorktree child scaffold contract' -Tag 'Unit' {
 
   It 'has stable-release NBGV metadata' {
     $metadata = Get-Content -LiteralPath (Join-Path $script:ModuleRoot 'version.json') -Raw | ConvertFrom-Json
-    $metadata.version | Should -Be '0.1.4'
+    $manifestUnderTest = [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'Process')
+    $metadata.version | Should -Match '^\d+\.\d+\.\d+$'
+    if (-not [string]::IsNullOrWhiteSpace($manifestUnderTest)) {
+      $metadata.version | Should -Be ([string](Import-PowerShellDataFile -LiteralPath $manifestUnderTest).ModuleVersion)
+    }
     @($metadata.publicReleaseRefSpec) | Should -Contain '.*'
   }
 }

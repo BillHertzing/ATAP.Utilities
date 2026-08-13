@@ -16,6 +16,9 @@ function Resolve-DabMcpConnectionStringSecretName {
     [ValidateNotNullOrEmpty()]
     [string] $DatabaseHost = $env:COMPUTERNAME,
 
+    [ValidateNotNullOrEmpty()]
+    [string] $DatabaseName = 'ATAPUtilities',
+
     [string] $UserName = $env:USERNAME
   )
 
@@ -30,7 +33,7 @@ function Resolve-DabMcpConnectionStringSecretName {
       if (-not (Get-Command -Name 'Get-DbConnectionStringSecretDescriptor' -ErrorAction SilentlyContinue)) {
         Import-Module -Name 'ATAP.Utilities.BuildTooling.Secrets.PowerShell' -DisableNameChecking -WarningAction SilentlyContinue -ErrorAction Stop
       }
-      $parameters = @{ DatabaseName = 'ATAPUtilities'; DatabaseHost = $DatabaseHost; Environment = $Tier }
+      $parameters = @{ DatabaseName = $DatabaseName; DatabaseHost = $DatabaseHost; Environment = $Tier }
       if ($Tier -in @('Dev', 'Exp')) {
         $parameters['UserName'] = $UserName
       }

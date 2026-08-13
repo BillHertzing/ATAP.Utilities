@@ -20,7 +20,16 @@
 BeforeAll {
   $script:ModuleName = 'ATAP.Utilities.Security.Secrets.PowerShell'
   $script:ModuleRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).ProviderPath
-  $script:ModulePath = Join-Path $script:ModuleRoot "$script:ModuleName.psd1"
+
+  # Under the promoted-module gate the harness has already imported the package
+  # built from the feed. Importing the source manifest as well would load two
+  # modules of the same name, and every InModuleScope block below would fail.
+  $promotedManifest = [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'Process')
+  $script:ModulePath = if ([string]::IsNullOrWhiteSpace($promotedManifest)) {
+    Join-Path $script:ModuleRoot "$script:ModuleName.psd1"
+  } else {
+    $promotedManifest
+  }
 
   # Two syntactically valid, obviously fake bws access tokens. Distinct bodies and distinct
   # lengths, so a cross-slot write shows up in both the fingerprint and the length.
@@ -58,7 +67,7 @@ AfterAll {
   Remove-Variable -Name 'RotateTestState' -Scope Global -ErrorAction SilentlyContinue
 }
 
-Describe 'Invoke-RotateSecretsATAP' {
+Describe 'Invoke-RotateSecretsATAP' -Tag 'Unit' {
 
   BeforeEach {
     # Shared mutable state for the mocks. Global because Pester mock bodies execute in the
@@ -321,7 +330,7 @@ Describe 'Invoke-RotateSecretsATAP' {
   }
 }
 
-Describe 'Invoke-RotateSecretsATAP private helpers' {
+Describe 'Invoke-RotateSecretsATAP private helpers' -Tag 'Unit' {
 
   Context 'Get-SecureStringFingerprint' {
 

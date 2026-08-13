@@ -282,6 +282,31 @@ replace the task definitions. The resulting `ATAP-ParityAudit` and
 the primary compare workload: S4U has no reusable network credential for the peer SMB
 share.
 
+### Broker permission boundary for parity task registration
+
+`SvcAnsibleAdmin` is the elevation-broker identity, not the `SvcParityAudit` runtime
+identity. The supported installer uses Task Scheduler's folder-level
+`RegisterTaskDefinition` operation because the task-only update path is unsatisfiable:
+`schtasks /Change` demands a run-as password even for an S4U task, while Task Scheduler
+COM requires folder create/update rights to register or update a definition.
+
+Grant `SvcAnsibleAdmin` the constrained create/update access on `\ATAP` required by the
+typed `register-atap-parity-tasks` broker operation, preserving every pre-existing folder
+and task ACE. Keep the broker's own scheduled task under `\ATAP-Broker`, where
+`SvcAnsibleAdmin` has no folder rights, so the grant cannot be used to replace or
+reconfigure the broker itself. Do not substitute an NTFS grant on
+`C:\Windows\System32\Tasks` for the Task Scheduler DACL, and do not grant task execution,
+deletion, ownership, or security-descriptor rights beyond the reviewed installer
+contract.
+
+Task-definition mutation is a one-time migration onto fixed, administrator-owned
+dispatchers below `C:\Program Files\ATAP\ParityDispatchers`. Subsequent approved module
+version repoints rewrite only the applicable dispatcher file; they do not re-register a
+task or require its run-as credential. When the one-time migration targets a
+Password-logon task, the broker resolves the exact `SvcParityAudit.<host>` credential
+in memory; the request, result, and transcript must never carry that credential or a
+secret value.
+
 #### Peer host — `utat01`
 
 Changing the local `SvcParityAudit` password requires re-registering the peer task with

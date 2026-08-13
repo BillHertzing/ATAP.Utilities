@@ -263,13 +263,15 @@ _Teach / Tell how to create software._
 - [C# Packages — Build Process](CSharp-Packages-Build-Process.md) —
   Step-by-step C# package build flow. Also names the separate
   `Build\Invoke-RepoHealthGate.ps1` RepoHealth gate for shared MSBuild property
-  checks that must run after restore and before pack/publish.
+  checks that must run after restore and before pack/publish, and the stable
+  Visual Studio Build Tools 2026/MSBuild/NuGet deterministic pack prerequisite.
 - [C# Packages — Test Process](CSharp-Packages-Test-Process.md) —
   C# package testing process and expected test artifacts, including the
   repo-wide `tests\RepoHealth` Pester gate that is intentionally outside
   package/module test discovery.
 - [C# Packages — Pack and Push](CSharp-Packages-Pack-and-Push.md) —
-  Packaging and publishing flow for C# packages.
+  Packaging and publishing flow for C# packages, including the NuGet 7.8+
+  fail-closed gate, Git-derived deterministic timestamp, and two-pack hash proof.
 - [C# Packages — Versioning](CSharp-Packages-Versioning.md) —
   Versioning policy for C# packages across sprint and release promotion.
 - [PowerShell Modules — Build Process](PowerShell-Modules-Build-Process.md) —

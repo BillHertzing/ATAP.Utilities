@@ -4,6 +4,14 @@
 
 _Migrated from `_Planning/Explainers/0013-BuildTooling-CSharp-MSBuild-interaction.md` (lines 1-791). Describes how `Directory.Build.props`, `Directory.Build.targets`, the `ATAP.Utilities.BuildTooling.CSharp` task DLL, and `ATAP.Utilities.BuildTooling.targets` cooperate to give every solution project automatic version management, JSON-settings copying, multi-RID publishing, and NuGet push-to-ProGet during an ordinary `dotnet build` or `dotnet pack`._
 
+> **Production pack engine (Task 14.105):** local `dotnet pack` is not a
+> release-artifact source. The C# BuildMaster runner resolves stable Visual
+> Studio Build Tools 2026 MSBuild 18.8+, verifies the NuGet Build Tools component
+> and SDK-selected `NuGet.Build.Tasks.Pack.dll` are NuGet 7.8+, and requires
+> `Microsoft.NetCore.Component.SDK` for full-MSBuild SDK resolution. It invokes
+> `/t:Pack` with `Deterministic=true` and a Git-commit-derived
+> `DeterministicTimestamp`; the two-pack hash gate precedes publication.
+
 ---
 
 ## File Roles

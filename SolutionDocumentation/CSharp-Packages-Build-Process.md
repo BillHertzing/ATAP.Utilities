@@ -2,7 +2,7 @@
 
 > **Task 13.62 security cutover:** Inline `--api-key` and ProGet API-key environment examples below are superseded. `PublishAfterBuild` passes only `ProGet.Admin.API.Key` as a SecretName to its PowerShell wrapper.
 
-**Scope.** How `dotnet build` and `dotnet pack` turn the ~170 `.csproj` files in the
+**Scope.** How `dotnet build` and the sanctioned Visual Studio MSBuild `Pack` target turn the ~170 `.csproj` files in the
 ATAP.Utilities solution into NuGet packages. Focus is on **what happens on a
 developer workstation or BuildMaster agent** — the MSBuild file hierarchy, the
 custom task DLL that participates in every build, the bootstrap sequence that gets
@@ -17,6 +17,14 @@ that DLL into place, and the end-to-end data flow for one project build.
 > `Promote-ProGetPackage`. See [Immutable-Build-Strategy.md](Immutable-Build-Strategy.md)
 > for the policy and [BuildMaster-Pipeline-Topology.md](BuildMaster-Pipeline-Topology.md)
 > for how this build slots into the larger pipeline catalog.
+
+> **Deterministic production pack baseline (Task 14.105).** BuildMaster uses
+> `dotnet build`, then stable Visual Studio Build Tools 2026 MSBuild `/t:Pack`.
+> Required minimums are VS Build Tools/MSBuild 18.8 and NuGet Pack 7.8, plus
+> `Microsoft.NetCore.Component.SDK`. The repo pins stable SDK 10.0.400; the
+> runner validates the SDK-selected `NuGet.Build.Tasks.Pack.dll`, sets
+> `Deterministic=true`, and binds `DeterministicTimestamp` to the Git commit
+> epoch. Missing or older tooling blocks publication.
 
 **Not in this doc:**
 

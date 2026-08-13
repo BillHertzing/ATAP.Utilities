@@ -1,5 +1,53 @@
 # Release notes
 
+## 0.1.31
+
+- Task 14.13: `Save-SprintWorkSession` no longer resolves the Claude Code memory
+  directory as a child of whichever project key the transcript search settled on.
+  The store is now located independently — the sprint-worktree key is probed
+  first, then the stable-repo key — so a checkpoint whose transcript lives at the
+  sprint key and whose memory lives only at the stable key captures memory
+  instead of silently reporting success with zero files. The sprint key always
+  wins when both exist, so a live sprint store is never shadowed by a staler
+  stable one, and the key that supplied the memory is recorded in the roster as
+  `MemorySourceKey`.
+- Task 14.13: memory skips are now discriminated. `MemorySkipKind` is one of
+  `None` (the agent has no on-disk memory store — Codex, correct behavior),
+  `NotFound` (a store was expected at a known key and was not there — the defect
+  above), or `Empty` (the store existed but held nothing). Previously the only
+  machine-readable signal was a boolean, so a failed capture and a correct skip
+  produced structurally identical roster rows.
+- Task 14.13: **behavior change** — `Save-SprintWorkSession` now returns the
+  roster entry as a `PSCustomObject` (`OutputType` changed from `[void]`), so a
+  caller sees an unexpected `NotFound` without reading PSFramework output.
+  Callers that invoke it as a statement now emit that object to the pipeline;
+  suppress with `| Out-Null` where the output is unwanted.
+- Task 14.14: `Convert-TasksMdToSprintBoard` derives its default `-OutputPath`
+  from the input file name instead of a fixed `TASKS.html`. Regenerating a dotted
+  sprint board without an explicit output path now updates
+  `Tasks.SprintNNNN.html` rather than writing a stray `TASKS.html` and leaving
+  the real board stale while reporting success. Backward compatible: a legacy
+  `TASKS.md` still derives `TASKS.html`. `-OutputPath` now accepts an empty
+  string (validator relaxed from `ValidateNotNullOrEmpty` to `AllowEmptyString`)
+  and treats it, like a whitespace-only value, as "not supplied".
+
+## 0.1.29
+
+- Task 14.10: add Test-SprintEndWriteTarget and New-SprintEndDefectRoute,
+  and gate the SprintEnd close plan so a stable worktree substituted into
+  WorktreePaths is rejected before any phase runs. Defects discovered during
+  a close route to the active sprint worktree or to a durable next-sprint input
+  under the _Planning sprint worktree, never to a stable checkout.
+- Task 14.11: add Get-SprintEndApprovalPlan. Pull-request merge
+  authorization is recorded once through -MergeAuthorizationConfirmed
+  instead of re-evaluated by each layer that can prompt; a delegated agent
+  relays named authorization provenance or fails closed; and NuGet lock-file
+  runner availability becomes a deterministic NotApplicable/Enforced/Blocked
+  fact rather than an operator proceed anyway question.
+- Task 14.12: add Invoke-SprintEndRehearsal covering the dry-run,
+  stable-boundary, crash/resume, and full-close scenarios, with before/after
+  stable-worktree snapshots proving the rehearsal changed no stable repository.
+
 ## 0.1.27
 
 - Classify committed `SolutionDocumentation/*-Task-N.before.summary.json` and

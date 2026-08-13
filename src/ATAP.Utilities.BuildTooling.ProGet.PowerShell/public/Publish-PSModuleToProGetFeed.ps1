@@ -122,6 +122,9 @@ function Publish-PSModuleToProGetFeed {
     if (-not (Get-Command -Name 'Resolve-ProGetFeedFromSettings' -CommandType Function -ErrorAction SilentlyContinue)) {
       . $helperPath
     }
+    if (-not (Get-Command -Name 'Test-PSModulePackageSignature' -CommandType Function -ErrorAction SilentlyContinue)) {
+      . (Join-Path $PSScriptRoot 'Test-PSModulePackageSignature.ps1')
+    }
   }
 
   process {
@@ -138,6 +141,9 @@ function Publish-PSModuleToProGetFeed {
     }
     $resolvedNupkg = (Resolve-Path -LiteralPath $NupkgPath).ProviderPath -replace '\\', '/'
 
+    # Fail closed before feed resolution, repository mutation, or secret lookup.
+    $signatureVerification = Test-PSModulePackageSignature -NupkgPath $resolvedNupkg -RequireTimestamp
+
     # 2. Map tier -> feed metadata from $global:Settings.
   $feed = Resolve-ProGetFeedFromSettings -FeedType 'powershellget' -Tier $canonicalTier
     $feedName = $feed.FeedName
@@ -152,6 +158,7 @@ function Publish-PSModuleToProGetFeed {
         FeedName        = $feedName
         FeedUri         = $feedUri
         Published       = $false
+        SignatureVerified = $signatureVerification.Valid
         ResponseSummary = "WhatIf: planned publish of '$resolvedNupkg' to '$feedName'"
       }
     }
@@ -206,6 +213,7 @@ function Publish-PSModuleToProGetFeed {
       FeedName        = $feedName
       FeedUri         = $feedUri
       Published       = $published
+      SignatureVerified = $signatureVerification.Valid
       ResponseSummary = $summary
     }
   }

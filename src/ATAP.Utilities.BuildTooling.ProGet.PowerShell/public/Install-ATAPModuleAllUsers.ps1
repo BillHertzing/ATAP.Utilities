@@ -18,15 +18,16 @@ The install is deliberately strict and all-or-nothing:
      answers the OData v2 form with "OData method is not implemented".
   3. Verifies the downloaded package against -ExpectedSha256 before anything is written under
      Program Files, so a substituted or corrupted artifact cannot be installed.
-  4. Validates every declared dependency against the INSTALLED floor read from the package's own
+  4. Verifies every signable PowerShell file has a valid timestamped Authenticode signature.
+  5. Validates every declared dependency against the INSTALLED floor read from the package's own
      manifest, rather than asking the feed to resolve it.
-  5. Refuses to overwrite an existing version folder, because ProGet versions are immutable and
+  6. Refuses to overwrite an existing version folder, because ProGet versions are immutable and
      silently replacing one hides which bits are actually deployed.
-  6. Stages in a temp folder, then creates the version folder under the AllUsers modules root and
+  7. Stages in a temp folder, then creates the version folder under the AllUsers modules root and
      copies the staged contents into it. Creating the target in place is intentional: a move from
      the broker service account's temporary directory preserves that account's restrictive ACL,
      making the apparent AllUsers install unreadable to normal consumers.
-  7. Rolls back a version folder THIS run created if any validation fails, so a retry reports the
+  8. Rolls back a version folder THIS run created if any validation fails, so a retry reports the
      real error instead of "Version folder already exists".
 
 Every run writes a transcript and a JSON result record under `_generated\deploy\` (SC-0033).
@@ -62,7 +63,7 @@ DependencyFailures, VersionPath, RolledBack, TranscriptPath, ResultJsonPath, Err
 .EXAMPLE
 Install-ATAPModuleAllUsers -ModuleName 'ATAP.Utilities.BuildTooling.Common.PowerShell' `
   -RequiredVersion '0.1.8' -Repository 'powershellget-stable' `
-  -FeedUrl 'http://localhost:50000/nuget/powershellget-stable' `
+  -FeedUrl 'https://localhost:50000/nuget/powershellget-stable' `
   -ExpectedSha256 '6795AD76AC3DD5CC35AAA2CDCEFC734B8043F498A8C9F2103F19EC8169BD9F7F'
 
 .NOTES
@@ -88,6 +89,13 @@ function Install-ATAPModuleAllUsers {
 
     [Parameter(Mandatory = $true, Position = 3)]
     [ValidateNotNullOrEmpty()]
+    [ValidateScript({
+      $uri = [uri]$_
+      if (-not $uri.IsAbsoluteUri -or $uri.Scheme -ne 'https') {
+        throw 'FeedUrl must be an absolute HTTPS URI. Cleartext module installation is not allowed.'
+      }
+      $true
+    })]
     [string]$FeedUrl,
 
     [Parameter(Mandatory = $true, Position = 4)]
@@ -130,6 +138,7 @@ function Install-ATAPModuleAllUsers {
       EndTime            = $null
       ExitStatus         = 0
       ActualSha256       = $null
+      SignatureVerified = $false
       DownloadUri        = $null
       DependencyFailures = @()
       VersionPath        = $null
@@ -185,6 +194,11 @@ function Install-ATAPModuleAllUsers {
         $result.ExitStatus = 1
         throw "SHA-256 validation failed for $nupkgPath. Expected $ExpectedSha256, actual $($result.ActualSha256)."
       }
+
+      $signatureEvidencePath = Join-Path -Path $DeployRoot -ChildPath 'signature-verification'
+      Test-PSModulePackageSignature -NupkgPath $nupkgPath `
+        -ResultsPath $signatureEvidencePath -RequireTimestamp -ErrorAction Stop | Out-Null
+      $result.SignatureVerified = $true
 
       $extractPath = Join-Path -Path $tempRoot -ChildPath 'expand'
       Expand-Archive -Path $nupkgPath -DestinationPath $extractPath -Force

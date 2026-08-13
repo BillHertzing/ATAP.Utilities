@@ -14,7 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
+    <ProjectReference Include="..\..\..\src\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>
 
 </Project>

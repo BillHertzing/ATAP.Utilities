@@ -11,8 +11,6 @@ database lifecycle management for the ATAP ecosystem. It covers:
   verification, and rollback-readiness checks.
 - **SQL Server lifecycle helpers** — instance installation, developer scratch databases,
   feature shared databases, backup jobs, and connection string resolution.
-- **Rule export utilities** — export Rules from the ATAPUtilities database for review
-  or archiving.
 - **Instantiation inventory helpers** — scan repository PowerShell/C# module source
   into database-shaped `SourceModule` rows and render manifestation evidence for
   Sprint 0012 instantiation work.
@@ -92,12 +90,6 @@ Use the module-level getting started guide for the lifecycle workflow:
 
 See [Task 13.80 — Instantiation Query, Ingestion, and Execution](../../SolutionDocumentation/Task-13.80-Instantiation-Execution.md)
 for the execution contract, safety gates, and verification evidence.
-| `Export-RuleToTextFile`                   | Rules               | Export a Rule from the ATAPUtilities database to a formatted text file.                                                    |
-
-### Example Scripts
-
-- `public/Example-RuleExport.ps1` — demonstrates `Export-RuleToTextFile` usage
-
 - Version bumped to 0.1.10 in Sprint 11
 
 ## Functional area

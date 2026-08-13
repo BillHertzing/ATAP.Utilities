@@ -17,6 +17,9 @@ function Invoke-SprintAIAdapterLifecycle {
     Redirects user-scope caller targets beneath TargetRoot for isolated tests.
   .PARAMETER AllowUserGlobalWrite
     Explicit approval required before live user/global targets can be written.
+    User-global targets change only when this switch is present. Per-repository
+    lifecycle calls without it skip the global set; the authoritative
+    SharedVSCode lifecycle call supplies it once.
   .PARAMETER CheckpointConfirmed
     Confirms a checkpoint completed before live user/global replacement.
   .PARAMETER EvidenceRoot
@@ -134,6 +137,9 @@ function Invoke-SprintAIAdapterLifecycle {
             Force = $true
             Confirm = $false
             WhatIf = $WhatIfPreference
+          }
+          if ($renderCommand.Parameters.ContainsKey('RetireCodexProjectAgents')) {
+            $renderParameters.RetireCodexProjectAgents = $true
           }
           $maximumRenderPasses = 5
           $renderResults = [System.Collections.Generic.List[object]]::new()

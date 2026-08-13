@@ -16,9 +16,11 @@
     halves of "test the promoted module" cleanly:
 
       * The MODULE UNDER TEST is the promoted .nupkg. This cmdlet
-        restores it from the tier's PowerShellGet feed with
-        Save-PSResource and imports it, so the commands exercised are the
-        promoted artifact's.
+        restores it from the tier's PowerShellGet feed with Save-Module
+        and imports it, so the commands exercised are the promoted
+        artifact's. PSResourceGet's Save-PSResource is deliberately NOT
+        used: it queries the OData v2 FindPackagesById() endpoint, which
+        this ProGet edition does not implement and answers with 404.
       * The TESTS THEMSELVES come from the source tree's tests/ folder.
         Pester test files are never shipped inside the .nupkg
         (PowerShell-Modules-Build-Process.md S2), so they cannot be run
@@ -54,10 +56,10 @@
 .PARAMETER Feed
     The PowerShellGet feed the promoted module currently lives in, e.g.
     'powershellget-development'. The feed must be registered as a
-    PSResourceRepository of the same name (the build pipeline registers
-    the tier feeds); Save-PSResource restores from it by `-Repository`.
+    PSRepository of the same name (the build pipeline registers the tier
+    feeds); Save-Module restores from it by `-Repository`.
     When ProGetBaseUrl is supplied, the package is restored from ProGet's
-    direct package endpoint instead of PSResourceGet's OData query path.
+    direct package endpoint instead.
 
 .PARAMETER Tier
     The current BuildMaster tier:
@@ -278,9 +280,20 @@ function Invoke-PromotedModuleTests {
             # ---- Step 1: restore the promoted module from the tier feed ----
             $restoreKey = ("$Name.$Version.$Feed" -replace '[^A-Za-z0-9._-]', '-')
             $restorePath = Join-Path $WorkingDirectory (Join-Path '_generated' (Join-Path '_promoted-modules' $restoreKey))
-            if (-not (Test-Path -Path $restorePath)) {
-                New-Item -ItemType Directory -Path $restorePath -Force | Out-Null
+            # The restore key is name+version+feed, so a re-run reuses the same
+            # folder. Purge it first: the two restore branches write DIFFERENT
+            # layouts into it -- the ProGet branch extracts to '<restore>/package'
+            # while the feed branch writes '<restore>/<Name>/<Version>'. Left
+            # behind, the stale layout is still discovered by the manifest search
+            # below, and 'package' sorts after the module name under a descending
+            # FullName sort, so a stale extract silently wins over a fresh
+            # restore. That turns a failed restore into a green test run against
+            # a previous artifact -- the worst possible failure mode for a gate
+            # whose entire purpose is proving WHICH bytes were tested.
+            if (Test-Path -Path $restorePath) {
+                Remove-Item -LiteralPath $restorePath -Recurse -Force -ErrorAction SilentlyContinue
             }
+            New-Item -ItemType Directory -Path $restorePath -Force | Out-Null
 
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Restoring promoted module $target from feed '$Feed' to '$restorePath'"
             if (-not [string]::IsNullOrWhiteSpace($ProGetBaseUrl)) {
@@ -321,16 +334,35 @@ function Invoke-PromotedModuleTests {
                 }
                 Expand-Archive -LiteralPath $nupkgPath -DestinationPath $extractPath -Force
             } else {
+                # Restore with PowerShellGet's Save-Module, NOT PSResourceGet's
+                # Save-PSResource.
+                #
+                # PSResourceGet cannot consume these ProGet PowerShell-type feeds
+                # at all. Registered with the '/v2' suffix it classifies the
+                # repository but 404s every call, because '/nuget/<feed>/v2' is
+                # not a real ProGet route; registered bare it reports "not a known
+                # repository type"; and these feeds expose no '/v3/index.json'.
+                # ProGet serves OData v2 only at the bare feed URL, which
+                # PSResourceGet will not accept. This is pre-existing and is not
+                # fixable from here.
+                #
+                # Scope note: the BuildMaster pipeline passes -ProGetBaseUrl and so
+                # takes the direct /package/<name>/<version> branch above, which
+                # never touched Save-PSResource. This branch is the one used when
+                # ProGetBaseUrl is absent (ad-hoc and local invocations), and it
+                # was dead on arrival for exactly the reason described. Save-Module
+                # (PowerShellGet v2) resolves the same package/version from the
+                # same feed, so this branch now works instead of always failing.
                 for ($attempt = 1; $attempt -le $RestoreRetryCount; $attempt++) {
                     try {
-                        Save-PSResource -Name $Name -Version $Version -Repository $Feed -Path $restorePath -TrustRepository -ErrorAction Stop
+                        Save-Module -Name $Name -RequiredVersion $Version -Repository $Feed -Path $restorePath -Force -ErrorAction Stop
                         break
                     } catch {
                         if ($attempt -ge $RestoreRetryCount) {
                             throw
                         }
 
-                        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "Promoted module Save-PSResource attempt $attempt/$RestoreRetryCount failed for $target from '$Feed': $($_.Exception.Message). Retrying in $RestoreRetryDelaySeconds second(s)."
+                        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "Promoted module Save-Module attempt $attempt/$RestoreRetryCount failed for $target from '$Feed': $($_.Exception.Message). Retrying in $RestoreRetryDelaySeconds second(s)."
                         if ($RestoreRetryDelaySeconds -gt 0) {
                             Start-Sleep -Seconds $RestoreRetryDelaySeconds
                         }
@@ -342,7 +374,7 @@ function Invoke-PromotedModuleTests {
                 Sort-Object -Property FullName -Descending |
                 Select-Object -First 1
             if ($null -eq $savedManifest) {
-                throw "Save-PSResource did not produce a '$Name.psd1' under '$restorePath' for $target."
+                throw "The promoted-module restore did not produce a '$Name.psd1' under '$restorePath' for $target."
             }
             $savedModulePath = $savedManifest.FullName
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Promoted module restored; manifest at '$savedModulePath'"

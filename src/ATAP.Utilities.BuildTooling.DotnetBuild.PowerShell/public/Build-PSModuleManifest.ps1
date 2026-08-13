@@ -146,6 +146,11 @@ function Build-PSModuleManifest {
           }
         )
       }
+      $sourceRequiredModules = if ($sourceManifest.ContainsKey('RequiredModules')) {
+        @($sourceManifest.RequiredModules | Where-Object { $_ })
+      } else {
+        @()
+      }
       $params = @{
         Path          = $OutputManifestPath
         ModuleVersion = $ModuleVersion
@@ -159,7 +164,7 @@ function Build-PSModuleManifest {
           @{ Key = 'Description'; Value = $sourceManifest.Description },
           @{ Key = 'PowerShellVersion'; Value = if ($sourceManifest.PowerShellVersion) { [version]$sourceManifest.PowerShellVersion } else { $null } },
           @{ Key = 'CompatiblePSEditions'; Value = @($sourceManifest.CompatiblePSEditions | Where-Object { $_ }) },
-          @{ Key = 'RequiredModules'; Value = if ($familyRequiredModules.Count -gt 0) { $familyRequiredModules } else { @($sourceManifest.RequiredModules | Where-Object { $_ }) } },
+          @{ Key = 'RequiredModules'; Value = if ($familyRequiredModules.Count -gt 0) { $familyRequiredModules } else { $sourceRequiredModules } },
           @{ Key = 'CmdletsToExport'; Value = @($sourceManifest.CmdletsToExport | Where-Object { $_ }) },
           @{ Key = 'VariablesToExport'; Value = @($sourceManifest.VariablesToExport | Where-Object { $_ }) }
         )) {

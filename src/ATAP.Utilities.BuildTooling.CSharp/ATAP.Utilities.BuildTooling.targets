@@ -154,11 +154,13 @@
   </Target>
 
   <!-- NuGet Publish target: push package to ProGet nuget-experimental feed after successful package generation -->
-  <!-- ProGet URL defaults to localhost:50000; override via $(ProGetExperimentalFeedUrl) property or PROGET_URL env var -->
+  <!-- ProGet URL defaults to https://utat022:50000; override via $(ProGetExperimentalFeedUrl) property or PROGET_URL env var -->
+  <!-- HTTPS only since the utat022 PKI change; ProGet refuses plain HTTP, and the
+       certificate SAN covers only 'utat022' so 'localhost' fails TLS validation. -->
   <!-- Authenticated operations pass only a SecretName to a PowerShell leaf. -->
   <PropertyGroup>
-    <ProGetExperimentalFeedUrl Condition="'$(ProGetExperimentalFeedUrl)' == ''">http://localhost:50000/nuget/nuget-experimental/v3/index.json</ProGetExperimentalFeedUrl>
-    <ProGetBaseUrl Condition="'$(ProGetBaseUrl)' == ''">http://localhost:50000</ProGetBaseUrl>
+    <ProGetExperimentalFeedUrl Condition="'$(ProGetExperimentalFeedUrl)' == ''">https://utat022:50000/nuget/nuget-experimental/v3/index.json</ProGetExperimentalFeedUrl>
+    <ProGetBaseUrl Condition="'$(ProGetBaseUrl)' == ''">https://utat022:50000</ProGetBaseUrl>
     <ProGetApiKeySecretName Condition="'$(ProGetApiKeySecretName)' == ''">ProGet.Admin.API.Key</ProGetApiKeySecretName>
   </PropertyGroup>
   <Target Name="PublishAfterBuild" AfterTargets="GenerateNuspec"

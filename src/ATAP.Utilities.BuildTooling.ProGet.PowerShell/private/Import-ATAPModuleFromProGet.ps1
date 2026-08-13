@@ -46,6 +46,41 @@ function Import-ATAPModuleFromProGet {
     }
   }
 
+  # Prefer the complete feed URI recorded in host settings (ProGetFeedPowerShell<Tier>Uri).
+  # That single value is the source of truth every other consumer uses - the BuildMaster
+  # pipeline, NuGet.Config, and the registered PSRepositories - so reading it keeps this
+  # function correct for free when the scheme, host, or port changes. Deriving a URI from
+  # the separate ProGetAdminUri* components is a second, parallel definition of the same
+  # fact, and it is what silently went stale across the utat022 HTTPS migration.
+  if ([string]::IsNullOrWhiteSpace($sourceLocation) -and $null -ne $global:Settings -and
+      (Get-Command -Name 'Resolve-BuildToolingSettingValue' -CommandType Function -ErrorAction SilentlyContinue)) {
+    $feedUriSettingNameByRepository = @{
+      'powershellget-experimental' = 'ProGetFeedPowerShellExperimentalUri'
+      'powershellget-development'  = 'ProGetFeedPowerShellDevelopmentUri'
+      'powershellget-integration'  = 'ProGetFeedPowerShellIntegrationUri'
+      'powershellget-qa'           = 'ProGetFeedPowerShellQAUri'
+      'powershellget-stable'       = 'ProGetFeedPowerShellStableUri'
+    }
+    $feedUriSettingName = $feedUriSettingNameByRepository[$RepositoryName]
+    if (-not [string]::IsNullOrWhiteSpace($feedUriSettingName)) {
+      try {
+        $settingsUri = [string](Resolve-BuildToolingSettingValue -Name $feedUriSettingName)
+        if (-not [string]::IsNullOrWhiteSpace($settingsUri)) {
+          $sourceLocation = $settingsUri
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+            -Message "Resolved feed URI for '$RepositoryName' from setting '$feedUriSettingName'."
+        }
+      }
+      catch {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+          -Message "Setting '$feedUriSettingName' did not resolve. Falling back to component-derived ProGet defaults. Exception: $($_.Exception.Message)"
+      }
+    }
+  }
+
+  # Last resort only: no feed metadata and no settings entry, so assemble a URI from the
+  # ProGetAdminUri* components. Anything hardcoded below is a guess about deployment
+  # topology and must be kept in step with host settings.
   if ([string]::IsNullOrWhiteSpace($sourceLocation)) {
     $scheme = [string]$env:ProGetScheme
     $hostName = [string]$env:ProGetHost
@@ -63,8 +98,11 @@ function Import-ATAPModuleFromProGet {
       }
     }
 
-    if ([string]::IsNullOrWhiteSpace($scheme)) { $scheme = 'http' }
-    if ([string]::IsNullOrWhiteSpace($hostName)) { $hostName = 'localhost' }
+    # ProGet is HTTPS-only since the utat022 PKI change, and the certificate SAN covers
+    # only 'utat022' -- a 'localhost' fallback fails TLS validation even though the same
+    # service answers there. Keep these last-resort defaults aligned with host settings.
+    if ([string]::IsNullOrWhiteSpace($scheme)) { $scheme = 'https' }
+    if ([string]::IsNullOrWhiteSpace($hostName)) { $hostName = 'utat022' }
     $port = 50000
     if (-not [string]::IsNullOrWhiteSpace($portValue)) {
       $parsedPort = 0

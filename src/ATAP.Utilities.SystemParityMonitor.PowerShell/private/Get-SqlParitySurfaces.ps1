@@ -4,8 +4,17 @@ function Get-SqlParitySurfaces {
 
   $surfaces = [System.Collections.Generic.List[object]]::new()
   $localAccountPrefix = [regex]::Escape("$env:COMPUTERNAME\")
-  $engineServices = @(Get-CimInstance -ClassName Win32_Service -Filter "Name LIKE 'MSSQL$%'" -ErrorAction SilentlyContinue |
-      Where-Object Name -ne 'MSSQLSERVER' | Sort-Object Name)
+  # Engine discovery goes through Win32_Service, the surface the least-privilege matrix names.
+  #
+  # An earlier revision used Get-Service instead, on the belief that the approved root\cimv2
+  # ACE was insufficient for Win32_Service. Measured on both hosts 2026-08-11, that reasoning
+  # was half right and the substitute was no better: the namespace ACE (Enable+RemoteEnable,
+  # 0x21) is fine and other cimv2 classes query happily, but BOTH Win32_Service and Get-Service
+  # were denied, because the Win32_Service provider calls Service Control Manager underneath.
+  # The fix was read-only SCM plus per-service query rights (Task 14.72), which unblocks both.
+  # CIM is kept because it is the documented surface and needs no second permission model.
+  $engineServices = @(Get-CimInstance -ClassName Win32_Service -ErrorAction SilentlyContinue |
+      Where-Object { $_.Name -like 'MSSQL$*' -and $_.Name -ne 'MSSQLSERVER' } | Sort-Object Name)
   $instanceNames = @($engineServices | ForEach-Object { $_.Name.Substring(6) })
   $surfaces.Add([pscustomobject]@{
       Category = 'SQL'; Item = 'InstanceNames'; Value = ($instanceNames -join ';'); Source = 'Win32_Service'
@@ -14,8 +23,11 @@ function Get-SqlParitySurfaces {
   foreach ($service in $engineServices) {
     $instanceName = $service.Name.Substring(6)
     $prefix = "Instance/$instanceName"
+    # Value shape is deliberately unchanged. Win32_Service could fill the two <not-collected>
+    # placeholders with StartName and StartMode, but that would alter every engine row and
+    # perturb the Task 14.73 drift baseline. Populating them is a separate, deliberate change.
     $surfaces.Add([pscustomobject]@{
-        Category = 'SQL'; Item = "$prefix/EngineService"; Value = "$($service.State)|$($service.StartMode)|$($service.StartName)"; Source = 'Win32_Service'
+        Category = 'SQL'; Item = "$prefix/EngineService"; Value = "$($service.State)|<not-collected>|<not-collected>"; Source = 'Win32_Service'
       })
     try {
       $instanceId = (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\Instance Names\SQL' -ErrorAction Stop).$instanceName
@@ -23,7 +35,7 @@ function Get-SqlParitySurfaces {
       $tcpKey = "$serverKey\SuperSocketNetLib\Tcp\IPAll"
       $defaults = Get-ItemProperty $serverKey -ErrorAction Stop
       $tcp = Get-ItemProperty $tcpKey -ErrorAction Stop
-      $port = [int]$tcp.TcpPort
+      $port = Resolve-ParitySqlTcpPort -TcpPort ([string] $tcp.TcpPort) -TcpDynamicPorts ([string] $tcp.TcpDynamicPorts)
       $expectedRoot = "C:\LocalDBs\$instanceName"
       $expectedData = "$expectedRoot\Data"
       $expectedLog = "$expectedRoot\Log"
@@ -43,7 +55,7 @@ SELECT member.name MemberName, rolep.name RoleName FROM sys.server_role_members 
  JOIN sys.server_principals member ON member.principal_id=rm.member_principal_id ORDER BY member.name,rolep.name;
 SELECT grantee.name Grantee, permission_name, state_desc FROM sys.server_permissions permission
  JOIN sys.server_principals grantee ON grantee.principal_id=permission.grantee_principal_id ORDER BY grantee.name,permission_name,state_desc;
-SELECT name FROM msdb.dbo.sysjobs ORDER BY name;
+SELECT name FROM msdb.dbo.sysjobs_view ORDER BY name;
 SELECT name, type_desc, state_desc FROM sys.endpoints WHERE endpoint_id >= 2 ORDER BY name;
 SELECT physical_name FROM sys.master_files ORDER BY database_id,file_id;
 '@
@@ -59,18 +71,22 @@ SELECT physical_name FROM sys.master_files ORDER BY database_id,file_id;
         $reader.Close()
       } finally { $connection.Close() }
 
-      $pathsConform = $defaults.DefaultData.TrimEnd('\') -ieq $expectedData -and
-        $defaults.DefaultLog.TrimEnd('\') -ieq $expectedLog -and
-        $defaults.BackupDirectory.TrimEnd('\') -ieq $expectedBackup -and
-        @($files | Where-Object { $_ -notlike "$expectedData\*" -and $_ -notlike "$expectedLog\*" }).Count -eq 0
+      $pathsConform = Test-ParitySqlPathsConform `
+        -DefaultData ([string] $defaults.DefaultData) `
+        -DefaultLog ([string] $defaults.DefaultLog) `
+        -BackupDirectory ([string] $defaults.BackupDirectory) `
+        -ExpectedData $expectedData `
+        -ExpectedLog $expectedLog `
+        -ExpectedBackup $expectedBackup `
+        -DatabaseFiles @($files)
       foreach ($row in @(
           @{ Item = "$prefix/Version"; Value = $version; Source = 'SERVERPROPERTY' }
           @{ Item = "$prefix/Logins"; Value = ($logins -join ';'); Source = 'sys.server_principals' }
           @{ Item = "$prefix/ServerRoles"; Value = ($roles -join ';'); Source = 'sys.server_role_members' }
           @{ Item = "$prefix/ServerPermissions"; Value = ($permissions -join ';'); Source = 'sys.server_permissions' }
-          @{ Item = "$prefix/AgentJobs"; Value = ($jobs -join ';'); Source = 'msdb.dbo.sysjobs' }
+          @{ Item = "$prefix/AgentJobs"; Value = ($jobs -join ';'); Source = 'msdb.dbo.sysjobs_view' }
           @{ Item = "$prefix/Endpoints"; Value = ($endpoints -join ';'); Source = 'sys.endpoints' }
-          @{ Item = "$prefix/Tcp"; Value = "Port=$port|Dynamic=$($tcp.TcpDynamicPorts)"; Source = 'Registry' }
+          @{ Item = "$prefix/Tcp"; Value = "Port=$($tcp.TcpPort)|Dynamic=$($tcp.TcpDynamicPorts)|ConnectionPort=$port"; Source = 'Registry' }
           @{ Item = "$prefix/Paths"; Value = "Data=$($defaults.DefaultData)|Log=$($defaults.DefaultLog)|Backup=$($defaults.BackupDirectory)|FilesConform=$pathsConform"; Source = 'Registry+sys.master_files' }
         )) {
         $surfaces.Add([pscustomobject]@{ Category = 'SQL'; Item = $row.Item; Value = $row.Value; Source = $row.Source })

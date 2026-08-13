@@ -17,7 +17,7 @@ following `_Planning/InformationForTheFuture/PlanPowerShellSecurityReorganizatio
 | --- | --- | --- |
 | `ATAP.Utilities.Security.Powershell` | Umbrella. Residual functions + **re-exports this child** for backward compatibility. | Existing |
 | `ATAP.Utilities.Security.Secrets.PowerShell` | **This module.** Bitwarden functions today. | Pilot, partial |
-| `ATAP.Utilities.Security.PKI.PowerShell` | Certificate / PKI functions. | Not yet extracted (plan Task 5.7) |
+| `ATAP.Utilities.Security.PKI.PowerShell` | Certificate / PKI functions. | Extracted, Sprint 0014 Stream E |
 
 Only the **Bitwarden** functions moved in this iteration. The five non-Bitwarden secret-vault
 functions (`Get-UsersSecretVaultInfo`, `Open-UsersSecretVault`, `Unlock-UsersSecretVault`,
@@ -28,16 +28,25 @@ in the umbrella and move later (plan Task 5.6).
 
 | Function | Aliases | Notes |
 | --- | --- | --- |
+| `Get-CredentialFile` | — | Imports an existing absolute-path DPAPI credential file and verifies it is a `PSCredential`. |
 | `Get-BitWardenCredential` | — | Loads/creates encrypted BitWarden login + unlock credentials. Supports `-WhatIf` (Task 12.55.c) |
 | `Invoke-RotateSecretsATAP` | — | **New.** Rotates the two machine-account access tokens. See below |
 | `List-BitwardenSecrets` | — | Non-approved verb; rename deferred (Task 12.55.a) |
 | `Load-BitwardenBackup` | — | Non-approved verb; rename deferred. **Was unexported in the umbrella manifest — now exported.** |
 | `New-BitwardenBackup` | — | |
+| `Set-CredentialFile` | — | Prompts for and writes an absolute-path DPAPI credential file. `-Force` is required to create its directory or replace a file; supports `-WhatIf`. |
 | `Set-BitWardenSecret` | `New-BWSecret`, `Add-BitWardenLogin` | |
 | `Sync-BitWardenDedicatedSecrets` | `Sync-DedicatedSecrets` | Calls `Test-SecretVault` from `Microsoft.PowerShell.SecretManagement` |
 
-`Invoke-RotateSecretsATAP` is **not** re-exported by the umbrella. It is a new function, not a moved
-name, so no existing consumer expects to find it there.
+`Invoke-RotateSecretsATAP` is re-exported by the umbrella with the rest of the Secrets compatibility
+surface. Existing consumers do not require it, but umbrella-only imports now receive one coherent
+Secrets child surface in both source and packaged modules.
+
+`Get-CredentialFile` and `Set-CredentialFile` were moved from the machine profile in Sprint 0014
+Task 14.62. The profile deliberately does not import this module at startup; PowerShell autoloads
+the child only when a caller invokes one of the functions. Both accept only absolute paths. The
+set function requires `-Force` before creating a credential directory or replacing an existing
+file, and `-WhatIf` neither prompts nor writes.
 
 ## `Invoke-RotateSecretsATAP`
 

@@ -1023,15 +1023,15 @@ captures full command arguments, so the key value appeared in plaintext in every
 execution log.
 
 **Contributing factor:** The Bitwarden entry was named `ProGet-BuildMaster-API-Key`
-(hyphen-separated), inconsistent with the convention used by all other secrets
-(`PROGET_ADMIN_API_KEY`, etc.). The env var was `PROGET_BUILDMASTER_KEY`, also
-inconsistent — it lacked the `_API_` infix that indicates an API key.
+(hyphen-separated), inconsistent with the current dotted SecretName convention.
+The env var was `PROGET_BUILDMASTER_KEY`, also inconsistent — it lacked the
+`_API_` infix that indicates an API key.
 
 **Actions taken:**
 
 1. Generated a new BuildMaster API key in **Administration → API Keys & Access Logs**
 2. Disabled the compromised key in the same UI
-3. Renamed the Bitwarden entry to `ProGet_BuildMaster_API_Key` and updated the stored key value
+3. Renamed the Bitwarden entry to `ProGet.BuildMaster.API.Key` and updated the stored key value
 4. Renamed the environment variable to `PROGET_BUILDMASTER_API_KEY` throughout all repos
 5. Updated the OtterScript Build plan to wrap the key with `$Obscure(...)`:
 
@@ -1051,8 +1051,9 @@ contain the key value; old key disabled (returns 403).
 
 These rules are now project policy, derived from the actions above:
 
-1. **API-key Bitwarden entries** use underscore separators and the `_API_KEY` or
-   `_API_TOKEN` suffix to match the environment-variable naming convention.
+1. **API-key Bitwarden SecretNames** use dotted notation such as
+   `ProGet.BuildMaster.API.Key`. Environment variables, when an integration truly
+   requires them, remain `ALL_UPPERCASE_WITH_UNDERSCORES`.
 2. **All OtterScript plans MUST** use `$Obscure(...)` when reading secrets from
    environment variables before passing them as command arguments. Forgetting `$Obscure()`
    is a recurrence of INC-001.
@@ -1066,7 +1067,7 @@ _Migrated from `_Planning/Explainers/0020-bitwarden-naming-convention.md`. Autho
 ### Per-Sprint Secrets
 
 ```text
-dbConnectionString-<Database>-<Host>-<Tier>-<DeveloperUsername>
+dbConnectionString.<Database>.<Host>.<Tier>.<DeveloperUsername>
 ```
 
 | Field                 | Values                                          |
@@ -1078,13 +1079,13 @@ dbConnectionString-<Database>-<Host>-<Tier>-<DeveloperUsername>
 
 **12 secrets per developer per sprint** (3 databases × 2 hosts × 2 tiers).
 
-Example: `dbConnectionString-ATAPUtilities-UTAT022-Dev-whertzing`,
-`dbConnectionString-AceCommander-localhost-Exp-whertzing`, etc.
+Example: `dbConnectionString.ATAPUtilities.UTAT022.Dev.whertzing`,
+`dbConnectionString.AceCommander.localhost.Exp.whertzing`, etc.
 
 ### Permanent Secrets
 
 ```text
-dbConnectionString-<Database>-<Host>-<Tier>
+dbConnectionString.<Database>.<Host>.<Tier>
 ```
 
 No `<DeveloperUsername>` suffix.
@@ -1097,8 +1098,8 @@ No `<DeveloperUsername>` suffix.
 
 **6 secrets per workstation** (2 databases × 3 tiers).
 
-Examples: `dbConnectionString-ATAPUtilities-utat022-Production`,
-`dbConnectionString-AceCommander-utat022-Integration`.
+Examples: `dbConnectionString.ATAPUtilities.utat022.Production`,
+`dbConnectionString.AceCommander.utat022.Integration`.
 
 ### Connection String Format
 

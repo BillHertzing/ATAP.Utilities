@@ -1,6 +1,6 @@
 #Requires -Version 7.0
 # Pester 5+ tests for Invoke-PromotedModuleTests (Stream M3).
-# Save-PSResource, Import-Module, Invoke-PSModulePesterTests and the
+# Save-Module, Import-Module, Invoke-PSModulePesterTests and the
 # filesystem cmdlets are mocked; no real feed restore or test run happens.
 
 BeforeAll {
@@ -16,13 +16,13 @@ BeforeAll {
         function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
     }
 
-    # Stand-in for the PSResourceGet cmdlet so the tests do not depend on
-    # it being installed and so Pester's Mock can replace it.
-    if (-not (Get-Command Save-PSResource -ErrorAction SilentlyContinue)) {
-        function global:Save-PSResource {
+    # Stand-in for the PowerShellGet restore cmdlet so the tests do not depend
+    # on it being installed and so Pester's Mock can replace it.
+    if (-not (Get-Command Save-Module -ErrorAction SilentlyContinue)) {
+        function global:Save-Module {
             param(
-                [string]$Name, [string]$Version, [string]$Repository, [string]$Path,
-                [switch]$TrustRepository,
+                [string]$Name, [string]$RequiredVersion, [string]$Repository, [string]$Path,
+                [switch]$Force,
                 [System.Management.Automation.ActionPreference]$ErrorAction
             )
         }
@@ -51,7 +51,7 @@ AfterAll {
         Remove-Variable -Name ProGetBaseUrl -Scope Global -ErrorAction SilentlyContinue
     }
 
-    Remove-Item function:global:Save-PSResource -ErrorAction SilentlyContinue
+    Remove-Item function:global:Save-Module -ErrorAction SilentlyContinue
     Remove-Item function:global:Invoke-PSModulePesterTests -ErrorAction SilentlyContinue
 }
 
@@ -70,7 +70,7 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
         Mock New-Item { }
         Mock Test-Path { $true }
         Mock Remove-Item { }
-        Mock Save-PSResource { }
+        Mock Save-Module { }
         Mock Invoke-WebRequest { }
         Mock Start-Sleep { }
         Mock Expand-Archive { }
@@ -139,7 +139,7 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
             $result.PesterTier      | Should -Be 'Alpha'
             $result.ResponseSummary | Should -Match 'WhatIf'
             $result.InnerResult     | Should -BeNullOrEmpty
-            Assert-MockCalled Save-PSResource -Times 0 -Exactly -Scope It
+            Assert-MockCalled Save-Module -Times 0 -Exactly -Scope It
             Assert-MockCalled Invoke-PSModulePesterTests -Times 0 -Exactly -Scope It
         }
     }
@@ -198,8 +198,8 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
             $result.ResponseSummary | Should -Match 'Development-tier promoted-module tests using Alpha Pester filter'
             $result.InnerResult     | Should -Not -BeNullOrEmpty
 
-            Assert-MockCalled Save-PSResource -Times 1 -Exactly -Scope It -ParameterFilter {
-                $Name -eq 'Mod' -and $Version -eq '1.0.0' -and $Repository -eq 'powershellget-development'
+            Assert-MockCalled Save-Module -Times 1 -Exactly -Scope It -ParameterFilter {
+                $Name -eq 'Mod' -and $RequiredVersion -eq '1.0.0' -and $Repository -eq 'powershellget-development'
             }
             Assert-MockCalled Invoke-WebRequest -Times 0 -Exactly -Scope It
             Assert-MockCalled Remove-Module -Times 2 -Exactly -Scope It -ParameterFilter {
@@ -327,12 +327,12 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
             $result = Invoke-PromotedModuleTests -Name 'Mod' -Version '1.0.0-Alpha001' `
                 -Feed 'powershellget-development' -Tier 'Development' -ResultsPath 'r' `
                 -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\fake' `
-                -ProGetBaseUrl 'http://localhost:50000/' -ProGetApiKeySecretName 'Test.ProGet.API.Key'
+                -ProGetBaseUrl 'https://utat022:50000/' -ProGetApiKeySecretName 'Test.ProGet.API.Key'
 
             $result.GatePass | Should -BeTrue
-            Assert-MockCalled Save-PSResource -Times 0 -Exactly -Scope It
+            Assert-MockCalled Save-Module -Times 0 -Exactly -Scope It
             Assert-MockCalled Invoke-WebRequest -Times 1 -Exactly -Scope It -ParameterFilter {
-                $Uri -eq 'http://localhost:50000/nuget/powershellget-development/package/Mod/1.0.0-Alpha001' -and
+                $Uri -eq 'https://utat022:50000/nuget/powershellget-development/package/Mod/1.0.0-Alpha001' -and
                 $OutFile -eq 'C:\fake\_generated\_promoted-modules\Mod.1.0.0-Alpha001.powershellget-development\Mod.1.0.0-Alpha001.nupkg' -and
                 $Headers['X-ApiKey'] -eq 'secret' -and
                 $TimeoutSec -eq 30
@@ -355,7 +355,7 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
             $result = Invoke-PromotedModuleTests -Name 'Mod' -Version '1.0.0-Beta006' `
                 -Feed 'powershellget-integration' -Tier 'Integration' -ResultsPath 'r' `
                 -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\fake' `
-                -ProGetBaseUrl 'http://localhost:50000/' -ProGetApiKeySecretName 'Test.ProGet.API.Key' `
+                -ProGetBaseUrl 'https://utat022:50000/' -ProGetApiKeySecretName 'Test.ProGet.API.Key' `
                 -RestoreRetryCount 2 -RestoreRetryDelaySeconds 1
 
             $result.GatePass | Should -BeTrue
@@ -364,7 +364,7 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
             Assert-MockCalled Start-Sleep -Times 1 -Exactly -Scope It -ParameterFilter { $Seconds -eq 1 }
         }
 
-        It 'Throws when Save-PSResource produced no manifest' {
+        It 'Throws when the promoted-module restore produced no manifest' {
             Mock Get-ChildItem { $null }
             { Invoke-PromotedModuleTests -Name 'Mod' -Version '1.0.0' -Feed 'powershellget-development' `
                 -Tier 'Development' -ResultsPath 'r' -ModuleSourceRoot 'C:\fake\src\Mod' `
@@ -413,6 +413,36 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
                     'Passed', 'Failed', 'SkippedCount', 'TotalCount', 'ResponseSummary', 'InnerResult')) {
                 $result.PSObject.Properties.Name | Should -Contain $prop
             }
+        }
+    }
+
+    Context 'Feed-restore cmdlet contract' {
+        # Regression for the Sprint 0014 promotion of
+        # ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell 0.1.29, where every
+        # promoted-module test run failed even though the package was correctly
+        # promoted. Save-PSResource queries the OData v2 FindPackagesById()
+        # endpoint, which this ProGet edition answers with 404 (see
+        # .claude/rules/ProGet.md), so the retry loop burned all 12 attempts
+        # against an endpoint that can never succeed. Save-Module resolves the
+        # same package/version from the same feed. Pin the choice so a future
+        # "modernize to PSResourceGet" edit cannot silently reintroduce the
+        # outage.
+        It 'restores with Save-Module and never with Save-PSResource' {
+            $sourcePath = Join-Path (Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public') 'Invoke-PromotedModuleTests.ps1'
+            $tokens = $null
+            $parseErrors = $null
+            $ast = [System.Management.Automation.Language.Parser]::ParseFile($sourcePath, [ref]$tokens, [ref]$parseErrors)
+            $parseErrors | Should -BeNullOrEmpty
+
+            $invokedNames = @(
+                $ast.FindAll({
+                        param($node)
+                        $node -is [System.Management.Automation.Language.CommandAst]
+                    }, $true) | ForEach-Object { $_.GetCommandName() } | Where-Object { $_ }
+            )
+
+            $invokedNames | Should -Contain 'Save-Module'
+            $invokedNames | Should -Not -Contain 'Save-PSResource'
         }
     }
 }

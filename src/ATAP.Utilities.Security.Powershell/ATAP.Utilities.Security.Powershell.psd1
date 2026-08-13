@@ -12,7 +12,7 @@
 RootModule = 'ATAP.Utilities.Security.Powershell.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.1.0'
+ModuleVersion = '0.1.1'
 
 # Supported PSEditions
 CompatiblePSEditions = 'Desktop', 'Core'
@@ -33,7 +33,7 @@ Copyright = '(c) 2018 - 2022  Bill Hertzing . All rights reserved. All code is u
 Description = 'Powershell scripts for managing an orgaization''s computer systems'' security'
 
 # Minimum version of the PowerShell engine required by this module
-PowerShellVersion = '5.1'
+PowerShellVersion = '7.0'
 
 # Name of the PowerShell host required by this module
 # PowerShellHostName = ''
@@ -55,6 +55,7 @@ PowerShellVersion = '5.1'
 # child (Sprint 0012 Task 12.55.b), so the child must be present. 0.1.1 is the first version whose
 # aliases actually survive the module build -- 0.1.0 declared three that nothing defined (SC-0254).
 RequiredModules = @(
+    @{ ModuleName = 'ATAP.Utilities.Security.PKI.PowerShell'; ModuleVersion = '0.1.1' }
     @{ ModuleName = 'ATAP.Utilities.Security.Secrets.PowerShell'; ModuleVersion = '0.1.1' }
   )
 
@@ -80,6 +81,7 @@ FunctionsToExport = 'Get-BitWardenCredential',
                'Install-CodeSigningCertificate', 
                'Install-DataEncryptionCertificate', 'Install-ModulesPerComputer', 
                'Install-SecretStoreVault', 'Install-SSLCertificate', 
+               'Install-TrustedPublisherCertificate',
                'List-BitwardenSecrets', 'List-CodeSigningCertificates', 'New-BitwardenBackup',
                'New-CACertificate', 
                'New-CertificateRequest', 'New-DataEncryptionCertificateRequest', 
@@ -93,10 +95,10 @@ FunctionsToExport = 'Get-BitWardenCredential',
                'Update-MasterPasswordSecureStringFile'
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
-CmdletsToExport = '*'
+CmdletsToExport = @()
 
 # Variables to export from this module
-VariablesToExport = '*'
+VariablesToExport = @()
 
 # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
 AliasesToExport = @()

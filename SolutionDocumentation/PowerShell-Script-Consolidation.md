@@ -97,9 +97,9 @@ The interesting bucket — and the focus of this doc — is **C**.
 | `Publish-ATAPUtilities.ps1`                            | C      | Iterate projects and publish to ProGet feeds   | **Delete** — replace with `Invoke-DotnetBuildWithRetry` / `Invoke-ModuleBuildWithRetry` |
 | `src/ATAP.Utilities.BuildTooling.PowerShell/tools/Setup-GitHubMCP.ps1` | C | One-time GitHub MCP server setup               | Keep as BuildTooling setup tool            |
 | `src/ATAP.Utilities.BuildTooling.PowerShell/tools/Test-GitHubMCP.ps1`  | C | Smoke-test GitHub MCP after setup              | Keep as BuildTooling setup tool            |
-| `Database/Powershell/public/Export-RuleToTextFile.ps1` | C/A    | Schema rule export                             | **Promote to module** (Database utilities) |
+| `Database/Powershell/public/Export-RuleToTextFile.ps1` | C/A    | Schema rule export                             | **Retired 2026-08-09** — the promoted command depended on the superseded pre-V3 result shape. |
 | `Database/Powershell/public/Rebuild-All.ps1`           | C      | Flyway rebuild orchestrator                    | Keep — not a function                      |
-| `Database/Powershell/public/Example-RuleExport.ps1`    | C      | Demo / docs example                            | Move to `Documentation/`                   |
+| `Database/Powershell/public/Example-RuleExport.ps1`    | C      | Demo / docs example                            | **Retired 2026-08-09** with the unsupported command. |
 | `Database/Powershell/tests/*.Tests.ps1`                | B      | Pester tests for the un-modularized DB scripts | Move with the promotion                    |
 | `OlderDBsForReference/**/*.ps1`                        | n/a    | Archive — pre-Flyway era                       | **Delete in sprint-0007**                  |
 | `src/.../public/Obsolete/*.ps1`                        | n/a    | Marked obsolete years ago                      | **Delete in sprint-0007**                  |

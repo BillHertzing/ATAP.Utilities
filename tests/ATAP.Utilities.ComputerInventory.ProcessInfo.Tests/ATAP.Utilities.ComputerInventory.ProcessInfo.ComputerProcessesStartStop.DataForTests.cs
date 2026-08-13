@@ -31,7 +31,7 @@ namespace ATAP.Utilities.ComputerInventory.ProcessInfo.Tests
     public static IEnumerable<object[]> ComputerProcessesStartStopTestData()
     {
       yield return new ComputerProcessesStartStopTestData[] { new ComputerProcessesStartStopTestData() {
-        ComputerSoftwareProgram = new ComputerSoftwareProgram(DefaultConfiguration.Production["PowerShell"],new Philote.Philote<IComputerSoftwareProgram>()),
+        ComputerSoftwareProgram = new ComputerSoftwareProgram(DefaultConfiguration.Production["PowerShell"]),
         // ToDo how to pass a placeholder/substitution in the arguments object Arguments = new object[2] {"-Command",$"&{{start-sleep -s {TestData.SpecifiedTestRunTime}; exit}}" },
         Arguments = new object[2] {"-Command",$"&{{start-sleep -s 10; exit}}" },
         SpecifiedTestRunTime = 10 } };

@@ -44,8 +44,7 @@
 
 ## 1. What "pack" Actually Produces
 
-`dotnet pack <project>` runs the `Pack` MSBuild target and writes two files per
-packable project:
+The `Pack` MSBuild target writes two files per packable project:
 
 | File       | Contents                                                         | When produced                       |
 | ---------- | ---------------------------------------------------------------- | ----------------------------------- |
@@ -61,10 +60,26 @@ The output folder is controlled by `-o|--output`; the default is
 generated artifacts under `_generated/nuget/` per the SC-0033 rule:
 
 ```powershell
-dotnet pack src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj `
-    --configuration Release `
-    --output _generated\nuget\local
+$msbuild = 'C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\MSBuild.exe'
+$sourceDateEpoch = (& git show -s --format=%ct HEAD).Trim()
+& $msbuild src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj `
+    /t:Pack /p:Configuration=Release `
+    /p:PackageOutputPath=_generated\nuget\local `
+    /p:ContinuousIntegrationBuild=true /p:Deterministic=true `
+    "/p:DeterministicTimestamp=$sourceDateEpoch" /m:1 /nr:false
 ```
+
+The sanctioned production path requires stable Visual Studio Build Tools 2026
+18.8+, MSBuild 18.8+, `Microsoft.NetCore.Component.SDK`, and NuGet Pack 7.8+.
+Repository `global.json` pins stable SDK 10.0.400 so Visual Studio MSBuild loads
+NuGet Pack 7.9 rather than the non-deterministic NuGet 7.6 task in older SDK
+bands. The BuildMaster runner fails closed if a component is absent or too old.
+Local exploratory `dotnet pack` output is not eligible for immutable publication.
+
+Before the one Experimental publication, pack twice from the same Git commit
+into isolated roots and require identical identity, nuspec, archive entries, and
+full `.nupkg` SHA-256. The Git commit epoch supplies
+`DeterministicTimestamp`; wall-clock time is not a release input.
 
 ---
 

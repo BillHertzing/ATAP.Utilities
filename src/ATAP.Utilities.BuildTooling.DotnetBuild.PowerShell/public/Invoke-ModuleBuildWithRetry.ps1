@@ -60,6 +60,15 @@ Optional generated output root passed through to module.build.ps1. BuildMaster
 uses this to isolate package staging by build id and avoid sharing
 _generated/psmodules/<ModuleName> across concurrent runs.
 
+.PARAMETER CodeSigningCertificateThumbprint
+Optional SHA-1 thumbprint of the code-signing certificate passed explicitly to
+module.build.ps1. Publishing callers should supply this rather than relying on
+the build-service account's user environment.
+
+.PARAMETER TimestampServerUri
+Optional absolute Authenticode timestamp service URI passed explicitly to
+module.build.ps1.
+
 .INPUTS
 System.String, System.String[], System.IO.FileInfo, System.IO.FileInfo[]
 Pipeline objects with a ProjectPath or FullName property are also accepted.
@@ -127,7 +136,14 @@ function Invoke-ModuleBuildWithRetry {
     [string] $BuildLogPath,
 
     [Parameter(Mandatory = $false)]
-    [string] $OutputRoot
+    [string] $OutputRoot,
+
+    [Parameter(Mandatory = $false)]
+    [ValidatePattern('^[0-9A-Fa-f]{40}$')]
+    [string] $CodeSigningCertificateThumbprint,
+
+    [Parameter(Mandatory = $false)]
+    [uri] $TimestampServerUri
   )
 
   begin {
@@ -325,8 +341,10 @@ function Invoke-ModuleBuildWithRetry {
       if ($WhatIfPreference) {
         $skipArg = if ($SkipPublish.IsPresent) { ' -SkipPublish' } else { '' }
         $outputRootArg = if ([string]::IsNullOrWhiteSpace($OutputRoot)) { '' } else { " -OutputRoot '$OutputRoot'" }
+        $signingArg = if ([string]::IsNullOrWhiteSpace($CodeSigningCertificateThumbprint)) { '' } else { " -CodeSigningCertificateThumbprint '$CodeSigningCertificateThumbprint'" }
+        $timestampArg = if ($null -eq $TimestampServerUri) { '' } else { " -TimestampServerUri '$TimestampServerUri'" }
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message (
-          "What if: Push-Location '$moduleRoot'; Invoke-Build $Task -Tier $resolvedTier -ModuleRoot '$moduleRoot'$outputRootArg$skipArg (build script resolved by Invoke-Build walk-up). " +
+          "What if: Push-Location '$moduleRoot'; Invoke-Build $Task -Tier $resolvedTier -ModuleRoot '$moduleRoot'$outputRootArg$signingArg$timestampArg$skipArg (build script resolved by Invoke-Build walk-up). " +
           "Transcript: '$transcriptFile'. " +
           "Would retry up to $MaxRetries time(s) on PSResourceGet/network/file-lock failures."
         )
@@ -368,6 +386,12 @@ function Invoke-ModuleBuildWithRetry {
             }
             if (-not [string]::IsNullOrWhiteSpace($OutputRoot)) {
               $invokeBuildParameters['OutputRoot'] = $OutputRoot
+            }
+            if (-not [string]::IsNullOrWhiteSpace($CodeSigningCertificateThumbprint)) {
+              $invokeBuildParameters['CodeSigningCertificateThumbprint'] = $CodeSigningCertificateThumbprint
+            }
+            if ($null -ne $TimestampServerUri) {
+              $invokeBuildParameters['TimestampServerUri'] = $TimestampServerUri
             }
 
             Invoke-Build $Task @invokeBuildParameters

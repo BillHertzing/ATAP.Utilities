@@ -1,5 +1,12 @@
 # Release Notes — ATAP.Utilities.DatabaseManagement.Powershell
 
+## sprint-0014
+
+- Retired `Export-RuleToTextFile` and its example because they consumed the
+  superseded pre-V3 Rule and temporal result shape. They are no longer exported
+  by the source manifest. No replacement Rule Export command is currently
+  supported.
+
 ## sprint-0009
 
 - **0.1.6** — Rebuilt and re-promoted to Production (`powershellget-stable`) via the

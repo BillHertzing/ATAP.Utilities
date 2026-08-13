@@ -8,7 +8,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
 {
 
   //ToDo add validation tests to ensure illegal values are not allowed.  This applies to all XxTestDataGenerator classes
-  public class CPUSocketTestData : TestData<CPUSocket>
+  public class CPUSocketTestData : SerializedTestData<CPUSocket>
   {
     public CPUSocketTestData(CPUSocket objTestData, string serializedTestData) : base(objTestData, serializedTestData)
     {

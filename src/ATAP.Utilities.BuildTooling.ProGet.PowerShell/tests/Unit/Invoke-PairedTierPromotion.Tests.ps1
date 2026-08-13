@@ -179,10 +179,10 @@ Describe 'Invoke-PairedTierPromotion' -Tag 'Unit', 'PromotedModuleHostSensitive'
         }
         It 'Forwards -ProGetBaseUrl and -ProGetApiKeySecretName to Invoke-PromotedModuleTests (direct-endpoint restore)' {
             $r = Invoke-PairedTierPromotion -ModuleVersion '1' -DatabasePackageVersion '1' -Tier 'Development' `
-                -ProGetBaseUrl 'http://localhost:50000' -ProGetApiKeySecretName 'Test.ProGet.API.Key'
+                -ProGetBaseUrl 'https://utat022:50000' -ProGetApiKeySecretName 'Test.ProGet.API.Key'
             $r.Succeeded | Should -BeTrue
             Assert-MockCalled Invoke-PromotedModuleTests -Times 1 -Exactly -Scope It -ParameterFilter {
-                $ProGetBaseUrl -eq 'http://localhost:50000' -and $ProGetApiKeySecretName -eq 'Test.ProGet.API.Key'
+                $ProGetBaseUrl -eq 'https://utat022:50000' -and $ProGetApiKeySecretName -eq 'Test.ProGet.API.Key'
             }
         }
         It 'Does not pass ProGet direct-endpoint args when they are not supplied' {

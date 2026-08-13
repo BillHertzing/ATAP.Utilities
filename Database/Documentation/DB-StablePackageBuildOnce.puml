@@ -54,7 +54,13 @@ note right
   stays pre-release.
 end note
 
-:Test migration locally\nagainst Experimental DB\n(Rebuild-All.ps1 or manual Flyway migrate);
+:Test migration locally\nagainst the logical Experimental-role DB\n(Rebuild-All.ps1 or manual Flyway migrate);
+note right
+  Terminology correction (2026-08-08):
+  Experimental is a logical role, not a SQL Server instance name.
+  Developer instances follow Exp<DeveloperName>;
+  ExpWhertzing is the instance for developer whertzing.
+end note
 
 if (Local tests pass?) then (yes)
 else (no)
@@ -100,9 +106,9 @@ end note
 
 :Push .nupkg to ProGet\nfeed: atap-db-experimental;
 
-:Provision Experimental DB from scratch\n(Rebuild-All.ps1 Experimental);
+:Provision the logical Experimental-role DB from scratch\n(Rebuild-All.ps1 Experimental);
 
-:Apply migration via Flyway\n(flyway migrate on Experimental instance);
+:Apply migration via Flyway\n(flyway migrate on Exp<DeveloperName> instance);
 
 :Run smoke tests\n(Verify/ folder SQL scripts);
 

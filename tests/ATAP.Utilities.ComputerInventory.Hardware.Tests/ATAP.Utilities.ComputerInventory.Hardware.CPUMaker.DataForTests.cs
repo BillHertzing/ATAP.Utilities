@@ -9,7 +9,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
 
 
   //ToDo add validation tests to ensure illegal values are not allowed.  This applies to all XxTestDataGenerator classes
-  public class CPUMakerTestData : TestData<CPUMaker>
+  public class CPUMakerTestData : SerializedTestData<CPUMaker>
   {
     public CPUMakerTestData(CPUMaker objTestData, string serializedTestData) : base(objTestData, serializedTestData)
     {

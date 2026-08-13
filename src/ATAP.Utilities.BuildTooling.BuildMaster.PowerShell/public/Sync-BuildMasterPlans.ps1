@@ -25,7 +25,7 @@ function Sync-BuildMasterPlans {
   .PARAMETER BuildMasterBaseUrl
     Base URL for the BuildMaster server. Defaults to BuildMaster.BaseUrl from
     $global:settings, then BUILDMASTER_BASE_URL from the process environment,
-    then http://localhost:50017.
+    then https://utat022:50017.
   .PARAMETER BuildMasterAdminApiKeySecretName
     ATAP secret name for the BuildMaster admin (Native API) key. Resolved via
     Get-PVal; value read with Get-SecretATAP.
@@ -50,7 +50,7 @@ function Sync-BuildMasterPlans {
   .EXAMPLE
     Sync-BuildMasterPlans -Path .\BuildMasterPlans -ApplicationName 'ATAP.Utilities'
   .EXAMPLE
-    Sync-BuildMasterPlans -Path .\Build.otter -BuildMasterBaseUrl 'http://localhost:50017' -WhatIf
+    Sync-BuildMasterPlans -Path .\Build.otter -BuildMasterBaseUrl 'https://utat022:50017' -WhatIf
   .LINK
     https://docs.inedo.com/docs/buildmaster/reference/api/native
   #>
@@ -124,7 +124,7 @@ function Sync-BuildMasterPlans {
       $BuildMasterBaseUrl = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_BASE_URL', 'User')
     }
     if ([string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) {
-      $BuildMasterBaseUrl = 'http://localhost:50017'
+      $BuildMasterBaseUrl = 'https://utat022:50017'
     }
 
     $BuildMasterAdminApiKeySecretName = Get-PVal -ParameterName 'BuildMasterAdminApiKeySecretName' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterAdminApiKeySecretName

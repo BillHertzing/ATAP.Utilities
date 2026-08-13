@@ -1,7 +1,6 @@
 using ATAP.Utilities.ETW;
 
 using ATAP.Utilities.Persistence;
-using ATAP.Utilities.StronglyTypedID;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +10,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using ATAP.Utilities.Philote;
 //using ATAP.Utilities.GraphDataStructures;
-using QuickGraph;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using ATAP.Utilities.ComputerInventory.Hardware;
@@ -25,7 +23,7 @@ using System.Text;
 namespace ATAP.Utilities.ComputerInventory.Hardware {
 
 
-  public class FSEEdge<TVertex> : IEdge<TVertex> where TVertex : FSEntityAbstract {
+  public class FSEEdge<TVertex> where TVertex : FSEntityAbstract {
     public FSEEdge(TVertex source, TVertex target) {
       Source = source ?? throw new ArgumentNullException(nameof(source));
       Target = target ?? throw new ArgumentNullException(nameof(target));
@@ -35,7 +33,28 @@ namespace ATAP.Utilities.ComputerInventory.Hardware {
 
     public TVertex Target { get; }
   }
-  public class FSEntityAdjacencyGraph : AdjacencyGraph<FSEntityAbstract, FSEEdge<FSEntityAbstract>> { }
+  public class FSEntityAdjacencyGraph {
+    private readonly List<FSEntityAbstract> vertices = new();
+    private readonly List<FSEEdge<FSEntityAbstract>> edges = new();
+
+    public IEnumerable<FSEntityAbstract> Vertices => vertices;
+    public IEnumerable<FSEEdge<FSEntityAbstract>> Edges => edges;
+    public int VertexCount => vertices.Count;
+    public int EdgeCount => edges.Count;
+
+    public bool AddVertex(FSEntityAbstract vertex) {
+      ArgumentNullException.ThrowIfNull(vertex);
+      if (vertices.Contains(vertex)) { return false; }
+      vertices.Add(vertex);
+      return true;
+    }
+
+    public bool AddEdge(FSEEdge<FSEntityAbstract> edge) {
+      ArgumentNullException.ThrowIfNull(edge);
+      edges.Add(edge);
+      return true;
+    }
+  }
 
 
   // ToDo: move to a seperate assembly ATAP.Utilities.FileIO

@@ -4,14 +4,12 @@ using ATAP.Utilities.ComputerInventory.Hardware;
 using System;
 using System.Text;
 using ATAP.Utilities.Testing;
-using ATAP.Utilities.StronglyTypedID;
-using Itenso.TimePeriod;
 
 namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
 {
 
   //ToDo add validation tests to ensure illegal values are not allowed.  This applies to all XxTestDataGenerator classes
-  public class CPUTestData : TestData<ICPU>
+  public class CPUTestData : SerializedTestData<ICPU>
   {
     public CPUTestData(CPU objTestData, string serializedTestData) : base(objTestData, serializedTestData)
     {
@@ -28,7 +26,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
         foreach (PhiloteTestData<ICPU>[] philote in PhiloteTestDataGenerator<ICPU>.TestData())
         {
           str.Clear();
-          str.Append($"{{\"CPUSignil\":{signil[0].SerializedTestData},\"Philote\":{philote[0].SerializedTestData}}}");
+          str.Append($"{{\"CPUSignil\":{signil[0].TestData},\"Philote\":{philote[0].TestData}}}");
           yield return new CPUTestData[] { new CPUTestData(new CPU(signil[0].ObjTestData, philote[0].ObjTestData), str.ToString()) };
           //yield return new CPUTestData[] { new CPUTestData(new CPU[2] { new CPU(signil[0].ObjTestData, id[0], timeBlock[0].ObjTestData), new CPU(signil[0].ObjTestData, id[1], timeBlock[0].ObjTestData) }, new string[2] { str[0].ToString(), String[1].ToString() }) };
           //yield return new CPUTestData[] { new CPUTestData(new CPU(signil[0].ObjTestData, id[0], timeBlock[0].ObjTestData), str.ToString()) };

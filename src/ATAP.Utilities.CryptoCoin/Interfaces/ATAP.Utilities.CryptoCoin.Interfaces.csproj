@@ -18,10 +18,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Enumerations\ATAP.Utilities.CryptoCoin.Enumerations.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.DateTime.Interfaces\ATAP.Utilities.DateTime.Interfaces.csproj" />
   </ItemGroup>
 
 <ItemGroup>
-    <PackageReference Include="TimePeriodLibrary.NET"/>
   </ItemGroup>
 
 

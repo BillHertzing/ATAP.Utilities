@@ -15,9 +15,9 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
     [MemberData(nameof(PartitionFileSystemTestDataGenerator.TestData), MemberType = typeof(PartitionFileSystemTestDataGenerator))]
     public void PartitionFileSystemDeserializeFromJSON(PartitionFileSystemTestData inTestData)
     {
-      var obj = Fixture.Serializer.Deserialize<PartitionFileSystem>(inTestData.SerializedTestData);
-      obj.Should().BeOfType(typeof(PartitionFileSystem));
-      Fixture.Serializer.Deserialize<PartitionFileSystem>(inTestData.SerializedTestData).Should().Be(inTestData.ObjTestData);
+      var obj = Fixture.Serializer.Deserialize<PartitionFileSystem>(inTestData.TestData);
+      ((object)obj).Should().BeOfType<PartitionFileSystem>();
+      Fixture.Serializer.Deserialize<PartitionFileSystem>(inTestData.TestData).Should().Be(inTestData.ObjTestData);
     }
 
     [Theory]
@@ -25,10 +25,10 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
     public void PartitionFileSystemSerializeToJSON(PartitionFileSystemTestData inTestData)
     {
 #if DEBUG
-      TestOutput.WriteLine("SerializedTestData is:" + inTestData.SerializedTestData);
+      TestOutput.WriteLine("SerializedTestData is:" + inTestData.TestData);
       TestOutput.WriteLine("Serialized ObjTestData is:" + Fixture.Serializer.Serialize(inTestData.ObjTestData));
 #endif
-      Fixture.Serializer.Serialize(inTestData.ObjTestData).Should().Be(inTestData.SerializedTestData);
+      Fixture.Serializer.Serialize(inTestData.ObjTestData).Should().Be(inTestData.TestData);
     }
 
   }

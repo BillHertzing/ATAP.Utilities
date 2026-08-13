@@ -1,0 +1,5 @@
+RuleId,PhiloteId,RuleKindId,RulePrimitiveId,RuleCode,RuleBody
+616fb394-0b4d-486a-98af-48f1fe461af2,616fb394-0b4d-486a-98af-48f1fe461af2,8e06f2af-52cf-47d5-872e-0d3912f4fda0,9460f2f5-9957-4455-b6a6-8ee241b7ebb3,HelloWorld.PowerShell,"function HelloWorld {
+  Write-Host 'Hello World'
+}"
+c5c1c63a-4364-4233-9aa1-2a1a5a2ba1f3,c5c1c63a-4364-4233-9aa1-2a1a5a2ba1f3,b32c60e0-86f3-40e6-893e-d3240ffea882,03c6c7a1-f6f8-4fcc-a1aa-9239dc96109a,HelloWorld.Path,HelloWorld.ps1

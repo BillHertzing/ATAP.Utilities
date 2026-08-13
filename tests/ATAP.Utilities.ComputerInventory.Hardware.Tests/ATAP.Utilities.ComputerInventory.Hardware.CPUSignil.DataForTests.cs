@@ -10,7 +10,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
 {
 
   //ToDo add validation tests to ensure illegal values are not allowed.  This applies to all XxTestDataGenerator classes
-  public class CPUSignilTestData : TestData<CPUSignil>
+  public class CPUSignilTestData : SerializedTestData<CPUSignil>
   {
     public CPUSignilTestData(CPUSignil objTestData, string serializedTestData) : base(objTestData, serializedTestData)
     {
@@ -27,7 +27,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
         foreach (CPUSocketTestData[] socket in CPUSocketTestDataGenerator.TestData())
         {
           str.Clear();
-          str.Append($"{{\"CPUMaker\":{maker[0].SerializedTestData},\"CPUSocket\":{socket[0].SerializedTestData},\"NumberOfPhysicalCores\":6,\"CoreClockNominal\":\"1.8 GHz\",\"CoreVoltageNominal\":\"1 Vdc\"}}");
+          str.Append($"{{\"CPUMaker\":{maker[0].TestData},\"CPUSocket\":{socket[0].TestData},\"NumberOfPhysicalCores\":6,\"CoreClockNominal\":\"1.8 GHz\",\"CoreVoltageNominal\":\"1 Vdc\"}}");
           yield return new CPUSignilTestData[] {
             new CPUSignilTestData(
               new CPUSignil(

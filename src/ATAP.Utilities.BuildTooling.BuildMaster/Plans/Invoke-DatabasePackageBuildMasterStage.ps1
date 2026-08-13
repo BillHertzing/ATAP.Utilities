@@ -108,7 +108,7 @@
     -DatabaseApplication ATAPUtilities `
     -DatabaseStream '' `
     -Stage Experimental `
-    -ProGetUrl http://localhost:50000
+    -ProGetUrl https://utat022:50000
 
 .NOTES
   AI assisted using Powershell.instructions.md as guidelines.
@@ -913,6 +913,22 @@ function Invoke-DatabasePackageBuildMasterStage {
     . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.ProGet.PowerShell' -RelativePath 'public/Publish-DatabaseChangePackageToProGet.ps1')
     . (Resolve-BuildToolingFunctionFile -ModuleName 'ATAP.Utilities.BuildTooling.ProGet.PowerShell' -RelativePath 'public/Promote-DatabaseChangePackage.ps1')
 
+    # Several database-management cmdlets declare Microsoft.Data.SqlClient
+    # parameter types. BuildMaster starts a clean service-account process, so
+    # load dbatools before dot-sourcing those functions to make the assembly
+    # available during PowerShell type resolution.
+    if ($null -eq ('Microsoft.Data.SqlClient.SqlConnection' -as [type])) {
+      try {
+        Import-Module -Name dbatools -ErrorAction Stop
+      }
+      catch {
+        throw "Unable to load Microsoft.Data.SqlClient before binding database-management cmdlets. Importing dbatools failed: $($_.Exception.Message)"
+      }
+    }
+    if ($null -eq ('Microsoft.Data.SqlClient.SqlConnection' -as [type])) {
+      throw 'Microsoft.Data.SqlClient.SqlConnection remains unavailable after importing dbatools.'
+    }
+
     # New-DatabaseChangePackage and the rehearsal/apply cmdlets live in the
     # DatabaseManagement.Powershell module. Always dot-source their source-tree
     # implementations. A machine-wide older module can otherwise shadow a
@@ -1079,6 +1095,47 @@ function Invoke-DatabasePackageBuildMasterStage {
     $tracePath = Join-Path -Path $contextDirectory -ChildPath "$databasePackageId.$($Stage.ToLowerInvariant()).log"
 
     if ($Stage -eq 'Experimental') {
+      # A prior Experimental execution may have published successfully and
+      # failed during the later database apply. The run context is written
+      # only after a successful publish, so reuse that exact captured artifact
+      # on retry instead of rebuilding or republishing an immutable version.
+      $capturedNupkgPath = if ($null -ne $existingContext -and
+        $existingContext.PSObject.Properties.Name -contains 'NupkgPath') {
+        [string]$existingContext.NupkgPath
+      }
+      else {
+        $null
+      }
+      if (-not [string]::IsNullOrWhiteSpace($capturedNupkgPath)) {
+        if (-not (Test-Path -LiteralPath $capturedNupkgPath -PathType Leaf)) {
+          throw "Experimental retry cannot reuse the captured immutable package because it is missing: '$capturedNupkgPath'."
+        }
+        $capturedPackageName = [System.IO.Path]::GetFileNameWithoutExtension($capturedNupkgPath)
+        $expectedPackageName = "$databasePackageId.$resolvedVersion"
+        if ($capturedPackageName -cne $expectedPackageName) {
+          throw "Experimental retry package drift: captured '$capturedPackageName', expected '$expectedPackageName'."
+        }
+        $capturedPackageHash = (Get-FileHash -LiteralPath $capturedNupkgPath -Algorithm SHA256).Hash
+        Add-DatabasePackagePublishTrace -Path $tracePath `
+          -Message "Resume exact published package '$capturedNupkgPath' (SHA256=$capturedPackageHash); build and publish skipped."
+
+        Invoke-DatabasePackageStageApply `
+          -ContextDirectory $contextDirectory `
+          -DatabasePackageId $databasePackageId `
+          -DatabaseApplication $DatabaseApplication `
+          -PackageVersion $resolvedVersion `
+          -Tier $Stage `
+          -NupkgPath $capturedNupkgPath `
+          -ConnectionStringSecretName $tierConnectionSecretName `
+          -SkipApply:$SkipApply `
+          -TracePath $tracePath
+
+        Set-DatabasePackageStageCompleted -ContextDirectory $contextDirectory -DatabasePackageId $databasePackageId -Tier $Stage -PackageVersion $resolvedVersion
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+          -Message "Applied previously published '$databasePackageId' '$resolvedVersion' to Experimental without rebuilding."
+        return
+      }
+
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
         -Message "Database stage 'Experimental' building and publishing '$databasePackageId' from '$databasePackageSourcePath'."
       Add-DatabasePackagePublishTrace -Path $tracePath -Message "Build and publish '$databasePackageId' version '$resolvedVersion' to '$ExperimentalFeed'."

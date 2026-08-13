@@ -1,0 +1,91 @@
+(*
+  CSharp grammar contract for RRSBS rendering.
+  Authority: SolutionDocumentation/grammers per GRAMMAR-01 (2026-08-01).
+  Scope: the deterministic source-file subset represented by the retained
+  CSharp Rule Primitives; this is not a replacement for the full ECMA-334
+  language specification.
+*)
+
+cs-source-file = { file-element } ;
+file-element = using-directive | namespace-block-declaration | type-declaration |
+               single-line-comment | block-comment | new-line ;
+
+using-directive = "using", whitespace, [ "static", whitespace ],
+                  namespace-or-type-name, ";"
+                | "using", whitespace, identifier, whitespace, "=", whitespace,
+                  namespace-or-type-name, ";" ;
+namespace-block-declaration = "namespace", whitespace, namespace-name,
+                              [ new-line ], "{", { namespace-body-element }, "}" ;
+namespace-body-element = using-directive | type-declaration | single-line-comment |
+                         block-comment | new-line ;
+
+type-declaration = interface-declaration | class-declaration | record-declaration ;
+interface-declaration = [ access-modifier, whitespace ], "interface", whitespace,
+                        identifier, [ type-parameter-list ], [ base-type-list ],
+                        { type-constraint-clause }, [ whitespace ], "{",
+                        { interface-member }, "}" ;
+class-declaration = { class-modifier, whitespace }, "class", whitespace, identifier,
+                    [ type-parameter-list ], [ base-type-list ],
+                    { type-constraint-clause }, [ whitespace ], "{",
+                    { class-member }, "}" ;
+record-declaration = { record-modifier, whitespace }, "record", whitespace, identifier,
+                     [ type-parameter-list ], [ base-type-list ],
+                     { type-constraint-clause }, [ whitespace ], "{",
+                     { record-member }, "}" ;
+
+interface-member = property-declaration | single-line-comment | new-line ;
+class-member = field-declaration | constructor-declaration | method-declaration |
+               property-declaration | single-line-comment | block-comment | new-line ;
+record-member = class-member ;
+property-declaration = type-reference, whitespace, identifier, [ whitespace ], "{",
+                       accessor-declaration, { accessor-declaration }, "}" ;
+accessor-declaration = "get", ";" | "set", ";" | "init", ";" ;
+field-declaration = { field-modifier, whitespace }, type-reference, whitespace,
+                    variable-declarator, { ",", [ whitespace ], variable-declarator }, ";" ;
+constructor-declaration = [ access-modifier, whitespace ], identifier,
+                          parameter-list, [ whitespace, constructor-initializer ],
+                          whitespace, block ;
+method-declaration = [ attribute-list ], [ access-modifier, whitespace ],
+                     { method-modifier, whitespace }, type-reference, whitespace, identifier,
+                     [ type-parameter-list ], parameter-list, { type-constraint-clause },
+                     whitespace, ( block | "=>", whitespace, expression, ";" ) ;
+
+parameter-list = "(", [ parameter, { ",", [ whitespace ], parameter } ], ")" ;
+parameter = [ parameter-modifier, whitespace ], type-reference, whitespace, identifier,
+            [ whitespace, "=", whitespace, expression ] ;
+type-parameter-list = "<", identifier, { ",", [ whitespace ], identifier }, ">" ;
+type-constraint-clause = "where", whitespace, identifier, whitespace, ":", whitespace,
+                         type-constraint, { ",", [ whitespace ], type-constraint } ;
+base-type-list = ":", whitespace, type-reference,
+                 { ",", [ whitespace ], type-reference } ;
+type-reference = qualified-identifier, [ "<", type-reference,
+                 { ",", [ whitespace ], type-reference }, ">" ], [ "?" ] ;
+qualified-identifier = identifier, { ".", identifier } ;
+attribute-list = attribute, { new-line, attribute } ;
+attribute = "[", qualified-identifier, [ parameter-list ], "]" ;
+access-modifier = "public" | "internal" | "private" | "protected" |
+                  "protected internal" | "private protected" ;
+
+identifier = letter, { letter | digit | "_" } ;
+namespace-name = qualified-identifier ;
+namespace-or-type-name = qualified-identifier ;
+whitespace = " " | "\t" ;
+new-line = "\r\n" | "\n" ;
+single-line-comment = "//", { ? any character except a new-line ? }, new-line ;
+block-comment = "/*", { ? any character ? }, "*/" ;
+block = "{", { ? C# statement or nested declaration text ? }, "}" ;
+expression = ? C# expression text emitted by a bound primitive input ? ;
+variable-declarator = identifier, [ whitespace, "=", whitespace, expression ] ;
+constructor-initializer = ":", whitespace, ( "base" | "this" ), parameter-list ;
+class-modifier = "public" | "internal" | "private" | "protected" | "abstract" |
+                 "sealed" | "static" | "partial" ;
+record-modifier = class-modifier ;
+field-modifier = "public" | "internal" | "private" | "protected" | "static" |
+                 "readonly" | "const" ;
+method-modifier = "static" | "virtual" | "abstract" | "override" | "sealed" |
+                  "async" | "partial" ;
+parameter-modifier = "ref" | "out" | "in" | "params" | "this" ;
+type-constraint = "class" | "struct" | "notnull" | "unmanaged" | "new()" |
+                  type-reference ;
+letter = "A"…"Z" | "a"…"z" ;
+digit = "0"…"9" ;

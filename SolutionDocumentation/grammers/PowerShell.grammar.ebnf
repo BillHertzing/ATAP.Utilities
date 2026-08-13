@@ -1,0 +1,71 @@
+(*
+  PowerShell RuleKind grammar authority.
+  This is an EBNF profile for the retained RRSBS PowerShell corpus.  It is not
+  a replacement for the full PowerShell language specification; terminals such
+  as <expression> and <statement> retain their PowerShell language meaning.
+*)
+
+<powershell-artifact> ::= <function-definition> | <script-block>
+
+<function-definition> ::= "function" <ws> <command-name> <ws-opt>
+                          "{" <script-block> "}"
+<script-block> ::= <param-block-opt> <named-block-list-opt> <statement-list-opt>
+<param-block-opt> ::= "" | <param-block> <statement-terminator-opt>
+<param-block> ::= "param" <ws-opt> "(" <parameter-list-opt> ")"
+<parameter-list-opt> ::= "" | <script-parameter> { "," <script-parameter> }
+<script-parameter> ::= <attribute-list-opt> <variable> <default-value-opt>
+<attribute-list-opt> ::= "" | { <attribute> }
+<attribute> ::= "[" <attribute-name> <attribute-arguments-opt> "]"
+<attribute-arguments-opt> ::= "" | "(" <expression-list-opt> ")"
+<default-value-opt> ::= "" | "=" <expression>
+
+<named-block-list-opt> ::= "" | <named-block> { <named-block> }
+<named-block> ::= <named-block-name> <ws-opt> "{" <statement-list-opt> "}"
+<named-block-name> ::= "dynamicparam" | "begin" | "process" | "end"
+<statement-list-opt> ::= "" | <statement> { <statement-terminator> <statement> }
+<statement-terminator-opt> ::= "" | <statement-terminator>
+<statement-terminator> ::= ";" | <newline>
+
+<statement> ::= <pipeline> | <control-statement> | <try-statement> | <function-definition>
+<pipeline> ::= <command> { "|" <command> }
+<command> ::= <command-name> { <ws> <command-element> }
+<command-element> ::= <command-parameter> | <expression> | <script-block-literal>
+<command-parameter> ::= "-" <parameter-name> <parameter-value-opt>
+<parameter-value-opt> ::= "" | ":" <expression> | <ws> <expression>
+<script-block-literal> ::= "{" <statement-list-opt> "}"
+<control-statement> ::= "if" <ws-opt> "(" <expression> ")" <ws-opt> <script-block-literal>
+                      | "foreach" <ws-opt> "(" <variable> "in" <expression> ")" <ws-opt> <script-block-literal>
+                      | "return" <return-value-opt>
+                      | "throw" <return-value-opt>
+<return-value-opt> ::= "" | <ws> <expression>
+<try-statement> ::= "try" <ws-opt> <script-block-literal> <catch-list> <finally-opt>
+<catch-list> ::= "catch" <ws-opt> <script-block-literal> { "catch" <ws-opt> <script-block-literal> }
+<finally-opt> ::= "" | "finally" <ws-opt> <script-block-literal>
+
+<expression-list-opt> ::= "" | <expression> { "," <expression> }
+<expression> ::= <literal> | <variable> | <subexpression> | <array-literal> | <hashtable-literal>
+                 | <command> | "(" <expression> ")"
+<subexpression> ::= "$" "(" <statement-list-opt> ")"
+<array-literal> ::= "@" "(" <expression-list-opt> ")"
+<hashtable-literal> ::= "@" "{" <hashtable-entry-list-opt> "}"
+<hashtable-entry-list-opt> ::= "" | <hashtable-entry> { <statement-terminator> <hashtable-entry> }
+<hashtable-entry> ::= <expression> "=" <expression>
+<variable> ::= "$" <variable-name> | "$" "{" <variable-name> "}"
+<literal> ::= <string-literal> | <number-literal> | "$true" | "$false" | "$null"
+<string-literal> ::= <single-quoted-string> | <double-quoted-string>
+
+<command-name> ::= <identifier> "-" <identifier>
+<parameter-name> ::= <identifier>
+<attribute-name> ::= <identifier> { "." <identifier> }
+<variable-name> ::= <identifier>
+<identifier> ::= <identifier-start> { <identifier-part> }
+<identifier-start> ::= <letter> | "_"
+<identifier-part> ::= <letter> | <digit> | "_"
+<number-literal> ::= <digit> { <digit> } | "0x" <hex-digit> { <hex-digit> }
+<single-quoted-string> ::= "'" { <single-quoted-character> } "'"
+<double-quoted-string> ::= '"' { <double-quoted-character> } '"'
+<ws-opt> ::= "" | <ws>
+<ws> ::= (" " | "\t") { " " | "\t" }
+
+(* Lexical terminals <letter>, <digit>, <hex-digit>, <newline>, and string
+   characters are defined by the PowerShell language specification. *)

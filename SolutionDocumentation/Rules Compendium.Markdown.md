@@ -1,5 +1,14 @@
 # Rules Compendium.Markdown
 
+<!-- METADATA
+  Language: Markdown
+  Created: pre-existing; normalized 2026-08-03
+  Kind Count: 1
+  Primitive Count: 14
+  Template version: 1.0
+  Source skill: .claude/skills/new-rule-kind/SKILL.md
+-->
+
 ## Markdown
 
 | Property | Value |
@@ -15,6 +24,60 @@ source files, stored with stable identity and ordered content, and instantiated 
 byte-identical files. It is the first Kind added after the Instantiation correction, and
 the first whose Rules are intended to be manifested to the filesystem rather than only
 described.
+
+## Part I — Grammar Specification
+
+*This section is written once when the Kind is defined. Update only on grammar revision.*
+*The grammar below is authored at `grammers/Markdown.grammar.ebnf`; its rendered `docs/`
+*copy remains deferred until grammar artifacts become database-stored.*
+
+<!-- rule-grammar-start -->
+
+### Kind: Markdown
+
+**Philote ID:** Not allocated in the current documentation corpus. The legacy
+numeric `PrimitiveLanguageKindId = 10` is recorded below as an unverified
+historical deployment assertion, not a Kind Philote GUID.
+
+**Grammar file:** `grammers/Markdown.grammar.ebnf`
+
+**DB record:** The legacy compendium asserts `PrimitiveLanguageKindId = 10`.
+RDB-180B-Markdown performs no database lookup or conformance assertion.
+
+**Description:** Deterministic rendering of the corpus-bounded CommonMark/GFM
+subset represented by the retained Markdown primitives.
+
+#### Grammar
+
+<!-- EMBEDDED from grammers/Markdown.grammar.ebnf -->
+```ebnf
+markdown-document = atx-heading, { markdown-block } ;
+markdown-block = atx-heading | paragraph | blank-line | fenced-code-block |
+                 unordered-list | pipe-table | source-line ;
+atx-heading = heading-marker, " ", inline-content, line-ending ;
+fenced-code-block = fence, info-string, line-ending, code-body, fence, line-ending ;
+pipe-table = table-row, delimiter-row, table-row, { table-row } ;
+```
+<!-- END EMBEDDED -->
+
+#### Composition Constraints
+
+- `MarkdownDocument` renders one required `atx-heading` followed by an ordered
+  sequence of `markdown-block` instances.
+- Block selection is explicit; a renderer must not infer or reorder block types.
+- Inline fragments preserve their supplied ordering and source line endings.
+- Byte-for-byte conformance requires a renderer to preserve the bound source
+  text, rather than pretty-printing semantically equivalent Markdown.
+
+#### Valid Expression Examples
+
+```markdown
+# Title
+
+`inline-code` and [a link](relative/path.md)
+```
+
+<!-- rule-grammar-end -->
 
 ### Purpose
 
@@ -59,6 +122,10 @@ Construct census across both files, from
 The only non-ASCII character in the corpus is the em dash, `—` U+2014, appearing 8 times.
 One apparent HTML tag is a false positive: `<FunctionName>` occurs inside an inline code
 span in `INDEX.md` and is not markup.
+
+## Part II — Rule Primitives
+
+<!-- rule-primitives-start -->
 
 ### Primitives
 
@@ -188,6 +255,12 @@ cell                ::= inline-content
 character           ::= <any Unicode scalar value except a line terminator>
 ```
 
+<!-- rule-primitives-end -->
+
+## Part III — Rule Repository
+
+<!-- rule-repository-start -->
+
 ### Initial RuleVersion model
 
 The `source-line` primitive exists because the initial ingestion of a file is
@@ -255,3 +328,14 @@ every foreign key and check constraint and appears only as wrong output:
 - `FencedCodeBlock.InfoString` non-empty, required by MD040.
 
 Task 13.85.s adds a verification SQL artifact covering each of these.
+
+<!-- rule-repository-end -->
+
+## Part IV — Rule Sets
+
+<!-- rule-sets-start -->
+
+No formal Markdown Rule Set is recorded in this documentation corpus. The
+documented `MarkdownDocument` composition is a RuleVersion model, not a Rule Set.
+
+<!-- rule-sets-end -->

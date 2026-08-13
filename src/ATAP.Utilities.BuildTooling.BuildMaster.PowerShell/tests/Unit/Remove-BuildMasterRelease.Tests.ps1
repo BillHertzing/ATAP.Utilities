@@ -81,7 +81,7 @@ Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' 
   }
 
   Context 'Happy path: cancel release (default action)' {
-    It 'Calls Applications_GetApplications, Releases_GetReleases, and Releases_CancelRelease' {
+    It 'Selects by Release_Number when Release_Name differs and calls cancel' {
       $script:capturedUris = @()
       Mock Invoke-RestMethod -MockWith {
         $script:capturedUris += $Uri
@@ -89,7 +89,7 @@ Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' 
           return , @([PSCustomObject]@{ Application_Id = 42; Application_Name = 'ATAP.Utilities-PowerShell' })
         }
         if ($Uri -match 'Releases_GetReleases') {
-          return , @([PSCustomObject]@{ Release_Id = 1004; Release_Name = '0.0.0' })
+          return , @([PSCustomObject]@{ Release_Id = 1004; Release_Number = '0.0.0'; Release_Name = 'ATAP.Utilities-PowerShell 0.0.0' })
         }
         if ($Uri -match 'Releases_CancelRelease') {
           return [PSCustomObject]@{ success = $true }
@@ -111,6 +111,60 @@ Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' 
     }
   }
 
+  Context 'Expected release ID safety binding' {
+    It 'Allows mutation when ExpectedReleaseId matches the selected Release_Id' {
+      $script:capturedUris = @()
+      Mock Invoke-RestMethod -MockWith {
+        $script:capturedUris += $Uri
+        if ($Uri -match 'Applications_GetApplications') {
+          return , @([PSCustomObject]@{ Application_Id = 42; Application_Name = 'MyApp' })
+        }
+        if ($Uri -match 'Releases_GetReleases') {
+          return , @([PSCustomObject]@{ Release_Id = 9086; Release_Number = '0.1.3'; Release_Name = 'ATAPUtilities.Database 0.1.3' })
+        }
+        if ($Uri -match 'Releases_PurgeReleaseData') {
+          return [PSCustomObject]@{ success = $true }
+        }
+        throw "Unexpected URI: $Uri"
+      }
+
+      $result = Remove-BuildMasterRelease `
+        -Application 'MyApp' `
+        -ReleaseNumber '0.1.3' `
+        -ExpectedReleaseId 9086 `
+        -Purge `
+        -Confirm:$false
+
+      $result.Action | Should -Be 'Purged'
+      $result.ReleaseId | Should -Be 9086
+      $script:capturedUris | Where-Object { $_ -match 'Releases_PurgeReleaseData' } | Should -HaveCount 1
+    }
+
+    It 'Throws before ShouldProcess or mutation when ExpectedReleaseId differs' {
+      $script:capturedUris = @()
+      Mock Invoke-RestMethod -MockWith {
+        $script:capturedUris += $Uri
+        if ($Uri -match 'Applications_GetApplications') {
+          return , @([PSCustomObject]@{ Application_Id = 42; Application_Name = 'MyApp' })
+        }
+        if ($Uri -match 'Releases_GetReleases') {
+          return , @([PSCustomObject]@{ Release_Id = 9087; Release_Number = '0.1.4'; Release_Name = 'ATAPUtilities.Database 0.1.4' })
+        }
+        throw "Unexpected URI: $Uri"
+      }
+
+      { Remove-BuildMasterRelease `
+          -Application 'MyApp' `
+          -ReleaseNumber '0.1.4' `
+          -ExpectedReleaseId 9086 `
+          -Purge `
+          -WhatIf } |
+        Should -Throw -ExpectedMessage '*Release ID drift*Release_Id=9087*ExpectedReleaseId=9086*'
+
+      $script:capturedUris | Where-Object { $_ -match 'Releases_CancelRelease|Releases_PurgeReleaseData' } | Should -HaveCount 0
+    }
+  }
+
   Context 'Happy path: purge release (with -Purge switch)' {
     It 'Calls Releases_PurgeReleaseData instead of Releases_CancelRelease' {
       $script:capturedUris = @()
@@ -120,7 +174,7 @@ Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' 
           return , @([PSCustomObject]@{ Application_Id = 42; Application_Name = 'ATAP.Utilities-PowerShell' })
         }
         if ($Uri -match 'Releases_GetReleases') {
-          return , @([PSCustomObject]@{ Release_Id = 1006; Release_Name = 'Placeholder' })
+          return , @([PSCustomObject]@{ Release_Id = 1006; Release_Number = 'Placeholder'; Release_Name = 'Descriptive placeholder release' })
         }
         if ($Uri -match 'Releases_PurgeReleaseData') {
           return [PSCustomObject]@{ success = $true }
@@ -144,15 +198,15 @@ Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' 
   }
 
   Context 'Ambiguous release match (error path)' {
-    It 'Throws when multiple releases have the same Release_Name' {
+    It 'Throws when multiple releases have the same Release_Number' {
       Mock Invoke-RestMethod -MockWith {
         if ($Uri -match 'Applications_GetApplications') {
           return , @([PSCustomObject]@{ Application_Id = 42; Application_Name = 'MyApp' })
         }
         if ($Uri -match 'Releases_GetReleases') {
           return , @(
-            [PSCustomObject]@{ Release_Id = 100; Release_Name = 'Duplicate' },
-            [PSCustomObject]@{ Release_Id = 101; Release_Name = 'Duplicate' }
+            [PSCustomObject]@{ Release_Id = 100; Release_Number = 'Duplicate'; Release_Name = 'First display name' },
+            [PSCustomObject]@{ Release_Id = 101; Release_Number = 'Duplicate'; Release_Name = 'Second display name' }
           )
         }
         throw "Unexpected URI: $Uri"
@@ -167,6 +221,28 @@ Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' 
   }
 
   Context 'Missing release (idempotent no-op)' {
+    It 'Does not match Release_Name when Release_Number differs' {
+      $script:capturedUris = @()
+      Mock Invoke-RestMethod -MockWith {
+        $script:capturedUris += $Uri
+        if ($Uri -match 'Applications_GetApplications') {
+          return , @([PSCustomObject]@{ Application_Id = 42; Application_Name = 'MyApp' })
+        }
+        if ($Uri -match 'Releases_GetReleases') {
+          return , @([PSCustomObject]@{ Release_Id = 700; Release_Number = '7.0.0'; Release_Name = 'RequestedLabel' })
+        }
+        throw "Unexpected URI: $Uri"
+      }
+
+      $result = Remove-BuildMasterRelease `
+        -Application 'MyApp' `
+        -ReleaseNumber 'RequestedLabel' `
+        -Confirm:$false
+
+      $result.Action | Should -Be 'Unchanged'
+      $script:capturedUris | Where-Object { $_ -match 'Releases_CancelRelease|Releases_PurgeReleaseData' } | Should -HaveCount 0
+    }
+
     It 'Returns Action=Unchanged when release not found' {
       Mock Invoke-RestMethod -MockWith {
         if ($Uri -match 'Applications_GetApplications') {
@@ -211,6 +287,30 @@ Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' 
     }
   }
 
+  Context 'Ambiguous application match (error path)' {
+    It 'Throws before release lookup or mutation when exact Application_Name is duplicated' {
+      $script:capturedUris = @()
+      Mock Invoke-RestMethod -MockWith {
+        $script:capturedUris += $Uri
+        if ($Uri -match 'Applications_GetApplications') {
+          return , @(
+            [PSCustomObject]@{ Application_Id = 42; Application_Name = 'DuplicateApp' },
+            [PSCustomObject]@{ Application_Id = 43; Application_Name = 'DuplicateApp' }
+          )
+        }
+        throw "Unexpected URI: $Uri"
+      }
+
+      { Remove-BuildMasterRelease `
+          -Application 'DuplicateApp' `
+          -ReleaseNumber '1.0.0' `
+          -Confirm:$false } |
+        Should -Throw -ExpectedMessage '*Ambiguous application match*Application_Name=''DuplicateApp''*'
+
+      $script:capturedUris | Where-Object { $_ -match 'Releases_GetReleases|Releases_CancelRelease|Releases_PurgeReleaseData' } | Should -HaveCount 0
+    }
+  }
+
   Context 'WhatIf short-circuit' {
     It 'Does not call cancel or purge when -WhatIf is supplied' {
       $script:capturedUris = @()
@@ -220,7 +320,7 @@ Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' 
           return , @([PSCustomObject]@{ Application_Id = 42; Application_Name = 'MyApp' })
         }
         if ($Uri -match 'Releases_GetReleases') {
-          return , @([PSCustomObject]@{ Release_Id = 999; Release_Name = 'TestRelease' })
+          return , @([PSCustomObject]@{ Release_Id = 999; Release_Number = 'TestRelease'; Release_Name = 'MyApp TestRelease' })
         }
         throw "Unexpected URI: $Uri"
       }
@@ -242,7 +342,7 @@ Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' 
           return , @([PSCustomObject]@{ Application_Id = 42; Application_Name = 'MyApp' })
         }
         if ($Uri -match 'Releases_GetReleases') {
-          return , @([PSCustomObject]@{ Release_Id = 999; Release_Name = 'TestRelease' })
+          return , @([PSCustomObject]@{ Release_Id = 999; Release_Number = 'TestRelease'; Release_Name = 'MyApp TestRelease' })
         }
         throw "Unexpected URI: $Uri"
       }
@@ -268,7 +368,7 @@ Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' 
           return , @([PSCustomObject]@{ Application_Id = 42; Application_Name = 'A' })
         }
         if ($Uri -match 'Releases_GetReleases') {
-          return , @([PSCustomObject]@{ Release_Id = 1; Release_Name = 'R' })
+          return , @([PSCustomObject]@{ Release_Id = 1; Release_Number = 'R'; Release_Name = 'A R' })
         }
         if ($Uri -match 'Releases_CancelRelease') {
           return [PSCustomObject]@{ success = $true }
@@ -293,7 +393,7 @@ Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' 
     }
 
     It 'Falls back to the local BuildMaster base URL when none is configured' {
-      # All BuildMaster cmdlets share a documented http://localhost:50017
+      # All BuildMaster cmdlets share a documented https://utat022:50017
       # fallback when no base URL is supplied via parameter, settings, or env
       # var (mirrors Start-BuildMasterPipeline / Start-BuildMasterDeployment).
       $global:settings = @{
@@ -311,7 +411,7 @@ Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' 
           return , @([PSCustomObject]@{ Application_Id = 42; Application_Name = 'A' })
         }
         if ($Uri -match 'Releases_GetReleases') {
-          return , @([PSCustomObject]@{ Release_Id = 1004; Release_Name = '1.0.0' })
+          return , @([PSCustomObject]@{ Release_Id = 1004; Release_Number = '1.0.0'; Release_Name = 'A 1.0.0' })
         }
         return [PSCustomObject]@{ success = $true }
       }
@@ -319,7 +419,7 @@ Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' 
       { Remove-BuildMasterRelease -Application 'A' -ReleaseNumber '1.0.0' -Confirm:$false } |
         Should -Not -Throw
       $script:capturedUris | Should -Not -BeNullOrEmpty
-      $script:capturedUris[0] | Should -Match '^http://localhost:50017/'
+      $script:capturedUris[0] | Should -Match '^https://utat022:50017/'
     }
   }
 
@@ -338,14 +438,14 @@ Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' 
   }
 
   Context 'Request body validation' {
-    It 'Purge request body contains Release_Id' {
+    It 'Purge request body contains exact Application_Id and Release_Number contract fields' {
       $script:capturedBody = $null
       Mock Invoke-RestMethod -MockWith {
         if ($Uri -match 'Applications_GetApplications') {
           return , @([PSCustomObject]@{ Application_Id = 42; Application_Name = 'MyApp' })
         }
         if ($Uri -match 'Releases_GetReleases') {
-          return , @([PSCustomObject]@{ Release_Id = 1234; Release_Name = 'R' })
+          return , @([PSCustomObject]@{ Release_Id = 1234; Release_Number = 'R'; Release_Name = 'MyApp R' })
         }
         if ($Uri -match 'Releases_PurgeReleaseData') {
           $script:capturedBody = $Body
@@ -356,7 +456,9 @@ Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' 
 
       Remove-BuildMasterRelease -Application 'MyApp' -ReleaseNumber 'R' -Purge -Confirm:$false | Out-Null
       $parsed = $script:capturedBody | ConvertFrom-Json
-      $parsed.Release_Id | Should -Be 1234
+      $parsed.Application_Id | Should -Be 42
+      $parsed.Release_Number | Should -Be 'R'
+      $parsed.PSObject.Properties.Name | Should -Not -Contain 'Release_Id'
     }
 
     It 'Cancel request body contains Release_Id' {
@@ -366,7 +468,7 @@ Describe 'Remove-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' 
           return , @([PSCustomObject]@{ Application_Id = 42; Application_Name = 'MyApp' })
         }
         if ($Uri -match 'Releases_GetReleases') {
-          return , @([PSCustomObject]@{ Release_Id = 5678; Release_Name = 'R' })
+          return , @([PSCustomObject]@{ Release_Id = 5678; Release_Number = 'R'; Release_Name = 'MyApp R' })
         }
         if ($Uri -match 'Releases_CancelRelease') {
           $script:capturedBody = $Body

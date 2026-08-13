@@ -425,6 +425,45 @@ function Read-BuildMasterRunContextJson {
   }
 }
 
+function Write-BuildMasterJsonFileAtomically {
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$Path,
+    [Parameter(Mandatory)][ValidateNotNull()][string]$Content,
+    [ValidateRange(1, 20)][int]$MaxAttempts = 10,
+    [ValidateRange(10, 5000)][int]$RetryDelayMilliseconds = 200
+  )
+
+  $temporaryPath = '{0}.{1}.{2}.tmp' -f $Path, $PID, [Guid]::NewGuid().ToString('N')
+  try {
+    for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+      try {
+        [System.IO.File]::WriteAllText(
+          $temporaryPath,
+          $Content,
+          [System.Text.UTF8Encoding]::new($false)
+        )
+        [System.IO.File]::Move($temporaryPath, $Path, $true)
+        return
+      } catch [System.IO.IOException] {
+        if ($attempt -eq $MaxAttempts) { throw }
+        Start-Sleep -Milliseconds ($RetryDelayMilliseconds * $attempt)
+      } catch [System.UnauthorizedAccessException] {
+        # Windows reports a transient share violation on an overwriting Move as
+        # UnauthorizedAccessException, not IOException, when the destination is
+        # briefly held open by another process (a concurrent stage run or the
+        # Dropbox sync client). It is retryable in exactly the same way.
+        if ($attempt -eq $MaxAttempts) { throw }
+        Start-Sleep -Milliseconds ($RetryDelayMilliseconds * $attempt)
+      }
+    }
+  } finally {
+    if (Test-Path -LiteralPath $temporaryPath) {
+      Remove-Item -LiteralPath $temporaryPath -Force -ErrorAction SilentlyContinue
+    }
+  }
+}
+
 function Write-BuildMasterRunContextJson {
   <#
   .SYNOPSIS
@@ -586,7 +625,8 @@ function Write-BuildMasterRunContextJson {
 
       $path = Join-Path -Path $ContextDirectory -ChildPath 'build-context.json'
       if ($PSCmdlet.ShouldProcess($path, 'Write build-context.json')) {
-        $payload | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $path -Encoding utf8
+        $json = $payload | ConvertTo-Json -Depth 12
+        Write-BuildMasterJsonFileAtomically -Path $path -Content $json
       }
       return [PSCustomObject]$payload
     } catch {

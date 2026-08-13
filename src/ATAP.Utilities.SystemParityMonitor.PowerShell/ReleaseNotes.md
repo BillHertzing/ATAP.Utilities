@@ -1,6 +1,138 @@
 # Release Notes — ATAP.Utilities.SystemParityMonitor.PowerShell
 
-## 0.1.4 (unreleased)
+## 0.1.21
+
+- Grant non-inheriting read-and-execute access on validated package-profile
+  ancestors. Node's `realpathSync` requires directory read access when the approved
+  machine npm prefix is an NVM symbolic link into the developer profile; the grant
+  remains non-inheriting and does not expose sibling contents recursively.
+
+## 0.1.20
+
+- Preserve a bounded, single-line native-command diagnostic when a package-manager
+  inventory exits nonzero. Scheduled audits remain fail-closed while reporting the
+  actionable npm error instead of only its exit code.
+
+## 0.1.19
+
+- Express the non-inheriting ancestor rights in the canonical order emitted by
+  `icacls` (`X,RA`), so post-grant verification recognizes the exact effective
+  rights instead of rejecting the equivalent input ordering.
+
+## 0.1.18
+
+- Grant non-inheriting `ReadAttributes` plus `Execute` on validated user-profile
+  ancestors. npm uses `lstat` while walking to its configured prefix, so execute-only
+  traversal is insufficient even though no directory listing or inherited access is
+  required.
+
+## 0.1.17
+
+- Grant non-inheriting traverse-only access on validated user-profile ancestors so the
+  parity identity can reach configured package roots without gaining inherited access to
+  sibling content.
+- When the approved machine npm prefix is a symbolic link, grant the resolved target only
+  when it remains beneath the approved developer user root; reject ambiguous, remote, or
+  out-of-root targets.
+- Treat missing SQL default-data/default-log registry values as path nonconformance rather
+  than an audit exception. This preserves the complete Integration instance surface while
+  reporting `FilesConform=False`.
+
+## 0.1.16
+
+- Fail audit and comparison coverage closed when any collector emits an explicit
+  `AuditError` row, and preserve the precise category/item path in diagnostic snapshots
+  and drift reports. A row count can no longer conceal an incomplete collection.
+- Support SQL named instances that use a dynamic TCP port by preferring a valid static
+  `TcpPort` and otherwise using `TcpDynamicPorts` for the connection.
+- Collect SQL Agent job names through `msdb.dbo.sysjobs_view`, matching the deployed
+  `SQLAgentReaderRole` least-privilege grant instead of requiring direct table access.
+- Grant read-and-traverse, rather than read alone, on configured package-manager profile
+  roots so npm, pip, and dotnet can descend through those inventories under the scheduled
+  service identity.
+
+## 0.1.15
+
+- Service and SQL engine discovery move from `Get-Service` back to `Win32_Service`, the surface
+  the least-privilege matrix names. A previous change had moved the other way on the belief that
+  the approved `root\cimv2` ACE could not serve `Win32_Service`; measured on both hosts
+  2026-08-11 that was wrong twice over. The namespace ACE (`Enable`+`RemoteEnable`, `0x21`) is
+  fine — `Win32_OperatingSystem`, `Win32_ComputerSystem`, `Win32_Process`, and
+  `Win32_LogicalDisk` all queried successfully — while BOTH `Win32_Service` and `Get-Service`
+  were denied, because the `Win32_Service` provider calls Service Control Manager underneath.
+  This was the cause of the long-standing `InvalidOperationException` that stopped the audit
+  before it collected anything, on both hosts.
+- Unblocking it required read-only SCM access plus per-service query rights (Task 14.72), not a
+  code change; the move to CIM keeps collection on one documented permission surface.
+- The audit now enumerates services once rather than querying per name, so a single denial
+  cannot silently degrade one row to `<missing>` while others succeed.
+- Recorded value shapes are deliberately unchanged, including the two `<not-collected>`
+  placeholders on engine rows. `Win32_Service` could populate them with `StartName` and
+  `StartMode`, but that would alter every engine row and perturb the Task 14.73 drift baseline.
+
+## 0.1.13 release candidate (unreleased)
+
+- Persist a scheduled-task failure's exception message and fully qualified error identifier in the task-result JSON, so S4U failures can be diagnosed without interactive logon.
+
+## 0.1.12 release candidate (unreleased)
+
+This candidate is not yet built, promoted, installed, or deployed. Permission-profile
+ACL follow-up remains in flight, so the module is not yet release-ready. The candidate's
+version must not be used to describe the installed host tasks.
+
+- Add identity-explicit configured path collection for pip, npm, and NuGet global
+  tools. Missing configuration is a status, not an implicit audit of the
+  `SvcParityAudit` profile; package/conflict rows are scoped by identity.
+- Add configurable audit and comparison minimum category counts. Missing and thin
+  coverage are structurally distinct; audit writes its diagnostic snapshot before
+  failing.
+- Add source-level Windows Application event thresholds: event `12380`/`12381` on
+  the second consecutive scheduled failure and event `12382` immediately for stale
+  snapshots or missing/thin comparison coverage. Host event-source registration and
+  SEQ forwarding are not verified or deployed.
+- Add validated scheduler transport for package-manager profiles and coverage minima.
+  Registration atomically materializes schema-versioned JSON, validates its read-back,
+  and places only the quoted configuration path on scheduled command lines. Wrappers
+  fail closed on missing, unreadable, malformed, or unsupported configuration while
+  preserving second-consecutive-failure alerting.
+- Add the local-only, additive `Set-ParityAuditReadAccess` permission tool for the
+  approved filesystem, SQL metadata, SQL Agent metadata, and separately gated WMI
+  read surfaces. It validates exact hosts, accounts, paths, and SQL instances, supports
+  `ShouldProcess`, verifies applied access, and does not accept credentials. Its
+  permission-profile ACL follow-up is not yet settled.
+- Collect SQL engine discovery through the Service Control Manager (`Get-Service`) rather
+  than `Win32_Service`. The approved non-inheriting WMI ACE remains unchanged: it is too
+  narrow for the deployed service identity's WMI query and must not be widened to method
+  execution. SCM status queries preserve least privilege and restore instance discovery.
+- Do not resolve the Windows PowerShell `ScheduledTasks` cmdlets when performing the
+  credential-backed S4U Task Scheduler COM registration path. This keeps UTAT01's
+  PowerShell 7 endpoint able to re-register its S4U/Limited audit task.
+
+## 0.1.10 (published and deployed 2026-08-10)
+
+- Deployed to both hosts from the immutable package with SHA-256
+  `70449CD9636D8D3880CF6ED26E69AF7296213AC27B239427E0B3AEF1C37E6BB1`.
+- Repaired the scheduled audit and compare actions to the installed `0.1.10` module
+  root and supplied the validated package-manager profile configuration path.
+- Live evidence confirms successful fresh audit and compare task results, token-free
+  task metadata, and no stale or missing/thin coverage in that run. It also records
+  123 undeclared drift rows, so it is not the two-consecutive-clean-compare acceptance
+  required by Task 14.74.
+- This deployment does not verify least-privilege grants, event-source registration,
+  SEQ forwarding, notification, or paging.
+
+## 0.1.8 (published and deployed 2026-08-09)
+
+- Remove the scheduled audit and compare wrappers' Bitwarden/BWS credential probe,
+  token-purpose parameters, and credential-directory dependency.
+- Record metadata-only task results with `SecretAccessRequired = false`; deployed
+  tasks require no BWS token, `bws`, or `BW_SESSION`.
+
+## Historical source changes recorded before 0.1.8
+
+The following changes were previously grouped under a stale `0.1.4 (unreleased)`
+heading. This file does not reconstruct or invent the exact intervening immutable
+version in which each item shipped.
 
 - Add canonical Task 12.59 `PrimaryRole.json` read/write cmdlets with atomic,
   idempotent writes and schema validation for DPOM entry and exit. The single
@@ -18,10 +150,6 @@
   inputs; unmatched differences are classified as undeclared drift.
 - Fall back to `Win32_Share` when `Get-SmbShare` is unavailable, including on the
   affected Windows 10 module-discovery surface.
-- Remove the scheduled audit and compare wrappers' Bitwarden/BWS credential probe,
-  token-purpose parameters, and credential-directory dependency. Scheduled action
-  arguments now contain no vault-token inputs, and metadata-only task-result JSON
-  records `SecretAccessRequired = false`.
 - Restore S4U/Limited as the peer audit topology; a supplied Windows credential is
   used only for cross-account task registration or primary-host peer SMB access, not
   for vault access.

@@ -326,7 +326,7 @@
         "contentHash": "xkKFzm0hylHF0SlDj78ACYMJC/i8fQ3i16sDDNYoKnjTsstGSQfuSBJ+QT4nqRXk/fOiYTh+iY0KIX5N7HTLuQ==",
         "dependencies": {
           "Microsoft.TestPlatform.ObjectModel": "17.0.0",
-          "Newtonsoft.Json": "[13.0.4, )"
+          "Newtonsoft.Json": "9.0.1"
         }
       },
       "NETStandard.Library": {
@@ -440,7 +440,8 @@
       "atap.utilities.serializer.model": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Serializer.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.Binder": "[9.0.0, )",
@@ -595,7 +596,7 @@
       "Newtonsoft.Json": {
         "type": "CentralTransitive",
         "requested": "[13.0.4, )",
-        "resolved": "13.0.4",
+        "resolved": "9.0.1",
         "contentHash": "U82mHQSKaIk+lpSVCbWYKNavmNH1i5xrExDEquU1i6I5pV6UMOqRnJRSlKO3cMPfcpp0RgDY+8jUXHdQ4IfXvw=="
       }
     },
@@ -939,7 +940,7 @@
         "contentHash": "xkKFzm0hylHF0SlDj78ACYMJC/i8fQ3i16sDDNYoKnjTsstGSQfuSBJ+QT4nqRXk/fOiYTh+iY0KIX5N7HTLuQ==",
         "dependencies": {
           "Microsoft.TestPlatform.ObjectModel": "17.0.0",
-          "Newtonsoft.Json": "[13.0.4, )"
+          "Newtonsoft.Json": "9.0.1"
         }
       },
       "NETStandard.Library": {
@@ -1068,7 +1069,8 @@
       "atap.utilities.serializer.model": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Serializer.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.Binder": "[9.0.0, )",
@@ -1225,7 +1227,7 @@
       "Newtonsoft.Json": {
         "type": "CentralTransitive",
         "requested": "[13.0.4, )",
-        "resolved": "13.0.4",
+        "resolved": "9.0.1",
         "contentHash": "U82mHQSKaIk+lpSVCbWYKNavmNH1i5xrExDEquU1i6I5pV6UMOqRnJRSlKO3cMPfcpp0RgDY+8jUXHdQ4IfXvw=="
       },
       "System.Text.Json": {
@@ -1581,7 +1583,7 @@
         "contentHash": "xkKFzm0hylHF0SlDj78ACYMJC/i8fQ3i16sDDNYoKnjTsstGSQfuSBJ+QT4nqRXk/fOiYTh+iY0KIX5N7HTLuQ==",
         "dependencies": {
           "Microsoft.TestPlatform.ObjectModel": "17.0.0",
-          "Newtonsoft.Json": "[13.0.4, )"
+          "Newtonsoft.Json": "9.0.1"
         }
       },
       "NETStandard.Library": {
@@ -1695,7 +1697,8 @@
       "atap.utilities.serializer.model": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Serializer.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.Binder": "[9.0.0, )",
@@ -1850,7 +1853,7 @@
       "Newtonsoft.Json": {
         "type": "CentralTransitive",
         "requested": "[13.0.4, )",
-        "resolved": "13.0.4",
+        "resolved": "9.0.1",
         "contentHash": "U82mHQSKaIk+lpSVCbWYKNavmNH1i5xrExDEquU1i6I5pV6UMOqRnJRSlKO3cMPfcpp0RgDY+8jUXHdQ4IfXvw=="
       }
     },

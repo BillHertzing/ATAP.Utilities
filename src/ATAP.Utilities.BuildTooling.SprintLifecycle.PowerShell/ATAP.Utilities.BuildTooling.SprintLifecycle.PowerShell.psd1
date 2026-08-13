@@ -78,17 +78,21 @@ RequiredModules = @(
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
 FunctionsToExport = @(
-  'Clear-SprintGeneratedArtifacts', 'Convert-TasksMdToSprintBoard', 'Get-SprintEndContext',
+  'Clear-SprintGeneratedArtifacts', 'Convert-TasksMdToSprintBoard', 'Get-SprintEndApprovalPlan',
+  'Get-SprintEndContext',
   'Get-SprintHistoryReconstruction', 'Initialize-DownstreamSprintFromSharedVSCode',
   'Initialize-SprintAIAdapters', 'Invoke-SprintAIAdapterLifecycle', 'Invoke-SprintEndGitHubClose',
   'Invoke-SprintEndInfrastructureCleanup', 'Invoke-SprintEndLifecycle', 'Invoke-SprintEndOverviewClose',
-  'New-OverviewSprintWorkspace', 'New-SprintEndHandoff', 'New-SprintStage1', 'New-SprintStage2',
+  'Invoke-SprintEndRehearsal',
+  'New-OverviewSprintWorkspace', 'New-SprintEndDefectRoute', 'New-SprintEndHandoff', 'New-SprintStage1',
+  'New-SprintStage2',
   'New-SprintStage2Result', 'Remove-OverviewSprintWorkspace', 'Remove-SprintWorktreeSafely',
   'Restore-SprintHistoryArtifacts', 'Save-CopilotCheckpoint', 'Save-SprintEndSessionTail',
   'Save-SprintHistoryArtifacts', 'Save-SprintRetrospectiveSnapshot', 'Save-SprintWorkSession',
   'Set-SprintBoundaryContext', 'Set-SprintBoundaryUserProfiles', 'Sync-SprintBoundaryPrimaryRoleMarker',
   'Test-SprintCheckpointCoverage', 'Test-SprintEndBoundaryState', 'Test-SprintEndCommandSurface',
-  'Test-SprintEndPullOverlap', 'Test-SprintEndWorktreeState', 'Test-SprintInfrastructureHealth',
+  'Test-SprintEndPullOverlap', 'Test-SprintEndWorktreeState', 'Test-SprintEndWriteTarget',
+  'Test-SprintInfrastructureHealth',
   'Test-SprintPrerequisites'
 )
 

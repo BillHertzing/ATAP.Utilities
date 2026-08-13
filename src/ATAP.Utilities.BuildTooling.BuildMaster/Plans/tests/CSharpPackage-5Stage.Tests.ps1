@@ -204,6 +204,45 @@ Describe 'V4-C02 runner shape: Invoke-CSharpPackageBuildMasterStage.ps1 contract
         $ciMatches.Count | Should -BeGreaterOrEqual 2
     }
 
+    It 'runner resolves stable Visual Studio Build Tools with the NuGet Build Tools component' {
+        $script:RunnerText | Should -Match 'function\s+Resolve-DeterministicNuGetMSBuild'
+        $script:RunnerText | Should -Match '-requires\s+Microsoft\.VisualStudio\.Component\.NuGet\.BuildTools'
+        $script:RunnerText | Should -Match "-lt\s+\[version\]'18\.8\.0\.0'"
+        $script:RunnerText | Should -Match "-lt\s+\[version\]'7\.8\.0\.0'"
+        $script:RunnerText | Should -Match 'Microsoft\.NetCore\.Component\.SDK'
+        $script:RunnerText | Should -Match 'NuGet\.Build\.Tasks\.Pack\.dll'
+        $script:RunnerText | Should -Match '\$sdkPackTaskVersion\s+-lt\s+\[version\]''7\.8\.0\.0'''
+    }
+
+    It 'runner uses Visual Studio MSBuild Pack with deterministic properties and never invokes dotnet pack' {
+        $script:RunnerText | Should -Match "'/t:Pack'"
+        $script:RunnerText | Should -Match "'/p:Deterministic=true'"
+        $script:RunnerText | Should -Match 'Get-SourceDateEpoch\s+-RepositoryPath\s+\$SourcePath'
+        $script:RunnerText | Should -Match '"/p:DeterministicTimestamp=\$sourceDateEpoch"'
+        $script:RunnerText | Should -Match '&\s+\$deterministicPackTool\.MSBuildPath\s+@packArgs'
+        $script:RunnerText | Should -Not -Match '(?m)^\s*dotnet\s+@packArgs\s*$'
+    }
+
+    It 'runner derives the deterministic package timestamp from Git HEAD and fails closed if unavailable' {
+        $script:RunnerText | Should -Match 'function\s+Get-SourceDateEpoch'
+        $script:RunnerText | Should -Match 'git\s+-C\s+\$RepositoryPath\s+show\s+-s\s+--format=%ct\s+HEAD'
+        $script:RunnerText | Should -Match 'deterministic pack is refused'
+    }
+
+    It 'runner packs twice and blocks publication unless every package hash matches' {
+        $script:RunnerText | Should -Match 'foreach\s*\(\$packRun\s+in\s+1\.\.2\)'
+        $script:RunnerText | Should -Match 'Get-FileHash[^\r\n]+SHA256'
+        $script:RunnerText | Should -Match 'Deterministic two-pack SHA-256 gate failed\. No feed was mutated'
+        $script:RunnerText | Should -Match 'Copy-Item\s+-LiteralPath\s+\$_\.Path\s+-Destination\s+\$PackageOutputPath'
+        $script:RunnerText | Should -Match 'two-pack SHA-256 gate passed'
+    }
+
+    It 'runner fails closed with actionable setup guidance when deterministic pack prerequisites are absent or old' {
+        $script:RunnerText | Should -Match 'Deterministic production NuGet pack currently requires'
+        $script:RunnerText | Should -Match 'SolutionDocumentation/NewComputerSetup\.md'
+        $script:RunnerText | Should -Match 'Stable deterministic pack requires Visual Studio Build Tools 2026 18\.8\+ and NuGet 7\.8\+'
+    }
+
     It 'runner uses the canonical per-build run-context directory' {
         $script:RunnerText | Should -Match 'Initialize-BuildMasterRunContextDirectory'
         $script:RunnerText | Should -Match "Join-Path[^\r\n]*PSScriptRoot[^\r\n]*BuildMasterRunContext\.Common\.ps1"

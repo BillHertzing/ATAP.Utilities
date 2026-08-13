@@ -1,0 +1,221 @@
+@startuml RRSBS_RDB_250_Logical_Model
+hide circle
+hide methods
+left to right direction
+skinparam linetype ortho
+skinparam defaultFontName Segoe UI
+skinparam shadowing false
+skinparam entity {
+  BackgroundColor #F7FAFC
+  BorderColor #34495E
+  FontColor #1F2937
+}
+
+title RDB-250 Plan, Approval, Run, Artifact, Event, and Usage Logical Model
+
+legend left
+  Design-only model; no SQL, seeds, execution, or allocated identifiers.
+  <<entity-root>> durable RDB-200 Entity subtype.
+  All plans, approvals, attempts, artifacts, events, and usage facts append only.
+endlegend
+
+package "Plan and immutable approval" #EAF2F8 {
+  entity ManifestationPlan <<entity-root>> {
+    * ManifestationPlanId : bigint <<PK>>
+    * ManifestationPlanPhiloteId : uniqueidentifier <<UQ>>
+    * InstantiationVersionId : bigint <<FK>>
+    * GraphSelectorHash : binary
+    * SelectedInputSnapshotHash : binary
+    * TargetScopeId : bigint <<FK>>
+    * TargetPolicyVersionId : bigint <<FK>>
+    * ExecutorBoundaryId : bigint <<FK>>
+    * HashAlgorithmCode : varchar <<FK>>
+    * PlanFingerprint : binary <<UQ>>
+    * PlannedAtUtc : datetime2
+  }
+
+  entity PlanArtifact <<immutable planned slot>> {
+    * PlanArtifactId : bigint <<PK>>
+    * ManifestationPlanId : bigint <<FK>>
+    * SlotOrdinal : int
+    * CanonicalLocator : varchar
+    * LocatorPolicyVersionId : bigint <<FK>>
+    * EffectClassCode : varchar <<FK>>
+    * ExpectedContentHash : binary
+    * ExpectedByteCount : bigint
+    --
+    UQ (ManifestationPlanId, SlotOrdinal)
+    UQ (ManifestationPlanId, CanonicalLocator)
+  }
+
+  entity PlanApproval <<entity-root, immutable decision>> {
+    * PlanApprovalId : bigint <<PK>>
+    * PlanApprovalPhiloteId : uniqueidentifier <<UQ>>
+    * ManifestationPlanId : bigint <<FK>>
+    * InstantiationVersionId : bigint <<FK>>
+    * TargetScopeId : bigint <<FK>>
+    * TargetPolicyVersionId : bigint <<FK>>
+    * ExecutorBoundaryId : bigint <<FK>>
+    * PlanFingerprint : binary
+    * DecisionCode : varchar <<FK>>
+    * AuthorityEntityId : bigint <<FK>>
+    * AuthorityPolicyVersionId : bigint <<FK>>
+    * DecidedAtUtc : datetime2
+    o ExpiresAtUtc : datetime2
+  }
+
+  entity PlanApprovalStateEvent <<immutable>> {
+    * PlanApprovalStateEventId : bigint <<PK>>
+    * PlanApprovalId : bigint <<FK>>
+    * StateEventCode : varchar <<FK>>
+    * RecordedAtUtc : datetime2
+    o SuccessorPlanApprovalId : bigint <<FK>>
+  }
+}
+
+package "Idempotent manifestation and execution" #E8F8F5 {
+  entity Manifestation <<entity-root>> {
+    * ManifestationId : bigint <<PK>>
+    * ManifestationPhiloteId : uniqueidentifier <<UQ>>
+    * ManifestationPlanId : bigint <<FK>>
+    * PlanApprovalId : bigint <<FK>>
+    * AuthorizationScopeId : bigint <<FK>>
+    * CallerIdempotencyKey : varchar
+    * RequestFingerprint : binary
+    * StateCode : varchar <<FK>>
+    --
+    UQ (AuthorizationScopeId, CallerIdempotencyKey)
+  }
+
+  entity ManifestationAttempt <<append-only>> {
+    * ManifestationAttemptId : bigint <<PK>>
+    * ManifestationId : bigint <<FK>>
+    * AttemptNumber : int
+    o RetryOfManifestationAttemptId : bigint <<FK>>
+    * ExecutorBuildId : bigint <<FK>>
+    o LeaseHolderReference : varchar
+    o LeaseToken : binary
+    o LeaseExpiresAtUtc : datetime2
+    o LastHeartbeatAtUtc : datetime2
+    * StateCode : varchar <<FK>>
+    --
+    UQ (ManifestationId, AttemptNumber)
+  }
+
+  entity RuleExecution <<exact occurrence execution>> {
+    * RuleExecutionId : bigint <<PK>>
+    * ManifestationAttemptId : bigint <<FK>>
+    * OccurrenceKey : binary <<FK>>
+    * RuleVersionId : bigint <<FK>>
+    * ExecutionOrdinal : int
+    * ExecutorBuildId : bigint <<FK>>
+    * OutcomeCode : varchar <<FK>>
+    * ExecutionFingerprint : binary
+    --
+    UQ (ManifestationAttemptId, OccurrenceKey, ExecutionOrdinal)
+  }
+
+  entity ManifestationEvent <<append-only journal>> {
+    * ManifestationEventId : bigint <<PK>>
+    * ManifestationAttemptId : bigint <<FK>>
+    * EventSequence : bigint
+    * EventKindCode : varchar <<FK>>
+    * OccurredAtUtc : datetime2
+    o RuleExecutionId : bigint <<FK>>
+    o PlanArtifactId : bigint <<FK>>
+    o ErrorTaxonomyCode : varchar <<FK>>
+    o OutboxMessageId : uniqueidentifier
+    --
+    UQ (ManifestationAttemptId, EventSequence)
+  }
+}
+
+package "Observed output and governed usage" #FDF2E9 {
+  entity ManifestationArtifact <<entity-root, observed>> {
+    * ManifestationArtifactId : bigint <<PK>>
+    * ManifestationArtifactPhiloteId : uniqueidentifier <<UQ>>
+    * ManifestationAttemptId : bigint <<FK>>
+    * RuleExecutionId : bigint <<FK>>
+    * PlanArtifactId : bigint <<FK>>
+    * ObservedContentHash : binary
+    * ObservedByteCount : bigint
+    * ObservedAtUtc : datetime2
+    * ArtifactStateCode : varchar <<FK>>
+    o ReusedFromManifestationArtifactId : bigint <<FK>>
+    --
+    UQ (ManifestationAttemptId, PlanArtifactId)
+  }
+
+  entity ErrorTaxonomy <<closed catalog>> {
+    * ErrorTaxonomyCode : varchar <<PK>>
+    * CategoryCode : varchar
+    * RetryDispositionCode : varchar
+    * SafetyClassCode : varchar
+  }
+
+  entity RuleUsage <<immutable provenance>> {
+    * RuleUsageId : bigint <<PK>>
+    * SubjectEntityId : bigint <<FK>>
+    * SubjectVersionId : bigint <<FK>>
+    * RuleVersionId : bigint <<FK>>
+    * UsageRoleCode : varchar <<FK>>
+    * ProvenanceKindCode : varchar <<FK>>
+    o ManifestationPlanId : bigint <<FK>>
+    o ManifestationAttemptId : bigint <<FK>>
+    o RuleExecutionId : bigint <<FK>>
+    * RecordedAtUtc : datetime2
+  }
+}
+
+entity InstantiationVersion <<external RDB-240>> {
+  * InstantiationVersionId : bigint <<PK>>
+}
+entity TargetScope <<external target identity>> {
+  * TargetScopeId : bigint <<PK>>
+}
+entity TargetPolicyVersion <<external immutable policy>> {
+  * TargetPolicyVersionId : bigint <<PK>>
+}
+entity ExecutorBoundary <<external RDB-140>> {
+  * ExecutorBoundaryId : bigint <<PK>>
+}
+entity RuleVersion <<external RDB-220>> {
+  * RuleVersionId : bigint <<PK>>
+}
+entity Entity <<external RDB-200>> {
+  * EntityId : bigint <<PK>>
+}
+
+InstantiationVersion ||--o{ ManifestationPlan : planned from
+TargetScope ||--o{ ManifestationPlan : targets
+TargetPolicyVersion ||--o{ ManifestationPlan : constrains
+ExecutorBoundary ||--o{ ManifestationPlan : selects
+ManifestationPlan ||--o{ PlanArtifact : declares
+ManifestationPlan ||--o{ PlanApproval : requires
+PlanApproval ||--o{ PlanApprovalStateEvent : history
+PlanApproval ||--o{ Manifestation : authorizes
+ManifestationPlan ||--o{ Manifestation : requested plan
+Manifestation ||--o{ ManifestationAttempt : retries
+ManifestationAttempt ||--o{ RuleExecution : executes
+RuleVersion ||--o{ RuleExecution : exact version
+ManifestationAttempt ||--o{ ManifestationEvent : journals
+RuleExecution ||--o{ ManifestationEvent : describes
+ErrorTaxonomy ||--o{ ManifestationEvent : classifies
+ManifestationAttempt ||--o{ ManifestationArtifact : observes
+RuleExecution ||--o{ ManifestationArtifact : produces
+PlanArtifact ||--o{ ManifestationArtifact : fulfills
+Entity ||--o{ RuleUsage : subject
+RuleVersion ||--o{ RuleUsage : governed rule
+ManifestationPlan ||--o{ RuleUsage : planned provenance
+RuleExecution ||--o{ RuleUsage : observed provenance
+
+note bottom of ManifestationArtifact
+  One observed artifact has one producing execution.
+  A cache reuse references its completed original producer.
+end note
+
+note bottom of PlanApproval
+  Changed plan, inputs, target, graph, or executor => new plan and approval.
+  Revocation/supersession is an event, never an update.
+end note
+@enduml

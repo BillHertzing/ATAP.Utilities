@@ -1,4 +1,0 @@
-"PhiloteId","PrimitiveLanguageKindId","Name","Purpose","SourceFileReference"
-"7a1b2c3d-4e5f-4061-8273-a4b5c6d7e8f9","3","Test_udf_dateperiod","Generate a runnable T-SQL query script that exercises the dbo.udf_dateperiod table-valued function.","src/ATAP.Utilities.Philote/Database/Queries/Test_udf_dateperiod.sql"
-"8b2c3d4e-5f60-4172-9384-b5c6d7e8f9a0","3","Create_udf_dateperiod","Generate the DDL script that conditionally drops then creates the [dbo].[udf_dateperiod] multi-statement table-valued function.","src/ATAP.Utilities.Philote/Database/Queries/Create_udf_dateperiod.sql"
-"9c3d4e5f-60a1-4283-a495-c6d7e8f9b0a1","3","V00.01.000010__Create_Philote_Core_Schema","Generate the Flyway versioned migration script for the Philote core schema.","src/ATAP.Utilities.Philote/Database/Flyway/DATA/V00.01.000010__Create_Philote_Core_Schema.sql"

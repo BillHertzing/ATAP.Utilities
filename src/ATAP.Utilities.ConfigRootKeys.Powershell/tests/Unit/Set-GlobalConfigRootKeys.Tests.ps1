@@ -39,11 +39,18 @@ Describe 'Set-GlobalConfigRootKeys population' -Tag 'Unit' {
     # one representative key from each section function
     $global:configRootKeys.ContainsKey('SYSTEMDRIVEConfigRootKey') | Should -BeTrue                       # Set-CoreConfigRootKeys
     $global:configRootKeys.ContainsKey('ServicePlacementMapConfigRootKey') | Should -BeTrue               # Set-CoreConfigRootKeys (role -> host placement map)
+    $global:configRootKeys.ContainsKey('AceOutpostServicePortConfigRootKey') | Should -BeTrue              # Set-CoreConfigRootKeys
+    $global:configRootKeys['AceOutpostServicePortConfigRootKey'] | Should -BeExactly 'AceOutpostServicePort'
     $global:configRootKeys.ContainsKey('DatabaseHostConfigRootKey') | Should -BeTrue                      # Add-DatabasesConfigRootKeys
     $global:configRootKeys.ContainsKey('DatabaseATAPUtilitiesNameConfigRootKey') | Should -BeTrue         # Set-DatabasesATAPUtilitiesConfigRootKeys
     $global:configRootKeys.ContainsKey('DatabaseAceCommanderNameConfigRootKey') | Should -BeTrue          # Set-DatabasesAceCommanderConfigRootKeys
     $global:configRootKeys.ContainsKey('SqlInstanceTopologyConfigRootKey') | Should -BeTrue               # Set-SqlInstanceTopologyConfigRootKeys
     $global:configRootKeys.ContainsKey('SqlInstanceTopologyTcpPortConfigRootKey') | Should -BeTrue        # Set-SqlInstanceTopologyConfigRootKeys
+    $global:configRootKeys.ContainsKey('SystemParityMonitorConfigRootKey') | Should -BeTrue               # Set-SystemParityMonitorConfigRootKeys
+    $global:configRootKeys['SystemParityMonitorConfigRootKey'] | Should -BeExactly 'SystemParityMonitor'
+    $global:configRootKeys['SystemParityMonitorSchemaVersionConfigRootKey'] | Should -BeExactly 'SchemaVersion'
+    $global:configRootKeys['SystemParityMonitorPackageManagerProfilesConfigRootKey'] | Should -BeExactly 'PackageManagerProfiles'
+    $global:configRootKeys['SystemParityMonitorExpectedSurfaceMinimumCountsConfigRootKey'] | Should -BeExactly 'ExpectedSurfaceMinimumCounts'
     $global:configRootKeys.ContainsKey('BuildMasterBaseUrlConfigRootKey') | Should -BeTrue                # Set-BuildMasterConfigRootKeys
     $global:configRootKeys.ContainsKey('BuildMasterApplicationByModuleConfigRootKey') | Should -BeTrue    # Set-BuildMasterConfigRootKeys (module->application map)
     $global:configRootKeys.ContainsKey('RulesManagementDatabaseHostConfigRootKey') | Should -BeTrue       # Set-RulesManagementConfigRootKeys
@@ -56,6 +63,38 @@ Describe 'Set-GlobalConfigRootKeys population' -Tag 'Unit' {
     $global:configRootKeys = $null
     Set-GlobalConfigRootKeys -WhatIf
     $global:configRootKeys | Should -BeNullOrEmpty
+  }
+
+  It 'repopulates the same exact SystemParityMonitor contract on repeated global initialization' {
+    Set-GlobalConfigRootKeys -Confirm:$false
+    $firstCount = $global:configRootKeys.Count
+    $firstContract = @(
+      $global:configRootKeys['SystemParityMonitorConfigRootKey']
+      $global:configRootKeys['SystemParityMonitorSchemaVersionConfigRootKey']
+      $global:configRootKeys['SystemParityMonitorPackageManagerProfilesConfigRootKey']
+      $global:configRootKeys['SystemParityMonitorExpectedSurfaceMinimumCountsConfigRootKey']
+    )
+
+    { Set-GlobalConfigRootKeys -Confirm:$false } | Should -Not -Throw
+
+    $global:configRootKeys.Count | Should -Be $firstCount
+    @(
+      $global:configRootKeys['SystemParityMonitorConfigRootKey']
+      $global:configRootKeys['SystemParityMonitorSchemaVersionConfigRootKey']
+      $global:configRootKeys['SystemParityMonitorPackageManagerProfilesConfigRootKey']
+      $global:configRootKeys['SystemParityMonitorExpectedSurfaceMinimumCountsConfigRootKey']
+    ) | Should -Be $firstContract
+  }
+
+  It 'keeps the SystemParityMonitor section explicitly ordered after SQL topology and before BuildMaster' {
+    $source = Get-Content -LiteralPath (Join-Path $script:publicDir 'Set-GlobalConfigRootKeys.ps1') -Raw
+    $sqlIndex = $source.IndexOf("'Set-SqlInstanceTopologyConfigRootKeys'", [StringComparison]::Ordinal)
+    $parityIndex = $source.IndexOf("'Set-SystemParityMonitorConfigRootKeys'", [StringComparison]::Ordinal)
+    $buildMasterIndex = $source.IndexOf("'Set-BuildMasterConfigRootKeys'", [StringComparison]::Ordinal)
+
+    $sqlIndex | Should -BeGreaterThan -1
+    $parityIndex | Should -BeGreaterThan $sqlIndex
+    $buildMasterIndex | Should -BeGreaterThan $parityIndex
   }
 }
 
@@ -90,6 +129,7 @@ Describe 'Set-GlobalConfigRootKeys in-module sibling resolution' -Tag 'Unit' {
       'Set-CoreConfigRootKeys'
       'Add-DatabasesConfigRootKeys'
       'Set-SqlInstanceTopologyConfigRootKeys'
+      'Set-SystemParityMonitorConfigRootKeys'
       'Set-BuildMasterConfigRootKeys'
       'Set-RulesManagementConfigRootKeys'
       'Add-PackageRepositoriesConfigRootKeys'
@@ -115,6 +155,7 @@ Describe 'ConfigRootKeys section functions precondition guard' -Tag 'Unit' {
     . (Join-Path $script:publicDir 'Set-BuildMasterConfigRootKeys.ps1')
     . (Join-Path $script:publicDir 'Add-DatabasesConfigRootKeys.ps1')
     . (Join-Path $script:publicDir 'Set-SqlInstanceTopologyConfigRootKeys.ps1')
+    . (Join-Path $script:publicDir 'Set-SystemParityMonitorConfigRootKeys.ps1')
   }
 
   It 'Set-BuildMasterConfigRootKeys throws when $global:configRootKeys is null' {
@@ -130,5 +171,10 @@ Describe 'ConfigRootKeys section functions precondition guard' -Tag 'Unit' {
   It 'Set-SqlInstanceTopologyConfigRootKeys throws when $global:configRootKeys is null' {
     $global:configRootKeys = $null
     { Set-SqlInstanceTopologyConfigRootKeys -Confirm:$false } | Should -Throw -ExpectedMessage '*not initialized*'
+  }
+
+  It 'Set-SystemParityMonitorConfigRootKeys throws when $global:configRootKeys is null' {
+    $global:configRootKeys = $null
+    { Set-SystemParityMonitorConfigRootKeys -Confirm:$false } | Should -Throw -ExpectedMessage '*not initialized*'
   }
 }

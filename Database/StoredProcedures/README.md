@@ -19,64 +19,28 @@ This folder provides:
 - Changes here do NOT automatically update the database
 - To modify a stored procedure, create a new migration file
 
-✅ **Workflow for Modifying Stored Procedures:**
+✅ **Workflow for Adding or Modifying Stored Procedures:**
 
-1. **Edit** the reference copy in this folder (for development/testing)
-2. **Test** the changes directly in SQL Server
-3. **Create** a new Flyway migration (e.g., `V00.01.000400__Update_GetRuleByName.sql`)
-4. **Update** this reference copy to match the new version
-5. **Run** Flyway migration to apply to all environments
+1. **Design** the contract and obtain the required architecture approval.
+2. **Create** a new Flyway migration in the active package source.
+3. **Add or update** a reference copy in this folder when useful.
+4. **Run** the required static, rehearsal, and deployment gates.
 
 ## File Organization
 
 Each file should:
 
-- Match the stored procedure name (e.g., `GetRuleByName.sql` for `dbo.GetRuleByName`)
+- Match the stored procedure name and schema.
 - Include header comments indicating the migration that creates it
 - Use `CREATE OR ALTER` for easy testing
 - Include usage examples
 
-## Usage Examples
-
-### From PowerShell
-
-```powershell
-# Execute stored procedure
-Invoke-DbaQuery -SqlInstance 'localhost' `
-                -Database 'ATAPUtilities' `
-                -CommandType StoredProcedure `
-                -Query 'dbo.GetRuleByName' `
-                -SqlParameter @{ RuleName = '<cs-source-file>'; LanguageKindName = 'CSharp' }
-```
-
-### From C# API
-
-```csharp
-// Call stored procedure via Dapper
-var parameters = new { RuleName = "<cs-source-file>", LanguageKindName = "CSharp" };
-using var multi = await connection.QueryMultipleAsync(
-    "dbo.GetRuleByName",
-    parameters,
-    commandType: CommandType.StoredProcedure);
-
-var ruleInfo = await multi.ReadFirstOrDefaultAsync<RuleInfo>();
-var composition = await multi.ReadAsync<RuleComposition>();
-```
-
-### Direct Testing in SSMS
-
-```sql
--- Copy from this folder, modify, and test
-EXEC dbo.GetRuleByName
-    @RuleName = '<cs-source-file>',
-    @LanguageKindName = 'CSharp';
-```
-
 ## Current Stored Procedures
 
-- **GetRuleByName.sql**: Retrieves a Rule with all metadata by name
-  - Created by: `V00.01.000300__Create_Stored_Procedure_GetRuleByName.sql`
-  - Returns: Multiple result sets (Rule info, Composition, Additional IDs, Time Blocks)
+There are no supported stored-procedure reference copies in this folder. The
+pre-V3 Rule Export procedure reference was retired on 2026-08-09. Its migration
+remains under `Database/Flyway/Archive/RPRRSBSI-PreV3/SQL/` as historical
+evidence only. See `Database/Documentation/RuleExport-Retirement.md`.
 
 ## Related Folders
 
@@ -86,7 +50,7 @@ EXEC dbo.GetRuleByName
 
 ## Naming Conventions
 
-- Use PascalCase for stored procedure names (e.g., `GetRuleByName`)
+- Use PascalCase for stored procedure names.
 - Prefix with verb describing action: `Get`, `Insert`, `Update`, `Delete`, `Upsert`, `Calculate`
 - Keep names clear and descriptive
 

@@ -1,5 +1,6 @@
 
 using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 using System;
 using System.Collections.Generic;
 
@@ -15,7 +16,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
     }
 
 
-    public MainBoard(IMainBoardSignil mainBoardSignil, IEnumerable<ICPU>? cPUs, IEnumerable<IDiskDrive>? diskDrives, IPhilote<IMainBoard>? philote)
+    public MainBoard(IMainBoardSignil mainBoardSignil, IEnumerable<ICPU>? cPUs, IEnumerable<IDiskDrive>? diskDrives, IGuidPhilote<GuidStronglyTypedId>? philote)
     {
       MainBoardSignil = mainBoardSignil ?? throw new ArgumentNullException(nameof(mainBoardSignil));
       CPUs = cPUs;
@@ -26,7 +27,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
     public IMainBoardSignil MainBoardSignil { get; private set; }
     public IEnumerable<ICPU>? CPUs { get; private set; }
     public IEnumerable<IDiskDrive>? DiskDrives { get; private set; }
-    public IPhilote<IMainBoard>? Philote { get; private set; }
+    public IGuidPhilote<GuidStronglyTypedId>? Philote { get; private set; }
   }
 
 }

@@ -11,8 +11,10 @@
   per-tier idempotent completion markers, run-context JSON, ProGet API-key
   resolution, ceiling-clamp enforcement, and the publish/promote/test loop.
 
-  For Experimental the script runs `dotnet build` and `dotnet pack` against the
-  per-build run-context output directory, captures the resulting `.nupkg` for
+  For Experimental the script runs `dotnet build`, then uses the stable Visual
+  Studio Build Tools MSBuild/NuGet pack implementation against the per-build
+  run-context output directory. The runner rejects NuGet versions older than
+  7.8 because they do not honor deterministic pack. It captures the resulting `.nupkg` for
   the configured `$MetaPackageName`, publishes it (and any sibling roll-up
   `.nupkg` files dotnet pack emits) to the Experimental feed via
   Publish-NuGetPackageToProGet (which resolves the supplied SecretName at its
@@ -93,7 +95,7 @@
   NuGet feed names per tier.
 
 .OUTPUTS
-  None. Side effects: dotnet build, dotnet pack, ProGet publish / promote,
+  None. Side effects: dotnet build, Visual Studio MSBuild pack, ProGet publish / promote,
   promoted-package test run, run-context JSON / state files / completion
   markers under _generated/buildmaster/<BuildMasterBuildId>.
 
@@ -108,7 +110,7 @@
     -SolutionPath ATAP.Utilities.Production.slnf `
     -Configuration Release `
     -Stage Experimental `
-    -ProGetUrl http://localhost:50000
+    -ProGetUrl https://utat022:50000
 
 .NOTES
   AI assisted using Powershell.instructions.md as guidelines
@@ -771,6 +773,89 @@ function Invoke-CSharpPackageBuildMasterStage {
   }
 
   PROCESS {
+    function Resolve-DeterministicNuGetMSBuild {
+      [CmdletBinding()]
+      [OutputType([pscustomobject])]
+      param()
+
+      BEGIN {
+        $f = 'Resolve-DeterministicNuGetMSBuild'
+        $m = 'ATAP.Utilities.BuildTooling.BuildMaster'
+      }
+
+      PROCESS {
+        if (-not $IsWindows) {
+          throw 'Deterministic production NuGet pack currently requires stable Visual Studio Build Tools 2026 18.8 or later on Windows.'
+        }
+
+        $programFilesX86 = [Environment]::GetFolderPath([Environment+SpecialFolder]::ProgramFilesX86)
+        $vsWherePath = Join-Path -Path $programFilesX86 -ChildPath 'Microsoft Visual Studio\Installer\vswhere.exe'
+        if (-not (Test-Path -LiteralPath $vsWherePath -PathType Leaf)) {
+          throw "Visual Studio Installer discovery tool not found at '$vsWherePath'. Follow SolutionDocumentation/NewComputerSetup.md to install stable Visual Studio Build Tools 2026 with the NuGet Build Tools component."
+        }
+
+        $installationPath = @(
+          & $vsWherePath -latest -products Microsoft.VisualStudio.Product.BuildTools `
+            -requires Microsoft.VisualStudio.Component.NuGet.BuildTools `
+            -property installationPath
+        ) | Select-Object -First 1
+        if ([string]::IsNullOrWhiteSpace([string]$installationPath)) {
+          throw 'No stable Visual Studio Build Tools installation with Microsoft.VisualStudio.Component.NuGet.BuildTools was found. Install stable Visual Studio Build Tools 2026 18.8 or later as documented in SolutionDocumentation/NewComputerSetup.md.'
+        }
+
+        $msBuildPath = Join-Path -Path $installationPath -ChildPath 'MSBuild\Current\Bin\MSBuild.exe'
+        $nuGetPackagingPath = Join-Path -Path $installationPath -ChildPath 'Common7\IDE\CommonExtensions\Microsoft\NuGet\NuGet.Packaging.dll'
+        foreach ($requiredPath in @($msBuildPath, $nuGetPackagingPath)) {
+          if (-not (Test-Path -LiteralPath $requiredPath -PathType Leaf)) {
+            throw "Stable deterministic pack prerequisite is incomplete; required file not found: '$requiredPath'. Repair Visual Studio Build Tools using SolutionDocumentation/NewComputerSetup.md."
+          }
+        }
+
+        $msBuildVersion = [version](Get-Item -LiteralPath $msBuildPath).VersionInfo.FileVersion
+        $nuGetVersion = [System.Reflection.AssemblyName]::GetAssemblyName($nuGetPackagingPath).Version
+        if ($msBuildVersion -lt [version]'18.8.0.0' -or $nuGetVersion -lt [version]'7.8.0.0') {
+          throw "Stable deterministic pack requires Visual Studio Build Tools 2026 18.8+ and NuGet 7.8+. Found MSBuild '$msBuildVersion' and NuGet '$nuGetVersion' at '$installationPath'."
+        }
+
+        $sdkVersionText = (& dotnet --version 2>&1 | Select-Object -First 1).ToString().Trim()
+        $sdkPackTaskPath = Join-Path -Path (Split-Path -Parent (Get-Command dotnet -ErrorAction Stop).Source) -ChildPath "sdk\$sdkVersionText\Sdks\Microsoft.NET.Sdk\tools\net472\NuGet.Build.Tasks.Pack.dll"
+        if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $sdkPackTaskPath -PathType Leaf)) {
+          throw "The repository-selected .NET SDK '$sdkVersionText' does not expose the NuGet pack task required by Visual Studio MSBuild. Install Microsoft.NetCore.Component.SDK and use the stable SDK pinned by global.json."
+        }
+        $sdkPackTaskVersion = [System.Reflection.AssemblyName]::GetAssemblyName($sdkPackTaskPath).Version
+        if ($sdkPackTaskVersion -lt [version]'7.8.0.0') {
+          throw "The repository-selected .NET SDK '$sdkVersionText' would load NuGet Pack '$sdkPackTaskVersion'; deterministic pack requires NuGet Pack 7.8+. Update global.json and the Microsoft.NetCore.Component.SDK installation."
+        }
+
+        Write-PSFMessage -FunctionName $f -ModuleName $m -Level Important -Message "Using stable Visual Studio MSBuild '$msBuildVersion', SDK '$sdkVersionText', and NuGet Pack '$sdkPackTaskVersion' for deterministic pack."
+        return [pscustomobject]@{
+          InstallationPath = [string]$installationPath
+          MSBuildPath      = $msBuildPath
+          MSBuildVersion   = $msBuildVersion
+          NuGetVersion     = $nuGetVersion
+          SDKVersion       = $sdkVersionText
+          NuGetPackVersion = $sdkPackTaskVersion
+        }
+      }
+
+      END {}
+    }
+
+    function Get-SourceDateEpoch {
+      [CmdletBinding()]
+      [OutputType([long])]
+      param([Parameter(Mandatory)][string]$RepositoryPath)
+
+      PROCESS {
+        $sourceDateEpochText = (& git -C $RepositoryPath show -s --format=%ct HEAD 2>&1 | Select-Object -First 1).ToString().Trim()
+        $sourceDateEpoch = 0L
+        if ($LASTEXITCODE -ne 0 -or -not [long]::TryParse($sourceDateEpochText, [ref]$sourceDateEpoch) -or $sourceDateEpoch -le 0) {
+          throw "Cannot derive a stable SOURCE_DATE_EPOCH from Git HEAD in '$RepositoryPath'; deterministic pack is refused."
+        }
+        return $sourceDateEpoch
+      }
+    }
+
     function Resolve-BuildToolingFunctionFile {
       [CmdletBinding()]
       [OutputType([string])]
@@ -1156,25 +1241,73 @@ function Invoke-CSharpPackageBuildMasterStage {
               throw "dotnet build failed for '$resolvedProjectPath' after $maxBuildAttempts attempt(s); last exit code $buildExit."
             }
 
-            $packArgs = @(
-              'pack', $resolvedProjectPath,
-              '--configuration', $Configuration,
-              '--no-build',
-              '--output', $PackageOutputPath,
-              '-p:ContinuousIntegrationBuild=true'
-            )
-            Add-BuildMasterPublishTrace -Path $publishTracePath -Message "dotnet pack '$resolvedProjectPath' --output '$PackageOutputPath' (deterministic)."
-            try {
-              dotnet @packArgs
-              $packExit = $LASTEXITCODE
+            $deterministicPackTool = Resolve-DeterministicNuGetMSBuild
+            $sourceDateEpoch = Get-SourceDateEpoch -RepositoryPath $SourcePath
+            $packVerificationRoot = Join-Path -Path $contextDirectory -ChildPath "$MetaPackageName.deterministic-pack.$([guid]::NewGuid().ToString('N'))"
+            $packRecordsByRun = @()
+            foreach ($packRun in 1..2) {
+              $packRunOutputPath = Join-Path -Path $packVerificationRoot -ChildPath "run$packRun"
+              New-Item -ItemType Directory -Path $packRunOutputPath -Force | Out-Null
+              $packArgs = @(
+                $resolvedProjectPath,
+                '/t:Pack',
+                "/p:Configuration=$Configuration",
+                '/p:NoBuild=true',
+                "/p:PackageOutputPath=$packRunOutputPath",
+                '/p:ContinuousIntegrationBuild=true',
+                '/p:Deterministic=true',
+                "/p:DeterministicTimestamp=$sourceDateEpoch",
+                '/m:1',
+                '/nr:false'
+              )
+              Add-BuildMasterPublishTrace -Path $publishTracePath -Message "Deterministic pack run ${packRun}: Visual Studio MSBuild '$($deterministicPackTool.MSBuildVersion)', SDK '$($deterministicPackTool.SDKVersion)', and NuGet Pack '$($deterministicPackTool.NuGetPackVersion)' pack '$resolvedProjectPath' with DeterministicTimestamp='$sourceDateEpoch'."
+              try {
+                & $deterministicPackTool.MSBuildPath @packArgs
+                $packExit = $LASTEXITCODE
+              }
+              catch {
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Visual Studio MSBuild deterministic pack run $packRun threw for '$resolvedProjectPath'. Exception: $($_.Exception.Message)"
+                throw
+              }
+              if ($packExit -ne 0) {
+                throw "Visual Studio MSBuild deterministic pack run $packRun failed for '$resolvedProjectPath' with exit code $packExit."
+              }
+
+              $packRecords = @(
+                Get-ChildItem -LiteralPath $packRunOutputPath -File |
+                  Where-Object Extension -In @('.nupkg', '.snupkg') |
+                  Sort-Object Name |
+                  ForEach-Object {
+                    [pscustomobject]@{
+                      Name   = $_.Name
+                      SHA256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+                      Path   = $_.FullName
+                    }
+                  }
+              )
+              if ($packRecords.Count -eq 0) {
+                throw "Deterministic pack run $packRun emitted no NuGet packages under '$packRunOutputPath'."
+              }
+              $packRecordsByRun += ,$packRecords
             }
-            catch {
-              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "dotnet pack threw for '$resolvedProjectPath'. Exception: $($_.Exception.Message)"
-              throw
+
+            $run1IdentityAndHashes = @($packRecordsByRun[0] | Select-Object Name, SHA256 | ConvertTo-Json -Compress)
+            $run2IdentityAndHashes = @($packRecordsByRun[1] | Select-Object Name, SHA256 | ConvertTo-Json -Compress)
+            if ($run1IdentityAndHashes.Count -ne 1 -or $run2IdentityAndHashes.Count -ne 1 -or $run1IdentityAndHashes[0] -cne $run2IdentityAndHashes[0]) {
+              $comparisonPath = Join-Path -Path $packVerificationRoot -ChildPath 'package-hash-comparison.json'
+              [pscustomobject]@{ Run1 = $packRecordsByRun[0]; Run2 = $packRecordsByRun[1]; Equal = $false } |
+                ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $comparisonPath -Encoding utf8
+              throw "Deterministic two-pack SHA-256 gate failed. No feed was mutated. Evidence: '$comparisonPath'."
             }
-            if ($packExit -ne 0) {
-              throw "dotnet pack failed for '$resolvedProjectPath' with exit code $packExit."
+
+            $existingPackageOutputs = @(Get-ChildItem -LiteralPath $PackageOutputPath -File | Where-Object Extension -In @('.nupkg', '.snupkg'))
+            if ($existingPackageOutputs.Count -gt 0) {
+              throw "Final package output '$PackageOutputPath' is not empty; refusing to overwrite package artifacts after the deterministic gate."
             }
+            $packRecordsByRun[0] | ForEach-Object { Copy-Item -LiteralPath $_.Path -Destination $PackageOutputPath }
+            [pscustomobject]@{ Run1 = $packRecordsByRun[0]; Run2 = $packRecordsByRun[1]; Equal = $true } |
+              ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $packVerificationRoot 'package-hash-comparison.json') -Encoding utf8
+            Add-BuildMasterPublishTrace -Path $publishTracePath -Message "Deterministic two-pack SHA-256 gate passed for $($packRecordsByRun[0].Count) package artifact(s); copied run 1 bytes to '$PackageOutputPath'."
 
             $metaPackageNupkg = Find-CSharpMetaPackageNupkg -PackageDirectory $PackageOutputPath -MetaPackageName $MetaPackageName
             $metaPackageNupkg.FullName | Set-Content -LiteralPath $NupkgPathFile -Encoding utf8 -NoNewline

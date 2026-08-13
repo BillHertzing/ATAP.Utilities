@@ -12,9 +12,9 @@ Entity Framework Core abstractions, Flyway migration helpers
 
 | Source File    | Last Modified            |
 | -------------- | ------------------------ |
-| CLAUDE-base.md | 2026-07-18 20:37:21 |
-| ai-local.md | 2026-07-16 00:47:27 |
-| CLAUDE.md (combined) | 2026-07-19 07:58:20 |
+| main-instructions.md | 2026-08-09 18:26:31 |
+| ai-local.md | 2026-08-01 13:56:58 |
+| CLAUDE.md (combined) | 2026-08-09 18:33:12 |
 
 ---
 
@@ -256,6 +256,13 @@ All agents operate on **Windows** inside **Visual Studio Code**. Use **PowerShel
 - When running Pester, NEVER use `-NoProfile`. Always allow PowerShell profiles:
   `pwsh -Command "Invoke-Pester -Path '<path>' -Output Detailed"`
 - For ATAP repository work, do not pass `-NoProfile` unless the task is explicitly auditing no-profile behavior. PowerShell profiles populate `$global:settings`, and BuildTooling resolves host/user configuration through `Get-PVal`; stripping profiles changes configuration resolution and can create misleading failures.
+- **PowerShell 7 inter-host remoting (R-39):** Every PowerShell remoting connection
+  between hosts in the ATAP organization must explicitly select the PowerShell 7
+  endpoint with `-ConfigurationName 'PowerShell.7'` (for example on
+  `New-PSSession`, `Invoke-Command`, or `Enter-PSSession`). Never silently fall back
+  to the default Windows PowerShell endpoint. If `PowerShell.7` is unavailable, fail
+  closed and repair or register that endpoint through a separately approved
+  administrative action before continuing.
 - If requirements are ambiguous, ask from one to five clarifying question before generating commands
 - **Bash tool override (R-01):** If `tools.bash.command` is configurable, set it to `pwsh`.
   In the Bash/terminal tool, ALL commands must be PowerShell. Never send bare PowerShell
@@ -453,7 +460,7 @@ When asked to create or modify a Rule, Rule Set, or Build Set:
 4. **ONE clarifying question** — if requirements are ambiguous, ask one focused question
    before generating code or commands
 5. **Save-SprintWorkSession.ps1 path (R-15):** The canonical script is at
-   `ATAP.Utilities/src/ATAP.Utilities.BuildTooling.PowerShell/public/Save-SprintWorkSession.ps1`
+   `ATAP.Utilities/src/ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell/public/Save-SprintWorkSession.ps1`
    (prefer the most-recent ATAP.Utilities sprint worktree copy; fall back to the stable
    repo). The former `_Planning/Powershell/Public/` wrapper was removed 2026-07-07
    (Sprint 0012 Task 12.46.e); never use `_Planning/Scripts/`.

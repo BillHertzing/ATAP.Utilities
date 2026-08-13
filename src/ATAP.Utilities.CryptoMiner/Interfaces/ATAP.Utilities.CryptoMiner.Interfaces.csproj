@@ -22,6 +22,7 @@
     <ProjectReference Include="..\..\ATAP.Utilities.CryptoCoin\Interfaces\ATAP.Utilities.CryptoCoin.Interfaces.csproj" />
     <ProjectReference Include="..\..\ATAP.Utilities.CryptoCoin\Models\ATAP.Utilities.CryptoCoin.Models.csproj" />
     <ProjectReference Include="..\Enumerations\ATAP.Utilities.CryptoMiner.Enumerations.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.DateTime.Interfaces\ATAP.Utilities.DateTime.Interfaces.csproj" />
   </ItemGroup>
 
 </Project>

@@ -48,6 +48,28 @@
         "resolved": "8.0.0",
         "contentHash": "dk9JPxTCIevS75HyEQ0E4OVAFhB2N+V9ShCXf8Q6FkUQZDkgLI12y679Nym1YqsiSysuQskT7Z+6nUf3yab6Vw=="
       },
+      "TestableIO.System.IO.Abstractions": {
+        "type": "Transitive",
+        "resolved": "21.1.3",
+        "contentHash": "qe/gIjOPCoyiSCToouJx/vCvcTQXVGj/eJVRK/7s2F8yIv0zvEpjByfXZvS3yqmcpg0/S6x6w7DvNyPrLe/RRw=="
+      },
+      "TestableIO.System.IO.Abstractions.TestingHelpers": {
+        "type": "Transitive",
+        "resolved": "21.1.3",
+        "contentHash": "sMRPFcqvmSeocHtb5JVf7heBqvBsaFGiodEOoysIB0KneV4+3Yg0ka1421kzBLjRW+itU3FVjjqAAa9fqvUmhA==",
+        "dependencies": {
+          "TestableIO.System.IO.Abstractions": "21.1.3",
+          "TestableIO.System.IO.Abstractions.Wrappers": "21.1.3"
+        }
+      },
+      "TestableIO.System.IO.Abstractions.Wrappers": {
+        "type": "Transitive",
+        "resolved": "21.1.3",
+        "contentHash": "5LEVwt5+K5TnL1ekfCbQszlgRnO77plpgQAgkXL7wXKGd0PQWE01eSss0+L7E8GGLGbtD7mzYJVq/bd79ZDBlQ==",
+        "dependencies": {
+          "TestableIO.System.IO.Abstractions": "21.1.3"
+        }
+      },
       "atap.utilities.collection.extensions": {
         "type": "Project",
         "dependencies": {
@@ -57,6 +79,29 @@
       },
       "atap.utilities.etw": {
         "type": "Project"
+      },
+      "atap.utilities.fileio": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
+          "System.IO.Abstractions": "[21.1.3, )",
+          "System.IO.Abstractions.TestingHelpers": "[21.1.3, )"
+        }
+      },
+      "atap.utilities.loader.interfaces": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.FileIO": "[0.1.0-Alpha, )"
+        }
+      },
+      "atap.utilities.loader.model": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.FileIO": "[0.1.0-Alpha, )",
+          "Microsoft.Extensions.Configuration": "[9.0.0, )",
+          "Microsoft.Extensions.Configuration.Binder": "[9.0.0, )",
+          "Microsoft.Extensions.DependencyInjection": "[9.0.0, )"
+        }
       },
       "atap.utilities.serializer.interfaces": {
         "type": "Project",
@@ -68,7 +113,8 @@
       "atap.utilities.serializer.model": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Serializer.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.Binder": "[9.0.0, )",
@@ -123,6 +169,25 @@
         "requested": "[9.0.0, )",
         "resolved": "9.0.0",
         "contentHash": "+6f2qv2a3dLwd5w6JanPIPs47CxRbnk+ZocMJUhv9NxP88VlOcJYZs9jY+MYSjxvady08bUZn6qgiNh7DadGgg=="
+      },
+      "System.IO.Abstractions": {
+        "type": "CentralTransitive",
+        "requested": "[21.1.3, )",
+        "resolved": "21.1.3",
+        "contentHash": "WgLx25YHAepNu5Wym1kBqYLqYMo/lmGakWILFYtpEtuxAVoeWvAj2U6oVfqmikPXVYit19tTGWnfbZhVUNjkrg==",
+        "dependencies": {
+          "TestableIO.System.IO.Abstractions": "21.1.3",
+          "TestableIO.System.IO.Abstractions.Wrappers": "21.1.3"
+        }
+      },
+      "System.IO.Abstractions.TestingHelpers": {
+        "type": "CentralTransitive",
+        "requested": "[21.1.3, )",
+        "resolved": "21.1.3",
+        "contentHash": "2EcDkDtYXem8IqFrbg/tMIgEiwql7kMeU5ttoE7Au79BIhmpqSUZqEEBJe6B7kJmY9EI6YXOUccx+ce3+wQWMQ==",
+        "dependencies": {
+          "TestableIO.System.IO.Abstractions.TestingHelpers": "21.1.3"
+        }
       },
       "System.Reactive": {
         "type": "CentralTransitive",
@@ -180,6 +245,28 @@
         "resolved": "8.0.0",
         "contentHash": "dk9JPxTCIevS75HyEQ0E4OVAFhB2N+V9ShCXf8Q6FkUQZDkgLI12y679Nym1YqsiSysuQskT7Z+6nUf3yab6Vw=="
       },
+      "TestableIO.System.IO.Abstractions": {
+        "type": "Transitive",
+        "resolved": "21.1.3",
+        "contentHash": "qe/gIjOPCoyiSCToouJx/vCvcTQXVGj/eJVRK/7s2F8yIv0zvEpjByfXZvS3yqmcpg0/S6x6w7DvNyPrLe/RRw=="
+      },
+      "TestableIO.System.IO.Abstractions.TestingHelpers": {
+        "type": "Transitive",
+        "resolved": "21.1.3",
+        "contentHash": "sMRPFcqvmSeocHtb5JVf7heBqvBsaFGiodEOoysIB0KneV4+3Yg0ka1421kzBLjRW+itU3FVjjqAAa9fqvUmhA==",
+        "dependencies": {
+          "TestableIO.System.IO.Abstractions": "21.1.3",
+          "TestableIO.System.IO.Abstractions.Wrappers": "21.1.3"
+        }
+      },
+      "TestableIO.System.IO.Abstractions.Wrappers": {
+        "type": "Transitive",
+        "resolved": "21.1.3",
+        "contentHash": "5LEVwt5+K5TnL1ekfCbQszlgRnO77plpgQAgkXL7wXKGd0PQWE01eSss0+L7E8GGLGbtD7mzYJVq/bd79ZDBlQ==",
+        "dependencies": {
+          "TestableIO.System.IO.Abstractions": "21.1.3"
+        }
+      },
       "atap.utilities.collection.extensions": {
         "type": "Project",
         "dependencies": {
@@ -189,6 +276,29 @@
       },
       "atap.utilities.etw": {
         "type": "Project"
+      },
+      "atap.utilities.fileio": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
+          "System.IO.Abstractions": "[21.1.3, )",
+          "System.IO.Abstractions.TestingHelpers": "[21.1.3, )"
+        }
+      },
+      "atap.utilities.loader.interfaces": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.FileIO": "[0.1.0-Alpha, )"
+        }
+      },
+      "atap.utilities.loader.model": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.FileIO": "[0.1.0-Alpha, )",
+          "Microsoft.Extensions.Configuration": "[9.0.0, )",
+          "Microsoft.Extensions.Configuration.Binder": "[9.0.0, )",
+          "Microsoft.Extensions.DependencyInjection": "[9.0.0, )"
+        }
       },
       "atap.utilities.serializer.interfaces": {
         "type": "Project",
@@ -200,7 +310,8 @@
       "atap.utilities.serializer.model": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Serializer.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.Binder": "[9.0.0, )",
@@ -255,6 +366,25 @@
         "requested": "[9.0.0, )",
         "resolved": "9.0.0",
         "contentHash": "+6f2qv2a3dLwd5w6JanPIPs47CxRbnk+ZocMJUhv9NxP88VlOcJYZs9jY+MYSjxvady08bUZn6qgiNh7DadGgg=="
+      },
+      "System.IO.Abstractions": {
+        "type": "CentralTransitive",
+        "requested": "[21.1.3, )",
+        "resolved": "21.1.3",
+        "contentHash": "WgLx25YHAepNu5Wym1kBqYLqYMo/lmGakWILFYtpEtuxAVoeWvAj2U6oVfqmikPXVYit19tTGWnfbZhVUNjkrg==",
+        "dependencies": {
+          "TestableIO.System.IO.Abstractions": "21.1.3",
+          "TestableIO.System.IO.Abstractions.Wrappers": "21.1.3"
+        }
+      },
+      "System.IO.Abstractions.TestingHelpers": {
+        "type": "CentralTransitive",
+        "requested": "[21.1.3, )",
+        "resolved": "21.1.3",
+        "contentHash": "2EcDkDtYXem8IqFrbg/tMIgEiwql7kMeU5ttoE7Au79BIhmpqSUZqEEBJe6B7kJmY9EI6YXOUccx+ce3+wQWMQ==",
+        "dependencies": {
+          "TestableIO.System.IO.Abstractions.TestingHelpers": "21.1.3"
+        }
       },
       "System.Reactive": {
         "type": "CentralTransitive",
@@ -312,6 +442,28 @@
         "resolved": "8.0.0",
         "contentHash": "dk9JPxTCIevS75HyEQ0E4OVAFhB2N+V9ShCXf8Q6FkUQZDkgLI12y679Nym1YqsiSysuQskT7Z+6nUf3yab6Vw=="
       },
+      "TestableIO.System.IO.Abstractions": {
+        "type": "Transitive",
+        "resolved": "21.1.3",
+        "contentHash": "qe/gIjOPCoyiSCToouJx/vCvcTQXVGj/eJVRK/7s2F8yIv0zvEpjByfXZvS3yqmcpg0/S6x6w7DvNyPrLe/RRw=="
+      },
+      "TestableIO.System.IO.Abstractions.TestingHelpers": {
+        "type": "Transitive",
+        "resolved": "21.1.3",
+        "contentHash": "sMRPFcqvmSeocHtb5JVf7heBqvBsaFGiodEOoysIB0KneV4+3Yg0ka1421kzBLjRW+itU3FVjjqAAa9fqvUmhA==",
+        "dependencies": {
+          "TestableIO.System.IO.Abstractions": "21.1.3",
+          "TestableIO.System.IO.Abstractions.Wrappers": "21.1.3"
+        }
+      },
+      "TestableIO.System.IO.Abstractions.Wrappers": {
+        "type": "Transitive",
+        "resolved": "21.1.3",
+        "contentHash": "5LEVwt5+K5TnL1ekfCbQszlgRnO77plpgQAgkXL7wXKGd0PQWE01eSss0+L7E8GGLGbtD7mzYJVq/bd79ZDBlQ==",
+        "dependencies": {
+          "TestableIO.System.IO.Abstractions": "21.1.3"
+        }
+      },
       "atap.utilities.collection.extensions": {
         "type": "Project",
         "dependencies": {
@@ -321,6 +473,29 @@
       },
       "atap.utilities.etw": {
         "type": "Project"
+      },
+      "atap.utilities.fileio": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
+          "System.IO.Abstractions": "[21.1.3, )",
+          "System.IO.Abstractions.TestingHelpers": "[21.1.3, )"
+        }
+      },
+      "atap.utilities.loader.interfaces": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.FileIO": "[0.1.0-Alpha, )"
+        }
+      },
+      "atap.utilities.loader.model": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.FileIO": "[0.1.0-Alpha, )",
+          "Microsoft.Extensions.Configuration": "[9.0.0, )",
+          "Microsoft.Extensions.Configuration.Binder": "[9.0.0, )",
+          "Microsoft.Extensions.DependencyInjection": "[9.0.0, )"
+        }
       },
       "atap.utilities.serializer.interfaces": {
         "type": "Project",
@@ -332,7 +507,8 @@
       "atap.utilities.serializer.model": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Serializer.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.Binder": "[9.0.0, )",
@@ -387,6 +563,25 @@
         "requested": "[9.0.0, )",
         "resolved": "9.0.0",
         "contentHash": "+6f2qv2a3dLwd5w6JanPIPs47CxRbnk+ZocMJUhv9NxP88VlOcJYZs9jY+MYSjxvady08bUZn6qgiNh7DadGgg=="
+      },
+      "System.IO.Abstractions": {
+        "type": "CentralTransitive",
+        "requested": "[21.1.3, )",
+        "resolved": "21.1.3",
+        "contentHash": "WgLx25YHAepNu5Wym1kBqYLqYMo/lmGakWILFYtpEtuxAVoeWvAj2U6oVfqmikPXVYit19tTGWnfbZhVUNjkrg==",
+        "dependencies": {
+          "TestableIO.System.IO.Abstractions": "21.1.3",
+          "TestableIO.System.IO.Abstractions.Wrappers": "21.1.3"
+        }
+      },
+      "System.IO.Abstractions.TestingHelpers": {
+        "type": "CentralTransitive",
+        "requested": "[21.1.3, )",
+        "resolved": "21.1.3",
+        "contentHash": "2EcDkDtYXem8IqFrbg/tMIgEiwql7kMeU5ttoE7Au79BIhmpqSUZqEEBJe6B7kJmY9EI6YXOUccx+ce3+wQWMQ==",
+        "dependencies": {
+          "TestableIO.System.IO.Abstractions.TestingHelpers": "21.1.3"
+        }
       },
       "System.Reactive": {
         "type": "CentralTransitive",

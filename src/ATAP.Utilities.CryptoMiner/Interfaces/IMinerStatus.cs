@@ -1,4 +1,4 @@
-using Itenso.TimePeriod;
+using ATAP.Utilities.DateTime.Interfaces;
 using ATAP.Utilities.CryptoMiner.Enumerations;
 
 namespace ATAP.Utilities.CryptoMiner.Interfaces
@@ -8,7 +8,7 @@ namespace ATAP.Utilities.CryptoMiner.Interfaces
     int ID { get; }
     MinerSWE Kind { get; }
     IMinerStatusDetailsAbstract MinerStatusDetails { get; }
-    ITimeBlock Moment { get; }
+    UtcInstant Moment { get; }
     string StatusQueryError { get; }
     string Version { get; }
   }

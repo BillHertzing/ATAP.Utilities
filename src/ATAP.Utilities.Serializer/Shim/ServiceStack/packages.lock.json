@@ -74,7 +74,8 @@
       "atap.utilities.serializer.model": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Serializer.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.Binder": "[9.0.0, )",
@@ -212,7 +213,8 @@
       "atap.utilities.serializer.model": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Serializer.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.Binder": "[9.0.0, )",
@@ -350,7 +352,8 @@
       "atap.utilities.serializer.model": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Serializer.Interfaces": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.Binder": "[9.0.0, )",

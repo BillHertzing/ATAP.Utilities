@@ -5,7 +5,6 @@ using ATAP.Utilities.ComputerInventory.ProcessInfo;
 using ATAP.Utilities.ComputerInventory.Software;
 using ATAP.Utilities.ComputerInventory;
 using ATAP.Utilities.ConcurrentObservableCollections;
-using Itenso.TimePeriod;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -32,7 +31,7 @@ namespace ATAP.Utilities.ComputerInventory.Configuration
                 new MainBoard(
                   MainBoardMaker.Generic,
                   CPUSocket.Generic),
-                new TimeBlock(),
+                new ATAP.Utilities.DateTime.Interfaces.UtcInstant(DateTimeOffset.UtcNow),
                 new VideoCard[1] {new VideoCard() }
 
               )

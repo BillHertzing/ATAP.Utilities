@@ -167,10 +167,13 @@ full ADO.NET connection string. Do not store these connection strings in a
 developer's personal Password Manager vault or retrieve them with `bw` /
 `BW_SESSION`.
 
+ATAP SecretNames use dotted notation. Hyphenated `dbConnectionString-...` names
+are legacy references only; do not construct new SecretNames with dashes.
+
 ### 4.1 Per-sprint secrets (Development and Experimental tiers)
 
 ```text
-dbConnectionString-<Database>-<Host>-<Tier>-<DeveloperUSERNAME>
+dbConnectionString.<Database>.<Host>.<Tier>.<DeveloperUSERNAME>
 ```
 
 | Segment               | Values                                       |
@@ -180,7 +183,7 @@ dbConnectionString-<Database>-<Host>-<Tier>-<DeveloperUSERNAME>
 | `<Tier>`              | `Dev` \| `Exp`                               |
 | `<DeveloperUSERNAME>` | `$env:USERNAME` on the developer workstation |
 
-**Example:** `dbConnectionString-ATAPUtilities-DEVBOX01-Dev-jsmith`
+**Example:** `dbConnectionString.ATAPUtilities.DEVBOX01.Dev.jsmith`
 
 A sprint start creates 12 secrets per developer by default:
 3 databases (`master`, `ATAPUtilities`, `AceCommander`) × 2 hosts
@@ -193,7 +196,7 @@ A sprint start creates 12 secrets per developer by default:
 ### 4.2 Permanent secrets (Integration, QA, Production tiers)
 
 ```text
-dbConnectionString-<Database>-<Host>-<Tier>
+dbConnectionString.<Database>.<Host>.<Tier>
 ```
 
 No username suffix — these secrets are shared across all developers on the
@@ -205,7 +208,7 @@ ecosystem and belong to the dedicated server accounts.
 | `<Host>`     | `utat022` (default; overridable per tier) |
 | `<Tier>`     | `Integration` \| `QA` \| `Production`     |
 
-**Example:** `dbConnectionString-ATAPUtilities-utat022-Integration`
+**Example:** `dbConnectionString.ATAPUtilities.utat022.Integration`
 
 6 permanent secrets total: 2 databases × 3 tiers.
 
@@ -224,7 +227,7 @@ All database connection-string secrets are retrieved via `Get-SecretATAP
 `New-SprintBitwardenSecrets` and `Remove-SprintBitwardenSecrets` use
 `Get-BWSAccessToken -TokenPurpose ReadWrite` /
 `CommonCIForBitwardenReadWrite`. The BWS provider passes the key name unchanged
-to `bws`, so names containing hyphens, machine names, and usernames are handled
+to `bws`; dotted names containing machine names and usernames are handled
 correctly. Development and Experimental values must exist in BWS; readers do not
 derive missing strings locally.
 
@@ -293,7 +296,7 @@ SprintStartAgent / SprintEndAgent PowerShell glob:
 | `IntegrationSqlInstance`                           | `utat022\Integration`                                           |
 | `QASqlInstance`                                    | `utat022\QA`                                                    |
 | `ProductionSqlInstance`                            | `utat022\Production`                                            |
-| `IntegrationDatabaseDBConnectionStringSecretName`           | `dbConnectionString-AceCommander-utat022-Integration`           |
+| `IntegrationDatabaseDBConnectionStringSecretName`           | `dbConnectionString.AceCommander.utat022.Integration`           |
 | `NuGetFeedName_Experimental`                       | `nuget-experimental`                                            |
 | `NuGetFeedUrl_Experimental`                        | `http://localhost:50000/nuget/nuget-experimental/v3/index.json` |
 | `PowerShellGetFeedName_Experimental`               | `powershellget-experimental`                                    |
@@ -327,8 +330,8 @@ variable too.
 | SQL — health check      | n/a                                                                     | n/a         | `Test-SprintInfrastructureHealth` _(planned — see §2.3)_         |
 | ProGet NuGet feed       | `nuget-<tier>`                                                          | ❌          | `New-ProGetFeedSet`                                              |
 | ProGet PS feed          | `powershellget-<tier>`                                                  | ❌          | `New-ProGetFeedSet`                                              |
-| Bitwarden — sprint      | `dbConnectionString-<DB>-<Host>-<Tier>-<User>`                          | ✅          | `New-SprintBitwardenSecrets` (see §4.1)                          |
-| Bitwarden — permanent   | `dbConnectionString-<DB>-<Host>-<Tier>`                                 | ❌          | `New-PermanentBitwardenSecrets`                                  |
+| Bitwarden — sprint      | `dbConnectionString.<DB>.<Host>.<Tier>.<User>`                          | ✅          | `New-SprintBitwardenSecrets` (see §4.1)                          |
+| Bitwarden — permanent   | `dbConnectionString.<DB>.<Host>.<Tier>`                                 | ❌          | `New-PermanentBitwardenSecrets`                                  |
 | Worktree / branch       | `<repo>-wt-<N>-Sprint-<NNNN>-work-items`                               | ✅          | `New-SprintStage1` / `New-SprintStage2` (function definition files; callers must `Import-Module ATAP.Utilities.BuildTooling.PowerShell -Force` or dot-source before invoking) |
 | BuildMaster sprint vars | `SprintNumber`, `UserName`, `SprintBranchName`                          | ✅          | `Set-BuildMasterSprintVariables`                                 |
 | BuildMaster stable vars | feed names/URLs, SQL instances, ReleaseBundle Integration DB secret name | ❌          | `Set-BuildMasterStableVariables` + ReleaseBundle app onboarding  |

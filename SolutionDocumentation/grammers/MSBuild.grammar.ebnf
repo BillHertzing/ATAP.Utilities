@@ -1,0 +1,57 @@
+(*
+  MSBuild grammar contract for RRSBS rendering.
+  Authority: SolutionDocumentation/grammers per GRAMMAR-01 (2026-08-01).
+  Scope: the deterministic XML project-file subset represented by the retained
+  MSBuild Rule Primitives; this is not a replacement for the MSBuild project
+  schema or the XML specification.
+*)
+
+msbuild-artifact = project-document ;
+project-document = project-open, { project-element }, project-close ;
+project-open = "<Project", [ whitespace, "Sdk=\"", attribute-value, "\"" ], ">" ;
+project-close = "</Project>" ;
+project-element = property-group | item-group | project-reference |
+                  package-reference | compile-remove | xml-comment | xml-node |
+                  new-line ;
+
+property-group = "<PropertyGroup", [ condition-attribute ], ">",
+                 { property | xml-comment | new-line }, "</PropertyGroup>" ;
+property = "<", element-name, [ condition-attribute ], ">", text-value,
+           "</", element-name, ">" ;
+item-group = "<ItemGroup", [ condition-attribute ], ">",
+             { item | xml-comment | new-line }, "</ItemGroup>" ;
+item = project-reference | package-reference | compile-remove | xml-node ;
+
+project-reference = "<ProjectReference", whitespace, "Include=\"", path-value,
+                    "\"", { whitespace, attribute }, "/>"
+                  | "<ProjectReference", whitespace, "Include=\"", path-value,
+                    "\"", { whitespace, attribute }, ">", { xml-node | new-line },
+                    "</ProjectReference>" ;
+package-reference = "<PackageReference", whitespace,
+                    ( "Include" | "Update" ), "=\"", package-id, "\"",
+                    { whitespace, attribute }, "/>"
+                  | "<PackageReference", whitespace,
+                    ( "Include" | "Update" ), "=\"", package-id, "\"",
+                    { whitespace, attribute }, ">", { xml-node | new-line },
+                    "</PackageReference>" ;
+compile-remove = "<Compile", whitespace, "Remove=\"", path-value, "\"",
+                 { whitespace, attribute }, "/>" ;
+xml-comment = "<!--", comment-text, "-->" ;
+
+condition-attribute = whitespace, "Condition=\"", attribute-value, "\"" ;
+attribute = attribute-name, "=\"", attribute-value, "\"" ;
+xml-node = "<", element-name, { whitespace, attribute }, "/>"
+         | "<", element-name, { whitespace, attribute }, ">", text-value,
+           "</", element-name, ">" ;
+element-name = identifier, { ".", identifier } ;
+attribute-name = element-name ;
+package-id = identifier, { ".", identifier | "-" } ;
+path-value = text-value ;
+attribute-value = { ? XML attribute character, escaped as required ? } ;
+text-value = { ? XML character data, escaped as required ? } ;
+comment-text = { ? XML comment character data excluding '--' ? } ;
+identifier = letter, { letter | digit | "_" | "-" } ;
+whitespace = " " | "\t" ;
+new-line = "\r\n" | "\n" ;
+letter = "A"…"Z" | "a"…"z" ;
+digit = "0"…"9" ;

@@ -15,9 +15,9 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
     [MemberData(nameof(CPUMakerTestDataGenerator.TestData), MemberType = typeof(CPUMakerTestDataGenerator))]
     public void CPUMakerDeserializeFromJSON(CPUMakerTestData inTestData)
     {
-      var obj = Fixture.Serializer.Deserialize<CPUMaker>(inTestData.SerializedTestData);
-      obj.Should().BeOfType(typeof(CPUMaker));
-      Fixture.Serializer.Deserialize<CPUMaker>(inTestData.SerializedTestData).Should().Be(inTestData.ObjTestData);
+      var obj = Fixture.Serializer.Deserialize<CPUMaker>(inTestData.TestData);
+      ((object)obj).Should().BeOfType<CPUMaker>();
+      Fixture.Serializer.Deserialize<CPUMaker>(inTestData.TestData).Should().Be(inTestData.ObjTestData);
     }
 
     [Theory]
@@ -25,10 +25,10 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
     public void CPUMakerSerializeToJSON(CPUMakerTestData inTestData)
     {
 #if DEBUG
-      TestOutput.WriteLine("SerializedTestData is:" + inTestData.SerializedTestData);
+      TestOutput.WriteLine("SerializedTestData is:" + inTestData.TestData);
       TestOutput.WriteLine("Serialized ObjTestData is:" + Fixture.Serializer.Serialize(inTestData.ObjTestData));
 #endif
-      Fixture.Serializer.Serialize(inTestData.ObjTestData).Should().Be(inTestData.SerializedTestData);
+      Fixture.Serializer.Serialize(inTestData.ObjTestData).Should().Be(inTestData.TestData);
     }
 
   }

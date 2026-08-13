@@ -165,8 +165,11 @@ invokes a synthetic sprint-completion task. The structured result reports
 `SqlInstancesRetained = true`.
 
 Sprint planning also now has an explicit markdown-to-board path: use
-`Convert-TasksMdToSprintBoard` to regenerate a sprint `TASKS.html` board from the
-authoritative `TASKS.md` file after task edits or status updates. Indented lettered
+`Convert-TasksMdToSprintBoard` to regenerate a sprint HTML board from the
+authoritative sprint markdown file after task edits or status updates. When
+`-OutputPath` is omitted, the board name is derived from the markdown name in the
+same directory — `Tasks.Sprint0014.md` produces `Tasks.Sprint0014.html`, and a
+legacy `TASKS.md` still produces `TASKS.html`. Indented lettered
 subtasks (`N.M.a/b/c`) are emitted as their own board cards — numbered distinctly,
 not indented — and inherit the `[Repo]` tag from their umbrella task. Single-line tasks are parsed safely without scalar unrolling.
 

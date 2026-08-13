@@ -1,5 +1,20 @@
 # Production Release Notes in Chronological order
 
+# 0.1.74
+
+- `Invoke-PromotedModuleTests`: restore the promoted package with PowerShellGet's
+  `Save-Module` instead of PSResourceGet's `Save-PSResource`. PSResourceGet cannot
+  consume these ProGet PowerShell-type feeds at all — registered with `/v2` it 404s
+  every call, registered bare it is unclassifiable, and the feeds expose no
+  `/v3/index.json`. The BuildMaster pipeline was unaffected because it passes
+  `-ProGetBaseUrl` and takes the direct `/package/` branch; this repairs the
+  feed-restore branch used by ad-hoc and local invocations, which always failed.
+- `Invoke-PromotedModuleTests`: purge the per-name/version/feed restore directory
+  before restoring. The two restore branches write different layouts into the same
+  reused folder, and a stale `package/` extract outsorted a fresh feed restore under
+  the descending-FullName manifest search — so a failed restore could silently test a
+  previous artifact and report green.
+
 # 0.1.72
 
 - Completes the Sprint 0013 dependency-ordered release of all eleven extracted

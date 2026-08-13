@@ -4,13 +4,12 @@ using ATAP.Utilities.ComputerInventory.Hardware;
 using System;
 using System.Text;
 using ATAP.Utilities.Testing;
-using ATAP.Utilities.StronglyTypedID;
 
 namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
 {
 
   //ToDo add validation tests to ensure illegal values are not allowed.  This applies to all XxTestDataGenerator classes
-  public class DiskDriveTestData : TestData<DiskDrive>
+  public class DiskDriveTestData : SerializedTestData<DiskDrive>
   {
     public DiskDriveTestData(DiskDrive objTestData, string serializedTestData) : base(objTestData, serializedTestData)
     {
@@ -27,7 +26,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
         foreach (PhiloteTestData<IDiskDrive>[] philote in PhiloteTestDataGenerator<IDiskDrive>.TestData())
         {
           str.Clear();
-          str.Append($"{{\"DiskDriveSignil\":{signil[0].SerializedTestData},\"DiskDriveNumber\":0,\"Philote\":{philote[0].SerializedTestData}}}");
+          str.Append($"{{\"DiskDriveSignil\":{signil[0].TestData},\"DiskDriveNumber\":0,\"Philote\":{philote[0].TestData}}}");
           yield return new DiskDriveTestData[] { new DiskDriveTestData(new DiskDrive(signil[0].ObjTestData,0, philote[0].ObjTestData), str.ToString()) };
         }
         //}

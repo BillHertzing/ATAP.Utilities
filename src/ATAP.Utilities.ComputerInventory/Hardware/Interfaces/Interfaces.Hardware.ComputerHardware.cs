@@ -1,5 +1,5 @@
 
-using Itenso.TimePeriod;
+using ATAP.Utilities.DateTime.Interfaces;
 using System;
 using System.Collections.Generic;
 
@@ -14,7 +14,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
     bool IsMainboardEnabled { get; }
     bool IsVideoCardsEnabled { get; }
     IMainBoard MainBoard { get; }
-    ITimeBlock Moment { get; }
+    UtcInstant Moment { get; }
     IVideoCard[] VideoCards { get; }
   }
  

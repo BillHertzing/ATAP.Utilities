@@ -3,25 +3,24 @@
     "plantuml": {
       "command": "node",
       "args": [
-        "${OSS_FORKS_ROOT}/plantuml-mcp-server/dist/plantuml-mcp-server.js"
+        "C:/Dropbox/whertzing/GitHub/OSSForks/plantuml-mcp-server/dist/plantuml-mcp-server.js"
       ],
       "env": {
-        "MCP_TRANSPORT": "stdio"
+        "MCP_TRANSPORT": "stdio",
+        "LOG_LEVEL": "error"
       },
       "type": "stdio"
     },
     "drawio": {
       "type": "stdio",
-      "command": "npx",
+      "command": "node",
       "args": [
-        "-y",
-        "drawio-mcp-server",
-        "--editor"
+        "C:/Users/whertzing/AppData/Local/npm-cache/_npx/a34dfef1e92abe10/node_modules/drawio-mcp-server/build/index.js"
       ]
     },
     "mssql-ataputilities-Exp-whertzing": {
       "type": "stdio",
-      "command": "${OSS_FORKS_ROOT}/aaronontheweb/mssql-mcp/src/MSSQL.MCP.IntegrationTests/bin/Release/net9.0/MSSQL.MCP.exe",
+      "command": "C:/Dropbox/whertzing/GitHub/OSSForks/aaronontheweb/mssql-mcp/src/MSSQL.MCP.IntegrationTests/bin/Release/net9.0/MSSQL.MCP.exe",
       "args": [],
       "env": {
         "MSSQL_CONNECTION_STRING": "Server=localhost\\Expwhertzing;Database=ATAPUtilities;Trusted_Connection=true;TrustServerCertificate=true;"

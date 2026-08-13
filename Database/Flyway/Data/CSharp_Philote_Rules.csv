@@ -1,8 +1,0 @@
-"PhiloteId","Comment"
-"f1f9a5d5-5e5a-4a44-8c48-1544a6d1c5ee","IStronglyTypedIds"
-"a8e3b1d0-1c6f-4f6f-9c7b-3c5d72e1b944","IPhilote"
-"c4a4b59f-1f8e-4bdb-9c8d-7a23f3b3d6e2","StronglyTypedIds"
-"5a2a7d5f-017d-4c89-98c5-7d4ab0f4ec3b","PhiloteRecords"
-"01d7c067-65b8-4370-bacf-2abf5ca7f7b8","ActivatorReplacement"
-"6e7f54c4-0b7d-4f0a-8d57-5f1f96c4d7b8","StronglyTypedIdJsonConverterSystemTextJson"
-"7d1a3b4c-2f5e-4c9f-9a64-5c7d8e9f0a1b","PhiloteJsonConverterSystemTextJson"

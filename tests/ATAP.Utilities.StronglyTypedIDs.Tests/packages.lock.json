@@ -400,6 +400,22 @@
           "Microsoft.Extensions.Logging": "[9.0.0, )"
         }
       },
+      "atap.utilities.datetime.interfaces": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.datetime.model": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.datetime.stringconstants": {
+        "type": "Project"
+      },
       "atap.utilities.etw": {
         "type": "Project"
       },
@@ -409,8 +425,9 @@
       "atap.utilities.philote.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )"
+          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.Model": "[1.0.0, )",
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
         }
       },
       "atap.utilities.serializer": {
@@ -430,7 +447,6 @@
           "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )",
           "ATAP.Utilities.Testing.Fixture.Serialization": "[1.0.0-NA, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -444,6 +460,7 @@
       "atap.utilities.serializer.model": {
         "type": "Project",
         "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )",
           "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
@@ -671,12 +688,6 @@
         "requested": "[5.0.0, )",
         "resolved": "5.0.0",
         "contentHash": "erBZjkQHWL9jpasCE/0qKAryzVBJFxGHVBAvgRN1bzM0q2s1S4oYREEEL0Vb+1kA/6BKb5FjUZMp5VXmy+gzkQ=="
-      },
-      "TimePeriodLibrary.NET": {
-        "type": "CentralTransitive",
-        "requested": "[2.1.5, )",
-        "resolved": "2.1.5",
-        "contentHash": "2QFqfYDl7/4wQd6Bsi1Z4fZlOurnJ2OQln5YK+TlIS6c5R0AM2Tn1EEfpWob/sOe0c0luUR01r0kZE4vruX8mw=="
       },
       "UnitsNet": {
         "type": "CentralTransitive",
@@ -1126,6 +1137,22 @@
           "Microsoft.Extensions.Logging": "[9.0.0, )"
         }
       },
+      "atap.utilities.datetime.interfaces": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.datetime.model": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.datetime.stringconstants": {
+        "type": "Project"
+      },
       "atap.utilities.etw": {
         "type": "Project"
       },
@@ -1135,8 +1162,9 @@
       "atap.utilities.philote.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )"
+          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.Model": "[1.0.0, )",
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
         }
       },
       "atap.utilities.serializer": {
@@ -1156,7 +1184,6 @@
           "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )",
           "ATAP.Utilities.Testing.Fixture.Serialization": "[1.0.0-NA, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -1170,6 +1197,7 @@
       "atap.utilities.serializer.model": {
         "type": "Project",
         "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )",
           "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
@@ -1409,12 +1437,6 @@
           "System.IO.Pipelines": "9.0.0",
           "System.Text.Encodings.Web": "9.0.0"
         }
-      },
-      "TimePeriodLibrary.NET": {
-        "type": "CentralTransitive",
-        "requested": "[2.1.5, )",
-        "resolved": "2.1.5",
-        "contentHash": "2QFqfYDl7/4wQd6Bsi1Z4fZlOurnJ2OQln5YK+TlIS6c5R0AM2Tn1EEfpWob/sOe0c0luUR01r0kZE4vruX8mw=="
       },
       "UnitsNet": {
         "type": "CentralTransitive",
@@ -1856,6 +1878,22 @@
           "Microsoft.Extensions.Logging": "[9.0.0, )"
         }
       },
+      "atap.utilities.datetime.interfaces": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.datetime.model": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.datetime.stringconstants": {
+        "type": "Project"
+      },
       "atap.utilities.etw": {
         "type": "Project"
       },
@@ -1865,8 +1903,9 @@
       "atap.utilities.philote.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )"
+          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.Model": "[1.0.0, )",
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
         }
       },
       "atap.utilities.serializer": {
@@ -1886,7 +1925,6 @@
           "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )",
           "ATAP.Utilities.Testing.Fixture.Serialization": "[1.0.0-NA, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -1900,6 +1938,7 @@
       "atap.utilities.serializer.model": {
         "type": "Project",
         "dependencies": {
+          "ATAP.Utilities.ETW": "[1.0.0, )",
           "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
@@ -2127,12 +2166,6 @@
         "requested": "[5.0.0, )",
         "resolved": "5.0.0",
         "contentHash": "erBZjkQHWL9jpasCE/0qKAryzVBJFxGHVBAvgRN1bzM0q2s1S4oYREEEL0Vb+1kA/6BKb5FjUZMp5VXmy+gzkQ=="
-      },
-      "TimePeriodLibrary.NET": {
-        "type": "CentralTransitive",
-        "requested": "[2.1.5, )",
-        "resolved": "2.1.5",
-        "contentHash": "2QFqfYDl7/4wQd6Bsi1Z4fZlOurnJ2OQln5YK+TlIS6c5R0AM2Tn1EEfpWob/sOe0c0luUR01r0kZE4vruX8mw=="
       },
       "UnitsNet": {
         "type": "CentralTransitive",

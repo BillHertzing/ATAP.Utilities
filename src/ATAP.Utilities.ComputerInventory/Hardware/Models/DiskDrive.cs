@@ -1,5 +1,6 @@
 
 using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 using System;
 
 namespace ATAP.Utilities.ComputerInventory.Hardware
@@ -13,7 +14,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
     {
     }
 
-    public DiskDrive(IDiskDriveSignil diskDriveSignil, int? diskDriveNumber, IPhilote<IDiskDrive> philote)
+    public DiskDrive(IDiskDriveSignil diskDriveSignil, int? diskDriveNumber, IGuidPhilote<GuidStronglyTypedId> philote)
     {
       DiskDriveSignil = diskDriveSignil ?? throw new ArgumentNullException(nameof(diskDriveSignil));
       DiskDriveNumber = diskDriveNumber;
@@ -29,7 +30,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
 
     public IDiskDriveSignil DiskDriveSignil { get; private set; }
     public int? DiskDriveNumber { get; private set; }
-    public IPhilote<IDiskDrive>? Philote { get; private set; }
+    public IGuidPhilote<GuidStronglyTypedId>? Philote { get; private set; }
   }
 }
 

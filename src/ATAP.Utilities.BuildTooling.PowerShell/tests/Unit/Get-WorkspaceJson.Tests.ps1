@@ -1,8 +1,13 @@
 BeforeAll {
-  Import-Module ATAP.Utilities.BuildTooling.PowerShell -Force
+  Import-Module ATAP.Utilities.BuildTooling.Common.PowerShell -Force
 }
 
-Describe 'Get-WorkspaceJson [private]' {
+Describe 'Get-WorkspaceJson [public]' {
+  It 'resolves from the Common child module' {
+    (Get-Command -Name 'Get-WorkspaceJson').Source |
+      Should -Be 'ATAP.Utilities.BuildTooling.Common.PowerShell'
+  }
+
   BeforeAll {
     $script:tempDir = Join-Path ([System.IO.Path]::GetTempPath()) "gwj_test_$([guid]::NewGuid().ToString('N'))"
     New-Item -ItemType Directory -Path $script:tempDir -Force | Out-Null

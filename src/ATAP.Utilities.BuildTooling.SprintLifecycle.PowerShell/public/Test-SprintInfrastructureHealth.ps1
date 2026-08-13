@@ -83,7 +83,7 @@ function Test-SprintInfrastructureHealth {
 .PARAMETER BuildMasterBaseUrl
     Base URL for BuildMaster. Defaults to
     $global:settings[$global:configRootKeys['BuildMasterBaseUrlConfigRootKey']],
-    then $env:BUILDMASTER_BASE_URL, then 'http://localhost:50017'.
+    then $env:BUILDMASTER_BASE_URL, then 'https://utat022:50017'.
 
 .PARAMETER BuildMasterAdminApiKeySecretName
     The Bitwarden secret name containing the BuildMaster admin API key. Defaults to
@@ -179,7 +179,7 @@ function Test-SprintInfrastructureHealth {
         $BuildMasterBaseUrl = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_BASE_URL', 'Process')
       }
       if ([string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) {
-        $BuildMasterBaseUrl = 'http://localhost:50017'
+        $BuildMasterBaseUrl = 'https://utat022:50017'
       }
     }
     if (-not [string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) {

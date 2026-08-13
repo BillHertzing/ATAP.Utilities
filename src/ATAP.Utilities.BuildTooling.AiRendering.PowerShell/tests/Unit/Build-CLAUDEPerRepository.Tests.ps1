@@ -1,4 +1,7 @@
 BeforeAll {
+  # Task 14.60: the combiner now builds the core body through this helper instead of
+  # reading <Carrier>-base.md directly, so the unit fixture must load it too.
+  . "$PSScriptRoot\..\..\private\Get-AICoreInstructionBody.ps1"
   . "$PSScriptRoot\..\..\public\Build-CLAUDEPerRepository.ps1"
 }
 

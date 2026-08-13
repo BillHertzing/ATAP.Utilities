@@ -1,0 +1,65 @@
+(*
+  OtterScript grammar contract for RRSBS rendering.
+  Authority: SolutionDocumentation/grammers per GRAMMAR-01 (2026-08-01).
+  Scope: the deterministic BuildMaster plan-fragment subset represented by the
+  nine Rule Primitives seeded in V00.01.000070. This profile is not a
+  replacement for the complete OtterScript language or BuildMaster operation
+  catalog.
+*)
+
+otter-artifact = otter-plan ;
+otter-plan = { otter-statement } ;
+otter-statement = set-variable | if-block | foreach-block | exec-step |
+                  dotnet-pack-step | proget-nuget-push-step |
+                  create-artifact-step | log-step | comment | new-line ;
+
+set-variable = "set", whitespace, variable-reference, whitespace, "=",
+               whitespace, expression, ";" ;
+if-block = "if", whitespace, expression, whitespace-opt, block ;
+foreach-block = "foreach", whitespace, variable-reference, whitespace,
+                "in", whitespace, expression, whitespace-opt, block ;
+block = "{", { otter-statement }, "}" ;
+
+exec-step = "Exec", whitespace, executable-name, whitespace-opt,
+            operation-arguments, ";" ;
+dotnet-pack-step = "Exec", whitespace, "dotnet", whitespace-opt,
+                   operation-arguments, ";" ;
+proget-nuget-push-step = "Exec", whitespace, "pwsh", whitespace-opt,
+                        operation-arguments, ";" ;
+create-artifact-step = "Create-Artifact", whitespace, artifact-name,
+                       whitespace-opt, operation-arguments, ";" ;
+log-step = "Log", whitespace, log-level, whitespace, expression, ";" ;
+
+operation-arguments = "(", whitespace-opt, [ named-argument-list ],
+                      whitespace-opt, ")" ;
+named-argument-list = named-argument,
+                      { ",", whitespace-opt, named-argument } ;
+named-argument = identifier, ":", whitespace-opt, expression ;
+
+expression = variable-reference | function-call | quoted-string | bare-value |
+             collection-expression ;
+function-call = variable-reference, "(", [ expression-list ], ")" ;
+expression-list = expression, { ",", whitespace-opt, expression } ;
+collection-expression = "%(", [ named-argument-list ], ")" ;
+variable-reference = "$", identifier | "$", "{", identifier, "}" ;
+executable-name = identifier, { identifier-character } ;
+artifact-name = quoted-string | variable-reference | bare-value ;
+log-level = "Debug" | "Information" | "Warning" | "Error" ;
+quoted-string = "\"", { ? character excluding an unescaped double quote ? }, "\""
+              | "`", { ? character excluding an unescaped backtick ? }, "`" ;
+bare-value = identifier, { identifier-character | "/" | "\\" | "." | "-" | "*" } ;
+comment = "#", { ? character excluding a new line ? } ;
+identifier = identifier-start, { identifier-character } ;
+identifier-start = letter | "_" ;
+identifier-character = letter | digit | "_" | "-" | "." ;
+whitespace-opt = "" | whitespace ;
+whitespace = " " | "\t", { " " | "\t" } ;
+new-line = "\r\n" | "\n" ;
+letter = "A"…"Z" | "a"…"z" ;
+digit = "0"…"9" ;
+
+(* The proget-nuget-push-step profile permits only a PowerShell executor
+   invocation with a SecretName argument. It deliberately does not render an
+   API-key value, $Decrypt(...), or a direct authenticated package-push
+   command. The legacy seed input named ProGetApiKey is retained as source
+   identity only; its safe conversion is deferred. *)

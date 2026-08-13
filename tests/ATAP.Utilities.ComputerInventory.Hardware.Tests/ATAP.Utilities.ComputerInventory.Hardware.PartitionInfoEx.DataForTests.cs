@@ -4,13 +4,12 @@ using ATAP.Utilities.ComputerInventory.Hardware;
 using System;
 using System.Text;
 using ATAP.Utilities.Testing;
-using ATAP.Utilities.StronglyTypedID;
 
 namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
 {
 
   //ToDo add validation tests to ensure illegal values are not allowed.  This applies to all XxTestDataGenerator classes
-  public class PartitionInfoExTestData : TestData<PartitionInfoEx>
+  public class PartitionInfoExTestData : SerializedTestData<PartitionInfoEx>
   {
     public PartitionInfoExTestData(PartitionInfoEx objTestData, string serializedTestData) : base(objTestData, serializedTestData)
     {
@@ -31,7 +30,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
           {
             var X = new PartitionInfoEx(partitionFileSystem[0].ObjTestData, information[0].ObjTestData, driveLetters, philote[0].ObjTestData);
             str.Clear();
-            str.Append($"{{\"PartitionFileSystem\":{partitionFileSystem[0].SerializedTestData},\"Size\":{information[0].SerializedTestData},\"DriveLetters\":[\"E\"],\"Philote\":{philote[0].SerializedTestData}}}");
+            str.Append($"{{\"PartitionFileSystem\":{partitionFileSystem[0].TestData},\"Size\":{information[0].TestData},\"DriveLetters\":[\"E\"],\"Philote\":{philote[0].TestData}}}");
 
             yield return new PartitionInfoExTestData[] { new PartitionInfoExTestData(new PartitionInfoEx(partitionFileSystem[0].ObjTestData, information[0].ObjTestData, driveLetters, philote[0].ObjTestData), str.ToString()) };
             //yield return new PartitionInfoExTestData[] { new PartitionInfoExTestData(new PartitionInfoEx(idpair.ID, idpair.ID2, new string[1] {"X"}, partitionFileSystem[0].ObjTestData, information[0].ObjTestData), str.ToString()) };

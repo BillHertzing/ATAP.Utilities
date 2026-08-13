@@ -10,7 +10,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
 {
 
   //ToDo add validation tests to ensure illegal values are not allowed.  This applies to all XxTestDataGenerator classes
-  public class DiskDriveSignilTestData : TestData<DiskDriveSignil>
+  public class DiskDriveSignilTestData : SerializedTestData<DiskDriveSignil>
   {
     public DiskDriveSignilTestData(DiskDriveSignil objTestData, string serializedTestData) : base(objTestData, serializedTestData)
     {
@@ -29,7 +29,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
           foreach (UnitsNetInformationTestData[] diskDriveInformation in UnitsNetInformationTestDataGenerator.TestData())
           {
             str.Clear();
-            str.Append($"{{\"DiskDriveMaker\":{diskDriveMaker[0].SerializedTestData},\"DiskDriveType\":{diskDriveType[0].SerializedTestData},\"InformationSize\":{diskDriveInformation[0].SerializedTestData}}}");
+            str.Append($"{{\"DiskDriveMaker\":{diskDriveMaker[0].TestData},\"DiskDriveType\":{diskDriveType[0].TestData},\"InformationSize\":{diskDriveInformation[0].TestData}}}");
             yield return new DiskDriveSignilTestData[] {
             new DiskDriveSignilTestData(
               new DiskDriveSignil(

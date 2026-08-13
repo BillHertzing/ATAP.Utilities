@@ -1,5 +1,20 @@
 # Release Notes — ATAP.Utilities.Security.Secrets.PowerShell
 
+## Unreleased — Sprint 0014 Task 14.62
+
+### Added
+
+- `Get-CredentialFile` and `Set-CredentialFile`, extracted from the machine PowerShell profile.
+  They validate absolute paths, enforce `-Force` for directory creation/replacement, honor
+  `ShouldProcess`, and verify imported payloads are `PSCredential` instances. The machine profile
+  does not import this child at startup; these functions autoload only for a caller that needs them.
+
+### Verification
+
+- Added isolated Pester coverage for force/overwrite protection, `-WhatIf`, path validation, and
+  type-safe credential imports. No profile deployment or credential-file migration is part of this
+  source change.
+
 ## 0.1.1 — 2026-07-09
 
 ### Fixed

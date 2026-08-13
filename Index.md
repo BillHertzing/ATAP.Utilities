@@ -27,6 +27,16 @@ for an individual package/module test suite. The current gate invokes
 and before pack/publish to verify `Directory.Build.props` properties across all
 C# projects under `src/`.
 
+### Deterministic C# package toolchain
+
+Production C# packages use stable Visual Studio Build Tools 2026 MSBuild 18.8+
+and SDK-resolved NuGet Pack 7.8+. The required MSBuild, NuGet Build Tools, and
+.NET SDK resolver components, Git-derived deterministic timestamp, two-pack
+SHA-256 gate, and parity-journal procedure are documented in
+[`SolutionDocumentation/NewComputerSetup.md`](SolutionDocumentation/NewComputerSetup.md#232-install-the-deterministic-c-package-build-toolchain)
+and the
+[`BuildMaster README`](src/ATAP.Utilities.BuildTooling.BuildMaster/ReadMe.md).
+
 ### AgentText RRSBS pilot
 
 Sprint 0008 adds an AgentText rule kind for AI agent and instruction text.

@@ -1,6 +1,21 @@
 ##########################################################################
 # CSharpPackage-5Stage - BuildMaster OtterScript Plan (thin-runner shape)
 #
+# !! EDITING THIS FILE IS NOT ENOUGH - SYNC IT TO THE RAFT !!
+#   BuildMaster executes the copy of this plan stored in its raft, NOT this
+#   file. Committing a change here does nothing until you run:
+#       Sync-BuildMasterPlans -Path <thisFile>
+#   The paired stage runner (Invoke-CSharpPackageBuildMasterStage.ps1) IS read
+#   from disk at run time, so a commit that changes both leaves the raft
+#   passing the OLD argument list to the NEW parameter block. When the missing
+#   argument is a [Parameter(Mandatory)] one, PowerShell prompts a console that
+#   nobody can answer and the stage HANGS FOREVER with no error - build stuck
+#   'active', log ending at "Executing pwsh...", near-zero CPU, and no
+#   _generated/buildmaster/<BuildMasterBuildId>/ directory.
+#   This cost a release cycle on 2026-08-03 in the PowerShellModule pipeline.
+#   Root cause, triage checklist, and fail-fast guidance:
+#       SolutionDocumentation/BuildMaster-Plan-Raft-Sync-Requirement.md
+#
 # Variables (Application Variables - set in BuildMaster Application config):
 #   $ApplicationName  - BuildMaster application name, e.g. "ATAP.Utilities"
 #   $Branch           - source branch name supplied by monitor/poller

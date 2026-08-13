@@ -27,7 +27,7 @@ function Set-SprintBoundaryContext {
     It covers the original five V4-H03 concerns plus the AI adapter lifecycle:
 
       - machine links (NTFS junctions) ........ Set-WorktreeJunctions (per worktree)
-      - SharedVSCode settings ................. Set-UserSettingsSymlink + Set-ClaudeSettingsSymlink (once)
+      - SharedVSCode settings ................. Invoke-SprintAIAdapterLifecycle + Set-UserSettingsSymlink (once)
       - downstream contexts ................... Initialize-DownstreamSprintFromSharedVSCode (Start)
                                                 / Reset-DownstreamToSharedVSCodeMain (End) (per worktree)
       - canonical AI adapters ................. Invoke-SprintAIAdapterLifecycle (per worktree)
@@ -102,7 +102,7 @@ function Set-SprintBoundaryContext {
     only for narrowly scoped repair or diagnostic calls.
   .PARAMETER SkipSharedVSCodeSettings
     Skip the machine-global SharedVSCode settings concern (shared-settings
-    render, Set-UserSettingsSymlink, Set-ClaudeSettingsSymlink). Used by
+    render and Set-UserSettingsSymlink). Used by
     New-SprintStage1/New-SprintStage2 which orchestrate those machine-global
     concerns once per stage while delegating per-worktree provisioning here
     (Task 12.2.b).
@@ -209,7 +209,7 @@ function Set-SprintBoundaryContext {
 
     # When the file is dot-sourced from source (no module import), the private
     # settings-symlink helpers are not yet defined. Load them on demand.
-    foreach ($privateHelperName in @('Set-ClaudeSettingsSymlink', 'Set-UserSettingsSymlink', 'Set-AIAgentMemoryJunction')) {
+    foreach ($privateHelperName in @('Set-UserSettingsSymlink', 'Set-AIAgentMemoryJunction')) {
       if (-not (Get-Command -Name $privateHelperName -CommandType Function -ErrorAction SilentlyContinue)) {
         $privateHelperPath = Join-Path $PSScriptRoot '..' 'private' "$privateHelperName.ps1"
         if (Test-Path -LiteralPath $privateHelperPath) {
@@ -324,8 +324,6 @@ function Set-SprintBoundaryContext {
               -Boundary Start `
               -TargetRoot $worktreePath `
               -SharedVSCodeWorktreePath $SharedVSCodeWorktreePath `
-              -AllowUserGlobalWrite:$AllowUserGlobalWrite `
-              -CheckpointConfirmed:$CheckpointConfirmed `
               -OmitSprintWorktrees `
               -Confirm:$false
             if (-not $stableRenderResult.PSObject.Properties['Idempotent'] -or -not $stableRenderResult.Idempotent) {
@@ -542,10 +540,6 @@ function Set-SprintBoundaryContext {
         }
         Invoke-SprintAIAdapterLifecycle @sharedSettingsRenderParameters | Out-Null
         Set-UserSettingsSymlink -SharedVSCodeWorktreePath $SharedVSCodeWorktreePath
-        Set-ClaudeSettingsSymlink `
-          -SharedVSCodeWorktreePath $SharedVSCodeWorktreePath `
-          -AllowUserGlobalWrite:$AllowUserGlobalWrite `
-          -CheckpointConfirmed:$CheckpointConfirmed
       }
     } catch {
       $settingsOk = $false
@@ -555,7 +549,7 @@ function Set-SprintBoundaryContext {
     }
     $concerns.Add([PSCustomObject]@{
         Concern        = 'SharedVSCodeSettings'
-        Action         = ($SkipSharedVSCodeSettings ? 'Skipped' : 'Invoke-SprintAIAdapterLifecycle (render shared settings) + Set-UserSettingsSymlink + Set-ClaudeSettingsSymlink')
+        Action         = ($SkipSharedVSCodeSettings ? 'Skipped' : 'Invoke-SprintAIAdapterLifecycle (authoritative shared and user-global adapter lifecycle) + Set-UserSettingsSymlink')
         StableByDesign = $false
         Succeeded      = $settingsOk
         Error          = $settingsError

@@ -42,7 +42,7 @@ function Clear-BuildMasterSprintVariables {
     those resolved from -RepositoryApplicationMap. Defaults to an empty list.
   .PARAMETER BuildMasterBaseUrl
     Base URL for the BuildMaster server.
-    Defaults to 'http://localhost:50017'.
+    Defaults to 'https://utat022:50017'.
   .PARAMETER BuildMasterAdminApiKeySecretName
     ATAP secret name for the BuildMaster admin API key. Resolved via Get-PVal
     (default 'BuildMaster.Admin.API.Key.utat01'); value read with Get-SecretATAP.
@@ -70,7 +70,7 @@ function Clear-BuildMasterSprintVariables {
 
     [string[]]$Applications = @(),
 
-    [string]$BuildMasterBaseUrl = 'http://localhost:50017',
+    [string]$BuildMasterBaseUrl = 'https://utat022:50017',
 
     [string]$BuildMasterAdminApiKeySecretName = 'BuildMaster.Admin.API.Key'
   )

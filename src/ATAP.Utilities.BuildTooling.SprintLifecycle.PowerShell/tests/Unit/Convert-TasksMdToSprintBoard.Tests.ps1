@@ -267,5 +267,176 @@ Last updated: 2026-07-04
     { Convert-TasksMdToSprintBoard -TasksFilePath $tasksMdPath } |
       Should -Throw '*Current Sprint*'
   }
+
+  Context 'Task 14.14 - default OutputPath derives from the input file name' {
+    BeforeAll {
+      # Each case gets an isolated directory so "no TASKS.html was created" is meaningful;
+      # the Describe-scope temp directory already contains a TASKS.html from an earlier test.
+      function script:New-IsolatedBoardDir {
+        $dir = Join-Path ([System.IO.Path]::GetTempPath()) "tasksboard_1414_$([guid]::NewGuid().ToString('N'))"
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+        return $dir
+      }
+
+      function script:New-MinimalBoardMarkdown {
+        param(
+          [Parameter(Mandatory)][string]$Path,
+          [string]$SprintTitle = 'Sprint 14 - Output Path Derivation'
+        )
+        @"
+# Current Sprint: $SprintTitle
+
+Source: TEST-1414 (2026-08-05)
+Last updated: 2026-08-05
+
+## Goal
+
+**PRIMARY - Exercise the default output path.**
+
+## Stream Z - Derivation Stream [PRIORITY 1]
+
+- [ ] **Task 14.14** [ATAP.Utilities] - Derive the board name from the markdown name.
+"@ | Set-Content -LiteralPath $Path -Encoding UTF8
+      }
+
+      $script:isolatedDirs = [System.Collections.Generic.List[string]]::new()
+    }
+
+    AfterAll {
+      foreach ($d in $script:isolatedDirs) {
+        Remove-Item -Path $d -Recurse -Force -ErrorAction SilentlyContinue
+      }
+    }
+
+    It 'Derives Tasks.Sprint0014.html from Tasks.Sprint0014.md and creates no TASKS.html' {
+      $dir = script:New-IsolatedBoardDir
+      $script:isolatedDirs.Add($dir)
+      $tasksMdPath = Join-Path $dir 'Tasks.Sprint0014.md'
+      script:New-MinimalBoardMarkdown -Path $tasksMdPath
+
+      $result = Convert-TasksMdToSprintBoard -TasksFilePath $tasksMdPath
+
+      $expected = Join-Path $dir 'Tasks.Sprint0014.html'
+      $result.OutputPath | Should -Be $expected
+      Test-Path -LiteralPath $expected | Should -BeTrue
+      # The whole point of the defect: a stray TASKS.html must not appear.
+      Test-Path -LiteralPath (Join-Path $dir 'TASKS.html') | Should -BeFalse
+    }
+
+    It 'Still derives TASKS.html from a legacy TASKS.md (backward compatibility)' {
+      $dir = script:New-IsolatedBoardDir
+      $script:isolatedDirs.Add($dir)
+      $tasksMdPath = Join-Path $dir 'TASKS.md'
+      script:New-MinimalBoardMarkdown -Path $tasksMdPath
+
+      $result = Convert-TasksMdToSprintBoard -TasksFilePath $tasksMdPath
+
+      $expected = Join-Path $dir 'TASKS.html'
+      $result.OutputPath | Should -Be $expected
+      Test-Path -LiteralPath $expected | Should -BeTrue
+    }
+
+    It 'Honours an explicit -OutputPath over the derivation' {
+      $dir = script:New-IsolatedBoardDir
+      $script:isolatedDirs.Add($dir)
+      $tasksMdPath = Join-Path $dir 'Tasks.Sprint0014.md'
+      script:New-MinimalBoardMarkdown -Path $tasksMdPath
+      $explicit = Join-Path $dir 'Explicit.Board.html'
+
+      $result = Convert-TasksMdToSprintBoard -TasksFilePath $tasksMdPath -OutputPath $explicit
+
+      $result.OutputPath | Should -Be $explicit
+      Test-Path -LiteralPath $explicit | Should -BeTrue
+      Test-Path -LiteralPath (Join-Path $dir 'Tasks.Sprint0014.html') | Should -BeFalse
+    }
+
+    It 'Falls back to the derivation for an empty or whitespace-only -OutputPath' -TestCases @(
+      @{ Label = 'empty'; Value = '' }
+      @{ Label = 'whitespace'; Value = '   ' }
+    ) {
+      param($Label, $Value)
+
+      $dir = script:New-IsolatedBoardDir
+      $script:isolatedDirs.Add($dir)
+      $tasksMdPath = Join-Path $dir 'Tasks.Sprint0014.md'
+      script:New-MinimalBoardMarkdown -Path $tasksMdPath
+
+      $result = Convert-TasksMdToSprintBoard -TasksFilePath $tasksMdPath -OutputPath $Value
+
+      $expected = Join-Path $dir 'Tasks.Sprint0014.html'
+      $result.OutputPath | Should -Be $expected -Because "the $Label value must fall back to the derivation"
+      Test-Path -LiteralPath $expected | Should -BeTrue
+      Test-Path -LiteralPath (Join-Path $dir 'TASKS.html') | Should -BeFalse
+    }
+
+    Context 'Task 14.14.c - adversarial variants of the derivation' {
+      It 'Derives from an uppercase .MD extension' {
+        $dir = script:New-IsolatedBoardDir
+        $script:isolatedDirs.Add($dir)
+        $tasksMdPath = Join-Path $dir 'Tasks.Sprint0014.MD'
+        script:New-MinimalBoardMarkdown -Path $tasksMdPath
+
+        $result = Convert-TasksMdToSprintBoard -TasksFilePath $tasksMdPath
+
+        $result.OutputPath | Should -Be (Join-Path $dir 'Tasks.Sprint0014.html')
+        Test-Path -LiteralPath (Join-Path $dir 'TASKS.html') | Should -BeFalse
+      }
+
+      It 'Gives a sibling dotted artifact its own board and never the main board name' {
+        $dir = script:New-IsolatedBoardDir
+        $script:isolatedDirs.Add($dir)
+        # The main board and a sibling companion artifact live in the same directory.
+        $mainPath = Join-Path $dir 'Tasks.Sprint0014.md'
+        $siblingPath = Join-Path $dir 'Tasks.Sprint0014.Accomplished.md'
+        script:New-MinimalBoardMarkdown -Path $mainPath
+        script:New-MinimalBoardMarkdown -Path $siblingPath -SprintTitle 'Sprint 14 - Accomplished'
+
+        $siblingResult = Convert-TasksMdToSprintBoard -TasksFilePath $siblingPath
+
+        $siblingResult.OutputPath | Should -Be (Join-Path $dir 'Tasks.Sprint0014.Accomplished.html')
+        # Regenerating the companion must not touch or create the main board.
+        Test-Path -LiteralPath (Join-Path $dir 'Tasks.Sprint0014.html') | Should -BeFalse
+      }
+
+      It 'Derives correctly when the directory path itself contains dots' {
+        $parent = script:New-IsolatedBoardDir
+        $script:isolatedDirs.Add($parent)
+        $dir = Join-Path $parent 'ATAP.Utilities.Sprint.0014'
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+        $tasksMdPath = Join-Path $dir 'Tasks.Sprint0014.md'
+        script:New-MinimalBoardMarkdown -Path $tasksMdPath
+
+        $result = Convert-TasksMdToSprintBoard -TasksFilePath $tasksMdPath
+
+        $result.OutputPath | Should -Be (Join-Path $dir 'Tasks.Sprint0014.html')
+      }
+
+      It 'Derives from an input file with no extension at all' {
+        $dir = script:New-IsolatedBoardDir
+        $script:isolatedDirs.Add($dir)
+        $tasksMdPath = Join-Path $dir 'TASKS'
+        script:New-MinimalBoardMarkdown -Path $tasksMdPath
+
+        $result = Convert-TasksMdToSprintBoard -TasksFilePath $tasksMdPath
+
+        $result.OutputPath | Should -Be (Join-Path $dir 'TASKS.html')
+        Test-Path -LiteralPath $result.OutputPath | Should -BeTrue
+      }
+
+      It 'Derives a usable name from an extension-only input such as .md' {
+        $dir = script:New-IsolatedBoardDir
+        $script:isolatedDirs.Add($dir)
+        $tasksMdPath = Join-Path $dir '.md'
+        script:New-MinimalBoardMarkdown -Path $tasksMdPath
+
+        $result = Convert-TasksMdToSprintBoard -TasksFilePath $tasksMdPath
+
+        # GetFileNameWithoutExtension('.md') is empty, so the guard falls back to the
+        # full file name. The result is odd-looking but deterministic and never bare.
+        $result.OutputPath | Should -Be (Join-Path $dir '.md.html')
+        Test-Path -LiteralPath $result.OutputPath | Should -BeTrue
+      }
+    }
+  }
 }
 

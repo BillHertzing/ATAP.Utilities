@@ -110,7 +110,7 @@ function Save-SprintWorkSession {
     https://github.com/whertzing/ATAP.Utilities
 #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
-    [OutputType([void])]
+    [OutputType([PSCustomObject])]
     param(
         [Parameter(Mandatory = $false, Position = 0)]
         [string] $SprintN = '',
@@ -401,8 +401,15 @@ function Save-SprintWorkSession {
                     # JSONL is found, fall back to the stable slug by stripping '-wt-.+$'
                     # from the path before slugging.
                     $makeSlug = { param([string]$p) ($p.Substring(0, 1).ToLower() + $p.Substring(1)) -replace ':', '-' -replace '\\', '-' -replace '_', '-' -replace '\.', '-' -replace '^-', '' }
-                    $slug = & $makeSlug $cwd
+                    $sprintSlug = & $makeSlug $cwd
+                    $slug = $sprintSlug
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Slug derived from cwd '$cwd': $slug"
+
+                    # Compute the stable-repo slug up front. Both the transcript fallback
+                    # below and the independent memory probe need it, and memory must not
+                    # depend on whether the transcript fallback happened to run.
+                    $stableCwd = $cwd -replace '-wt-.+$', ''
+                    $stableSlug = if ($stableCwd -ne $cwd) { & $makeSlug $stableCwd } else { $null }
 
                     $sessionDir = Resolve-CaseInsensitiveChildDirectory -ParentPath $ClaudeProjectsRoot -ChildName $slug
                     $jsonl = Get-ChildItem -Path $sessionDir -Filter '*.jsonl' -ErrorAction SilentlyContinue |
@@ -410,11 +417,9 @@ function Save-SprintWorkSession {
                         Select-Object -First 1
 
                     if (-not $jsonl) {
-                        # Worktree fallback: strip '-wt-.+$' to get the stable repo path,
-                        # recompute slug, and search there.
-                        $stableCwd = $cwd -replace '-wt-.+$', ''
-                        if ($stableCwd -ne $cwd) {
-                            $stableSlug = & $makeSlug $stableCwd
+                        # Worktree fallback: use the stable repo slug computed above and
+                        # search there.
+                        if ($stableSlug) {
                             $stableSessionDir = Resolve-CaseInsensitiveChildDirectory -ParentPath $ClaudeProjectsRoot -ChildName $stableSlug
                             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "No JSONL at sprint slug '$slug'; trying stable slug '$stableSlug'"
                             $jsonl = Get-ChildItem -Path $stableSessionDir -Filter '*.jsonl' -ErrorAction SilentlyContinue |
@@ -432,9 +437,43 @@ function Save-SprintWorkSession {
                         throw "No JSONL found in '$sessionDir' — verify the slug is correct. Slug derived: $slug"
                     }
 
-                    # Memory lives under the slug of the directory where Claude Code was
-                    # launched (the current working directory), NOT under the _Planning slug.
-                    $memSrcDir = Resolve-CaseInsensitiveChildDirectory -ParentPath $sessionDir -ChildName 'memory'
+                    # Memory lives under a project slug, but NOT necessarily the same slug
+                    # the transcript was found under (Task 14.13). The transcript can sit at
+                    # the sprint-worktree key while the memory store exists only at the
+                    # stable-repo key, so the store is located independently here rather
+                    # than inherited from $sessionDir.
+                    #
+                    # Probe order is sprint key first, then stable key: a live sprint store
+                    # must never be shadowed by a staler stable one. Neither is under the
+                    # _Planning slug.
+                    $memoryCandidateSlugs = @($sprintSlug)
+                    if ($stableSlug -and $stableSlug -ne $sprintSlug) {
+                        $memoryCandidateSlugs += $stableSlug
+                    }
+
+                    $memSrcDir = $null
+                    $memorySourceKey = $null
+                    foreach ($candidateSlug in $memoryCandidateSlugs) {
+                        $candidateSessionDir = Resolve-CaseInsensitiveChildDirectory -ParentPath $ClaudeProjectsRoot -ChildName $candidateSlug
+                        $candidateMemoryDir = Resolve-CaseInsensitiveChildDirectory -ParentPath $candidateSessionDir -ChildName 'memory'
+                        if (Test-Path -LiteralPath $candidateMemoryDir -PathType Container) {
+                            $memSrcDir = $candidateMemoryDir
+                            $memorySourceKey = $candidateSlug
+                            if ($candidateSlug -ne $sprintSlug) {
+                                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Memory store found under the stable repo slug '$candidateSlug', not the sprint slug '$sprintSlug'"
+                            }
+                            break
+                        }
+                    }
+
+                    if (-not $memSrcDir) {
+                        # Nothing found at any candidate. Keep the sprint-key path so the
+                        # skip diagnostic names the location that was expected.
+                        $sprintSessionDir = Resolve-CaseInsensitiveChildDirectory -ParentPath $ClaudeProjectsRoot -ChildName $sprintSlug
+                        $memSrcDir = Resolve-CaseInsensitiveChildDirectory -ParentPath $sprintSessionDir -ChildName 'memory'
+                        $memorySourceKey = $sprintSlug
+                    }
+
                     $memoryCopyMode = 'ClaudeMd'
                     $agentSessionKey = $slug
                 }
@@ -545,6 +584,13 @@ function Save-SprintWorkSession {
             $memoryCopied = $false
             $memoryFileCount = 0
             $memorySkipReason = $null
+            # Discriminated skip outcome (Task 14.13). Prose in $memorySkipReason cannot be
+            # acted on by a caller, and a boolean cannot tell "this agent has no memory
+            # store" apart from "a store was expected and was not found":
+            #   None     -> the agent legitimately has no on-disk memory store (Codex)
+            #   NotFound -> a store was expected at a known key and was not there
+            #   Empty    -> the store exists but held nothing to copy
+            $memorySkipKind = $null
 
             # ── 1. Compress conversation JSONL with 7-zip ──────────────────────────
             $convDir = Join-Path $PlanningRoot 'SprintWorkSessionConversations'
@@ -609,9 +655,13 @@ function Save-SprintWorkSession {
             $memDstDir = Join-Path $PlanningRoot "SprintWorkSessionMemorys\$memName"
 
             if ($memoryCopyMode -eq 'None' -or -not $memSrcDir) {
+                $memorySkipKind = 'None'
                 $memorySkipReason = "Agent '$Agent' has no on-disk memory store; memory copy skipped."
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message $memorySkipReason
             } elseif (-not (Test-Path $memSrcDir)) {
+                # A store was expected at a known key and is not there. Structurally
+                # distinct from the 'None' case above, which is correct behavior.
+                $memorySkipKind = 'NotFound'
                 $memorySkipReason = "Memory directory not found: $memSrcDir"
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "$memorySkipReason — memory copy skipped."
             } elseif ($PSCmdlet.ShouldProcess($memDstDir, "Copy memory files from '$memSrcDir'")) {
@@ -629,7 +679,15 @@ function Save-SprintWorkSession {
                     }
                 }
                 $memoryFileCount = (Get-ChildItem $memDstDir -ErrorAction SilentlyContinue).Count
-                $memoryCopied = $true
+                if ($memoryFileCount -eq 0) {
+                    # The store existed but held nothing to copy — a third outcome that is
+                    # neither a legitimate 'None' nor a missing-store 'NotFound'.
+                    $memorySkipKind = 'Empty'
+                    $memorySkipReason = "Memory directory contained no files to copy: $memSrcDir"
+                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message $memorySkipReason
+                } else {
+                    $memoryCopied = $true
+                }
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Memory files saved ($memoryFileCount files): $memDstDir"
             }
 
@@ -648,9 +706,11 @@ function Save-SprintWorkSession {
                 ConversationArchiveCreated = $archiveCreated
                 ConversationDbPath         = $conversationDbPath
                 MemorySourcePath           = $memSrcDir
+                MemorySourceKey            = $memorySourceKey
                 MemorySnapshotPath         = $memDstDir
                 MemorySnapshotCreated      = $memoryCopied
                 MemoryFileCount            = $memoryFileCount
+                MemorySkipKind             = $memorySkipKind
                 MemorySkipReason           = $memorySkipReason
             }
 
@@ -660,6 +720,11 @@ function Save-SprintWorkSession {
                 Add-Content -LiteralPath $rosterPath -Value $rosterJson -Encoding UTF8
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Session roster updated: $rosterPath"
             }
+
+            # Return the same facts the roster records so the caller — the checkpoint
+            # skill's report in particular — can see an unexpected 'NotFound' without
+            # reading PSFramework output (Task 14.13).
+            [PSCustomObject]$rosterEntry
         } catch {
             $errorMessage = "Save-SprintWorkSession failed. Exception: $($_.Exception.Message)"
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage

@@ -7,17 +7,14 @@ for the folder's purpose and scope.
 
 ## Canonical ATAPUtilities Source Layout
 
-`Database/Flyway/` is the single source root for the `ATAPUtilities.Database`
-package: its `version.json` supplies package metadata, `SQL/` supplies the
-versioned Flyway schema and CSV-loader scripts, and `Data/` supplies their CSV
-inputs. `SQL/V00.01.000010__Create_ATAPUtilities_Core_Schema.sql` retains the
-immutable bytes already applied to permanent tiers. The historical
-instantiation, durable RRSBS, typed-membership retirement, invariant, and
-effective-dating changes are preserved as forward migrations
-`V00.02.000060` through `V00.02.000100` in that same canonical `SQL/`
-directory. The former split source directory is retired; existing databases at
-`00.02.000040` keep these later migrations pending until a separately reviewed
-promotion.
+`Database/Flyway/` is the single source root for the unpublished
+`ATAPUtilities.Database` `0.1.0` package. `version.json` supplies package
+metadata; `SQL/` contains only
+`V00010__Create_ATAPUtilities_Initial_Schema_And_Seed.sql`; and `Data/` contains
+the eleven approved CSV inputs. The superseded pre-adoption V3 sequence and
+older lineages are preserved under `Archive/` and are excluded from the Flyway
+location. Publication, promotion, installation, and deployment remain behind
+their later human gates.
 
 ## Database Pipeline — Cross-Cutting References (in `SolutionDocumentation/`)
 
@@ -107,11 +104,12 @@ hosts do not export them as environment variables. Names used:
 - `ProGet.BuildMaster.API.Key` — CI publishing/promotion SecretName, passed as
   `-ProGetApiKeySecretName`. The authenticated leaf resolves it through
   `Get-SecretATAP` and fails closed; there is no administrator-key fallback.
-- `dbConnectionString-<Database>-<Host>-<Tier>` — Bitwarden secure-note
-  items for permanent SQL Server connection strings, e.g.
-  `dbConnectionString-ATAPUtilities-utat022-Production`. The naming
-  convention for permanent and ephemeral sprint instances is defined
-  in `.claude/Rules/Bitwarden.md`.
+- `dbConnectionString-<Database>-<Host>-<Tier>[-<UserName>]` — connection-string
+  SecretNames. Permanent tiers use `Integration`, `QA`, or `Production`;
+  developer-scoped sprint items use the short `Dev` or `Exp` token and username.
+  Resolve them at the point of use with `Get-SecretATAP`. Never infer the SQL
+  instance name from the tier token. The developer-scoped instance used by PTV
+  is `utat022\expWhertzing`; there is no instance named `Experimental`.
 
 No secret values are stored in this folder or in any of the linked
 documents.
@@ -129,9 +127,9 @@ See
 [`SolutionDocumentation/Generated-Diagram-Pipeline.md`](../../SolutionDocumentation/Generated-Diagram-Pipeline.md)
 for the `Convert-DiagramsToImages` command and renderer prerequisites.
 
-- [CoreSchema_Overview.puml](CoreSchema_Overview.puml) — Entity-relationship overview of the full ATAPUtilities schema, showing all major tables and their relationships.
+- [CoreSchema_Overview.puml](CoreSchema_Overview.puml) — Entity-relationship overview of the exact consolidated 11-table RPRRSBSI V3 schema.
 - [CoreSchema_Rules.puml](CoreSchema_Rules.puml) — Detailed ER diagram for the Rules subsystem: `PrimitiveLanguageKind`, `RulePrimitive`, `RulePrimitiveInput`, `RulePrimitiveComposition`.
-- [CoreSchema_Philote.puml](CoreSchema_Philote.puml) — ER diagram for the Philote identity tables, showing GUID-based entity identity across all objects.
+- [CoreSchema_Philote.puml](CoreSchema_Philote.puml) — Philote identity and half-open predecessor-chain validity contract.
 - [CoreSchema_Instantiation.puml](CoreSchema_Instantiation.puml) — ER diagram for the Instantiation subsystem, tracking BuildSet deployment records.
 
 ## PlantUML Diagrams — Database Package Promotion Pipeline
@@ -146,10 +144,14 @@ These diagrams document the CI/CD workflow for promoting ATAPUtilities database 
 
 ## Markdown Design Documents
 
+- [RRSBS-RDB-300-Flyway-Allocation-and-Bootstrap-Contract.md](RRSBS-RDB-300-Flyway-Allocation-and-Bootstrap-Contract.md) — Wave 4 allocation of the isolated RRSBS V2 Flyway lineage (`00010`), package `0.0.1`, history-table boundary, bootstrap contract, and future mixing-rejection requirements.
+- [RPRRSBSI-V3-Data-Dictionary.md](RPRRSBSI-V3-Data-Dictionary.md) — Exact active 11-table, 45-column, 72-constraint physical contract.
+- [ADR-Philote-Temporal-Validity-Relational-Contract.md](ADR-Philote-Temporal-Validity-Relational-Contract.md) — Half-open predecessor-chain, mutation, concurrency, and query contract.
+- [RebuildDatabase.md](RebuildDatabase.md) — Separately authorized exact-target rebuild and verification runbook.
+- [PROMOTION_SUMMARY.md](PROMOTION_SUMMARY.md) — `ATAPUtilities.Database` `0.1.0` source/release summary and authorization boundary.
 - [FolderStructure.md](FolderStructure.md) — Annotated folder tree of the entire `Database/` subtree with the purpose of each file and subfolder.
 - [CrossSchema_UserView_Design.md](CrossSchema_UserView_Design.md) — Design notes for cross-schema user views that join the Rules, Philote, Tags, and Instantiation schemas.
-- [API_Specification_RuleExport.md](API_Specification_RuleExport.md) — REST API specification for the Rule Export endpoint: request/response shapes, error codes, and versioning policy.
-- [README_RuleExport.md](README_RuleExport.md) — Usage guide and developer quick-start for the Rule Export utilities.
+- [RuleExport-Retirement.md](RuleExport-Retirement.md) — Retirement boundary for the superseded pre-V3 Rule Export SQL, PowerShell, test, and API surfaces.
 - [README.RRSBS.md](README.RRSBS.md) — Overview of the Rules, Rule Sets, and Build Sets (RRSBS) subsystem as implemented in the ATAPUtilities database.
 - [PROMOTION_SUMMARY.md](PROMOTION_SUMMARY.md) — Narrative summary of the database package promotion process, suitable as an executive overview of the pipeline diagrams above.
 - [HelloWorld-Example-Remediation-Plan.md](HelloWorld-Example-Remediation-Plan.md) — Remediation plan and example walkthrough for the canonical "Hello World" BuildSet instantiation.

@@ -1,5 +1,6 @@
 
 using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 using System.Collections.Generic;
 using UnitsNet;
 
@@ -12,7 +13,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
     {
     }
 
-    public PartitionInfoEx(PartitionFileSystem partitionFileSystem, Information size, IEnumerable<char>? driveLetters, IPhilote<IPartitionInfoEx>? philote)
+    public PartitionInfoEx(PartitionFileSystem partitionFileSystem, Information size, IEnumerable<char>? driveLetters, IGuidPhilote<GuidStronglyTypedId>? philote)
     {
       PartitionFileSystem = partitionFileSystem;
       Size = size;
@@ -23,7 +24,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
     public PartitionFileSystem PartitionFileSystem { get; private set; }
     public UnitsNet.Information Size { get; private set; }
     public IEnumerable<char>? DriveLetters { get; private set; }
-    public IPhilote<IPartitionInfoEx>? Philote { get; private set; }
+    public IGuidPhilote<GuidStronglyTypedId>? Philote { get; private set; }
   }
 }
 /*

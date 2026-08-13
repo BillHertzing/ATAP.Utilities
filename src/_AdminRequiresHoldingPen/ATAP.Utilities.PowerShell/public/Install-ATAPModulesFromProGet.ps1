@@ -146,9 +146,11 @@ function Install-ATAPModulesFromProGet {
       -ParameterName 'ProGetHost' `
       -originalPSBoundParameters $PSBoundParameters `
       -dottedPath ($global:configRootKeys['ProGetAdminUriHostConfigRootKey'] ?? 'ProGetAdminUriHost') `
-      -DefaultValue 'localhost' `
+      -DefaultValue 'utat022' `
       -AllowMissing
-    if ([string]::IsNullOrWhiteSpace($ProGetHost)) { $ProGetHost = 'localhost' }
+    # 'utat022', not 'localhost': the ProGet certificate SAN covers only utat022, so a
+    # localhost fallback fails TLS validation against the HTTPS-only server.
+    if ([string]::IsNullOrWhiteSpace($ProGetHost)) { $ProGetHost = 'utat022' }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "ProGetHost resolved to '$ProGetHost'"
 
     # ── Snippet: Check and populate simple parameter — ProGetScheme ───────
@@ -156,9 +158,10 @@ function Install-ATAPModulesFromProGet {
       -ParameterName 'ProGetScheme' `
       -originalPSBoundParameters $PSBoundParameters `
       -dottedPath ($global:configRootKeys['ProGetAdminUriSchemeConfigRootKey'] ?? 'ProGetAdminUriScheme') `
-      -DefaultValue 'http' `
+      -DefaultValue 'https' `
       -AllowMissing
-    if ([string]::IsNullOrWhiteSpace($ProGetScheme)) { $ProGetScheme = 'http' }
+    # ProGet refuses plain HTTP since the PKI change; a cleartext fallback fails outright.
+    if ([string]::IsNullOrWhiteSpace($ProGetScheme)) { $ProGetScheme = 'https' }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "ProGetScheme resolved to '$ProGetScheme'"
 
     # ── Snippet: Check and populate simple parameter as Type — ProGetPort ─

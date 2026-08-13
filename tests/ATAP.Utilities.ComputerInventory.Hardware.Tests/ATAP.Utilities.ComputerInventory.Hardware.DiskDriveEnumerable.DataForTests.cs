@@ -8,20 +8,20 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
   //ToDo add validation tests to ensure illegal values are not allowed.  This applies to all XxTestDataGenerator classes
   public class DiskDriveEnumerableTestData : TestDataEn<IDiskDrive>
   {
-    public DiskDriveEnumerableTestData(IEnumerable<TestData<IDiskDrive>> e) : base(e)
+    public DiskDriveEnumerableTestData(IEnumerable<SerializedTestData<IDiskDrive>> e) : base(e)
     {
     }
   }
   public class DiskDriveEnumerableTestDataGenerator : IEnumerable<object[]>
   {
     public static DiskDrive DiskDriveStaticDefault = new DiskDrive();
-    public static TestData<IDiskDrive> DiskDriveTestDataStaticDefault = new TestData<IDiskDrive>(DiskDriveStaticDefault, "{\"DiskDriveSignil\":\"stuff\"");
+    public static SerializedTestData<IDiskDrive> DiskDriveTestDataStaticDefault = new SerializedTestData<IDiskDrive>(DiskDriveStaticDefault, "{\"DiskDriveSignil\":\"stuff\"");
     public static IEnumerable<object[]> TestData()
     {
       // An empty list
-      yield return new DiskDriveEnumerableTestData[] { new DiskDriveEnumerableTestData(new List<TestData<IDiskDrive>>()) };
+      yield return new DiskDriveEnumerableTestData[] { new DiskDriveEnumerableTestData(new List<SerializedTestData<IDiskDrive>>()) };
       // a list with just the default instance of the type
-      yield return new DiskDriveEnumerableTestData[] { new DiskDriveEnumerableTestData(new List<TestData<IDiskDrive>>()) };
+      yield return new DiskDriveEnumerableTestData[] { new DiskDriveEnumerableTestData(new List<SerializedTestData<IDiskDrive>>()) };
 
       /*
        *foreach (DiskDriveSignilTestData[] signil in DiskDriveSignilTestDataGenerator.TestData())
@@ -34,7 +34,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
                 //foreach (IdAsStruct<IDiskDrive>id[] in IdTestDataGenerator.TestData(IDiskDrive))
                 //{
                   //str[i].Clear();
-                  //str[i].Append($"{{\"DiskDriveSignil\":{signil[0].SerializedTestData},\"ID\":\"{id[i]}\",\"TimeBlock\":{timeBlock[0].SerializedTestData}}}");
+                  //str[i].Append($"{{\"DiskDriveSignil\":{signil[0].TestData},\"ID\":\"{id[i]}\",\"TimeBlock\":{timeBlock[0].TestData}}}");
                   yield return new DiskDriveEnTestData { new DiskDriveEnTestData(new DiskDrive[1] { new DiskDrive(signil[0].ObjTestData, id[0], timeBlock[0].ObjTestData) }, new string[1] { str[0].ToString() }) };
                   //yield return new DiskDriveTestData[] { new DiskDriveTestData(new DiskDrive[2] { new DiskDrive(signil[0].ObjTestData, id[0], timeBlock[0].ObjTestData), new DiskDrive(signil[0].ObjTestData, id[1], timeBlock[0].ObjTestData) }, new string[2] { str[0].ToString(), String[1].ToString() }) };
                   //yield return new DiskDriveTestData[] { new DiskDriveTestData(new DiskDrive(signil[0].ObjTestData, id[0], timeBlock[0].ObjTestData), str.ToString()) };

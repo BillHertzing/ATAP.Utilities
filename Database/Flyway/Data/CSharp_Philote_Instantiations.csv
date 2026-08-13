@@ -1,8 +1,0 @@
-PhiloteId,Comment
-1939ccb3-057b-43d9-b15c-9392c1cba19e,Instantiation of IStronglyTypedIds rule - IStronglyTypedIds.cs
-0e09bbec-6d9d-4119-9006-c19ef9b7daed,Instantiation of IPhilote rule - IPhilote.cs
-de81d964-9afc-4b22-afbb-a2afc353937b,Instantiation of StronglyTypedIds rule - StronglyTypedIds.cs
-e45c66f3-2ad8-41fe-bf6d-f47a72ca0c4c,Instantiation of PhiloteRecords rule - Philote.cs
-08873a6e-201e-4529-b564-cecc24d6e927,Instantiation of ActivatorReplacement rule - ActivatorReplacement.cs
-1d50fa71-644e-46de-838a-d27abe57c16a,Instantiation of StronglyTypedIdJsonConverterSystemTextJson rule - StronglyTypedIdJsonConverterSystemTextJson.cs
-9444a632-5fe6-4150-8c75-28dfab06f7db,Instantiation of PhiloteJsonConverterSystemTextJson rule - JsonConverter.Shim.SystemTextJson.cs

@@ -4,7 +4,6 @@ using System;
 using System.Text;
 using ATAP.Utilities.Testing;
 
-using Itenso.TimePeriod;
 
 namespace ATAP.Utilities.Serializer.Tests {
 

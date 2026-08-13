@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using ATAP.Utilities.CryptoCoin.Enumerations;
 using ATAP.Utilities.CryptoCoin.Interfaces;
-using Itenso.TimePeriod;
+using ATAP.Utilities.DateTime.Interfaces;
 
 namespace ATAP.Utilities.CryptoCoin.Models
 {
@@ -13,40 +13,53 @@ namespace ATAP.Utilities.CryptoCoin.Models
     {
     }
 
-    public CryptoCoinNetworkInfo(TimeBlock avgBlockTime, double blockRewardPerBlock, Coin coin, IHashRate hashRate)
+    public CryptoCoinNetworkInfo(TemporalDuration avgBlockTime, double blockRewardPerBlock, Coin coin, IHashRate hashRate)
     {
-      AvgBlockTime = avgBlockTime ?? throw new ArgumentNullException(nameof(avgBlockTime));
+      AvgBlockTime = avgBlockTime;
       BlockRewardPerBlock = blockRewardPerBlock;
       Coin = coin;
       HashRate = hashRate ?? throw new ArgumentNullException(nameof(hashRate));
     }
 
-    public TimeBlock AvgBlockTime { get; set; }
+    public TemporalDuration AvgBlockTime { get; set; }
     public double BlockRewardPerBlock { get; set; }
     public Coin Coin { get; set; }
     public IHashRate HashRate { get; set; }
 
-    public static double AverageShareOfBlockRewardPerSpanFast(AverageShareOfBlockRewardDT data, TimeBlock timeBlock)
+    public static double AverageShareOfBlockRewardPerSpanFast(AverageShareOfBlockRewardDT data, TemporalDuration duration)
     {
-      // normalize into minerHashRateAsAPercentOfTotal the MinerHashRate / NetworkHashRate using the TimeBlock of the Miner
-      HashRate minerHashRateAsAPercentOfTotal = default;// ToDo: Fix this calculation data.MinerHashRate / data.NetworkHashRate;
-      // normalize the BlockRewardPerSpan to the same span the Miner HashRate span
-      //ToDo Fix this calculation
-      // normalize the BlockRewardPerSpan to the same span the network HashRate span
-      double normalizedBlockCreationSpan = data.AverageBlockCreationSpan.Duration.Ticks /
+      double minerRatePerTick = data.MinerHashRate.HashRatePerTimeSpan /
+          data.MinerHashRate.HashRateTimeSpan.Duration().Ticks;
+      double networkRatePerTick = data.NetworkHashRate.HashRatePerTimeSpan /
           data.NetworkHashRate.HashRateTimeSpan.Duration().Ticks;
-      double normalizedBlockRewardPerSpan = data.BlockRewardPerBlock /
-          (data.AverageBlockCreationSpan.Duration.Ticks *
-              normalizedBlockCreationSpan);
-      // The number of block rewards found, on average, within a given TimeBlock, is number of blocks in the span, times the fraction of the NetworkHashRate contributed by the miner
-      return normalizedBlockRewardPerSpan *
-          (minerHashRateAsAPercentOfTotal.HashRatePerTimeSpan /
-              data.NetworkHashRate.HashRatePerTimeSpan);
+      double expectedBlocks = (double)duration.Ticks / data.AverageBlockCreationSpan.Ticks;
+
+      return expectedBlocks * data.BlockRewardPerBlock * (minerRatePerTick / networkRatePerTick);
     }
-    public static double AverageShareOfBlockRewardPerSpanSafe(AverageShareOfBlockRewardDT data, TimeBlock timeSpan)
+
+    public static double AverageShareOfBlockRewardPerSpanSafe(AverageShareOfBlockRewardDT data, TemporalDuration duration)
     {
-      // ToDo: Add parameter checking
-      return AverageShareOfBlockRewardPerSpanFast(data, timeSpan);
+      ArgumentNullException.ThrowIfNull(data);
+
+      if (data.AverageBlockCreationSpan.Ticks == 0)
+      {
+        throw new DivideByZeroException("The average block creation duration must be greater than zero.");
+      }
+
+      if (data.MinerHashRate.HashRateTimeSpan.Duration().Ticks == 0 ||
+          data.NetworkHashRate.HashRateTimeSpan.Duration().Ticks == 0 ||
+          data.NetworkHashRate.HashRatePerTimeSpan == 0)
+      {
+        throw new DivideByZeroException("Hash-rate spans and the network hash rate must be greater than zero.");
+      }
+
+      double result = AverageShareOfBlockRewardPerSpanFast(data, duration);
+      if (!double.IsFinite(result))
+      {
+        throw new OverflowException("The expected block-reward share is outside the finite Double range.");
+      }
+
+      return result;
     }
 
   }

@@ -1,4 +1,3 @@
-using QuickGraph;
 using System;
 using System.Collections.Generic;
 
@@ -16,24 +15,24 @@ namespace ATAP.Utilities.ComputerInventory.Hardware {
       AggregateException = aggregateException;
       DeepestDirectoryTree = 0;
       LargestFile = 0;
-      EarliestDirectoryCreationTime = DateTime.MaxValue;
-      LatestDirectoryCreationTime = DateTime.MinValue;
-      EarliestFileCreationTime = DateTime.MaxValue;
-      LatestFileCreationTime = DateTime.MinValue;
-      EarliestFileModificationTime = DateTime.MaxValue;
-      LatestFileModificationTime = DateTime.MinValue;
+      EarliestDirectoryCreationTime = System.DateTime.MaxValue;
+      LatestDirectoryCreationTime = System.DateTime.MinValue;
+      EarliestFileCreationTime = System.DateTime.MaxValue;
+      LatestFileCreationTime = System.DateTime.MinValue;
+      EarliestFileModificationTime = System.DateTime.MaxValue;
+      LatestFileModificationTime = System.DateTime.MinValue;
     }
 
     public bool Success { get; set; }
     public FSEntityAdjacencyGraph FSEntityAdjacencyGraph { get; private set; }
     public int DeepestDirectoryTree { get; set; }
     public long LargestFile { get; set; }
-    public DateTime EarliestDirectoryCreationTime { get; set; }
-    public DateTime LatestDirectoryCreationTime { get; set; }
-    public DateTime EarliestFileCreationTime { get; set; }
-    public DateTime LatestFileCreationTime { get; set; }
-    public DateTime EarliestFileModificationTime { get; set; }
-    public DateTime LatestFileModificationTime { get; set; }
+    public System.DateTime EarliestDirectoryCreationTime { get; set; }
+    public System.DateTime LatestDirectoryCreationTime { get; set; }
+    public System.DateTime EarliestFileCreationTime { get; set; }
+    public System.DateTime LatestFileCreationTime { get; set; }
+    public System.DateTime EarliestFileModificationTime { get; set; }
+    public System.DateTime LatestFileModificationTime { get; set; }
     public IList<Exception> AcceptableExceptions { get; private set; }
     public AggregateException? AggregateException { get; set; }
 

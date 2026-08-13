@@ -1,0 +1,101 @@
+(*
+  SQL grammar contract for RRSBS rendering.
+  Authority: SolutionDocumentation/grammers per GRAMMAR-01 (2026-08-01).
+  Scope: the deterministic T-SQL source-file subset represented by the retained
+  SQL Rule Primitives; this is not a replacement for the full SQL Server grammar.
+*)
+
+sql-script-file = { script-element } ;
+script-element = batch | go-separator | single-line-comment | block-comment | new-line ;
+batch = { batch-statement | single-line-comment | block-comment | new-line } ;
+batch-statement = use-statement | set-option-statement | declare-statement |
+                  set-variable-statement | select-from-order-statement |
+                  object-existence-guard | create-function-tvf-statement |
+                  create-table-statement | cte-clause | insert-into-select-statement |
+                  return-statement ;
+go-separator = "GO", [ whitespace, decimal-digits ], new-line ;
+use-statement = "USE", whitespace, database-name, [ statement-terminator ] ;
+set-option-statement = "SET", whitespace, option-name, whitespace, option-value,
+                       [ statement-terminator ] ;
+single-line-comment = "--", { ? any character except a new-line ? }, new-line ;
+block-comment = "/*", { ? any character except the closing sequence */ ? }, "*/" ;
+separator-comment-block = comment-rule-line, { comment-body-line }, comment-rule-line ;
+object-existence-guard = "IF", whitespace, "OBJECT_ID", "(", string-literal, ")",
+                         whitespace, "IS NOT NULL", new-line, drop-statement ;
+declare-statement = "DECLARE", whitespace, declare-variable,
+                    { ",", whitespace, declare-variable }, [ statement-terminator ] ;
+set-variable-statement = "SET", whitespace, variable, whitespace, "=", whitespace,
+                         scalar-expression, [ statement-terminator ] ;
+select-from-order-statement = "SELECT", whitespace, select-list, whitespace, "FROM",
+                              whitespace, table-source, [ whitespace, order-by-clause ],
+                              [ statement-terminator ] ;
+function-parameter = variable, whitespace, data-type-spec,
+                     [ whitespace, "=", whitespace, scalar-expression ] ;
+returns-table-clause = "RETURNS", whitespace,
+                       ( "TABLE" | variable, whitespace, "TABLE", "(",
+                         table-column-spec, { ",", whitespace, table-column-spec }, ")" ) ;
+create-function-tvf-statement = "CREATE FUNCTION", whitespace, schema-qualified-name,
+                                "(", [ function-parameter, { ",", whitespace, function-parameter } ], ")",
+                                whitespace, returns-table-clause, whitespace, "AS", whitespace,
+                                "BEGIN", { function-body-statement }, "END" ;
+cte-clause = "WITH", whitespace, identifier, whitespace, "AS", whitespace, "(",
+             select-from-order-statement, ")" ;
+insert-into-select-statement = "INSERT INTO", whitespace, table-name, [ "(", identifier,
+                               { ",", whitespace, identifier }, ")" ], whitespace,
+                               select-from-order-statement ;
+case-when-expression = "CASE", { "WHEN", whitespace, search-condition, whitespace,
+                       "THEN", whitespace, scalar-expression }, [ "ELSE", whitespace,
+                       scalar-expression ], "END" ;
+query-hint-clause = "OPTION", whitespace, "(", query-hint,
+                    { ",", whitespace, query-hint }, ")" ;
+return-statement = "RETURN", [ whitespace, scalar-expression ], [ statement-terminator ] ;
+create-table-statement = "CREATE TABLE", whitespace, schema-qualified-name, whitespace,
+                         "(", table-element, { ",", whitespace, table-element }, ")",
+                         [ statement-terminator ] ;
+column-definition = column-name, whitespace, data-type-spec,
+                    [ whitespace, "IDENTITY", "(", decimal-digits, ",", decimal-digits, ")" ],
+                    [ whitespace, nullability ] ;
+inline-table-constraint = "CONSTRAINT", whitespace, constraint-name, whitespace,
+                          ( "PRIMARY KEY" | "UNIQUE" | "FOREIGN KEY" | "CHECK" | "DEFAULT" ),
+                          { ? constraint-specific text ? } ;
+
+drop-statement = "DROP", whitespace, ( "FUNCTION" | "PROCEDURE" | "TABLE" | "VIEW" ),
+                 whitespace, object-name, [ statement-terminator ] ;
+declare-variable = variable, whitespace, data-type-spec, [ whitespace, "=", whitespace, scalar-expression ] ;
+select-list = "*" | scalar-expression, [ whitespace, "AS", whitespace, identifier ],
+              { ",", whitespace, scalar-expression, [ whitespace, "AS", whitespace, identifier ] } ;
+table-source = table-name | function-call ;
+function-call = schema-qualified-name, "(", [ scalar-expression, { ",", whitespace, scalar-expression } ], ")" ;
+order-by-clause = "ORDER BY", whitespace, identifier, [ whitespace, ( "ASC" | "DESC" ) ] ;
+function-body-statement = cte-clause | insert-into-select-statement | return-statement |
+                          set-variable-statement | select-from-order-statement ;
+table-element = column-definition | inline-table-constraint ;
+table-column-spec = column-name, whitespace, data-type-spec, [ whitespace, nullability ] ;
+query-hint = "MAXRECURSION", whitespace, decimal-digits ;
+search-condition = ? T-SQL predicate text emitted by a bound primitive input ? ;
+scalar-expression = literal | variable | identifier | function-call | case-when-expression |
+                    "(", scalar-expression, ")" ;
+literal = string-literal | decimal-digits | "NULL" ;
+string-literal = "'", { ? SQL string character, with escaped quote represented as '' ? }, "'" ;
+variable = "@", identifier ;
+database-name = identifier ;
+option-name = "ANSI_NULLS" | "QUOTED_IDENTIFIER" | "ANSI_PADDING" | identifier ;
+option-value = "ON" | "OFF" ;
+table-name = schema-qualified-name | identifier ;
+schema-qualified-name = identifier, ".", identifier ;
+object-name = schema-qualified-name | identifier ;
+column-name = identifier ;
+constraint-name = identifier ;
+data-type-spec = identifier, [ "(", decimal-digits, [ ",", decimal-digits ], ")" ] ;
+nullability = "NULL" | "NOT NULL" ;
+statement-terminator = ";" ;
+comment-rule-line = "--", ( "=" | "-" ), { "=" | "-" }, new-line ;
+comment-body-line = "--", [ whitespace ], { ? any character except a new-line ? }, new-line ;
+identifier = identifier-start, { identifier-part } ;
+identifier-start = letter | "_" | "#" ;
+identifier-part = letter | digit | "_" | "$" | "#" ;
+decimal-digits = digit, { digit } ;
+whitespace = " " | "\t", { " " | "\t" } ;
+new-line = "\r\n" | "\n" ;
+letter = "A"…"Z" | "a"…"z" ;
+digit = "0"…"9" ;

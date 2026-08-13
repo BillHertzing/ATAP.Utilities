@@ -2,8 +2,9 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <IsPackable>true</IsPackable>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IsPackable>false</IsPackable>
+    <IsPublishable>false</IsPublishable>
     <!-- Assembly, File, and Package Information for this assembly-->
     <!-- Build and revision are created based on date-->
     <MajorVersion>0</MajorVersion>
@@ -16,10 +17,10 @@
     <PackageLabel>Alpha</PackageLabel>
   </PropertyGroup>
 
-<ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" />
-<PackageReference Include="Polly" />
-</ItemGroup>
+    <PackageReference Include="Polly" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.CryptoCoin\Extensions\ATAP.Utilities.CryptoCoin.Extensions.csproj" />

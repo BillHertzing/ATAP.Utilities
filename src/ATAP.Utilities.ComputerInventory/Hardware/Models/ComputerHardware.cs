@@ -1,4 +1,4 @@
-using Itenso.TimePeriod;
+using ATAP.Utilities.DateTime.Interfaces;
 using System;
 
 
@@ -17,7 +17,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
     {
     }
 
-    public ComputerHardware(ICPU[] cPUS, bool isCPUsEnabled, bool isFanControllerEnabled, bool isMainboardEnabled, bool isVideoCardsEnabled, IMainBoard mainBoard, TimeBlock moment, IVideoCard[] videoCards)
+    public ComputerHardware(ICPU[] cPUS, bool isCPUsEnabled, bool isFanControllerEnabled, bool isMainboardEnabled, bool isVideoCardsEnabled, IMainBoard mainBoard, UtcInstant moment, IVideoCard[] videoCards)
     {
       CPUS = cPUS ?? throw new ArgumentNullException(nameof(cPUS));
       IsCPUsEnabled = isCPUsEnabled;
@@ -25,7 +25,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
       IsMainboardEnabled = isMainboardEnabled;
       IsVideoCardsEnabled = isVideoCardsEnabled;
       MainBoard = mainBoard ?? throw new ArgumentNullException(nameof(mainBoard));
-      Moment = moment ?? throw new ArgumentNullException(nameof(moment));
+      Moment = moment;
       VideoCards = videoCards ?? throw new ArgumentNullException(nameof(videoCards));
     }
 #if NETFUL
@@ -38,7 +38,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
     public bool IsMainboardEnabled { get; }
     public bool IsVideoCardsEnabled { get; }
     public IMainBoard MainBoard { get; }
-    public ITimeBlock Moment { get; }
+    public UtcInstant Moment { get; }
     public IVideoCard[] VideoCards { get; }
 
     // ToDo: Add field and property for MainBoardMemory

@@ -11,6 +11,9 @@ param(
   [ValidateNotNullOrEmpty()]
   [string] $DatabaseHost = $env:COMPUTERNAME,
 
+  [ValidateNotNullOrEmpty()]
+  [string] $DatabaseName = 'ATAPUtilities',
+
   [string] $UserName = $env:USERNAME,
 
   [string] $ConnectionStringSecretName,

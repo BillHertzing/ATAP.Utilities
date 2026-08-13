@@ -655,6 +655,12 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
     }
   }
 
+  # Task 14.10: fixtures in this context uniquify by ISSUE NUMBER, never by a
+  # decorative suffix. Invoke-SprintEndLifecycle now gates its close plan with
+  # Test-SprintEndWriteTarget, which classifies anything that does not match
+  # '<repo>-wt-<issue>-Sprint-<nnnn>-work-items' as a stable worktree and blocks
+  # it. A name like 'SharedVSCode-wt-48-Sprint-0010-work-items-recovery' is not
+  # a sprint worktree name, and the gate is right to refuse it.
   Context 'Invoke-SprintEndLifecycle' {
     BeforeEach {
       Mock Get-SprintEndContext {
@@ -695,8 +701,8 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
     }
 
     It 'plans every selected mutation phase in a full-switch WhatIf run' {
-      $planning = Join-Path $TestDrive '_Planning-wt-20-Sprint-0010-work-items-full'
-      $shared = Join-Path $TestDrive 'SharedVSCode-wt-48-Sprint-0010-work-items-full'
+      $planning = Join-Path $TestDrive '_Planning-wt-21-Sprint-0010-work-items'
+      $shared = Join-Path $TestDrive 'SharedVSCode-wt-49-Sprint-0010-work-items'
       New-Item -ItemType Directory -Path $planning, $shared -Force | Out-Null
       New-Item -ItemType Directory -Path (Join-Path $planning 'SprintRetrospective') -Force | Out-Null
       Set-Content -LiteralPath (Join-Path $planning 'SprintRetrospective\Notebook-SprintWorkSession-0010-End.md') -Value '# Sprint 0010 End'
@@ -781,8 +787,8 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
     }
 
     It 'fails closed before boundary mutation when checkpoint coverage was not requested' {
-      $planning = Join-Path $TestDrive '_Planning-wt-20-Sprint-0010-work-items-no-checkpoint'
-      $shared = Join-Path $TestDrive 'SharedVSCode-no-checkpoint'
+      $planning = Join-Path $TestDrive '_Planning-wt-22-Sprint-0010-work-items'
+      $shared = Join-Path $TestDrive 'SharedVSCode-wt-50-Sprint-0010-work-items'
       New-Item -ItemType Directory -Path $planning, $shared -Force | Out-Null
       New-Item -ItemType Directory -Path (Join-Path $planning 'SprintRetrospective') -Force | Out-Null
       Set-Content -LiteralPath (Join-Path $planning 'SprintRetrospective\Notebook-SprintWorkSession-0010-End.md') -Value '# Sprint 0010 End'
@@ -802,8 +808,8 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
     }
 
     It 'adds the Planning worktree to the SprintEnd close plan when omitted by the caller' {
-      $planning = Join-Path $TestDrive '_Planning-wt-20-Sprint-0010-work-items-omitted'
-      $shared = Join-Path $TestDrive 'SharedVSCode-wt-48-Sprint-0010-work-items-omitted'
+      $planning = Join-Path $TestDrive '_Planning-wt-23-Sprint-0010-work-items'
+      $shared = Join-Path $TestDrive 'SharedVSCode-wt-51-Sprint-0010-work-items'
       New-Item -ItemType Directory -Path $planning, $shared -Force | Out-Null
       New-Item -ItemType Directory -Path (Join-Path $planning 'SprintRetrospective') -Force | Out-Null
       Set-Content -LiteralPath (Join-Path $planning 'SprintRetrospective\Notebook-SprintWorkSession-0010-End.md') -Value '# Sprint 0010 End'
@@ -841,8 +847,8 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
     }
 
     It 'keeps a partial close resumable through generated safe teardown and idempotent re-entry' {
-      $planning = Join-Path $TestDrive '_Planning-wt-20-Sprint-0010-work-items-recovery'
-      $shared = Join-Path $TestDrive 'SharedVSCode-wt-48-Sprint-0010-work-items-recovery'
+      $planning = Join-Path $TestDrive '_Planning-wt-24-Sprint-0010-work-items'
+      $shared = Join-Path $TestDrive 'SharedVSCode-wt-52-Sprint-0010-work-items'
       New-Item -ItemType Directory -Path $planning, $shared -Force | Out-Null
       New-Item -ItemType Directory -Path (Join-Path $planning 'SprintRetrospective') -Force | Out-Null
       Set-Content -LiteralPath (Join-Path $planning 'SprintRetrospective\Notebook-SprintWorkSession-0010-End.md') -Value '# Sprint 0010 End'

@@ -49,7 +49,7 @@ function Assert-BuildMasterReady {
 .PARAMETER BuildMasterBaseUrl
     Base URL for BuildMaster. Defaults to
     $global:settings[$global:configRootKeys['BuildMasterBaseUrlConfigRootKey']],
-    then $env:BUILDMASTER_BASE_URL, then 'http://localhost:50017'.
+    then $env:BUILDMASTER_BASE_URL, then 'https://utat022:50017'.
 
 .PARAMETER BuildMasterAdminApiKeySecretName
     The ATAP secret name containing the BuildMaster admin API key. Defaults to
@@ -142,7 +142,7 @@ function Assert-BuildMasterReady {
         $BuildMasterBaseUrl = $env:BUILDMASTER_BASE_URL
       }
       if ([string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) {
-        $BuildMasterBaseUrl = 'http://localhost:50017'
+        $BuildMasterBaseUrl = 'https://utat022:50017'
       }
     }
     $BuildMasterBaseUrl = $BuildMasterBaseUrl.TrimEnd('/')

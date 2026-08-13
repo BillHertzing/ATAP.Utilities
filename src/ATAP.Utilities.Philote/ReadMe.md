@@ -1,14 +1,20 @@
 # ATAP.Utilities.Philote
 
-**Facade Project**
+**Facade project**
 
 ## Purpose
 
-<!-- Describe the purpose of this facade package -->
+Provide stable strongly typed identity plus immutable business-validity periods.
+`IAbstractPhilote<TId,TValue>` exposes `Id`, immutable `AdditionalIds`, ordered
+`ValidityPeriods`, and `IsValidAt(UtcInstant)`. The public contract contains no
+third-party temporal type.
 
 ## Architecture
 
-<!-- Describe the architecture of this facade and how child packages relate -->
+The Interfaces project owns the public contract. Models implements identity-only,
+same-runtime-type equality and immutable validity transitions. The
+System.Text.Json shim owns the Philote converter factory. DateTime Interfaces and
+Model own the temporal value types and calculations.
 
 ## Child Packages
 
@@ -18,18 +24,29 @@
 - ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson
 - ATAP.Utilities.Philote.Converters.Interfaces
 
-## Prerequisites
+## JSON contract
 
-<!-- List any prerequisites required to use this package -->
+The canonical Philote shape is:
 
-## Setup
+```json
+{
+  "id": "01234567-abcd-9876-cdef-456789abcdef",
+  "additionalIds": {},
+  "validityPeriods": [
+    {
+      "validFromUtc": "2026-08-08T00:00:00.0000000Z",
+      "validToUtc": null
+    }
+  ]
+}
+```
 
-<!-- Describe how to set up and use this package -->
+The property names are case-sensitive. A null `validityPeriods` value reads as an
+empty set, but the writer emits an array. Retired vendor-shaped temporal fields
+are rejected rather than ignored or reinterpreted.
 
-## Known Issues
+## Contract references
 
-<!-- List any known issues -->
-
-## Release Notes
-
-<!-- Document release history and changes -->
+- [C# temporal-validity ADR](../../SolutionDocumentation/ADR-Philote-Temporal-Validity-CSharp-Contract.md)
+- [DateTime facade](../ATAP.Utilities.DateTime/INDEX.md)
+- [Relational contract](../../Database/Documentation/ADR-Philote-Temporal-Validity-Relational-Contract.md)

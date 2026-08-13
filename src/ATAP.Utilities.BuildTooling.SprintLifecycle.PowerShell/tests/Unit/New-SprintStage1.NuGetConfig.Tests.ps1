@@ -197,10 +197,10 @@ Describe 'New-SprintStage1 NuGet.config generation (A09)' -Tag 'Unit', 'Promoted
     Remove-Item -LiteralPath $script:tempGitRoot -Recurse -Force -ErrorAction SilentlyContinue
   }
 
-  Context 'Default ProGetBaseUrl (http://localhost:50000)' {
+  Context 'Default ProGetBaseUrl (https://utat022:50000)' {
     BeforeEach {
       New-SprintStage1 -GitRoot $script:tempGitRoot -Owner 'owner' -SprintNumber '0007' `
-        -ProGetBaseUrl 'http://localhost:50000' -Confirm:$false | Out-Null
+        -ProGetBaseUrl 'https://utat022:50000' -Confirm:$false | Out-Null
       $script:content = Get-Content -LiteralPath $script:nugetConfigPath -Raw
     }
 
@@ -238,7 +238,7 @@ Describe 'New-SprintStage1 NuGet.config generation (A09)' -Tag 'Unit', 'Promoted
     }
 
     It 'Substitutes the default ProGetBaseUrl into feed URLs' {
-      $script:content | Should -Match 'http://localhost:50000/nuget/nuget-experimental/v3/index\.json'
+      $script:content | Should -Match 'https://utat022:50000/nuget/nuget-experimental/v3/index\.json'
     }
 
     It 'Emits the packageSourceMapping section with all six sources mapped' {
@@ -289,7 +289,7 @@ Describe 'New-SprintStage1 NuGet.config generation (A09)' -Tag 'Unit', 'Promoted
       foreach ($key in @('nuget-experimental','nuget-development','nuget-integration','nuget-qa','nuget-production')) {
         $content | Should -Match ('http://proget\.internal:51000/nuget/{0}/v3/index\.json' -f [regex]::Escape($key))
       }
-      $content | Should -Not -Match 'http://localhost:50000'
+      $content | Should -Not -Match 'https://utat022:50000'
     }
   }
 }

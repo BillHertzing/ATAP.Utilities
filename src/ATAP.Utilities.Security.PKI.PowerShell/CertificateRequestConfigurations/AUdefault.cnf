@@ -1,0 +1,63 @@
+HOME = .
+
+[ ca ]
+default_ca = CA_default
+
+[ CA_default ]
+database = $ENV::ATAP_PKI_CA_DATABASE
+new_certs_dir = $ENV::ATAP_PKI_CA_NEW_CERTS
+serial = $ENV::ATAP_PKI_CA_SERIAL
+crlnumber = $ENV::ATAP_PKI_CA_CRLNUMBER
+certificate = $ENV::ATAP_PKI_CA_CERTIFICATE
+private_key = $ENV::ATAP_PKI_CA_PRIVATE_KEY
+default_md = sha384
+default_days = 397
+default_crl_days = 30
+policy = policy_loose
+email_in_dn = no
+unique_subject = no
+copy_extensions = copy
+
+[ policy_loose ]
+commonName = supplied
+organizationName = optional
+countryName = optional
+organizationalUnitName = optional
+stateOrProvinceName = optional
+localityName = optional
+emailAddress = optional
+
+[ req ]
+prompt = no
+distinguished_name = req_distinguished_name
+x509_extensions = v3_ca
+
+[ req_distinguished_name ]
+CN = supplied-by-command-line
+
+[ v3_ca ]
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always,issuer:always
+basicConstraints = critical,CA:true,pathlen:0
+keyUsage = critical,cRLSign,keyCertSign
+
+[ server_cert ]
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid,issuer
+basicConstraints = critical,CA:false
+keyUsage = critical,digitalSignature,keyEncipherment
+extendedKeyUsage = serverAuth
+
+[ code_signing_cert ]
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid,issuer
+basicConstraints = critical,CA:false
+keyUsage = critical,digitalSignature
+extendedKeyUsage = codeSigning
+
+[ data_encryption_cert ]
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid,issuer
+basicConstraints = critical,CA:false
+keyUsage = critical,keyEncipherment,dataEncipherment
+extendedKeyUsage = 1.3.6.1.4.1.311.80.1

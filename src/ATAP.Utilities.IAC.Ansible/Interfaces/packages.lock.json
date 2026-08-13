@@ -187,7 +187,6 @@
           "Microsoft.Extensions.Configuration.CommandLine": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.EnvironmentVariables": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.Json": "[9.0.0, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -224,12 +223,6 @@
         "requested": "[5.0.0, )",
         "resolved": "5.0.0",
         "contentHash": "erBZjkQHWL9jpasCE/0qKAryzVBJFxGHVBAvgRN1bzM0q2s1S4oYREEEL0Vb+1kA/6BKb5FjUZMp5VXmy+gzkQ=="
-      },
-      "TimePeriodLibrary.NET": {
-        "type": "CentralTransitive",
-        "requested": "[2.1.5, )",
-        "resolved": "2.1.5",
-        "contentHash": "2QFqfYDl7/4wQd6Bsi1Z4fZlOurnJ2OQln5YK+TlIS6c5R0AM2Tn1EEfpWob/sOe0c0luUR01r0kZE4vruX8mw=="
       },
       "UnitsNet": {
         "type": "CentralTransitive",
@@ -449,7 +442,6 @@
           "Microsoft.Extensions.Configuration.CommandLine": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.EnvironmentVariables": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.Json": "[9.0.0, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -496,12 +488,6 @@
           "System.IO.Pipelines": "9.0.0",
           "System.Text.Encodings.Web": "9.0.0"
         }
-      },
-      "TimePeriodLibrary.NET": {
-        "type": "CentralTransitive",
-        "requested": "[2.1.5, )",
-        "resolved": "2.1.5",
-        "contentHash": "2QFqfYDl7/4wQd6Bsi1Z4fZlOurnJ2OQln5YK+TlIS6c5R0AM2Tn1EEfpWob/sOe0c0luUR01r0kZE4vruX8mw=="
       },
       "UnitsNet": {
         "type": "CentralTransitive",
@@ -720,7 +706,6 @@
           "Microsoft.Extensions.Configuration.CommandLine": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.EnvironmentVariables": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.Json": "[9.0.0, )",
-          "TimePeriodLibrary.NET": "[2.1.5, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -757,12 +742,6 @@
         "requested": "[5.0.0, )",
         "resolved": "5.0.0",
         "contentHash": "erBZjkQHWL9jpasCE/0qKAryzVBJFxGHVBAvgRN1bzM0q2s1S4oYREEEL0Vb+1kA/6BKb5FjUZMp5VXmy+gzkQ=="
-      },
-      "TimePeriodLibrary.NET": {
-        "type": "CentralTransitive",
-        "requested": "[2.1.5, )",
-        "resolved": "2.1.5",
-        "contentHash": "2QFqfYDl7/4wQd6Bsi1Z4fZlOurnJ2OQln5YK+TlIS6c5R0AM2Tn1EEfpWob/sOe0c0luUR01r0kZE4vruX8mw=="
       },
       "UnitsNet": {
         "type": "CentralTransitive",

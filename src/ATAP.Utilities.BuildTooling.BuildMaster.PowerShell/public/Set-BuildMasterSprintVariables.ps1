@@ -71,7 +71,7 @@ function Set-BuildMasterSprintVariables {
     rather than a fixed list.
   .PARAMETER BuildMasterBaseUrl
     Base URL for the BuildMaster server.
-    Defaults to 'http://localhost:50017'.
+    Defaults to 'https://utat022:50017'.
   .OUTPUTS
     PSCustomObject with variablesSet (array of 'appName/varName' strings),
     skippedRepositories (array of repo names with no BuildMaster application),

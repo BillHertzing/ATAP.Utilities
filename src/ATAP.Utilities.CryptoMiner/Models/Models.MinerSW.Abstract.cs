@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Itenso.TimePeriod;
+using ATAP.Utilities.DateTime.Interfaces;
 using ATAP.Utilities.ConcurrentObservableCollections;
 using UnitsNet;
 using ATAP.Utilities.CryptoCoin.Models;
@@ -62,10 +62,7 @@ namespace ATAP.Utilities.CryptoMiner.Models
   public abstract class MinerSWAbstract : ComputerSoftwareProgram, IMinerSWAbstract
   {
     public MinerSWAbstract(string processName, string processPath, string version, string processStartPath, bool hasConfigurationSettings, ConcurrentObservableDictionary<string, string> configurationSettings, string configFilePath, bool hasSTDOut, bool hasERROut, bool hasAPI, string aPIDiscoveryURL, bool hasLogFiles, string logFileFolder, string logFileFnPattern, Coin[] coinsMined, string[][] pools) : base(
-      new ComputerSoftwareProgramSignil(processName, processPath, processStartPath, version, hasSTDOut, hasERROut, hasLogFiles, logFileFolder, logFileFnPattern, hasAPI, aPIDiscoveryURL, hasConfigurationSettings,  configFilePath),
-      null
-
-      )
+      new ComputerSoftwareProgramSignil(processName, processPath, processStartPath, version, hasSTDOut, hasERROut, hasLogFiles, logFileFolder, logFileFnPattern, hasAPI, aPIDiscoveryURL, hasConfigurationSettings,  configFilePath))
     {
       CoinsMined = coinsMined ?? throw new ArgumentNullException(nameof(coinsMined));
       Pools = pools ?? throw new ArgumentNullException(nameof(pools));
@@ -86,7 +83,7 @@ namespace ATAP.Utilities.CryptoMiner.Models
     public MinerStatusAbstract()
     {
     }
-    public MinerStatusAbstract(int iD, MinerStatusDetailsAbstract minerStatusDetails, string statusQueryError, string version, TimeBlock moment)
+    public MinerStatusAbstract(int iD, MinerStatusDetailsAbstract minerStatusDetails, string statusQueryError, string version, UtcInstant moment)
     {
       this.ID = iD;
       this.MinerStatusDetails = minerStatusDetails;
@@ -99,7 +96,7 @@ namespace ATAP.Utilities.CryptoMiner.Models
 
     public IMinerStatusDetailsAbstract MinerStatusDetails { get; }
 
-    public ITimeBlock Moment { get; }
+    public UtcInstant Moment { get; }
 
     public string StatusQueryError { get; }
 
@@ -114,13 +111,13 @@ namespace ATAP.Utilities.CryptoMiner.Models
     {
     }
 
-    public MinerStatusDetailsAbstract(ConcurrentObservableDictionary<int, Ratio> perGPUFanPct, ConcurrentObservableDictionary<int, ConcurrentObservableDictionary<Coin, double>> perGPUPerCoinHashRate, ConcurrentObservableDictionary<int, Power> perGPUPowerConsumption, ConcurrentObservableDictionary<int, Temperature> perGPUTemperature, string runningTime, ConcurrentObservableDictionary<Coin, double> totalPerCoinHashRate, ConcurrentObservableDictionary<Coin, int> totalPerCoinInvalidShares, ConcurrentObservableDictionary<Coin, int> totalPerCoinPoolSwitches, ConcurrentObservableDictionary<Coin, int> totalPerCoinRejectedShares, ConcurrentObservableDictionary<Coin, int> totalPerCoinShares, string version)
+    public MinerStatusDetailsAbstract(ConcurrentObservableDictionary<int, Ratio> perGPUFanPct, ConcurrentObservableDictionary<int, ConcurrentObservableDictionary<Coin, double>> perGPUPerCoinHashRate, ConcurrentObservableDictionary<int, Power> perGPUPowerConsumption, ConcurrentObservableDictionary<int, Temperature> perGPUTemperature, TemporalDuration runningTime, ConcurrentObservableDictionary<Coin, double> totalPerCoinHashRate, ConcurrentObservableDictionary<Coin, int> totalPerCoinInvalidShares, ConcurrentObservableDictionary<Coin, int> totalPerCoinPoolSwitches, ConcurrentObservableDictionary<Coin, int> totalPerCoinRejectedShares, ConcurrentObservableDictionary<Coin, int> totalPerCoinShares, string version)
     {
       PerGPUFanPct = perGPUFanPct ?? throw new ArgumentNullException(nameof(perGPUFanPct));
       PerGPUPerCoinHashRate = perGPUPerCoinHashRate ?? throw new ArgumentNullException(nameof(perGPUPerCoinHashRate));
       PerGPUPowerConsumption = perGPUPowerConsumption ?? throw new ArgumentNullException(nameof(perGPUPowerConsumption));
       PerGPUTemperature = perGPUTemperature ?? throw new ArgumentNullException(nameof(perGPUTemperature));
-      RunningTime = runningTime ?? throw new ArgumentNullException(nameof(runningTime));
+      RunningTime = runningTime;
       TotalPerCoinHashRate = totalPerCoinHashRate ?? throw new ArgumentNullException(nameof(totalPerCoinHashRate));
       TotalPerCoinInvalidShares = totalPerCoinInvalidShares ?? throw new ArgumentNullException(nameof(totalPerCoinInvalidShares));
       TotalPerCoinPoolSwitches = totalPerCoinPoolSwitches ?? throw new ArgumentNullException(nameof(totalPerCoinPoolSwitches));
@@ -137,7 +134,7 @@ namespace ATAP.Utilities.CryptoMiner.Models
 
     public ConcurrentObservableDictionary<int, UnitsNet.Temperature> PerGPUTemperature { get; }
 
-    public string RunningTime { get; }
+    public TemporalDuration RunningTime { get; }
 
     public ConcurrentObservableDictionary<Coin, double> TotalPerCoinHashRate { get; }
 

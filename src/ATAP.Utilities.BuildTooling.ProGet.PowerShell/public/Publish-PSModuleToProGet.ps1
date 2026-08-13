@@ -108,6 +108,9 @@ function Publish-PSModuleToProGet {
                 . $helperPath
             }
         }
+        if (-not (Get-Command -Name 'Test-PSModulePackageSignature' -CommandType Function -ErrorAction SilentlyContinue)) {
+            . (Join-Path $PSScriptRoot 'Test-PSModulePackageSignature.ps1')
+        }
     }
 
     process {
@@ -124,6 +127,9 @@ function Publish-PSModuleToProGet {
         }
         $resolvedNupkg = (Resolve-Path -LiteralPath $NupkgPath).ProviderPath -replace '\\', '/'
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolved NupkgPath to '$resolvedNupkg'"
+
+        # Verify the immutable artifact before feed resolution, repository mutation, or secret lookup.
+        $signatureVerification = Test-PSModulePackageSignature -NupkgPath $resolvedNupkg -RequireTimestamp
 
         # 2. Resolve the experimental PowerShellGet feed from $global:Settings.
         $feed = Resolve-ProGetFeedFromSettings -FeedType 'powershellget' -Tier 'Experimental'
@@ -155,6 +161,7 @@ function Publish-PSModuleToProGet {
                 FeedUri         = $feedUri
                 Published       = $false
                 CeilingTier     = $CeilingTier
+                SignatureVerified = $signatureVerification.Valid
                 ResponseSummary = "WhatIf: planned publish of '$resolvedNupkg' to '$feedName'"
             }
         }
@@ -203,6 +210,7 @@ function Publish-PSModuleToProGet {
             FeedUri         = $feedUri
             Published       = $published
             CeilingTier     = $CeilingTier
+            SignatureVerified = $signatureVerification.Valid
             ResponseSummary = $summary
         }
     }

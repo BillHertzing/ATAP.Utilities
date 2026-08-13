@@ -31,6 +31,40 @@ BeforeAll {
     @{ version = '1.2.3' } | ConvertTo-Json | Set-Content (Join-Path $flywayRoot 'version.json')
     "PRINT 'canonical';" | Set-Content (Join-Path $sqlRoot 'V00.01.000010__core.sql')
     "Id,Name`n1,canonical" | Set-Content (Join-Path $dataRoot 'Canonical.csv')
+    Write-CanonicalPackageAllowlist -FlywayRoot $flywayRoot
+  }
+
+  function Write-CanonicalPackageAllowlist {
+    param([string]$FlywayRoot)
+
+    $files = [System.Collections.Generic.List[object]]::new()
+    @(
+      @{ Folder = 'SQL'; Kind = 'migration'; Extension = '.sql' },
+      @{ Folder = 'Repeatable'; Kind = 'repeatable'; Extension = '.sql' },
+      @{ Folder = 'Data'; Kind = 'seed'; Extension = '.csv' }
+    ) | ForEach-Object {
+      $definition = $_
+      $folderPath = Join-Path $FlywayRoot $definition.Folder
+      if (Test-Path -LiteralPath $folderPath -PathType Container) {
+        Get-ChildItem -LiteralPath $folderPath -File |
+          Where-Object Extension -eq $definition.Extension |
+          Sort-Object Name |
+          ForEach-Object {
+            $files.Add([ordered]@{
+                path   = "$($definition.Folder)/$($_.Name)"
+                kind   = $definition.Kind
+                sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash
+              })
+          }
+      }
+    }
+    $version = (Get-Content -LiteralPath (Join-Path $FlywayRoot 'version.json') -Raw | ConvertFrom-Json).version
+    [ordered]@{
+      schemaVersion = 1
+      packageId     = 'ATAPUtilities.Database'
+      sourceVersion = $version
+      files         = @($files)
+    } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $FlywayRoot 'package-content-allowlist.json') -Encoding UTF8
   }
 
   New-FixtureTree -DbRoot $script:AppDbRoot
@@ -145,6 +179,85 @@ Describe 'New-DatabaseChangePackage — ATAPUtilities canonical Flyway layout' {
 
     $manifest.flywayTargetVersion | Should -Be '00.01.000010'
     $manifest.files.path | Should -Not -Contain 'db/migrations/V00.01.000020__future.sql'
+  }
+
+  It 'fails closed when the canonical allowlist is missing' {
+    $root = Join-Path $TestDrive 'canonical-missing-allowlist'
+    New-CanonicalFlywayFixture -RepositoryRoot $root
+    Remove-Item -LiteralPath (Join-Path $root 'Database\Flyway\package-content-allowlist.json') -Force
+
+    {
+      New-DatabaseChangePackage -Application 'ATAPUtilities' -RepositoryRoot $root
+    } | Should -Throw '*allowlist not found*'
+  }
+
+  It 'fails closed when an undeclared seed is present' {
+    $root = Join-Path $TestDrive 'canonical-extra-seed'
+    New-CanonicalFlywayFixture -RepositoryRoot $root
+    'Id,Name' | Set-Content -LiteralPath (Join-Path $root 'Database\Flyway\Data\Unexpected.csv')
+
+    {
+      New-DatabaseChangePackage -Application 'ATAPUtilities' -RepositoryRoot $root
+    } | Should -Throw '*differs from the allowlist*'
+  }
+
+  It 'fails closed when a declared file checksum changes' {
+    $root = Join-Path $TestDrive 'canonical-checksum-mismatch'
+    New-CanonicalFlywayFixture -RepositoryRoot $root
+    "PRINT 'modified';" | Set-Content -LiteralPath (Join-Path $root 'Database\Flyway\SQL\V00.01.000010__core.sql')
+
+    {
+      New-DatabaseChangePackage -Application 'ATAPUtilities' -RepositoryRoot $root
+    } | Should -Throw '*checksum mismatch*'
+  }
+
+  It 'fails closed when a declared file is missing' {
+    $root = Join-Path $TestDrive 'canonical-missing-file'
+    New-CanonicalFlywayFixture -RepositoryRoot $root
+    Remove-Item -LiteralPath (Join-Path $root 'Database\Flyway\Data\Canonical.csv') -Force
+
+    {
+      New-DatabaseChangePackage -Application 'ATAPUtilities' -RepositoryRoot $root
+    } | Should -Throw '*differs from the allowlist*'
+  }
+
+  It 'fails closed when a declared file kind does not match its source folder' {
+    $root = Join-Path $TestDrive 'canonical-kind-mismatch'
+    New-CanonicalFlywayFixture -RepositoryRoot $root
+    $allowlistPath = Join-Path $root 'Database\Flyway\package-content-allowlist.json'
+    $allowlist = Get-Content -LiteralPath $allowlistPath -Raw | ConvertFrom-Json
+    $allowlist.files[0].kind = 'seed'
+    $allowlist | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $allowlistPath -Encoding UTF8
+
+    {
+      New-DatabaseChangePackage -Application 'ATAPUtilities' -RepositoryRoot $root
+    } | Should -Throw '*invalid kind or extension*'
+  }
+
+  It 'fails closed when an allowlist path is non-canonical' {
+    $root = Join-Path $TestDrive 'canonical-invalid-path'
+    New-CanonicalFlywayFixture -RepositoryRoot $root
+    $allowlistPath = Join-Path $root 'Database\Flyway\package-content-allowlist.json'
+    $allowlist = Get-Content -LiteralPath $allowlistPath -Raw | ConvertFrom-Json
+    $allowlist.files[0].path = 'SQL/../V00.01.000010__core.sql'
+    $allowlist | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $allowlistPath -Encoding UTF8
+
+    {
+      New-DatabaseChangePackage -Application 'ATAPUtilities' -RepositoryRoot $root
+    } | Should -Throw '*not a canonical direct-child path*'
+  }
+
+  It 'fails closed when the allowlist contains a duplicate path' {
+    $root = Join-Path $TestDrive 'canonical-duplicate-path'
+    New-CanonicalFlywayFixture -RepositoryRoot $root
+    $allowlistPath = Join-Path $root 'Database\Flyway\package-content-allowlist.json'
+    $allowlist = Get-Content -LiteralPath $allowlistPath -Raw | ConvertFrom-Json
+    $allowlist.files = @($allowlist.files) + $allowlist.files[0]
+    $allowlist | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $allowlistPath -Encoding UTF8
+
+    {
+      New-DatabaseChangePackage -Application 'ATAPUtilities' -RepositoryRoot $root
+    } | Should -Throw '*duplicate paths*'
   }
 }
 

@@ -120,6 +120,9 @@
         "resolved": "4.7.0",
         "contentHash": "VybpaOQQhqE6siHppMktjfGBw1GCwvCqiufqmP8F1nj7fTUNtW35LOEt3UZTEsECfo+ELAl/9o9nJx3U91i7vA=="
       },
+      "atap.utilities.etw": {
+        "type": "Project"
+      },
       "atap.utilities.persistence.interfaces": {
         "type": "Project"
       },
@@ -305,6 +308,9 @@
           "runtime.native.System.Data.SqlClient.sni": "4.7.0"
         }
       },
+      "atap.utilities.etw": {
+        "type": "Project"
+      },
       "atap.utilities.persistence.interfaces": {
         "type": "Project"
       },
@@ -489,6 +495,9 @@
         "dependencies": {
           "runtime.native.System.Data.SqlClient.sni": "4.7.0"
         }
+      },
+      "atap.utilities.etw": {
+        "type": "Project"
       },
       "atap.utilities.persistence.interfaces": {
         "type": "Project"

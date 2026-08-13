@@ -47,7 +47,7 @@ Describe 'Invoke-SprintAIAdapterLifecycle [public]' {
     $result.AllowUserGlobalWrite | Should -BeFalse
   }
 
-  It 'forwards live replacement checkpoint confirmation' {
+  It 'forwards both gates to the canonical Start registration lifecycle' {
     $result = Invoke-SprintAIAdapterLifecycle `
       -Boundary Start `
       -TargetRoot (Join-Path $TestDrive 'live-target') `

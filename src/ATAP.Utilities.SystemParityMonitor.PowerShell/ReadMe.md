@@ -101,22 +101,47 @@ Set-ParityPrimaryRole `
   password. This is the deployed peer audit topology now that the wrapper has no
   per-user DPAPI or vault dependency. Version `0.1.2` could incorrectly persist a
   Password principal on the peer and must not be used for new S4U registrations.
-- Cadence is `Daily` during the first onboarding month; re-register with
-  `-Cadence BiWeekly` after the first clean month. The compare wrapper passes the
-  expected cadence into `Compare-ParityAudits`, which flags snapshots older than
-  `1.5x` cadence as stale.
-- Package collection covers Chocolatey local packages, pip packages for the active
-  `python` interpreter, npm global packages, and NuGet-managed global .NET tools.
-  Package/version rows compare normally between hosts. A normalized package name
-  found under multiple managers produces a host-qualified `PackageManagerConflict`
-  row whose value begins `ACTION REQUIRED`; this keeps the conflict visible in the
-  drift report even when both hosts have made the same conflicting manager choices.
-  Operators must choose one owning manager and remove the duplicate installation.
+- The elevation-broker identity, `SvcAnsibleAdmin`, is not a parity-task runtime
+  identity. Grant it only native Task Scheduler `TASK_CHANGE` (`0x2`) on the existing
+  `\ATAP\ATAP-ParityAudit` task on each host. Do not grant it access to the `\ATAP`
+  folder, other tasks, task deletion, task execution, or task security changes. The
+  current folder-level re-registration installer requires broader folder access and
+  therefore cannot consume this deliberately narrow grant; it must be replaced by a
+  direct action-only update path before broker-based repointing is used.
+- Version `0.1.10` is the deployed token-free baseline. Its scheduled actions use the
+  installed immutable module root and a package-manager profile-configuration path.
+  Source version `0.1.12` remains a release candidate and is not a claim about the
+  installed tasks.
+- The next-release collector accepts explicit records containing `Identity` plus
+  `PipPath`, `NpmPrefix`, and `NuGetToolPath`. It never derives those paths from the
+  `SvcParityAudit` profile. Rows are identity-qualified; an omitted path produces a
+  manager-specific `<profile-path-not-configured>` status, and an entirely omitted
+  profile set produces `<profile-paths-not-configured>` without querying pip, npm, or
+  dotnet. Chocolatey remains machine-scoped. Conflicts are scoped to identity plus
+  normalized package name, so equal names under different identities do not conflict.
+- The next-release audit requires at least one SQL and one `PackageManager` row by
+  default. Missing or thin required categories are preserved as
+  `AuditCoverageFinding` rows in the diagnostic snapshot before the audit fails.
+- `Daily` cadence restarts only after package and SQL collection is trustworthy on
+  both hosts. Re-register as `BiWeekly` only after a verified clean month; the prior
+  blind period does not count.
+- The deployed D-6 behavior writes Windows Application events on the second
+  consecutive audit/compare failure and immediately for stale or missing/thin
+  comparison coverage. Windows event-source registration and SEQ forwarding remain
+  independently unverified.
 - BuildMaster: consolidated application `ATAP.Utilities-PowerShell` (see the reviewed
   module map in the ATAP.IAC BuildMaster HostSettings fragment).
 - Packaging preserves the `scripts\` and `Documentation\` folders below the installed
   module root. A package missing either folder is not deployable for parity monitoring.
   Version `0.1.2` replaces the temporary manual `scripts\` copy used for 0.1.1.
+
+## Coverage boundary
+
+The audit covers the surfaces explicitly emitted by `Invoke-ParityAudit`: operating
+system, PowerShell engine version, selected services and shares, SQL topology,
+Chocolatey, configured pip/npm/NuGet-tool paths, and ParityState file names. It does
+**not** inventory installed ATAP PowerShell module names or versions. A clean report
+therefore never proves that the same ATAP module versions are installed on both hosts.
 
 ## Functional area
 

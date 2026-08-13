@@ -9,7 +9,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
 
 
   //ToDo add validation tests to ensure illegal values are not allowed.  This applies to all XxTestDataGenerator classes
-  public class DiskDriveTypeTestData : TestData<DiskDriveType>
+  public class DiskDriveTypeTestData : SerializedTestData<DiskDriveType>
   {
     public DiskDriveTypeTestData(DiskDriveType objTestData, string serializedTestData) : base(objTestData, serializedTestData)
     {

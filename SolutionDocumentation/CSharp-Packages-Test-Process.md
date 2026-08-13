@@ -629,11 +629,11 @@ PackageReference mode:
 
 | Tier                     | Bitwarden secret-name form                                    | SQL instance            |
 | ------------------------ | ------------------------------------------------------------- | ----------------------- |
-| Developer / Experimental | `dbConnectionString-ATAPUtilities-<Host>-Experimental-<User>` | `<Host>\Exp<username>`  |
-| Development (alpha)      | `dbConnectionString-ATAPUtilities-<Host>-Development-<User>`  | `<Host>\Dev<username>`  |
-| Integration (beta)       | `dbConnectionString-ATAPUtilities-utat022-Integration`        | `utat022\Integration`   |
-| QA                       | `dbConnectionString-ATAPUtilities-utat022-QA`                 | `utat022\QA`            |
-| Production (smoke)       | `dbConnectionString-ATAPUtilities-utat022-Production`         | `utat022\Production`    |
+| Developer / Experimental | `dbConnectionString.ATAPUtilities.<Host>.Exp.<User>`          | `<Host>\Exp<username>`  |
+| Development (alpha)      | `dbConnectionString.ATAPUtilities.<Host>.Dev.<User>`          | `<Host>\Dev<username>`  |
+| Integration (beta)       | `dbConnectionString.ATAPUtilities.utat022.Integration`        | `utat022\Integration`   |
+| QA                       | `dbConnectionString.ATAPUtilities.utat022.QA`                 | `utat022\QA`            |
+| Production (smoke)       | `dbConnectionString.ATAPUtilities.utat022.Production`         | `utat022\Production`    |
 
 The BuildMaster release plan holds the name in its per-tier variable (for the
 Integration tier this is the existing `IntegrationDatabaseDBConnectionStringSecretName`

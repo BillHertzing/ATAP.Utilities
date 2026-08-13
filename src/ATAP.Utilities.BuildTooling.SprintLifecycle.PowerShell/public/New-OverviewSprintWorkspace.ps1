@@ -57,10 +57,10 @@ function New-OverviewSprintWorkspace {
     [object[]]$DeveloperAssignments,
 
     [ValidateNotNullOrEmpty()]
-    [string]$BuildMasterBaseUrl = 'http://localhost:50017',
+    [string]$BuildMasterBaseUrl = 'https://utat022:50017',
 
     [ValidateNotNullOrEmpty()]
-    [string]$ProGetBaseUrl = 'http://localhost:50000'
+    [string]$ProGetBaseUrl = 'https://utat022:50000'
   )
 
   begin {

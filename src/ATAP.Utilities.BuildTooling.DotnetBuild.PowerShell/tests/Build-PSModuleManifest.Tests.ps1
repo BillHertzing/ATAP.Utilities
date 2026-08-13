@@ -96,6 +96,29 @@ Describe 'Build-PSModuleManifest' {
       $data = Import-PowerShellDataFile -Path $script:Output
       $data.PrivateData.PSData.Keys | Should -Not -Contain 'Prerelease'
     }
+
+    It 'accepts a source manifest that omits RequiredModules' {
+      $sourceWithoutDependencies = Join-Path $script:Root 'src\NoDependencies.psd1'
+      @"
+@{
+  ModuleVersion = '0.0.1'
+  GUID = '7d0e649e-cd04-4c97-a64d-773e2c13f67a'
+  Author = 'test'
+  Description = 'manifest without a RequiredModules key'
+  FunctionsToExport = @()
+}
+"@ | Set-Content -LiteralPath $sourceWithoutDependencies -Encoding utf8
+
+      {
+        Build-PSModuleManifest `
+          -SourceManifestPath $sourceWithoutDependencies `
+          -OutputManifestPath $script:Output `
+          -ModuleVersion ([version]'1.2.3') `
+          -Confirm:$false
+      } | Should -Not -Throw
+
+      (Import-PowerShellDataFile -LiteralPath $script:Output).ContainsKey('RequiredModules') | Should -BeFalse
+    }
   }
 
   Context 'prerelease version' {

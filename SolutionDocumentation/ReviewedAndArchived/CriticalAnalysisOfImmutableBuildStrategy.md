@@ -342,11 +342,17 @@ implies one DB instance per tier:
 
 | Tier | DB |
 | ---- | --- |
-| Experimental | empty Experimental SQL Server instance (`localhost\EXPWHERTZING` in this worktree) |
+| Experimental | empty database assigned to the logical Experimental role (`localhost\EXPWHERTZING` in this worktree) |
 | Development | small dev fixture DB |
 | Integration | snapshot of previous-prod DB |
 | QA | QA Gold DB |
 | Production | customer DB |
+
+> **Historical terminology correction (2026-08-08):** `Experimental` is a
+> logical role, not a physical SQL Server instance name. Developer-scoped
+> instances follow `Exp<DeveloperName>`; `EXPWHERTZING` is the instance for
+> developer `whertzing`. The original wording above must not be used to justify
+> provisioning an instance named `Experimental`.
 
 This is suitable for a 1-developer, 1-feature, 1-sprint world. It breaks
 in any of these scenarios:

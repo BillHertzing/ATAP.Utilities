@@ -1,26 +1,27 @@
 
 
 using System;
-using System.Collections.Generic;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 using ATAP.Utilities.Serializer;
 
-namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
+namespace ATAP.Utilities.Serializer.Shim.Plugin {
 
-  public class SerializerOptions : SerializerOptionsAbstract {
-    public object ShimSpecificOptions { get; set; }
-    public SerializerOptions() {
-      // uses the primitive type default for all Autoproperties (false for bool, null for objects and strings)
-    }
+  public sealed class SerializerOptions : SerializerOptionsAbstract {
+    public SerializerOptions() : base(new JsonSerializerOptions()) { }
 
-    public SerializerOptions(SerializerOptionsAbstract options) {
-      ShimSpecificOptions = (JsonSerializerOptions)options.ShimSpecificOptions;
-    }
+    public SerializerOptions(ISerializerOptionsAbstract options)
+      : base(GetJsonSerializerOptions(options)) { }
 
-    public SerializerOptions(JsonSerializerOptions jsonSerializerOptions) {
-      ShimSpecificOptions = jsonSerializerOptions;
+    public SerializerOptions(JsonSerializerOptions jsonSerializerOptions)
+      : base(jsonSerializerOptions) { }
+
+    private static JsonSerializerOptions GetJsonSerializerOptions(ISerializerOptionsAbstract options) {
+      ArgumentNullException.ThrowIfNull(options);
+      return options.ShimSpecificOptions as JsonSerializerOptions
+        ?? throw new ArgumentException(
+          $"{nameof(options)} must contain {nameof(JsonSerializerOptions)}.",
+          nameof(options));
     }
   }
 }

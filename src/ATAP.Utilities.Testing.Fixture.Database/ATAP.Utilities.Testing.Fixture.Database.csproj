@@ -50,7 +50,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="TimePeriodLibrary.NET" />
   </ItemGroup>
 
   <!-- ATAP Utility Packages that handle IConfiguration, and dynamic loading plugin assemblies, and plugins for Serializers -->

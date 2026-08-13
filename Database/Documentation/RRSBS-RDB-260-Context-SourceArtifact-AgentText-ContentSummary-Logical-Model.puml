@@ -1,0 +1,237 @@
+@startuml RRSBS_RDB_260_Logical_Model
+hide circle
+hide methods
+left to right direction
+skinparam linetype ortho
+skinparam defaultFontName Segoe UI
+skinparam shadowing false
+skinparam entity {
+  BackgroundColor #F7FAFC
+  BorderColor #34495E
+  FontColor #1F2937
+}
+
+title RDB-260 Context, SourceArtifact, AgentText, and ContentSummary Logical Model
+
+legend left
+  Design-only model; no SQL, seeds, scanning, rendering, or allocated identifiers.
+  <<entity-root>> durable RDB-200 Entity subtype.
+  Observations, lineage, summary/projection versions, and refresh outcomes append only.
+endlegend
+
+package "Context and discovery" #EAF2F8 {
+  entity Organization <<entity-root>> {
+    * OrganizationId : bigint <<PK>>
+    * OrganizationPhiloteId : uniqueidentifier <<UQ>>
+    * CanonicalName : varchar
+    * ClassificationPolicyVersionId : bigint <<FK>>
+  }
+
+  entity Repository <<entity-root>> {
+    * RepositoryId : bigint <<PK>>
+    * RepositoryPhiloteId : uniqueidentifier <<UQ>>
+    * OrganizationId : bigint <<FK>>
+    * CanonicalRepositoryName : varchar
+    o RemoteIdentityEvidence : binary
+    --
+    UQ (OrganizationId, CanonicalRepositoryName)
+  }
+
+  entity RepositoryRootRegistration <<discovery only>> {
+    * RepositoryRootRegistrationId : bigint <<PK>>
+    * RepositoryId : bigint <<FK>>
+    * NormalizedAbsoluteRoot : varchar
+    * RootKindCode : varchar <<FK>>
+    * RegisteredAtUtc : datetime2
+    o RetiredAtUtc : datetime2
+    --
+    UQ active (NormalizedAbsoluteRoot)
+  }
+
+  entity SourceModule <<classification>> {
+    * SourceModuleId : bigint <<PK>>
+    * RepositoryId : bigint <<FK>>
+    o ParentSourceModuleId : bigint <<FK>>
+    * ModuleRelativePath : varchar <<binary>>
+    * ModuleKindCode : varchar <<FK>>
+    --
+    UQ (RepositoryId, ModuleRelativePath)
+  }
+}
+
+package "Source provenance" #E8F8F5 {
+  entity SourceArtifact <<entity-root>> {
+    * SourceArtifactId : bigint <<PK>>
+    * SourceArtifactPhiloteId : uniqueidentifier <<UQ>>
+    * RepositoryId : bigint <<FK>>
+    o SourceModuleId : bigint <<FK>>
+    * LocatorTypeCode : varchar <<FK>>
+    * RepoRelativePathOrExternalLocator : varchar
+    o RetiredAtUtc : datetime2
+    --
+    UQ RepositoryPath (RepositoryId, RepoRelativePath) <<binary>>
+  }
+
+  entity SourceArtifactVersion <<append-only>> {
+    * SourceArtifactVersionId : bigint <<PK>>
+    * SourceArtifactId : bigint <<FK>>
+    * VersionSequence : bigint
+    * NormalizedContentSha256 : char(64)
+    o ByteSha256 : char(64)
+    * ByteCount : bigint
+    * EncodingCode : varchar <<FK>>
+    * BomPresent : bit
+    * LineEndingCode : varchar <<FK>>
+    * HarvesterIdentity : varchar
+    * ObservedAtUtc : datetime2
+    --
+    UQ (SourceArtifactId, VersionSequence)
+  }
+
+  entity SourceArtifactLineage <<accepted immutable edge>> {
+    * SourceArtifactLineageId : bigint <<PK>>
+    * PredecessorSourceArtifactId : bigint <<FK>>
+    * SuccessorSourceArtifactId : bigint <<FK>>
+    * RelationKindCode : varchar <<FK>>
+    * AcceptancePolicyVersionId : bigint <<FK>>
+    * AcceptedAtUtc : datetime2
+  }
+}
+
+package "ContentSummary lifecycle" #FDF2E9 {
+  entity ContentSummary <<entity-root>> {
+    * ContentSummaryId : bigint <<PK>>
+    * ContentSummaryPhiloteId : uniqueidentifier <<UQ>>
+    * SourceArtifactId : bigint <<FK>>
+    * SummaryProfileCode : varchar <<FK>>
+    * ClassificationPolicyVersionId : bigint <<FK>>
+    --
+    UQ (SourceArtifactId, SummaryProfileCode, ClassificationPolicyVersionId)
+  }
+
+  entity ContentSummaryVersion <<append-only>> {
+    * ContentSummaryVersionId : bigint <<PK>>
+    * ContentSummaryId : bigint <<FK>>
+    * VersionSequence : bigint
+    * SourceArtifactVersionId : bigint <<FK>>
+    * LifecycleStateCode : varchar <<FK>>
+    * PromptRuleVersionId : bigint <<FK>>
+    * GeneratorModelIdentity : varchar
+    * RedactionPolicyVersionId : bigint <<FK>>
+    o SafeSummaryContentHash : binary
+    o SafeRenderedText : text
+    * GeneratedAtUtc : datetime2
+    --
+    UQ (ContentSummaryId, VersionSequence)
+  }
+
+  entity ContentSummaryDependency <<typed ordered edge>> {
+    * ContentSummaryDependencyId : bigint <<PK>>
+    * ContentSummaryVersionId : bigint <<FK>>
+    * DependencyOrdinal : int
+    * DependencyKindCode : varchar <<FK>>
+    o SourceArtifactVersionId : bigint <<FK>>
+    o ExternalReferenceId : bigint <<FK>>
+    * CapturedAtUtc : datetime2
+    --
+    UQ (ContentSummaryVersionId, DependencyOrdinal)
+  }
+}
+
+package "AgentText projection" #F4ECF7 {
+  entity AgentTextProjection <<entity-root, read model>> {
+    * AgentTextProjectionId : bigint <<PK>>
+    * AgentTextProjectionPhiloteId : uniqueidentifier <<UQ>>
+    * ProjectionName : varchar
+    * ConsumerClassCode : varchar <<FK>>
+    * SelectionPolicyVersionId : bigint <<FK>>
+    * RenderingRuleVersionId : bigint <<FK>>
+    * ClassificationPolicyVersionId : bigint <<FK>>
+    --
+    UQ active (ProjectionName, ConsumerClassCode)
+  }
+
+  entity AgentTextProjectionVersion <<immutable materialization>> {
+    * AgentTextProjectionVersionId : bigint <<PK>>
+    * AgentTextProjectionId : bigint <<FK>>
+    * VersionSequence : bigint
+    * InputWatermarkUtc : datetime2
+    * SourceVersionWatermark : bigint
+    * RenderingRuleVersionId : bigint <<FK>>
+    * SelectedSummarySetFingerprint : binary
+    * ProjectionContentHash : binary
+    o SafeRenderedText : text
+    * MaterializationStateCode : varchar <<FK>>
+    * GeneratedAtUtc : datetime2
+    --
+    UQ (AgentTextProjectionId, VersionSequence)
+  }
+
+  entity AgentTextProjectionRefresh <<append-only outcome>> {
+    * AgentTextProjectionRefreshId : bigint <<PK>>
+    * AgentTextProjectionId : bigint <<FK>>
+    * RefreshSequence : bigint
+    * RequestedInputWatermarkUtc : datetime2
+    * ResultCode : varchar <<FK>>
+    o AgentTextProjectionVersionId : bigint <<FK>>
+    o ErrorTaxonomyCode : varchar <<FK>>
+    o NonSecretDiagnosticHash : binary
+    * RequestedAtUtc : datetime2
+    o CompletedAtUtc : datetime2
+    --
+    UQ (AgentTextProjectionId, RefreshSequence)
+  }
+}
+
+entity RuleVersion <<external RDB-220>> {
+  * RuleVersionId : bigint <<PK>>
+}
+entity ExternalReference <<external controlled reference>> {
+  * ExternalReferenceId : bigint <<PK>>
+}
+entity Entity <<external RDB-200>> {
+  * EntityId : bigint <<PK>>
+}
+
+Organization ||--o{ Repository : owns
+Repository ||--o{ RepositoryRootRegistration : discovers through
+Repository ||--o{ SourceModule : classifies
+SourceModule ||--o{ SourceModule : contains
+Repository ||--o{ SourceArtifact : namespace
+SourceModule ||--o{ SourceArtifact : classifies
+SourceArtifact ||--o{ SourceArtifactVersion : observes
+SourceArtifact ||--o{ SourceArtifactLineage : predecessor
+SourceArtifact ||--o{ SourceArtifactLineage : successor
+SourceArtifact ||--o{ ContentSummary : summarizes
+ContentSummary ||--o{ ContentSummaryVersion : versions
+SourceArtifactVersion ||--o{ ContentSummaryVersion : source bytes
+ContentSummaryVersion ||--o{ ContentSummaryDependency : depends on
+SourceArtifactVersion ||--o{ ContentSummaryDependency : typed source dependency
+ExternalReference ||--o{ ContentSummaryDependency : typed external dependency
+RuleVersion ||--o{ ContentSummaryVersion : prompt provenance
+AgentTextProjection ||--o{ AgentTextProjectionVersion : materializes
+AgentTextProjection ||--o{ AgentTextProjectionRefresh : refreshes
+AgentTextProjectionVersion ||--o{ AgentTextProjectionRefresh : produced by
+RuleVersion ||--o{ AgentTextProjection : rendering contract
+RuleVersion ||--o{ AgentTextProjectionVersion : exact renderer
+Entity ||--o{ Organization : durable identity
+Entity ||--o{ Repository : durable identity
+Entity ||--o{ SourceArtifact : durable identity
+Entity ||--o{ ContentSummary : durable identity
+Entity ||--o{ AgentTextProjection : durable identity
+
+note bottom of RepositoryRootRegistration
+  Stable and sprint roots locate one Repository;
+  neither root participates in SourceArtifact identity.
+end note
+
+note bottom of ContentSummaryVersion
+  Lifecycle and provenance are immutable facts.
+  Excluded content, keys, credentials, and resolved SecretNames are never stored.
+end note
+
+note bottom of AgentTextProjectionRefresh
+  Refresh records success, failure, or staleness.
+  Only a complete success can produce a projection version.
+end note
+@enduml

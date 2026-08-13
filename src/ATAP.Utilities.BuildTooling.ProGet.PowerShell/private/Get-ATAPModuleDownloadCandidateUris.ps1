@@ -29,7 +29,7 @@ Exact package version.
 System.String[] in try-order.
 
 .EXAMPLE
-Get-ATAPModuleDownloadCandidateUris -BaseFeedUrl 'http://localhost:50000/nuget/powershellget-stable' -ModuleName 'M' -RequiredVersion '1.0.0'
+Get-ATAPModuleDownloadCandidateUris -BaseFeedUrl 'https://localhost:50000/nuget/powershellget-stable' -ModuleName 'M' -RequiredVersion '1.0.0'
 
 .NOTES
 Task 13.76.c. Promoted from the _Planning CodexMisstepFixes standalone installer.

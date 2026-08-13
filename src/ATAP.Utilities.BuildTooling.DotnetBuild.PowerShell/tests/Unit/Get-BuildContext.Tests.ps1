@@ -116,6 +116,19 @@ Describe 'Get-BuildContext' -Tag 'Unit' {
       @{ Branch = 'release/1.0.0';              Expected = 'release' }
       @{ Branch = 'hotfix/something';           Expected = 'stable' }
       @{ Branch = 'develop';                    Expected = 'stable' }
+
+      # The naming convention this workspace actually uses. Before the fix these
+      # all fell through to 'stable' because '^sprint/' cannot match a name whose
+      # 'Sprint' token is mid-string.
+      @{ Branch = '132-Sprint-0014-work-items'; Expected = 'sprint' }
+      @{ Branch = '33-Sprint-0014-work-items';  Expected = 'sprint' }
+      @{ Branch = '72-sprint-0006-work-items';  Expected = 'sprint' }
+
+      # Near-miss names must NOT be promoted to 'sprint': the sprint token needs
+      # four digits and the '-work-items' suffix must actually terminate the name.
+      @{ Branch = '132-Sprint-14-work-items';        Expected = 'stable' }
+      @{ Branch = '132-Sprint-0014-work-items-old';  Expected = 'stable' }
+      @{ Branch = '132-Sprint-0014';                 Expected = 'stable' }
     )
 
     It "Maps branch '<Branch>' to BranchType '<Expected>'" -TestCases $branchCases {

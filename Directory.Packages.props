@@ -139,6 +139,7 @@
   </ItemGroup>
   <ItemGroup Label="MSBuild Custom Tasks">
     <!-- Packages used for custom build tasks -->
+    <PackageVersion Include="docfx.console" Version="2.48.1" />
     <PackageVersion Include="Microsoft.Build.Framework" Version="17.14.28" />
     <PackageVersion Include="Microsoft.Build.Utilities.Core" Version="17.14.28" />
     <!-- NBGV MSBuild integration — version must match the nbgv CLI tool -->

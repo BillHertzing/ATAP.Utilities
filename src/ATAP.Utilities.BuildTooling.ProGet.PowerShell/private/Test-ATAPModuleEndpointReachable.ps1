@@ -17,7 +17,7 @@ HEAD request timeout.
 System.Boolean
 
 .EXAMPLE
-Test-ATAPModuleEndpointReachable -Uri 'http://localhost:50000/nuget/powershellget-stable/package/M/1.0.0'
+Test-ATAPModuleEndpointReachable -Uri 'https://utat022:50000/nuget/powershellget-stable/package/M/1.0.0'
 
 .NOTES
 Task 13.76.c. Promoted from the _Planning CodexMisstepFixes standalone installer.

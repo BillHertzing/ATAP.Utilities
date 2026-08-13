@@ -1,0 +1,9 @@
+PhiloteId,RulePhiloteId,Notes
+e834c990-2f92-48a6-ad7f-2875e5af8396,a1b2c3d4-e5f6-4a78-9012-b3c4d5e6f7a8,Instantiation of Build-ImageFromPlantUML PlantUML image generator script
+cf5f50ed-cb63-4d25-a975-83f5dd4f3015,b2c3d4e5-f6a7-4b89-a123-c4d5e6f7a8b9,Instantiation of Test-PowerShellSyntax syntax validation script
+f9c0dcb5-67a4-4af5-a0d1-58731c8950db,c3d4e5f6-a7b8-4c90-b234-d5e6f7a8b9c0,Instantiation of New-MCPServerJunction junction creation script
+3710da2c-a0bd-43b5-a5ba-116aee83f7db,d4e5f6a7-b8c9-4d01-c345-e6f7a8b9c0d1,Instantiation of Get-RepositoryRoot repository root finder script
+98407929-ec12-450a-9725-69b8b12d4109,e5f6a7b8-c9d0-4e12-d456-f7a8b9c0d1e2,Instantiation of Remove-ObjAndBinSubDirectories build artifact cleanup script
+52a1e6f4-7c72-40de-89b7-bc8026833c0c,f6a7b8c9-d0e1-4f23-e567-a8b9c0d1e2f3,Instantiation of Sync-RulesToCSV database export script
+ee4ce73b-8f4d-42a2-a8fe-681b312df6d9,a7b8c9d0-e1f2-4034-f678-b9c0d1e2f3a4,Instantiation of Read-SourceAndCreateRules AI-assisted rule extraction script
+c95f9fbb-40bb-4372-a32c-3538fd4d88c2,fefa78dd-2291-44b1-96b7-14a0bb857a5c,Instantiation of Write-ArrayIndented function script

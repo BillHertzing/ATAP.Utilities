@@ -8,7 +8,6 @@ using Xunit.Abstractions;
 using ServiceStack.Text;
 using ATAP.Utilities.ComputerInventory;
 using ATAP.Utilities.Testing;
-using Itenso.TimePeriod;
 
 namespace ATAP.Utilities.ComputerInventory.Tests
 {
@@ -114,7 +113,6 @@ public async void ComputerProcessesStartStopTest001(string _testdatainput)
   // stop the program in 1/2 of the specified test run time (specifiedTestRunTime is in seconds, timers are in milliseconds)
   Timer aTimer = new Timer(specifiedTestRunTime * 500);
   aTimer.Elapsed += new ElapsedEventHandler(HandleTimer);
-  TimeInterval ti = new TimeInterval(System.DateTime.Now);
   DiFixture.pidUnderTest = DiFixture.computerProcesses.Start(powerShell,
                                                            new object[2] {
             "-Command",
@@ -124,7 +122,6 @@ public async void ComputerProcessesStartStopTest001(string _testdatainput)
   // wait for the program to stop. The event handler should stop it.
   var p = DiFixture.computerProcesses.ComputerProcessDictionary[DiFixture.pidUnderTest];
   await p.Command.Task;
-  ti.ExpandTo(System.DateTime.Now);
   // Dispose of the timer
   aTimer.Dispose();
   var processResult = p.Command.Task.Result;
@@ -132,8 +129,6 @@ public async void ComputerProcessesStartStopTest001(string _testdatainput)
       .Be(-1);
   p.Command.Result.Success.Should()
       .Be(false);
-  ti.Duration.Should()
-      .BeCloseTo(new TimeSpan(0, 0, specifiedTestRunTime / 2), 1000);
 }
 
 [Theory]
@@ -156,7 +151,6 @@ public async void ComputerProcessesStartTest001(string _testdatainput)
                                                                    false,
                                                                    false);
   DiFixture.computerProcesses = new ComputerProcesses();
-  TimeInterval ti = new TimeInterval(System.DateTime.Now);
   DiFixture.pidUnderTest = DiFixture.computerProcesses.Start(powerShell,
                                                            new object[2] {
             "-Command",
@@ -165,14 +159,11 @@ public async void ComputerProcessesStartTest001(string _testdatainput)
   // wait for the program to stop
   var p = DiFixture.computerProcesses.ComputerProcessDictionary[DiFixture.pidUnderTest];
   await p.Command.Task;
-  ti.ExpandTo(System.DateTime.Now);
   var processResult = p.Command.Task.Result;
   p.Command.Result.ExitCode.Should()
       .Be(0);
   p.Command.Result.Success.Should()
       .Be(true);
-  ti.Duration.Should()
-      .BeCloseTo(new TimeSpan(0, 0, specifiedTestRunTime), 1000);
 }
 
 

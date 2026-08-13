@@ -87,7 +87,9 @@ function Invoke-Flyway {
   Optional explicit Git commit (otherwise discovered from git).
 
   .PARAMETER FlywayAdditionalArgs
-  Additional raw arguments passed to flyway before the 'FlywayCommand' verb (e.g. '-X').
+  Additional raw arguments passed to flyway before the 'FlywayCommand' verb.
+  Diagnostic flags such as '-X' are opt-in because Flyway debug output can expose
+  configured placeholder values.
 
   .OUTPUTS
   PSCustomObject summarizing placeholders and flyway execution result.
@@ -554,7 +556,9 @@ function Invoke-Flyway {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Flyway data directory: $FlywayDataPath"
 
       # Build flyway parameters and execute
-      $flywayParams = @("-configFiles=$FlywayTomlPath", "-environment=$environmentKey", '-X')
+      # Debug flags are never implicit: Flyway can include configured placeholders in
+      # diagnostic output, so callers must explicitly opt in through FlywayAdditionalArgs.
+      $flywayParams = @("-configFiles=$FlywayTomlPath", "-environment=$environmentKey")
       if ($FlywayAdditionalArgs) { $flywayParams += $FlywayAdditionalArgs }
       $flywayParams += $FlywayCommand
 

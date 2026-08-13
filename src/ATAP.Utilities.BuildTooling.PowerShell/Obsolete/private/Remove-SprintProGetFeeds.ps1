@@ -12,13 +12,13 @@ function Remove-SprintProGetFeeds {
   .PARAMETER SprintNumber
     The sprint number, zero-padded to 4 digits (e.g., '0006').
   .PARAMETER ProGetBaseUrl
-    Base URL for the ProGet server (e.g., 'http://localhost:50000').
+    Base URL for the ProGet server (e.g., 'https://utat022:50000').
   .PARAMETER Username
     Optional. Must match the value used when the feeds were created.
   .OUTPUTS
     PSCustomObject with deletedFeeds and errors arrays.
   .EXAMPLE
-    Remove-SprintProGetFeeds -SprintNumber '0006' -ProGetBaseUrl 'http://localhost:50000'
+    Remove-SprintProGetFeeds -SprintNumber '0006' -ProGetBaseUrl 'https://utat022:50000'
   .NOTES
     AI assisted using Powershell.instructions.md as guidelines
   .LINK

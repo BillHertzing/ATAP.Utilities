@@ -1,7 +1,7 @@
 # ATAP.Utilities.DatabaseManagement.Powershell — Index
 
 PowerShell module for SQL Server lifecycle management, Flyway migration orchestration,
-backup automation, and rule-export utilities in the ATAP 5-tier ecosystem.
+and backup automation in the ATAP 5-tier ecosystem.
 
 ---
 
@@ -100,13 +100,6 @@ backup automation, and rule-export utilities in the ATAP 5-tier ecosystem.
 | `New-DatabasePreMigrationSnapshot` | [public/New-DatabasePreMigrationSnapshot.ps1](public/New-DatabasePreMigrationSnapshot.ps1) | Takes a dbatools Full backup before a migration run; captures Flyway schema version at backup time; writes `pre-migration-snapshot-evidence.json` to `_generated/database-packages/<Application>/`; returns the evidence object.        | dbatools; `Get-FlywaySchemaVersion`; `Get-RepositoryRoot` or explicit `-RepositoryRoot`. |
 | `Restore-DatabaseFromSnapshot`     | [public/Restore-DatabaseFromSnapshot.ps1](public/Restore-DatabaseFromSnapshot.ps1)         | Restores a `.bak` via `Restore-DbaDatabase`; verifies post-restore Flyway schema version matches the version recorded in the evidence file. Returns `[PSCustomObject]@{ Restored; VerifiedVersion; Errors }`.                          | dbatools; `Get-FlywaySchemaVersion`.                                                     |
 | `Test-DatabaseRollbackReadiness`   | [public/Test-DatabaseRollbackReadiness.ps1](public/Test-DatabaseRollbackReadiness.ps1)     | Reads `pre-migration-snapshot-evidence.json` and verifies: file exists, backup file exists, evidence timestamp is within `MaxAgeMinutes` (default 60). No SQL Server connection required. Returns `[PSCustomObject]@{ IsReady; Reason }`. | None (file-system only).                                                                 |
-
-### Rules and Utilities
-
-| Cmdlet / Script          | File                                                                 | Synopsis                                                                                                                                                                 |
-| ------------------------ | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `Export-RuleToTextFile`  | [public/Export-RuleToTextFile.ps1](public/Export-RuleToTextFile.ps1) | Retrieves a Rule by name from the ATAPUtilities database and exports all metadata (PhiloteID, purpose, language kind, composition, primitives) to a formatted text file. |
-| `Example-RuleExport.ps1` | [public/Example-RuleExport.ps1](public/Example-RuleExport.ps1)       | Example script demonstrating `Export-RuleToTextFile` usage scenarios: single export, batch export, and error handling.                                                   |
 
 ### Instantiation Inventory
 

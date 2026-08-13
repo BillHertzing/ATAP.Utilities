@@ -134,6 +134,17 @@ Describe 'V4-E08 runner shape: Invoke-DatabasePackageBuildMasterStage.ps1 contra
         $script:RunnerText | Should -Match 'Required database-management cmdlet'
     }
 
+    It 'runner loads Microsoft.Data.SqlClient before binding typed database-management commands' {
+        $typeGuardIdx = $script:RunnerText.IndexOf("'Microsoft.Data.SqlClient.SqlConnection' -as [type]")
+        $dbatoolsIdx = $script:RunnerText.IndexOf('Import-Module -Name dbatools')
+        $bindingLoopIdx = $script:RunnerText.IndexOf('foreach ($commandName in $databaseManagementFunctionFiles.Keys)')
+
+        $typeGuardIdx | Should -BeGreaterThan 0
+        $dbatoolsIdx | Should -BeGreaterThan $typeGuardIdx
+        $bindingLoopIdx | Should -BeGreaterThan $dbatoolsIdx
+        $script:RunnerText | Should -Match 'Microsoft\.Data\.SqlClient\.SqlConnection remains unavailable after importing dbatools'
+    }
+
     It 'plan passes the exact migration exclusion application variable to the runner' {
         $script:PlanText | Should -Match '-ExcludedMigrationFileNames\s+"\$ExcludedMigrationFileNames"'
     }
@@ -229,6 +240,17 @@ Describe 'Task 9.10 runner contract: per-tier apply + rehearsal-before-promotion
         $applyIdx   = $script:RunnerText.IndexOf('Invoke-DatabasePackageStageApply `', $publishIdx)
         $publishIdx | Should -BeGreaterThan 0
         $applyIdx   | Should -BeGreaterThan $publishIdx
+    }
+
+    It 'reuses the captured immutable Experimental package after publish succeeds but apply fails' {
+        $resumeIdx = $script:RunnerText.IndexOf("Resume exact published package '")
+        $buildIdx = $script:RunnerText.IndexOf('$nupkgPath = New-DatabaseChangePackage')
+
+        $resumeIdx | Should -BeGreaterThan 0
+        $buildIdx | Should -BeGreaterThan $resumeIdx
+        $script:RunnerText | Should -Match 'Experimental retry package drift'
+        $script:RunnerText | Should -Match 'build and publish skipped'
+        $script:RunnerText | Should -Match 'Get-FileHash\s+-LiteralPath\s+\$capturedNupkgPath\s+-Algorithm\s+SHA256'
     }
 
     It 'promotes each later ProGet tier before applying the exact package to its database' {

@@ -234,6 +234,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Configuration.Secrets.Shims": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ETW": "[1.0.0, )",
           "ATAP.Utilities.Secrets.Interfaces": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.0, )"
         }
@@ -734,6 +735,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Configuration.Secrets.Shims": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ETW": "[1.0.0, )",
           "ATAP.Utilities.Secrets.Interfaces": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.0, )"
         }
@@ -1238,6 +1240,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Configuration.Secrets.Shims": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.ETW": "[1.0.0, )",
           "ATAP.Utilities.Secrets.Interfaces": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.0, )"
         }

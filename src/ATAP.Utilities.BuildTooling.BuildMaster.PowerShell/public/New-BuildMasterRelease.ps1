@@ -127,7 +127,7 @@ function New-BuildMasterRelease {
       $BuildMasterBaseUrl = [System.Environment]::GetEnvironmentVariable('BUILDMASTER_BASE_URL', 'User')
     }
     if ([string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) {
-      $BuildMasterBaseUrl = 'http://localhost:50017'
+      $BuildMasterBaseUrl = 'https://utat022:50017'
     }
     $BuildMasterBaseUrl = $BuildMasterBaseUrl.TrimEnd('/')
   }

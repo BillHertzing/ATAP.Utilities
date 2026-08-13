@@ -1,4 +1,5 @@
 using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,7 +10,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
   {
     Exception Exception { get; set; }
     string Path { get; set; }
-    IPhilote<IFSEntityAbstract> Philote { get; set; }
+    IGuidPhilote<GuidStronglyTypedId> Philote { get; set; }
   }
   public interface IFSEntityDirectory : IFSEntityAbstract
   {

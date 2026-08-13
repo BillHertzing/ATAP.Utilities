@@ -81,10 +81,10 @@ function New-SprintStage2 {
     that must exercise the rest of Stage 2 without changing host configuration.
   .PARAMETER ProGetBaseUrl
     Base URL for the ProGet server.
-    Defaults to 'http://localhost:50000'.
+    Defaults to 'https://utat022:50000'.
   .PARAMETER BuildMasterBaseUrl
     Base URL for the BuildMaster server.
-    Defaults to 'http://localhost:50017'.
+    Defaults to 'https://utat022:50017'.
   .PARAMETER DryRun
     Preview all sprint-start downstream actions without creating GitHub issues,
     branches, worktrees, junctions, SharedVSCode context, SQL Server database
@@ -180,8 +180,8 @@ function New-SprintStage2 {
     $ownerDefault = if (Get-Command -Name 'Get-GitHubOwnerFromWorkspace' -ErrorAction SilentlyContinue) {
       Get-GitHubOwnerFromWorkspace -GitRoot $gitRootForOwner -Fallback $env:USERNAME
     } else { $env:USERNAME }
-    $proGetBaseUrlDefault = 'http://localhost:50000'
-    $buildMasterBaseUrlDefault = 'http://localhost:50017'
+    $proGetBaseUrlDefault = 'https://utat022:50000'
+    $buildMasterBaseUrlDefault = 'https://utat022:50017'
 
     if ($getPValAvailable) {
       foreach ($spec in @(
@@ -222,17 +222,17 @@ function New-SprintStage2 {
 
     # Autoload-or-throw contract (FSS-11): the BuildTooling module is CI-built and
     # installed, so every command this stage calls must resolve by module autoload
-    # (public functions and the private helpers Set-ClaudeSettingsSymlink,
-    # Set-UserSettingsSymlink, Get-SprintTaskRepositoryNames). A missing command is
+    # (public functions and the private helper Set-UserSettingsSymlink). A missing
+    # command is
     # an environment fault the user must repair — never a silent dot-source from a
     # worktree path.
     foreach ($required in @(
-        'Set-ClaudeSettingsSymlink',
         'Set-UserSettingsSymlink',
         'Get-SprintTaskRepositoryNames',
         'Initialize-ATAPConfigurationGlobals',
         'Reset-SprintDatabases',
         'Set-SprintBoundaryContext',
+        'Invoke-SprintAIAdapterLifecycle',
         'New-OverviewSprintWorkspace',
         'Build-AIInstructionsPerRepository')) {
       if (-not (Get-Command -Name $required -ErrorAction SilentlyContinue)) {
@@ -670,19 +670,27 @@ function New-SprintStage2 {
     }
 
     # ===================================================================
-    # 6. Render Claude Code user settings
+    # 6. Register user-global AI adapter settings once after every worktree
+    # exists. Per-worktree calls through Set-SprintBoundaryContext deliberately
+    # materialize project settings only; this single shared call is authoritative
+    # for the user-global Codex and Claude projections.
     # ===================================================================
     $claudeSettingsError = $null
 
     try {
-      if ($PSCmdlet.ShouldProcess($svWorktreePath, 'Render Claude Code user settings')) {
-        Set-ClaudeSettingsSymlink `
+      if ($PSCmdlet.ShouldProcess($svWorktreePath, 'Register user-global AI adapter settings')) {
+        Invoke-SprintAIAdapterLifecycle `
+          -Boundary Start `
+          -TargetRoot $svWorktreePath `
           -SharedVSCodeWorktreePath $svWorktreePath `
           -AllowUserGlobalWrite:$AllowUserGlobalWrite `
-          -CheckpointConfirmed:$CheckpointConfirmed
+          -CheckpointConfirmed:$CheckpointConfirmed `
+          -Confirm:$false | Out-Null
       }
     } catch {
-      $claudeSettingsError = "Failed to render Claude Code user settings. Exception: $($_.Exception.Message)"
+      # Preserve the established result field for callers while its scope now
+      # covers the authoritative generic user-global adapter lifecycle.
+      $claudeSettingsError = "Failed to register user-global AI adapter settings. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $claudeSettingsError
     }
 

@@ -91,7 +91,12 @@ function Request-ElevatedInstall {
     [int] $PollMilliseconds = 1000,
 
     [Parameter(Mandatory = $false)]
-    [string] $BrokerTaskPath = '\ATAP\',
+    # \ATAP-Broker, not \ATAP. The broker task was moved out of \ATAP on 2026-08-11 so that
+    # granting the broker service account folder-level create/update on \ATAP -- which
+    # ITaskFolder.RegisterTaskDefinition requires to manage the parity tasks -- cannot also let
+    # it rewrite its own task definition. Keeping the broker in a folder it has no rights on is
+    # what makes that grant safe.
+    [string] $BrokerTaskPath = '\ATAP-Broker\',
 
     [Parameter(Mandatory = $false)]
     [string] $BrokerTaskName = 'ATAP-ElevatedInstallBroker',

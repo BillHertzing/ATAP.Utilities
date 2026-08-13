@@ -5,6 +5,19 @@ BuildMaster application: `ATAPUtilitiesDatabase`
 Release/build: `0.1.3` / `1` (`ReleaseId 9086`, `BuildId 20217`)  
 Package: `ATAPUtilities.Database` `0.1.3`
 
+## Sprint 0014 provenance boundary
+
+Sprint 0014 Task 14.104 closes Task 13.78 as superseded. This release record is
+the authoritative repository provenance for the completed legacy `V00.*` lineage;
+it is not an instruction to repeat the build, publication, promotion, tier apply,
+or checksum repair.
+
+Task 14.20 owns the isolated RRSBS V2 lineage beginning at package `0.0.1`,
+baseline `00010`, and a separate Flyway history table. Task 14.30 owns
+ContentSummary under the sequencing and model decisions established by Task 14.20.
+The completed 0.1.3 release and checksum reconciliation remain evidence inputs to
+those programs, not open implementation steps.
+
 ## Outcome
 
 BuildMaster built, tested, packaged, promoted, snapshotted, and deployed one
@@ -22,6 +35,11 @@ QA, and Production databases independently report eight successful release
 migrations and head `00.02.000140`. Deferred ContentSummary migration
 `V00.02.000120__Add_ContentSummary_Rule_Kind.sql` is absent from the package,
 manifest, and every authorized tier.
+
+> **Instance-naming correction (2026-08-08):** Here, Experimental names only
+> the logical release/database role. It is not a physical SQL Server instance
+> name. Developer-scoped instances follow `Exp<DeveloperName>`;
+> `localhost\Expwhertzing` is the specific instance for developer `whertzing`.
 
 ## Migration boundary
 
@@ -45,7 +63,7 @@ Excluded:
 
 | Stage | Parent/target execution | Result | Notes |
 | --- | --- | --- | --- |
-| Experimental | `20578` target | success | Published to `database-experimental`, then applied to the approved ephemeral `localhost\Expwhertzing` database; head `00.02.000140`. Permanent Experimental SQL instances remain retired and must not be recreated. |
+| Experimental | `20578` target | success | Published to `database-experimental`, then applied to the approved ephemeral `localhost\Expwhertzing` database; head `00.02.000140`. `Expwhertzing` is the `whertzing` realization of `Exp<DeveloperName>`; a physical SQL instance named `Experimental` is retired and must not be recreated. |
 | Development | `20595` / `20596` | success | Real apply reached `00.02.000140`. |
 | Integration | `20599` / `20600` | success | Retry resumed after prior ProGet promotion; snapshot and real apply succeeded. |
 | QA | `20601` / `20602` | success | Snapshot, rehearsal, promotion, and real apply succeeded. |

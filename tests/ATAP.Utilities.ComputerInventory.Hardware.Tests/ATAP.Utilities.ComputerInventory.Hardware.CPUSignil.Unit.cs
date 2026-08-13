@@ -16,16 +16,16 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests
     [MemberData(nameof(CPUSignilTestDataGenerator.TestData), MemberType = typeof(CPUSignilTestDataGenerator))]
     public void CPUSignilDeserializeFromJSON(CPUSignilTestData inTestData)
     {
-      var obj = Fixture.Serializer.Deserialize<CPUSignil>(inTestData.SerializedTestData);
+      var obj = Fixture.Serializer.Deserialize<CPUSignil>(inTestData.TestData);
       obj.Should().BeOfType(typeof(CPUSignil));
-      Fixture.Serializer.Deserialize<CPUSignil>(inTestData.SerializedTestData).Should().BeEquivalentTo(inTestData.ObjTestData);
+      Fixture.Serializer.Deserialize<CPUSignil>(inTestData.TestData).Should().BeEquivalentTo(inTestData.ObjTestData);
     }
 
     [Theory]
     [MemberData(nameof(CPUSignilTestDataGenerator.TestData), MemberType = typeof(CPUSignilTestDataGenerator))]
     public void CPUSignilSerializeToJSON(CPUSignilTestData inTestData)
     {
-      Fixture.Serializer.Serialize(inTestData.ObjTestData).Should().Be(inTestData.SerializedTestData);
+      Fixture.Serializer.Serialize(inTestData.ObjTestData).Should().Be(inTestData.TestData);
     }
   }
 }

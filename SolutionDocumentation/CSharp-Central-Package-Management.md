@@ -369,6 +369,52 @@ Local automation guard:
   and pass any documented facade/aggregator exceptions through
   `-AllowedMissingLockFileProjectPaths`.
 
+### 8.1 ATAP.Utilities production-filter lock-file exceptions
+
+Task 14.91 revalidated the five recovered V4-D02 exceptions. Each project is
+an intentionally source-free facade/aggregator with
+`<EnableDefaultItems>false</EnableDefaultItems>` and only project references
+declared in its own project file. The V4-D02 force-evaluated production-filter
+restore completed without NuGet emitting a sibling lock file for these nodes;
+Task 14.91 revalidated the current five-path set with `Assert-LockFilesClean`.
+The referenced implementation projects remain independently lock-file
+governed.
+
+| Project | Owner |
+| --- | --- |
+| `src/ATAP.Utilities.ComputerInventory/ATAP.Utilities.ComputerInventory.csproj` | ATAP.Utilities ComputerInventory maintainers |
+| `src/ATAP.Utilities.ComputerInventory/Hardware/ATAP.Utilities.ComputerInventory.Hardware.csproj` | ATAP.Utilities ComputerInventory maintainers |
+| `src/ATAP.Utilities.ComputerInventory/ProcessInfo/ATAP.Utilities.ComputerInventory.ProcessInfo.csproj` | ATAP.Utilities ComputerInventory maintainers |
+| `src/ATAP.Utilities.ComputerInventory/Software/ATAP.Utilities.ComputerInventory.Software.csproj` | ATAP.Utilities ComputerInventory maintainers |
+| `src/ATAP.Utilities.IAC.Ansible/ATAP.Utilities.IAC.Ansible.csproj` | ATAP.Utilities IAC/Ansible maintainers |
+
+Use this exact guard invocation. Adding or removing an exception requires the
+owning maintainers to repeat the restore and update this list; the
+ATAP.Utilities BuildTooling maintainers own the guard behavior.
+
+```powershell
+$allowedMissing = @(
+  'src/ATAP.Utilities.ComputerInventory/ATAP.Utilities.ComputerInventory.csproj',
+  'src/ATAP.Utilities.ComputerInventory/Hardware/ATAP.Utilities.ComputerInventory.Hardware.csproj',
+  'src/ATAP.Utilities.ComputerInventory/ProcessInfo/ATAP.Utilities.ComputerInventory.ProcessInfo.csproj',
+  'src/ATAP.Utilities.ComputerInventory/Software/ATAP.Utilities.ComputerInventory.Software.csproj',
+  'src/ATAP.Utilities.IAC.Ansible/ATAP.Utilities.IAC.Ansible.csproj'
+)
+
+Assert-LockFilesClean `
+  -RepoPath (Get-Location).Path `
+  -CheckSolutionFilter `
+  -SolutionFilterPath '.\ATAP.Utilities.Production.slnf' `
+  -AllowedMissingLockFileProjectPaths $allowedMissing
+```
+
+### 8.2 AutoDoc central package management
+
+`ATAP.Utilities.AutoDoc` declares versionless `PackageReference` items. Its
+`docfx.console` version and `Microsoft.Build.Utilities.Core` version are owned
+by `Directory.Packages.props`, and direct force-evaluated restore governs its
+checked-in `packages.lock.json`.
+
 ---
 
 ## 9. Interaction with `ConstrainATAPPackageDependencyVersionRange`

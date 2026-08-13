@@ -42,6 +42,22 @@ function Invoke-SprintEndLifecycle {
   .PARAMETER MergePullRequests
   Merges ready PRs and verifies originating issues close.
 
+  .PARAMETER MergeAuthorizationConfirmed
+  Records that the operator already authorized this close's pull-request merge,
+  so downstream calls do not re-ask the question the operator answered at the
+  dry-run gate. It suppresses duplicate prompts only; it never authorizes a
+  merge that was not requested with -MergePullRequests.
+
+  .PARAMETER DelegationMode
+  'None' when this orchestrator performs GitHub operations itself, 'Delegated'
+  when a PR/version-control agent performs them on its behalf. A delegate must
+  relay a named authorization source rather than raising its own prompt.
+
+  .PARAMETER DelegatedAuthorizationSource
+  Provenance for the authorization relayed to the delegate, for example
+  'Operator:2026-08-03T09:15:00-06:00'. Required when DelegationMode is
+  'Delegated'.
+
   .PARAMETER ArchiveHistory
   Copies dotted sprint task artifacts into SprintHistory.
 
@@ -109,6 +125,17 @@ function Invoke-SprintEndLifecycle {
     [switch]$MergePullRequests,
 
     [Parameter()]
+    [switch]$MergeAuthorizationConfirmed,
+
+    [Parameter()]
+    [ValidateSet('None', 'Delegated')]
+    [string]$DelegationMode = 'None',
+
+    [Parameter()]
+    [AllowEmptyString()]
+    [string]$DelegatedAuthorizationSource,
+
+    [Parameter()]
     [switch]$ArchiveHistory,
 
     [Parameter()]
@@ -169,12 +196,46 @@ function Invoke-SprintEndLifecycle {
     }
     $phases.ClosePlan = @($closePlan)
 
+    # Task 14.10. Every worktree this close will mutate must be a sprint
+    # worktree. Gate the whole close plan once, before any phase runs, so a
+    # stable path substituted into WorktreePaths is rejected up front instead of
+    # surfacing incidentally from inside whichever helper happens to touch it
+    # first. This is the regression boundary for the Sprint 0013 behavior that
+    # wrote remediation changes into stable worktrees.
+    $phases.WriteTargetBoundary = Test-SprintEndWriteTarget `
+      -Path $worktreeFullPaths `
+      -GitRoot $gitRootFull `
+      -Operation 'SprintEndClosePlan'
+    if (-not $phases.WriteTargetBoundary.Ok) { [void]$failures.Add('WriteTargetBoundary') }
+
+    # Task 14.11. Resolve every approval concern deterministically before any
+    # phase asks the operator anything, so a single authorization is recorded
+    # once rather than re-evaluated by each layer that can prompt.
+    $approvalParameters = @{
+      MergePullRequests           = [bool]$MergePullRequests
+      MergeAuthorizationConfirmed = [bool]$MergeAuthorizationConfirmed
+      DelegationMode              = $DelegationMode
+      WorktreePaths               = $worktreeFullPaths
+    }
+    if ($PSBoundParameters.ContainsKey('DelegatedAuthorizationSource')) {
+      $approvalParameters.DelegatedAuthorizationSource = $DelegatedAuthorizationSource
+    }
+    $phases.ApprovalPlan = Get-SprintEndApprovalPlan @approvalParameters
+    if (-not $phases.ApprovalPlan.Ok) { [void]$failures.Add('ApprovalPlan') }
+
     $phases.CommandSurface = Test-SprintEndCommandSurface
     if (-not $phases.CommandSurface.Ok) { [void]$failures.Add('CommandSurface') }
 
     $prerequisiteParameters = @{
       RequiredRepoWorktrees = $worktreeFullPaths
       BuiltModule           = $BuiltModule
+    }
+    # Task 14.11. When no selected worktree tracks a packages.lock.json, the
+    # lock-file guard is skipped because it cannot apply -- not because anyone
+    # answered a prompt about runner availability.
+    $lockFileConcern = @($phases.ApprovalPlan.Concerns | Where-Object Concern -eq 'NuGetLockFileRunner') | Select-Object -First 1
+    if ($lockFileConcern -and $lockFileConcern.Decision -eq 'NotApplicable') {
+      $prerequisiteParameters.SkipLockFileGuard = $true
     }
     $phases.Prerequisites = Test-SprintPrerequisites @prerequisiteParameters
     if (-not $phases.Prerequisites.AllOk) { [void]$failures.Add('Prerequisites') }
@@ -257,6 +318,17 @@ function Invoke-SprintEndLifecycle {
     } else {
       $phases.BoundaryReset = $null
       $phases.TemplateRef = @()
+    }
+
+    # Task 14.11. A live merge runs only after the operator authorization is
+    # recorded. The dry run plans the merge without it, because -WhatIf mutates
+    # nothing; a live run refuses rather than raising the prompt a second time
+    # from inside a phase the operator has already approved as a whole.
+    $mergeAuthorized = [bool]($MergeAuthorizationConfirmed -or $WhatIfPreference)
+    if ($MergePullRequests -and -not $mergeAuthorized) {
+      [void]$failures.Add('MergeAuthorizationRequired')
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error `
+        -Message 'A live pull-request merge was requested without recorded operator authorization. Re-run with -MergeAuthorizationConfirmed after the operator approves the dry run.'
     }
 
     $githubResults = [System.Collections.Generic.List[object]]::new()
@@ -382,6 +454,8 @@ function Invoke-SprintEndLifecycle {
       BitwardenSecretsRemoved    = $false
       SqlInstancesRetained       = $true
       SyntheticTaskCompleted     = $false
+      StableWorktreeWritesPlanned = @($phases.WriteTargetBoundary.BlockedPaths)
+      OperatorPromptsRequired    = @($phases.ApprovalPlan.RequiredPrompts)
     }
     if (-not $result.Ok -and $ThrowOnFailure) {
       throw "SprintEnd lifecycle failed: $($result.Failures -join ', ')."

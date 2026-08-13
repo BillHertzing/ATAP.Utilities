@@ -255,6 +255,274 @@ Describe 'Save-SprintWorkSession' {
     }
   }
 
+  Context 'Task 14.13 — memory store resolution is independent of transcript resolution' {
+
+    BeforeAll {
+      # Mirror of the Bug 2 Context above: there the JSONL is missing at the sprint slug,
+      # here the JSONL is PRESENT at the sprint slug while the memory store lives only at
+      # the stable slug. Memory must be located on its own rather than inheriting whatever
+      # directory the transcript search settled on.
+      function script:New-MemoryResolutionFixture {
+        param(
+          [switch]$SprintMemory,
+          [switch]$StableMemory,
+          [string]$SprintMemoryFileName = 'sprint-memory.md',
+          [string]$StableMemoryFileName = 'stable-memory.md'
+        )
+
+        $claudeRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('ssws-1413-' + [guid]::NewGuid().ToString('N'))
+        $planRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('ssws-plan-' + [guid]::NewGuid().ToString('N'))
+        New-Item -ItemType Directory -Path $claudeRoot, $planRoot -Force | Out-Null
+
+        $makeSlug = {
+          param([string]$p)
+          ($p.Substring(0, 1).ToLower() + $p.Substring(1)) `
+            -replace ':', '-' -replace '\\', '-' -replace '_', '-' -replace '\.', '-' -replace '^-', ''
+        }
+
+        $sprintSlug = & $makeSlug $script:atapWt
+        $stableSlug = & $makeSlug ($script:atapWt -replace '-wt-.+$', '')
+
+        # The transcript always lives at the SPRINT slug for these cases.
+        $sprintSessionDir = Join-Path $claudeRoot $sprintSlug
+        New-Item -ItemType Directory -Path $sprintSessionDir -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $sprintSessionDir 'sprint.jsonl') `
+          -Value '{"role":"user","content":"sprint"}' -Encoding UTF8
+
+        $sprintMemoryDir = Join-Path $sprintSessionDir 'memory'
+        if ($SprintMemory) {
+          New-Item -ItemType Directory -Path $sprintMemoryDir -Force | Out-Null
+          Set-Content -LiteralPath (Join-Path $sprintMemoryDir $SprintMemoryFileName) `
+            -Value '# sprint memory' -Encoding UTF8
+        }
+
+        $stableSessionDir = Join-Path $claudeRoot $stableSlug
+        $stableMemoryDir = Join-Path $stableSessionDir 'memory'
+        if ($StableMemory) {
+          New-Item -ItemType Directory -Path $stableMemoryDir -Force | Out-Null
+          Set-Content -LiteralPath (Join-Path $stableMemoryDir $StableMemoryFileName) `
+            -Value '# stable memory' -Encoding UTF8
+        }
+
+        return [pscustomobject]@{
+          ClaudeRoot      = $claudeRoot
+          PlanRoot        = $planRoot
+          SprintMemoryDir = $sprintMemoryDir
+          StableMemoryDir = $stableMemoryDir
+        }
+      }
+
+      function script:Invoke-MemoryResolutionCheckpoint {
+        param([Parameter(Mandatory)]$Fixture)
+
+        $savedLocation = Get-Location
+        Set-Location $script:atapWt
+        try {
+          $savedSettings = $global:settings
+          try {
+            $global:settings = $null
+            Save-SprintWorkSession `
+              -SprintN $script:sprintNumber `
+              -PlanningRoot $Fixture.PlanRoot `
+              -ClaudeProjectsRoot $Fixture.ClaudeRoot `
+              -GitHubRoot $script:gitRoot `
+              -Confirm:$false | Out-Null
+
+            $rosterPath = Join-Path $Fixture.PlanRoot "SprintWorkSessionRoster\SprintWorkSessionRoster-$($script:sprintNumber).jsonl"
+            return Get-Content -LiteralPath $rosterPath | Select-Object -Last 1 | ConvertFrom-Json
+          } finally {
+            $global:settings = $savedSettings
+          }
+        } finally {
+          Set-Location $savedLocation
+        }
+      }
+    }
+
+    It 'Case 1 — copies memory from the stable key when the sprint key has a transcript but no memory' {
+      $fixture = script:New-MemoryResolutionFixture -StableMemory
+      try {
+        $entry = script:Invoke-MemoryResolutionCheckpoint -Fixture $fixture
+
+        $entry.MemorySnapshotCreated | Should -BeTrue -Because 'the store exists at the stable key and must be found'
+        $entry.MemoryFileCount | Should -Be 1
+        $entry.MemorySourcePath | Should -BeExactly $fixture.StableMemoryDir
+        Test-Path -LiteralPath (Join-Path $entry.MemorySnapshotPath 'stable-memory.md') | Should -BeTrue
+        # The roster must record which key the memory actually came from.
+        $entry.MemorySourceKey | Should -Match 'ATAP-Utilities$' -Because 'the stable key, not the -wt- sprint key, supplied the memory'
+      } finally {
+        Remove-Item -Recurse -Force $fixture.ClaudeRoot, $fixture.PlanRoot -ErrorAction SilentlyContinue
+      }
+    }
+
+    It 'Case 2 — prefers the sprint key when both keys have a memory store' {
+      $fixture = script:New-MemoryResolutionFixture -SprintMemory -StableMemory
+      try {
+        $entry = script:Invoke-MemoryResolutionCheckpoint -Fixture $fixture
+
+        $entry.MemorySnapshotCreated | Should -BeTrue
+        $entry.MemorySourcePath | Should -BeExactly $fixture.SprintMemoryDir -Because 'a live sprint store must never be shadowed by a staler stable one'
+        Test-Path -LiteralPath (Join-Path $entry.MemorySnapshotPath 'sprint-memory.md') | Should -BeTrue
+        Test-Path -LiteralPath (Join-Path $entry.MemorySnapshotPath 'stable-memory.md') | Should -BeFalse
+        $entry.MemorySourceKey | Should -Match '-wt-100-'
+      } finally {
+        Remove-Item -Recurse -Force $fixture.ClaudeRoot, $fixture.PlanRoot -ErrorAction SilentlyContinue
+      }
+    }
+
+    It 'Case 3 — records NotFound, distinct from Codex None, when neither key has a memory store' {
+      $fixture = script:New-MemoryResolutionFixture
+      try {
+        $entry = script:Invoke-MemoryResolutionCheckpoint -Fixture $fixture
+
+        $entry.MemorySnapshotCreated | Should -BeFalse
+        $entry.MemoryFileCount | Should -Be 0
+        $entry.MemorySkipKind | Should -Be 'NotFound' -Because 'a store was expected and not found — this must not look like an agent that has none'
+        $entry.MemorySkipReason | Should -Match 'Memory directory not found'
+      } finally {
+        Remove-Item -Recurse -Force $fixture.ClaudeRoot, $fixture.PlanRoot -ErrorAction SilentlyContinue
+      }
+    }
+
+    It 'Case 4 — Codex still records None, not NotFound' {
+      $codexRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('ssws-codex-' + [guid]::NewGuid().ToString('N'))
+      $planRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('ssws-plan-' + [guid]::NewGuid().ToString('N'))
+      $sessionId = [guid]::NewGuid().ToString()
+      $dated = Join-Path $codexRoot 'sessions\2026\08\05'
+      New-Item -ItemType Directory -Path $dated, $planRoot -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $dated "rollout-2026-08-05T10-00-00-$sessionId.jsonl") `
+        -Value '{"role":"user"}' -Encoding UTF8
+
+      $savedLocation = Get-Location
+      Set-Location $script:atapWt
+      try {
+        $savedSettings = $global:settings
+        try {
+          $global:settings = $null
+          Save-SprintWorkSession `
+            -Agent Codex -SessionId $sessionId -CodexRoot $codexRoot `
+            -SprintN $script:sprintNumber -PlanningRoot $planRoot -GitHubRoot $script:gitRoot `
+            -Confirm:$false | Out-Null
+
+          $rosterPath = Join-Path $planRoot "SprintWorkSessionRoster\SprintWorkSessionRoster-$($script:sprintNumber).jsonl"
+          $entry = Get-Content -LiteralPath $rosterPath | Select-Object -Last 1 | ConvertFrom-Json
+
+          $entry.MemorySnapshotCreated | Should -BeFalse
+          $entry.MemorySkipKind | Should -Be 'None' -Because 'Codex legitimately has no on-disk memory store'
+          $entry.MemorySkipReason | Should -Match 'no on-disk memory'
+        } finally {
+          $global:settings = $savedSettings
+        }
+      } finally {
+        Set-Location $savedLocation
+        Remove-Item -Recurse -Force $codexRoot, $planRoot -ErrorAction SilentlyContinue
+      }
+    }
+
+    It 'Task 14.13.f — finds the stable-key store when that key differs only by drive-letter casing' {
+      # Both 'C--' and 'c--' casings occur in the real projects tree. The computed slug is
+      # always lowercase, so a stable key that exists on disk with an uppercase leading
+      # letter must still resolve.
+      $fixture = script:New-MemoryResolutionFixture
+      try {
+        $stableSessionDir = Split-Path -Parent $fixture.StableMemoryDir
+        $stableParent = Split-Path -Parent $stableSessionDir
+        $stableLeaf = Split-Path -Leaf $stableSessionDir
+        $upperLeaf = $stableLeaf.Substring(0, 1).ToUpper() + $stableLeaf.Substring(1)
+        $upperSessionDir = Join-Path $stableParent $upperLeaf
+        $upperMemoryDir = Join-Path $upperSessionDir 'memory'
+        New-Item -ItemType Directory -Path $upperMemoryDir -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $upperMemoryDir 'stable-memory.md') `
+          -Value '# stable memory' -Encoding UTF8
+
+        $entry = script:Invoke-MemoryResolutionCheckpoint -Fixture $fixture
+
+        $entry.MemorySnapshotCreated | Should -BeTrue -Because 'slug casing must not hide an existing store'
+        $entry.MemoryFileCount | Should -Be 1
+      } finally {
+        Remove-Item -Recurse -Force $fixture.ClaudeRoot, $fixture.PlanRoot -ErrorAction SilentlyContinue
+      }
+    }
+
+    It 'Task 14.13.f — probes only the sprint key when the worktree is not a sprint worktree' {
+      # A checkout with no '-wt-' segment has no stable-repo sibling to fall back to.
+      # The probe must simply find nothing rather than mangle the path or throw.
+      $gitRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('ssws-nowt-' + [guid]::NewGuid().ToString('N'))
+      $plainRepo = Join-Path $gitRoot 'ATAP.Utilities'
+      $planRoot = Join-Path $gitRoot '_Planning'
+      $claudeRoot = Join-Path $gitRoot '.claude-projects'
+      New-Item -ItemType Directory -Path $plainRepo, $planRoot, $claudeRoot -Force | Out-Null
+
+      $branchName = "100-sprint-$($script:sprintNumber)-work-items"
+      & git -C $plainRepo init --quiet --initial-branch=$branchName 2>$null
+      & git -C $plainRepo config user.email 'test@example.com'
+      & git -C $plainRepo config user.name 'Pester Tester'
+      Set-Content -LiteralPath (Join-Path $plainRepo 'README.md') -Value 'seed' -Encoding UTF8
+      & git -C $plainRepo add . 2>$null | Out-Null
+      & git -C $plainRepo commit --quiet -m 'seed' 2>$null | Out-Null
+
+      $slug = ($plainRepo.Substring(0, 1).ToLower() + $plainRepo.Substring(1)) `
+        -replace ':', '-' -replace '\\', '-' -replace '_', '-' -replace '\.', '-' -replace '^-', ''
+      $sessionDir = Join-Path $claudeRoot $slug
+      New-Item -ItemType Directory -Path $sessionDir -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $sessionDir 'plain.jsonl') `
+        -Value '{"role":"user","content":"plain"}' -Encoding UTF8
+
+      $savedLocation = Get-Location
+      Set-Location $plainRepo
+      try {
+        $savedSettings = $global:settings
+        try {
+          $global:settings = $null
+          $result = Save-SprintWorkSession `
+            -SprintN $script:sprintNumber `
+            -PlanningRoot $planRoot `
+            -ClaudeProjectsRoot $claudeRoot `
+            -GitHubRoot $gitRoot `
+            -Confirm:$false
+
+          $result.MemorySkipKind | Should -Be 'NotFound'
+          # The reported path must be the repo's own key, never a truncated one.
+          $result.MemorySourcePath | Should -BeExactly (Join-Path $sessionDir 'memory')
+        } finally {
+          $global:settings = $savedSettings
+        }
+      } finally {
+        Set-Location $savedLocation
+        Remove-Item -Recurse -Force $gitRoot -ErrorAction SilentlyContinue
+      }
+    }
+
+    It 'surfaces the skip kind in the object the function returns, not only in the roster' {
+      $fixture = script:New-MemoryResolutionFixture
+      try {
+        $savedLocation = Get-Location
+        Set-Location $script:atapWt
+        try {
+          $savedSettings = $global:settings
+          try {
+            $global:settings = $null
+            $result = Save-SprintWorkSession `
+              -SprintN $script:sprintNumber `
+              -PlanningRoot $fixture.PlanRoot `
+              -ClaudeProjectsRoot $fixture.ClaudeRoot `
+              -GitHubRoot $script:gitRoot `
+              -Confirm:$false
+
+            $result | Should -Not -BeNullOrEmpty -Because 'the operator must see the outcome without reading PSFramework output'
+            $result.MemorySkipKind | Should -Be 'NotFound'
+          } finally {
+            $global:settings = $savedSettings
+          }
+        } finally {
+          Set-Location $savedLocation
+        }
+      } finally {
+        Remove-Item -Recurse -Force $fixture.ClaudeRoot, $fixture.PlanRoot -ErrorAction SilentlyContinue
+      }
+    }
+  }
+
   Context 'Task 12.29 — Claude project slug directory casing' {
 
     It 'records and copies memory from the actual on-disk Claude project directory casing' {
@@ -431,12 +699,15 @@ Describe 'Save-SprintWorkSession' {
           $global:MockSevenZipContents = @{}
           $global:MockSevenZipForcedEntries = $ArchiveEntries
           try {
+            # Discard the checkpoint result object: this helper's contract is to return
+            # the caught error or $null, and since Task 14.13 the function emits a
+            # result object that would otherwise leak into that return value.
             Save-SprintWorkSession `
               -SprintN $script:sprintNumber `
               -PlanningRoot $script:planningWt `
               -ClaudeProjectsRoot $script:claudeProjectsRoot `
               -GitHubRoot $script:gitRoot `
-              -Confirm:$false
+              -Confirm:$false | Out-Null
             return $null
           }
           catch {

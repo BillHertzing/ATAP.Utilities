@@ -8,7 +8,7 @@ using Xunit.Abstractions;
 
 namespace ATAP.Utilities.ComputerInventory.Tests
 {
-  public class Fixture : DiFixture { }
+  public class Fixture : ConfigurableFixture { }
   public partial class ComputerInventoryUnitTests001 : IClassFixture<Fixture>
   {
     protected Fixture Fixture { get; }

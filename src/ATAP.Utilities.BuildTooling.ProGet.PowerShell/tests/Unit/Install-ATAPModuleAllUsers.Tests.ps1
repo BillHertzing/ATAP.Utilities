@@ -30,6 +30,7 @@ BeforeAll {
     . (Join-Path $privateDir $helper)
   }
   . (Join-Path $publicDir 'Install-ATAPModuleAllUsers.ps1')
+  . (Join-Path $publicDir 'Test-PSModulePackageSignature.ps1')
 }
 
 Describe 'Get-ATAPModuleVersionInstallPath' {
@@ -62,7 +63,7 @@ Describe 'Test-ATAPModuleFileHash' {
 
 Describe 'Get-ATAPModuleDownloadCandidateUris' {
   BeforeAll {
-    $script:Feed = 'http://localhost:50000/nuget/powershellget-stable'
+    $script:Feed = 'https://localhost:50000/nuget/powershellget-stable'
     $script:Name = 'ATAP.Utilities.BuildTooling.Common.PowerShell'
     $script:Version = '0.1.8'
   }
@@ -80,9 +81,9 @@ Describe 'Get-ATAPModuleDownloadCandidateUris' {
   }
 
   It 'prefers localhost over the utat01 hostname' {
-    $uris = @(Get-ATAPModuleDownloadCandidateUris -BaseFeedUrl 'http://utat01:50000/nuget/powershellget-stable' -ModuleName $script:Name -RequiredVersion $script:Version)
-    $uris[0] | Should -Match '^http://localhost:50000/'
-    @($uris | Where-Object { $_ -match '^http://utat01:50000/' }).Count | Should -BeGreaterThan 0
+    $uris = @(Get-ATAPModuleDownloadCandidateUris -BaseFeedUrl 'https://utat01:50000/nuget/powershellget-stable' -ModuleName $script:Name -RequiredVersion $script:Version)
+    $uris[0] | Should -Match '^https://localhost:50000/'
+    @($uris | Where-Object { $_ -match '^https://utat01:50000/' }).Count | Should -BeGreaterThan 0
   }
 
   It 'honors an explicit /api/v2 base and still offers the direct form' {
@@ -100,19 +101,19 @@ Describe 'Get-ATAPModuleDownloadCandidateUris' {
 Describe 'Get-ATAPModuleDownloadUri' {
   It 'returns the first reachable candidate' {
     Mock Test-ATAPModuleEndpointReachable { $Uri -notmatch '/api/v2/' }
-    $uri = Get-ATAPModuleDownloadUri -FeedUrl 'http://localhost:50000/nuget/powershellget-stable' -ModuleName 'M' -RequiredVersion '1.0.0'
-    $uri | Should -Be 'http://localhost:50000/nuget/powershellget-stable/package/M/1.0.0'
+    $uri = Get-ATAPModuleDownloadUri -FeedUrl 'https://localhost:50000/nuget/powershellget-stable' -ModuleName 'M' -RequiredVersion '1.0.0'
+    $uri | Should -Be 'https://localhost:50000/nuget/powershellget-stable/package/M/1.0.0'
   }
 
   It 'falls through to the OData endpoint when the direct form is unreachable' {
     Mock Test-ATAPModuleEndpointReachable { $Uri -match '/api/v2/' }
-    $uri = Get-ATAPModuleDownloadUri -FeedUrl 'http://localhost:50000/nuget/powershellget-stable' -ModuleName 'M' -RequiredVersion '1.0.0'
-    $uri | Should -Be 'http://localhost:50000/nuget/powershellget-stable/api/v2/package/M/1.0.0'
+    $uri = Get-ATAPModuleDownloadUri -FeedUrl 'https://localhost:50000/nuget/powershellget-stable' -ModuleName 'M' -RequiredVersion '1.0.0'
+    $uri | Should -Be 'https://localhost:50000/nuget/powershellget-stable/api/v2/package/M/1.0.0'
   }
 
   It 'throws when no candidate is reachable' {
     Mock Test-ATAPModuleEndpointReachable { $false }
-    { Get-ATAPModuleDownloadUri -FeedUrl 'http://localhost:50000/nuget/powershellget-stable' -ModuleName 'M' -RequiredVersion '1.0.0' } |
+    { Get-ATAPModuleDownloadUri -FeedUrl 'https://localhost:50000/nuget/powershellget-stable' -ModuleName 'M' -RequiredVersion '1.0.0' } |
       Should -Throw -ExpectedMessage '*No reachable download URI*'
   }
 }
@@ -202,19 +203,30 @@ Describe 'Install-ATAPModuleAllUsers' {
 
     Mock Test-ATAPModuleAllUsersElevated { $true }
     Mock Get-PSRepository { [pscustomobject]@{ Name = 'powershellget-stable' } }
-    Mock Get-ATAPModuleDownloadUri { 'http://localhost:50000/nuget/powershellget-stable/package/Fixture.Module/1.0.0' }
+    Mock Get-ATAPModuleDownloadUri { 'https://localhost:50000/nuget/powershellget-stable/package/Fixture.Module/1.0.0' }
     Mock Invoke-WebRequest { Copy-Item -LiteralPath $script:Nupkg -Destination $OutFile -Force }
     Mock Get-ATAPModuleInstalledVersions { @{} }
+    Mock Test-PSModulePackageSignature { [pscustomobject]@{ Valid = $true } }
     Mock Start-Transcript { }
     Mock Stop-Transcript { }
   }
 
+  It 'rejects a cleartext feed URL at parameter binding' {
+    { Install-ATAPModuleAllUsers -ModuleName $script:Name -RequiredVersion $script:Version `
+        -Repository 'powershellget-stable' -FeedUrl 'http://localhost:50000/nuget/powershellget-stable' `
+        -ExpectedSha256 $script:NupkgHash -ModulesRoot $script:ModulesRoot -DeployRoot $script:DeployRoot -Confirm:$false } |
+      Should -Throw '*absolute HTTPS URI*'
+
+    Assert-MockCalled Invoke-WebRequest -Times 0 -Exactly -Scope It
+  }
+
   It 'installs into <ModulesRoot>\<Name>\<Version> and validates the fresh import' {
     $r = Install-ATAPModuleAllUsers -ModuleName $script:Name -RequiredVersion $script:Version `
-      -Repository 'powershellget-stable' -FeedUrl 'http://localhost:50000/nuget/powershellget-stable' `
+      -Repository 'powershellget-stable' -FeedUrl 'https://localhost:50000/nuget/powershellget-stable' `
       -ExpectedSha256 $script:NupkgHash -ModulesRoot $script:ModulesRoot -DeployRoot $script:DeployRoot -Confirm:$false
 
     $r.ExitStatus | Should -Be 0
+    $r.SignatureVerified | Should -BeTrue
     $r.ErrorText | Should -BeNullOrEmpty
     $expected = Join-Path (Join-Path $script:ModulesRoot $script:Name) $script:Version
     $r.VersionPath | Should -Be $expected
@@ -226,7 +238,7 @@ Describe 'Install-ATAPModuleAllUsers' {
 
   It 'creates the version folder at the AllUsers root instead of moving the broker-temp folder' {
     $r = Install-ATAPModuleAllUsers -ModuleName $script:Name -RequiredVersion $script:Version `
-      -Repository 'powershellget-stable' -FeedUrl 'http://localhost:50000/nuget/powershellget-stable' `
+      -Repository 'powershellget-stable' -FeedUrl 'https://localhost:50000/nuget/powershellget-stable' `
       -ExpectedSha256 $script:NupkgHash -ModulesRoot $script:ModulesRoot -DeployRoot $script:DeployRoot -Confirm:$false
 
     $r.ExitStatus | Should -Be 0
@@ -238,7 +250,7 @@ Describe 'Install-ATAPModuleAllUsers' {
 
   It 'writes a JSON result record for the run' {
     $r = Install-ATAPModuleAllUsers -ModuleName $script:Name -RequiredVersion $script:Version `
-      -Repository 'powershellget-stable' -FeedUrl 'http://localhost:50000/nuget/powershellget-stable' `
+      -Repository 'powershellget-stable' -FeedUrl 'https://localhost:50000/nuget/powershellget-stable' `
       -ExpectedSha256 $script:NupkgHash -ModulesRoot $script:ModulesRoot -DeployRoot $script:DeployRoot -Confirm:$false
 
     Test-Path -LiteralPath $r.ResultJsonPath | Should -BeTrue
@@ -249,7 +261,7 @@ Describe 'Install-ATAPModuleAllUsers' {
 
   It 'refuses a package whose hash does not match the pin, and installs nothing' {
     $r = Install-ATAPModuleAllUsers -ModuleName $script:Name -RequiredVersion $script:Version `
-      -Repository 'powershellget-stable' -FeedUrl 'http://localhost:50000/nuget/powershellget-stable' `
+      -Repository 'powershellget-stable' -FeedUrl 'https://localhost:50000/nuget/powershellget-stable' `
       -ExpectedSha256 ('A' * 64) -ModulesRoot $script:ModulesRoot -DeployRoot $script:DeployRoot -Confirm:$false
 
     $r.ExitStatus | Should -Be 1
@@ -257,10 +269,23 @@ Describe 'Install-ATAPModuleAllUsers' {
     Test-Path -LiteralPath (Join-Path (Join-Path $script:ModulesRoot $script:Name) $script:Version) | Should -BeFalse
   }
 
+  It 'rejects an unsigned package before expanding or installing it' {
+    Mock Test-PSModulePackageSignature { throw 'PowerShell package signature verification failed: NotSigned' }
+
+    $r = Install-ATAPModuleAllUsers -ModuleName $script:Name -RequiredVersion $script:Version `
+      -Repository 'powershellget-stable' -FeedUrl 'https://localhost:50000/nuget/powershellget-stable' `
+      -ExpectedSha256 $script:NupkgHash -ModulesRoot $script:ModulesRoot -DeployRoot $script:DeployRoot -Confirm:$false
+
+    $r.ExitStatus | Should -Be 1
+    $r.SignatureVerified | Should -BeFalse
+    $r.ErrorText | Should -Match 'signature verification failed'
+    Test-Path -LiteralPath (Join-Path (Join-Path $script:ModulesRoot $script:Name) $script:Version) | Should -BeFalse
+  }
+
   It 'exits 2 without installing when not elevated' {
     Mock Test-ATAPModuleAllUsersElevated { $false }
     $r = Install-ATAPModuleAllUsers -ModuleName $script:Name -RequiredVersion $script:Version `
-      -Repository 'powershellget-stable' -FeedUrl 'http://localhost:50000/nuget/powershellget-stable' `
+      -Repository 'powershellget-stable' -FeedUrl 'https://localhost:50000/nuget/powershellget-stable' `
       -ExpectedSha256 $script:NupkgHash -ModulesRoot $script:ModulesRoot -DeployRoot $script:DeployRoot -Confirm:$false
 
     $r.ExitStatus | Should -Be 2
@@ -274,7 +299,7 @@ Describe 'Install-ATAPModuleAllUsers' {
     Set-Content -LiteralPath (Join-Path $existing 'sentinel.txt') -Value 'do not clobber'
 
     $r = Install-ATAPModuleAllUsers -ModuleName $script:Name -RequiredVersion $script:Version `
-      -Repository 'powershellget-stable' -FeedUrl 'http://localhost:50000/nuget/powershellget-stable' `
+      -Repository 'powershellget-stable' -FeedUrl 'https://localhost:50000/nuget/powershellget-stable' `
       -ExpectedSha256 $script:NupkgHash -ModulesRoot $script:ModulesRoot -DeployRoot $script:DeployRoot -Confirm:$false
 
     $r.ExitStatus | Should -Be 1
@@ -293,7 +318,7 @@ Describe 'Install-ATAPModuleAllUsers' {
     $hash = (Get-FileHash -Algorithm SHA256 -Path $script:Nupkg).Hash
 
     $r = Install-ATAPModuleAllUsers -ModuleName $script:Name -RequiredVersion $script:Version `
-      -Repository 'powershellget-stable' -FeedUrl 'http://localhost:50000/nuget/powershellget-stable' `
+      -Repository 'powershellget-stable' -FeedUrl 'https://localhost:50000/nuget/powershellget-stable' `
       -ExpectedSha256 $hash -ModulesRoot $script:ModulesRoot -DeployRoot $script:DeployRoot -Confirm:$false
 
     $r.ExitStatus | Should -Be 1
@@ -308,7 +333,7 @@ Describe 'Install-ATAPModuleAllUsers' {
     Mock Import-Module { throw 'simulated import failure' } -ParameterFilter { $FullyQualifiedName }
 
     $r = Install-ATAPModuleAllUsers -ModuleName $script:Name -RequiredVersion $script:Version `
-      -Repository 'powershellget-stable' -FeedUrl 'http://localhost:50000/nuget/powershellget-stable' `
+      -Repository 'powershellget-stable' -FeedUrl 'https://localhost:50000/nuget/powershellget-stable' `
       -ExpectedSha256 $script:NupkgHash -ModulesRoot $script:ModulesRoot -DeployRoot $script:DeployRoot -Confirm:$false
 
     $r.ExitStatus | Should -Be 1

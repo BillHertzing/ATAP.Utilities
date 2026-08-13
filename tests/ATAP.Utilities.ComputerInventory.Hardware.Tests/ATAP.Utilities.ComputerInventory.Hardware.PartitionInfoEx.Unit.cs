@@ -1,9 +1,7 @@
 using ATAP.Utilities.ComputerInventory.Hardware;
 using ATAP.Utilities.Testing;
-using ATAP.Utilities.StronglyTypedID;
 using ATAP.Utilities.Persistence;
 using FluentAssertions;
-using Itenso.TimePeriod;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -15,7 +13,6 @@ using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 using static FluentAssertions.FluentActions;
-using QuickGraph;
 using System.Diagnostics;
 
 namespace ATAP.Utilities.ComputerInventory.Hardware.Tests {
@@ -25,19 +22,19 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests {
     [Theory]
     [MemberData(nameof(PartitionInfoExTestDataGenerator.TestData), MemberType = typeof(PartitionInfoExTestDataGenerator))]
     public void PartitionInfoExDeserializeFromJSON(PartitionInfoExTestData inTestData) {
-      var obj = Fixture.Serializer.Deserialize<PartitionInfoEx>(inTestData.SerializedTestData);
+      var obj = Fixture.Serializer.Deserialize<PartitionInfoEx>(inTestData.TestData);
       obj.Should().BeOfType(typeof(PartitionInfoEx));
-      Fixture.Serializer.Deserialize<PartitionInfoEx>(inTestData.SerializedTestData).Should().Be(inTestData.ObjTestData);
+      Fixture.Serializer.Deserialize<PartitionInfoEx>(inTestData.TestData).Should().Be(inTestData.ObjTestData);
     }
 
     [Theory]
     [MemberData(nameof(PartitionInfoExTestDataGenerator.TestData), MemberType = typeof(PartitionInfoExTestDataGenerator))]
     public void PartitionInfoExSerializeToJSON(PartitionInfoExTestData inTestData) {
 #if DEBUG
-      TestOutput.WriteLine("SerializedTestData is:" + inTestData.SerializedTestData);
+      TestOutput.WriteLine("SerializedTestData is:" + inTestData.TestData);
       TestOutput.WriteLine("Serialized ObjTestData is:" + Fixture.Serializer.Serialize(inTestData.ObjTestData));
 #endif
-      Fixture.Serializer.Serialize(inTestData.ObjTestData).Should().Be(inTestData.SerializedTestData);
+      Fixture.Serializer.Serialize(inTestData.ObjTestData).Should().Be(inTestData.TestData);
     }
 
     [Fact]
@@ -54,7 +51,6 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests {
       var convertFileSystemToGraphProgress = new ConvertFileSystemToGraphProgress();
       // Cancellation token for the task
       var cancellationTokenSource = new CancellationTokenSource();
-      var cancellationTokenSourceId = new IdAsStruct<CancellationTokenSource>(Guid.NewGuid());
       var cancellationToken = cancellationTokenSource.Token;
       ConvertFileSystemToGraphResult convertFileSystemToGraphResult;
       Stopwatch stopWatch = new Stopwatch();
@@ -88,7 +84,6 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests {
       var convertFileSystemToGraphProgress = new ConvertFileSystemToGraphProgress();
       // Cancellation token for the task
       var cancellationTokenSource = new CancellationTokenSource();
-      var cancellationTokenSourceId = new IdAsStruct<CancellationTokenSource>(Guid.NewGuid());
       var cancellationToken = cancellationTokenSource.Token;
       ConvertFileSystemToGraphResult convertFileSystemToGraphResult;
       Stopwatch stopWatch = new Stopwatch();
@@ -122,7 +117,6 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests {
       var convertFileSystemToGraphProgress = new ConvertFileSystemToGraphProgress();
       // Cancellation token for the task
       var cancellationTokenSource = new CancellationTokenSource();
-      var cancellationTokenSourceId = new IdAsStruct<CancellationTokenSource>(Guid.NewGuid());
       var cancellationToken = cancellationTokenSource.Token;
       ConvertFileSystemToGraphResult convertFileSystemToGraphResult;
       Stopwatch stopWatch = new Stopwatch();
@@ -172,7 +166,6 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests {
       var convertFileSystemToGraphProgress = new ConvertFileSystemToGraphProgress();
       // Cancellation token for the task
       var cancellationTokenSource = new CancellationTokenSource();
-      var cancellationTokenSourceId = new IdAsStruct<CancellationTokenSource>(Guid.NewGuid());
       var cancellationToken = cancellationTokenSource.Token;
       // PersistenceViaFiles
       // Create temporary files to hold the persistence data
@@ -197,7 +190,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests {
 #if DEBUG
         TestOutput.WriteLine($"Got {numberOfFiles} arrays of data to write");
 #endif
-        int numberOfStreamWriters = setupResults.StreamWriters.Length;
+        int numberOfStreamWriters = setupResults.FileStreamStreamWriterPairs.Length;
 #if DEBUG
         TestOutput.WriteLine($"Got {numberOfStreamWriters} streamwriters to write to");
 #endif
@@ -205,7 +198,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.Tests {
           foreach (string str in insertData.ToArray()[i]) {
             //ToDo: add async versions await setupResults.StreamWriters[i].WriteLineAsync(str);
             //ToDo: exception handling
-            setupResults.StreamWriters[i].WriteLine(str);
+            setupResults.FileStreamStreamWriterPairs[i].streamWriter.WriteLine(str);
 #if DEBUG
             TestOutput.WriteLine($"writing {str} to file {i}");
 #endif

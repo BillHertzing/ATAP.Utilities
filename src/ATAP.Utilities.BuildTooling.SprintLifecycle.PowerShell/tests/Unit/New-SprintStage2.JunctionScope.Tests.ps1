@@ -22,7 +22,6 @@ BeforeAll {
     'Set-WorktreeJunctions',
     'Initialize-DownstreamSprintFromSharedVSCode',
     'Invoke-SprintAIAdapterLifecycle',
-    'Set-ClaudeSettingsSymlink',
     'Set-PowerShell7ProfileSymlink',
     'Set-UserSettingsSymlink',
     'Get-SprintTaskRepositoryNames',
@@ -75,9 +74,16 @@ BeforeAll {
     [CmdletBinding(SupportsShouldProcess = $true)]
     param([string]$Boundary, [string]$TargetRoot, [string]$SharedVSCodeWorktreePath, [switch]$FixtureMode, [switch]$AllowUserGlobalWrite, [switch]$CheckpointConfirmed, [string]$EvidenceRoot, [switch]$OmitSprintWorktrees)
     $global:stage2CallOrder.Add('render') | Out-Null
+    $global:stage2AdapterLifecycleCalls.Add([PSCustomObject]@{
+        Boundary              = $Boundary
+        TargetRoot            = $TargetRoot
+        SharedVSCodeWorktreePath = $SharedVSCodeWorktreePath
+        AllowUserGlobalWrite  = [bool]$AllowUserGlobalWrite
+        CheckpointConfirmed   = [bool]$CheckpointConfirmed
+        OmitSprintWorktrees   = [bool]$OmitSprintWorktrees
+      }) | Out-Null
     [PSCustomObject]@{ DriftClean = $true; Results = @(); ChangedCount = 0 }
   }
-  function global:Set-ClaudeSettingsSymlink { }
   function global:Set-PowerShell7ProfileSymlink {
     [CmdletBinding(SupportsShouldProcess = $true)]
     param([string]$ATAPUtilitiesRoot, [string]$ATAPIACRoot)
@@ -166,6 +172,7 @@ Describe 'New-SprintStage2 junction scan scope (SC-0236)' -Tag 'Unit', 'Promoted
   BeforeEach {
     $global:stage2JunctionCalls = [System.Collections.Generic.List[object]]::new()
     $global:stage2CallOrder = [System.Collections.Generic.List[string]]::new()
+    $global:stage2AdapterLifecycleCalls = [System.Collections.Generic.List[object]]::new()
 
     $script:tempGitRoot = Join-Path ([System.IO.Path]::GetTempPath()) "stage2_junctionscope_$([guid]::NewGuid().ToString('N'))"
     $repoPath = Join-Path $script:tempGitRoot 'ATAP.Utilities'
@@ -200,6 +207,7 @@ Describe 'New-SprintStage2 junction scan scope (SC-0236)' -Tag 'Unit', 'Promoted
     Remove-Item -LiteralPath $script:tempGitRoot -Recurse -Force -ErrorAction SilentlyContinue
     Remove-Variable -Name stage2JunctionCalls -Scope Global -Force -ErrorAction SilentlyContinue
     Remove-Variable -Name stage2CallOrder -Scope Global -Force -ErrorAction SilentlyContinue
+    Remove-Variable -Name stage2AdapterLifecycleCalls -Scope Global -Force -ErrorAction SilentlyContinue
   }
 
   It 'Passes -SourceRepoFolderNames matching JunctionFolderNames (default .vscode only)' {
@@ -244,5 +252,33 @@ Describe 'New-SprintStage2 junction scan scope (SC-0236)' -Tag 'Unit', 'Promoted
     @($global:stage2CallOrder) | Should -Contain 'junctions'
     @($global:stage2CallOrder) | Should -Contain 'render'
     $global:stage2CallOrder.IndexOf('junctions') | Should -BeLessThan $global:stage2CallOrder.IndexOf('render')
+  }
+
+  It 'registers user-global adapters once after all worktrees exist and forwards both confirmation gates' {
+    New-SprintStage2 `
+      -Stage1Result $script:stage1 `
+      -TasksFilePath $script:tasksPath `
+      -GitRoot $script:tempGitRoot `
+      -Owner 'owner' `
+      -AllowUserGlobalWrite `
+      -CheckpointConfirmed `
+      -SkipDatabaseReset `
+      -SkipPowerShellProfileRetarget `
+      -Confirm:$false | Out-Null
+
+    $userGlobalCalls = @($global:stage2AdapterLifecycleCalls | Where-Object {
+        $_.Boundary -eq 'Start' -and $_.TargetRoot -eq $script:stage1.sharedVSCode.worktreePath
+      })
+    $userGlobalCalls | Should -HaveCount 1
+    $userGlobalCalls[0].SharedVSCodeWorktreePath | Should -Be $script:stage1.sharedVSCode.worktreePath
+    $userGlobalCalls[0].AllowUserGlobalWrite | Should -BeTrue
+    $userGlobalCalls[0].CheckpointConfirmed | Should -BeTrue
+
+    $projectCalls = @($global:stage2AdapterLifecycleCalls | Where-Object {
+        $_.TargetRoot -ne $script:stage1.sharedVSCode.worktreePath
+      })
+    $projectCalls | Should -HaveCount 1
+    $projectCalls[0].AllowUserGlobalWrite | Should -BeFalse
+    $projectCalls[0].CheckpointConfirmed | Should -BeFalse
   }
 }

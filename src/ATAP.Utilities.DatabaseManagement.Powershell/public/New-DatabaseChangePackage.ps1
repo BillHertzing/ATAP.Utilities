@@ -37,6 +37,11 @@ function New-DatabaseChangePackage {
     intended for explicitly deferred, unapplied future-sprint migrations. Each
     name must identify a file in the canonical migration source folder.
 
+.PARAMETER StagingRoot
+    Optional generated-output root used for package staging. Defaults to
+    <RepositoryRoot>/_generated/database-packages. This supports isolated local
+    verification without changing package identity or content.
+
 .OUTPUTS
     [string] Absolute path of the produced .nupkg file.
 
@@ -65,7 +70,11 @@ function New-DatabaseChangePackage {
 
     [Parameter(Mandatory = $false)]
     [ValidateNotNullOrEmpty()]
-    [string[]]$ExcludedMigrationFileName = @()
+    [string[]]$ExcludedMigrationFileName = @(),
+
+    [Parameter(Mandatory = $false)]
+    [ValidateNotNullOrEmpty()]
+    [string]$StagingRoot
   )
 
   begin {
@@ -133,9 +142,115 @@ function New-DatabaseChangePackage {
       throw $msg
     }
 
+    # Canonical ATAPUtilities packages are governed by an exact, tracked
+    # source-content allowlist. Validate before creating staging output so an
+    # undeclared, missing, malformed, or modified SQL/CSV file fails closed.
+    if ($usesCanonicalFlywayLayout) {
+      $allowlistPath = Join-Path $DatabasePackageSourcePath 'package-content-allowlist.json'
+      if (-not (Test-Path -LiteralPath $allowlistPath -PathType Leaf)) {
+        throw "Canonical package content allowlist not found at '$allowlistPath'."
+      }
+
+      try {
+        $allowlist = Get-Content -LiteralPath $allowlistPath -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+      } catch {
+        throw "Canonical package content allowlist is not valid JSON: $($_.Exception.Message)"
+      }
+
+      if ($allowlist.schemaVersion -ne 1) {
+        throw "Canonical package content allowlist schemaVersion must be 1."
+      }
+      if ($allowlist.packageId -cne $DatabasePackageId) {
+        throw "Canonical package content allowlist packageId '$($allowlist.packageId)' does not match '$DatabasePackageId'."
+      }
+      if ($allowlist.sourceVersion -cne [string]$versionObj.version) {
+        throw "Canonical package content allowlist sourceVersion '$($allowlist.sourceVersion)' does not match version.json '$($versionObj.version)'."
+      }
+
+      $allowlistEntries = @($allowlist.files)
+      if ($allowlistEntries.Count -eq 0) {
+        throw 'Canonical package content allowlist must contain at least one file.'
+      }
+
+      $duplicates = @($allowlistEntries | Group-Object { ([string]$_.path).ToUpperInvariant() } | Where-Object Count -gt 1)
+      if ($duplicates.Count -gt 0) {
+        throw "Canonical package content allowlist contains duplicate paths: $($duplicates.Name -join ', ')."
+      }
+
+      $declaredByPath = [System.Collections.Generic.Dictionary[string, object]]::new([System.StringComparer]::Ordinal)
+      foreach ($entry in $allowlistEntries) {
+        $relativePath = ([string]$entry.path).Replace('\', '/')
+        $kind = [string]$entry.kind
+        $declaredHash = ([string]$entry.sha256).ToUpperInvariant()
+
+        if ($relativePath -cne [string]$entry.path -or
+          $relativePath -notmatch '^(SQL|Repeatable|Data)/[^/\\]+$' -or
+          [System.IO.Path]::IsPathRooted($relativePath) -or
+          $relativePath.Split('/') -contains '..') {
+          throw "Canonical package content allowlist path '$($entry.path)' is not a canonical direct-child path."
+        }
+        $expectedKind = if ($relativePath.StartsWith('SQL/', [System.StringComparison]::Ordinal)) { 'migration' }
+        elseif ($relativePath.StartsWith('Repeatable/', [System.StringComparison]::Ordinal)) { 'repeatable' }
+        else { 'seed' }
+        $expectedExtension = if ($expectedKind -eq 'seed') { '.csv' } else { '.sql' }
+        if ($kind -cne $expectedKind -or [System.IO.Path]::GetExtension($relativePath) -cne $expectedExtension) {
+          throw "Canonical package content allowlist entry '$relativePath' has an invalid kind or extension."
+        }
+        if ($declaredHash -notmatch '^[A-F0-9]{64}$') {
+          throw "Canonical package content allowlist entry '$relativePath' has an invalid SHA-256 value."
+        }
+        $declaredByPath.Add($relativePath, $entry)
+      }
+
+      $discovered = [System.Collections.Generic.List[object]]::new()
+      @(
+        @{ Folder = $migrationsFolder; Prefix = 'SQL'; Kind = 'migration'; Extension = '.sql' },
+        @{ Folder = $repeatablesFolder; Prefix = 'Repeatable'; Kind = 'repeatable'; Extension = '.sql' },
+        @{ Folder = $seedsFolder; Prefix = 'Data'; Kind = 'seed'; Extension = '.csv' }
+      ) | ForEach-Object {
+        $sourceDefinition = $_
+        if (Test-Path -LiteralPath $sourceDefinition.Folder -PathType Container) {
+          Get-ChildItem -LiteralPath $sourceDefinition.Folder -File |
+            Where-Object Extension -eq $sourceDefinition.Extension |
+            Where-Object { $sourceDefinition.Kind -ne 'migration' -or $_.Name -notin $ExcludedMigrationFileName } |
+            ForEach-Object {
+              $discovered.Add([pscustomobject]@{
+                  Path   = "$($sourceDefinition.Prefix)/$($_.Name)"
+                  Kind   = $sourceDefinition.Kind
+                  Source = $_.FullName
+                })
+            }
+        }
+      }
+
+      if ($discovered.Count -ne $allowlistEntries.Count) {
+        throw "Canonical package content differs from the allowlist: discovered $($discovered.Count) files; declared $($allowlistEntries.Count)."
+      }
+      foreach ($file in $discovered) {
+        if (-not $declaredByPath.ContainsKey($file.Path)) {
+          throw "Canonical package content contains undeclared file '$($file.Path)'."
+        }
+        $declared = $declaredByPath[$file.Path]
+        if ([string]$declared.kind -cne $file.Kind) {
+          throw "Canonical package content kind mismatch for '$($file.Path)'."
+        }
+        $actualHash = (Get-FileHash -LiteralPath $file.Source -Algorithm SHA256).Hash.ToUpperInvariant()
+        if ([string]$declared.sha256 -cne $actualHash) {
+          throw "Canonical package content checksum mismatch for '$($file.Path)'."
+        }
+      }
+      foreach ($declaredPath in $declaredByPath.Keys) {
+        if (-not ($discovered.Path -ccontains $declaredPath)) {
+          throw "Canonical package content allowlist declares missing file '$declaredPath'."
+        }
+      }
+    }
+
     # ── 4. Staging folder ────────────────────────────────────────────────────
-    $stagingRoot = Join-Path $RepositoryRoot '_generated' 'database-packages'
-    $stagingFolder = Join-Path $stagingRoot "$DatabasePackageId.$PackageVersion"
+    if (-not $StagingRoot) {
+      $StagingRoot = Join-Path $RepositoryRoot '_generated' 'database-packages'
+    }
+    $stagingFolder = Join-Path $StagingRoot "$DatabasePackageId.$PackageVersion"
     $dbFolder = Join-Path $stagingFolder 'db'
 
     if ($PSCmdlet.ShouldProcess($stagingFolder, 'Create staging folder')) {
@@ -254,14 +369,10 @@ $locationToml
     else { 'data' }
 
     # ── 8b. Derive flywayTargetVersion from the highest versioned migration ───
-    # Unified version-numbering scheme (Sprint 0009 Task 9.12): the packaged
-    # change unit uses the SAME canonical dotted, zero-padded Flyway version
-    # scheme as the consolidated authoritative set in Database/Flyway/SQL
-    # (V00.0X.NNNNNN). The target version is therefore the maximum migration
-    # version actually present in db/migrations, compared with Flyway's
-    # part-by-part numeric semantics (each dot-separated component as an integer),
-    # NOT a hard-coded literal. Data-only packages (no versioned migration) keep
-    # '0' to signal "no schema target".
+    # The target is the maximum version actually present in db/migrations,
+    # compared with Flyway's part-by-part numeric semantics for dotted versions.
+    # This supports the active V3 V00010 scheme and retained generic/legacy
+    # layouts without a hard-coded target. Data-only packages keep '0'.
     $migrationVersions = foreach ($f in ($sortedFiles | Where-Object { $_['kind'] -eq 'migration' })) {
       $migName = Split-Path -Leaf $f['path']
       if ($migName -match '^[Vv](?<ver>[0-9]+(?:\.[0-9]+)*)__') { $Matches['ver'] }

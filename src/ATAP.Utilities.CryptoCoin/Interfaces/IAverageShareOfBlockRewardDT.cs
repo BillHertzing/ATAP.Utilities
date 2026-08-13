@@ -1,12 +1,12 @@
-using Itenso.TimePeriod;
+using ATAP.Utilities.DateTime.Interfaces;
 
 namespace ATAP.Utilities.CryptoCoin.Interfaces
 {
   public interface IAverageShareOfBlockRewardDT
   {
-    TimeBlock AverageBlockCreationSpan { get; }
+    TemporalDuration AverageBlockCreationSpan { get; }
     double BlockRewardPerBlock { get; set; }
-    TimeBlock Duration { get; set; }
+    TemporalDuration Duration { get; set; }
     IHashRate MinerHashRate { get; set; }
     IHashRate NetworkHashRate { get; set; }
   }

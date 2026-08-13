@@ -1,15 +1,16 @@
 <#
 .SYNOPSIS
-  Registers all five permanent powershellget-* ProGet feeds as PSResource repositories on the developer workstation.
+  Registers all five permanent powershellget-* ProGet feeds in both PowerShell repository stores.
 
 .DESCRIPTION
   Iterates the ProGetFeedCollection (from $global:settings) and registers every feed whose
-  FeedType is 'powershellget' as a trusted PSResource repository using Register-PSResourceRepository.
+  FeedType is 'powershellget' as a trusted repository in both PowerShellGet and PSResourceGet.
   This is a one-time, per-workstation operation. Sprint start / end do NOT call this cmdlet —
   the five permanent powershellget-* feeds (experimental, development, integration, qa, stable)
   never change between sprints.
 
-  If a repository with the same name is already registered it is skipped (idempotent).
+  If a repository with the same name is already registered, its URI and trust policy are
+  reconciled to the canonical settings. Matching registrations are left unchanged.
 
   Only the canonical lowercase feed names (powershellget-experimental, -development,
   -integration, -qa, -stable) are ever registered — they come straight from the feed
@@ -22,19 +23,15 @@
   PSGallery, and public connector repositories are never touched. Pruning honours -WhatIf
   and -Confirm through ShouldProcess, and can be disabled with -PruneObsolete:$false.
 
-  The equivalent PowerShellGet v2 (Register-PSRepository / Get-PSRepository) canonical
-  registration and obsolete-name removal are covered by the operator procedure in
-  _Planning/InformationForTheFuture/UTAT01-DPOM-Sprint0013-OperatorRunbook.md
-  ("PowerShellGet repository registration"); this function manages the v3 side only.
-
 .PARAMETER PruneObsolete
   When $true (default), unregisters obsolete legacy promotion-matrix PSResource repositories
   before registering the canonical feeds. Set to $false to register only, leaving any legacy
   registrations untouched.
 
 .OUTPUTS
-  [PSCustomObject] one per registered or pruned feed with FeedName, EndpointUri, and
-  RegistrationResult ('Registered' object, 'AlreadyRegistered', or 'Unregistered').
+  [PSCustomObject] one per registered or pruned feed with RepositoryKind, FeedName,
+  EndpointUri, and RegistrationResult ('Registered', 'Updated', 'AlreadyRegistered',
+  or 'Unregistered').
 
 .NOTES
   AI assisted using ./claude/Rules/Powershell.md as guidelines
@@ -81,6 +78,7 @@ function Register-ProGetFeedSet {
             Write-PSFMessage -Level Verbose -Message "Unregistering obsolete PSResource repository '$($obsolete.Name)'" -Tag 'Register-ProGetFeedSet', 'Trace'
             Unregister-PSResourceRepository -Name $obsolete.Name
             [PSCustomObject]@{
+              RepositoryKind      = 'PSResourceGet'
               FeedName           = $obsolete.Name
               EndpointUri        = $obsolete.Uri
               RegistrationResult = 'Unregistered'
@@ -94,8 +92,8 @@ function Register-ProGetFeedSet {
       }
     }
 
-    # Collect all existing PSResource repository names for idempotency check
-    $existingRepos = Get-PSResourceRepository -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name
+    # Preserve the full registration objects so URI and trust drift can be reconciled.
+    $existingRepos = @(Get-PSResourceRepository -ErrorAction SilentlyContinue)
 
     [string[]]$feedKeys = $feedCollection.Keys
 
@@ -118,12 +116,36 @@ function Register-ProGetFeedSet {
         throw $errorMessage
       }
 
-      if ($existingRepos -contains $feedName) {
-        Write-PSFMessage -Level Verbose -Message "PSResource repository '$feedName' is already registered — skipping." -Tag 'Register-ProGetFeedSet', 'Trace'
+      $existingRepo = $existingRepos | Where-Object Name -EQ $feedName | Select-Object -First 1
+      if ($null -ne $existingRepo) {
+        $existingUri = ([string]$existingRepo.Uri).TrimEnd('/')
+        $expectedUri = ([string]$endpointUri).TrimEnd('/')
+        if ($existingUri -eq $expectedUri -and [bool]$existingRepo.Trusted) {
+          Write-PSFMessage -Level Verbose -Message "PSResource repository '$feedName' already matches canonical settings." -Tag 'Register-ProGetFeedSet', 'Trace'
+          [PSCustomObject]@{
+            RepositoryKind      = 'PSResourceGet'
+            FeedName           = $feedName
+            EndpointUri        = $endpointUri
+            RegistrationResult = 'AlreadyRegistered'
+          }
+          continue
+        }
+
+        if ($PSCmdlet.ShouldProcess("PSResource repository '$feedName'", "Reconcile URI and trust policy to $endpointUri")) {
+          try {
+            Write-PSFMessage -Level Verbose -Message "Reconciling PSResource repository '$feedName' to '$endpointUri'." -Tag 'Register-ProGetFeedSet', 'Trace'
+            $result = Set-PSResourceRepository -Name $feedName -Uri $endpointUri -Trusted -PassThru
+          } catch {
+            $errorMessage = "Failed to reconcile PSResource repository '$feedName'. Exception: $($_.Exception.Message)"
+            Write-PSFMessage -Level Error -Message $errorMessage -Exception $_.Exception -Tag 'Register-ProGetFeedSet', 'Trace', 'Error'
+            throw $_
+          }
+        }
         [PSCustomObject]@{
+          RepositoryKind      = 'PSResourceGet'
           FeedName           = $feedName
           EndpointUri        = $endpointUri
-          RegistrationResult = 'AlreadyRegistered'
+          RegistrationResult = 'Updated'
         }
         continue
       }
@@ -134,12 +156,80 @@ function Register-ProGetFeedSet {
           $result = Register-PSResourceRepository -Name $feedName -Uri $endpointUri -Trusted -PassThru
           Write-PSFMessage -Level Verbose -Message "Successfully registered PSResource repository '$feedName'" -Tag 'Register-ProGetFeedSet', 'Trace'
           [PSCustomObject]@{
+            RepositoryKind      = 'PSResourceGet'
             FeedName           = $feedName
             EndpointUri        = $endpointUri
-            RegistrationResult = $result
+            RegistrationResult = 'Registered'
           }
         } catch {
           $errorMessage = "Failed to register PSResource repository '$feedName' at '$endpointUri'. Exception: $($_.Exception.Message)"
+          Write-PSFMessage -Level Error -Message $errorMessage -Exception $_.Exception -Tag 'Register-ProGetFeedSet', 'Trace', 'Error'
+          throw $_
+        }
+      }
+    }
+
+    # PowerShellGet and PSResourceGet persist separate repository stores. Reconcile the
+    # legacy store as well because Install-Module and the elevation broker still use it.
+    $existingPSRepositories = @(Get-PSRepository -ErrorAction SilentlyContinue)
+    for ($i = 0; $i -lt $feedKeys.Count; $i++) {
+      $feed = $feedCollection[$feedKeys[$i]]
+      if ($feed.FeedType -ne 'powershellget') {
+        continue
+      }
+
+      $feedName = $feed.FeedName
+      $endpointUri = $feed.Uri
+      if ([string]::IsNullOrWhiteSpace($endpointUri)) {
+        $errorMessage = "Feed '$feedName' has no Uri - cannot register as a PowerShellGet repository."
+        Write-PSFMessage -Level Error -Message $errorMessage -Tag 'Register-ProGetFeedSet', 'Trace', 'Error'
+        throw $errorMessage
+      }
+
+      $existingRepo = $existingPSRepositories | Where-Object Name -EQ $feedName | Select-Object -First 1
+      if ($null -ne $existingRepo) {
+        $sourceMatches = ([string]$existingRepo.SourceLocation).TrimEnd('/') -eq ([string]$endpointUri).TrimEnd('/')
+        $publishMatches = ([string]$existingRepo.PublishLocation).TrimEnd('/') -eq ([string]$endpointUri).TrimEnd('/')
+        $trusted = [string]$existingRepo.InstallationPolicy -eq 'Trusted'
+        if ($sourceMatches -and $publishMatches -and $trusted) {
+          [PSCustomObject]@{
+            RepositoryKind      = 'PowerShellGet'
+            FeedName           = $feedName
+            EndpointUri        = $endpointUri
+            RegistrationResult = 'AlreadyRegistered'
+          }
+          continue
+        }
+
+        if ($PSCmdlet.ShouldProcess("PowerShellGet repository '$feedName'", "Reconcile URI and trust policy to $endpointUri")) {
+          try {
+            Set-PSRepository -Name $feedName -SourceLocation $endpointUri -PublishLocation $endpointUri -InstallationPolicy Trusted
+          } catch {
+            $errorMessage = "Failed to reconcile PowerShellGet repository '$feedName'. Exception: $($_.Exception.Message)"
+            Write-PSFMessage -Level Error -Message $errorMessage -Exception $_.Exception -Tag 'Register-ProGetFeedSet', 'Trace', 'Error'
+            throw $_
+          }
+        }
+        [PSCustomObject]@{
+          RepositoryKind      = 'PowerShellGet'
+          FeedName           = $feedName
+          EndpointUri        = $endpointUri
+          RegistrationResult = 'Updated'
+        }
+        continue
+      }
+
+      if ($PSCmdlet.ShouldProcess("PowerShellGet repository '$feedName' at $endpointUri", 'Register-PSRepository')) {
+        try {
+          Register-PSRepository -Name $feedName -SourceLocation $endpointUri -PublishLocation $endpointUri -InstallationPolicy Trusted
+          [PSCustomObject]@{
+            RepositoryKind      = 'PowerShellGet'
+            FeedName           = $feedName
+            EndpointUri        = $endpointUri
+            RegistrationResult = 'Registered'
+          }
+        } catch {
+          $errorMessage = "Failed to register PowerShellGet repository '$feedName' at '$endpointUri'. Exception: $($_.Exception.Message)"
           Write-PSFMessage -Level Error -Message $errorMessage -Exception $_.Exception -Tag 'Register-ProGetFeedSet', 'Trace', 'Error'
           throw $_
         }

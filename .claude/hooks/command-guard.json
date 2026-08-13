@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "description": "Canonical command-guard policy for the PreToolUse-PwshGuard hook (Task 11.18.e/.f). The guard matches the tool command against each rule in order: the first matching 'deny' rule blocks the call, otherwise the first matching 'ask' rule prompts. A rule matches via either a named built-in 'match' (for logic a plain regex cannot express) or a case-insensitive regex 'pattern'. 'appliesToTool' scopes a rule to a tool_name ('*' = any). Since Task 11.18.f this file owns the nuanced deny/ask policy that previously lived in the per-agent settings 'deny'/'ask' lists: the 'deny' bucket is the robust-regex form of the catastrophic floor (recursive root delete, force-push to a protected branch, full vault export) plus the two -NoProfile / Verb-Noun-to-Bash seed bans; the 'ask' bucket holds the small set of commands whose worst outcome is unrecoverable and therefore always warrants a human confirmation. The per-agent settings 'deny' keeps only a coarse prefix-form floor as a fail-open backstop; settings 'allow' is widened and settings 'ask' is empty. NOTE (Sprint 0014): there is no 'allow' bucket in this schema - the guard only ever emits 'deny' or 'ask', and a command matching neither falls through to the per-agent settings 'allow' list (PowerShell(*) / Bash(*)), which auto-approves it. A hook 'ask' decision cannot be overridden by a settings 'allow' rule, so every rule kept here prompts on every matching call. Seven rules that fired on routine work were therefore removed from 'ask' by HITL decision and now fall through to allow: file-removal, clear-content, invoke-expression, process-and-power-control, permissions-ownership, registry-mutation, scheduled-task-mutation. Three were deliberately retained: disk-volume-boot (unbootable system), git-history-rewrite (discards uncommitted work), and secret-token-to-network (credential exfiltration). Restore a removed rule by re-adding it to 'ask' here and re-rendering; do not add an 'allow' array, as the guard would ignore it. To change deny/ask behavior, add a rule here with a 'pattern' regex and a 'reason' - no edit to the guard script is required. Use '{0}' in a reason to interpolate the matched first token.",
+  "description": "Canonical command-guard policy for the PreToolUse-PwshGuard hook (Task 11.18.e/.f). The guard matches the tool command against each rule in order: the first matching 'deny' rule blocks the call, otherwise the first matching 'ask' rule prompts. A rule matches via either a named built-in 'match' (for logic a plain regex cannot express) or a case-insensitive regex 'pattern'. 'appliesToTool' scopes a rule to a tool_name ('*' = any). Since Task 11.18.f this file owns the nuanced deny/ask policy that previously lived in the per-agent settings 'deny'/'ask' lists: the 'deny' bucket is the robust-regex form of the catastrophic floor (recursive root delete, force-push to a protected branch, full vault export) plus the two -NoProfile / Verb-Noun-to-Bash seed bans; the 'ask' bucket holds the destructive-but-recoverable commands that should prompt. The per-agent settings 'deny' keeps only a coarse prefix-form floor as a fail-open backstop; settings 'allow' is widened and settings 'ask' is empty. To change deny/ask behavior, add a rule here with a 'pattern' regex and a 'reason' - no edit to the guard script is required. Use '{0}' in a reason to interpolate the matched first token.",
   "deny": [
     {
       "id": "no-profile-ban",
@@ -35,10 +35,52 @@
   ],
   "ask": [
     {
+      "id": "file-removal",
+      "appliesToTool": "*",
+      "pattern": "(?i)(?:^|[\\s;&|(])(?:rm|rmdir|del|erase|Remove-Item|Remove-ItemProperty)(?=$|[\\s])",
+      "reason": "ASK: this deletes files or items. Confirm the target path is correct - especially with -Recurse / -Force or a wildcard - before proceeding."
+    },
+    {
+      "id": "clear-content",
+      "appliesToTool": "*",
+      "pattern": "(?i)(?:^|[\\s;&|(])Clear-(?:Content|Item|ItemProperty)(?=$|[\\s])",
+      "reason": "ASK: Clear-Content / Clear-Item / Clear-ItemProperty empties file or item content or properties. Confirm the target before proceeding."
+    },
+    {
+      "id": "invoke-expression",
+      "appliesToTool": "*",
+      "pattern": "(?i)(?:^|[\\s;&|(])(?:Invoke-Expression|iex)(?=$|[\\s])",
+      "reason": "ASK: Invoke-Expression / iex executes a constructed string as code. Confirm the expression is trusted before proceeding."
+    },
+    {
+      "id": "process-and-power-control",
+      "appliesToTool": "*",
+      "pattern": "(?i)(?:^|[\\s;&|(])(?:Start-Process|Stop-Process|Stop-Computer|Restart-Computer|taskkill|kill|shutdown)(?=$|[\\s])",
+      "reason": "ASK: this starts or stops a process, or restarts/shuts down the computer. Confirm intent before proceeding."
+    },
+    {
       "id": "disk-volume-boot",
       "appliesToTool": "*",
       "pattern": "(?i)(?:^|[\\s;&|(])(?:Format-Volume|diskpart|bcdedit)(?=$|[\\s])",
       "reason": "ASK: a disk, volume, or boot-configuration tool - these can destroy data or render the system unbootable. Confirm intent before proceeding."
+    },
+    {
+      "id": "permissions-ownership",
+      "appliesToTool": "*",
+      "pattern": "(?i)(?:^|[\\s;&|(])(?:takeown|icacls|chmod|chown)(?=$|[\\s])",
+      "reason": "ASK: this changes file ownership or permissions. Confirm the target and the ACL change before proceeding."
+    },
+    {
+      "id": "registry-mutation",
+      "appliesToTool": "*",
+      "pattern": "(?i)(?:^|[\\s;&|(])reg\\s+(?:add|delete)(?=$|[\\s])",
+      "reason": "ASK: this modifies the Windows registry. Confirm the key and value before proceeding."
+    },
+    {
+      "id": "scheduled-task-mutation",
+      "appliesToTool": "*",
+      "pattern": "(?i)(?:^|[\\s;&|(])schtasks\\s+/(?:create|delete|change|run|end)(?=$|[\\s])",
+      "reason": "ASK: this creates, modifies, or runs a scheduled task. Confirm intent before proceeding."
     },
     {
       "id": "git-history-rewrite",

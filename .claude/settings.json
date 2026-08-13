@@ -11,15 +11,10 @@
       "C:\\Program Files\\PowerShell\\Modules",
       "C:\\Program Files\\PowerShell\\7",
       "C:\\Dropbox\\whertzing\\GitHub\\SharedVSCode",
-      "C:\\Dropbox\\whertzing\\GitHub\\SharedVSCode-wt-62-Sprint-0014-work-items",
       "C:\\Dropbox\\whertzing\\GitHub\\_Planning",
-      "C:\\Dropbox\\whertzing\\GitHub\\_Planning-wt-33-Sprint-0014-work-items",
       "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities",
-      "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities-wt-132-Sprint-0014-work-items",
       "C:\\Dropbox\\whertzing\\GitHub\\ATAP.IAC",
-      "C:\\Dropbox\\whertzing\\GitHub\\ATAP.IAC-wt-21-Sprint-0014-work-items",
-      "C:\\Dropbox\\whertzing\\GitHub\\AceCommander",
-      "C:\\Dropbox\\whertzing\\GitHub\\AceCommander-wt-43-Sprint-0014-work-items"
+      "C:\\Dropbox\\whertzing\\GitHub\\AceCommander"
     ]
   },
   "hooks": {
@@ -29,15 +24,14 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities-wt-132-Sprint-0014-work-items\\.claude\\hooks\\PreToolUse-PwshGuard.ps1\""
+            "command": "pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"C:\\Dropbox\\whertzing\\GitHub\\SharedVSCode\\.claude\\hooks\\PreToolUse-PwshGuard.ps1\""
           }
         ]
       }
     ]
   },
   "env": {
-    "CLAUDE_CODE_SHELL": "pwsh",
-    "CLAUDE_CODE_USE_POWERSHELL_TOOL": "false"
+    "CLAUDE_CODE_SHELL": "pwsh"
   },
   "autoUpdatesChannel": "latest"
 }

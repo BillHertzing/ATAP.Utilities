@@ -16,7 +16,6 @@
 #   <repo>\.git                  -> index.lock writes from linked sprint worktrees
 [sandbox_workspace_write]
 writable_roots = [
-  "C:\\Dropbox\\whertzing\\GitHub\\_Planning-wt-33-Sprint-0014-work-items",
   "C:\\Users\\whertzing\\AppData\\Local\\PSResourceGet",
   "C:\\Dropbox\\whertzing\\GitHub\\SharedVSCode\\.git",
   "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities\\.git",

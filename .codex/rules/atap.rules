@@ -8,6 +8,10 @@ prefix_rule(pattern=["pwsh.exe", "-NoProfile"], decision="forbidden")
 prefix_rule(pattern=["powershell", "-NoProfile"], decision="forbidden")
 prefix_rule(pattern=["powershell.exe", "-NoProfile"], decision="forbidden")
 prefix_rule(pattern=["C:\\Program Files\\PowerShell\\7\\pwsh.exe", "-NoProfile"], decision="forbidden")
+# Task 14.60.a.01: both PowerShell binaries exist on utat022, so the full-path form
+# of the ban must cover Windows PowerShell 5.1 as well as pwsh 7. Without this rule an
+# absolute-path powershell.exe invocation bypassed the direct-prefix floor entirely.
+prefix_rule(pattern=["C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "-NoProfile"], decision="forbidden")
 
 # Task 11.18.g - command-guard catastrophic floor (prefix-representable subset).
 # Source: .ai/policy/command-guard.json deny[]. Codex prefix_rule is an ordered
@@ -15,10 +19,23 @@ prefix_rule(pattern=["C:\\Program Files\\PowerShell\\7\\pwsh.exe", "-NoProfile"]
 # Reordered/embedded forms (e.g. `git push origin main --force`, combined `rm -rfv /`)
 # and the entire recoverable "ask" bucket are NOT expressible here and remain a
 # documented capability gap (capabilities.json floor-prefix-only / lossy-regex-to-prefix).
+# Task 14.60.a.01 additionally records two deny[] rules as permanently
+# unrepresentable here, each with its own capabilities.json waiver:
+#   verb-noun-to-bash        - matches an open set of PowerShell Verb-Noun tokens.
+#   git push --force (bare)  - needs a negative lookahead; the bare prefix would also
+#                              block the allowed sprint-branch force push.
 prefix_rule(pattern=["rm", "-rf", "/"], decision="forbidden")
 prefix_rule(pattern=["rm", "-fr", "/"], decision="forbidden")
 prefix_rule(pattern=["sudo", "rm", "-rf", "/"], decision="forbidden")
 prefix_rule(pattern=["sudo", "rm", "-fr", "/"], decision="forbidden")
+# Task 14.60.a.01: the canonical rm-rf-root regex accepts an optional trailing '*'
+# ("/(?:\*)?"). The argv token "/*" is not the token "/", so the rules above did not
+# match `rm -rf /*` at all. These are the literal argv forms of that same floor, for a
+# caller that passes the glob through unexpanded.
+prefix_rule(pattern=["rm", "-rf", "/*"], decision="forbidden")
+prefix_rule(pattern=["rm", "-fr", "/*"], decision="forbidden")
+prefix_rule(pattern=["sudo", "rm", "-rf", "/*"], decision="forbidden")
+prefix_rule(pattern=["sudo", "rm", "-fr", "/*"], decision="forbidden")
 prefix_rule(pattern=["bw", "export"], decision="forbidden")
 prefix_rule(pattern=["git", "push", "--force", "origin", "main"], decision="forbidden")
 prefix_rule(pattern=["git", "push", "-f", "origin", "main"], decision="forbidden")

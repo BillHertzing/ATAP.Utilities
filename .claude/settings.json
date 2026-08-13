@@ -14,7 +14,7 @@
       "C:\\Dropbox\\whertzing\\GitHub\\_Planning",
       "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities",
       "C:\\Dropbox\\whertzing\\GitHub\\ATAP.IAC",
-      "C:\\Dropbox\\whertzing\\GitHub\\AceCommander"
+      "C:\\Dropbox\\whertzing\\GitHub\\Ace"
     ]
   },
   "hooks": {
@@ -31,7 +31,8 @@
     ]
   },
   "env": {
-    "CLAUDE_CODE_SHELL": "pwsh"
+    "CLAUDE_CODE_SHELL": "pwsh",
+    "CLAUDE_CODE_USE_POWERSHELL_TOOL": "false"
   },
   "autoUpdatesChannel": "latest"
 }

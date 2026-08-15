@@ -1,0 +1,137 @@
+@startuml
+title RPRRSBSI-V4 Core Entity Model
+skinparam linetype ortho
+skinparam roundcorner 5
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 10
+skinparam entity {
+  BackgroundColor #F0F4FF
+  BorderColor #3366CC
+  FontColor #1A1A2E
+}
+skinparam arrow {
+  Color #3366CC
+  FontSize 8
+}
+
+package "V3 retained identity backbone" #EEF6EE {
+  entity Philote {
+  * PhiloteId : uniqueidentifier <<PK>>
+}
+  entity PhiloteValidityPeriod {
+  * PhiloteValidityPeriodId : uniqueidentifier <<PK>>
+  --
+  PhiloteId : uniqueidentifier <<FK>>
+  ValidFromUtc : datetime2
+  ValidToUtc : datetime2 [NULL]
+}
+  entity Rule {
+  * RuleId : uniqueidentifier <<PK>>
+  --
+  PhiloteId : uniqueidentifier <<FK>>
+  RuleKindId : uniqueidentifier <<FK>>
+  RulePrimitiveId : uniqueidentifier <<FK>>
+  RuleCode : varchar(128)
+}
+  entity RuleSet {
+  * RuleSetId : uniqueidentifier <<PK>>
+  --
+  PhiloteId : uniqueidentifier <<FK>>
+  RuleSetCode : varchar(128)
+}
+  entity BuildSet {
+  * BuildSetId : uniqueidentifier <<PK>>
+  --
+  PhiloteId : uniqueidentifier <<FK>>
+  BuildSetCode : varchar(128)
+}
+  entity Instantiation {
+  * InstantiationId : uniqueidentifier <<PK>>
+  --
+  PhiloteId : uniqueidentifier <<FK>>
+  BuildSetId : uniqueidentifier <<FK>>
+}
+}
+
+package "V4 definition and overlay model" #FFF5E6 {
+  entity EntityType {
+  * EntityTypeId : uniqueidentifier <<PK>>
+  --
+  EntityTypeCode : varchar(128) <<UQ>>
+}
+  entity Entity {
+  * EntityId : uniqueidentifier <<PK>>
+  --
+  PhiloteId : uniqueidentifier <<FK>>
+  EntityTypeId : uniqueidentifier <<FK>>
+}
+  entity ExpertSystem {
+  * ExpertSystemId : uniqueidentifier <<PK>>
+  --
+  PhiloteId : uniqueidentifier <<FK>>
+  ExpertSystemCode : varchar(128) <<UQ>>
+}
+  entity ExpertSystemState {
+  * ExpertSystemStateId : uniqueidentifier <<PK>>
+  --
+  ExpertSystemId : uniqueidentifier <<FK>>
+  PhiloteValidityPeriodId : uniqueidentifier <<FK>>
+  Name : nvarchar(256)
+}
+  entity RuleVariant {
+  * RuleVariantId : uniqueidentifier <<PK>>
+  --
+  PhiloteId : uniqueidentifier <<FK>>
+  RuleId : uniqueidentifier <<FK>>
+  OwningRuleSetId : uniqueidentifier <<FK>>
+}
+  entity RuleVariantState {
+  * RuleVariantStateId : uniqueidentifier <<PK>>
+  --
+  RuleVariantId : uniqueidentifier <<FK>>
+  PhiloteValidityPeriodId : uniqueidentifier <<FK>>
+  ExecutorContractId : uniqueidentifier <<FK>>
+}
+  entity RuleSetRuleOccurrence {
+  * RuleSetRuleOccurrenceId : uniqueidentifier <<PK>>
+  --
+  RuleSetId : uniqueidentifier <<FK>>
+  RuleVariantId : uniqueidentifier <<FK>>
+  MembershipRoleId : uniqueidentifier <<FK>>
+  Ordinal : int
+}
+  entity BuildSetRuleSetOccurrence {
+  * BuildSetRuleSetOccurrenceId : uniqueidentifier <<PK>>
+  --
+  BuildSetId : uniqueidentifier <<FK>>
+  RuleSetId : uniqueidentifier <<FK>>
+  Ordinal : int
+}
+}
+
+Philote ||--o{ PhiloteValidityPeriod : has
+Philote ||--o| Entity : identifies
+EntityType ||--o{ Entity : classifies
+Philote ||--o| ExpertSystem : identifies
+ExpertSystem ||--o{ ExpertSystemState : has state
+PhiloteValidityPeriod ||--o{ ExpertSystemState : effective during
+Philote ||--o| RuleVariant : identifies
+Rule ||--o{ RuleVariant : basic rule
+RuleSet ||--o{ RuleVariant : owns
+RuleVariant ||--o{ RuleVariantState : has state
+PhiloteValidityPeriod ||--o{ RuleVariantState : effective during
+RuleSet ||--o{ RuleSetRuleOccurrence : contains
+RuleVariant ||--o{ RuleSetRuleOccurrence : selects
+BuildSet ||--o{ BuildSetRuleSetOccurrence : contains
+RuleSet ||--o{ BuildSetRuleSetOccurrence : layers
+BuildSet ||--o{ Instantiation : instantiates
+
+note right of BuildSetRuleSetOccurrence
+  D-2 RATIFIED:
+  higher Ordinal = higher precedence.
+end note
+note bottom of RuleVariant
+  Variants reuse a basic RuleId.
+  An overlay does not copy the basic rule.
+end note
+@enduml

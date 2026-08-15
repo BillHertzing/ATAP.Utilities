@@ -1,0 +1,42 @@
+@startuml
+title RPRRSBSI-V4 Rule Overlay Resolution
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 11
+skinparam activity {
+  BackgroundColor #F0F4FF
+  BorderColor #3366CC
+  DiamondBackgroundColor #FFF2CC
+  DiamondBorderColor #B8860B
+}
+start
+:Choose BuildSet and as-of UTC instant;
+:Select active BuildSetRuleSetOccurrence rows;
+:Order RuleSets by Ordinal DESC;
+note right
+  D-2: higher ordinal wins.
+  A duplicate ordinal is invalid within a BuildSet.
+end note
+:Select active RuleSetRuleOccurrence rows
+within each RuleSet;
+repeat
+  :Take next occurrence in precedence order;
+  if (First occurrence for basic RuleId?) then (yes)
+    if (Membership role?) then (Suppress)
+      :Mark RuleId suppressed;
+    elseif (Override) then
+      :Require a lower-precedence candidate;
+      :Select this RuleVariant;
+    else (Add)
+      :Require no lower-precedence collision;
+      :Select this RuleVariant;
+    endif
+  else (no)
+    :Retain winner; record shadowed candidate;
+  endif
+repeat while (More occurrences?) is (yes)
+->no;
+:Validate calculation dependency graph;
+:Emit deterministic effective rule set
+and resolution provenance;
+stop
+@enduml

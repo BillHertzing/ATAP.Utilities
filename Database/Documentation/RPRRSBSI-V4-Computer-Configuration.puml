@@ -1,0 +1,64 @@
+@startuml
+title RPRRSBSI-V4 Computer Configuration (Mechanized Engineering)
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 10
+skinparam component {
+  BackgroundColor #F0F4FF
+  BorderColor #3366CC
+}
+left to right direction
+
+package "Normalized inputs" #FFF5E6 {
+  component Budget
+  component "Chassis / form factor" as Chassis
+  component "Processor / performance" as CPU
+  component "Memory capacity / speed" as Memory
+  component Storage
+  component Connectivity
+  component "Power / thermal" as Power
+  component "Workloads: local LLM, testing" as Workload
+}
+package "Deterministic calculations" #EEF6EE {
+  component Compatibility
+  component Cost
+  component "Power and thermal" as Thermal
+  component "Memory adequacy" as Adequacy
+  component "Workload scores" as Scores
+  component Violations
+}
+package "Plan-only outputs" #EEF2FF {
+  component "Bill of materials" as BOM
+  component "Cost breakdown" as CostBreakdown
+  component "Compatibility findings" as Findings
+  component "Workload summary" as Summary
+  component "Purchasing list" as Purchasing
+  component "Unresolved choices" as Choices
+}
+
+Budget --> Cost
+Chassis --> Compatibility
+CPU --> Compatibility
+Memory --> Compatibility
+Storage --> Compatibility
+Connectivity --> Compatibility
+Power --> Thermal
+CPU --> Thermal
+Memory --> Adequacy
+Workload --> Adequacy
+Workload --> Scores
+Compatibility --> Violations
+Cost --> Violations
+Thermal --> Violations
+Adequacy --> Violations
+Compatibility --> BOM
+Cost --> CostBreakdown
+Violations --> Findings
+Scores --> Summary
+BOM --> Purchasing
+Violations --> Choices
+
+note bottom of Purchasing
+  Sprint scope ends at an inspectable plan.
+  No purchase, provisioning, or Ansible execution.
+end note
+@enduml

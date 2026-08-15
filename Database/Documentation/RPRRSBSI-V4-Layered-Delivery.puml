@@ -1,0 +1,36 @@
+@startuml
+title RPRRSBSI-V4 Layered Specification and Quality Promotion
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 10
+skinparam activity {
+  BackgroundColor #F0F4FF
+  BorderColor #3366CC
+}
+start
+:Layer 0 - characterize and freeze V3 baseline;
+:Layer 1 - catalogs, Entity, ExpertSystem;
+:Layer 2 - variants, occurrences, overlays;
+:Layer 3 - typed I/O, workflow and calculation graphs;
+:Layer 4 - Tags expert system and reference seeds;
+:Layer 5 - computer-configuration expert system;
+:Layer 6 - ACE edit sessions and compound instantiation;
+:Layer 7 - manifestation plan, approval, run contract;
+:Layer 8 - backup, cloud, retention hardening;
+
+partition "For every layer" {
+  :Add forward-only Flyway migration;
+  :Add deterministic CSV seeds and loader checks;
+  :Run static and fresh-database tests;
+  :Upgrade a V3-shaped database and run negative tests;
+  :Run semantic/as-of tests;
+}
+
+partition "Quality promotion" {
+  :expwhertzing experimental instance;
+  :Development;
+  :Integration;
+  :QA;
+  :Stable / Production after named HITL approval;
+}
+stop
+@enduml

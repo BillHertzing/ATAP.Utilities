@@ -1,0 +1,48 @@
+@startuml
+title RPRRSBSI-V4 Input Workflow and Calculation Dependency Graphs
+skinparam linetype ortho
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 10
+skinparam component {
+  BackgroundColor #F0F4FF
+  BorderColor #3366CC
+}
+
+package "Input workflow graph: what to ask next" #FFF5E6 {
+  component "InputWorkflowNode\n(question/group/branch)" as Node
+  component "InputWorkflowEdge" as Edge
+  component "InputWorkflowCondition" as Condition
+  component "RuleInputDefinition" as InputDefinition
+  Node --> Edge
+  Edge --> Node : next
+  Edge --> Condition : guarded by
+  Node --> InputDefinition : collects
+}
+
+package "Calculation graph: what to recompute" #EEF6EE {
+  component "RuleVariant" as Variant
+  component "RuleDependencyEdge" as Dependency
+  component "RuleOutputDefinition" as Output
+  component "RuleOutputInputBinding" as Binding
+  component "DirtyWorkItem" as Dirty
+  component "ExecutionAttempt" as Attempt
+  component "ExecutionResult" as Result
+  Variant --> Output : declares
+  Variant --> Dependency : depends on
+  Dependency --> Variant : prerequisite
+  Output --> Binding : supplies
+  Binding --> InputDefinition : maps into
+  Dependency --> Dirty : invalidation creates
+  Dirty --> Attempt : schedules
+  Attempt --> Result : produces
+}
+
+note bottom of Condition
+  Workflow cycles are permitted only when explicitly
+  bounded and validated. Calculation cycles are rejected.
+end note
+note bottom of Dirty
+  A changed input dirties the smallest reachable
+  calculation subgraph, not the entire expert system.
+end note
+@enduml

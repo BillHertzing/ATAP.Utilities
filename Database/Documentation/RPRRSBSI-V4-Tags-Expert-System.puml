@@ -1,0 +1,91 @@
+@startuml
+title RPRRSBSI-V4 Tags Expert System
+skinparam linetype ortho
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 10
+skinparam entity {
+  BackgroundColor #F0F4FF
+  BorderColor #3366CC
+}
+
+entity TagNamespace {
+  * TagNamespaceId : uniqueidentifier <<PK>>
+  --
+  NamespaceCode : varchar(128) <<UQ>>
+}
+entity Tag {
+  * TagId : uniqueidentifier <<PK>>
+  --
+  PhiloteId : uniqueidentifier <<FK>>
+  TagNamespaceId : uniqueidentifier <<FK>>
+  TagCode : varchar(128)
+}
+entity TagState {
+  * TagStateId : uniqueidentifier <<PK>>
+  --
+  TagId : uniqueidentifier <<FK>>
+  PhiloteValidityPeriodId : uniqueidentifier <<FK>>
+  DisplayName : nvarchar(256)
+  IsDeprecated : bit
+}
+entity TagCodeRegistry {
+  * TagCodeRegistryId : uniqueidentifier <<PK>>
+  --
+  TagId : uniqueidentifier <<FK>>
+  CodeSystem : varchar(128)
+  ExternalCode : varchar(256)
+}
+entity TagRelationRole {
+  * TagRelationRoleId : uniqueidentifier <<PK>>
+  --
+  RoleCode : varchar(64) <<UQ>>
+  IsAcyclic : bit
+}
+entity TagRelation {
+  * TagRelationId : uniqueidentifier <<PK>>
+  --
+  FromTagId : uniqueidentifier <<FK>>
+  ToTagId : uniqueidentifier <<FK>>
+  TagRelationRoleId : uniqueidentifier <<FK>>
+  Weight : decimal(9,8)
+}
+entity TagAssignment {
+  * TagAssignmentId : uniqueidentifier <<PK>>
+  --
+  TagId : uniqueidentifier <<FK>>
+  EntityId : uniqueidentifier <<FK>>
+  ProvenanceEntityId : uniqueidentifier <<FK>>
+}
+entity Entity {
+  * EntityId : uniqueidentifier <<PK>>
+  --
+  EntityTypeId : uniqueidentifier <<FK>>
+}
+entity "Tags expert system" as Expert <<service>>
+entity "Validated database-change plan" as Plan <<output>>
+
+TagNamespace ||--o{ Tag : owns
+Tag ||--o{ TagState : has state
+Tag ||--o{ TagCodeRegistry : maps code
+TagRelationRole ||--o{ TagRelation : classifies
+Tag ||--o{ TagRelation : source
+Tag ||--o{ TagRelation : target
+Tag ||--o{ TagAssignment : assigned
+Entity ||--o{ TagAssignment : receives
+TagAssignment --> Entity : provenance
+Expert --> Tag
+Expert --> TagRelation
+Expert --> TagAssignment
+Expert --> Plan : emits first
+
+note right of TagRelation
+  Directed, weighted edge.
+  0 < Weight <= 1.
+  broader/narrower subgraphs are acyclic.
+  related-to cycles are permitted.
+end note
+note bottom of TagAssignment
+  Tags describe and classify.
+  They never grant authorization.
+end note
+@enduml

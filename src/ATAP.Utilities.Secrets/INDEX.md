@@ -4,3 +4,4 @@
 
 - [ReadMe](ReadMe.md)
 - [Documentation](Documentation/)
+- [Bitwarden Secrets Manager](BitwardenSecretsManager/INDEX.md)

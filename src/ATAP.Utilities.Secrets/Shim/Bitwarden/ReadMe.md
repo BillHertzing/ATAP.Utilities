@@ -1,80 +1,29 @@
-# ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden
+# Obsolete Bitwarden Password Manager compatibility
 
-## Purpose
+## Status
 
-Provides a Bitwarden-backed implementation of the ATAP secrets shim pattern.
-This assembly bridges the Bitwarden CLI (`bw`) into the ATAP secrets plugin system and into
-`Microsoft.Extensions.Configuration` via a custom `IConfigurationProvider`.
+This package is quarantined compatibility code for the Bitwarden Password
+Manager CLI. Its public APIs emit `ATAPSECRETS001` and target removal in release
+1.0.0. New application code must use
+`ATAP.Utilities.Secrets.BitwardenSecretsManager` and the `bws` Project API.
 
-Key types:
+This package is not referenced by the provider-neutral
+`ATAP.Utilities.Secrets` facade, is not a default provider, and must never be an
+automatic fallback. It is retained only to preserve source and binary shape for
+explicitly named legacy consumers during migration.
 
-| Type                             | Description                                                                                       |
-| -------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `BitwardenSecretsShim`           | Concrete `SecretsConfigurableAbstract` that invokes `bw` to retrieve secrets by name              |
-| `BitwardenSecretsOptions`        | Configuration options — session environment variable name, default field name, CLI path, timeouts |
-| `BitwardenConfigurationProvider` | `IConfigurationProvider` that exposes Bitwarden vault entries as configuration key/value pairs    |
-| `BitwardenConfigurationSource`   | `IConfigurationSource` registered with `IConfigurationBuilder`                                    |
-| `ConfigurationBuilderExtensions` | Extension method `AddBitwarden(…)` for `IConfigurationBuilder`                                    |
-| `ServiceCollectionExtensions`    | Extension method `AddBitwardenSecrets(…)` for `IServiceCollection`                                |
+## Legacy behavior
 
-## Architecture
+The implementation uses `bw`, `BW_SESSION`, and `--session` with Password
+Manager item-search semantics. Those mechanics are incompatible with the
+application access contract. The legacy configuration provider also uses a
+synchronous `Load()` bridge and therefore must not be copied into new code.
 
-```
-IConfigurationBuilder
-   └─ AddBitwarden()
-         └─ BitwardenConfigurationSource
-               └─ BitwardenConfigurationProvider
-                     └─ BitwardenSecretsShim
-                           └─ bw CLI (spawned process)
-```
+Applications resolve individual secrets from one application-owned vault
+grouping. Bitwarden expresses that grouping as a Project; other vault products
+may use a different provider-specific grouping mechanism. There are no secret
+sets.
 
-`BitwardenSecretsShim` derives from `SecretsConfigurableAbstract` (defined in
-`ATAP.Utilities.Secrets`) and implements secret retrieval by spawning the Bitwarden CLI
-with the session token read from the environment variable named in `BitwardenSecretsOptions.SessionEnvVarName`.
-`IsAvailable()` returns `false` when the session token variable is absent, allowing the host
-to skip Bitwarden silently in environments where it is not installed.
-
-For DI consumers that prefer `ISecretsAbstract` over the Configuration provider, register
-`BitwardenSecretsShim` directly via `ServiceCollectionExtensions.AddBitwardenSecrets()`.
-
-## Prerequisites
-
-- .NET 10.0 or later
-- Bitwarden CLI (`bw`) installed and on `PATH`
-- A valid Bitwarden session token in the environment variable specified by `BitwardenSecretsOptions.SessionEnvVarName` (default: `BW_SESSION`)
-- `ATAP.Utilities.Secrets` (for `SecretsConfigurableAbstract` and `ISecretsAbstract`)
-
-## Setup
-
-Add the NuGet reference:
-
-```xml
-<PackageReference Include="ATAP.Utilities.Secrets.Shim.Bitwarden" Version="*" />
-```
-
-**Configuration provider** (reads vault entries into `IConfiguration`):
-
-```csharp
-builder.Configuration.AddBitwarden(options =>
-{
-    options.SessionEnvVarName = "BW_SESSION";
-    options.DefaultFieldName  = "password";
-});
-```
-
-**DI / `ISecretsAbstract`** (inject secrets service into application code):
-
-```csharp
-services.AddBitwardenSecrets();
-// Then inject ISecretsAbstract where needed.
-```
-
-## Known Issues
-
-- Session tokens are short-lived; a new token must be obtained (`bw unlock`) before each
-  agent or CI run.
-- Spawning the CLI is time-intensive for bulk secret lookups. Batch requests where possible.
-
-## Release Notes
-
-<!-- Document release history and changes -->
+See the [Bitwarden Secrets Manager provider guidance](../../BitwardenSecretsManager/ReadMe.md)
+for the supported asynchronous provider, Windows identity binding, DPAPI
+envelope, process boundary, and failure behavior.

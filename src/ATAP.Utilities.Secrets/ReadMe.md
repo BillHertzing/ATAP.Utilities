@@ -8,3 +8,4 @@ This folder contains source code and assets for ATAP.Utilities.Secrets.
 
 - [INDEX.md](INDEX.md)
 - [Documentation](Documentation/)
+- [Bitwarden Secrets Manager provider](BitwardenSecretsManager/ReadMe.md)

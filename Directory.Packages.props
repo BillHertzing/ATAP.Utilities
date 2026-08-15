@@ -18,6 +18,8 @@
     <PackageVersion Include="System.Drawing.Common" Version="8.0.2" />
     <!-- System.Security.Cryptography.Xml (4.7.0 has moderate vulnerability GHSA-vh55-786g-wjwj, 8.0.1 has high severity GHSA-37gx-xxp4-5rgx and GHSA-w3x6-4m5h-cxqf) -->
     <PackageVersion Include="System.Security.Cryptography.Xml" Version="8.0.2" />
+    <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="9.0.0" />
+    <PackageVersion Include="System.IO.FileSystem.AccessControl" Version="5.0.0" />
   </ItemGroup>
   <ItemGroup Label="Core Libraries">
     <PackageVersion Include="DotNet.Contracts" Version="1.10.20606.1" />

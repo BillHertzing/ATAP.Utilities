@@ -8,7 +8,7 @@
 #   Integration: functional checks — invoke dotnet msbuild -getProperty against
 #                a single representative project for each NBGV prerelease-label
 #                variant and verify the resulting TargetProGetFeed and
-#                CentralPackageVersionOverridesEnabled values.
+#                CentralPackageVersionOverrideEnabled values.
 #
 # AI assisted using pesterTest.instructions.md as guidelines
 
@@ -19,7 +19,7 @@ BeforeAll {
 
   # A simple StringConstants project — minimal dependencies, fast to evaluate.
   $script:probeProject = Join-Path $script:repoRoot `
-    'src\ATAP.Console.Console01.StringConstants\ATAP.Console.Console01.StringConstants.csproj'
+    'src\ATAP.Utilities.RRSBS.Contracts\ATAP.Utilities.RRSBS.Contracts.csproj'
 
   # Helper: invoke dotnet msbuild -getProperty and return the trimmed stdout value.
   function script:Get-MSBuildProperty {
@@ -36,6 +36,27 @@ BeforeAll {
     # The property value is the last non-empty, non-error line.
     $valueLines = $result | Where-Object { $_ -notmatch '^MSBUILD\s*:' -and $_.Trim() -ne '' }
     return ($valueLines | Select-Object -Last 1).Trim()
+  }
+
+  $script:stableProbeProject = Join-Path $script:repoRoot `
+    'src\ATAP.Utilities.RRSBS.Contracts\ATAP.Utilities.RRSBS.Contracts.csproj'
+
+  function script:Invoke-StableBuildRefProbe {
+    param(
+      [Parameter(Mandatory)][string] $BuildingRef
+    )
+
+    $output = & dotnet build $script:stableProbeProject `
+      '-c' 'Release' `
+      '--no-restore' `
+      "-p:NBGV_BuildingRef=$BuildingRef" `
+      '-p:PackageLifeCycleStage=' `
+      '-nologo' 2>&1
+
+    return [pscustomobject]@{
+      ExitCode = $LASTEXITCODE
+      Output = ($output -join [Environment]::NewLine)
+    }
   }
 }
 
@@ -79,12 +100,18 @@ Describe 'Directory.Build.props — structural checks (task 1.1-1 through 1.1-4)
       $content = Get-Content $script:propsFile -Raw
       $content | Should -Match 'ATAP5TIER001'
     }
+
+    It 'recognizes main, release, and numbered Sprint worktree refs as stable-capable' {
+      $content = Get-Content $script:propsFile -Raw
+      $content | Should -Match 'IsStablePackageBuildRef'
+      $content | Should -Match ([regex]::Escape('main|release/.+|[0-9]+-Sprint-[0-9]{4}-work-items'))
+    }
   }
 
-  Context '1.1-4: CentralPackageVersionOverridesEnabled is declared false' {
-    It 'Directory.Build.props sets CentralPackageVersionOverridesEnabled to false' {
+  Context '1.1-4: CentralPackageVersionOverrideEnabled is declared false' {
+    It 'Directory.Build.props sets CentralPackageVersionOverrideEnabled to false' {
       $content = Get-Content $script:propsFile -Raw
-      $content | Should -Match ([regex]::Escape('<CentralPackageVersionOverridesEnabled>false</CentralPackageVersionOverridesEnabled>'))
+      $content | Should -Match ([regex]::Escape('<CentralPackageVersionOverrideEnabled>false</CentralPackageVersionOverrideEnabled>'))
     }
   }
 }
@@ -114,7 +141,7 @@ Describe 'Directory.Build.props — TargetProGetFeed evaluation (task 1.1-2, Int
   }
 }
 
-Describe 'Directory.Build.props — CentralPackageVersionOverridesEnabled evaluation (task 1.1-4, Integration)' -Tag 'Integration', 'PromotedModuleHostSensitive' {
+Describe 'Directory.Build.props — CentralPackageVersionOverrideEnabled evaluation (task 1.1-4, Integration)' -Tag 'Integration', 'PromotedModuleHostSensitive' {
 
   BeforeAll {
     if (-not (Test-Path $script:probeProject)) {
@@ -122,9 +149,43 @@ Describe 'Directory.Build.props — CentralPackageVersionOverridesEnabled evalua
     }
   }
 
-  It 'CentralPackageVersionOverridesEnabled evaluates to false for a representative project' {
+  It 'CentralPackageVersionOverrideEnabled evaluates to false for a representative project' {
     $actual = Get-MSBuildProperty -ProjectPath $script:probeProject `
-      -PropertyName 'CentralPackageVersionOverridesEnabled'
+      -PropertyName 'CentralPackageVersionOverrideEnabled'
     $actual | Should -BeExactly 'false'
+  }
+}
+
+Describe 'Directory.Build.props — stable-capable ref validation (task 1.1-3, Integration)' -Tag 'Integration', 'PromotedModuleHostSensitive' {
+
+  BeforeAll {
+    if (-not (Test-Path $script:stableProbeProject)) {
+      throw "Stable probe project not found: $script:stableProbeProject"
+    }
+
+    $restoreOutput = & dotnet restore $script:stableProbeProject '-nologo' 2>&1
+    if ($LASTEXITCODE -ne 0) {
+      throw "Stable probe restore failed:$([Environment]::NewLine)$($restoreOutput -join [Environment]::NewLine)"
+    }
+  }
+
+  $allowedRefs = @(
+    @{ BuildingRef = 'refs/heads/main' }
+    @{ BuildingRef = 'refs/heads/release/0.1.0' }
+    @{ BuildingRef = 'refs/heads/137-Sprint-0015-work-items' }
+    @{ BuildingRef = 'refs/heads/42-sprint-0009-work-items' }
+  )
+
+  It "accepts stable/empty lifecycle on '<BuildingRef>'" -TestCases $allowedRefs {
+    param($BuildingRef)
+    $result = Invoke-StableBuildRefProbe -BuildingRef $BuildingRef
+    $result.ExitCode | Should -Be 0 -Because $result.Output
+    $result.Output | Should -Not -Match 'ATAP5TIER001'
+  }
+
+  It 'rejects stable/empty lifecycle on an arbitrary feature branch' {
+    $result = Invoke-StableBuildRefProbe -BuildingRef 'refs/heads/feature/unapproved-stable-build'
+    $result.ExitCode | Should -Not -Be 0
+    $result.Output | Should -Match 'ATAP5TIER001'
   }
 }

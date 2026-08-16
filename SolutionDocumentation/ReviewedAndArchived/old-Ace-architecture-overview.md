@@ -1,8 +1,8 @@
 # Architecture Overview — ACE / AceCommander
 
 > **Archived 2026-07-06** (Sprint 0012 Task 12.45.e). Historical architecture overview of the
-> pre-modernization "Ace" application; superseded by `AceCommander-architecture-overview.md`
-> (this folder's parent) and the AceCommander Modernization Plan. Moved from
+> pre-modernization "Ace" application; superseded by Ace
+> `SolutionDocumentation/architecture-overview.md` and the AceCommander Modernization Plan. Moved from
 > `_Planning/Repositories/Ace/old Ace architecture-overview.md`.
 
 > **Status:** Current as of March 2026.

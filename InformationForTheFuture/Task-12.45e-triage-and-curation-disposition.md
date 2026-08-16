@@ -7,10 +7,10 @@ Worktrees edited: `_Planning-wt-26`, `ATAP.Utilities-wt-120`.
 
 | File | Disposition |
 | --- | --- |
-| `Repositories\AceCommander\AceCommander architecture-overview.md` | PARKED → ATAP.Utilities `SolutionDocumentation\AceCommander-architecture-overview.md` (eventual-home-AceCommander banner); `git rm` in _Planning |
-| `AceCommander-Modernization-Plan.md` | PARKED → `SolutionDocumentation\AceCommander-Modernization-Plan.md` (same banner); `git rm` |
+| `Repositories\AceCommander\AceCommander architecture-overview.md` | RELOCATED → Ace `SolutionDocumentation\architecture-overview.md` by Sprint 0015 Task 15.4 / SC-0245; originally parked in ATAP.Utilities after `git rm` in _Planning |
+| `AceCommander-Modernization-Plan.md` | RELOCATED → Ace `SolutionDocumentation\AceCommander-Modernization-Plan.md` by Sprint 0015 Task 15.4 / SC-0245; originally parked in ATAP.Utilities after `git rm` |
 | `Repositories\Ace\old Ace architecture-overview.md` | ARCHIVED → `SolutionDocumentation\ReviewedAndArchived\old-Ace-architecture-overview.md` (historical pre-modernization overview); `git rm` |
-| (3.a tracking) | **SC-0245** recorded via `Add-ScopeCreepIdea` — relocate the three parked AceCommander docs when an AceCommander sprint worktree exists. Note: the cmdlet threw a non-fatal `Read-Host`/`$rawTags` error in the non-interactive shell because `-Tags` was omitted; the inbox entry was still written (verify Tags field when triaging). |
+| (3.a tracking) | **SC-0245 completed by Sprint 0015 Task 15.4** — the three parked AceCommander documents were relocated to Ace `SolutionDocumentation/`. The original capture cmdlet threw a non-fatal `Read-Host`/`$rawTags` error in the non-interactive shell because `-Tags` was omitted; the inbox entry was still written. |
 | `Repositories\ATAP.Utilities\ATAP.Utilities architecture-overview.md` | DELETED (`git rm`) — byte-identical (`diff -q`) to `SolutionDocumentation\architecture-overview.md`; no merge needed (3.b) |
 | `AllDBDocuments-052526_v2.md` | ARCHIVED → `_Planning\Archived\` (point-in-time 2026-05-25 DB-doc catalog) (3.c) |
 | `SharedVSCode-Reconciliation-Worksheet.md` | ARCHIVED → `_Planning\Archived\` (completed Sprint 0010 reconciliation); link in `SprintEnd-SprintStart-ManualReview-Checklist.md` retargeted (3.c) |

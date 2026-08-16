@@ -12,9 +12,9 @@ Entity Framework Core abstractions, Flyway migration helpers
 
 | Source File    | Last Modified            |
 | -------------- | ------------------------ |
-| main-instructions.md | 2026-08-09 18:26:31 |
-| ai-local.md | 2026-08-01 13:56:58 |
-| CLAUDE.md (combined) | 2026-08-09 18:33:12 |
+| main-instructions.md | 2026-08-13 12:10:12 |
+| ai-local.md | 2026-08-13 12:27:38 |
+| CLAUDE.md (combined) | 2026-08-13 12:27:47 |
 
 ---
 
@@ -59,7 +59,7 @@ which exists for the duration of a work sprint. Sprint worktrees' root paths mat
 | Repository     | Root Path                                  | Role                                                                 |
 | -------------- | ------------------------------------------ | -------------------------------------------------------------------- |
 | \_Planning     | C:/Dropbox/whertzing/github/\_Planning     | Planning information for this shared workspace                       |
-| AceCommander   | C:/Dropbox/whertzing/github/AceCommander   | Multi-tenant .NET server, Blazor WASM UI, ETW streaming              |
+| Ace            | C:/Dropbox/whertzing/github/Ace            | Multi-tenant .NET server, Blazor WASM UI, ETW streaming              |
 |                |                                            | on Windows platfor, Also Android and iOS apps                        |
 | ATAP.Utilities | C:/Dropbox/whertzing/github/ATAP.Utilities | Reusable C# library, schema framework, DB/API utilities              |
 | SharedVSCode   | C:/Dropbox/whertzing/github/SharedVSCode   | Shared VS Code config, source of AiAgent configuration surfaces      |
@@ -82,7 +82,7 @@ Sprint (`${SPRINT_WORKTREE_PATH_*}`) placeholders — the active sprint branch w
 - `${SPRINT_WORKTREE_PATH_ATAP_UTILITIES}` — ATAP.Utilities sprint worktree path.
 - `${SPRINT_WORKTREE_PATH_ATAP_IAC}` — ATAP.IAC (Infrastructure-as-Code) sprint worktree path.
 - `${SPRINT_WORKTREE_PATH_ATAP_PLANNING}` — _Planning sprint worktree path.
-- `${SPRINT_WORKTREE_PATH_ACECOMMANDER}` — AceCommander sprint worktree path.
+- `${SPRINT_WORKTREE_PATH_ACECOMMANDER}` — Ace repository sprint worktree path.
 - `${SPRINT_WORKTREE_PATH_EPHEMERAL}` — Abstract sprint worktree path (used in examples not tied to a specific repository).
 
 Stable (`${STABLE_WORKTREE_PATH_*}`) placeholders — the permanent stable-branch worktree for a

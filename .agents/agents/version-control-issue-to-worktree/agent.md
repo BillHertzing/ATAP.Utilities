@@ -140,7 +140,7 @@ junctions for all other repos and must not have junctions itself.
 
 - **Sprint worktrees** (branch name includes `sprint-NNNN`): junctions must point to the
   active SharedVSCode **sprint** worktree (for example, the current
-  `C:\Dropbox\whertzing\GitHub\SharedVSCode` target),
+  `C:\Dropbox\whertzing\GitHub\SharedVSCode-wt-64-Sprint-0015-work-items` target),
   not the main worktree. Use `-DevSourceRepoPath` for this.
 - **Normal issue worktrees**: junctions point to the SharedVSCode **main** worktree
   (default behavior — just copy targets from the source repo).

@@ -2,15 +2,19 @@
 
 ## Status
 
-This package is quarantined compatibility code for the Bitwarden Password
-Manager CLI. Its public APIs emit `ATAPSECRETS001` and target removal in release
-1.0.0. New application code must use
+This package is obsolete, non-default, quarantined compatibility code for the
+Bitwarden Password Manager CLI. Its public APIs emit `ATAPSECRETS001` and
+target removal in release 1.0.0. New application code must use
 `ATAP.Utilities.Secrets.BitwardenSecretsManager` and the `bws` Project API.
 
 This package is not referenced by the provider-neutral
 `ATAP.Utilities.Secrets` facade, is not a default provider, and must never be an
 automatic fallback. It is retained only to preserve source and binary shape for
 explicitly named legacy consumers during migration.
+
+Application hosts must not invoke this package, `bw`, `BW_SESSION`, or
+`--session`. A supported-provider failure must remain typed and fail closed; it
+must not switch to this compatibility path.
 
 ## Legacy behavior
 
@@ -27,3 +31,7 @@ sets.
 See the [Bitwarden Secrets Manager provider guidance](../../BitwardenSecretsManager/ReadMe.md)
 for the supported asynchronous provider, Windows identity binding, DPAPI
 envelope, process boundary, and failure behavior.
+
+Migration and rollback must follow the
+[operator-controlled runbook](../../BitwardenSecretsManager/MigrationRollbackRunbook.md);
+this obsolete package does not authorize rollback or cleanup actions.

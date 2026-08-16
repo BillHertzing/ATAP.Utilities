@@ -29,6 +29,8 @@ public sealed class BwsDpapiEnvelopeReader
       if (root.Name != RootName || root.HasAttributes || root.Elements().Count() != allowedElements.Count ||
           root.Elements().Any(element => element.Name.NamespaceName.Length != 0 || !allowedElements.Contains(element.Name.LocalName) || element.HasAttributes || element.HasElements)) throw new FormatException();
       var version = One(root, "formatVersion");
+      if (version != FormatVersion)
+        throw new BwsException(BwsFailureKind.TokenFormatUnsupported, "The token file is not a supported ATAP BWS DPAPI envelope.");
       var purpose = One(root, "purpose");
       var host = One(root, "host");
       var sid = One(root, "sid");
@@ -36,7 +38,7 @@ public sealed class BwsDpapiEnvelopeReader
       var applicationId = One(root, "applicationId");
       var provider = One(root, "provider");
       var grouping = One(root, "vaultGroupingId");
-      if (version != FormatVersion || purpose != "ReadOnly" || provider != Provider ||
+      if (purpose != "ReadOnly" || provider != Provider ||
           host != expected.Host || sid != expected.Sid || sam != expected.SamAccountName ||
           applicationId != expected.ApplicationId || grouping != expected.VaultGroupingId)
         throw new BwsException(BwsFailureKind.TokenIdentityMismatch, "The BWS token envelope is not bound to the current identity, application, and vault grouping.");

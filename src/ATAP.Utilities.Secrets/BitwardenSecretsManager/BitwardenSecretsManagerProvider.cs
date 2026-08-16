@@ -67,7 +67,11 @@ public sealed class BitwardenSecretsManagerProvider : SecretsAbstract
       if (document.RootElement.ValueKind == JsonValueKind.Object && document.RootElement.TryGetProperty(fieldName, out var field))
         return field.ValueKind == JsonValueKind.String ? field.GetString() : field.GetRawText();
     }
-    catch (JsonException) when (_options.ReturnRawValueWhenFieldMissing) { return value; }
+    catch (JsonException exception)
+    {
+      if (_options.ReturnRawValueWhenFieldMissing) return value;
+      throw new BwsException(BwsFailureKind.SecretFieldMissing, $"Field '{fieldName}' was not found in SecretName '{secretName}'.", exception);
+    }
     if (_options.ReturnRawValueWhenFieldMissing) return value;
     throw new BwsException(BwsFailureKind.SecretFieldMissing, $"Field '{fieldName}' was not found in SecretName '{secretName}'.");
   }

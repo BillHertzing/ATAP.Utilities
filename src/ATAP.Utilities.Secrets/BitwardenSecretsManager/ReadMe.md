@@ -1,5 +1,9 @@
 # Bitwarden Secrets Manager provider
 
+This is the supported application path: Bitwarden Secrets Manager `bws`, a
+Bitwarden Project, exact individual SecretNames, and an identity-bound DPAPI
+`ReadOnly` access-token source on Windows.
+
 ## Scope
 
 This package resolves individual secrets through the Bitwarden Secrets Manager
@@ -17,8 +21,8 @@ fail closed.
 - `ATAP.Utilities.Secrets.BitwardenSecretsManager` contains the portable provider,
   bounded process runner, typed failures, and asynchronous mapping loader.
 - `ATAP.Utilities.Secrets.BitwardenSecretsManager.Windows` contains the Windows
-  identity-bound DPAPI token reader.
-- `ATAP.Utilities.Secrets.Shim.Bitwarden` is warning-only Password Manager
+  identity-bound DPAPI `ReadOnly` token reader and composition registration.
+- `ATAP.Utilities.Secrets.Shim.Bitwarden` is obsolete, warning-only Password Manager
   compatibility. It uses `bw`, `BW_SESSION`, and `--session`; it is never a default
   or fallback and emits `ATAPSECRETS001`.
 
@@ -29,6 +33,74 @@ absolute local `BwsExecutablePath`, and the approved executable's
 `TrustedBwsSha256`. Configure required SecretNames explicitly. Values and tokens
 must not appear in configuration, logs, exceptions, caches, or parent-process
 environment variables.
+
+The following values are synthetic. Replace IDs, names, paths, mappings, and the
+approved executable digest with deployment-owned metadata; never place an access
+token or secret value in configuration.
+
+```json
+{
+  "Secrets": {
+    "BitwardenSecretsManager": {
+      "ApplicationId": "acecommander",
+      "ProjectId": "11111111-1111-1111-1111-111111111111",
+      "ProjectName": "AceCommander",
+      "VaultGroupingId": "11111111-1111-1111-1111-111111111111",
+      "BwsExecutablePath": "C:\\Program Files\\Bitwarden Secrets Manager CLI\\bws.exe",
+      "TrustedBwsSha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "TimeoutSeconds": 30,
+      "TokenPurpose": "ReadOnly",
+      "RequiredSecretNames": ["Database.Primary.ConnectionString"]
+    }
+  }
+}
+```
+
+Register the portable provider and Windows DPAPI token source with matching IDs:
+
+```csharp
+var providerOptions = new BitwardenSecretsManagerOptions
+{
+  ApplicationId = "acecommander",
+  ProjectId = "11111111-1111-1111-1111-111111111111",
+  ProjectName = "AceCommander",
+  VaultGroupingId = "11111111-1111-1111-1111-111111111111",
+  BwsExecutablePath = @"C:\Program Files\Bitwarden Secrets Manager CLI\bws.exe",
+  TrustedBwsSha256 =
+    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  TokenPurpose = BwsTokenPurpose.ReadOnly,
+  RequiredSecretNames = new HashSet<string>(StringComparer.Ordinal)
+  {
+    "Database.Primary.ConnectionString",
+  },
+};
+
+var tokenSourceOptions = new WindowsBwsTokenSourceOptions
+{
+  ApplicationId = providerOptions.ApplicationId,
+  VaultGroupingId = providerOptions.VaultGroupingId,
+  AllowLegacyPowerShellCliXml = false,
+};
+
+services.AddBitwardenSecretsManager(providerOptions);
+services.AddWindowsDpapiBwsReadOnlyAccessTokenSource(tokenSourceOptions);
+```
+
+Load mapped values asynchronously during host startup:
+
+```csharp
+var loader = host.Services
+  .GetRequiredService<BitwardenSecretsManagerConfigurationLoader>();
+await configurationBuilder.AddBitwardenSecretsManagerConfigurationAsync(
+  loader,
+  new[]
+  {
+    new BwsSecretMapping(
+      "ConnectionStrings:Primary",
+      "Database.Primary.ConnectionString"),
+  },
+  cancellationToken);
+```
 
 Use `BitwardenSecretsManagerConfigurationLoader.LoadAsync` during asynchronous
 host startup. It lists the Project once and maps the returned individual secrets

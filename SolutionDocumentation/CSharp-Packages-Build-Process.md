@@ -47,16 +47,23 @@ remains authoritative for the build-once/promote-the-same-artifact policy, and
 the focused versioning, testing, central-package-management, pack/push, and
 BuildMaster documents remain authoritative for their narrower subjects.
 
-### Target architecture (PROPOSED — pending operator ratification)
+### Target architecture (PARTIALLY RATIFIED — rulings recorded 2026-08-16)
 
-> **Ratification status.** Everything in this subsection and in the two
-> subsections that follow it is **proposed, not ratified**. Task 15.160.c
-> drafted it from the 15.160.b classification and assembled the ratification
-> packet at
-> `_Planning/InformationForTheFuture/Sprint0015/StreamP/Task-15.160.c/ratification-packet.md`.
-> No operator ruling has been recorded. Tasks 15.161-15.166 are blocked on that
-> ruling for every item below that depends on an unresolved decision.
-
+> **Ratification status, 2026-08-16.** The operator approved the shared-invariant
+> membership for D01, D04, D05, D07, D09, D18, D22, D23, D25, and D27 and issued
+> the detailed D03-D37 rulings recorded in the planning ratification packet.
+> D10 remains deferred behind D09; D12 is final policy with cross-repository
+> call-site/dependency remediation remaining; D37 is final CI-bound policy with
+> implementation/evidence remaining; D29 is final immutable-package policy with
+> canonical/deployed remediation remaining; D13 is
+> advisory pending review; D33 is explicitly deferred. A ruling is not an
+> implementation or alignment claim. Tasks 15.161-15.166 and the new investigation
+> stream own the required implementation and deciding evidence.
+>
+> D08 is an intentional overlay: ATAP.Utilities remains globally injected; Ace is
+> per-project opt-in. Existing AceCommander opt-ins stay as-is, AceOutpost.Windows
+> opts in, AceCommander.Client is out, and AceCommon reevaluation waits first for
+> simplest-case ETW tracing, then for display/evidence work.
 The target architecture is one shared C# production process with small,
 explicit repository overlays. Unit 15.160.b classified 41 differences into four
 dispositions, and the numbered points below are restated in those terms so a
@@ -96,11 +103,11 @@ reader can tell a settled obligation from an open question:
    [Immutable-Build-Strategy.md](Immutable-Build-Strategy.md) §5 and §9.
    Deletion must happen in the canonical source **before** that tooling is
    deployed to Ace, or rebinding Ace propagates the defect.
-4. **Unresolved decisions — 13 entries.** Listed in full under _Unresolved
-   decisions pending operator ratification_ below. Ten of the 19 entries on the
-   six axes the board named for rationale are unresolved, so Stream P's
-   dominant blocker is architecture that was never decided rather than drift to
-   be repaired.
+4. **Decision overlay updated 2026-08-16.** Most of the original 13 questions now have
+   rulings, conditional policies, or explicit deferrals. D10, D13, and D33
+   retain measurement, dependency, investigation, review, or deferred-return gates as
+   recorded in the ratification packet. D12, D29, and D37 are final and retain
+   implementation evidence/remediation work rather than decision-return gates.
 
 Ownership is unchanged and is not in question: ATAP.Utilities owns the
 canonical BuildTooling source and shared BuildMaster runner; Ace consumes
@@ -141,23 +148,21 @@ anything. Nothing in this matrix asserts that a criterion currently passes; the
 Two notes that bear directly on this matrix, both carried from the 15.160.c
 cross-check (`_generated/Sprint0015/StreamP/Task-15.160.c/cross-check-findings.md`):
 
-- **The `D22` gate does not currently assert what §8.1 of this document says it
-  asserts.** `tests/RepoHealth/Directory.Build.Props.Properties.Tests.ps1`
-  (lines 13, 119-124) evaluates a property spelled
-  `CentralPackageVersionOverridesEnabled` — plural _Overrides_ — and requires it
-  to equal `false`. The NuGet property is
-  `CentralPackageVersionOverrideEnabled`, singular _Override_, and 15.160.a/b
-  measured that property as **unset in both repositories**. The name in
-  circulation is not a NuGet property, which is the most economical explanation
-  for why nobody ever set it. §8.1 of this document repeats the plural spelling.
-  Correcting the gate and its test is outside unit 15.160.c's writable scope and
-  is reported, not fixed.
+- **D22 property correction applied 2026-08-16.** The former plural
+  property-name misspelling was replaced with NuGet's singular
+  CentralPackageVersionOverrideEnabled in ATAP.Utilities Directory.Build.props,
+  RepoHealth tests, propagation tests, indexes, and this document. Ace now declares
+  the same singular property as false. Ace still lacks the equivalent RepoHealth
+  script; therefore D22 is decided and its property defect is repaired, but the full
+  cross-repository acceptance criterion is not yet satisfied.
+
 - **Locked-mode restore is conditioned on a property that is unset in both
   repositories.** [CSharp-Central-Package-Management.md](CSharp-Central-Package-Management.md)
   line 344 makes `RestoreLockedMode` conditional on
-  `ContinuousIntegrationBuild == 'true'`, and that property evaluates empty in
-  both repositories (`D37`). Any acceptance criterion that assumes locked
-  restore is in force must first settle `D37`.
+  `ContinuousIntegrationBuild == 'true'`; at the 2026-08-15 evidence snapshot,
+  that property evaluated empty in both repositories. D37 is now settled, but
+  any acceptance criterion that assumes locked restore is in force must first
+  implement and prove the CI-tier signal in both repositories.
 
 ### Verified divergence baseline (2026-08-15, re-verified by 15.160.a/b)
 
@@ -179,7 +184,7 @@ resolution.
 | Framework/RID defaults                                                                                     | Centrally targets `net10.0`; no shared RID matrix.                                                                                                                                                                                                                            | Centrally targets `net8.0;net9.0;net10.0` and `win-x64;linux-x64`.                                                                                                                                                                                                             | Keep only a ratified product overlay; share the mechanics that consume the matrix.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | BuildTooling deployment **(row 3 — RESTATED, sharpened; NOT aligned)**                                     | Sentinel selects `0.1.0.1`; `Build/ATAP.Utilities.BuildTooling.0.1.0.1/` contains **only** `build/ATAP.Utilities.BuildTooling.targets` — no `Release/net10.0/*.dll`.                                                                                                          | Sentinel selects `1.0.1.0`, but `Build/ATAP.Utilities.BuildTooling.1.0.1.0/` is absent entirely, so the `Exists()`-conditioned import is skipped.                                                                                                                              | **Sharpening:** the compiled custom-task assembly is absent from **both** repositories (`D04`), not just one; Ace merely has a deployed _targets_ file that ATAP.Utilities lacks (`D05`). This is survivable today only because the three `UsingTask` declarations are commented out as superseded by NBGV (`D06`), which is precisely why the fail-open defect went unnoticed. Produce one canonical, versioned deployment; make missing/mismatched tooling fail closed after an explicit bootstrap path.                                                                                                                                                                          |
 | Shared MSBuild policy                                                                                      | Smaller `Directory.Build.*` surface; no global Fody core injection, no lifecycle-to-feed validation, and dependency-range rewriting applies to all packable builds.                                                                                                           | Larger legacy surface; global Fody injection and lifecycle validation; dependency-range rewriting is prerelease-only.                                                                                                                                                          | Ratify and implement one common policy surface, with deliberate feature switches rather than repository drift.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| Central package policy **(row 5 — RESTATED against `CentralPackageFloatingVersionsEnabled`; NOT aligned)** | `CentralPackageFloatingVersionsEnabled=true` (`Directory.Packages.props:8`); nine internal `ATAP.Utilities.*` packages pinned to the floating range `0.*-*` (`:15-26`), while three RRSBS packages are pinned exactly (`:29-33`) — so the floating policy is already partial. | `CentralPackageFloatingVersionsEnabled` is **unset**, and internal dependencies use explicit pinned versions.                                                                                                                                                                  | **Retraction:** the original row named `CentralPackageVersionOverrideEnabled` and claimed ATAP.Utilities "disables central version overrides". That property evaluates **empty in both repositories** and is declared in neither, so it described no divergence at all; it is excluded as `X01`. The real measured divergence is `CentralPackageFloatingVersionsEnabled` (`D16`), which is an **unresolved decision**, not a defect to converge. Define common restore/lock determinism and explicit ownership of any permitted floating development inputs. Dependency catalogs may legitimately differ (`D17`).                                                                   |
+| Central package policy **(row 5 — RESTATED against `CentralPackageFloatingVersionsEnabled`; NOT aligned)** | `CentralPackageFloatingVersionsEnabled=true` (`Directory.Packages.props:8`); nine internal `ATAP.Utilities.*` packages pinned to the floating range `0.*-*` (`:15-26`), while three RRSBS packages are pinned exactly (`:29-33`) — so the floating policy is already partial. | `CentralPackageFloatingVersionsEnabled` is **unset**, and internal dependencies use explicit pinned versions.                                                                                                                                                                  | **Historical retraction and 2026-08-16 correction:** the 2026-08-15 evidence found the correctly named property empty in both repositories, so the original row described no measured divergence and was excluded as `X01`. The operator subsequently required the property explicitly false in both repositories; that singular property now evaluates false in each. The real measured divergence is `CentralPackageFloatingVersionsEnabled` (`D16`), whose quality-tier architecture is decided but whose build capability is not yet implemented. Define common restore/lock determinism and explicit ownership of any permitted floating development inputs. Dependency catalogs may legitimately differ (`D17`).                                                                   |
 | NuGet/ProGet transport                                                                                     | NuGet feeds are partly migrated to `https://utat022:50000`, but retain stale insecure-connection comments/attributes; ReleaseBundle feeds still use HTTP localhost.                                                                                                           | Uses `https://utat022:50000` without `allowInsecureConnections`.                                                                                                                                                                                                               | Use the same HTTPS endpoints, source mapping, audit sources, and SecretName boundary; remove stale insecure fallbacks.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Lock-file CI **(row 7 — RESTATED, narrowed to restore scope; NOT aligned)**                                | `.github/workflows/lock-file-guard.yml` restores `AceCommander.sln --locked-mode`; adds a `samples/**` exclusion to the `git diff` check.                                                                                                                                     | The same workflow, from a near-identical template, restores `ATAP.Utilities.Production.slnf --locked-mode`.                                                                                                                                                                    | **Narrowing:** the original row overstated the gap. The gate itself is already converged — same workflow name, triggers, runner labels, and `--locked-mode` + `git diff --exit-code` shape in both repositories (`D24`, classified an overlay). What actually differs is the **restore scope**, which is downstream of `D23` (Ace has no production `.slnf`): once Ace has one, the scope difference becomes a one-line overlay of the same template. The `samples/**` exclusion is a legitimate repository-content overlay. The residual invariant is `D23`, not the workflow.                                                                                                     |
 | RepoHealth                                                                                                 | No equivalent repository-wide shared-property gate.                                                                                                                                                                                                                           | Runs `Build/Invoke-RepoHealthGate.ps1` before pack/publish.                                                                                                                                                                                                                    | Run equivalent evaluated-property, packaging, and drift gates in both repositories.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
@@ -187,7 +192,60 @@ resolution.
 | BuildMaster binding                                                                                        | Documentation and variables still carry historical AceCommander repository/branch/path assumptions.                                                                                                                                                                           | Owns the common five-stage C# plan and stage runner.                                                                                                                                                                                                                           | Rebind Ace to its current identity while retaining one common plan/runner; synchronize and verify the deployed raft copy.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | Services/applications                                                                                      | Application outputs are not governed by a complete parity contract with library builds.                                                                                                                                                                                       | Library/package documentation dominates; executable samples/services have no single shared closeout matrix.                                                                                                                                                                    | Reuse the library pipeline through deterministic build/test, then add a narrow publish/ReleaseBundle/install/deploy tail.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 
-### Unresolved decisions pending operator ratification
+### Operator rulings and remaining investigation gates (updated 2026-08-16)
+
+The operator selected D03(b), D19(a), D31(c), and D35(a); approved explicit D09
+pinning to the ATAP.Utilities practice; deferred D10 behind production and review of
+D09's required measurements; retained build-time code-style enforcement as D10's eventual
+goal while withholding all D10 work, including preparation, until that entry gate and
+withholding unconditional current enforcement; approved `SYSLIB0011` as a build error
+in both repositories under D12; retained
+the operator-confirmed interim D13 policy that ordinary warnings remain advisory while
+the final policy awaits the analyzer measurement review; established the measure-first
+conditional policy for D14;
+approved the quality-tier dependency contract for D16; directed that D34's parity
+contract be authored; and confirmed D33 remains deferred so its publish-input
+representation is designed jointly with the Release Bundle creation process and none is
+selected beforehand.
+
+D08 is clarified as follows: Common is AceCommon/AceCommon.csproj; existing
+AceCommander opt-ins remain as-is; AceOutpost.Windows opts in; AceCommander.Client is
+out; and AceCommon reevaluation waits first for simplest-case ETW tracing, then
+for display/evidence work and later review.
+
+Still requiring future operator review: D10 AnalysisMode, remaining analyzer settings,
+and staged activation conditions after D09's required measurements have first been produced
+and reviewed and the later analyzer measurement regime has run; D13 after the D10
+measurement review and D33 only through a joint Release Bundle/publish-input design. No
+publish-input representation may be selected before that design exists. No D10 work—including preparatory code-style
+configuration, inventory, baselining, or analyzer-measurement implementation—may proceed
+before the D09 gate clears, and unconditional `EnforceCodeStyleInBuild` is not currently
+approved. The option
+analysis below is retained as the basis for those tasks and as history for ruled items.
+
+D12 is no longer a pending policy question. `SYSLIB0011` must be a build error in
+both repositories. Implementation must inventory the newly affected ATAP.Utilities
+and Ace builds, fix owned call sites, and upgrade or replace software and dependencies
+that use obsolete BinaryFormatter-related APIs. Once the SC-0329 safe binary-logging
+capability is available, its restricted/redacted logs are the intended rich diagnostic
+evidence for that remediation; they do not reopen the decision.
+
+D37 and its rationale are final: every BuildMaster-run automated CI build,
+including Experimental, Integration, Test, and Production, evaluates
+`ContinuousIntegrationBuild=true`. Developer-initiated workstation, IDE, and
+terminal builds do not unless an explicit CI environment is detected.
+`Deterministic=true` remains enabled in every environment; local developer builds
+may omit only CI-specific path normalization to retain debugging usability. Task
+15.170.d owns cross-tier implementation and evaluated-property/output evidence.
+
+D29 is final immutable-package policy. An existing package name/version and its
+bytes are never deleted or overwritten merely to publish a different build.
+Changed content receives a new version. Already-exists, conflict, concurrent
+publish, and retry handling must be safe/idempotent, retain the original artifact,
+and preserve checksums/provenance, reproducibility, traceability, promotion history,
+and rollback confidence. Task 15.170.e owns canonical/deployed tooling remediation
+and evidence before the tooling is rebound to Ace.
+
 
 **Thirteen** decisions must be ruled on before the work they gate can proceed.
 They are reproduced here so this file is self-contained; the packet the operator
@@ -196,10 +254,9 @@ rules on is
 which carries the same thirteen with fuller context and, where defensible, a
 recommendation.
 
-**No ruling has been recorded on any of them.** Nothing below may be treated as
-settled, and no successor task may resolve one of these by writing code that
-assumes an answer. Ten of the thirteen fall on the six axes the Sprint 0015
-board named as requiring rationale.
+**Historical option record.** The numbered list below preserves the questions as
+originally presented. The operator-ruling section above and the planning packet
+govern current status; the historical question wording must not override them.
 
 1. **`D03` — RIDs for Ace's application artifacts.** For `AceCommander.Client`
    (Blazor WASM), `AceCommander.Server` (ASP.NET Core), and `AceOutpost.Windows`
@@ -220,22 +277,18 @@ board named as requiring rationale.
    **unsafe** — p`documents a deliberate
 exclusion.`D09` (pin the Fody core version) holds under every option and
    need not wait.
-3. **`D10` — the shared Roslyn analyzer policy.** Is `EnableNETAnalyzers` on, at
-   what `AnalysisLevel` and `AnalysisMode`, is `EnforceCodeStyleInBuild` on, and
-   do violations fail the build or warn? _This is a shared gap, not a
-   divergence:_ neither repository sets any of the four. _Consequence:_ gates
-   the analysis stage of the shared process; should be decided together with
-   `D13`, since analyzers without `TreatWarningsAsErrors` produce diagnostics
-   nobody is obliged to act on.
-4. **`D12` — `SYSLIB0011` as an error.** Is Ace's escalation a shared policy to
-   adopt in ATAP.Utilities, or an Ace-specific overlay to document and bound?
-   If shared, does ATAP.Utilities compile clean under it today? _Consequence:_
-   small, but it changes the warning-policy convergence target.
-5. **`D13` — `TreatWarningsAsErrors`.** Should it be `true` in both
-   repositories, and at which tier does it become blocking — developer inner
-   loop, CI, or promotion gate only? _Shared gap: unset in both._
-   _Consequence:_ sets the floor for the analysis stage; remediation cost is
-   unmeasured, so a measurement task should probably precede the ruling.
+3. **`D10` — the shared Roslyn analyzer policy.** Deferred and gated on D09.
+   Eventual build-time code-style enforcement is the target, but no D10 work,
+   including preparation, begins before D09 measurement evidence is reviewed.
+   `AnalysisMode`, remaining settings, and activation staging then await the D10
+   measurement regime. Unconditional enforcement is not current policy.
+4. **`D12` — `SYSLIB0011` as an error.** Approved and final in both repositories.
+   Inventory and remediate every affected build by fixing owned call sites or
+   upgrading/replacing affected software and dependencies; use SC-0329 binary
+   logs once safely available for rich diagnostic evidence.
+5. **`D13` — `TreatWarningsAsErrors`.** Ordinary warnings are operator-confirmed
+   advisory for now. The final policy and any blocking tier remain deferred until
+   the analyzer measurement review.
 6. **`D14` — the nullable `NoWarn` suppression.** Does ATAP.Utilities remove it
    to match Ace (which has already commented the identical block out), keep it
    as a bounded and dated exception, or does Ace re-adopt it? _Consequence:_
@@ -285,17 +338,12 @@ exclusion.`D09` (pin the Fody core version) holds under every option and
     ATAP.Utilities repository-level release? _Consequence:_ without a
     repository-level version there is no single version for tier promotion and
     Release Bundle identity to anchor to.
-13. **`D37` — where `ContinuousIntegrationBuild=true` is set.** Unconditionally
-    in `Directory.Build.props`, or only when a CI environment variable is
-    present? _Consequence:_ the property is unset in **both** repositories
-    today, so deterministic path normalization and SourceLink are not fully in
-    effect, and the locked-restore condition in
-    [CSharp-Central-Package-Management.md](CSharp-Central-Package-Management.md)
-    line 344 never fires. Note that
-    [Immutable-Build-Strategy.md](Immutable-Build-Strategy.md) §6.4 already
-    **mandates** `ContinuousIntegrationBuild=true` for the Experimental build,
-    so the _whether_ may already be settled policy and only the _where_ is
-    genuinely open — the operator should confirm which reading governs.
+13. **`D37` — where `ContinuousIntegrationBuild=true` is set.** Approved for
+    every BuildMaster-run automated CI build and tier, including Experimental,
+    Integration, Test, and Production. Developer-initiated workstation, IDE,
+    and terminal builds remain outside that setting unless explicit CI is
+    detected. `Deterministic=true` remains enabled across all environments;
+    local builds may omit only CI-specific path normalization for debugging.
 
 ### Stream P documentation rule
 
@@ -1063,7 +1111,7 @@ pwsh -File Build\Invoke-RepoHealthGate.ps1
 
 The gate invokes `tests\RepoHealth\Directory.Build.Props.Properties.Tests.ps1`
 and evaluates `PackageLifeCycleStage`, `TargetProGetFeed`, and
-`CentralPackageVersionOverridesEnabled` through `dotnet msbuild -getProperty`
+`CentralPackageVersionOverrideEnabled` through `dotnet msbuild -getProperty`
 for every C# project under `src/`. C# CI and BuildMaster flows should run this
 after restore and before `dotnet pack` or publish. It intentionally lives
 outside `src\ATAP.Utilities.BuildTooling.PowerShell\tests` so a single
@@ -1136,8 +1184,12 @@ which matters for SourceLink traceability and supply-chain verification:
 dotnet build --configuration Release -p:ContinuousIntegrationBuild=true
 ```
 
-`ContinuousIntegrationBuild=true` is set automatically by BuildMaster agents.
-Do not set it for `Debug` builds — it disables some diagnostic output.
+`ContinuousIntegrationBuild=true` must be set for every BuildMaster-run automated
+CI build, regardless of tier, including Experimental, Integration, Test, and
+Production. Developer-initiated workstation, IDE, and terminal builds remain
+outside that CI-specific setting unless explicit CI is detected.
+`Deterministic=true` remains enabled in every environment; only CI-specific path
+normalization may be omitted locally for debugging usability.
 
 See also [github.com/clairernovotny/DeterministicBuilds](https://github.com/clairernovotny/DeterministicBuilds).
 

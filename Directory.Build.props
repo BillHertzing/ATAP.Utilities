@@ -289,7 +289,7 @@
   <!-- Task 1.1-4: Disallow per-project overrides of Directory.Packages.props versions.
        Prevents accidental package drift from Central Package Management. -->
   <PropertyGroup>
-    <CentralPackageVersionOverridesEnabled>false</CentralPackageVersionOverridesEnabled>
+    <CentralPackageVersionOverrideEnabled>false</CentralPackageVersionOverrideEnabled>
   </PropertyGroup>
 
   <!-- Task 1.1-2: Map the lifecycle stage to a ProGet NuGet feed via Choose/When.
@@ -326,10 +326,10 @@
     </Otherwise>
   </Choose>
 
-  <!-- Task 1.1-3: Build-time validation. An empty $(PackageLifeCycleStage) is only
-       permitted when building the main branch. We prefer $(NBGV_BuildingRef) since
-       NBGV is already in scope; it is set to e.g. "refs/heads/main" once NBGV's
-       targets have run (well before the Build target executes). -->
+  <!-- Task 1.1-3: Build-time validation. An empty $(PackageLifeCycleStage) is valid
+       on stable-capable refs: main, release branches, and the numbered Sprint branches
+       used by sprint worktrees. Other branch kinds must carry an explicit prerelease
+       ceiling. We prefer $(NBGV_BuildingRef) when NBGV supplies it. -->
   <Target Name="ValidatePackageLifeCycleStage" BeforeTargets="Build">
     <!-- NBGV_BuildingRef is often empty in local builds; resolve branch via git as fallback. -->
     <Exec Command="git rev-parse --abbrev-ref HEAD" ConsoleToMsBuild="true" IgnoreExitCode="true" Condition=" '$(NBGV_BuildingRef)' == '' ">
@@ -339,11 +339,12 @@
       <CurrentGitBranchName>$([System.String]::Copy('$(CurrentGitBranchName)').Trim())</CurrentGitBranchName>
       <CurrentBuildRef Condition=" '$(NBGV_BuildingRef)' != '' ">$(NBGV_BuildingRef)</CurrentBuildRef>
       <CurrentBuildRef Condition=" '$(CurrentBuildRef)' == '' And '$(CurrentGitBranchName)' != '' ">refs/heads/$(CurrentGitBranchName)</CurrentBuildRef>
+      <IsStablePackageBuildRef>$([System.Text.RegularExpressions.Regex]::IsMatch('$(CurrentBuildRef)', '^refs/heads/(main|release/.+|[0-9]+-Sprint-[0-9]{4}-work-items)$', System.Text.RegularExpressions.RegexOptions.IgnoreCase))</IsStablePackageBuildRef>
     </PropertyGroup>
 
-    <Error Condition=" '$(PackageLifeCycleStage)' == '' And '$(CurrentBuildRef)' != 'refs/heads/main' "
+    <Error Condition=" '$(PackageLifeCycleStage)' == '' And '$(IsStablePackageBuildRef)' != 'True' "
            Code="ATAP5TIER001"
-           Text="PackageLifeCycleStage is empty but the current branch ($(CurrentBuildRef)) is not refs/heads/main. Confirm version.json exists at the project or repository root and that its 'version' field carries a prerelease label (Sprint, Alpha, Beta, or QA). Stable/empty labels are only valid on main." />
+           Text="PackageLifeCycleStage is empty but the current ref ($(CurrentBuildRef)) is not stable-capable. Stable/empty labels are valid on main, release/*, and numbered Sprint worktree branches such as 137-Sprint-0015-work-items. Other branches must use a prerelease label (Sprint, Alpha, Beta, or QA)." />
   </Target>
 
 </Project>

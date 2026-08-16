@@ -10,7 +10,7 @@
 #       Sprint -> nuget-experimental, Alpha -> nuget-development,
 #       Beta   -> nuget-integration, QA    -> nuget-qa,
 #       ''     -> nuget-stable
-#   * CentralPackageVersionOverridesEnabled - must evaluate to 'false'
+#   * CentralPackageVersionOverrideEnabled - must evaluate to 'false'
 #
 # Mechanism: each csproj is queried with
 #     dotnet msbuild <csproj> -getProperty:<Prop>
@@ -116,11 +116,11 @@ Describe 'Directory.Build.props - TargetProGetFeed propagates and matches stage'
   }
 }
 
-Describe 'Directory.Build.props - CentralPackageVersionOverridesEnabled is false' -Tag 'RepoHealth', 'Integration', '5Tier' {
+Describe 'Directory.Build.props - CentralPackageVersionOverrideEnabled is false' -Tag 'RepoHealth', 'Integration', '5Tier' {
 
-  It "CentralPackageVersionOverridesEnabled evaluates to 'false' on <CsprojName>" -ForEach $script:csprojCases {
+  It "CentralPackageVersionOverrideEnabled evaluates to 'false' on <CsprojName>" -ForEach $script:csprojCases {
     param($CsprojPath, $CsprojName)
-    $value = Get-EvaluatedMSBuildProperty -CsprojPath $CsprojPath -PropertyName 'CentralPackageVersionOverridesEnabled'
-    $value | Should -BeExactly 'false' -Because "csproj '$CsprojName' evaluated CentralPackageVersionOverridesEnabled='$value'; central package management must remain enforced (expected 'false')"
+    $value = Get-EvaluatedMSBuildProperty -CsprojPath $CsprojPath -PropertyName 'CentralPackageVersionOverrideEnabled'
+    $value | Should -BeExactly 'false' -Because "csproj '$CsprojName' evaluated CentralPackageVersionOverrideEnabled='$value'; central package management must remain enforced (expected 'false')"
   }
 }

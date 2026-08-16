@@ -12,6 +12,8 @@ Editable diagram source: [RPRRSBSI-V4-Core-Entity-Model.puml](RPRRSBSI-V4-Core-E
 - **V4-CORE-004:** For any Philote, validity periods SHALL be non-overlapping half-open intervals. Gaps are allowed. A null `ValidToUtc` means open ended.
 - **V4-CORE-005:** Internal semantic change SHALL be represented by new GUID-identified `State` or `Variant` rows and validity periods, not by an integer or string revision number.
 - **V4-CORE-006:** External product, package, firmware, and protocol versions remain domain values and are not prohibited by V4-CORE-005.
+- **V4-CORE-007:** CSV and API representations of GUIDs SHALL use canonical lowercase dashed `D` format.
+- **V4-CORE-008:** Database GUID equality, joins, uniqueness, and referential checks SHALL operate on native `uniqueidentifier` values. Implementations SHALL NOT obtain identity semantics by casting GUIDs to text or comparing their spelling, case, or collation.
 
 ## General entity registry
 
@@ -51,6 +53,7 @@ V3 has a basic `Rule` and set-membership joins. V4 keeps the basic identity and 
 
 - **V4-CORE-030:** `RuleVariant.RuleId` SHALL identify the basic semantic rule being varied.
 - **V4-CORE-031:** A baseline ATAP variant and an ACE override variant MAY reference the same `RuleId`; their `RuleVariantId` and owning RuleSet SHALL differ.
+- **V4-CORE-031A:** D-4 is normative: an overlay SHALL be a `RuleVariant` of the same `RuleId`, and an occurrence with membership role `Override` SHALL select it. An implementation SHALL NOT copy the basic `Rule` to represent an overlay.
 - **V4-CORE-032:** Membership and BuildSet composition SHALL use occurrence identities; the V3 composite join tables remain readable during transition but SHALL NOT constrain V4 to one occurrence per pair.
 - **V4-CORE-033:** A RuleSet SHALL reject duplicate occurrence ordinals. A BuildSet SHALL reject duplicate RuleSet occurrence ordinals.
 - **V4-CORE-034:** D-2 is normative: effective resolution orders BuildSet RuleSet occurrences by descending ordinal.
@@ -90,7 +93,17 @@ Editable diagram source: [RPRRSBSI-V4-Rule-Overlay-Resolution.puml](RPRRSBSI-V4-
 - **V4-CORE-041:** Secret values SHALL NOT be stored as seed or runtime plaintext. The stored value is a secret name/reference only.
 - **V4-CORE-042:** Defaults SHALL be distinguishable from user-supplied, imported, calculated, and inherited values.
 - **V4-CORE-043:** Every normalization operation SHALL be deterministic, identified, and included in execution provenance.
-- **V4-CORE-044:** A declared type change that invalidates existing meaning is provisionally a new basic semantic identity pending D-3 ratification.
+- **V4-CORE-044:** D-3 is normative: a material declared-type change SHALL create a new basic semantic identity. Existing identities SHALL NOT be mutated to carry a materially different meaning.
+- **V4-CORE-045:** Material changes are: (1) any change of rule kind; (2) a variable's scalar type changing to a different scalar type, including integer, character, or string variants; (3) any change between a scalar and a heap/object type; and (4) any change involving a heap/object type, including changing one heap/object value into a collection.
+- **V4-CORE-046:** A default-value change and a change to text used only for visual display are non-material and MAY retain the existing semantic identity, while still using the applicable state/validity history.
+
+### D-3 edge-case clarification register
+
+The classifications above are ratified. The following space is intentionally retained for cases not yet classified; no implementation may infer that an unlisted case is non-material merely because it is absent.
+
+| Edge case | Proposed classification | Rationale | Operator clarification |
+| --------- | ----------------------- | --------- | ---------------------- |
+| _Add case_ | _Material / non-material / context-dependent_ | _Add rationale_ | _Pending_ |
 
 ## Separate workflow and calculation graphs
 

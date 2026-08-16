@@ -7,7 +7,7 @@ The V3 consolidation currently establishes these minimum row counts: Philote 22,
 ## CSV packaging contract
 
 - **V4-SEED-001:** Every reference row SHALL have a stable registered GUID and a stable human-readable code.
-- **V4-SEED-002:** CSV files SHALL be UTF-8, comma-delimited, header-bearing, and use invariant formatting for booleans, decimal values, UTC instants, and GUIDs.
+- **V4-SEED-002:** CSV files SHALL be UTF-8, comma-delimited, header-bearing, and use invariant formatting for booleans, decimal values, and UTC instants. GUID text SHALL use canonical lowercase dashed `D` format.
 - **V4-SEED-003:** Null SHALL have one documented representation distinct from an empty string.
 - **V4-SEED-004:** Each CSV schema SHALL be versioned through the Flyway migration/package that consumes it, not through mutable loader interpretation.
 - **V4-SEED-005:** A manifest SHALL record each file path, schema identifier, expected row count or permitted range, SHA-256 hash, load order, and destination table.
@@ -32,6 +32,7 @@ The V3 consolidation currently establishes these minimum row counts: Philote 22,
 - **V4-LOAD-004:** The loader SHALL reject a PhiloteValidityPeriod not owned by the state row's Philote-bearing entity.
 - **V4-LOAD-005:** The loader SHALL reject plaintext secret material and accept only secret reference names where allowed.
 - **V4-LOAD-006:** SQL generated or executed by a loader SHALL be parameterized or staging-table based; CSV content SHALL never become executable SQL text.
+- **V4-LOAD-007:** After parsing, loaders and migrations SHALL compare, join, and de-duplicate GUIDs as native values. Text case, spelling, and database collation SHALL NOT determine GUID equality.
 
 ## Foundational CSV files
 

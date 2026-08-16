@@ -16,19 +16,19 @@ Gate: no V3 row is lost or reinterpreted; the fixture can be restored repeatedly
 
 Deliverables: `EntityType`, `Entity`, expert-system tables, core catalogs, fixed GUID registry entries, foundational CSVs, loader validation, and a minimal generic system.
 
-Gate: fresh and V3-upgrade migrations pass; all catalogs load deterministically; a generic definition can be queried as-of time without Tags or computer-specific code.
+Gate: fresh and V3-upgrade migrations pass; all catalogs load deterministically; CSV/API fixtures emit canonical lowercase dashed GUIDs; database comparisons prove equivalent GUID spellings resolve by native value; a generic definition can be queried as-of time without Tags or computer-specific code.
 
 ## Layer 2 — variants, occurrences, and overlays
 
 Deliverables: RuleVariant tables, occurrence tables, membership-role catalog, D-2 resolver, resolution provenance, and positive/negative overlay seeds.
 
-Gate: baseline/1500/1200 as-of scenarios pass; duplicate ordinals, invalid Add, invalid Override, and invalid Suppress data are rejected; higher ordinal wins.
+Gate: baseline/1500/1200 as-of scenarios pass; duplicate ordinals, invalid Add, invalid Override, and invalid Suppress data are rejected; higher ordinal wins; overlay fixtures prove the selected variant retains the same `RuleId`, is reached through an `Override` occurrence, and does not copy the rule.
 
 ## Layer 3 — typed I/O and the generic deterministic executor
 
 Deliverables: typed input/default/output/constraint tables, workflow graph, calculation DAG, bindings, InstantiationState, dirty work, attempt/result tables, and one safe deterministic executor contract.
 
-Gate: type errors and calculation cycles are rejected; input changes dirty only reachable work; identical inputs produce identical outputs and provenance.
+Gate: type errors and calculation cycles are rejected; classified material declared-type changes create new semantic identities; default-value and display-only text changes retain identity with appropriate history; input changes dirty only reachable work; identical inputs produce identical outputs and provenance. Any unclassified type-change edge case remains blocked for explicit clarification.
 
 ## Layer 4 — Tags expert system
 

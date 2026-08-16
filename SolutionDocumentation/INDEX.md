@@ -265,6 +265,12 @@ _Teach / Tell how to create software._
   `Build\Invoke-RepoHealthGate.ps1` RepoHealth gate for shared MSBuild property
   checks that must run after restore and before pack/publish, and the stable
   Visual Studio Build Tools 2026/MSBuild/NuGet deterministic pack prerequisite.
+  Since Sprint 0015 Stream P it also carries the Ace and ATAP.Utilities
+  convergence ledger: a proposed target build architecture pending operator
+  ratification, acceptance matrices for the proposed shared invariants, the
+  verified divergence baseline, and 13 unresolved decisions. Treat older
+  examples later in that document as historical where they conflict with the
+  ledger.
 - [C# Packages — Test Process](CSharp-Packages-Test-Process.md) —
   C# package testing process and expected test artifacts, including the
   repo-wide `tests\RepoHealth` Pester gate that is intentionally outside

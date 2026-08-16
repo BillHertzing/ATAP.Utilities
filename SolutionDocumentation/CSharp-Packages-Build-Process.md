@@ -39,6 +39,278 @@ scattered across [Building.md](Building.md) and [\_Planning/Explainers/0013-Buil
 
 ---
 
+## Sprint 0015 Stream P — Ace and ATAP.Utilities convergence ledger
+
+This file is the primary description of the C# build process for both
+ATAP.Utilities and Ace. [Immutable-Build-Strategy.md](Immutable-Build-Strategy.md)
+remains authoritative for the build-once/promote-the-same-artifact policy, and
+the focused versioning, testing, central-package-management, pack/push, and
+BuildMaster documents remain authoritative for their narrower subjects.
+
+### Target architecture (PROPOSED — pending operator ratification)
+
+> **Ratification status.** Everything in this subsection and in the two
+> subsections that follow it is **proposed, not ratified**. Task 15.160.c
+> drafted it from the 15.160.b classification and assembled the ratification
+> packet at
+> `_Planning/InformationForTheFuture/Sprint0015/StreamP/Task-15.160.c/ratification-packet.md`.
+> No operator ruling has been recorded. Tasks 15.161-15.166 are blocked on that
+> ruling for every item below that depends on an unresolved decision.
+
+The target architecture is one shared C# production process with small,
+explicit repository overlays. Unit 15.160.b classified 41 differences into four
+dispositions, and the numbered points below are restated in those terms so a
+reader can tell a settled obligation from an open question:
+
+1. **Shared invariants — 11 entries (`D01`, `D04`, `D05`, `D07`, `D09`, `D18`,
+   `D20`, `D22`, `D23`, `D25`, `D27`).** C# libraries in both repositories use
+   the same pinned toolchain, restore, central-package policy, versioning,
+   compilation, analysis, test, deterministic pack, provenance, immutable
+   publication, promotion, and health gates. Divergence on these is a defect.
+   `D18` and `D09` are unambiguous defects independent of every open decision
+   and may be fixed without waiting for ratification. **Proposed as
+   invariants; the set itself is what the operator is being asked to ratify.**
+2. **Explicit overlays — 8 entries (`D02`, `D17`, `D21`, `D24`, `D32`, `D39`,
+   `D40`, `D41`).** Repository/product identity, dependency catalogs,
+   target-framework and RID matrices, package metadata, solution membership,
+   and application-specific deployment checks are explicit, bounded overlays.
+   They are not reasons to fork the shared build mechanics. C# services and
+   applications use the shared process through restore, version, compile,
+   analysis, test, deterministic output, provenance, and promotion
+   eligibility, diverging only where their artifact type requires it:
+   `dotnet publish`, runtime/self-contained choices, service or application
+   startup validation, Release Bundle assembly, installation, and deployment.
+   **Caution:** Ace's application artifacts are **not** discoverable by
+   `OutputType` alone — `AceCommander.Client` and `AceCommander.Server` declare
+   their nature through the `Sdk` attribute
+   (`Microsoft.NET.Sdk.BlazorWebAssembly`, `Microsoft.NET.Sdk.Web`), and only
+   `AceOutpost.Windows` declares `OutputType=Exe`. Any criterion keyed on
+   `OutputType` covers one of three.
+3. **Obsolete legacy behavior — 9 entries (`D06`, `D11`, `D15`, `D26`, `D28`,
+   `D29`, `D30`, `D36`, `D38`).** These exist only because something was never
+   removed; disposition is deletion, not convergence. `D29` is the load-bearing
+   one: **ATAP.Utilities' canonical BuildTooling source still deletes a package
+   version from the feed before pushing it**
+   (`src/ATAP.Utilities.BuildTooling.CSharp/ATAP.Utilities.BuildTooling.targets`
+   lines 180-183), which contradicts
+   [Immutable-Build-Strategy.md](Immutable-Build-Strategy.md) §5 and §9.
+   Deletion must happen in the canonical source **before** that tooling is
+   deployed to Ace, or rebinding Ace propagates the defect.
+4. **Unresolved decisions — 13 entries.** Listed in full under _Unresolved
+   decisions pending operator ratification_ below. Ten of the 19 entries on the
+   six axes the board named for rationale are unresolved, so Stream P's
+   dominant blocker is architecture that was never decided rather than drift to
+   be repaired.
+
+Ownership is unchanged and is not in question: ATAP.Utilities owns the
+canonical BuildTooling source and shared BuildMaster runner; Ace consumes
+versioned deployed tooling and supplies only its repository/application
+variables and approved overlays. **This ownership statement carries no claim
+that either repository is immutable-compliant today** — see `D29` above and
+baseline row 9 below.
+
+Evidence for every claim in this subsection:
+`_generated/Sprint0015/StreamP/Task-15.160.a/` (inventory, evaluated
+properties, inventory report) and
+`_generated/Sprint0015/StreamP/Task-15.160.b/classification.json` in both
+repositories, with the prose classification and the six-axis rationale under
+`_Planning/InformationForTheFuture/Sprint0015/StreamP/Task-15.160.b/`.
+
+### Acceptance matrix for the proposed shared invariants (PROPOSED)
+
+One row per proposed mandatory shared invariant. **An acceptance criterion that
+no command can decide is not an acceptance criterion** — such rows are marked
+`NEEDS A DECIDING COMMAND` and must acquire one before the invariant can gate
+anything. Nothing in this matrix asserts that a criterion currently passes; the
+`Decided by` column names the command or artifact that _would_ decide it.
+
+| ID    | Proposed invariant                                                  | Acceptance criterion                                                                                                                                                           | Decided by                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ----- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `D01` | One declared SDK/toolchain in both repositories.                    | Both repositories contain a root `global.json` pinning the same SDK version with the same `rollForward` and `allowPrerelease`, and a build fails when that SDK is unavailable. | `Test-Path -LiteralPath <repo>/global.json` in both, plus `dotnet --version` compared against the pinned value. Present in ATAP.Utilities; absent in Ace (15.160.a inventory `sdk-selection`).                                                                                                                                                                                                                                              |
+| `D04` | Missing build tooling fails the build closed, not open.             | With the deployed BuildTooling absent, the build terminates with a named diagnostic instead of silently skipping the import.                                                   | **NEEDS A DECIDING COMMAND.** Today the import is `Condition="Exists(...)"`, so no command distinguishes "tooling present" from "tooling silently skipped". A criterion becomes decidable only once the guard is replaced by an explicit error; the test is then a build with the tooling directory absent, expecting a non-zero exit and that diagnostic code.                                                                             |
+| `D05` | One canonical versioned tooling deployment, consumed identically.   | In both repositories the sentinel-selected version resolves to a directory that exists and contains both the targets file and the custom-task assembly.                        | `dotnet msbuild <project> -getProperty:ATAPUtilitiesBuildToolingTargetsPath` then `Test-Path -LiteralPath` on the result and on `Release/net10.0/ATAP.Utilities.BuildTooling.CSharp.dll`. Currently resolves to a non-existent path in ATAP.Utilities (15.160.a).                                                                                                                                                                           |
+| `D07` | The committed diagnostic-verbosity default is `Release` in both.    | `ATAPBuildToolingConfiguration` evaluates to `Release` in both repositories on a clean checkout.                                                                               | `dotnet msbuild <project> -getProperty:ATAPBuildToolingConfiguration`. Evaluates `Debug` in ATAP.Utilities, `Release` in Ace (15.160.a evaluated properties).                                                                                                                                                                                                                                                                               |
+| `D09` | Fody **core** version is a declared input wherever weaving runs.    | Every repository containing at least one Fody weaver reference declares a central `Fody` `PackageVersion` at or above the .NET 10 floor (6.9.3).                               | `Select-String -Path <repo>/Directory.Packages.props -Pattern 'PackageVersion Include="Fody"'` in both. Present in ATAP.Utilities (6.9.3); absent in Ace, which weaves in six projects. Independent of the `D08` model decision.                                                                                                                                                                                                            |
+| `D18` | The ATAP.\* dependency-range rewrite is prerelease-gated in both.   | A **stable**-versioned packable project retains its resolved stable dependency range; only prerelease builds are rewritten to `[0.0.0-alpha-000, 2.0.0)`.                      | Pack a stable-versioned project in each repository and read the dependency range from the generated `.nuspec`. Textual precursor: compare the `Condition` on `ConstrainATAPPackageDependencyVersionRange` (ATAP.Utilities `Directory.Build.targets:161-163` vs Ace `:60-62`).                                                                                                                                                               |
+| `D20` | A lifecycle-stage-to-branch publication gate exists in both.        | Building a packable project on a ref that is not stable-capable, with an empty `PackageLifeCycleStage`, fails with the gate's diagnostic.                                      | Build on such a ref expecting `ATAP5TIER001`. Gate present at ATAP.Utilities `Directory.Build.props:335-347`; no counterpart in Ace.                                                                                                                                                                                                                                                                                                        |
+| `D22` | An equivalent repository-wide health gate runs in both.             | The gate script exists in both repositories and exits 0 before pack/publish.                                                                                                   | `pwsh -File <repo>/Build/Invoke-RepoHealthGate.ps1`. Present in ATAP.Utilities; **the script does not exist in Ace**, so the command cannot be run there yet. See the note below on what this gate actually asserts.                                                                                                                                                                                                                        |
+| `D23` | Each repository declares an explicit production scope.              | A production `.slnf` exists in both and restores under `--locked-mode`.                                                                                                        | `Test-Path -LiteralPath <repo>/<name>.Production.slnf`, then `dotnet restore <slnf> --locked-mode`. Three `.slnf` in ATAP.Utilities; zero in Ace. Filter _membership_ remains an overlay; filter _existence_ is the invariant.                                                                                                                                                                                                              |
+| `D25` | HTTPS transport with no insecure fallbacks in both.                 | No NuGet source in either repository uses `http://`, and no source carries `allowInsecureConnections`.                                                                         | `Select-String -Path <repo>/NuGet.\*onfig -Pattern 'http://                                                                                                                                                                                                                                                                                                                                                                                 | allowInsecureConnections'`expecting no matches. Ace currently has five`releasebundle-_`sources on`http://localhost:50000`and`allowInsecureConnections="true"`on five`nuget-_` sources. |
+| `D27` | One canonical spelling of the central NuGet configuration filename. | Both repositories spell the file identically, so probing succeeds on a case-sensitive filesystem.                                                                              | **PARTIALLY DECIDABLE — NEEDS A DECIDING COMMAND for the failure it guards against.** `Get-ChildItem -LiteralPath <repo> -Filter 'NuGet.*onfig' \| Select-Object Name` compares the spellings (`NuGet.Config` vs `NuGet.config`), but Windows is case-insensitive, so no command _on this workstation_ reproduces the Linux restore failure the invariant exists to prevent. Deciding it requires a restore on a case-sensitive filesystem. |
+
+Two notes that bear directly on this matrix, both carried from the 15.160.c
+cross-check (`_generated/Sprint0015/StreamP/Task-15.160.c/cross-check-findings.md`):
+
+- **The `D22` gate does not currently assert what §8.1 of this document says it
+  asserts.** `tests/RepoHealth/Directory.Build.Props.Properties.Tests.ps1`
+  (lines 13, 119-124) evaluates a property spelled
+  `CentralPackageVersionOverridesEnabled` — plural _Overrides_ — and requires it
+  to equal `false`. The NuGet property is
+  `CentralPackageVersionOverrideEnabled`, singular _Override_, and 15.160.a/b
+  measured that property as **unset in both repositories**. The name in
+  circulation is not a NuGet property, which is the most economical explanation
+  for why nobody ever set it. §8.1 of this document repeats the plural spelling.
+  Correcting the gate and its test is outside unit 15.160.c's writable scope and
+  is reported, not fixed.
+- **Locked-mode restore is conditioned on a property that is unset in both
+  repositories.** [CSharp-Central-Package-Management.md](CSharp-Central-Package-Management.md)
+  line 344 makes `RestoreLockedMode` conditional on
+  `ContinuousIntegrationBuild == 'true'`, and that property evaluates empty in
+  both repositories (`D37`). Any acceptance criterion that assumes locked
+  restore is in force must first settle `D37`.
+
+### Verified divergence baseline (2026-08-15, re-verified by 15.160.a/b)
+
+This table records the live Sprint 0015 worktree state that motivated
+`_Planning/Tasks.Sprint0015.md` Stream P. It is evidence of current divergence,
+not approval to preserve that divergence. A row may be marked aligned only by
+updating this ledger with the task and evidence that proves the deployed state.
+
+**No row is marked aligned by unit 15.160.c.** This unit edited documentation
+only and changed no build behavior, so no row's deployed state changed and none
+could qualify. Rows 3, 5, 7, and 9 below are **restated** where 15.160.a/b
+re-verification found the original wording inaccurate or imprecise — a
+restatement corrects the description of the divergence and never records its
+resolution.
+
+| Area                                                                                                       | Ace Sprint worktree                                                                                                                                                                                                                                                           | ATAP.Utilities Sprint worktree                                                                                                                                                                                                                                                 | Required disposition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SDK selection                                                                                              | Uses the installed SDK; no repository `global.json`.                                                                                                                                                                                                                          | Pins SDK `10.0.400` with `latestPatch`.                                                                                                                                                                                                                                        | Pin and validate one supported SDK/toolchain policy in both repositories.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Framework/RID defaults                                                                                     | Centrally targets `net10.0`; no shared RID matrix.                                                                                                                                                                                                                            | Centrally targets `net8.0;net9.0;net10.0` and `win-x64;linux-x64`.                                                                                                                                                                                                             | Keep only a ratified product overlay; share the mechanics that consume the matrix.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| BuildTooling deployment **(row 3 — RESTATED, sharpened; NOT aligned)**                                     | Sentinel selects `0.1.0.1`; `Build/ATAP.Utilities.BuildTooling.0.1.0.1/` contains **only** `build/ATAP.Utilities.BuildTooling.targets` — no `Release/net10.0/*.dll`.                                                                                                          | Sentinel selects `1.0.1.0`, but `Build/ATAP.Utilities.BuildTooling.1.0.1.0/` is absent entirely, so the `Exists()`-conditioned import is skipped.                                                                                                                              | **Sharpening:** the compiled custom-task assembly is absent from **both** repositories (`D04`), not just one; Ace merely has a deployed _targets_ file that ATAP.Utilities lacks (`D05`). This is survivable today only because the three `UsingTask` declarations are commented out as superseded by NBGV (`D06`), which is precisely why the fail-open defect went unnoticed. Produce one canonical, versioned deployment; make missing/mismatched tooling fail closed after an explicit bootstrap path.                                                                                                                                                                          |
+| Shared MSBuild policy                                                                                      | Smaller `Directory.Build.*` surface; no global Fody core injection, no lifecycle-to-feed validation, and dependency-range rewriting applies to all packable builds.                                                                                                           | Larger legacy surface; global Fody injection and lifecycle validation; dependency-range rewriting is prerelease-only.                                                                                                                                                          | Ratify and implement one common policy surface, with deliberate feature switches rather than repository drift.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Central package policy **(row 5 — RESTATED against `CentralPackageFloatingVersionsEnabled`; NOT aligned)** | `CentralPackageFloatingVersionsEnabled=true` (`Directory.Packages.props:8`); nine internal `ATAP.Utilities.*` packages pinned to the floating range `0.*-*` (`:15-26`), while three RRSBS packages are pinned exactly (`:29-33`) — so the floating policy is already partial. | `CentralPackageFloatingVersionsEnabled` is **unset**, and internal dependencies use explicit pinned versions.                                                                                                                                                                  | **Retraction:** the original row named `CentralPackageVersionOverrideEnabled` and claimed ATAP.Utilities "disables central version overrides". That property evaluates **empty in both repositories** and is declared in neither, so it described no divergence at all; it is excluded as `X01`. The real measured divergence is `CentralPackageFloatingVersionsEnabled` (`D16`), which is an **unresolved decision**, not a defect to converge. Define common restore/lock determinism and explicit ownership of any permitted floating development inputs. Dependency catalogs may legitimately differ (`D17`).                                                                   |
+| NuGet/ProGet transport                                                                                     | NuGet feeds are partly migrated to `https://utat022:50000`, but retain stale insecure-connection comments/attributes; ReleaseBundle feeds still use HTTP localhost.                                                                                                           | Uses `https://utat022:50000` without `allowInsecureConnections`.                                                                                                                                                                                                               | Use the same HTTPS endpoints, source mapping, audit sources, and SecretName boundary; remove stale insecure fallbacks.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Lock-file CI **(row 7 — RESTATED, narrowed to restore scope; NOT aligned)**                                | `.github/workflows/lock-file-guard.yml` restores `AceCommander.sln --locked-mode`; adds a `samples/**` exclusion to the `git diff` check.                                                                                                                                     | The same workflow, from a near-identical template, restores `ATAP.Utilities.Production.slnf --locked-mode`.                                                                                                                                                                    | **Narrowing:** the original row overstated the gap. The gate itself is already converged — same workflow name, triggers, runner labels, and `--locked-mode` + `git diff --exit-code` shape in both repositories (`D24`, classified an overlay). What actually differs is the **restore scope**, which is downstream of `D23` (Ace has no production `.slnf`): once Ace has one, the scope difference becomes a one-line overlay of the same template. The `samples/**` exclusion is a legitimate repository-content overlay. The residual invariant is `D23`, not the workflow.                                                                                                     |
+| RepoHealth                                                                                                 | No equivalent repository-wide shared-property gate.                                                                                                                                                                                                                           | Runs `Build/Invoke-RepoHealthGate.ps1` before pack/publish.                                                                                                                                                                                                                    | Run equivalent evaluated-property, packaging, and drift gates in both repositories.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Publishing implementation **(row 9 — RESTATED, sharpened; NOT aligned)**                                   | Deployed `0.1.0.1` target uses `http://localhost:50000`, reads a raw `$env:PROGET_ADMIN_API_KEY` inside an inline `Invoke-RestMethod -Method Delete`, then pushes (`D28`).                                                                                                    | Current source uses `https://utat022:50000` and a SecretName-mediated PowerShell leaf, but the selected deployed target is absent — **and the source still deletes the existing version from the feed before pushing** (`ATAP.Utilities.BuildTooling.targets:180-183`, `D29`). | **Sharpening — read this before rebinding Ace:** ATAP.Utilities' improvement over Ace's deployed copy is transport and secret handling, **not** the removal of delete-and-republish. This row must not be read as "ATAP.Utilities is already immutable-compliant"; delete-before-push contradicts [Immutable-Build-Strategy.md](Immutable-Build-Strategy.md) §5 and §9 in both repositories. Deploying current ATAP.Utilities tooling to Ace would fix `D28` while **propagating** `D29`, so the deletion must be removed from the canonical source _first_. Publish a new immutable version once, never delete/reuse a package version, and promote identical bytes through tiers. |
+| BuildMaster binding                                                                                        | Documentation and variables still carry historical AceCommander repository/branch/path assumptions.                                                                                                                                                                           | Owns the common five-stage C# plan and stage runner.                                                                                                                                                                                                                           | Rebind Ace to its current identity while retaining one common plan/runner; synchronize and verify the deployed raft copy.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Services/applications                                                                                      | Application outputs are not governed by a complete parity contract with library builds.                                                                                                                                                                                       | Library/package documentation dominates; executable samples/services have no single shared closeout matrix.                                                                                                                                                                    | Reuse the library pipeline through deterministic build/test, then add a narrow publish/ReleaseBundle/install/deploy tail.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+
+### Unresolved decisions pending operator ratification
+
+**Thirteen** decisions must be ruled on before the work they gate can proceed.
+They are reproduced here so this file is self-contained; the packet the operator
+rules on is
+`_Planning/InformationForTheFuture/Sprint0015/StreamP/Task-15.160.c/ratification-packet.md`,
+which carries the same thirteen with fuller context and, where defensible, a
+recommendation.
+
+**No ruling has been recorded on any of them.** Nothing below may be treated as
+settled, and no successor task may resolve one of these by writing code that
+assumes an answer. Ten of the thirteen fall on the six axes the Sprint 0015
+board named as requiring rationale.
+
+1. **`D03` — RIDs for Ace's application artifacts.** For `AceCommander.Client`
+   (Blazor WASM), `AceCommander.Server` (ASP.NET Core), and `AceOutpost.Windows`
+   (console `Exe`), which RIDs must each publish for, and is publication
+   framework-dependent or self-contained? _Options:_ (a) adopt
+   `win-x64;linux-x64` centrally in Ace; (b) declare RIDs on application
+   projects only, leaving libraries RID-less; (c) ratify framework-dependent
+   portable publication with no RID. _Consequence:_ blocks any publish/Release
+   Bundle work in the 15.161-15.166 sequence, and is a hard prerequisite for
+   `D33`.
+2. **`D08` — the canonical Fody injection model.** _Options:_ (a) global
+   injection plus a documented per-project opt-out able to express
+   `AceCommander.Server`'s async-weaving exclusion; (b) per-project opt-in in
+   both repositories, converting ATAP.Utilities' global injection into explicit
+   references; (c) global injection in ATAP.Utilities only, ratified as a
+   library-repository overlay with Ace permanently opt-in. _Consequence:_
+   gates any shared-MSBuild-policy convergence task. Naive convergence is
+   **unsafe** — p`documents a deliberate
+exclusion.`D09` (pin the Fody core version) holds under every option and
+   need not wait.
+3. **`D10` — the shared Roslyn analyzer policy.** Is `EnableNETAnalyzers` on, at
+   what `AnalysisLevel` and `AnalysisMode`, is `EnforceCodeStyleInBuild` on, and
+   do violations fail the build or warn? _This is a shared gap, not a
+   divergence:_ neither repository sets any of the four. _Consequence:_ gates
+   the analysis stage of the shared process; should be decided together with
+   `D13`, since analyzers without `TreatWarningsAsErrors` produce diagnostics
+   nobody is obliged to act on.
+4. **`D12` — `SYSLIB0011` as an error.** Is Ace's escalation a shared policy to
+   adopt in ATAP.Utilities, or an Ace-specific overlay to document and bound?
+   If shared, does ATAP.Utilities compile clean under it today? _Consequence:_
+   small, but it changes the warning-policy convergence target.
+5. **`D13` — `TreatWarningsAsErrors`.** Should it be `true` in both
+   repositories, and at which tier does it become blocking — developer inner
+   loop, CI, or promotion gate only? _Shared gap: unset in both._
+   _Consequence:_ sets the floor for the analysis stage; remediation cost is
+   unmeasured, so a measurement task should probably precede the ruling.
+6. **`D14` — the nullable `NoWarn` suppression.** Does ATAP.Utilities remove it
+   to match Ace (which has already commented the identical block out), keep it
+   as a bounded and dated exception, or does Ace re-adopt it? _Consequence:_
+   removal exposes an unmeasured nullability warning surface across 210
+   projects; measure before ruling.
+7. **`D16` — floating internal `0.*-*` dependencies in Ace.** _Options:_ (a) pin
+   explicitly and converge; (b) permit floating in sprint/experimental branches
+   only, enforced by a gate that fails a `main`/`release` build containing any
+   floating range — which is what Ace's own comment promises and nothing
+   enforces; (c) ratify floating permanently and accept the lock file as the
+   sole record of build inputs. Under (b), who owns the pin-before-merge step?
+   _Consequence:_ this is the restated row 5 and it gates the
+   restore/lock-determinism task. Note the tension with
+   [Immutable-Build-Strategy.md](Immutable-Build-Strategy.md) §6.3, which
+   already describes floating `0.*-*` resolution as intentional for consumers —
+   see the cross-check findings before ruling.
+8. **`D19` — packability default.** Is packability opt-in (central
+   `IsPackable=false`, publishable projects opting in) or opt-out (SDK default,
+   non-publishable projects opting out)? If opt-in, does the `D22` health gate
+   enforce that every packable project is a deliberate declaration?
+   _Consequence:_ the opt-out direction has a silent failure mode — a new
+   ATAP.Utilities project is publishable unless someone remembers to opt out,
+   and 72 projects have already needed that opt-out.
+9. **`D31` — the deployed BuildMaster raft.** Who performs the live comparison
+   against the canonical five-stage plan and stage runner, under what approval,
+   and does the result become a recurring gate or a one-time reconciliation?
+   _Consequence:_ undecidable by any file-reading unit; it needs a live
+   BuildMaster action, which is a gated operation no Stream P worker may take.
+10. **`D33` — how Ace's application publish inputs are declared.** _Options:_
+    (a) `.pubxml` profiles committed per application project, matching
+    ATAP.Utilities' 15; (b) BuildMaster stage parameters with no in-repository
+    profile; (c) a Release Bundle definition superseding both. _Consequence:_
+    Ace has **zero** publish profiles beside three deployable applications;
+    `D03` must be answered first, since a publish profile without a RID
+    decision is not authorable.
+11. **`D34` — the application/service parity contract.** Which library-pipeline
+    stages (restore, version, compile, analysis, test, deterministic output,
+    provenance, promotion eligibility) are mandatory for application projects,
+    and what is the narrow additional tail (publish, Release Bundle, install,
+    deploy) that applies only to them? _Consequence:_ this is baseline row 11.
+    Writing the contract **is** the decision — no file check can measure
+    conformance to a contract that does not yet exist.
+12. **`D35` — version-file granularity.** Is per-package independent versioning
+    (ATAP.Utilities' 181 project-adjacent `version.json`, no root file)
+    ratified as a library-repository overlay, or does ATAP.Utilities also need a
+    repository-level `version.json`? If ratified as-is, what identifies an
+    ATAP.Utilities repository-level release? _Consequence:_ without a
+    repository-level version there is no single version for tier promotion and
+    Release Bundle identity to anchor to.
+13. **`D37` — where `ContinuousIntegrationBuild=true` is set.** Unconditionally
+    in `Directory.Build.props`, or only when a CI environment variable is
+    present? _Consequence:_ the property is unset in **both** repositories
+    today, so deterministic path normalization and SourceLink are not fully in
+    effect, and the locked-restore condition in
+    [CSharp-Central-Package-Management.md](CSharp-Central-Package-Management.md)
+    line 344 never fires. Note that
+    [Immutable-Build-Strategy.md](Immutable-Build-Strategy.md) §6.4 already
+    **mandates** `ContinuousIntegrationBuild=true` for the Experimental build,
+    so the _whether_ may already be settled policy and only the _where_ is
+    genuinely open — the operator should confirm which reading governs.
+
+### Stream P documentation rule
+
+Tasks 15.160 through 15.166 must update this section as their work finishes.
+Each completed task must replace its affected divergence statement with the
+implemented contract and link the command or `_generated/Sprint0015/` artifact
+that proves it. Task 15.166 performs the final consistency pass across this file,
+the focused companion documents, both repositories' nearest indexes/readmes, and
+the synchronized Sprint 0015 planning board. Until that closeout is complete,
+older examples elsewhere in this document—especially legacy custom version-task,
+HTTP feed, bootstrap-copy, or build-per-tier examples—must be treated as historical
+material when they conflict with this ledger or Immutable Build Strategy.
+
+---
+
 ## 1. The Four Files That Cooperate
 
 Every project build in this solution is driven by four files working together.
@@ -763,22 +1035,22 @@ dotnet build MyProject.csproj --configuration Release
 
 ## 8. Key Property Reference
 
-| Property                                       | Set in                                                      | Example value                                                          | Purpose                                                                                       |
-| ---------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `SolutionDir`                                  | `Directory.Build.props`                                     | `C:\...\ATAP.Utilities\`                                               | Root of the repository.                                                                       |
-| `SolutionBuildToolsBaseDir`                    | `Directory.Build.props`                                     | `$(SolutionDir)Build\`                                                 | Where pre-built task tools live.                                                              |
-| `ATAPBuildToolingConfiguration`                | `Directory.Build.props`                                     | `Debug` or `Release`                                                   | Verbose-logging switch inside tasks.                                                          |
-| `ATAPBuildToolingDebugVerbosity`               | `Directory.Build.props`                                     | `Trace`                                                                | Sub-level logging verbosity.                                                                  |
-| `ATAPBuildToolingVersion`                      | `Directory.Build.props` (sentinel file or fallback)         | `0.1.0`                                                                | Deployed BuildTooling version; read from `Build\ATAP.Utilities.BuildTooling.current-version`. |
-| `ATAPUtilitiesBuildToolingTargetsPath`         | `Directory.Build.props`                                     | `$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.0.1.0\build\` | Where `ATAP.Utilities.BuildTooling.targets` is loaded from.                                   |
-| `ATAPUtilitiesBuildToolingTasksAssembly`       | `Directory.Build.props`                                     | `...\Release\net10.0\ATAP.Utilities.BuildTooling.CSharp.dll`           | The task DLL path.                                                                            |
-| `VersionFile`                                  | `Directory.Build.props`                                     | `$(MSBuildProjectDirectory)\Properties\AssemblyInfo.cs`                | Per-project version file.                                                                     |
-| `UpdatePackageVersionLockFilePath`             | `Directory.Build.props`                                     | `$(MSBuildProjectDirectory)\<ProjectName>.UpdatePackageVersion.lock`   | Multi-TFM deduplication lock.                                                                 |
-| `MajorVersion`, `MinorVersion`, `PatchVersion` | Individual `.csproj`                                        | `0`, `1`, `0`                                                          | Semantic version parts; read by `UpdateVersion`.                                              |
-| `PackageLifeCycleStage`                        | Individual `.csproj`                                        | `Development`                                                          | Controls whether a pre-release suffix is added.                                               |
-| `PackageLabel`                                 | Individual `.csproj`                                        | `Alpha`                                                                | Pre-release label string.                                                                     |
-| `ProGetExperimentalFeedUrl`                    | `ATAP.Utilities.BuildTooling.targets`                       | `http://localhost:50000/nuget/nuget-experimental/v3/index.json`        | Push destination.                                                                             |
-| `ProGetApiKeySecretName`                       | `ATAP.Utilities.BuildTooling.targets`                        | `ProGet.Admin.API.Key`                                                  | Non-secret name passed to the publishing wrapper.                                             |
+| Property                                       | Set in                                              | Example value                                                          | Purpose                                                                                       |
+| ---------------------------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `SolutionDir`                                  | `Directory.Build.props`                             | `C:\...\ATAP.Utilities\`                                               | Root of the repository.                                                                       |
+| `SolutionBuildToolsBaseDir`                    | `Directory.Build.props`                             | `$(SolutionDir)Build\`                                                 | Where pre-built task tools live.                                                              |
+| `ATAPBuildToolingConfiguration`                | `Directory.Build.props`                             | `Debug` or `Release`                                                   | Verbose-logging switch inside tasks.                                                          |
+| `ATAPBuildToolingDebugVerbosity`               | `Directory.Build.props`                             | `Trace`                                                                | Sub-level logging verbosity.                                                                  |
+| `ATAPBuildToolingVersion`                      | `Directory.Build.props` (sentinel file or fallback) | `0.1.0`                                                                | Deployed BuildTooling version; read from `Build\ATAP.Utilities.BuildTooling.current-version`. |
+| `ATAPUtilitiesBuildToolingTargetsPath`         | `Directory.Build.props`                             | `$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.0.1.0\build\` | Where `ATAP.Utilities.BuildTooling.targets` is loaded from.                                   |
+| `ATAPUtilitiesBuildToolingTasksAssembly`       | `Directory.Build.props`                             | `...\Release\net10.0\ATAP.Utilities.BuildTooling.CSharp.dll`           | The task DLL path.                                                                            |
+| `VersionFile`                                  | `Directory.Build.props`                             | `$(MSBuildProjectDirectory)\Properties\AssemblyInfo.cs`                | Per-project version file.                                                                     |
+| `UpdatePackageVersionLockFilePath`             | `Directory.Build.props`                             | `$(MSBuildProjectDirectory)\<ProjectName>.UpdatePackageVersion.lock`   | Multi-TFM deduplication lock.                                                                 |
+| `MajorVersion`, `MinorVersion`, `PatchVersion` | Individual `.csproj`                                | `0`, `1`, `0`                                                          | Semantic version parts; read by `UpdateVersion`.                                              |
+| `PackageLifeCycleStage`                        | Individual `.csproj`                                | `Development`                                                          | Controls whether a pre-release suffix is added.                                               |
+| `PackageLabel`                                 | Individual `.csproj`                                | `Alpha`                                                                | Pre-release label string.                                                                     |
+| `ProGetExperimentalFeedUrl`                    | `ATAP.Utilities.BuildTooling.targets`               | `http://localhost:50000/nuget/nuget-experimental/v3/index.json`        | Push destination.                                                                             |
+| `ProGetApiKeySecretName`                       | `ATAP.Utilities.BuildTooling.targets`               | `ProGet.Admin.API.Key`                                                 | Non-secret name passed to the publishing wrapper.                                             |
 
 ### 8.1 RepoHealth gate for shared MSBuild properties
 
@@ -880,7 +1152,7 @@ See also [github.com/clairernovotny/DeterministicBuilds](https://github.com/clai
 | Version not incrementing                                                            | `CallTarget` inside `BeforeCompile` is commented out.                             | Intentional in current state; uncomment when ready, or rely on NBGV (§9).                                                                                         |
 | Version incremented N times per build (N = number of TFMs)                          | Lock file logic not working; lock file path resolves differently per inner build. | Verify `$(UpdatePackageVersionLockFilePath)` uses `$(MSBuildProjectDirectory)`, not a relative path.                                                              |
 | `AssemblyInfo.cs` has all-zero versions after first build                           | File was not created with valid initial values before bootstrap.                  | Write valid initial content (see [CSharp-Packages-Versioning.md](CSharp-Packages-Versioning.md)).                                                                 |
-| ProGet push fails with 401                                                          | `ProGet.Admin.API.Key` cannot resolve or lacks permission.                        | Verify the SecretName metadata and grant; never print or export its value.                                                                                         |
+| ProGet push fails with 401                                                          | `ProGet.Admin.API.Key` cannot resolve or lacks permission.                        | Verify the SecretName metadata and grant; never print or export its value.                                                                                        |
 | DesignTime build in Visual Studio triggers version update                           | `DesignTimeBuild` condition missing from `BeforeCompile` inputs.                  | Restore the `$(DesignTimeBuild) != true` guard inside `BeforeCompile`.                                                                                            |
 | `MSB4022` "result of evaluating the value … is invalid" on `UsingTask`              | Sentinel file points to a nonexistent directory during bootstrap.                 | The `Condition="'$(ATAP…Assembly)' != ''"` guard on `UsingTask` (§5.1) normally prevents this; verify the guard is still present.                                 |
 | Project pack writes dependency `>= resolved-version`                                | `ConstrainATAPPackageDependencyVersionRange` (§3.5) did not run.                  | Verify `IsPackable=true` on the project; confirm the target is present in `Directory.Build.targets`.                                                              |

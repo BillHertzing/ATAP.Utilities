@@ -74,7 +74,7 @@ public sealed class BitwardenSecretsManagerProvider : SecretsAbstract
 
   private async Task<IReadOnlyList<BwsSecret>> ListProjectSecretsAsync(CancellationToken cancellationToken)
   {
-    var result = await _runner.RunAsync(["secret", "list", _options.ProjectId, "--output", "json", "--color", "no"], cancellationToken).ConfigureAwait(false);
+    var result = await _runner.RunAsync(["secret", "list", _options.ProjectId, "--output", "json", "--color", "never"], cancellationToken).ConfigureAwait(false);
     try
     {
       var utf8 = Encoding.UTF8.GetBytes(result.StandardOutput);

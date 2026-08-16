@@ -129,7 +129,7 @@ the promotion ceiling for one immutable pipeline run, not the current stage.
 | Development          | `nuget-development`                     | `Alpha`              | `0.1.0-Alpha.1`       | `integration`            |
 | Integration          | `nuget-integration`                     | `Beta`               | `0.1.0-Beta.2`        | `integration` (promoted) |
 | QA                   | `nuget-qa`                              | `QA`                 | `0.1.0-QA.1`          | `qa`                     |
-| Production (=Stable) | `nuget-stable`                          | _(none)_             | `0.1.0`               | `main`                   |
+| Production (=Stable) | `nuget-stable`                          | _(none)_             | `0.1.0`               | `main`, `release/*`, or numbered Sprint worktree branch |
 
 - The five NuGet feeds are **permanent** topology — `nuget-experimental`,
   `nuget-development`, `nuget-integration`, `nuget-qa`, `nuget-stable` — and are
@@ -142,9 +142,11 @@ the promotion ceiling for one immutable pipeline run, not the current stage.
   is feed-side history, "Production" is pipeline-side canonical. A package
   with no prerelease label (`0.1.0` exactly) is a Production / Stable
   release. NuGet treats any `-*` suffix as prerelease.
-- The `Sprint` label lives on the developer's sprint worktree branch. Packages
-  pushed from there land only in `nuget-experimental` and are skipped
-  by higher stages because their `CeilingTier` is Experimental.
+- The `Sprint` label normally lives on the developer's sprint worktree branch. Packages
+  carrying that label land only in `nuget-experimental` and are skipped by higher stages
+  because their `CeilingTier` is Experimental. A Sprint worktree may deliberately raise
+  the ceiling, including to an empty Production/Stable label, when the package is approved
+  for the corresponding immutable promotion run; branch location does not reduce that ceiling.
 
 > **Ceiling semantics** — the `version.json` label is the promotion ceiling for
 > one immutable pipeline run. For the complete label-to-tier mapping and the

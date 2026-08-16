@@ -402,7 +402,7 @@ back to the unnamed Windows PowerShell endpoint:
 
 ```powershell
 Invoke-Command -ComputerName '<host>' -ConfigurationName 'PowerShell.7' -ScriptBlock {
-  [pscustomobject]@{
+  [PSCustomobject]@{
     ComputerName = $env:COMPUTERNAME
     UserName = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
     PSVersion = $PSVersionTable.PSVersion.ToString()
@@ -1305,7 +1305,7 @@ SELECT MaxMB  = (SELECT CONVERT(bigint, value_in_use) FROM sys.configurations WH
        UsedMB = (SELECT physical_memory_in_use_kb / 1024 FROM sys.dm_os_process_memory)
 '@
   $r = $cmd.ExecuteReader()
-  while ($r.Read()) { [pscustomobject] @{ Instance = $instance; MaxMB = $r['MaxMB']; UsedMB = $r['UsedMB'] } }
+  while ($r.Read()) { [PSCustomobject] @{ Instance = $instance; MaxMB = $r['MaxMB']; UsedMB = $r['UsedMB'] } }
   $c.Close()
 }
 $rows | Format-Table -AutoSize
@@ -2461,9 +2461,10 @@ Minimum checks:
 3. ProGet is reachable.
 4. BuildMaster is reachable.
 
-On a Sprint branch, pass `-p:PackageLifeCycleStage=Sprint` consistently to split and
-combined restore/build/test flows. Preserve the `ATAP5TIER001` guard. Omit the override on
-`main`, where the stable/empty lifecycle label is valid.
+Let committed `version.json` metadata supply `PackageLifeCycleStage` consistently to split and
+combined restore/build/test flows. Preserve the `ATAP5TIER001` guard: stable/empty lifecycle is
+valid on `main`, `release/*`, and numbered Sprint worktree branches, while other branch kinds
+must carry an explicit prerelease label.
 
 Example reachability checks:
 

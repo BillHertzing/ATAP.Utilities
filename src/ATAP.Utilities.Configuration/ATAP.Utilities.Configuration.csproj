@@ -1,6 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
+    <PackageVersion>0.1.1</PackageVersion>
+    <Version>0.1.1</Version>
     <EnableDefaultItems>false</EnableDefaultItems>
     <OutputType>Library</OutputType>
     <IncludeBuildOutput>false</IncludeBuildOutput>
@@ -8,7 +10,6 @@
     <IsPackable>true</IsPackable>
     <Description>Aggregator package for ATAP.Utilities.Configuration libraries.</Description>
   </PropertyGroup>
-
   <!-- Aggregate all Configuration child projects — no PrivateAssets so they flow as NuGet deps -->
   <ItemGroup>
     <ProjectReference Include="Extensions\ATAP.Utilities.Configuration.Extensions.csproj" />
@@ -16,5 +17,4 @@
     <ProjectReference Include="Secrets\Shims\Bitwarden\ATAP.Utilities.Configuration.Secrets.Shim.Bitwarden.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Secrets\ATAP.Utilities.Secrets.csproj" />
   </ItemGroup>
-
 </Project>

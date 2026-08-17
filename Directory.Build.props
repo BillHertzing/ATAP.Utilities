@@ -272,14 +272,8 @@
        evaluates correctly because MSBuild re-evaluates property references lazily at
        consumer sites during the build. -->
   <PropertyGroup>
-    <PackageLifeCycleStage>$(NBGV_PrereleaseLabel)</PackageLifeCycleStage>
-    <!-- Fallback for local/worktree builds where NBGV_PrereleaseLabel may be empty:
-         infer the lifecycle label directly from the nearest project version.json.
-         Expected version pattern examples:
-           0.1-Sprint.{height}
-           0.1-Alpha.{height}
-           0.1-Beta.{height}
-           0.1-QA.{height} -->
+    <!-- Derive routing from the nearest version.json at evaluation time. NBGV targets
+         are imported after this props file, so NBGV_PrereleaseLabel is not reliable here. -->
     <PackageLifeCycleStage
       Condition=" '$(PackageLifeCycleStage)' == '' And Exists('$(MSBuildProjectDirectory)\version.json') ">$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\version.json')), '&quot;version&quot;\s*:\s*&quot;[^&quot;]*-([A-Za-z]+)[\.-][^&quot;]*&quot;', System.Text.RegularExpressions.RegexOptions.IgnoreCase).Groups[1].Value)</PackageLifeCycleStage>
     <PackageLifeCycleStage

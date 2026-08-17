@@ -1,12 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
+    <PackageVersion>0.1.1</PackageVersion>
+    <Version>0.1.1</Version>
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
     <Description>Extension methods and helpers for ASP.NET Core Generic Host configuration, environment variables, JSON, command-line, localization, and logging setup.</Description>
   </PropertyGroup>
-
   <!-- Packages necessary to run the ASP.Net Core Generic Host and web server hosts Server -->
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration" />
@@ -17,11 +18,9 @@
     <PackageReference Include="Microsoft.Extensions.Localization" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
   </ItemGroup>
-
   <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
   <ItemGroup>
     <!-- Project Reference to the ETW attribute and log provider -->
     <ProjectReference Include="..\..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>
-
 </Project>

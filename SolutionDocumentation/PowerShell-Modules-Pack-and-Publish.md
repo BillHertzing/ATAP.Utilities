@@ -1,6 +1,34 @@
 # PowerShell Modules — Pack and Publish
 
-> **Task 13.62 security cutover:** Tier-specific key names and ProGet API-key environment fallbacks below are superseded. Pass `ProGet.BuildMaster.API.Key` as `-ProGetApiKeySecretName`; the publish leaf resolves it immediately before use.
+> **Task 13.62 security cutover:** Tier-specific key names and ProGet API-key
+> environment fallbacks below are superseded. The publish leaf resolves the key
+> with `Get-SecretATAP` from a SecretName; no raw key value ever appears in a
+> parameter, environment variable, or log.
+
+> **SecretName host suffix (SC-0288) — read before copying any example below.**
+> Every ProGet SecretName is stored in the canonical host-suffixed form
+> `<BaseName>.<service-host>` — the suffix names the host running the ProGet
+> instance the credential authenticates against (see
+> [SecretName-HostSuffix-Convention.md](SecretName-HostSuffix-Convention.md)).
+> The suffixless base name `ProGet.BuildMaster.API.Key` **does not exist in the
+> vault** and fails closed with "No Bitwarden Secrets Manager secret found with
+> key ... in the BWS token's granted projects."
+>
+> **Therefore: omit `-ProGetApiKeySecretName` entirely.** Each BuildTooling
+> cmdlet applies `Resolve-HostSuffixedSecretName` in its BEGIN block *only when
+> the caller did not bind the parameter*, deriving the host from the
+> `ServicePlacementMap` setting. Passing the bare base name explicitly is
+> honoured verbatim and therefore **defeats** that resolver. If you must name it
+> explicitly (for cross-host administration), derive the host rather than
+> hard-coding it:
+>
+> ```powershell
+> # Also correct: take the already-suffixed name from host settings.
+> $secretName = $global:settings['ProGetBuildMasterApiKeySecretName']
+> ```
+>
+> Never hard-code a literal `.utat01` / `.utat022` suffix in a command, plan, or
+> example — that is prohibited by the convention's §4.
 
 **Scope:** Sprint-0006/0007. How a built PowerShell module (`.psm1` + `.psd1`
 under `_generated/psmodules/<Module>/packages/<Module>/`) becomes a `.nupkg`
@@ -159,11 +187,19 @@ See [BuildMaster-ProGet-CSharp-Package-Pipeline.md](BuildMaster-ProGet-CSharp-Pa
 
 ## 6. API-key resolution
 
-ProGet requires an API key for write operations. Callers pass the non-secret
-SecretName `ProGet.BuildMaster.API.Key` as `-ProGetApiKeySecretName`. The
-authenticated publishing leaf resolves it through `Get-SecretATAP` immediately
-before the ProGet request and fails closed when resolution is unavailable or
-empty. There is no environment-variable or broader administrator fallback.
+ProGet requires an API key for write operations. Callers normally pass no
+SecretName at all: `Publish-PSModuleToProGet` defaults
+`-ProGetApiKeySecretName` to the base name `ProGet.BuildMaster.API.Key` and,
+because the parameter was left unbound, resolves it to the host-suffixed vault
+name through `Resolve-HostSuffixedSecretName` in its BEGIN block (SC-0288). The
+authenticated publishing leaf then resolves the value through `Get-SecretATAP`
+immediately before the ProGet request and fails closed when resolution is
+unavailable or empty. There is no environment-variable or broader administrator
+fallback.
+
+Binding `-ProGetApiKeySecretName` to the bare base name suppresses that
+resolution and is the single most common cause of a failed publish — see the
+SC-0288 note at the top of this document.
 
 The resolved value exists only inside that leaf and is never logged, returned,
 or placed in caller-visible state.
@@ -194,12 +230,12 @@ or PSGallery.
 
 ## 8. The publish call
 
-Use the wrapper so the caller supplies only a SecretName:
+Use the wrapper so no key value ever reaches the caller. `-ProGetApiKeySecretName`
+is intentionally omitted so the cmdlet's `Resolve-HostSuffixedSecretName` BEGIN
+block supplies the host suffix:
 
 ```powershell
-Publish-PSModuleToProGet `
-  -NupkgPath $resolvedNupkg `
-  -ProGetApiKeySecretName 'ProGet.BuildMaster.API.Key'
+Publish-PSModuleToProGet -NupkgPath $resolvedNupkg
 ```
 
 The authenticated leaf passes `-NupkgPath` (a pre-built `.nupkg` path), not

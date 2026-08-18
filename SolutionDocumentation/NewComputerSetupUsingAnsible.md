@@ -986,14 +986,22 @@ partial install. The only reliable way to remove them is the Management REST API
 
 | Requirement     | Detail                                                                                               |
 | --------------- | ---------------------------------------------------------------------------------------------------- |
-| SecretName      | `ProGet.Admin.API.Key`, with **Use/Manage Feeds** permission                                         |
+| SecretName      | base name `ProGet.Admin.API.Key`, with **Use/Manage Feeds** permission; the vault entry is host-suffixed (SC-0288) and is supplied by the cmdlet's resolver — do not pass it explicitly |
 | Boundary        | `List-ProGetFeeds` / `Remove-ProGetFeeds`; never call the authenticated REST endpoint directly       |
 | ProGet base URL | `$global:settings[$global:configRootKeys['ProGetBaseUrlConfigRootKey']]`                             |
 
 #### Step 1 — List feeds to confirm the exact name
 
+`-ProGetApiKeySecretName` is intentionally omitted throughout this section:
+each cmdlet defaults it to the base name and applies
+`Resolve-HostSuffixedSecretName` in its BEGIN block *only when the caller did
+not bind the parameter*. Passing the bare base name explicitly is honoured
+verbatim, defeats that resolver, and fails closed — the vault holds only the
+host-suffixed form. See
+[SecretName-HostSuffix-Convention.md](SecretName-HostSuffix-Convention.md).
+
 ```powershell
-List-ProGetFeeds -ProGetApiKeySecretName 'ProGet.Admin.API.Key'
+List-ProGetFeeds
 ```
 
 Returns a JSON array of feed objects. Locate the exact `name` value before deleting.
@@ -1002,9 +1010,7 @@ Returns a JSON array of feed objects. Locate the exact `name` value before delet
 
 ```powershell
 $feedName = 'IntPreNugetDevPushFeed'   # replace with the name confirmed in Step 1
-Remove-ProGetFeeds `
-  -Name $feedName `
-  -ProGetApiKeySecretName 'ProGet.Admin.API.Key'
+Remove-ProGetFeeds -Name $feedName
 ```
 
 HTTP 200 with no body = success. Common errors:
@@ -1018,8 +1024,8 @@ HTTP 200 with no body = success. Common errors:
 
 Do not call `pgutil` directly for authenticated administration because its
 command-line contract requires a raw credential handoff. Use
-`Remove-ProGetFeeds -ProGetApiKeySecretName 'ProGet.Admin.API.Key'`; it resolves
-the secret only inside the authenticated leaf.
+`Remove-ProGetFeeds`; it resolves the SecretName to its host-suffixed form and
+then the secret value only inside the authenticated leaf.
 
 #### After deletion
 

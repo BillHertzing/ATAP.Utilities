@@ -112,4 +112,17 @@ Describe 'Task 13.62 ProGet SecretName-only public contract' -Tag 'Unit', 'Secur
     )
     $violations | Should -BeNullOrEmpty
   }
-}
+
+  It 'keeps ordinary MSBuild release builds free of ProGet deletion, push, feed, and credential paths' -TestCases $repositoryCase {
+    param($RepositoryRoot)
+
+    $targetsPath = Join-Path $RepositoryRoot 'src\ATAP.Utilities.BuildTooling.CSharp\ATAP.Utilities.BuildTooling.targets'
+    $explicitPublisherPath = Join-Path $RepositoryRoot 'src\ATAP.Utilities.BuildTooling.ProGet.PowerShell\public\Publish-NuGetPackageToProGet.ps1'
+    $targetsContent = Get-Content -LiteralPath $targetsPath -Raw
+    $explicitPublisherContent = Get-Content -LiteralPath $explicitPublisherPath -Raw
+
+    $targetsContent | Should -Not -Match '(?i)PublishAfterBuild|Invoke-ProGetNuGetPublish|ProGetExperimentalFeedUrl|ProGetBaseUrl|ProGetApiKeySecretName|nuget-experimental|dotnet\s+nuget\s+push|Invoke-RestMethod\s+-Method\s+Delete'
+    $explicitPublisherPath | Should -Exist
+    $explicitPublisherContent | Should -Match '(?i)dotnet\s+nuget\s+push'
+    $explicitPublisherContent | Should -Match '(?i)--skip-duplicate'
+  }}

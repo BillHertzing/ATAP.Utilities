@@ -6,7 +6,12 @@ function Invoke-BWSReadOnlyTokenBootstrap {
     Registers one short-lived Password-logon scheduled task under an explicitly supplied
     PSCredential. The approved service account decrypts its account-specific CMS envelope
     with its CurrentUser private key and writes only the ReadOnly DPAPI slot. Task arguments
-    contain no token. CI-Shared and ReadOnly are fixed policy outputs.
+    contain no token. Project and ReadOnly are fixed policy outputs of the resolved identity,
+    never caller input.
+
+    Which slot is written follows from the identity: the three legacy CI accounts write the
+    common-CI PSCredential CLIXML slot, and an identity carrying an ApplicationId (SvcAceOutpost)
+    writes the AtapBwsDpapiEnvelope application slot that the .NET reader consumes.
   .PARAMETER AccountName
     Local approved service account.
   .PARAMETER ServiceLogonCredential
@@ -97,7 +102,9 @@ function Invoke-BWSReadOnlyTokenBootstrap {
       throw "Canonical credential directory is unavailable for '$($identity.SamAccountName)'."
     }
 
-    $tokenFileName = '{0}_{1}_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml' -f $env:COMPUTERNAME, $identity.SamAccountName
+    # Slot-aware: an identity carrying an ApplicationId is provisioned into the application
+    # envelope slot, and the three legacy CI identities keep their historical common-CI filename.
+    $tokenFileName = Get-BWSReadOnlyBootstrapTokenFileName -Identity $identity
     $tokenPath = Join-Path $CredentialDirectory $tokenFileName
     $taskPath = '\ATAP\'
     $taskName = 'ATAP-BWS-ReadOnly-Bootstrap-{0}-{1}' -f $env:COMPUTERNAME, $identity.SamAccountName
@@ -127,6 +134,7 @@ function Invoke-BWSReadOnlyTokenBootstrap {
       OperationId  = $operationId
       AccountName  = $identity.AccountName
       ProjectName  = $identity.ProjectName
+      ApplicationId = $identity.ApplicationId
       TokenPurpose = $identity.TokenPurpose
       TaskPath      = $taskPath
       TaskName      = $taskName
@@ -144,7 +152,7 @@ function Invoke-BWSReadOnlyTokenBootstrap {
       return [PSCustomObject]$baseResult
     }
 
-    $actionDescription = "Bootstrap CI-Shared ReadOnly token for $($identity.AccountName) using Password task logon"
+    $actionDescription = "Bootstrap $($identity.ProjectName) ReadOnly token for $($identity.AccountName) using Password task logon"
     if (-not $PSCmdlet.ShouldProcess($taskName, $actionDescription)) {
       $baseResult.Status = 'Planned'
       return [PSCustomObject]$baseResult

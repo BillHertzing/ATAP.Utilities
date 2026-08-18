@@ -19,6 +19,7 @@
     'Get-SecretATAPBitwarden',
     'Get-SecretATAPBitwardenSecretsManager',
     'Initialize-BWSAccessToken',
+    'Initialize-BWSApplicationAccessToken',
     'Initialize-BWSCredentialDirectory',
     'Invoke-BWSReadOnlyTokenBootstrap',
     'New-BWSReadOnlyBootstrapEnvelope',

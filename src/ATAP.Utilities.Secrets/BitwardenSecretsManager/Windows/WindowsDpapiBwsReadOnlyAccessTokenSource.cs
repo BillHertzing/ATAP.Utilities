@@ -54,6 +54,8 @@ public sealed class WindowsDpapiBwsReadOnlyAccessTokenSource : IBwsReadOnlyAcces
 
   private WindowsBwsTokenSlotDescriptor[] ValidateAndGetEnabledSlots()
   {
+    if (!string.IsNullOrWhiteSpace(_options.EnabledSlotId))
+      return [_options.ResolveConfiguredSlot()];
     if (_options.TokenSlots is null || _options.TokenSlots.Count == 0)
       throw new BwsException(BwsFailureKind.InvalidConfiguration, "At least one BWS token-slot descriptor is required.");
 

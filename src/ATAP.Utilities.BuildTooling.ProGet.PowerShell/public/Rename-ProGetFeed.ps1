@@ -46,10 +46,12 @@
     Renames the feed on the ProGet server configured in $global:settings.
 
 .EXAMPLE
-    Rename-ProGetFeed -OldFeedName 'old-feed' -NewFeedName 'new-feed' `
-        -ProGetBaseUrl 'https://utat022:50000' -ProGetApiKeySecretName 'ProGet.Admin.API.Key' -WhatIf
+    Rename-ProGetFeed -OldFeedName 'old-feed' -NewFeedName 'new-feed' -WhatIf
 
-    Shows what would happen without contacting ProGet.
+    Shows what would happen without contacting ProGet. -ProGetApiKeySecretName is
+    left unbound so the BEGIN-block Resolve-HostSuffixedSecretName supplies the
+    host-suffixed vault name (SC-0288); binding the bare base name explicitly is
+    honoured verbatim and fails closed.
 
 .NOTES
     AI assisted using ./claude/Rules/Powershell.md as guidelines

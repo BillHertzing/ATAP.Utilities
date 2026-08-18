@@ -66,8 +66,12 @@ function Set-FloatingPackagePins {
         -PackagePropsPath 'C:\src\AceCommander\Directory.Packages.props' `
         -ProGetUrl 'http://proget.local:50000' `
         -FeedName 'nuget-integration' `
-        -PackageIdPrefix 'ATAP.' `
-        -ProGetApiKeySecretName 'ProGet.BuildMaster.API.Key'
+        -PackageIdPrefix 'ATAP.'
+
+    -ProGetApiKeySecretName is intentionally omitted so the BEGIN-block
+    Resolve-HostSuffixedSecretName supplies the host-suffixed vault name
+    (SC-0288). Binding the bare base name explicitly is honoured verbatim and
+    fails closed.
 
 .LINK
     https://github.com/ATAPUtilities/ATAP.Utilities

@@ -60,10 +60,16 @@
     New-HostSettingsForPackageRepositoryFeeds
 
 .EXAMPLE
-    # Explicit values (useful in a BuildMaster agent shell with no profile):
+    # Explicit values (useful in a BuildMaster agent shell with no profile).
+    # This function RECORDS the SecretName into the generated host-settings file,
+    # so it must be the host-suffixed vault name, not the bare base name (SC-0288).
+    # With no profile loaded there is no ServicePlacementMap for
+    # Resolve-HostSuffixedSecretName to derive from, so pass the suffixed name —
+    # e.g. from the BuildMaster $ProGetApiKeySecretName application variable.
+    # Recording a suffixless name here is the original SC-0288 defect.
     New-HostSettingsForPackageRepositoryFeeds `
         -FeedBaseUrl 'http://proget.corp:50000' `
-        -ProGetApiKeySecretName 'ProGet.BuildMaster.API.Key' `
+        -ProGetApiKeySecretName $proGetApiKeySecretName `
         -OutputPath 'C:\ProgramData\ATAP\HostSettings.PackageRepositoryFeeds.psd1'
 
 .EXAMPLE

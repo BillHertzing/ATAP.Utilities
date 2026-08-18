@@ -1,10 +1,38 @@
 # C# Packages — Pack and Push
 
 > **Task 13.62 security cutover:** Do not use legacy direct-tool,
-> environment-variable, or sensitive-value examples. Use
-> `-ProGetApiKeySecretName` with `ProGet.BuildMaster.API.Key` for CI or
-> `ProGet.Admin.API.Key` for administration; the leaf resolves it with
-> `Get-SecretATAP`.
+> environment-variable, or sensitive-value examples. The publishing leaf
+> resolves the key with `Get-SecretATAP` from a SecretName; no raw key value
+> ever appears in a parameter, environment variable, or log.
+
+> **SecretName host suffix (SC-0288) — read before copying any example below.**
+> Every ProGet SecretName is stored in the canonical host-suffixed form
+> `<BaseName>.<service-host>` — the suffix names the host running the ProGet
+> instance the credential authenticates against (see
+> [SecretName-HostSuffix-Convention.md](SecretName-HostSuffix-Convention.md)).
+> The suffixless base names `ProGet.BuildMaster.API.Key` (CI) and
+> `ProGet.Admin.API.Key` (administration) **do not exist in the vault** and fail
+> closed with "No Bitwarden Secrets Manager secret found with key ... in the
+> BWS token's granted projects."
+>
+> **Therefore: omit `-ProGetApiKeySecretName` entirely.** Each BuildTooling
+> cmdlet applies `Resolve-HostSuffixedSecretName` in its BEGIN block *only when
+> the caller did not bind the parameter*, deriving the host from the
+> `ServicePlacementMap` setting. Passing the bare base name explicitly is
+> honoured verbatim and therefore **defeats** that resolver — this is the single
+> most common cause of a failed push. If you must name it explicitly (for
+> cross-host administration), derive the host rather than hard-coding it:
+>
+> ```powershell
+> # Correct: let the BEGIN-block resolver supply the host suffix.
+> Publish-NuGetPackageToProGet -NupkgPath $nupkg -Feed 'nuget-experimental'
+>
+> # Also correct: take the already-suffixed name from host settings.
+> $secretName = $global:settings['ProGetBuildMasterApiKeySecretName']
+> ```
+>
+> Never hard-code a literal `.utat01` / `.utat022` suffix in a command, plan, or
+> example — that is prohibited by the convention's §4.
 
 **Scope:** Producing `.nupkg` / `.snupkg` files from `ATAP.Utilities.*` and
 `AceCommander.*` C# projects and pushing them to the correct ProGet feed.
@@ -215,12 +243,13 @@ dotnet pack src\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj `
 Get-ChildItem _generated\nuget\local -Filter '*.nupkg' |
     Select-Object -ExpandProperty Name
 
-# 4) Push through the SecretName-only PowerShell boundary
+# 4) Push through the SecretName-only PowerShell boundary.
+#    -ProGetApiKeySecretName is intentionally omitted so the cmdlet's
+#    Resolve-HostSuffixedSecretName BEGIN block supplies the host suffix.
 Get-ChildItem _generated\nuget\local -Filter '*.nupkg' | ForEach-Object {
   Publish-NuGetPackageToProGet `
     -NupkgPath $_.FullName `
-    -Feed 'nuget-experimental' `
-    -ProGetApiKeySecretName 'ProGet.BuildMaster.API.Key'
+    -Feed 'nuget-experimental'
 }
 ```
 
@@ -372,7 +401,9 @@ because NuGet warning `NU1507` escalates without it.
 - All five feeds permit anonymous read. No `<packageSourceCredentials>` section
   is needed.
 - The publishing leaf performs the tool-required API-key handoff internally.
-  Callers pass only `ProGet.BuildMaster.API.Key` as a SecretName.
+  Callers normally pass no SecretName at all — the leaf resolves the
+  host-suffixed `ProGet.BuildMaster.API.Key.<service-host>` itself. See the
+  host-suffix note at the top of this document.
 
 ---
 
@@ -414,8 +445,7 @@ for the full automation surface.
 ```powershell
 Publish-NuGetPackageToProGet `
   -NupkgPath .\path\to\ATAP.Utilities.ETW.0.1.0-Sprint.47.nupkg `
-  -Feed 'nuget-experimental' `
-  -ProGetApiKeySecretName 'ProGet.BuildMaster.API.Key'
+  -Feed 'nuget-experimental'
 ```
 
 ### 9.2 All `.nupkg` in a folder
@@ -424,8 +454,7 @@ Publish-NuGetPackageToProGet `
 Get-ChildItem _generated\nuget\local -Filter '*.nupkg' | ForEach-Object {
   Publish-NuGetPackageToProGet `
     -NupkgPath $_.FullName `
-    -Feed 'nuget-experimental' `
-    -ProGetApiKeySecretName 'ProGet.BuildMaster.API.Key'
+    -Feed 'nuget-experimental'
 }
 ```
 
@@ -441,8 +470,7 @@ accepted:
 ```powershell
 Publish-NuGetPackageToProGet `
   -NupkgPath .\Package.1.0.0.nupkg `
-  -Feed 'nuget-experimental' `
-  -ProGetApiKeySecretName 'ProGet.BuildMaster.API.Key'
+  -Feed 'nuget-experimental'
 ```
 
 This is the form used by BuildMaster's OtterScript — the feed name resolves via
@@ -456,9 +484,8 @@ without hardcoding URLs.
 
 ```powershell
 Publish-NuGetPackageToProGet `
-  -PackagePath '.\ATAP.Utilities.ETW.0.1.0-Sprint.47.snupkg' `
-  -FeedName 'nuget-experimental' `
-  -ProGetApiKeySecretName 'ProGet.BuildMaster.API.Key'
+  -NupkgPath '.\ATAP.Utilities.ETW.0.1.0-Sprint.47.snupkg' `
+  -Feed 'nuget-experimental'
 ```
 
 ---
@@ -499,12 +526,39 @@ ATAP.Utilities` is accurate today but should be tightened to
 
 ### 11.1 `401 Unauthorized` on push
 
-- `ProGet.BuildMaster.API.Key` cannot resolve for the current identity or lacks
+- The resolved SecretName cannot resolve for the current identity or lacks
   publish permission. Verify metadata and grants without displaying the value.
 - Wrong feed name in the URL — `nuget-experimental` is one hyphenated token,
   not `nuget/experimental`.
 - ProGet has `Require API key for push` enabled but the `--api-key` flag was
   omitted.
+
+### 11.1a `No Bitwarden Secrets Manager secret found with key '...'`
+
+The full text is:
+
+```text
+No Bitwarden Secrets Manager secret found with key 'ProGet.BuildMaster.API.Key'
+in the BWS token's granted projects.
+```
+
+The SecretName was passed **suffixless**. Vault entries are host-suffixed
+(`<BaseName>.<service-host>`), so the bare base name matches nothing and the
+resolver fails closed. Because an explicitly bound `-ProGetApiKeySecretName` is
+honoured verbatim, binding the bare name suppresses the BEGIN-block
+`Resolve-HostSuffixedSecretName` that would otherwise have added the suffix.
+
+Fix: drop the `-ProGetApiKeySecretName` argument. Confirm what the resolver
+will use with:
+
+```powershell
+$global:settings['ProGetBuildMasterApiKeySecretName']   # CI publishing key
+$global:settings['ProGetAdminApiKeySecretName']         # administration key
+```
+
+If `$global:settings` is empty, the shell has no ATAP profile loaded — dot-source
+`$PROFILE.AllUsersAllHosts` and `$PROFILE.CurrentUserAllHosts` first. Agent-spawned
+shells frequently do not inherit them.
 
 ### 11.2 `409 Conflict`
 
@@ -534,6 +588,30 @@ never hand-write `{height}` with padding.
   older prerelease than something already there.
 - Browser cache on the ProGet UI. Hard-refresh the feed page.
 - Verify via API: `Invoke-RestMethod http://localhost:50000/nuget/nuget-experimental/v3/index.json`.
+
+### 11.5a Push reports success but lands in a `database-*` feed
+
+Requires `ATAP.Utilities.BuildTooling.ProGet.PowerShell` **0.1.20 or later**.
+
+In 0.1.19 and earlier, `Resolve-ProGetFeedFromSettings` matched feeds on
+*transport* `FeedType` only. Database feeds legitimately declare transport type
+`nuget`, so a request for `nuget-experimental` could return
+`database-experimental`. `Publish-NuGetPackageToProGet` then reported
+`Published = True` against the wrong feed, and the subsequent promotion failed
+with "found in neither source feed ... nor destination feed".
+
+`-Feed` is parsed only for its tier suffix and the feed is then re-resolved, so
+the argument alone does not pin the destination. Always confirm the returned
+object:
+
+```powershell
+$r = Publish-NuGetPackageToProGet -NupkgPath $nupkg -Feed 'nuget-experimental'
+if ($r.FeedName -ne 'nuget-experimental') { throw "Wrong feed: $($r.FeedName)" }
+```
+
+Fixed in 0.1.20 by classifying the feed family from the canonical feed-name
+prefix (`nuget-`, `database-`, `powershellget-`, ...) before falling back to
+transport type.
 
 ### 11.6 "The package 'X' is not listed in the package source"
 

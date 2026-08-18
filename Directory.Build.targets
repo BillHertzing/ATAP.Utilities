@@ -169,6 +169,31 @@
     </ItemGroup>
   </Target>
 
+  <!-- Task 15.155: pin the approved stable secrets release closure only. -->
+  <Target Name="PinStableSecretsReleaseDependencyVersions"
+          AfterTargets="ConstrainATAPPackageDependencyVersionRange"
+          BeforeTargets="GenerateNuspec"
+          Condition="'$(PackageId)' == 'ATAP.Utilities.Secrets.BitwardenSecretsManager'">
+    <ItemGroup>
+      <_ProjectReferencesWithVersions
+        Update="@(_ProjectReferencesWithVersions)"
+        Condition="'%(Filename)' == 'ATAP.Utilities.Secrets.Interfaces' or '%(Filename)' == 'ATAP.Utilities.Secrets.Model'"
+        ProjectVersion="[0.1.2]" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="PinStableWindowsSecretsReleaseDependencyVersion"
+          AfterTargets="ConstrainATAPPackageDependencyVersionRange"
+          BeforeTargets="GenerateNuspec"
+          Condition="'$(PackageId)' == 'ATAP.Utilities.Secrets.BitwardenSecretsManager.Windows'">
+    <ItemGroup>
+      <_ProjectReferencesWithVersions
+        Update="@(_ProjectReferencesWithVersions)"
+        Condition="'%(Filename)' == 'ATAP.Utilities.Secrets.BitwardenSecretsManager'"
+        ProjectVersion="[0.1.1]" />
+    </ItemGroup>
+  </Target>
+
   <!-- Compute $(Version) at property-evaluation time from per-project version properties.
        This ensures NuGet resolves ProjectReference dependency ranges correctly in nuspecs.
        The custom BuildTooling task runs at build time (too late for pack dependency resolution),

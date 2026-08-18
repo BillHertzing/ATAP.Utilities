@@ -1,37 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-    <!-- Print debugging information if the BeforeTargets is "PublishAfterBuild" instead of "NeverJustAPlaceHolder"-->
-   <Target Name="PrintBuildVariables" BeforeTargets="PublishAfterBuild">
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MSBuildProjectDirectory = $(MSBuildProjectDirectory)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MSBuildProjectFullPath = $(MSBuildProjectFullPath)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MSBuildToolsPath = $(MSBuildToolsPath)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MSBuildBinPath = $(MSBuildBinPath)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Configuration = $(Configuration)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Platform = $(Platform)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="TargetFrameworks = $(TargetFrameworks)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="TargetFramework = $(TargetFramework)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MajorVersion = $(MajorVersion)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MinorVersion = $(MinorVersion)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PatchVersion = $(PatchVersion)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Build = $(Build)"  />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Revision = $(Revision)"  />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PackageLifecycleStage = $(PackageLifecycleStage)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PackageLabel = $(PackageLabel)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PackageVersion = $(PackageVersion)"  />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="VersionFile = $(VersionFile)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="AssemblyName = $(AssemblyName)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="AssemblyVersion = $(AssemblyVersion)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="AssemblyFileVersion = $(AssemblyFileVersion)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="AssemblyInfoVersion = $(AssemblyInfoVersion)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="IntDir = $(IntDir)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="OutDir = $(OutDir)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="OutputPath = $(OutputPath)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="NuGetLocalFeedPath = $(NuGetLocalFeedPath)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PackageId = $(PackageId)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PackageName = $(PackageId).$(PackageVersion).nupkg" />
-  </Target>
-
     <!-- Include the custom tasks from the ATAP.Utilities.BuildTooling Assembly
         The location of the Assembly has been specified in Directory.Build.props -->
   <!-- OBSOLETE: GetVersion, UpdateVersion, and SetVersion Task classes were superseded by
@@ -153,48 +122,6 @@
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="SetPackageVersionForPack: PackageVersion = $(PackageVersion) (version provided by NBGV)" />
   </Target>
 
-  <!-- NuGet Publish target: push package to ProGet nuget-experimental feed after successful package generation -->
-  <!-- ProGet URL defaults to https://utat022:50000; override via $(ProGetExperimentalFeedUrl) property or PROGET_URL env var -->
-  <!-- HTTPS only since the utat022 PKI change; ProGet refuses plain HTTP, and the
-       certificate SAN covers only 'utat022' so 'localhost' fails TLS validation. -->
-  <!-- Authenticated operations pass only a SecretName to a PowerShell leaf. -->
-  <PropertyGroup>
-    <ProGetExperimentalFeedUrl Condition="'$(ProGetExperimentalFeedUrl)' == ''">https://utat022:50000/nuget/nuget-experimental/v3/index.json</ProGetExperimentalFeedUrl>
-    <ProGetBaseUrl Condition="'$(ProGetBaseUrl)' == ''">https://utat022:50000</ProGetBaseUrl>
-    <ProGetApiKeySecretName Condition="'$(ProGetApiKeySecretName)' == ''">ProGet.Admin.API.Key</ProGetApiKeySecretName>
-  </PropertyGroup>
-  <Target Name="PublishAfterBuild" AfterTargets="GenerateNuspec"
-          Condition="'$(Configuration)' == 'Release'">
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="OutputPath = $(OutputPath)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PackageOutputPath = $(PackageOutputPath)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="ProGetExperimentalFeedUrl = $(ProGetExperimentalFeedUrl)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Pushing $(PackageId).$(PackageVersion).nupkg to ProGet nuget-experimental feed" />
-    <!-- Resolve nupkg directory: PackageOutputPath may be absolute (from the -output flag) or relative.
-        String-concatenation with MSBuildProjectDirectory breaks when it is absolute, so we
-        use IsPathRooted to pick the right base. WorkingDirectory is omitted - dotnet nuget
-        push only needs the full nupkg path, not a cwd. -->
-    <PropertyGroup>
-      <_NupkgDir Condition="$([System.IO.Path]::IsPathRooted('$(PackageOutputPath)'))">$(PackageOutputPath)</_NupkgDir>
-      <_NupkgDir Condition="'$(_NupkgDir)' == ''">$(MSBuildProjectDirectory)\$(PackageOutputPath)</_NupkgDir>
-    </PropertyGroup>
-    <!-- Delete any existing version from the feed before pushing so iterative rebuilds
-         on the same NBGV version (no commit between builds) always land the latest DLLs.
-         Uses the NuGet v2 DELETE endpoint; 404 (not yet published) is silently ignored. -->
-    <Exec Command="pwsh -File &quot;$(MSBuildThisFileDirectory)Invoke-ProGetNuGetPublish.ps1&quot; -NupkgPath &quot;$(_NupkgDir)$(PackageId).$(PackageVersion).nupkg&quot; -Source &quot;$(ProGetExperimentalFeedUrl)&quot; -ProGetBaseUrl &quot;$(ProGetBaseUrl)&quot; -PackageId &quot;$(PackageId)&quot; -PackageVersion &quot;$(PackageVersion)&quot; -ProGetApiKeySecretName &quot;$(ProGetApiKeySecretName)&quot;"
-          IgnoreExitCode="false" />
-    <!-- Keep Directory.Packages.props in sync: update the PackageVersion entry for this package -->
-    <PropertyGroup>
-      <_DppDir>$([MSBuild]::GetDirectoryNameOfFileAbove('$(MSBuildProjectDirectory)', 'Directory.Packages.props'))</_DppDir>
-      <_DppPath>$(_DppDir)\Directory.Packages.props</_DppPath>
-    </PropertyGroup>
-    <XmlPoke XmlInputPath="$(_DppPath)"
-             Query="//ItemGroup/PackageVersion[@Include='$(PackageId)']/@Version"
-             Value="$(PackageVersion)"
-             Condition="'$(_DppDir)' != '' AND Exists('$(_DppPath)')" />
-    <Message Text="Synced Directory.Packages.props: $(PackageId) = $(PackageVersion)" Importance="high"
-             Condition="'$(_DppDir)' != '' AND Exists('$(_DppPath)')" />
-  </Target>
-
   <!-- Deploy the freshly-built BuildTooling DLL and targets file to the Build directory,
        then write the sentinel file so Directory.Build.props resolves the path automatically
        on the next build of any project in the solution.
@@ -221,8 +148,6 @@
     <Copy SourceFiles="@(_BuildToolingBinaries)" DestinationFolder="$(_DeployTFMDir)" SkipUnchangedFiles="true" />
     <!-- Copy the companion .targets file (always overwrite to pick up any edits) -->
     <Copy SourceFiles="$(MSBuildProjectDirectory)\ATAP.Utilities.BuildTooling.targets"
-          DestinationFolder="$(_DeployBuildDir)" SkipUnchangedFiles="false" />
-    <Copy SourceFiles="$(MSBuildProjectDirectory)\Invoke-ProGetNuGetPublish.ps1"
           DestinationFolder="$(_DeployBuildDir)" SkipUnchangedFiles="false" />
     <!-- Write the sentinel file — Directory.Build.props reads this at evaluation time -->
     <WriteLinesToFile File="$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.current-version"

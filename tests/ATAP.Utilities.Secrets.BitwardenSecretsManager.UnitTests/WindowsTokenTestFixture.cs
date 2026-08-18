@@ -199,17 +199,21 @@ internal sealed class WindowsTokenTestFixture : IDisposable
     IWindowsIdentityContext? identity = null,
     IWindowsTokenPathSecurityValidator? validator = null,
     bool allowLegacy = false,
-    IBwsDpapiProtector? protector = null)
+    IBwsDpapiProtector? protector = null,
+    IList<WindowsBwsTokenSlotDescriptor>? tokenSlots = null)
   {
     identity ??= CurrentIdentity;
+    var options = new WindowsBwsTokenSourceOptions
+    {
+      CredentialRootDirectory = RootDirectory,
+      ApplicationId = ApplicationId,
+      VaultGroupingId = VaultGroupingId,
+      AllowLegacyPowerShellCliXml = allowLegacy,
+    };
+    if (tokenSlots is not null) options.TokenSlots = tokenSlots;
+
     return new WindowsDpapiBwsReadOnlyAccessTokenSource(
-      new WindowsBwsTokenSourceOptions
-      {
-        CredentialRootDirectory = RootDirectory,
-        ApplicationId = ApplicationId,
-        VaultGroupingId = VaultGroupingId,
-        AllowLegacyPowerShellCliXml = allowLegacy,
-      },
+      options,
       identity,
       new BwsDpapiEnvelopeReader(protector ?? new DpapiUnprotector()),
       new PowerShellCredentialCliXmlReader(new DpapiUnprotector()),

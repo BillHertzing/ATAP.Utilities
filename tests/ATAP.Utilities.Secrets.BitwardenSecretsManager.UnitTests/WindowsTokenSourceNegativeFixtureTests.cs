@@ -128,7 +128,9 @@ public sealed class WindowsTokenSourceNegativeFixtureTests
       fixture.WriteLegacy(fixture.LegacyPath(), token);
 
       var error = await Assert.ThrowsAsync<BwsException>(
-        async () => await fixture.CreateSource(allowLegacy: false).AcquireAsync());
+        async () => await fixture.CreateSource(
+          allowLegacy: false,
+          tokenSlots: [WindowsBwsTokenSlotDescriptor.LegacyCiCliXml with { Enabled = true }]).AcquireAsync());
 
       Assert.Equal(BwsFailureKind.TokenFormatUnsupported, error.Kind);
     }
@@ -150,7 +152,9 @@ public sealed class WindowsTokenSourceNegativeFixtureTests
       var path = fixture.LegacyPath();
       fixture.WriteLegacy(path, token);
 
-      using var lease = await fixture.CreateSource(allowLegacy: true).AcquireAsync();
+      using var lease = await fixture.CreateSource(
+        allowLegacy: true,
+        tokenSlots: [WindowsBwsTokenSlotDescriptor.LegacyCiCliXml with { Enabled = true }]).AcquireAsync();
 
       Assert.True(fixture.LeaseMatchesHash(lease, expectedHash));
       Assert.False(fixture.FileContainsToken(path, token));

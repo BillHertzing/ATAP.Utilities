@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <!-- Creates an executable Project -->
   <PropertyGroup>
@@ -143,7 +143,7 @@
   <ItemGroup>
     <PackageReference Include="ServiceStack" />
     <PackageReference Include="ServiceStack.ORMLite" />
-    <PackageReference Include="ServiceStack.OrmLite.SqlServer" />
+    <PackageReference Include="ServiceStack.OrmLite.SqlServer.Data" />
   </ItemGroup>
 
   <!-- Packages necessary to run the ASP.Net Core Generic Host and web server hosts Server -->

@@ -57,7 +57,7 @@
   <ItemGroup>
     <PackageReference Include="ServiceStack" />
     <PackageReference Include="ServiceStack.ORMLite" />
-    <PackageReference Include="ServiceStack.OrmLite.SqlServer" />
+    <PackageReference Include="ServiceStack.OrmLite.SqlServer.Data" />
   </ItemGroup>
 
   <!-- Packages necessary to run the ASP.Net Core Generic Host and web server hosts Server -->

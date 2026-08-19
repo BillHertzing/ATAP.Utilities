@@ -28,7 +28,7 @@
 <!--
   <ItemGroup>
     <PackageReference Include="ServiceStack.OrmLite"/>
-    <PackageReference Include="ServiceStack.OrmLite.SqlServer"/>
+    <PackageReference Include="ServiceStack.OrmLite.SqlServer.Data"/>
   </ItemGroup>
 -->
   <!-- Packages and projects to implement IL Weaving using Fody during the build process -->

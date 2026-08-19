@@ -3,6 +3,13 @@
   <!-- Documentation: https://learn.microsoft.com/en-us/nuget/consume-packages/central-package-management -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- Make a central PackageVersion authoritative for a package that arrives only
+         transitively. Without this, NuGet records such an entry in packages.lock.json as
+         "CentralTransitive" carrying the requested range but still resolving the transitive
+         minimum, so the central pin silently has no effect. Sprint 0015 Task 15.174.b. -->
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+    <!-- Task 15.176: permits the SQL Server provider consumers to satisfy the minimum ProtectedData version required by Microsoft.Data.SqlClient without changing unrelated package graphs. -->
+    <CentralPackageVersionOverrideEnabled>true</CentralPackageVersionOverrideEnabled>
   </PropertyGroup>
   <ItemGroup Label="Security Patches (Critical - Addresses Known Vulnerabilities)">
     <!-- HTTP library (4.3.0 has a vulnerability) -->
@@ -17,8 +24,8 @@
     <!-- System.Drawing.Common (4.7.0 has critical vulnerability GHSA-rxg9-xrhp-64gj, upgrade to 8.0.2+) -->
     <PackageVersion Include="System.Drawing.Common" Version="8.0.2" />
     <!-- System.Security.Cryptography.Xml (4.7.0 has moderate vulnerability GHSA-vh55-786g-wjwj, 8.0.1 has high severity GHSA-37gx-xxp4-5rgx and GHSA-w3x6-4m5h-cxqf) -->
-    <PackageVersion Include="System.Security.Cryptography.Xml" Version="8.0.2" />
-    <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="9.0.0" />
+    <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.10" />
+    <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="9.0.4" />
     <PackageVersion Include="System.IO.FileSystem.AccessControl" Version="5.0.0" />
   </ItemGroup>
   <ItemGroup Label="Core Libraries">
@@ -30,7 +37,7 @@
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
     <!-- Stateless lightweight StateMachine library -->
     <PackageVersion Include="Stateless" Version="5.1.2" />
-    <PackageVersion Include="System.Collections.Immutable" Version="5.0.0" />
+    <PackageVersion Include="System.Collections.Immutable" Version="9.0.0" />
     <!-- Reactive Extensions -->
     <PackageVersion Include="System.Reactive" Version="5.0.0" />
     <!-- Text-To-Speech (TTS) packages -->
@@ -39,18 +46,20 @@
     <PackageVersion Include="YC.QuickGraph" Version="3.7.4" />
   </ItemGroup>
   <ItemGroup Label="ServiceStack Suite">
-    <PackageVersion Include="ServiceStack" Version="5.12.0" />
-    <PackageVersion Include="ServiceStack.HttpClient" Version="5.12.0" />
-    <!-- ServiceStack ORMLite and SQLServer -->
-    <PackageVersion Include="ServiceStack.OrmLite" Version="5.12.0" />
-    <PackageVersion Include="ServiceStack.OrmLite.Core" Version="5.12.0" />
-    <PackageVersion Include="ServiceStack.OrmLite.MySQL" Version="5.12.0" />
-    <PackageVersion Include="ServiceStack.OrmLite.MySQL.Core" Version="5.12.0" />
-    <PackageVersion Include="ServiceStack.OrmLite.Sqlite" Version="5.12.0" />
-    <PackageVersion Include="ServiceStack.OrmLite.Sqlite.Core" Version="5.12.0" />
-    <PackageVersion Include="ServiceStack.OrmLite.SqlServer" Version="5.12.0" />
-    <PackageVersion Include="ServiceStack.OrmLite.SqlServer.Core" Version="5.12.0" />
-    <PackageVersion Include="ServiceStack.Text" Version="5.12.0" />
+    <PackageVersion Include="ServiceStack" Version="8.10.0" />
+    <PackageVersion Include="ServiceStack.HttpClient" Version="8.10.0" />
+    <!-- ServiceStack OrmLite 8.10 retains the Data and Data.Core SQL Server providers required by this target matrix. -->
+    <PackageVersion Include="ServiceStack.OrmLite" Version="8.10.0" />
+    <PackageVersion Include="ServiceStack.OrmLite.Core" Version="8.10.0" />
+    <PackageVersion Include="ServiceStack.OrmLite.MySQL" Version="8.10.0" />
+    <PackageVersion Include="ServiceStack.OrmLite.MySQL.Core" Version="8.10.0" />
+    <PackageVersion Include="ServiceStack.OrmLite.Sqlite" Version="8.10.0" />
+    <PackageVersion Include="ServiceStack.OrmLite.Sqlite.Core" Version="8.10.0" />
+    <PackageVersion Include="ServiceStack.OrmLite.SqlServer.Data" Version="8.10.0" />
+    <PackageVersion Include="ServiceStack.OrmLite.SqlServer.Data.Core" Version="8.10.0" />
+
+
+    <PackageVersion Include="ServiceStack.Text" Version="8.10.0" />
     <!-- ServiceStack serializers and dump utility -->
     <PackageVersion Include="ServiceStack.Text.EnumMemberSerializer" Version="3.0.0.50044" />
   </ItemGroup>
@@ -94,14 +103,14 @@
     <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0" />
     <!-- Standalone reference to Microsoft.Extensions.DependencyInjection used by unitTest projects -->
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.2" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.2" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Localization" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="9.0.0" />
     <PackageVersion Include="Microsoft.SemanticKernel" Version="1.71.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.2" />
   </ItemGroup>
   <ItemGroup Label="Dependency Injection Alternatives">
     <!-- Alternate DI container used in UnitTest projects -->
@@ -195,7 +204,11 @@
     <!-- DocFX package -->
     <PackageVersion Include="docfx" Version="2.56.5" />
     <!-- Packages to play with CSharpSyntaxTree -->
-    <PackageVersion Include="Microsoft.CodeAnalysis.Common" Version="3.5.0" />
+    <!-- Must match the Roslyn workspace packages below: Microsoft.CodeAnalysis.*.Workspaces
+         3.3.1 declare an EXACT dependency on Microsoft.CodeAnalysis.Common [3.3.1]. The former
+         3.5.0 here never took effect (the lock file recorded requested [3.5.0, ) / resolved
+         3.3.1); under transitive pinning it becomes an unsatisfiable constraint. -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.Common" Version="3.3.1" />
     <!-- Dynamic Types -->
     <PackageVersion Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageVersion Include="NLog" Version="4.7.0" />
@@ -207,9 +220,9 @@
   <!-- Framework-Conditional Package Versions -->
   <!-- These package versions vary based on target framework -->
   <ItemGroup Label="Framework-Conditional: All Frameworks (net472+)">
-    <!-- System.Text.Json V 5.0.0 supports framework 4.7.2 and later -->
+    <!-- System.Text.Json 10.0.2 still ships a netstandard2.0 asset, so it covers net472 and later. -->
     <!-- Condition matches: net472, net48, netstandard, netcore, net5+, net6+, net7+, net8+, net9+ -->
-    <PackageVersion Include="System.Text.Json" Version="5.0.0" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('$(TargetFramework)', '(net|net472|standard|core|net[56789])'))" />
+    <PackageVersion Include="System.Text.Json" Version="10.0.2" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('$(TargetFramework)', '(net|net472|standard|core|net[56789])'))" />
   </ItemGroup>
   <ItemGroup Label="Roslyn Code Analysis">
     <!-- Packages for Roslyn code analysis and workspaces -->

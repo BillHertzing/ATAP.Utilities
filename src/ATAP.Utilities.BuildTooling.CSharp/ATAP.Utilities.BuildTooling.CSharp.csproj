@@ -2,19 +2,24 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
+    <BuildOutputTargetFolder>tools</BuildOutputTargetFolder>
+    <PackageId>ATAP.Utilities.BuildTooling.CSharp</PackageId>
+    <Description>Canonical ATAP C# MSBuild package contract.</Description>
   </PropertyGroup>
 
-    <!-- Include NuGet PackageReferences to the required DLLs for custom msbuild tasks-->
+  <!-- Required only by the custom MSBuild task assembly. -->
   <ItemGroup>
-    <PackageReference Include="Microsoft.Build.Framework"/>
-    <PackageReference Include="Microsoft.Build.Utilities.Core" />
+    <PackageReference Include="Microsoft.Build.Framework" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
     <None Update="ATAP.Utilities.BuildTooling.targets">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>build\;buildTransitive\</PackagePath>
     </None>
   </ItemGroup>
 

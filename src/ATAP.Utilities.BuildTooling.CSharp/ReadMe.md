@@ -1,50 +1,52 @@
 # ATAP.Utilities.BuildTooling.CSharp
 
-If you are viewing this ReadMe.md in GitHub, [here is this same ReadMe on the documentation site]()
+This project is the canonical NuGet distribution point for the ATAP C# MSBuild
+package contract. It builds the custom-task assembly and ships
+`ATAP.Utilities.BuildTooling.targets` through both NuGet import conventions:
 
-## Introduction
+- `build/ATAP.Utilities.BuildTooling.targets` for direct consumers.
+- `buildTransitive/ATAP.Utilities.BuildTooling.targets` for transitive consumers.
+- `tools/<target-framework>/ATAP.Utilities.BuildTooling.CSharp.dll` through the
+  project's configured SDK package build-output folder; it is not a consumer
+  compile reference.
 
-This project provides:
-an additional Targets file that can be imported in a project's build definition (.csproj)
-a .dll file that contains additional MSBuild Task definitions written in CSharp
+The imported targets file is deliberately inert. It exposes contract-version,
+compatibility-sentinel, import-provenance, import-directory, and task-assembly
+properties, but it has no build, pack, publish, copy, delete, credential, or
+external-system target.
 
-Authenticated ProGet publishing is delegated to
-`Invoke-ProGetNuGetPublish.ps1`. MSBuild supplies only
-`ProGetApiKeySecretName` (administrator by default because the legacy replace
-workflow deletes before pushing); the wrapper resolves the value through
-`Get-SecretATAP` only at the authenticated leaf.
+## Release and publication boundary
 
-Repository-wide C# build health checks run through
-`Build\Invoke-RepoHealthGate.ps1` after restore and before pack or publish.
-Those checks live outside this project and outside PowerShell module package
-tests because they audit shared `Directory.Build.props` behavior across the
-repository.
+`GeneratePackageOnBuild` is disabled. An ordinary `Release` build only compiles;
+it does not pack, publish, deploy, update a sentinel file, read credentials, or
+mutate a feed. Packaging requires an explicit `dotnet pack` invocation.
+Publication requires a separately authorized publication workflow and is not
+implemented by this project or its imported targets.
 
-Repository-wide C# build health checks run through
-`Build\Invoke-RepoHealthGate.ps1` after restore and before pack or publish.
-Those checks live outside this project and outside PowerShell module package
-tests because they audit shared `Directory.Build.props` behavior across the
-repository.
+The package source slice does not wire repository consumers to this package.
+Consumer integration, version selection, restore, packaging proof, and deployed
+parity belong to later Task 15.180 units.
 
-## ATAP.Utilities.BuildTooling.Targets
+## Import interface
 
-This is a .targets file that can be imported into a project, either by inclusion in a .csproj file, or solution-wide by inclusion in to a Directory.Build.props file
+After NuGet imports the targets file, consumers can inspect:
 
-### BeforeCompile Tasks
+| Property | Meaning |
+| --- | --- |
+| `ATAPBuildToolingImported` | `true` when this contract file was evaluated. |
+| `ATAPBuildToolingContractVersion` | Integer compatibility contract; currently `1`. |
+| `ATAPBuildToolingCompatibilitySentinel` | Stable identity `ATAP.Utilities.BuildTooling.CSharp/1`. |
+| `ATAPBuildToolingImportProvenance` | Exact imported targets-file path. |
+| `ATAPBuildToolingImportDirectory` | Directory containing the imported targets file. |
+| `ATAPBuildToolingTaskTargetFramework` | Task-assembly TFM, defaulting to `net10.0`. |
+| `ATAPUtilitiesBuildToolingTasksAssembly` | Package-relative custom-task assembly path. |
 
----Stoping point---
+The task TFM may be overridden before import for a proven compatible consumer.
+No custom task is registered or executed by this source slice.
 
-Additional tasks and targets for MSBuild extensions
+## Validation boundary
 
-- additional Targets file
-- Additional BeforeCompile Tasks to evaluate a project's inputs and outputs
-- Tasks to Create a lockfile, and update the AssemblyInformation in Properties/AssemblyInfo.cs
-- Tasks to Delete the Lockfile \* conditional call UpdateAssemblyVersion if the lockfile does not exists
-
-* DLL with these tasks (**OBSOLETE** — wrapped in `#if false`, not compiled):
-  > These three MSBuild Task classes have been superseded by
-  > [Nerdbank.GitVersioning (NBGV)](https://github.com/dotnet/Nerdbank.GitVersioning).
-  > The code is retained for historical reference only.
-  - ~~GetVersion~~ — read AssemblyVersion, AssemblyFileVersion, and AssemblyInformationalVersion from an `AssemblyInfo.cs` file.
-  - ~~SetVersion~~ — write updated version values back to an `AssemblyInfo.cs` file.
-  - ~~UpdateVersion~~ — combine GetVersion + MakeBuild + MakePackageVersion + SetVersion into a single build step.
+Task 15.180.d performs static XML and package-contract validation only. It does
+not restore, build, pack, publish, or deploy. The generated handoff therefore
+separates verified source claims from unverified package and deployed-state
+claims.

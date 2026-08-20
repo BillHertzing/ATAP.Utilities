@@ -2,12 +2,6 @@
   "version": 2,
   "dependencies": {
     "net10.0": {
-      "Fody": {
-        "type": "Direct",
-        "requested": "[6.9.3, )",
-        "resolved": "6.9.3",
-        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
-      },
       "MethodBoundaryAspect.Fody": {
         "type": "Direct",
         "requested": "[2.0.150, )",
@@ -226,7 +220,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Services.TcpWithResilience.Interfaces": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.2, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.Extensions.Hosting": "[9.0.0, )",
           "Microsoft.Extensions.Localization": "[9.0.0, )",
@@ -277,7 +271,7 @@
           "ATAP.Utilities.GraphDataStructures": "[0.1.0-Alpha, )",
           "ATAP.Utilities.GraphDataStructures.Interfaces": "[0.1.0-Alpha, )",
           "MedallionShell": "[1.6.2, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
           "UnitsNet": "[5.60.0, )"
         }
@@ -310,7 +304,7 @@
           "ATAP.Utilities.Philote.Models": "[1.0.0, )",
           "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )",
           "MedallionShell": "[1.6.2, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
           "UnitsNet": "[5.60.0, )"
         }
@@ -335,7 +329,7 @@
           "ATAP.Utilities.ComputerInventory.Software.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
           "MedallionShell": "[1.6.2, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
           "UnitsNet": "[5.60.0, )"
         }
@@ -399,7 +393,7 @@
           "ATAP.Utilities.Philote": "[1.0.0, )",
           "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
           "MedallionShell": "[1.6.2, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
           "UnitsNet": "[5.60.0, )"
         }
@@ -411,7 +405,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Enumeration": "[1.0.0, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )"
         }
       },
@@ -472,7 +466,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.2, )",
           "ATAP.Utilities.GraphDataStructures.Interfaces": "[0.1.0-Alpha, )"
         }
       },
@@ -486,7 +480,6 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.DateTime.Model": "[1.0.0, )",
           "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
         }
       },
@@ -508,6 +501,12 @@
         "dependencies": {
           "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
         }
+      },
+      "Fody": {
+        "type": "CentralTransitive",
+        "requested": "[6.9.3, )",
+        "resolved": "6.9.3",
+        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
       },
       "MedallionShell": {
         "type": "CentralTransitive",
@@ -577,18 +576,18 @@
       },
       "Microsoft.Extensions.DependencyInjection": {
         "type": "CentralTransitive",
-        "requested": "[9.0.0, )",
-        "resolved": "9.0.0",
-        "contentHash": "MCPrg7v3QgNMr0vX4vzRXvkNGgLg8vKWX0nKCWUxu2uPyMsaRgiRc1tHBnbTcfJMhMKj2slE/j2M9oGkd25DNw==",
+        "requested": "[10.0.2, )",
+        "resolved": "10.0.2",
+        "contentHash": "J/Zmp6fY93JbaiZ11ckWvcyxMPjD6XVwIHQXBjryTBgn7O6O20HYg9uVLFcZlNfgH78MnreE/7EH+hjfzn7VyA==",
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.0"
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.2"
         }
       },
       "Microsoft.Extensions.DependencyInjection.Abstractions": {
         "type": "CentralTransitive",
-        "requested": "[9.0.0, )",
-        "resolved": "9.0.0",
-        "contentHash": "+6f2qv2a3dLwd5w6JanPIPs47CxRbnk+ZocMJUhv9NxP88VlOcJYZs9jY+MYSjxvady08bUZn6qgiNh7DadGgg=="
+        "requested": "[10.0.2, )",
+        "resolved": "10.0.2",
+        "contentHash": "zOIurr59+kUf9vNcsUkCvKWZv+fPosUZXURZesYkJCvl0EzTc9F7maAO4Cd2WEV7ZJJ0AZrFQvuH6Npph9wdBw=="
       },
       "Microsoft.Extensions.Hosting": {
         "type": "CentralTransitive",
@@ -645,11 +644,11 @@
       },
       "Microsoft.Extensions.Logging.Abstractions": {
         "type": "CentralTransitive",
-        "requested": "[9.0.0, )",
-        "resolved": "9.0.0",
-        "contentHash": "g0UfujELzlLbHoVG8kPKVBaW470Ewi+jnptGS9KUi6jcb+k2StujtK3m26DFSGGwQ/+bVgZfsWqNzlP6YOejvw==",
+        "requested": "[10.0.2, )",
+        "resolved": "10.0.2",
+        "contentHash": "RZkez/JjpnO+MZ6efKkSynN6ZztLpw3WbxNzjLCPBd97wWj1S9ZYPWi0nmT4kWBRa6atHsdM1ydGkUr8GudyDQ==",
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.0"
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.2"
         }
       },
       "Polly": {
@@ -678,9 +677,9 @@
       },
       "ServiceStack.Text": {
         "type": "CentralTransitive",
-        "requested": "[5.12.0, )",
-        "resolved": "5.12.0",
-        "contentHash": "KBbHZ73I9suf1DSYeEJSXPmgobyJikB9fhfhJFaeBPw22Es1taeuSQsuXtgH8qjQI7MWhug63D9l8xarGxG03A=="
+        "requested": "[8.10.0, )",
+        "resolved": "8.10.0",
+        "contentHash": "x6F5ihNCH1KHCQAJrAx/BS4BOODHCakWiPnWGIbfS5xOZgke7y5QFyII8lta9OsRy9P/GvYGViUp0pHxrWfzPQ=="
       },
       "ServiceStack.Text.EnumMemberSerializer": {
         "type": "CentralTransitive",
@@ -719,12 +718,6 @@
       }
     },
     "net8.0": {
-      "Fody": {
-        "type": "Direct",
-        "requested": "[6.9.3, )",
-        "resolved": "6.9.3",
-        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
-      },
       "MethodBoundaryAspect.Fody": {
         "type": "Direct",
         "requested": "[2.0.150, )",
@@ -939,8 +932,8 @@
       },
       "System.Diagnostics.DiagnosticSource": {
         "type": "Transitive",
-        "resolved": "9.0.0",
-        "contentHash": "ddppcFpnbohLWdYKr/ZeLZHmmI+DXFgZ3Snq+/E7SwcdW4UnvxmaugkwGywvGVWkHPGCSZjCP+MLzu23AL5SDw=="
+        "resolved": "10.0.2",
+        "contentHash": "lYWBy8fKkJHaRcOuw30d67PrtVjR5754sz5Wl76s8P+vJ9FSThh9b7LIcTSODx1LY7NB3Srvg+JMnzd67qNZOw=="
       },
       "System.Diagnostics.EventLog": {
         "type": "Transitive",
@@ -949,19 +942,19 @@
       },
       "System.IO.Pipelines": {
         "type": "Transitive",
-        "resolved": "9.0.0",
-        "contentHash": "eA3cinogwaNB4jdjQHOP3Z3EuyiDII7MT35jgtnsA4vkn0LUrrSHsU0nzHTzFzmaFYeKV7MYyMxOocFzsBHpTw=="
+        "resolved": "10.0.2",
+        "contentHash": "EqMsn9r18ABvTDxrDce4OWDhBE3y+rR23ilG7Y3BudDKrDKrLG/hkD/JmeFZbctAPxSkCjyJ/Ddwbn/g7ufRJA=="
       },
       "System.Text.Encodings.Web": {
         "type": "Transitive",
-        "resolved": "9.0.0",
-        "contentHash": "e2hMgAErLbKyUUwt18qSBf9T5Y+SFAL3ZedM8fLupkVj8Rj2PZ9oxQ37XX2LF8fTO1wNIxvKpihD7Of7D/NxZw=="
+        "resolved": "10.0.2",
+        "contentHash": "Ro4cLT4qpRy64crfLAy3ekihtXckeXrD5eI6qb6NDSEVyHcHsmH7KgN4dbnIuiBmXIoaCslx4SynLYxag1SLSQ=="
       },
       "atap.services.tcpwithresilience": {
         "type": "Project",
         "dependencies": {
           "ATAP.Services.TcpWithResilience.Interfaces": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.2, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.Extensions.Hosting": "[9.0.0, )",
           "Microsoft.Extensions.Localization": "[9.0.0, )",
@@ -1012,7 +1005,7 @@
           "ATAP.Utilities.GraphDataStructures": "[0.1.0-Alpha, )",
           "ATAP.Utilities.GraphDataStructures.Interfaces": "[0.1.0-Alpha, )",
           "MedallionShell": "[1.6.2, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
           "UnitsNet": "[5.60.0, )"
         }
@@ -1045,7 +1038,7 @@
           "ATAP.Utilities.Philote.Models": "[1.0.0, )",
           "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )",
           "MedallionShell": "[1.6.2, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
           "UnitsNet": "[5.60.0, )"
         }
@@ -1070,7 +1063,7 @@
           "ATAP.Utilities.ComputerInventory.Software.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
           "MedallionShell": "[1.6.2, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
           "UnitsNet": "[5.60.0, )"
         }
@@ -1134,19 +1127,22 @@
           "ATAP.Utilities.Philote": "[1.0.0, )",
           "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
           "MedallionShell": "[1.6.2, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
       "atap.utilities.concurrentobservablecollections": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "System.Collections.Immutable": "[9.0.0, )"
+        }
       },
       "atap.utilities.cryptocoin.enumerations": {
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Enumeration": "[1.0.0, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )"
         }
       },
@@ -1207,7 +1203,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.2, )",
           "ATAP.Utilities.GraphDataStructures.Interfaces": "[0.1.0-Alpha, )"
         }
       },
@@ -1221,7 +1217,6 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.DateTime.Model": "[1.0.0, )",
           "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
         }
       },
@@ -1243,6 +1238,12 @@
         "dependencies": {
           "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
         }
+      },
+      "Fody": {
+        "type": "CentralTransitive",
+        "requested": "[6.9.3, )",
+        "resolved": "6.9.3",
+        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
       },
       "MedallionShell": {
         "type": "CentralTransitive",
@@ -1313,18 +1314,18 @@
       },
       "Microsoft.Extensions.DependencyInjection": {
         "type": "CentralTransitive",
-        "requested": "[9.0.0, )",
-        "resolved": "9.0.0",
-        "contentHash": "MCPrg7v3QgNMr0vX4vzRXvkNGgLg8vKWX0nKCWUxu2uPyMsaRgiRc1tHBnbTcfJMhMKj2slE/j2M9oGkd25DNw==",
+        "requested": "[10.0.2, )",
+        "resolved": "10.0.2",
+        "contentHash": "J/Zmp6fY93JbaiZ11ckWvcyxMPjD6XVwIHQXBjryTBgn7O6O20HYg9uVLFcZlNfgH78MnreE/7EH+hjfzn7VyA==",
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.0"
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.2"
         }
       },
       "Microsoft.Extensions.DependencyInjection.Abstractions": {
         "type": "CentralTransitive",
-        "requested": "[9.0.0, )",
-        "resolved": "9.0.0",
-        "contentHash": "+6f2qv2a3dLwd5w6JanPIPs47CxRbnk+ZocMJUhv9NxP88VlOcJYZs9jY+MYSjxvady08bUZn6qgiNh7DadGgg=="
+        "requested": "[10.0.2, )",
+        "resolved": "10.0.2",
+        "contentHash": "zOIurr59+kUf9vNcsUkCvKWZv+fPosUZXURZesYkJCvl0EzTc9F7maAO4Cd2WEV7ZJJ0AZrFQvuH6Npph9wdBw=="
       },
       "Microsoft.Extensions.Hosting": {
         "type": "CentralTransitive",
@@ -1381,12 +1382,12 @@
       },
       "Microsoft.Extensions.Logging.Abstractions": {
         "type": "CentralTransitive",
-        "requested": "[9.0.0, )",
-        "resolved": "9.0.0",
-        "contentHash": "g0UfujELzlLbHoVG8kPKVBaW470Ewi+jnptGS9KUi6jcb+k2StujtK3m26DFSGGwQ/+bVgZfsWqNzlP6YOejvw==",
+        "requested": "[10.0.2, )",
+        "resolved": "10.0.2",
+        "contentHash": "RZkez/JjpnO+MZ6efKkSynN6ZztLpw3WbxNzjLCPBd97wWj1S9ZYPWi0nmT4kWBRa6atHsdM1ydGkUr8GudyDQ==",
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.0",
-          "System.Diagnostics.DiagnosticSource": "9.0.0"
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.2",
+          "System.Diagnostics.DiagnosticSource": "10.0.2"
         }
       },
       "Polly": {
@@ -1415,9 +1416,9 @@
       },
       "ServiceStack.Text": {
         "type": "CentralTransitive",
-        "requested": "[5.12.0, )",
-        "resolved": "5.12.0",
-        "contentHash": "KBbHZ73I9suf1DSYeEJSXPmgobyJikB9fhfhJFaeBPw22Es1taeuSQsuXtgH8qjQI7MWhug63D9l8xarGxG03A=="
+        "requested": "[8.10.0, )",
+        "resolved": "8.10.0",
+        "contentHash": "x6F5ihNCH1KHCQAJrAx/BS4BOODHCakWiPnWGIbfS5xOZgke7y5QFyII8lta9OsRy9P/GvYGViUp0pHxrWfzPQ=="
       },
       "ServiceStack.Text.EnumMemberSerializer": {
         "type": "CentralTransitive",
@@ -1428,6 +1429,12 @@
           "ServiceStack.Text": "5.0.0"
         }
       },
+      "System.Collections.Immutable": {
+        "type": "CentralTransitive",
+        "requested": "[9.0.0, )",
+        "resolved": "9.0.0",
+        "contentHash": "QhkXUl2gNrQtvPmtBTQHb0YsUrDiDQ2QS09YbtTTiSjGcf7NBqtYbrG/BE06zcBPCKEwQGzIv13IVdXNOSub2w=="
+      },
       "System.Reactive": {
         "type": "CentralTransitive",
         "requested": "[5.0.0, )",
@@ -1436,12 +1443,12 @@
       },
       "System.Text.Json": {
         "type": "CentralTransitive",
-        "requested": "[5.0.0, )",
-        "resolved": "9.0.0",
-        "contentHash": "js7+qAu/9mQvnhA4EfGMZNEzXtJCDxgkgj8ohuxq/Qxv+R56G+ljefhiJHOxTNiw54q8vmABCWUwkMulNdlZ4A==",
+        "requested": "[10.0.2, )",
+        "resolved": "10.0.2",
+        "contentHash": "zy8ey7I16G9neZ6uzxrnYwS7pidElzN8XarsBjGu7lE2m7afTKMEe18KbY3ZSmh/z/bR40oxjd6hlUcmOEaMHw==",
         "dependencies": {
-          "System.IO.Pipelines": "9.0.0",
-          "System.Text.Encodings.Web": "9.0.0"
+          "System.IO.Pipelines": "10.0.2",
+          "System.Text.Encodings.Web": "10.0.2"
         }
       },
       "UnitsNet": {
@@ -1459,8 +1466,8 @@
       },
       "System.Text.Encodings.Web": {
         "type": "Transitive",
-        "resolved": "9.0.0",
-        "contentHash": "e2hMgAErLbKyUUwt18qSBf9T5Y+SFAL3ZedM8fLupkVj8Rj2PZ9oxQ37XX2LF8fTO1wNIxvKpihD7Of7D/NxZw=="
+        "resolved": "10.0.2",
+        "contentHash": "Ro4cLT4qpRy64crfLAy3ekihtXckeXrD5eI6qb6NDSEVyHcHsmH7KgN4dbnIuiBmXIoaCslx4SynLYxag1SLSQ=="
       }
     },
     "net8.0/win-x64": {
@@ -1471,17 +1478,11 @@
       },
       "System.Text.Encodings.Web": {
         "type": "Transitive",
-        "resolved": "9.0.0",
-        "contentHash": "e2hMgAErLbKyUUwt18qSBf9T5Y+SFAL3ZedM8fLupkVj8Rj2PZ9oxQ37XX2LF8fTO1wNIxvKpihD7Of7D/NxZw=="
+        "resolved": "10.0.2",
+        "contentHash": "Ro4cLT4qpRy64crfLAy3ekihtXckeXrD5eI6qb6NDSEVyHcHsmH7KgN4dbnIuiBmXIoaCslx4SynLYxag1SLSQ=="
       }
     },
     "net9.0": {
-      "Fody": {
-        "type": "Direct",
-        "requested": "[6.9.3, )",
-        "resolved": "6.9.3",
-        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
-      },
       "MethodBoundaryAspect.Fody": {
         "type": "Direct",
         "requested": "[2.0.150, )",
@@ -1691,6 +1692,11 @@
         "resolved": "8.5.0",
         "contentHash": "VYYMZNitZ85UEhwOKkTQI63WEMvzUqwQc74I2mm8h/DBVAMcBBxqYPni4DmuRtbCwngmuONuK2yBJfWNRKzI+A=="
       },
+      "System.Diagnostics.DiagnosticSource": {
+        "type": "Transitive",
+        "resolved": "10.0.2",
+        "contentHash": "lYWBy8fKkJHaRcOuw30d67PrtVjR5754sz5Wl76s8P+vJ9FSThh9b7LIcTSODx1LY7NB3Srvg+JMnzd67qNZOw=="
+      },
       "System.Diagnostics.EventLog": {
         "type": "Transitive",
         "resolved": "9.0.0",
@@ -1700,7 +1706,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Services.TcpWithResilience.Interfaces": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.2, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.Extensions.Hosting": "[9.0.0, )",
           "Microsoft.Extensions.Localization": "[9.0.0, )",
@@ -1751,7 +1757,7 @@
           "ATAP.Utilities.GraphDataStructures": "[0.1.0-Alpha, )",
           "ATAP.Utilities.GraphDataStructures.Interfaces": "[0.1.0-Alpha, )",
           "MedallionShell": "[1.6.2, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
           "UnitsNet": "[5.60.0, )"
         }
@@ -1784,7 +1790,7 @@
           "ATAP.Utilities.Philote.Models": "[1.0.0, )",
           "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )",
           "MedallionShell": "[1.6.2, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
           "UnitsNet": "[5.60.0, )"
         }
@@ -1809,7 +1815,7 @@
           "ATAP.Utilities.ComputerInventory.Software.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
           "MedallionShell": "[1.6.2, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
           "UnitsNet": "[5.60.0, )"
         }
@@ -1873,7 +1879,7 @@
           "ATAP.Utilities.Philote": "[1.0.0, )",
           "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
           "MedallionShell": "[1.6.2, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
           "UnitsNet": "[5.60.0, )"
         }
@@ -1885,7 +1891,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Enumeration": "[1.0.0, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )"
         }
       },
@@ -1946,7 +1952,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.2, )",
           "ATAP.Utilities.GraphDataStructures.Interfaces": "[0.1.0-Alpha, )"
         }
       },
@@ -1960,7 +1966,6 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.DateTime.Model": "[1.0.0, )",
           "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
         }
       },
@@ -1982,6 +1987,12 @@
         "dependencies": {
           "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
         }
+      },
+      "Fody": {
+        "type": "CentralTransitive",
+        "requested": "[6.9.3, )",
+        "resolved": "6.9.3",
+        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
       },
       "MedallionShell": {
         "type": "CentralTransitive",
@@ -2051,18 +2062,18 @@
       },
       "Microsoft.Extensions.DependencyInjection": {
         "type": "CentralTransitive",
-        "requested": "[9.0.0, )",
-        "resolved": "9.0.0",
-        "contentHash": "MCPrg7v3QgNMr0vX4vzRXvkNGgLg8vKWX0nKCWUxu2uPyMsaRgiRc1tHBnbTcfJMhMKj2slE/j2M9oGkd25DNw==",
+        "requested": "[10.0.2, )",
+        "resolved": "10.0.2",
+        "contentHash": "J/Zmp6fY93JbaiZ11ckWvcyxMPjD6XVwIHQXBjryTBgn7O6O20HYg9uVLFcZlNfgH78MnreE/7EH+hjfzn7VyA==",
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.0"
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.2"
         }
       },
       "Microsoft.Extensions.DependencyInjection.Abstractions": {
         "type": "CentralTransitive",
-        "requested": "[9.0.0, )",
-        "resolved": "9.0.0",
-        "contentHash": "+6f2qv2a3dLwd5w6JanPIPs47CxRbnk+ZocMJUhv9NxP88VlOcJYZs9jY+MYSjxvady08bUZn6qgiNh7DadGgg=="
+        "requested": "[10.0.2, )",
+        "resolved": "10.0.2",
+        "contentHash": "zOIurr59+kUf9vNcsUkCvKWZv+fPosUZXURZesYkJCvl0EzTc9F7maAO4Cd2WEV7ZJJ0AZrFQvuH6Npph9wdBw=="
       },
       "Microsoft.Extensions.Hosting": {
         "type": "CentralTransitive",
@@ -2119,11 +2130,12 @@
       },
       "Microsoft.Extensions.Logging.Abstractions": {
         "type": "CentralTransitive",
-        "requested": "[9.0.0, )",
-        "resolved": "9.0.0",
-        "contentHash": "g0UfujELzlLbHoVG8kPKVBaW470Ewi+jnptGS9KUi6jcb+k2StujtK3m26DFSGGwQ/+bVgZfsWqNzlP6YOejvw==",
+        "requested": "[10.0.2, )",
+        "resolved": "10.0.2",
+        "contentHash": "RZkez/JjpnO+MZ6efKkSynN6ZztLpw3WbxNzjLCPBd97wWj1S9ZYPWi0nmT4kWBRa6atHsdM1ydGkUr8GudyDQ==",
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.0"
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.2",
+          "System.Diagnostics.DiagnosticSource": "10.0.2"
         }
       },
       "Polly": {
@@ -2152,9 +2164,9 @@
       },
       "ServiceStack.Text": {
         "type": "CentralTransitive",
-        "requested": "[5.12.0, )",
-        "resolved": "5.12.0",
-        "contentHash": "KBbHZ73I9suf1DSYeEJSXPmgobyJikB9fhfhJFaeBPw22Es1taeuSQsuXtgH8qjQI7MWhug63D9l8xarGxG03A=="
+        "requested": "[8.10.0, )",
+        "resolved": "8.10.0",
+        "contentHash": "x6F5ihNCH1KHCQAJrAx/BS4BOODHCakWiPnWGIbfS5xOZgke7y5QFyII8lta9OsRy9P/GvYGViUp0pHxrWfzPQ=="
       },
       "ServiceStack.Text.EnumMemberSerializer": {
         "type": "CentralTransitive",

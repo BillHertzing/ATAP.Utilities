@@ -2,12 +2,6 @@
   "version": 2,
   "dependencies": {
     "net10.0": {
-      "Fody": {
-        "type": "Direct",
-        "requested": "[6.9.3, )",
-        "resolved": "6.9.3",
-        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
-      },
       "MethodBoundaryAspect.Fody": {
         "type": "Direct",
         "requested": "[2.0.150, )",
@@ -57,7 +51,7 @@
           "ATAP.Utilities.GraphDataStructures": "[0.1.0-Alpha, )",
           "ATAP.Utilities.GraphDataStructures.Interfaces": "[0.1.0-Alpha, )",
           "MedallionShell": "[1.6.2, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
           "UnitsNet": "[5.60.0, )"
         }
@@ -90,7 +84,7 @@
           "ATAP.Utilities.Philote.Models": "[1.0.0, )",
           "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )",
           "MedallionShell": "[1.6.2, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
           "UnitsNet": "[5.60.0, )"
         }
@@ -115,7 +109,7 @@
           "ATAP.Utilities.ComputerInventory.Software.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
           "MedallionShell": "[1.6.2, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
           "UnitsNet": "[5.60.0, )"
         }
@@ -165,7 +159,7 @@
           "ATAP.Utilities.Philote": "[1.0.0, )",
           "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
           "MedallionShell": "[1.6.2, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
           "UnitsNet": "[5.60.0, )"
         }
@@ -177,7 +171,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Enumeration": "[1.0.0, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )"
         }
       },
@@ -214,7 +208,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.2, )",
           "ATAP.Utilities.GraphDataStructures.Interfaces": "[0.1.0-Alpha, )"
         }
       },
@@ -228,7 +222,6 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.DateTime.Model": "[1.0.0, )",
           "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
         }
       },
@@ -251,6 +244,12 @@
           "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
         }
       },
+      "Fody": {
+        "type": "CentralTransitive",
+        "requested": "[6.9.3, )",
+        "resolved": "6.9.3",
+        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
+      },
       "MedallionShell": {
         "type": "CentralTransitive",
         "requested": "[1.6.2, )",
@@ -259,9 +258,9 @@
       },
       "ServiceStack.Text": {
         "type": "CentralTransitive",
-        "requested": "[5.12.0, )",
-        "resolved": "5.12.0",
-        "contentHash": "KBbHZ73I9suf1DSYeEJSXPmgobyJikB9fhfhJFaeBPw22Es1taeuSQsuXtgH8qjQI7MWhug63D9l8xarGxG03A=="
+        "requested": "[8.10.0, )",
+        "resolved": "8.10.0",
+        "contentHash": "x6F5ihNCH1KHCQAJrAx/BS4BOODHCakWiPnWGIbfS5xOZgke7y5QFyII8lta9OsRy9P/GvYGViUp0pHxrWfzPQ=="
       },
       "ServiceStack.Text.EnumMemberSerializer": {
         "type": "CentralTransitive",
@@ -282,12 +281,6 @@
     "net10.0/linux-x64": {},
     "net10.0/win-x64": {},
     "net8.0": {
-      "Fody": {
-        "type": "Direct",
-        "requested": "[6.9.3, )",
-        "resolved": "6.9.3",
-        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
-      },
       "MethodBoundaryAspect.Fody": {
         "type": "Direct",
         "requested": "[2.0.150, )",
@@ -337,7 +330,7 @@
           "ATAP.Utilities.GraphDataStructures": "[0.1.0-Alpha, )",
           "ATAP.Utilities.GraphDataStructures.Interfaces": "[0.1.0-Alpha, )",
           "MedallionShell": "[1.6.2, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
           "UnitsNet": "[5.60.0, )"
         }
@@ -370,7 +363,7 @@
           "ATAP.Utilities.Philote.Models": "[1.0.0, )",
           "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )",
           "MedallionShell": "[1.6.2, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
           "UnitsNet": "[5.60.0, )"
         }
@@ -395,7 +388,7 @@
           "ATAP.Utilities.ComputerInventory.Software.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
           "MedallionShell": "[1.6.2, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
           "UnitsNet": "[5.60.0, )"
         }
@@ -445,19 +438,22 @@
           "ATAP.Utilities.Philote": "[1.0.0, )",
           "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
           "MedallionShell": "[1.6.2, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
       "atap.utilities.concurrentobservablecollections": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "System.Collections.Immutable": "[9.0.0, )"
+        }
       },
       "atap.utilities.cryptocoin.enumerations": {
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Enumeration": "[1.0.0, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )"
         }
       },
@@ -494,7 +490,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.2, )",
           "ATAP.Utilities.GraphDataStructures.Interfaces": "[0.1.0-Alpha, )"
         }
       },
@@ -508,7 +504,6 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.DateTime.Model": "[1.0.0, )",
           "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
         }
       },
@@ -531,6 +526,12 @@
           "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
         }
       },
+      "Fody": {
+        "type": "CentralTransitive",
+        "requested": "[6.9.3, )",
+        "resolved": "6.9.3",
+        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
+      },
       "MedallionShell": {
         "type": "CentralTransitive",
         "requested": "[1.6.2, )",
@@ -539,9 +540,9 @@
       },
       "ServiceStack.Text": {
         "type": "CentralTransitive",
-        "requested": "[5.12.0, )",
-        "resolved": "5.12.0",
-        "contentHash": "KBbHZ73I9suf1DSYeEJSXPmgobyJikB9fhfhJFaeBPw22Es1taeuSQsuXtgH8qjQI7MWhug63D9l8xarGxG03A=="
+        "requested": "[8.10.0, )",
+        "resolved": "8.10.0",
+        "contentHash": "x6F5ihNCH1KHCQAJrAx/BS4BOODHCakWiPnWGIbfS5xOZgke7y5QFyII8lta9OsRy9P/GvYGViUp0pHxrWfzPQ=="
       },
       "ServiceStack.Text.EnumMemberSerializer": {
         "type": "CentralTransitive",
@@ -551,6 +552,12 @@
         "dependencies": {
           "ServiceStack.Text": "5.0.0"
         }
+      },
+      "System.Collections.Immutable": {
+        "type": "CentralTransitive",
+        "requested": "[9.0.0, )",
+        "resolved": "9.0.0",
+        "contentHash": "QhkXUl2gNrQtvPmtBTQHb0YsUrDiDQ2QS09YbtTTiSjGcf7NBqtYbrG/BE06zcBPCKEwQGzIv13IVdXNOSub2w=="
       },
       "UnitsNet": {
         "type": "CentralTransitive",
@@ -562,12 +569,6 @@
     "net8.0/linux-x64": {},
     "net8.0/win-x64": {},
     "net9.0": {
-      "Fody": {
-        "type": "Direct",
-        "requested": "[6.9.3, )",
-        "resolved": "6.9.3",
-        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
-      },
       "MethodBoundaryAspect.Fody": {
         "type": "Direct",
         "requested": "[2.0.150, )",
@@ -617,7 +618,7 @@
           "ATAP.Utilities.GraphDataStructures": "[0.1.0-Alpha, )",
           "ATAP.Utilities.GraphDataStructures.Interfaces": "[0.1.0-Alpha, )",
           "MedallionShell": "[1.6.2, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
           "UnitsNet": "[5.60.0, )"
         }
@@ -650,7 +651,7 @@
           "ATAP.Utilities.Philote.Models": "[1.0.0, )",
           "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )",
           "MedallionShell": "[1.6.2, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
           "UnitsNet": "[5.60.0, )"
         }
@@ -675,7 +676,7 @@
           "ATAP.Utilities.ComputerInventory.Software.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
           "MedallionShell": "[1.6.2, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
           "UnitsNet": "[5.60.0, )"
         }
@@ -725,7 +726,7 @@
           "ATAP.Utilities.Philote": "[1.0.0, )",
           "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
           "MedallionShell": "[1.6.2, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
           "UnitsNet": "[5.60.0, )"
         }
@@ -737,7 +738,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Enumeration": "[1.0.0, )",
-          "ServiceStack.Text": "[5.12.0, )",
+          "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )"
         }
       },
@@ -774,7 +775,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.2, )",
           "ATAP.Utilities.GraphDataStructures.Interfaces": "[0.1.0-Alpha, )"
         }
       },
@@ -788,7 +789,6 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.DateTime.Model": "[1.0.0, )",
           "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
         }
       },
@@ -811,6 +811,12 @@
           "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
         }
       },
+      "Fody": {
+        "type": "CentralTransitive",
+        "requested": "[6.9.3, )",
+        "resolved": "6.9.3",
+        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
+      },
       "MedallionShell": {
         "type": "CentralTransitive",
         "requested": "[1.6.2, )",
@@ -819,9 +825,9 @@
       },
       "ServiceStack.Text": {
         "type": "CentralTransitive",
-        "requested": "[5.12.0, )",
-        "resolved": "5.12.0",
-        "contentHash": "KBbHZ73I9suf1DSYeEJSXPmgobyJikB9fhfhJFaeBPw22Es1taeuSQsuXtgH8qjQI7MWhug63D9l8xarGxG03A=="
+        "requested": "[8.10.0, )",
+        "resolved": "8.10.0",
+        "contentHash": "x6F5ihNCH1KHCQAJrAx/BS4BOODHCakWiPnWGIbfS5xOZgke7y5QFyII8lta9OsRy9P/GvYGViUp0pHxrWfzPQ=="
       },
       "ServiceStack.Text.EnumMemberSerializer": {
         "type": "CentralTransitive",

@@ -50,28 +50,37 @@
     <!-- the result is that the $(SolutionDir) is set properly regardless of the $(MSBuildRuntimeType) -->
     <SolutionDir>$(MSBuildThisFileDirectory)</SolutionDir>
 
+    <!-- Task 15.180.j common build contract. Caller-owned identifiers are deliberately
+         explicit; Task 15.180.l resolves and propagates them across every invocation. -->
+    <ATAPRepositorySlug>ATAP.Utilities</ATAPRepositorySlug>
+    <ATAPArtifactsRoot Condition="'$(ATAPArtifactsRoot)' == ''">$(ATAP_ARTIFACTS_ROOT)</ATAPArtifactsRoot>
+    <ATAPArtifactsWorktreeId Condition="'$(ATAPArtifactsWorktreeId)' == ''">$(ATAP_ARTIFACTS_WORKTREE_ID)</ATAPArtifactsWorktreeId>
+    <ATAPArtifactsExecutionId Condition="'$(ATAPArtifactsExecutionId)' == ''">$(ATAP_ARTIFACTS_EXECUTION_ID)</ATAPArtifactsExecutionId>
+    <ATAPExpectedArtifactsPath Condition="'$(ATAPArtifactsRoot)' != '' And '$(ATAPArtifactsWorktreeId)' != '' And '$(ATAPArtifactsExecutionId)' != ''">$(ATAPArtifactsRoot)\dotnet\$(ATAPRepositorySlug)\$(ATAPArtifactsWorktreeId)\$(ATAPArtifactsExecutionId)</ATAPExpectedArtifactsPath>
+    <ArtifactsPath Condition="'$(ArtifactsPath)' == '' And '$(ATAPExpectedArtifactsPath)' != ''">$(ATAPExpectedArtifactsPath)</ArtifactsPath>
+    <UseArtifactsOutput Condition="'$(ArtifactsPath)' != ''">true</UseArtifactsOutput>
+    <ATAPArtifactsOwner>$(ATAPRepositorySlug)|$(ATAPArtifactsWorktreeId)|$(ATAPArtifactsExecutionId)</ATAPArtifactsOwner>
+    <ATAPBinlogPath Condition="'$(ArtifactsPath)' != ''">$(ArtifactsPath)\logs\$(MSBuildProjectName).binlog</ATAPBinlogPath>
+    <ATAPPackageStagingPath Condition="'$(ArtifactsPath)' != ''">$(ArtifactsPath)\packages</ATAPPackageStagingPath>
+    <ATAPPublishStagingPath Condition="'$(ArtifactsPath)' != ''">$(ArtifactsPath)\publish</ATAPPublishStagingPath>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(ContinuousIntegrationBuild)' == '' And '$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <ProjectWeaverXml>$(MSBuildThisFileDirectory)FodyWeavers.xml</ProjectWeaverXml>
+    <FodyGenerateXsd>false</FodyGenerateXsd>
+    <ATAPDeferredOpenHardwareMonitorLib>$([System.Text.RegularExpressions.Regex]::IsMatch('$(MSBuildProjectFullPath)', '[\\/]OpenHardwareMonitorLib[\\/]', System.Text.RegularExpressions.RegexOptions.IgnoreCase))</ATAPDeferredOpenHardwareMonitorLib>
+
     <!-- Directory where all of the custom build tools are stored -->
     <SolutionBuildToolsBaseDir Condition=" '$(SolutionBuildToolsBaseDir)' == '' ">$(SolutionDir)Build\</SolutionBuildToolsBaseDir>
 
     <!-- bring in the build tasks extensions defined in the MSBuild.Community project-->
     <MSBuildCommunityTasksPath Condition=" '$(MSBuildCommunityTasksPath)' == '' ">$(SolutionBuildToolsBaseDir)MSBuildTasks.*\build</MSBuildCommunityTasksPath>
 
-    <!-- bring in the build tasks extensions defined in the ATAP.Utilities.BuildTooling project-->
-    <!-- ATAPBuildToolingConfiguration is normally set to Release; use Debug if developing the BuildTooling assemblies and scripts -->
-    <ATAPBuildToolingConfiguration>Debug</ATAPBuildToolingConfiguration>
-    <!-- Read the deployed BuildTooling version from the sentinel file written by DeployBuildToolingToBuildDirectory. -->
-    <!-- Fallback to the last known-good version if the file does not yet exist (first bootstrap). -->
-    <ATAPBuildToolingVersion Condition="Exists('$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.current-version')"
-      >$([System.IO.File]::ReadAllText('$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.current-version').Trim())</ATAPBuildToolingVersion>
-    <ATAPBuildToolingVersion Condition="'$(ATAPBuildToolingVersion)' == ''">0.1.0.1</ATAPBuildToolingVersion>
-    <ATAPBuildToolingRelativeBasePath>ATAP.Utilities.BuildTooling.$(ATAPBuildToolingVersion)\build\</ATAPBuildToolingRelativeBasePath>
-    <!-- ATAPBuildToolingDebugVerbosity controls the level of details the Debug mode logging. If ATAPBuildToolingConfiguration is not Debug, this setting has no effect -->
-    <!-- valid values for ATAPBuildToolingDebugVerbosity are trace -->
-    <ATAPBuildToolingDebugVerbosity>Trace</ATAPBuildToolingDebugVerbosity>
-    <ATAPUtilitiesBuildToolingTargetsPath>$(SolutionBuildToolsBaseDir)$(ATAPBuildToolingRelativeBasePath)</ATAPUtilitiesBuildToolingTargetsPath>
-    <ATAPUtilitiesBuildToolingTasksPath>$(SolutionBuildToolsBaseDir)$(ATAPBuildToolingRelativeBasePath)</ATAPUtilitiesBuildToolingTasksPath>
-    <ATAPUtilitiesBuildToolingTasksAssembly Condition=" '$(MSBuildRuntimeType)' == 'Core'">$(ATAPUtilitiesBuildToolingTasksPath)\Release\net10.0\ATAP.Utilities.BuildTooling.CSharp.dll</ATAPUtilitiesBuildToolingTasksAssembly>
-    <ATAPUtilitiesBuildToolingTasksAssembly Condition=" '$(MSBuildRuntimeType)' != 'Core'">$(ATAPUtilitiesBuildToolingTasksPath)\Release\net471\ATAP.Utilities.BuildTooling.CSharp.dll</ATAPUtilitiesBuildToolingTasksAssembly>
+    <!-- Versioned BuildTooling is imported only from its immutable NuGet package. The
+         exact package selection is activated after publication/pinning by Task 15.180.t;
+         no editable Build\ deployment or sentinel-file fallback is permitted. -->
+    <ATAPBuildToolingRequiredContractVersion Condition="'$(ATAPBuildToolingRequiredContractVersion)' == ''">1</ATAPBuildToolingRequiredContractVersion>
+    <ATAPBuildToolingRequiredCompatibilitySentinel Condition="'$(ATAPBuildToolingRequiredCompatibilitySentinel)' == ''">ATAP.Utilities.BuildTooling.CSharp/1</ATAPBuildToolingRequiredCompatibilitySentinel>
+    <ATAPRequireBuildToolingPackage Condition="'$(ATAPRequireBuildToolingPackage)' == ''">false</ATAPRequireBuildToolingPackage>
 
     <!-- The Roslyn Code Analyzers for FxCop Rules should be installed as a Nuget Package at the Solution level, per this article https://docs.microsoft.com/en-us/visualstudio/code-quality/install-fxcop-analyzers?view=vs-2019 -->
     <!-- Per this article https://docs.microsoft.com/en-us/visualstudio/code-quality/roslyn-analyzers-overview?view=vs-2019#nuget-package-versus-vsix-extension the legacy post-build code analysis tools should be turned off -->

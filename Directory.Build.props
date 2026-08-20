@@ -264,13 +264,8 @@
     <PackageReference Include="Nerdbank.GitVersioning" PrivateAssets="all" />
   </ItemGroup>
 
-  <!-- 5-Tier PackageLifeCycleStage + feed routing (tasks 1.1-1..1.1-4) -->
-  <!-- Task 1.1-1: Source the package lifecycle stage from NBGV's prerelease label.
-       Valid values: Sprint, Alpha, Beta, QA, or empty (stable/main release).
-       $(NBGV_PrereleaseLabel) is populated during restore/build by the Nerdbank.GitVersioning
-       MSBuild targets. Directory.Build.props is read early, but this property still
-       evaluates correctly because MSBuild re-evaluates property references lazily at
-       consumer sites during the build. -->
+  <!-- Canonical 5-tier package lifecycle and feed routing. PackageLifeCycleStage is the
+       caller/project input; CanonicalPackageLifeCycleStage is the normalized effective value. -->
   <PropertyGroup>
     <!-- Derive routing from the nearest version.json at evaluation time. NBGV targets
          are imported after this props file, so NBGV_PrereleaseLabel is not reliable here. -->
@@ -278,52 +273,72 @@
       Condition=" '$(PackageLifeCycleStage)' == '' And Exists('$(MSBuildProjectDirectory)\version.json') ">$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\version.json')), '&quot;version&quot;\s*:\s*&quot;[^&quot;]*-([A-Za-z]+)[\.-][^&quot;]*&quot;', System.Text.RegularExpressions.RegexOptions.IgnoreCase).Groups[1].Value)</PackageLifeCycleStage>
     <PackageLifeCycleStage
       Condition=" '$(PackageLifeCycleStage)' == '' And Exists('$(MSBuildProjectDirectory)\..\version.json') ">$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\..\version.json')), '&quot;version&quot;\s*:\s*&quot;[^&quot;]*-([A-Za-z]+)[\.-][^&quot;]*&quot;', System.Text.RegularExpressions.RegexOptions.IgnoreCase).Groups[1].Value)</PackageLifeCycleStage>
+    <NormalizedPackageLifeCycleStage>$([System.String]::Copy('$(PackageLifeCycleStage)').Trim().ToLowerInvariant())</NormalizedPackageLifeCycleStage>
   </PropertyGroup>
 
-  <!-- Task 1.1-4: Disallow per-project overrides of Directory.Packages.props versions.
-       Prevents accidental package drift from Central Package Management. -->
-  <PropertyGroup>
-    <CentralPackageVersionOverrideEnabled>false</CentralPackageVersionOverrideEnabled>
-  </PropertyGroup>
-
-  <!-- Task 1.1-2: Map the lifecycle stage to a ProGet NuGet feed via Choose/When.
-       This stores the mapped feed name in $(TargetProGetFeed) for downstream
-       publish/push tasks to consume. -->
+  <!-- Aliases and canonical inputs converge before routing. The empty input remains
+       distinguishable in NormalizedPackageLifeCycleStage for the stable-ref safeguard. -->
   <Choose>
-    <When Condition=" '$(PackageLifeCycleStage)' == 'Sprint' ">
+    <When Condition=" '$(NormalizedPackageLifeCycleStage)' == 'sprint' Or '$(NormalizedPackageLifeCycleStage)' == 'experimental' ">
+      <PropertyGroup>
+        <CanonicalPackageLifeCycleStage>Experimental</CanonicalPackageLifeCycleStage>
+      </PropertyGroup>
+    </When>
+    <When Condition=" '$(NormalizedPackageLifeCycleStage)' == 'alpha' Or '$(NormalizedPackageLifeCycleStage)' == 'development' ">
+      <PropertyGroup>
+        <CanonicalPackageLifeCycleStage>Development</CanonicalPackageLifeCycleStage>
+      </PropertyGroup>
+    </When>
+    <When Condition=" '$(NormalizedPackageLifeCycleStage)' == 'beta' Or '$(NormalizedPackageLifeCycleStage)' == 'integration' ">
+      <PropertyGroup>
+        <CanonicalPackageLifeCycleStage>Integration</CanonicalPackageLifeCycleStage>
+      </PropertyGroup>
+    </When>
+    <When Condition=" '$(NormalizedPackageLifeCycleStage)' == 'qa' ">
+      <PropertyGroup>
+        <CanonicalPackageLifeCycleStage>QA</CanonicalPackageLifeCycleStage>
+      </PropertyGroup>
+    </When>
+    <When Condition=" '$(NormalizedPackageLifeCycleStage)' == '' Or '$(NormalizedPackageLifeCycleStage)' == 'stable' Or '$(NormalizedPackageLifeCycleStage)' == 'production' ">
+      <PropertyGroup>
+        <CanonicalPackageLifeCycleStage>Production</CanonicalPackageLifeCycleStage>
+      </PropertyGroup>
+    </When>
+  </Choose>
+
+  <!-- Map only canonical values. There is intentionally no Otherwise route: an unknown
+       input leaves TargetProGetFeed empty and fails with ATAP5TIER001 before Build. -->
+  <Choose>
+    <When Condition=" '$(CanonicalPackageLifeCycleStage)' == 'Experimental' ">
       <PropertyGroup>
         <TargetProGetFeed>nuget-experimental</TargetProGetFeed>
       </PropertyGroup>
     </When>
-    <When Condition=" '$(PackageLifeCycleStage)' == 'Alpha' ">
+    <When Condition=" '$(CanonicalPackageLifeCycleStage)' == 'Development' ">
       <PropertyGroup>
         <TargetProGetFeed>nuget-development</TargetProGetFeed>
       </PropertyGroup>
     </When>
-    <When Condition=" '$(PackageLifeCycleStage)' == 'Beta' ">
+    <When Condition=" '$(CanonicalPackageLifeCycleStage)' == 'Integration' ">
       <PropertyGroup>
         <TargetProGetFeed>nuget-integration</TargetProGetFeed>
       </PropertyGroup>
     </When>
-    <When Condition=" '$(PackageLifeCycleStage)' == 'QA' ">
+    <When Condition=" '$(CanonicalPackageLifeCycleStage)' == 'QA' ">
       <PropertyGroup>
         <TargetProGetFeed>nuget-qa</TargetProGetFeed>
       </PropertyGroup>
     </When>
-    <Otherwise>
-      <!-- Empty label => stable/main release feed. Branch enforcement is handled
-           by the ValidatePackageLifeCycleStage target below (a <Choose> cannot
-           emit <Error> tasks; errors must live inside a <Target>). -->
+    <When Condition=" '$(CanonicalPackageLifeCycleStage)' == 'Production' ">
       <PropertyGroup>
         <TargetProGetFeed>nuget-stable</TargetProGetFeed>
       </PropertyGroup>
-    </Otherwise>
+    </When>
   </Choose>
 
-  <!-- Task 1.1-3: Build-time validation. An empty $(PackageLifeCycleStage) is valid
-       on stable-capable refs: main, release branches, and the numbered Sprint branches
-       used by sprint worktrees. Other branch kinds must carry an explicit prerelease
-       ceiling. We prefer $(NBGV_BuildingRef) when NBGV supplies it. -->
+  <!-- An empty PackageLifeCycleStage is valid on stable-capable refs: main, release
+       branches, and numbered Sprint worktree branches. Other branch kinds must carry
+       an accepted explicit lifecycle value. -->
   <Target Name="ValidatePackageLifeCycleStage" BeforeTargets="Build">
     <!-- NBGV_BuildingRef is often empty in local builds; resolve branch via git as fallback. -->
     <Exec Command="git rev-parse --abbrev-ref HEAD" ConsoleToMsBuild="true" IgnoreExitCode="true" Condition=" '$(NBGV_BuildingRef)' == '' ">
@@ -336,9 +351,12 @@
       <IsStablePackageBuildRef>$([System.Text.RegularExpressions.Regex]::IsMatch('$(CurrentBuildRef)', '^refs/heads/(main|release/.+|[0-9]+-Sprint-[0-9]{4}-work-items)$', System.Text.RegularExpressions.RegexOptions.IgnoreCase))</IsStablePackageBuildRef>
     </PropertyGroup>
 
-    <Error Condition=" '$(PackageLifeCycleStage)' == '' And '$(IsStablePackageBuildRef)' != 'True' "
+    <Error Condition=" '$(CanonicalPackageLifeCycleStage)' == '' "
            Code="ATAP5TIER001"
-           Text="PackageLifeCycleStage is empty but the current ref ($(CurrentBuildRef)) is not stable-capable. Stable/empty labels are valid on main, release/*, and numbered Sprint worktree branches such as 137-Sprint-0015-work-items. Other branches must use a prerelease label (Sprint, Alpha, Beta, or QA)." />
+           Text="PackageLifeCycleStage '$(PackageLifeCycleStage)' is unknown. Accepted inputs are Sprint, Experimental, Alpha, Development, Beta, Integration, QA, Stable, Production, or empty on a stable-capable ref." />
+    <Error Condition=" '$(NormalizedPackageLifeCycleStage)' == '' And '$(IsStablePackageBuildRef)' != 'True' "
+           Code="ATAP5TIER001"
+           Text="PackageLifeCycleStage is empty but the current ref ($(CurrentBuildRef)) is not stable-capable. Empty labels are valid on main, release/*, and numbered Sprint worktree branches such as 137-Sprint-0015-work-items. Other branches must use an accepted explicit lifecycle value." />
   </Target>
 
 </Project>

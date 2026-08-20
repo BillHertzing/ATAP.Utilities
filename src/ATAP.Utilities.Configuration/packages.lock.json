@@ -233,16 +233,6 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.2, )"
         }
       },
-      "atap.utilities.configuration.secrets.shim.bitwarden": {
-        "type": "Project",
-        "dependencies": {
-          "ATAP.Utilities.Configuration.Secrets": "[0.1.1, )",
-          "ATAP.Utilities.ETW": "[0.1.2, )",
-          "ATAP.Utilities.Secrets.Shim.Bitwarden": "[0.1.1, )",
-          "Microsoft.Extensions.Configuration": "[9.0.0, )",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.2, )"
-        }
-      },
       "atap.utilities.configuration.secrets.shims": {
         "type": "Project",
         "dependencies": {
@@ -298,18 +288,6 @@
           "ATAP.Utilities.ETW": "[0.1.2, )",
           "ATAP.Utilities.Secrets.Interfaces": "[0.1.2, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
-        }
-      },
-      "atap.utilities.secrets.shim.bitwarden": {
-        "type": "Project",
-        "dependencies": {
-          "ATAP.Utilities.ETW": "[0.1.2, )",
-          "ATAP.Utilities.Secrets.Interfaces": "[0.1.2, )",
-          "ATAP.Utilities.Secrets.Model": "[0.1.2, )",
-          "ATAP.Utilities.Secrets.StringConstants": "[0.1.2, )",
-          "Microsoft.Extensions.Configuration": "[9.0.0, )",
-          "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.2, )"
         }
       },
       "atap.utilities.secrets.stringconstants": {
@@ -726,16 +704,6 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.2, )"
         }
       },
-      "atap.utilities.configuration.secrets.shim.bitwarden": {
-        "type": "Project",
-        "dependencies": {
-          "ATAP.Utilities.Configuration.Secrets": "[0.1.1, )",
-          "ATAP.Utilities.ETW": "[0.1.2, )",
-          "ATAP.Utilities.Secrets.Shim.Bitwarden": "[0.1.1, )",
-          "Microsoft.Extensions.Configuration": "[9.0.0, )",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.2, )"
-        }
-      },
       "atap.utilities.configuration.secrets.shims": {
         "type": "Project",
         "dependencies": {
@@ -791,18 +759,6 @@
           "ATAP.Utilities.ETW": "[0.1.2, )",
           "ATAP.Utilities.Secrets.Interfaces": "[0.1.2, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
-        }
-      },
-      "atap.utilities.secrets.shim.bitwarden": {
-        "type": "Project",
-        "dependencies": {
-          "ATAP.Utilities.ETW": "[0.1.2, )",
-          "ATAP.Utilities.Secrets.Interfaces": "[0.1.2, )",
-          "ATAP.Utilities.Secrets.Model": "[0.1.2, )",
-          "ATAP.Utilities.Secrets.StringConstants": "[0.1.2, )",
-          "Microsoft.Extensions.Configuration": "[9.0.0, )",
-          "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.2, )"
         }
       },
       "atap.utilities.secrets.stringconstants": {
@@ -1228,16 +1184,6 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.2, )"
         }
       },
-      "atap.utilities.configuration.secrets.shim.bitwarden": {
-        "type": "Project",
-        "dependencies": {
-          "ATAP.Utilities.Configuration.Secrets": "[0.1.1, )",
-          "ATAP.Utilities.ETW": "[0.1.2, )",
-          "ATAP.Utilities.Secrets.Shim.Bitwarden": "[0.1.1, )",
-          "Microsoft.Extensions.Configuration": "[9.0.0, )",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.2, )"
-        }
-      },
       "atap.utilities.configuration.secrets.shims": {
         "type": "Project",
         "dependencies": {
@@ -1293,18 +1239,6 @@
           "ATAP.Utilities.ETW": "[0.1.2, )",
           "ATAP.Utilities.Secrets.Interfaces": "[0.1.2, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
-        }
-      },
-      "atap.utilities.secrets.shim.bitwarden": {
-        "type": "Project",
-        "dependencies": {
-          "ATAP.Utilities.ETW": "[0.1.2, )",
-          "ATAP.Utilities.Secrets.Interfaces": "[0.1.2, )",
-          "ATAP.Utilities.Secrets.Model": "[0.1.2, )",
-          "ATAP.Utilities.Secrets.StringConstants": "[0.1.2, )",
-          "Microsoft.Extensions.Configuration": "[9.0.0, )",
-          "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.2, )"
         }
       },
       "atap.utilities.secrets.stringconstants": {

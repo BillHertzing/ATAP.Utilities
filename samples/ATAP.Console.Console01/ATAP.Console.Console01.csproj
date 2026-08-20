@@ -10,27 +10,27 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Console.Console01.StringConstants\ATAP.Console.Console01.StringConstants.csproj" />
-    <!--    <ProjectReference Include="..\ATAP.Services.GenerateProgram\ATAP.Services.GenerateProgram.csproj" /> -->
-    <ProjectReference Include="..\ATAP.Services.ConsoleMonitor.Interfaces\ConsoleMonitor.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Services.ConsoleMonitor\ConsoleMonitor.csproj" />
-    <ProjectReference Include="..\ATAP.Services.Timers.Interfaces\Timers.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Services.Timers\Timers.csproj" />
-    <ProjectReference Include="..\ATAP.Services.ConsoleSink\ConsoleSink.csproj" />
-    <ProjectReference Include="..\ATAP.Services.ConsoleSink.Interfaces\ConsoleSink.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Services.ConsoleSource\ConsoleSource.csproj" />
-    <ProjectReference Include="..\ATAP.Services.ConsoleSource.Interfaces\ConsoleSource.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Services.FileSystemWatchers\FileSystemWatchers.csproj" />
-    <ProjectReference Include="..\ATAP.Services.FileSystemWatchers.Interfaces\FileSystemWatchers.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.GenericHost.Extensions\ATAP.Utilities.GenericHost.Extensions.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Configuration\Extensions\ATAP.Utilities.Configuration.Extensions.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory\Hardware\Extensions\ATAP.Utilities.ComputerInventory.Hardware.Extensions.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory\ProcessInfo\Models\ATAP.Utilities.ComputerInventory.ProcessInfo.Models.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory\Software\Enumerations\ATAP.Utilities.ComputerInventory.Software.Enumerations.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Persistence\Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Persistence\Model\ATAP.Utilities.Persistence.Model.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Persistence\Extensions\ATAP.Utilities.Persistence.Extensions.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Reactive.Extensions\ATAP.Utilities.Reactive.Extensions.csproj" />
+    <!--    <ProjectReference Include="..\..\src\ATAP.Services.GenerateProgram\ATAP.Services.GenerateProgram.csproj" /> -->
+    <ProjectReference Include="..\..\src\ATAP.Services.ConsoleMonitor.Interfaces\ConsoleMonitor.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Services.ConsoleMonitor\ConsoleMonitor.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Services.Timers.Interfaces\Timers.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Services.Timers\Timers.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Services.ConsoleSink\ConsoleSink.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Services.ConsoleSink.Interfaces\ConsoleSink.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Services.ConsoleSource\ConsoleSource.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Services.ConsoleSource.Interfaces\ConsoleSource.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Services.FileSystemWatchers\FileSystemWatchers.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Services.FileSystemWatchers.Interfaces\FileSystemWatchers.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.GenericHost.Extensions\ATAP.Utilities.GenericHost.Extensions.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Configuration\Extensions\ATAP.Utilities.Configuration.Extensions.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory\Hardware\Extensions\ATAP.Utilities.ComputerInventory.Hardware.Extensions.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory\ProcessInfo\Models\ATAP.Utilities.ComputerInventory.ProcessInfo.Models.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory\Software\Enumerations\ATAP.Utilities.ComputerInventory.Software.Enumerations.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Persistence\Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Persistence\Model\ATAP.Utilities.Persistence.Model.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Persistence\Extensions\ATAP.Utilities.Persistence.Extensions.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Reactive.Extensions\ATAP.Utilities.Reactive.Extensions.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -149,7 +149,7 @@
   <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
   <ItemGroup>
     <!-- Project Reference to the ETW attribute and log provider -->
-    <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>
 
 </Project>

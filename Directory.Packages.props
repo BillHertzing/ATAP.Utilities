@@ -8,8 +8,8 @@
          "CentralTransitive" carrying the requested range but still resolving the transitive
          minimum, so the central pin silently has no effect. Sprint 0015 Task 15.174.b. -->
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-    <!-- Task 15.176: permits the SQL Server provider consumers to satisfy the minimum ProtectedData version required by Microsoft.Data.SqlClient without changing unrelated package graphs. -->
-    <CentralPackageVersionOverrideEnabled>true</CentralPackageVersionOverrideEnabled>
+    <!-- VersionOverride is disabled repository-wide; only the ratified package-consumption fixtures opt in locally. -->
+    <CentralPackageVersionOverrideEnabled>false</CentralPackageVersionOverrideEnabled>
   </PropertyGroup>
   <ItemGroup Label="Security Patches (Critical - Addresses Known Vulnerabilities)">
     <!-- HTTP library (4.3.0 has a vulnerability) -->

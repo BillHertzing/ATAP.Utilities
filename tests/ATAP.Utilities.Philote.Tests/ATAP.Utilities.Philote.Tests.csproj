@@ -46,6 +46,11 @@
     <ProjectReference Include="..\..\src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj" />
   </ItemGroup>
 
+  <!-- Package-consumption SUT fixture: permit the promoted package version supplied by the caller. -->
+  <PropertyGroup Condition="'$(UsePackageReferenceForSUT)' == 'true'">
+    <CentralPackageVersionOverrideEnabled>true</CentralPackageVersionOverrideEnabled>
+  </PropertyGroup>
+
   <ItemGroup Condition="'$(UsePackageReferenceForSUT)' == 'true'">
     <PackageReference Include="ATAP.Utilities.Philote.DefaultConfiguration" VersionOverride="$(SUTVersion)" />
     <PackageReference Include="ATAP.Utilities.Philote.Interfaces" VersionOverride="$(SUTVersion)" />

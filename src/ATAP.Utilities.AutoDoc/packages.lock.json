@@ -8,12 +8,6 @@
         "resolved": "2.48.1",
         "contentHash": "dl4N/6zFwkI9DRRShTsR1/27+w4/yaf2Z9gzcORo11+4SCf9TPiNcJEWoKZnEsEIbjN4mBg+1bDwGZ30XPTOCA=="
       },
-      "Fody": {
-        "type": "Direct",
-        "requested": "[6.9.3, )",
-        "resolved": "6.9.3",
-        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
-      },
       "MethodBoundaryAspect.Fody": {
         "type": "Direct",
         "requested": "[2.0.150, )",
@@ -138,14 +132,6 @@
           "System.Security.Principal.Windows": "5.0.0"
         }
       },
-      "System.Security.Cryptography.ProtectedData": {
-        "type": "Transitive",
-        "resolved": "9.0.0",
-        "contentHash": "CJW+x/F6fmRQ7N6K8paasTw9PDZp4t7G76UjGNlSDgoHPF0h08vTzLYbLZpOLEJSg35d5wy2jCXGo84EN05DpQ==",
-        "dependencies": {
-          "System.Memory": "4.5.5"
-        }
-      },
       "System.Security.Principal.Windows": {
         "type": "Transitive",
         "resolved": "5.0.0",
@@ -159,6 +145,12 @@
           "System.Memory": "4.5.5",
           "System.Runtime.CompilerServices.Unsafe": "6.0.0"
         }
+      },
+      "Fody": {
+        "type": "CentralTransitive",
+        "requested": "[6.9.3, )",
+        "resolved": "6.9.3",
+        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
       },
       "Microsoft.Build.Framework": {
         "type": "CentralTransitive",
@@ -175,12 +167,21 @@
       },
       "System.Collections.Immutable": {
         "type": "CentralTransitive",
-        "requested": "[5.0.0, )",
+        "requested": "[9.0.0, )",
         "resolved": "9.0.0",
         "contentHash": "QhkXUl2gNrQtvPmtBTQHb0YsUrDiDQ2QS09YbtTTiSjGcf7NBqtYbrG/BE06zcBPCKEwQGzIv13IVdXNOSub2w==",
         "dependencies": {
           "System.Memory": "4.5.5",
           "System.Runtime.CompilerServices.Unsafe": "6.0.0"
+        }
+      },
+      "System.Security.Cryptography.ProtectedData": {
+        "type": "CentralTransitive",
+        "requested": "[9.0.4, )",
+        "resolved": "9.0.4",
+        "contentHash": "o94k2RKuAce3GeDMlUvIXlhVa1kWpJw95E6C9LwW0KlG0nj5+SgCiIxJ2Eroqb9sLtG1mEMbFttZIBZ13EJPvQ==",
+        "dependencies": {
+          "System.Memory": "4.5.5"
         }
       }
     },
@@ -242,12 +243,6 @@
         "requested": "[2.48.1, )",
         "resolved": "2.48.1",
         "contentHash": "dl4N/6zFwkI9DRRShTsR1/27+w4/yaf2Z9gzcORo11+4SCf9TPiNcJEWoKZnEsEIbjN4mBg+1bDwGZ30XPTOCA=="
-      },
-      "Fody": {
-        "type": "Direct",
-        "requested": "[6.9.3, )",
-        "resolved": "6.9.3",
-        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
       },
       "MethodBoundaryAspect.Fody": {
         "type": "Direct",
@@ -362,14 +357,6 @@
           "System.Security.Principal.Windows": "5.0.0"
         }
       },
-      "System.Security.Cryptography.ProtectedData": {
-        "type": "Transitive",
-        "resolved": "9.0.0",
-        "contentHash": "CJW+x/F6fmRQ7N6K8paasTw9PDZp4t7G76UjGNlSDgoHPF0h08vTzLYbLZpOLEJSg35d5wy2jCXGo84EN05DpQ==",
-        "dependencies": {
-          "System.Memory": "4.5.5"
-        }
-      },
       "System.Security.Principal.Windows": {
         "type": "Transitive",
         "resolved": "5.0.0",
@@ -383,6 +370,12 @@
           "System.Memory": "4.5.5",
           "System.Runtime.CompilerServices.Unsafe": "6.0.0"
         }
+      },
+      "Fody": {
+        "type": "CentralTransitive",
+        "requested": "[6.9.3, )",
+        "resolved": "6.9.3",
+        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
       },
       "Microsoft.Build.Framework": {
         "type": "CentralTransitive",
@@ -399,12 +392,21 @@
       },
       "System.Collections.Immutable": {
         "type": "CentralTransitive",
-        "requested": "[5.0.0, )",
+        "requested": "[9.0.0, )",
         "resolved": "9.0.0",
         "contentHash": "QhkXUl2gNrQtvPmtBTQHb0YsUrDiDQ2QS09YbtTTiSjGcf7NBqtYbrG/BE06zcBPCKEwQGzIv13IVdXNOSub2w==",
         "dependencies": {
           "System.Memory": "4.5.5",
           "System.Runtime.CompilerServices.Unsafe": "6.0.0"
+        }
+      },
+      "System.Security.Cryptography.ProtectedData": {
+        "type": "CentralTransitive",
+        "requested": "[9.0.4, )",
+        "resolved": "9.0.4",
+        "contentHash": "o94k2RKuAce3GeDMlUvIXlhVa1kWpJw95E6C9LwW0KlG0nj5+SgCiIxJ2Eroqb9sLtG1mEMbFttZIBZ13EJPvQ==",
+        "dependencies": {
+          "System.Memory": "4.5.5"
         }
       }
     },

@@ -93,7 +93,7 @@ function Test-BuildToolingBootstrapContract {
       $escapedPackages = [Security.SecurityElement]::Escape($packagesRoot)
       $configPath = Join-Path $consumerRoot 'NuGet.Config'
       Write-Utf8File $configPath ('<configuration><packageSources><clear /><add key="local" value="{0}" /></packageSources></configuration>' -f $escapedFeed)
-      $guard = '<Target Name="ATAPRequireBuildToolingImport" BeforeTargets="PrepareForBuild"><Error Condition="''$(ATAPBuildToolingImported)'' != ''true''" Code="ATAPBUILD009" Text="Required ATAP BuildTooling package import is missing." /></Target>'
+      $guard = '<Target Name="ATAPRequireBuildToolingImport" BeforeTargets="PrepareForBuild"><Error Condition="''$(ATAPBuildToolingImported)'' != ''true''" Code="ATAPBUILD019" Text="Required ATAP BuildTooling package import is missing." /></Target>'
       $directProject = Join-Path $consumerRoot 'Direct.csproj'
       $directXml = "<Project Sdk=`"Microsoft.NET.Sdk`"><PropertyGroup><TargetFramework>net10.0</TargetFramework><RestoreSources>$escapedFeed</RestoreSources><RestorePackagesPath>$escapedPackages</RestorePackagesPath></PropertyGroup><ItemGroup><PackageReference Include=`"ATAP.Utilities.BuildTooling.CSharp`" Version=`"$version`" /></ItemGroup>$guard</Project>"
       Write-Utf8File $directProject $directXml
@@ -131,11 +131,11 @@ function Test-BuildToolingBootstrapContract {
       if ($beforeRepeatHash -ne $afterRepeatHash) { throw 'Repeated restore changed immutable target bytes.' }
 
       $versionMismatch = Invoke-ProcessChecked 'dotnet' @('msbuild', $directProject, '-t:ATAPValidateBuildToolingCompatibility', '-p:ATAPBuildToolingRequiredContractVersion=2') $consumerRoot @(1)
-      if ($versionMismatch.Text -notmatch 'ATAPBUILD010') { throw 'Version mismatch did not fail with ATAPBUILD010.' }
+      if ($versionMismatch.Text -notmatch 'ATAPBUILD020') { throw 'Version mismatch did not fail with ATAPBUILD020.' }
       $sentinelMismatch = Invoke-ProcessChecked 'dotnet' @('msbuild', $directProject, '-t:ATAPValidateBuildToolingCompatibility', '-p:ATAPBuildToolingRequiredCompatibilitySentinel=corrupt') $consumerRoot @(1)
-      if ($sentinelMismatch.Text -notmatch 'ATAPBUILD011') { throw 'Sentinel mismatch did not fail with ATAPBUILD011.' }
+      if ($sentinelMismatch.Text -notmatch 'ATAPBUILD021') { throw 'Sentinel mismatch did not fail with ATAPBUILD021.' }
       $missingAssembly = Invoke-ProcessChecked 'dotnet' @('msbuild', $directProject, '-t:ATAPValidateBuildToolingCompatibility', '-p:ATAPBuildToolingRequireTaskAssembly=true', '-p:ATAPUtilitiesBuildToolingTasksAssembly=missing.dll') $consumerRoot @(1)
-      if ($missingAssembly.Text -notmatch 'ATAPBUILD012') { throw 'Missing task assembly did not fail with ATAPBUILD012.' }
+      if ($missingAssembly.Text -notmatch 'ATAPBUILD022') { throw 'Missing task assembly did not fail with ATAPBUILD022.' }
 
       $missingTargetBackup = "$cachedTargets.missing"
       $missingTransitiveBackup = "$cachedTransitiveTargets.missing"
@@ -143,7 +143,7 @@ function Test-BuildToolingBootstrapContract {
       [IO.File]::Move($cachedTransitiveTargets, $missingTransitiveBackup)
       try {
         $missingTarget = Invoke-ProcessChecked 'dotnet' @('msbuild', $directProject, '-t:ATAPRequireBuildToolingImport') $consumerRoot @(1)
-        if ($missingTarget.Text -notmatch 'ATAPBUILD009') { throw 'Missing package targets did not fail with the consumer bootstrap diagnostic ATAPBUILD009.' }
+        if ($missingTarget.Text -notmatch 'ATAPBUILD019') { throw 'Missing package targets did not fail with the consumer bootstrap diagnostic ATAPBUILD019.' }
       } finally {
         [IO.File]::Move($missingTargetBackup, $cachedTargets)
         [IO.File]::Move($missingTransitiveBackup, $cachedTransitiveTargets)
@@ -161,7 +161,7 @@ function Test-BuildToolingBootstrapContract {
         result = 'Passed'; package = $package.Name; version = $version; packageSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $package.FullName).Hash
         requiredEntries = 6; directTransitiveTargetsSha256 = $directHash; directTransitiveProperties = $directProperties
         firstUseRestore = 'Passed'; transitiveConsumer = 'Passed'; repeatedRestoreUnderFileLock = 'Passed'; rollbackToKnownGood = 'Passed'
-        diagnostics = @('ATAPBUILD009', 'ATAPBUILD010', 'ATAPBUILD011', 'ATAPBUILD012'); feedContact = 'local-only'; publication = $false; signingKeyAccess = $false
+        diagnostics = @('ATAPBUILD019', 'ATAPBUILD020', 'ATAPBUILD021', 'ATAPBUILD022'); feedContact = 'local-only'; publication = $false; signingKeyAccess = $false
         runRoot = $runRoot
       }
       $evidencePath = Join-Path $evidenceRoot 'verification.json'

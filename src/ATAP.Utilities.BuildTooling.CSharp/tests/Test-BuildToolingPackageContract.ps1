@@ -57,8 +57,8 @@ function Test-BuildToolingPackageContract {
       }
       $compatibilityTarget = $targets.SelectSingleNode("//*[local-name()='Target' and @Name='ATAPValidateBuildToolingCompatibility']")
       $diagnostics = @($compatibilityTarget.SelectNodes("*[local-name()='Error']") | ForEach-Object { $_.Code })
-      if ($null -eq $compatibilityTarget -or @(Compare-Object @('ATAPBUILD010', 'ATAPBUILD011', 'ATAPBUILD012') $diagnostics).Count -ne 0) {
-        $failures.Add('Compatibility target and diagnostics ATAPBUILD010-012 must be present exactly.')
+      if ($null -eq $compatibilityTarget -or @(Compare-Object @('ATAPBUILD020', 'ATAPBUILD021', 'ATAPBUILD022') $diagnostics).Count -ne 0) {
+        $failures.Add('Compatibility target and diagnostics ATAPBUILD020-022 must be present exactly.')
       }
       $sourceText = [IO.File]::ReadAllText($targetsPath)
       foreach ($token in @('Get-SecretATAP', 'ProGetApiKey', 'NuGetApiKey', 'AfterTargets="Build"', 'BeforeTargets="Pack"')) {

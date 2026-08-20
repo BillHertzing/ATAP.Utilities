@@ -12,7 +12,7 @@ conventions:
 
 The imported file exposes version, compatibility, provenance, and task-assembly
 properties. Its only target is a pre-compilation, side-effect-free compatibility
-gate with stable diagnostics `ATAPBUILD010` through `ATAPBUILD012`. It has no
+gate with stable diagnostics `ATAPBUILD020` through `ATAPBUILD022`. It has no
 pack, publish, copy, delete, credential, or external-system target.
 
 ## Bootstrap and exact selection

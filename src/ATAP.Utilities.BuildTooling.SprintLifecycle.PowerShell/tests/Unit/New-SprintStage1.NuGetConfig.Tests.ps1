@@ -3,7 +3,7 @@
 # Verifies the NuGet.config that New-SprintStage1 emits into the SharedVSCode
 # sprint worktree. Acceptance for A09: only permanent feed names
 # (nuget-experimental, nuget-development, nuget-integration, nuget-qa,
-# nuget-production, plus nuget.org; D-2); no sprint-scoped keys; full AceCommander-stable
+# nuget-stable, plus nuget.org; D-2); no sprint-scoped keys; full AceCommander-stable
 # topology (packageSources, packageSourceCredentials, packageRestore,
 # disabledPackageSources, packageSourceMapping, auditSources).
 
@@ -151,7 +151,7 @@ Describe 'New-SprintStage1 NuGet.config generation (A09)' -Tag 'Unit', 'Promoted
     <add key="nuget-development" value="${ProGetBaseUrl}/nuget/nuget-development/v3/index.json" allowInsecureConnections="true" />
     <add key="nuget-integration" value="${ProGetBaseUrl}/nuget/nuget-integration/v3/index.json" allowInsecureConnections="true" />
     <add key="nuget-qa" value="${ProGetBaseUrl}/nuget/nuget-qa/v3/index.json" allowInsecureConnections="true" />
-    <add key="nuget-production" value="${ProGetBaseUrl}/nuget/nuget-production/v3/index.json" allowInsecureConnections="true" />
+    <add key="nuget-stable" value="${ProGetBaseUrl}/nuget/nuget-stable/v3/index.json" allowInsecureConnections="true" />
   </packageSources>
   <packageRestore>
     <add key="enabled" value="True" />
@@ -166,7 +166,7 @@ Describe 'New-SprintStage1 NuGet.config generation (A09)' -Tag 'Unit', 'Promoted
     <packageSource key="nuget-development"><package pattern="*" /></packageSource>
     <packageSource key="nuget-integration"><package pattern="*" /></packageSource>
     <packageSource key="nuget-qa"><package pattern="*" /></packageSource>
-    <packageSource key="nuget-production"><package pattern="*" /></packageSource>
+    <packageSource key="nuget-stable"><package pattern="*" /></packageSource>
   </packageSourceMapping>
   <auditSources>
     <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
@@ -218,7 +218,7 @@ Describe 'New-SprintStage1 NuGet.config generation (A09)' -Tag 'Unit', 'Promoted
     }
 
     It 'Contains every permanent ProGet feed key' {
-      foreach ($key in @('nuget-experimental','nuget-development','nuget-integration','nuget-qa','nuget-production')) {
+      foreach ($key in @('nuget-experimental','nuget-development','nuget-integration','nuget-qa','nuget-stable')) {
         $script:content | Should -Match ('key="{0}"' -f [regex]::Escape($key))
       }
     }
@@ -228,7 +228,7 @@ Describe 'New-SprintStage1 NuGet.config generation (A09)' -Tag 'Unit', 'Promoted
     }
 
     It 'Uses /v3/index.json paths for ProGet feeds' {
-      foreach ($key in @('nuget-experimental','nuget-development','nuget-integration','nuget-qa','nuget-production')) {
+      foreach ($key in @('nuget-experimental','nuget-development','nuget-integration','nuget-qa','nuget-stable')) {
         $script:content | Should -Match ('/nuget/{0}/v3/index\.json' -f [regex]::Escape($key))
       }
     }
@@ -244,7 +244,7 @@ Describe 'New-SprintStage1 NuGet.config generation (A09)' -Tag 'Unit', 'Promoted
     It 'Emits the packageSourceMapping section with all six sources mapped' {
       $script:content | Should -Match '<packageSourceMapping>'
       $script:content | Should -Match 'packageSource key="nuget.org"'
-      foreach ($key in @('nuget-experimental','nuget-development','nuget-integration','nuget-qa','nuget-production')) {
+      foreach ($key in @('nuget-experimental','nuget-development','nuget-integration','nuget-qa','nuget-stable')) {
         $script:content | Should -Match ('packageSource key="{0}"' -f [regex]::Escape($key))
       }
     }
@@ -286,7 +286,7 @@ Describe 'New-SprintStage1 NuGet.config generation (A09)' -Tag 'Unit', 'Promoted
         -Confirm:$false | Out-Null
 
       $content = Get-Content -LiteralPath $script:nugetConfigPath -Raw
-      foreach ($key in @('nuget-experimental','nuget-development','nuget-integration','nuget-qa','nuget-production')) {
+      foreach ($key in @('nuget-experimental','nuget-development','nuget-integration','nuget-qa','nuget-stable')) {
         $content | Should -Match ('http://proget\.internal:51000/nuget/{0}/v3/index\.json' -f [regex]::Escape($key))
       }
       $content | Should -Not -Match 'https://utat022:50000'

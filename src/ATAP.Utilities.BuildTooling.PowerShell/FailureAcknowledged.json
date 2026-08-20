@@ -91,13 +91,6 @@
     "acknowledgedDate": "2026-05-29"
   },
   {
-    "testName": "Move-ProGetPackageInterTier.Normalizes 'production' -> 'stable' tier and throws (already at top)",
-    "tier": "T2",
-    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
-    "acknowledgedBy": "pipeline-exercise-2026-05-29",
-    "acknowledgedDate": "2026-05-29"
-  },
-  {
     "testName": "Move-ProGetPackageInterTier.Accepts nuget-experimental-push and routes to nuget-development",
     "tier": "T2",
     "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
@@ -239,13 +232,6 @@
   },
   {
     "testName": "Move-ProGetPackageIntraTier.Accepts source=nuget-testing-push and dest=nuget-testing (normalized to qa)",
-    "tier": "T2",
-    "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
-    "acknowledgedBy": "pipeline-exercise-2026-05-29",
-    "acknowledgedDate": "2026-05-29"
-  },
-  {
-    "testName": "Move-ProGetPackageIntraTier.Accepts source=nuget-production-push and dest=nuget-production (normalized to stable)",
     "tier": "T2",
     "reason": "Known Get-PVal alias/scope failure under the 5-tier build (or related pre-existing unit-test gap); deferred pending test-isolation remediation. See memory project_psbuild-getpval-scope-failure.",
     "acknowledgedBy": "pipeline-exercise-2026-05-29",

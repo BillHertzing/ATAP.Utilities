@@ -156,8 +156,16 @@ function Move-ProGetPackageInterTier {
         # Ordered list of tiers. Index determines movement direction (lower → higher).
         $tierOrder = @('experimental', 'development', 'integration', 'qa', 'stable')
         $tierAliases = @{
-            testing    = 'qa'
-            production = 'stable'
+            testing = 'qa'
+        }
+
+        foreach ($feedName in @($FromFeed, $ToFeed)) {
+            if (-not [string]::IsNullOrWhiteSpace($feedName) -and $feedName -match '-production(?:-push)?$') {
+                $stableFeedName = $feedName -replace '-production(?=-push$|$)', '-stable'
+                $errorMessage = "Feed '$feedName' uses the retired physical tier name 'production'. Use '$stableFeedName'."
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+                throw $errorMessage
+            }
         }
 
         # Known package type prefixes in feed names.
@@ -197,7 +205,7 @@ function Move-ProGetPackageInterTier {
 
         if (-not $parsedPrefix -or -not $parsedTier) {
             $errorMessage = "Cannot parse source feed name '$FromFeed'. " +
-            'Expected format: {nuget|powershellget|database|chocolatey}-{experimental|development|integration|qa|stable}[-push]. Legacy prefix powershell and tiers testing/production are normalized.'
+            'Expected format: {nuget|powershellget|database|chocolatey}-{experimental|development|integration|qa|stable}[-push]. Legacy prefix powershell and tier testing are normalized.'
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
             throw $errorMessage
         }

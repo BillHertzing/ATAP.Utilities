@@ -278,51 +278,53 @@ project grant, service identity, and purpose-specific BWS credential metadata.
 
 ---
 
-## Step 5 — Create the 8 Phase 1 Feeds
+## Step 5 — Create the 10 Five-Stage Feeds
 
-Phase 1 creates **8 combined feeds** (each serves as both push target and pull source):
-4 NuGet feeds for the C# environment promotion chain, plus 4 PowerShell feeds for the
-PowerShell module promotion chain.
+The canonical lifecycle has five stages: Experimental, Development, Integration, QA,
+and Stable. C# packages and PowerShell modules use the same lifecycle, but they use
+separate ProGet feed families and package protocols. The Production deployment stage
+consumes the `stable` feed; there is no physical `production` feed tier.
 
-### NuGet Feeds
+### NuGet Feeds for C# Packages
 
-| Feed Name            | Feed Type | Purpose                                           | Public Connector |
-| -------------------- | --------- | ------------------------------------------------- | ---------------- |
-| `nuget-experimental` | NuGet     | Developer local builds, feature branches          | nuget.org        |
-| `nuget-development`  | NuGet     | Promoted from experimental after CI passes        | nuget.org        |
-| `nuget-testing`      | NuGet     | Promoted from development after integration tests | —                |
-| `nuget-production`   | NuGet     | Stable, released packages for production builds   | nuget.org        |
+| Feed Name            | Feed Type | Purpose                                      | Public Connector |
+| -------------------- | --------- | -------------------------------------------- | ---------------- |
+| `nuget-experimental` | NuGet     | Developer and feature-branch packages        | nuget.org        |
+| `nuget-development`  | NuGet     | Packages promoted after initial CI           | nuget.org        |
+| `nuget-integration`  | NuGet     | Cross-package integration candidates         | —                |
+| `nuget-qa`           | NuGet     | QA-validated release candidates              | —                |
+| `nuget-stable`       | NuGet     | Stable packages consumed by production builds | nuget.org       |
 
-### PowerShell Feeds
+### PowerShell Feeds for Modules
 
-| Feed Name                        | Feed Type  | Purpose                            | Public Connector      |
-| -------------------------------- | ---------- | ---------------------------------- | --------------------- |
-| `PowershellGallery-experimental` | PowerShell | Developer PowerShell module builds | powershellgallery.com |
-| `PowershellGallery-development`  | PowerShell | Promoted from experimental         | powershellgallery.com |
-| `PowershellGallery-testing`      | PowerShell | Promoted from development          | —                     |
-| `PowershellGallery-production`   | PowerShell | Stable PowerShell modules          | powershellgallery.com |
+| Feed Name                    | Feed Type  | Purpose                                      | Public Connector      |
+| ---------------------------- | ---------- | -------------------------------------------- | --------------------- |
+| `powershellget-experimental` | PowerShell | Developer and feature-branch modules         | PowerShellGallery.com |
+| `powershellget-development`  | PowerShell | Modules promoted after initial CI            | PowerShellGallery.com |
+| `powershellget-integration`  | PowerShell | Cross-module integration candidates          | —                     |
+| `powershellget-qa`           | PowerShell | QA-validated release candidates              | —                     |
+| `powershellget-stable`       | PowerShell | Stable modules consumed by production hosts  | PowerShellGallery.com |
 
-> **Note:** Feed names use the `PowershellGallery-` prefix (not `powershell-`) because
-> the Phase 1 feeds on `utat022` were created by the ATAP.IAC automated setup before this
-> naming was simplified. The feed names are what ProGet actually has on disk; changing
-> them would require recreating the feeds.
+The lifecycle tiers are shared, but the feeds are not interchangeable: C# uses the
+`nuget-*` family and NuGet protocol, while PowerShell uses the `powershellget-*` family
+and PowerShell package semantics. Older `PowershellGallery-*`, `*-testing`, and
+physical `*-production` names are retired aliases, not targets for new automation.
 
 ### Creation: Manual (Web UI)
 
 For each feed:
 
-1. Navigate to **Feeds → Create New Feed**
-2. Select the feed type (NuGet or PowerShell)
-3. Enter the feed name from the tables above
-4. Click **Create Feed**
-5. For feeds with public connectors: go to feed's **Manage** → **Connectors** → **Add Connector** → select the appropriate public connector
-6. For feeds with inter-tier connectors: **Manage** → **Connectors** → **Add Connector** → select the internal ProGet feed connector (e.g., for `nuget-development`, add a connector to `nuget-experimental`)
+1. Navigate to **Feeds → Create New Feed**.
+2. Select the feed type shown in the table.
+3. Enter the canonical feed name.
+4. Click **Create Feed**.
+5. Assign public and inter-tier connectors only under the approved connector policy.
 
 ### Creation: Automated (PowerShell)
 
-The existing `New-ProGetFeedSet` function in `ATAP.Utilities.IAC.Ansible.PowerShell` can
-create all feeds from the `PackageRepositoriesCollection` in global settings. For the
-initial setup, create feeds manually via the Web UI or write a simple one-off script.
+`New-ProGetFeedSet` in `ATAP.Utilities.IAC.Ansible.PowerShell` can create feeds from the
+`PackageRepositoriesCollection` in global settings. This runbook describes the desired
+configuration; Task 15.180.e.E08 does not query, create, rename, or delete live feeds.
 
 ### Phase 1 feed access policy
 
@@ -341,36 +343,25 @@ initial setup, create feeds manually via the Web UI or write a simple one-off sc
 
 ### Connectors for public feed fallback
 
-Feeds marked with a public connector should have a connector created so that packages
-not present locally are transparently resolved from the public feed:
-
-| Connector Name          | URL                                        | Used By                                                                                     |
-| ----------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| `nuget.org`             | `https://api.nuget.org/v3/index.json`      | nuget-experimental, nuget-development, nuget-production                                     |
-| `PowerShellGallery.com` | `https://www.powershellgallery.com/api/v2` | PowershellGallery-experimental, PowershellGallery-development, PowershellGallery-production |
+The public connectors are `nuget.org` (`https://api.nuget.org/v3/index.json`) and
+`PowerShellGallery.com` (`https://www.powershellgallery.com/api/v2`). Connector
+assignment is independent of the lifecycle-name correction and must be verified against
+the approved ProGet policy before live mutation.
 
 ### Connectors for inter-tier visibility
 
-Each higher-tier feed has a connector to the tier below it, so packages promoted to
-lower tiers are visible to consumers restoring from higher tiers (even before formal
-promotion copies the package locally):
+If the approved connector policy enables inter-tier visibility, each higher canonical
+feed points to the immediately lower feed in its own family:
 
-| Feed                 | Inter-Tier Connector To | Public Connector    |
-| -------------------- | ----------------------- | ------------------- |
-| `nuget-experimental` | _(none — lowest tier)_  | nuget.org           |
-| `nuget-development`  | `nuget-experimental`    | nuget.org           |
-| `nuget-testing`      | `nuget-development`     | _(none — hermetic)_ |
-| `nuget-production`   | `nuget-testing`         | nuget.org           |
+| Higher Tier  | Lower Tier   |
+| ------------ | ------------ |
+| Development  | Experimental |
+| Integration  | Development  |
+| QA           | Integration  |
+| Stable       | QA           |
 
-The same pattern applies to the `PowershellGallery-*` feeds — see
-`Set-ProGetPSFeedConnectors.ps1` for the automated setup.
-
-> **Why connectors AND promotion?** Connectors provide convenience (a developer restoring
-> from `nuget-development` can see experimental packages). Promotion provides certainty
-> (once promoted, the package is a local copy that survives if the lower feed is cleaned).
-> The connector chain means you can always _see_ lower-tier packages; promotion means the
-> package is _committed_ to that tier.
-
+Do not connect a `nuget-*` feed to a `powershellget-*` feed. Promotion copies a package
+into a tier; connectors only affect visibility and do not replace promotion evidence.
 > **API quirk (ProGet 2024, discovered 2026-03-20):** The management API endpoint
 > `POST /api/management/feeds/update` requires the feed name **in the URL path**
 > (`/api/management/feeds/update/{feedName}`), not in the JSON body. Sending only a body
@@ -395,11 +386,11 @@ The same pattern applies to the `PowershellGallery-*` feeds — see
       authenticated administration probe succeeds
 - [ ] No persistent User, Machine, service, or process-launch ProGet API-key
       environment variable exists
-- [ ] All 4 NuGet feeds (`nuget-experimental`, `nuget-development`, `nuget-testing`,
-      `nuget-production`) exist
-- [ ] All 4 PowerShell feeds (`PowershellGallery-experimental`,
-      `PowershellGallery-development`, `PowershellGallery-testing`,
-      `PowershellGallery-production`) exist
-- [ ] Public connectors (`nuget.org`, `PowerShellGallery.com`) are assigned to the
-      experimental/development/production feeds in each family
-- [ ] Inter-tier connectors are wired between adjacent tier feeds in each family
+- [ ] All 5 NuGet feeds (`nuget-experimental`, `nuget-development`,
+      `nuget-integration`, `nuget-qa`, `nuget-stable`) exist
+- [ ] All 5 PowerShell feeds (`powershellget-experimental`,
+      `powershellget-development`, `powershellget-integration`, `powershellget-qa`,
+      `powershellget-stable`) exist
+- [ ] No new automation routes to retired `*-testing` or physical `*-production` names
+- [ ] Public connectors are assigned according to the approved connector policy
+- [ ] Inter-tier connectors, when enabled, stay within one feed family and join adjacent tiers

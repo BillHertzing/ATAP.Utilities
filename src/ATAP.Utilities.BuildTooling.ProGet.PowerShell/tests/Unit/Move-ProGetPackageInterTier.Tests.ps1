@@ -1,7 +1,7 @@
 #Requires -Version 7.0
 # Pester 5+ unit tests for Move-ProGetPackageInterTier.
-# All ProGet REST calls are mocked. Validates tier ordering, legacy alias
-# normalization (testing->qa, production->stable), and 5-tier auto-routing.
+# All ProGet REST calls are mocked. Validates tier ordering, testing->qa legacy
+# normalization, production-name retirement, and 5-tier auto-routing.
 # AI assisted using Powershell.instructions.md as guidelines
 
 BeforeAll {
@@ -86,7 +86,7 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit', 'PromotedModuleHostSensitive
     }
   }
 
-  Context 'Legacy tier name normalization' {
+  Context 'Legacy tier handling' {
 
     It "Normalizes 'testing' -> 'qa' tier and routes to nuget-stable" {
       $result = Move-ProGetPackageInterTier `
@@ -97,14 +97,23 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit', 'PromotedModuleHostSensitive
       $result.DestinationFeed | Should -Be 'nuget-stable'
     }
 
-    It "Normalizes 'production' -> 'stable' tier and throws (already at top)" {
+    It 'Rejects retired nuget-production source feed before any REST call' {
       { Move-ProGetPackageInterTier `
           -Name 'Test.Package' -Version '1.0.0' `
           -FromFeed 'nuget-production' `
           -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key'
-      } | Should -Throw -ExpectedMessage '*highest tier*'
+      } | Should -Throw -ExpectedMessage "*retired*Use 'nuget-stable'*"
+      Assert-MockCalled Invoke-RestMethod -Times 0 -Exactly -Scope It
     }
-  }
+
+    It 'Rejects retired nuget-production explicit destination before any REST call' {
+      { Move-ProGetPackageInterTier `
+          -Name 'Test.Package' -Version '1.0.0' `
+          -FromFeed 'nuget-qa' -ToFeed 'nuget-production' `
+          -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key'
+      } | Should -Throw -ExpectedMessage "*retired*Use 'nuget-stable'*"
+      Assert-MockCalled Invoke-RestMethod -Times 0 -Exactly -Scope It
+    }  }
 
   Context 'Push feed as source is tolerated (strip -push and treat as pull)' {
 

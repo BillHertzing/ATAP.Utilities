@@ -194,14 +194,23 @@ function Move-ProGetPackageIntraTier {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "ProGetBaseUrl is $ProGetBaseUrl"
 
         # Validate that source/destination follow expected Phase 2 push/pull feed pair naming.
-        # Also support legacy tier aliases (testing -> qa, production -> stable).
+        # Also support the legacy testing -> qa alias. The retired physical
+        # production feed name fails closed; stable is the canonical top tier.
         # 'powershell' is accepted as a deprecated alias. Canonical ProGet
         # PowerShell feed names use the powershellget-* prefix.
         $knownPrefixes = @('nuget', 'powershellget', 'powershell', 'chocolatey')
         $tierOrder = @('experimental', 'development', 'integration', 'qa', 'stable')
         $tierAliases = @{
-            testing    = 'qa'
-            production = 'stable'
+            testing = 'qa'
+        }
+
+        foreach ($feedName in @($FromFeed, $ToFeed)) {
+            if ($feedName -match '-production(?:-push)?$') {
+                $stableFeedName = $feedName -replace '-production(?=-push$|$)', '-stable'
+                $errorMessage = "Feed '$feedName' uses the retired physical tier name 'production'. Use '$stableFeedName'."
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+                throw $errorMessage
+            }
         }
 
         $feedPattern = "^(?<prefix>$($knownPrefixes -join '|'))-(?<tier>[a-z]+?)(?<push>-push)?$"

@@ -109,7 +109,7 @@ $global:configRootKeys['ProGetFeedNuGetTestingFeedTypeConfigRootKey'] = 'ProGetF
 $global:configRootKeys['ProGetFeedNuGetTestingApiKeyNameConfigRootKey'] = 'ProGetFeedNuGetTestingApiKeyName'
 $global:configRootKeys['ProGetFeedNuGetTestingFeedConfigRootKey'] = 'ProGetFeedNuGetTesting'
 
-# ── nuget-production ─────────────────────────────────────────────────────
+# ── nuget-stable (legacy Production-named keys retained for reference) ───
 $global:configRootKeys['ProGetFeedNuGetProductionUriSchemeConfigRootKey'] = 'ProGetFeedNuGetProductionUriScheme'
 $global:configRootKeys['ProGetFeedNuGetProductionUriHostConfigRootKey'] = 'ProGetFeedNuGetProductionUriHost'
 $global:configRootKeys['ProGetFeedNuGetProductionUriPortConfigRootKey'] = 'ProGetFeedNuGetProductionUriPort'

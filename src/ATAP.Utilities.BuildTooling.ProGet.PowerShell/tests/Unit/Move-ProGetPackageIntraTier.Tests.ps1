@@ -1,7 +1,7 @@
 #Requires -Version 7.0
 # Pester 5+ unit tests for Move-ProGetPackageIntraTier.
 # Validates Phase 2 push->pull enforcement, integration tier support,
-# legacy tier-name normalization (testing->qa, production->stable),
+# testing->qa legacy normalization, production-name retirement,
 # same-feed Phase 1 mode (-ScanOnly), and the stub malware scan.
 # AI assisted using Powershell.instructions.md as guidelines
 
@@ -129,7 +129,7 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit', 'PromotedModuleHostSensitive
     }
   }
 
-  Context 'Legacy tier alias normalization — validation accepts normalized names' {
+  Context 'Legacy tier handling' {
 
     It 'Accepts source=nuget-testing-push and dest=nuget-testing (normalized to qa)' {
       # Both normalize to qa, same tier, push->pull: valid
@@ -140,14 +140,23 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit', 'PromotedModuleHostSensitive
       $result.Promoted | Should -BeTrue
     }
 
-    It 'Accepts source=nuget-production-push and dest=nuget-production (normalized to stable)' {
-      $result = Move-ProGetPackageIntraTier `
-        -Name 'Test.Package' -Version '1.0.0' `
-        -FromFeed 'nuget-production-push' -ToFeed 'nuget-production' `
-        -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key'
-      $result.Promoted | Should -BeTrue
+    It 'Rejects retired nuget-production source before any REST call' {
+      { Move-ProGetPackageIntraTier `
+          -Name 'Test.Package' -Version '1.0.0' `
+          -FromFeed 'nuget-production-push' -ToFeed 'nuget-stable' `
+          -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key'
+      } | Should -Throw -ExpectedMessage "*retired*Use 'nuget-stable-push'*"
+      $script:MoveProGetIntraTierRestCalls.Count | Should -Be 0
     }
-  }
+
+    It 'Rejects retired nuget-production destination before any REST call' {
+      { Move-ProGetPackageIntraTier `
+          -Name 'Test.Package' -Version '1.0.0' `
+          -FromFeed 'nuget-stable-push' -ToFeed 'nuget-production' `
+          -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key'
+      } | Should -Throw -ExpectedMessage "*retired*Use 'nuget-stable'*"
+      $script:MoveProGetIntraTierRestCalls.Count | Should -Be 0
+    }  }
 
   Context 'Phase 2 validation: mismatched tiers' {
 

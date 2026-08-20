@@ -14,9 +14,23 @@
 #   _Planning sprint worktree    -> sprint-board regeneration and cross-repo evidence writes
 #   %LOCALAPPDATA%\PSResourceGet -> PSResourceGet repository store during package packing
 #   <repo>\.git                  -> index.lock writes from linked sprint worktrees
+#
+# This list must stay a UNION of the user-global list, never a subset. Verified against
+# codex-cli 0.147.0 on 2026-08-20: for a trusted project the project layer REPLACES
+# writable_roots wholesale - TOML/serde arrays do not concatenate, so any root present
+# only in global.config.overlay.toml is silently dropped whenever this file is loaded.
+# Carrying only _Planning here reintroduced the exact Task 14.60.a.04 regression at
+# project scope: from ATAP.Utilities-wt-137, the SharedVSCode, ATAP.IAC, and Ace sprint
+# worktrees were unwritable. All five sprint tokens are therefore listed, in the same
+# order as the global overlay, and are omitted together at SprintEnd
+# (-OmitSprintWorktrees) so the round trip stays idempotent.
 [sandbox_workspace_write]
 writable_roots = [
+  "C:\\Dropbox\\whertzing\\GitHub\\SharedVSCode-wt-64-Sprint-0015-work-items",
   "C:\\Dropbox\\whertzing\\GitHub\\_Planning-wt-35-Sprint-0015-work-items",
+  "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities-wt-137-Sprint-0015-work-items",
+  "C:\\Dropbox\\whertzing\\GitHub\\ATAP.IAC-wt-23-Sprint-0015-work-items",
+  "C:\\Dropbox\\whertzing\\GitHub\\Ace-wt-45-Sprint-0015-work-items",
   "C:\\Users\\whertzing\\AppData\\Local\\PSResourceGet",
   "C:\\Dropbox\\whertzing\\GitHub\\SharedVSCode\\.git",
   "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities\\.git",

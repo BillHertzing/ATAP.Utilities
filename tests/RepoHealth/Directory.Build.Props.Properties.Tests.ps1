@@ -1,26 +1,8 @@
-# tests/RepoHealth/Directory.Build.Props.Properties.Tests.ps1
-#
-# Pester 5+ repository health tests for the 5-Tier Software Production model
-# MSBuild properties that must propagate to every csproj under src/ via
-# Directory.Build.props:
-#
-#   * PackageLifeCycleStage            - derived from NBGV prerelease label
-#       (Sprint | Alpha | Beta | QA | '' (stable))
-#   * TargetProGetFeed                 - feed name per stage-to-feed mapping:
-#       Sprint -> nuget-experimental, Alpha -> nuget-development,
-#       Beta   -> nuget-integration, QA    -> nuget-qa,
-#       ''     -> nuget-stable
-#   * CentralPackageVersionOverrideEnabled - must evaluate to 'false'
-#
-# Mechanism: each csproj is queried with
-#     dotnet msbuild <csproj> -getProperty:<Prop>
-# which writes the evaluated value to stdout. This exercises the full MSBuild
-# evaluation chain (Directory.Build.props -> NBGV import -> csproj).
-#
-# This file intentionally lives outside any PowerShell module's tests/ folder.
-# Run it through Build/Invoke-RepoHealthGate.ps1 from C# build or CI flows.
-
 #Requires -Module Pester
+
+# Repository-wide evaluation checks for the ratified Task 15.180 lifecycle and
+# Central Package Management contract. OpenHardwareMonitorLib is deliberately
+# excluded from discovery and cannot block this gate.
 
 BeforeDiscovery {
   $testFilePath = if (-not [string]::IsNullOrWhiteSpace($PSCommandPath)) {
@@ -30,52 +12,34 @@ BeforeDiscovery {
   } else {
     throw 'Unable to resolve the RepoHealth test file path during Pester discovery.'
   }
+
   $testDirectory = Split-Path -Path $testFilePath -Parent
   $script:repoRoot = (Resolve-Path -Path (Join-Path $testDirectory '..\..')).Path
   $script:srcRoot = Join-Path $script:repoRoot 'src'
-  $script:csprojFiles = Get-ChildItem -Path $script:srcRoot -Recurse -Filter *.csproj -File |
-    Where-Object {
-      $_.FullName -notmatch '\\(bin|obj)\\'
-    } |
-    Sort-Object FullName
-
+  $script:openHardwareMonitorRoot = Join-Path $script:repoRoot 'OpenHardwareMonitorLib'
+  $script:csprojFiles = @(Get-ChildItem -Path $script:srcRoot -Recurse -Filter *.csproj -File |
+      Where-Object {
+        $_.FullName -notmatch '\\(bin|obj|_generated)\\' -and
+        -not $_.FullName.StartsWith($script:openHardwareMonitorRoot, [StringComparison]::OrdinalIgnoreCase)
+      } |
+      Sort-Object FullName)
   $script:csprojCases = @($script:csprojFiles | ForEach-Object {
       @{
         CsprojPath = $_.FullName
         CsprojName = $_.BaseName
       }
     })
-
-  $script:validStages = @('Sprint', 'Alpha', 'Beta', 'QA', '')
-  $script:stageToFeed = @{
-    'Sprint' = 'nuget-experimental'
-    'Alpha'  = 'nuget-development'
-    'Beta'   = 'nuget-integration'
-    'QA'     = 'nuget-qa'
-    ''       = 'nuget-stable'
-  }
-  $script:validFeeds = @($script:stageToFeed.Values)
 }
 
 BeforeAll {
-  if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
-    function global:Write-PSFMessage {
-      param( [Parameter(ValueFromRemainingArguments = $true)] $rest )
-    }
+  $script:repoRoot = (Resolve-Path -Path (Join-Path $PSScriptRoot '..\..')).Path
+  $script:canonicalToFeed = @{
+    Experimental = 'nuget-experimental'
+    Development = 'nuget-development'
+    Integration = 'nuget-integration'
+    QA = 'nuget-qa'
+    Production = 'nuget-stable'
   }
-  else {
-    Import-Module PSFramework -ErrorAction SilentlyContinue
-  }
-
-  $script:validStages = @('Sprint', 'Alpha', 'Beta', 'QA', '')
-  $script:stageToFeed = @{
-    'Sprint' = 'nuget-experimental'
-    'Alpha'  = 'nuget-development'
-    'Beta'   = 'nuget-integration'
-    'QA'     = 'nuget-qa'
-    ''       = 'nuget-stable'
-  }
-  $script:validFeeds = @($script:stageToFeed.Values)
 
   function script:Get-EvaluatedMSBuildProperty {
     [CmdletBinding()]
@@ -84,7 +48,7 @@ BeforeAll {
       [Parameter(Mandatory)][string] $PropertyName
     )
 
-    $stdout = & dotnet msbuild $CsprojPath "-getProperty:$PropertyName" 2>&1
+    $stdout = & dotnet msbuild $CsprojPath "-getProperty:$PropertyName" '-nologo' 2>&1
     if ($LASTEXITCODE -ne 0) {
       throw "dotnet msbuild -getProperty:$PropertyName failed for '$CsprojPath' (exit $LASTEXITCODE): $stdout"
     }
@@ -93,34 +57,34 @@ BeforeAll {
   }
 }
 
-Describe 'Directory.Build.props - PackageLifeCycleStage propagates to every csproj' -Tag 'RepoHealth', 'Integration', '5Tier' {
-
-  It "PackageLifeCycleStage is in the valid-stage set for <CsprojName>" -ForEach $script:csprojCases {
-    param($CsprojPath, $CsprojName)
-    $value = Get-EvaluatedMSBuildProperty -CsprojPath $CsprojPath -PropertyName 'PackageLifeCycleStage'
-    $script:validStages | Should -Contain $value -Because "csproj '$CsprojName' evaluated PackageLifeCycleStage='$value', which is not in the allowed 5-Tier stage set"
+Describe 'Task 15.180.e E07 repository project inventory' -Tag 'RepoHealth', 'Integration', '5Tier' {
+  It 'discovers production source projects without OpenHardwareMonitorLib' {
+    $inventory = @(Get-ChildItem -Path (Join-Path $script:repoRoot 'src') -Recurse -Filter *.csproj -File |
+        Where-Object { $_.FullName -notmatch '\\(bin|obj|_generated)\\' })
+    $inventory.Count | Should -BeGreaterThan 0
+    @($inventory | Where-Object {
+        $_.FullName -match '(^|[\\/])OpenHardwareMonitorLib([\\/]|$)'
+      }).Count | Should -Be 0
   }
 }
 
-Describe 'Directory.Build.props - TargetProGetFeed propagates and matches stage' -Tag 'RepoHealth', 'Integration', '5Tier' {
-
-  It "TargetProGetFeed matches the expected feed for PackageLifeCycleStage on <CsprojName>" -ForEach $script:csprojCases {
+Describe 'Directory.Build.props lifecycle routing propagates to every included source project' -Tag 'RepoHealth', 'Integration', '5Tier' {
+  It 'evaluates a canonical lifecycle stage and exact feed for <CsprojName>' -ForEach $script:csprojCases {
     param($CsprojPath, $CsprojName)
-    $stage = Get-EvaluatedMSBuildProperty -CsprojPath $CsprojPath -PropertyName 'PackageLifeCycleStage'
-    $feed  = Get-EvaluatedMSBuildProperty -CsprojPath $CsprojPath -PropertyName 'TargetProGetFeed'
 
-    $script:validFeeds | Should -Contain $feed -Because "csproj '$CsprojName' evaluated TargetProGetFeed='$feed', which is not in the allowed 5-Tier feed set"
+    $canonical = Get-EvaluatedMSBuildProperty -CsprojPath $CsprojPath -PropertyName 'CanonicalPackageLifeCycleStage'
+    $feed = Get-EvaluatedMSBuildProperty -CsprojPath $CsprojPath -PropertyName 'TargetProGetFeed'
 
-    $expectedFeed = $script:stageToFeed[$stage]
-    $feed | Should -BeExactly $expectedFeed -Because "csproj '$CsprojName' has PackageLifeCycleStage='$stage', so TargetProGetFeed must be '$expectedFeed' per the 5-Tier stage-to-feed mapping"
+    $script:canonicalToFeed.Keys | Should -Contain $canonical -Because "'$CsprojName' must evaluate one ratified canonical lifecycle stage"
+    $feed | Should -BeExactly $script:canonicalToFeed[$canonical] -Because "'$CsprojName' must route canonical stage '$canonical' to its exact physical feed"
   }
 }
 
-Describe 'Directory.Build.props - CentralPackageVersionOverrideEnabled is false' -Tag 'RepoHealth', 'Integration', '5Tier' {
-
-  It "CentralPackageVersionOverrideEnabled evaluates to 'false' on <CsprojName>" -ForEach $script:csprojCases {
+Describe 'Directory.Packages.props CPM default propagates to every included source project' -Tag 'RepoHealth', 'Integration', '5Tier' {
+  It "evaluates CentralPackageVersionOverrideEnabled as 'false' for <CsprojName>" -ForEach $script:csprojCases {
     param($CsprojPath, $CsprojName)
+
     $value = Get-EvaluatedMSBuildProperty -CsprojPath $CsprojPath -PropertyName 'CentralPackageVersionOverrideEnabled'
-    $value | Should -BeExactly 'false' -Because "csproj '$CsprojName' evaluated CentralPackageVersionOverrideEnabled='$value'; central package management must remain enforced (expected 'false')"
+    $value | Should -BeExactly 'false' -Because "'$CsprojName' must inherit the repository CPM default unless its package-SUT switch is explicitly enabled"
   }
 }

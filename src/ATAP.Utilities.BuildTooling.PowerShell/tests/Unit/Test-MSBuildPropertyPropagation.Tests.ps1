@@ -1,191 +1,196 @@
 #Requires -Version 7.0
-# Pester 5+ tests for the 5-Tier MSBuild property propagation defined in
-# Directory.Build.props (tasks 1.1-1 through 1.1-4 / T-32).
-#
-# Strategy:
-#   Unit: structural checks — confirm the expected properties and targets
-#         are present in Directory.Build.props without invoking the toolchain.
-#   Integration: functional checks — invoke dotnet msbuild -getProperty against
-#                a single representative project for each NBGV prerelease-label
-#                variant and verify the resulting TargetProGetFeed and
-#                CentralPackageVersionOverrideEnabled values.
-#
-# AI assisted using pesterTest.instructions.md as guidelines
+#Requires -Module Pester
 
-BeforeAll {
-  # Navigate from tests/Unit up four levels to the repo root.
-  $script:repoRoot = (Get-Item $PSScriptRoot).Parent.Parent.Parent.Parent.FullName
-  $script:propsFile = Join-Path $script:repoRoot 'Directory.Build.props'
+# Focused Task 15.180.e E07 contract tests. These tests evaluate MSBuild
+# properties and invoke only the validation target; they do not restore or build.
 
-  # A simple StringConstants project — minimal dependencies, fast to evaluate.
-  $script:probeProject = Join-Path $script:repoRoot `
-    'src\ATAP.Utilities.RRSBS.Contracts\ATAP.Utilities.RRSBS.Contracts.csproj'
-
-  # Helper: invoke dotnet msbuild -getProperty and return the trimmed stdout value.
-  function script:Get-MSBuildProperty {
-    param(
-      [Parameter(Mandatory)][string] $ProjectPath,
-      [Parameter(Mandatory)][string] $PropertyName,
-      [string] $NBGVLabel = ''
-    )
-    $result = & dotnet msbuild $ProjectPath `
-      "-getProperty:$PropertyName" `
-      "-p:NBGV_PrereleaseLabel=$NBGVLabel" `
-      '-nologo' 2>&1
-    # dotnet msbuild writes warnings/errors to stdout in this mode.
-    # The property value is the last non-empty, non-error line.
-    $valueLines = $result | Where-Object { $_ -notmatch '^MSBUILD\s*:' -and $_.Trim() -ne '' }
-    return ($valueLines | Select-Object -Last 1).Trim()
-  }
-
-  $script:stableProbeProject = Join-Path $script:repoRoot `
-    'src\ATAP.Utilities.RRSBS.Contracts\ATAP.Utilities.RRSBS.Contracts.csproj'
-
-  function script:Invoke-StableBuildRefProbe {
-    param(
-      [Parameter(Mandatory)][string] $BuildingRef
-    )
-
-    $output = & dotnet build $script:stableProbeProject `
-      '-c' 'Release' `
-      '--no-restore' `
-      "-p:NBGV_BuildingRef=$BuildingRef" `
-      '-p:PackageLifeCycleStage=' `
-      '-nologo' 2>&1
-
-    return [pscustomobject]@{
-      ExitCode = $LASTEXITCODE
-      Output = ($output -join [Environment]::NewLine)
-    }
-  }
-}
-
-Describe 'Directory.Build.props — structural checks (task 1.1-1 through 1.1-4)' -Tag 'Unit' {
-
-  Context '1.1-1: PackageLifeCycleStage is sourced from NBGV_PrereleaseLabel' {
-    It 'Directory.Build.props defines PackageLifeCycleStage from $(NBGV_PrereleaseLabel)' {
-      $content = Get-Content $script:propsFile -Raw
-      $content | Should -Match ([regex]::Escape('<PackageLifeCycleStage>$(NBGV_PrereleaseLabel)</PackageLifeCycleStage>'))
-    }
-  }
-
-  Context '1.1-2: All five tier-to-feed mappings are declared' {
-    $expectedMappings = @(
-      @{ Feed = 'nuget-experimental' }
-      @{ Feed = 'nuget-development' }
-      @{ Feed = 'nuget-integration' }
-      @{ Feed = 'nuget-qa' }
-      @{ Feed = 'nuget-stable' }
-    )
-
-    It "Directory.Build.props declares TargetProGetFeed '<Feed>'" -TestCases $expectedMappings {
-      param($Feed)
-      $content = Get-Content $script:propsFile -Raw
-      $content | Should -Match ([regex]::Escape("<TargetProGetFeed>$Feed</TargetProGetFeed>"))
-    }
-  }
-
-  Context '1.1-3: Build-time validation target is present' {
-    It 'ValidatePackageLifeCycleStage target is declared in Directory.Build.props' {
-      $content = Get-Content $script:propsFile -Raw
-      $content | Should -Match 'ValidatePackageLifeCycleStage'
-    }
-
-    It 'ValidatePackageLifeCycleStage fires BeforeTargets="Build"' {
-      $content = Get-Content $script:propsFile -Raw
-      $content | Should -Match 'BeforeTargets="Build"'
-    }
-
-    It 'ValidatePackageLifeCycleStage emits error code ATAP5TIER001' {
-      $content = Get-Content $script:propsFile -Raw
-      $content | Should -Match 'ATAP5TIER001'
-    }
-
-    It 'recognizes main, release, and numbered Sprint worktree refs as stable-capable' {
-      $content = Get-Content $script:propsFile -Raw
-      $content | Should -Match 'IsStablePackageBuildRef'
-      $content | Should -Match ([regex]::Escape('main|release/.+|[0-9]+-Sprint-[0-9]{4}-work-items'))
-    }
-  }
-
-  Context '1.1-4: CentralPackageVersionOverrideEnabled is declared false' {
-    It 'Directory.Build.props sets CentralPackageVersionOverrideEnabled to false' {
-      $content = Get-Content $script:propsFile -Raw
-      $content | Should -Match ([regex]::Escape('<CentralPackageVersionOverrideEnabled>false</CentralPackageVersionOverrideEnabled>'))
-    }
-  }
-}
-
-Describe 'Directory.Build.props — TargetProGetFeed evaluation (task 1.1-2, Integration)' -Tag 'Integration', 'PromotedModuleHostSensitive' {
-
-  BeforeAll {
-    if (-not (Test-Path $script:probeProject)) {
-      throw "Probe project not found: $script:probeProject"
-    }
-  }
-
-  $tierCases = @(
-    @{ Label = 'Sprint'; ExpectedFeed = 'nuget-experimental' }
-    @{ Label = 'Alpha'; ExpectedFeed = 'nuget-development' }
-    @{ Label = 'Beta'; ExpectedFeed = 'nuget-integration' }
-    @{ Label = 'QA'; ExpectedFeed = 'nuget-qa' }
-    @{ Label = ''; ExpectedFeed = 'nuget-stable' }
+BeforeDiscovery {
+  $script:lifecycleCases = @(
+    @{ InputStage = 'sPrInT'; ExpectedNormalized = 'sprint'; ExpectedCanonical = 'Experimental'; ExpectedFeed = 'nuget-experimental' }
+    @{ InputStage = 'EXPERIMENTAL'; ExpectedNormalized = 'experimental'; ExpectedCanonical = 'Experimental'; ExpectedFeed = 'nuget-experimental' }
+    @{ InputStage = 'Alpha'; ExpectedNormalized = 'alpha'; ExpectedCanonical = 'Development'; ExpectedFeed = 'nuget-development' }
+    @{ InputStage = 'development'; ExpectedNormalized = 'development'; ExpectedCanonical = 'Development'; ExpectedFeed = 'nuget-development' }
+    @{ InputStage = 'BETA'; ExpectedNormalized = 'beta'; ExpectedCanonical = 'Integration'; ExpectedFeed = 'nuget-integration' }
+    @{ InputStage = 'Integration'; ExpectedNormalized = 'integration'; ExpectedCanonical = 'Integration'; ExpectedFeed = 'nuget-integration' }
+    @{ InputStage = 'qA'; ExpectedNormalized = 'qa'; ExpectedCanonical = 'QA'; ExpectedFeed = 'nuget-qa' }
+    @{ InputStage = ''; ExpectedNormalized = ''; ExpectedCanonical = 'Production'; ExpectedFeed = 'nuget-stable' }
+    @{ InputStage = 'sTaBlE'; ExpectedNormalized = 'stable'; ExpectedCanonical = 'Production'; ExpectedFeed = 'nuget-stable' }
+    @{ InputStage = 'PRODUCTION'; ExpectedNormalized = 'production'; ExpectedCanonical = 'Production'; ExpectedFeed = 'nuget-stable' }
   )
-
-  It "NBGV_PrereleaseLabel='<Label>' yields TargetProGetFeed '<ExpectedFeed>'" `
-    -TestCases $tierCases {
-    param($Label, $ExpectedFeed)
-    $actual = Get-MSBuildProperty -ProjectPath $script:probeProject `
-      -PropertyName 'TargetProGetFeed' -NBGVLabel $Label
-    $actual | Should -BeExactly $ExpectedFeed
-  }
-}
-
-Describe 'Directory.Build.props — CentralPackageVersionOverrideEnabled evaluation (task 1.1-4, Integration)' -Tag 'Integration', 'PromotedModuleHostSensitive' {
-
-  BeforeAll {
-    if (-not (Test-Path $script:probeProject)) {
-      throw "Probe project not found: $script:probeProject"
-    }
-  }
-
-  It 'CentralPackageVersionOverrideEnabled evaluates to false for a representative project' {
-    $actual = Get-MSBuildProperty -ProjectPath $script:probeProject `
-      -PropertyName 'CentralPackageVersionOverrideEnabled'
-    $actual | Should -BeExactly 'false'
-  }
-}
-
-Describe 'Directory.Build.props — stable-capable ref validation (task 1.1-3, Integration)' -Tag 'Integration', 'PromotedModuleHostSensitive' {
-
-  BeforeAll {
-    if (-not (Test-Path $script:stableProbeProject)) {
-      throw "Stable probe project not found: $script:stableProbeProject"
-    }
-
-    $restoreOutput = & dotnet restore $script:stableProbeProject '-nologo' 2>&1
-    if ($LASTEXITCODE -ne 0) {
-      throw "Stable probe restore failed:$([Environment]::NewLine)$($restoreOutput -join [Environment]::NewLine)"
-    }
-  }
-
-  $allowedRefs = @(
+  $script:unknownCases = @(
+    @{ InputStage = 'Prodution' }
+    @{ InputStage = 'Stable-' }
+  )
+  $script:stableRefs = @(
     @{ BuildingRef = 'refs/heads/main' }
     @{ BuildingRef = 'refs/heads/release/0.1.0' }
     @{ BuildingRef = 'refs/heads/137-Sprint-0015-work-items' }
     @{ BuildingRef = 'refs/heads/42-sprint-0009-work-items' }
   )
+  $script:overrideAllowlist = @(
+    'tests/ATAP.Utilities.Philote.Tests/ATAP.Utilities.Philote.Tests.csproj'
+    'tests/ATAP.Utilities.Secrets.BitwardenSecretsManager.PackageSmoke.Tests/ATAP.Utilities.Secrets.BitwardenSecretsManager.PackageSmoke.Tests.csproj'
+    'tests/ATAP.Utilities.Serializer.Interfaces.PackageSmoke.Tests/ATAP.Utilities.Serializer.Interfaces.PackageSmoke.Tests.csproj'
+    'tests/ATAP.Utilities.StronglyTypedIDs.Tests/ATAP.Utilities.StronglyTypedIDs.Tests.csproj'
+  )
+}
 
-  It "accepts stable/empty lifecycle on '<BuildingRef>'" -TestCases $allowedRefs {
+BeforeAll {
+  $script:repoRoot = (Get-Item $PSScriptRoot).Parent.Parent.Parent.Parent.FullName
+  $script:propsFile = Join-Path $script:repoRoot 'Directory.Build.props'
+  $script:packagesPropsFile = Join-Path $script:repoRoot 'Directory.Packages.props'
+  $script:probeProject = Join-Path $script:repoRoot 'src\ATAP.Utilities.RRSBS.Contracts\ATAP.Utilities.RRSBS.Contracts.csproj'
+
+  function script:Get-MSBuildProperty {
+    [CmdletBinding()]
+    param(
+      [Parameter(Mandatory)][string] $PropertyName,
+      [AllowEmptyString()][string] $InputStage
+    )
+
+    $result = & dotnet msbuild $script:probeProject `
+      "-getProperty:$PropertyName" `
+      "-p:PackageLifeCycleStage=$InputStage" `
+      '-p:NBGV_BuildingRef=refs/heads/137-Sprint-0015-work-items' `
+      '-nologo' 2>&1
+    if ($LASTEXITCODE -ne 0) {
+      throw "MSBuild property evaluation failed for $PropertyName / '$InputStage': $($result -join [Environment]::NewLine)"
+    }
+
+    return ([string]($result | Select-Object -Last 1)).Trim()
+  }
+
+  function script:Invoke-LifecycleValidation {
+    [CmdletBinding()]
+    param(
+      [AllowEmptyString()][string] $InputStage,
+      [Parameter(Mandatory)][string] $BuildingRef
+    )
+
+    $output = & dotnet msbuild $script:probeProject `
+      '-target:ValidatePackageLifeCycleStage' `
+      "-p:PackageLifeCycleStage=$InputStage" `
+      "-p:NBGV_BuildingRef=$BuildingRef" `
+      '-nologo' 2>&1
+
+    return [pscustomobject]@{
+      ExitCode = $LASTEXITCODE
+      Output = $output -join [Environment]::NewLine
+    }
+  }
+}
+
+Describe 'Task 15.180 lifecycle contract structure' -Tag 'Unit', '5Tier' {
+  BeforeAll {
+    [xml] $script:propsXml = Get-Content -LiteralPath $script:propsFile -Raw
+    [xml] $script:packagesPropsXml = Get-Content -LiteralPath $script:packagesPropsFile -Raw
+  }
+
+  It 'normalizes lifecycle input case-insensitively before canonical routing' {
+    $content = Get-Content -LiteralPath $script:propsFile -Raw
+    $content | Should -Match 'NormalizedPackageLifeCycleStage'
+    $content | Should -Match 'ToLowerInvariant\(\)'
+  }
+
+  It 'declares exactly the five canonical feed mappings without an Otherwise fallback' {
+    $mappingChoose = @($script:propsXml.SelectNodes('/Project/Choose[When/PropertyGroup/TargetProGetFeed]'))
+    $mappingChoose.Count | Should -Be 1
+    @($mappingChoose[0].When).Count | Should -Be 5
+    $mappingChoose[0].Otherwise | Should -BeNullOrEmpty
+
+    $feeds = @($mappingChoose[0].When | ForEach-Object { [string]$_.PropertyGroup.TargetProGetFeed })
+    $expectedFeeds = @('nuget-experimental', 'nuget-development', 'nuget-integration', 'nuget-qa', 'nuget-stable')
+    @(Compare-Object -ReferenceObject $expectedFeeds -DifferenceObject $feeds -SyncWindow 0).Count |
+      Should -Be 0
+  }
+
+  It 'owns the CPM default only in Directory.Packages.props' {
+    @($script:propsXml.SelectNodes('//CentralPackageVersionOverrideEnabled')).Count | Should -Be 0
+    $defaultNodes = @($script:packagesPropsXml.SelectNodes('//CentralPackageVersionOverrideEnabled'))
+    $defaultNodes.Count | Should -Be 1
+    $defaultNodes[0].InnerText | Should -BeExactly 'false'
+  }
+
+  It 'declares the fail-closed ATAP5TIER001 validation target' {
+    $target = @($script:propsXml.Project.Target | Where-Object { $_.Name -eq 'ValidatePackageLifeCycleStage' })
+    $target.Count | Should -Be 1
+    $target[0].BeforeTargets | Should -BeExactly 'Build'
+    @($target[0].Error | Where-Object { $_.Code -eq 'ATAP5TIER001' }).Count | Should -Be 2
+  }
+}
+
+Describe 'Task 15.180 lifecycle aliases and canonical feed routing' -Tag 'Integration', '5Tier' {
+  It "maps '<InputStage>' to <ExpectedCanonical> and <ExpectedFeed>" -TestCases $script:lifecycleCases {
+    param($InputStage, $ExpectedNormalized, $ExpectedCanonical, $ExpectedFeed)
+
+    Get-MSBuildProperty -PropertyName 'NormalizedPackageLifeCycleStage' -InputStage $InputStage |
+      Should -BeExactly $ExpectedNormalized
+    Get-MSBuildProperty -PropertyName 'CanonicalPackageLifeCycleStage' -InputStage $InputStage |
+      Should -BeExactly $ExpectedCanonical
+    Get-MSBuildProperty -PropertyName 'TargetProGetFeed' -InputStage $InputStage |
+      Should -BeExactly $ExpectedFeed
+  }
+
+  It "rejects unknown lifecycle '<InputStage>' with ATAP5TIER001 and no feed" -TestCases $script:unknownCases {
+    param($InputStage)
+
+    Get-MSBuildProperty -PropertyName 'CanonicalPackageLifeCycleStage' -InputStage $InputStage |
+      Should -BeNullOrEmpty
+    Get-MSBuildProperty -PropertyName 'TargetProGetFeed' -InputStage $InputStage |
+      Should -BeNullOrEmpty
+    $result = Invoke-LifecycleValidation -InputStage $InputStage -BuildingRef 'refs/heads/137-Sprint-0015-work-items'
+    $result.ExitCode | Should -Not -Be 0
+    $result.Output | Should -Match 'ATAP5TIER001'
+    $result.Output | Should -Not -Match 'nuget-stable'
+  }
+}
+
+Describe 'Task 15.180 empty lifecycle branch safeguard' -Tag 'Integration', '5Tier' {
+  It "accepts empty lifecycle on stable-capable ref '<BuildingRef>'" -TestCases $script:stableRefs {
     param($BuildingRef)
-    $result = Invoke-StableBuildRefProbe -BuildingRef $BuildingRef
+
+    $result = Invoke-LifecycleValidation -InputStage '' -BuildingRef $BuildingRef
     $result.ExitCode | Should -Be 0 -Because $result.Output
     $result.Output | Should -Not -Match 'ATAP5TIER001'
   }
 
-  It 'rejects stable/empty lifecycle on an arbitrary feature branch' {
-    $result = Invoke-StableBuildRefProbe -BuildingRef 'refs/heads/feature/unapproved-stable-build'
+  It 'rejects empty lifecycle on an arbitrary feature branch' {
+    $result = Invoke-LifecycleValidation -InputStage '' -BuildingRef 'refs/heads/feature/unapproved-stable-build'
     $result.ExitCode | Should -Not -Be 0
     $result.Output | Should -Match 'ATAP5TIER001'
+  }
+}
+
+Describe 'Task 15.180 exact VersionOverride fixture allowlist' -Tag 'Unit', 'CPM' {
+  It 'contains exactly the four ratified conditional local enables' {
+    $actual = @(Get-ChildItem -LiteralPath $script:repoRoot -Recurse -Filter *.csproj -File |
+        Where-Object {
+          $_.FullName -notmatch '\\(bin|obj|_generated|OpenHardwareMonitorLib)\\'
+        } |
+        ForEach-Object {
+          [xml] $project = Get-Content -LiteralPath $_.FullName -Raw
+          $enabled = @($project.SelectNodes('//CentralPackageVersionOverrideEnabled') | Where-Object {
+              $_.InnerText -eq 'true'
+            })
+          if ($enabled.Count -gt 0) {
+            $_.FullName.Substring($script:repoRoot.Length + 1).Replace('\', '/')
+          }
+        } |
+        Sort-Object)
+
+    $expected = @(
+      'tests/ATAP.Utilities.Philote.Tests/ATAP.Utilities.Philote.Tests.csproj'
+      'tests/ATAP.Utilities.Secrets.BitwardenSecretsManager.PackageSmoke.Tests/ATAP.Utilities.Secrets.BitwardenSecretsManager.PackageSmoke.Tests.csproj'
+      'tests/ATAP.Utilities.Serializer.Interfaces.PackageSmoke.Tests/ATAP.Utilities.Serializer.Interfaces.PackageSmoke.Tests.csproj'
+      'tests/ATAP.Utilities.StronglyTypedIDs.Tests/ATAP.Utilities.StronglyTypedIDs.Tests.csproj'
+    ) | Sort-Object
+    @(Compare-Object -ReferenceObject $expected -DifferenceObject $actual -SyncWindow 0).Count |
+      Should -Be 0
+  }
+
+  It 'keeps OpenHardwareMonitorLib outside the production filter and override inventory' {
+    $productionFilter = Get-Content -LiteralPath (Join-Path $script:repoRoot 'ATAP.Utilities.Production.slnf') -Raw
+    $productionFilter | Should -Not -Match 'OpenHardwareMonitorLib'
+    $script:overrideAllowlist | Should -Not -Match 'OpenHardwareMonitorLib'
   }
 }

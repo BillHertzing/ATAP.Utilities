@@ -1,52 +1,79 @@
 # ATAP.Utilities.BuildTooling.CSharp
 
 This project is the canonical NuGet distribution point for the ATAP C# MSBuild
-package contract. It builds the custom-task assembly and ships
-`ATAP.Utilities.BuildTooling.targets` through both NuGet import conventions:
+package contract. It builds the custom-task assembly and ships identical
+`ATAP.Utilities.BuildTooling.CSharp.targets` bytes through both NuGet import
+conventions:
 
-- `build/ATAP.Utilities.BuildTooling.targets` for direct consumers.
-- `buildTransitive/ATAP.Utilities.BuildTooling.targets` for transitive consumers.
-- `tools/<target-framework>/ATAP.Utilities.BuildTooling.CSharp.dll` through the
-  project's configured SDK package build-output folder; it is not a consumer
-  compile reference.
+- `build/ATAP.Utilities.BuildTooling.CSharp.targets` for direct consumers.
+- `buildTransitive/ATAP.Utilities.BuildTooling.CSharp.targets` for transitive consumers.
+- `tools/<target-framework>/ATAP.Utilities.BuildTooling.CSharp.dll` as an
+  MSBuild-hosted task assembly, not a consumer compile reference.
 
-The imported targets file is deliberately inert. It exposes contract-version,
-compatibility-sentinel, import-provenance, import-directory, and task-assembly
-properties, but it has no build, pack, publish, copy, delete, credential, or
-external-system target.
+The imported file exposes version, compatibility, provenance, and task-assembly
+properties. Its only target is a pre-compilation, side-effect-free compatibility
+gate with stable diagnostics `ATAPBUILD010` through `ATAPBUILD012`. It has no
+pack, publish, copy, delete, credential, or external-system target.
+
+## Bootstrap and exact selection
+
+NuGet restore is the only first-use deployment mechanism. A repository selects
+one exact immutable package version through Central Package Management and its
+lock files; it never copies an editable targets or task-assembly fork into a
+consumer. Direct and transitive consumers import identical package bytes.
+
+After restore, `ATAPValidateBuildToolingCompatibility` fails closed when the
+contract version or compatibility sentinel differs from the repository-required
+values. Projects registering a packaged custom task set
+`ATAPBuildToolingRequireTaskAssembly=true`, which makes a missing task assembly
+fail closed. A completely absent package/import is detected by the repository
+bootstrap gate owned by Tasks 15.180.j and 15.180.k.
+
+Repeated restore of the same immutable version is idempotent. Rollback changes
+the exact central version and lock to a previously verified immutable package,
+then performs forced locked restore; it never overwrites or re-signs a published
+version.
+
+## Provenance and signing
+
+The SDK package records repository type, URL, and commit metadata. The imported
+`ATAPBuildToolingImportProvenance` property records the evaluated package path,
+and package verification hashes every payload. Local candidates may be unsigned.
+Promotion requires the separately authorized signing/publication pipeline to
+validate the intended signing identity and immutable package hash; this project
+never reads a signing key or publication credential.
 
 ## Release and publication boundary
 
 `GeneratePackageOnBuild` is disabled. An ordinary `Release` build only compiles;
 it does not pack, publish, deploy, update a sentinel file, read credentials, or
-mutate a feed. Packaging requires an explicit `dotnet pack` invocation.
-Publication requires a separately authorized publication workflow and is not
-implemented by this project or its imported targets.
+mutate a feed. Packaging requires explicit `dotnet pack`. Publication requires a
+separately authorized workflow and is not implemented by this project or its
+imported targets.
 
-The package source slice does not wire repository consumers to this package.
-Consumer integration, version selection, restore, packaging proof, and deployed
-parity belong to later Task 15.180 units.
+Repository integration and missing-import enforcement belong to Tasks 15.180.j
+and 15.180.k; publication and deployed parity remain gated by Tasks 15.180.s and
+15.180.t.
 
 ## Import interface
 
-After NuGet imports the targets file, consumers can inspect:
-
 | Property | Meaning |
 | --- | --- |
-| `ATAPBuildToolingImported` | `true` when this contract file was evaluated. |
+| `ATAPBuildToolingImported` | `true` when the contract file was evaluated. |
+| `ATAPBuildToolingPackageId` | Stable package identity. |
 | `ATAPBuildToolingContractVersion` | Integer compatibility contract; currently `1`. |
 | `ATAPBuildToolingCompatibilitySentinel` | Stable identity `ATAP.Utilities.BuildTooling.CSharp/1`. |
+| `ATAPBuildToolingRequiredContractVersion` | Consumer-required version; defaults to `1`. |
+| `ATAPBuildToolingRequiredCompatibilitySentinel` | Consumer-required sentinel; defaults to v1. |
 | `ATAPBuildToolingImportProvenance` | Exact imported targets-file path. |
 | `ATAPBuildToolingImportDirectory` | Directory containing the imported targets file. |
-| `ATAPBuildToolingTaskTargetFramework` | Task-assembly TFM, defaulting to `net10.0`. |
+| `ATAPBuildToolingTaskTargetFramework` | Task-assembly TFM; defaults to `net10.0`. |
 | `ATAPUtilitiesBuildToolingTasksAssembly` | Package-relative custom-task assembly path. |
-
-The task TFM may be overridden before import for a proven compatible consumer.
-No custom task is registered or executed by this source slice.
 
 ## Validation boundary
 
-Task 15.180.d performs static XML and package-contract validation only. It does
-not restore, build, pack, publish, or deploy. The generated handoff therefore
-separates verified source claims from unverified package and deployed-state
-claims.
+Task 15.180.d performs static validation, offline local packing, package payload
+inspection, and isolated local-feed consumer evaluation. It does not contact or
+mutate a feed, use credentials or signing keys, publish, install to either real
+repository, or deploy. Evidence separates verified package/isolated-consumer
+claims from later repository and deployed-state claims.

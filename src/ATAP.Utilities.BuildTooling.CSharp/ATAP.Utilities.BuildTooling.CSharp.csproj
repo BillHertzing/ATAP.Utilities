@@ -6,7 +6,13 @@
     <IsPackable>true</IsPackable>
     <BuildOutputTargetFolder>tools</BuildOutputTargetFolder>
     <PackageId>ATAP.Utilities.BuildTooling.CSharp</PackageId>
-    <Description>Canonical ATAP C# MSBuild package contract.</Description>
+    <Description>Canonical versioned ATAP C# MSBuild distribution and bootstrap contract.</Description>
+    <PackageReadmeFile>ReadMe.md</PackageReadmeFile>
+    <PackageTags>ATAP;MSBuild;BuildTooling;bootstrap</PackageTags>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
   </PropertyGroup>
 
   <!-- Required only by the custom MSBuild task assembly. -->
@@ -16,11 +22,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="ATAP.Utilities.BuildTooling.targets">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Pack>true</Pack>
-      <PackagePath>build\;buildTransitive\</PackagePath>
-    </None>
+    <None Include="ATAP.Utilities.BuildTooling.targets" Pack="true" PackagePath="build\ATAP.Utilities.BuildTooling.CSharp.targets" />
+    <None Include="ATAP.Utilities.BuildTooling.targets" Pack="true" PackagePath="buildTransitive\ATAP.Utilities.BuildTooling.CSharp.targets" />
+    <None Include="ReadMe.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>

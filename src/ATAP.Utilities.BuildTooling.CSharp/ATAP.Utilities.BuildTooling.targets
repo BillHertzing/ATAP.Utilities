@@ -1,19 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-  <!--
-    This file is intentionally inert. NuGet imports it from both build and
-    buildTransitive so consumers can discover the canonical package contract.
-    Consumer policy and validation targets are owned by later Task 15.180 units.
-  -->
   <PropertyGroup>
-    <ATAPBuildToolingImported>true</ATAPBuildToolingImported>
-    <ATAPBuildToolingContractVersion>1</ATAPBuildToolingContractVersion>
-    <ATAPBuildToolingCompatibilitySentinel>ATAP.Utilities.BuildTooling.CSharp/1</ATAPBuildToolingCompatibilitySentinel>
-    <ATAPBuildToolingImportProvenance>$(MSBuildThisFileFullPath)</ATAPBuildToolingImportProvenance>
-    <ATAPBuildToolingImportDirectory>$(MSBuildThisFileDirectory)</ATAPBuildToolingImportDirectory>
+    <ATAPBuildToolingImported Condition="'$(ATAPBuildToolingImported)' == ''">true</ATAPBuildToolingImported>
+    <ATAPBuildToolingPackageId Condition="'$(ATAPBuildToolingPackageId)' == ''">ATAP.Utilities.BuildTooling.CSharp</ATAPBuildToolingPackageId>
+    <ATAPBuildToolingContractVersion Condition="'$(ATAPBuildToolingContractVersion)' == ''">1</ATAPBuildToolingContractVersion>
+    <ATAPBuildToolingCompatibilitySentinel Condition="'$(ATAPBuildToolingCompatibilitySentinel)' == ''">ATAP.Utilities.BuildTooling.CSharp/1</ATAPBuildToolingCompatibilitySentinel>
+    <ATAPBuildToolingRequiredContractVersion Condition="'$(ATAPBuildToolingRequiredContractVersion)' == ''">1</ATAPBuildToolingRequiredContractVersion>
+    <ATAPBuildToolingRequiredCompatibilitySentinel Condition="'$(ATAPBuildToolingRequiredCompatibilitySentinel)' == ''">ATAP.Utilities.BuildTooling.CSharp/1</ATAPBuildToolingRequiredCompatibilitySentinel>
+    <ATAPBuildToolingImportProvenance Condition="'$(ATAPBuildToolingImportProvenance)' == ''">$(MSBuildThisFileFullPath)</ATAPBuildToolingImportProvenance>
+    <ATAPBuildToolingImportDirectory Condition="'$(ATAPBuildToolingImportDirectory)' == ''">$(MSBuildThisFileDirectory)</ATAPBuildToolingImportDirectory>
     <ATAPBuildToolingTaskTargetFramework Condition="'$(ATAPBuildToolingTaskTargetFramework)' == ''">net10.0</ATAPBuildToolingTaskTargetFramework>
     <ATAPUtilitiesBuildToolingTasksAssembly Condition="'$(ATAPUtilitiesBuildToolingTasksAssembly)' == ''">$(MSBuildThisFileDirectory)..\tools\$(ATAPBuildToolingTaskTargetFramework)\ATAP.Utilities.BuildTooling.CSharp.dll</ATAPUtilitiesBuildToolingTasksAssembly>
   </PropertyGroup>
+
+  <!-- NuGet restore is the bootstrap/deployment boundary. -->
+  <Target Name="ATAPValidateBuildToolingCompatibility" BeforeTargets="PrepareForBuild">
+    <Error Condition="'$(ATAPBuildToolingContractVersion)' != '$(ATAPBuildToolingRequiredContractVersion)'"
+           Code="ATAPBUILD010"
+           Text="ATAP BuildTooling contract version '$(ATAPBuildToolingContractVersion)' does not satisfy required version '$(ATAPBuildToolingRequiredContractVersion)'. Select one exact compatible immutable package version and restore again." />
+    <Error Condition="'$(ATAPBuildToolingCompatibilitySentinel)' != '$(ATAPBuildToolingRequiredCompatibilitySentinel)'"
+           Code="ATAPBUILD011"
+           Text="ATAP BuildTooling compatibility sentinel '$(ATAPBuildToolingCompatibilitySentinel)' does not match required sentinel '$(ATAPBuildToolingRequiredCompatibilitySentinel)'. The selected package is corrupt or incompatible." />
+    <Error Condition="'$(ATAPBuildToolingRequireTaskAssembly)' == 'true' And !Exists('$(ATAPUtilitiesBuildToolingTasksAssembly)')"
+           Code="ATAPBUILD012"
+           Text="ATAP BuildTooling task assembly is missing at '$(ATAPUtilitiesBuildToolingTasksAssembly)'. Restore the exact selected package; do not copy an editable task assembly into the consumer." />
+  </Target>
 
 </Project>

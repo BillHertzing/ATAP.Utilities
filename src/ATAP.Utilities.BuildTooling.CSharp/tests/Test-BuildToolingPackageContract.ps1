@@ -11,96 +11,70 @@ function Test-BuildToolingPackageContract {
   }
 
   process {
-    if (-not $PSCmdlet.ShouldProcess($projectDirectory, 'Validate static package contract')) {
-      return
-    }
-
+    if (-not $PSCmdlet.ShouldProcess($projectDirectory, 'Validate static package contract')) { return }
     try {
-      [xml] $project = [System.IO.File]::ReadAllText($projectPath)
-      [xml] $targets = [System.IO.File]::ReadAllText($targetsPath)
-
-      $failures = [System.Collections.Generic.List[string]]::new()
-      if ($project.Project.PropertyGroup.GeneratePackageOnBuild -ne 'false') {
-        $failures.Add('GeneratePackageOnBuild must be false.')
+      [xml] $project = [IO.File]::ReadAllText($projectPath)
+      [xml] $targets = [IO.File]::ReadAllText($targetsPath)
+      $failures = [Collections.Generic.List[string]]::new()
+      function Get-XmlNodeText {
+        param($Node)
+        if ($Node -is [Xml.XmlElement]) { return $Node.InnerText }
+        [string] $Node
       }
-      if ($project.Project.PropertyGroup.IsPackable -ne 'true') {
-        $failures.Add('IsPackable must remain true for explicit pack.')
+      $properties = $project.Project.PropertyGroup
+      foreach ($pair in @(
+        @('GeneratePackageOnBuild', 'false'), @('IsPackable', 'true'),
+        @('BuildOutputTargetFolder', 'tools'), @('PackageReadmeFile', 'ReadMe.md'),
+        @('SuppressDependenciesWhenPacking', 'true'), @('RepositoryType', 'git'),
+        @('PublishRepositoryUrl', 'true'), @('EmbedUntrackedSources', 'true'))) {
+        if ((Get-XmlNodeText $properties.($pair[0])) -ne $pair[1]) { $failures.Add("$($pair[0]) must equal $($pair[1]).") }
       }
-      if ($project.Project.PropertyGroup.BuildOutputTargetFolder -ne 'tools') {
-        $failures.Add('BuildOutputTargetFolder must isolate the task assembly under tools/.')
-      }
-      $buildReferences = @($project.Project.ItemGroup.PackageReference |
-        Where-Object { $_.Include -like 'Microsoft.Build.*' })
-      if ($buildReferences.Count -ne 2 -or
-        @($buildReferences | Where-Object { $_.PrivateAssets -ne 'all' }).Count -ne 0) {
+      $buildReferences = @($project.Project.ItemGroup.PackageReference | Where-Object { $_.Include -like 'Microsoft.Build.*' })
+      if ($buildReferences.Count -ne 2 -or @($buildReferences | Where-Object { $_.PrivateAssets -ne 'all' }).Count -ne 0) {
         $failures.Add('Microsoft.Build package references must remain private packaging inputs.')
       }
-
-      $packageItem = @($project.Project.ItemGroup.None) |
-        Where-Object { $_.Update -eq 'ATAP.Utilities.BuildTooling.targets' } |
-        Select-Object -First 1
-      if ($null -eq $packageItem -or $packageItem.Pack -ne 'true') {
-        $failures.Add('The canonical targets file must be explicitly packable.')
-      } else {
-        $packagePaths = @($packageItem.PackagePath -split ';' | Where-Object { $_ })
-        $expectedPaths = @('build\', 'buildTransitive\')
-        if (@(Compare-Object -ReferenceObject $expectedPaths -DifferenceObject $packagePaths).Count -ne 0) {
-          $failures.Add('PackagePath must contain exactly build\ and buildTransitive\.')
-        }
+      $targetItems = @($project.Project.ItemGroup.None | Where-Object { $_.Include -eq 'ATAP.Utilities.BuildTooling.targets' -and $_.Pack -eq 'true' })
+      $readmeItems = @($project.Project.ItemGroup.None | Where-Object { $_.Include -eq 'ReadMe.md' -and $_.Pack -eq 'true' -and $_.PackagePath -eq '\' })
+      if ($readmeItems.Count -ne 1) { $failures.Add('ReadMe.md must be explicitly packed at the package root.') }
+      $expectedPaths = @('build\ATAP.Utilities.BuildTooling.CSharp.targets', 'buildTransitive\ATAP.Utilities.BuildTooling.CSharp.targets')
+      if ($targetItems.Count -ne 2 -or @(Compare-Object $expectedPaths @($targetItems.PackagePath)).Count -ne 0) {
+        $failures.Add('Canonical targets must be packed exactly once into build and buildTransitive.')
       }
-
-      $propertyGroup = $targets.Project.PropertyGroup
-      $expectedProperties = [ordered] @{
-        ATAPBuildToolingImported = 'true'
-        ATAPBuildToolingContractVersion = '1'
-        ATAPBuildToolingCompatibilitySentinel = 'ATAP.Utilities.BuildTooling.CSharp/1'
-        ATAPBuildToolingImportProvenance = '$(MSBuildThisFileFullPath)'
-        ATAPBuildToolingImportDirectory = '$(MSBuildThisFileDirectory)'
+      $expectedProperties = [ordered]@{
+        ATAPBuildToolingImported = 'true'; ATAPBuildToolingPackageId = 'ATAP.Utilities.BuildTooling.CSharp'
+        ATAPBuildToolingContractVersion = '1'; ATAPBuildToolingCompatibilitySentinel = 'ATAP.Utilities.BuildTooling.CSharp/1'
+        ATAPBuildToolingRequiredContractVersion = '1'; ATAPBuildToolingRequiredCompatibilitySentinel = 'ATAP.Utilities.BuildTooling.CSharp/1'
+        ATAPBuildToolingImportProvenance = '$(MSBuildThisFileFullPath)'; ATAPBuildToolingImportDirectory = '$(MSBuildThisFileDirectory)'
         ATAPBuildToolingTaskTargetFramework = 'net10.0'
         ATAPUtilitiesBuildToolingTasksAssembly = '$(MSBuildThisFileDirectory)..\tools\$(ATAPBuildToolingTaskTargetFramework)\ATAP.Utilities.BuildTooling.CSharp.dll'
       }
+      $propertyGroup = $targets.Project.PropertyGroup
       foreach ($entry in $expectedProperties.GetEnumerator()) {
-        if ($propertyGroup.($entry.Key).'#text' -and $propertyGroup.($entry.Key).'#text' -ne $entry.Value) {
-          $failures.Add("$($entry.Key) has an unexpected value.")
-        } elseif (-not $propertyGroup.($entry.Key).'#text' -and [string] $propertyGroup.($entry.Key) -ne $entry.Value) {
-          $failures.Add("$($entry.Key) has an unexpected value.")
-        }
+        if ((Get-XmlNodeText $propertyGroup.($entry.Key)) -ne $entry.Value) { $failures.Add("$($entry.Key) has an unexpected value.") }
       }
-
-      $forbiddenElements = @('Target', 'Exec', 'Copy', 'Delete', 'MakeDir', 'Touch', 'WriteLinesToFile', 'UsingTask')
-      foreach ($elementName in $forbiddenElements) {
-        if ($targets.SelectNodes("//*[local-name()='$elementName']").Count -ne 0) {
-          $failures.Add("Imported targets must not contain $elementName elements.")
-        }
+      foreach ($elementName in @('Exec', 'Copy', 'Delete', 'MakeDir', 'Touch', 'WriteLinesToFile', 'UsingTask')) {
+        if ($targets.SelectNodes("//*[local-name()='$elementName']").Count -ne 0) { $failures.Add("Imported targets must not contain $elementName elements.") }
       }
-
-      $sourceText = [System.IO.File]::ReadAllText($targetsPath)
-      foreach ($forbiddenToken in @('Get-SecretATAP', 'ProGetApiKey', 'NuGetApiKey', 'AfterTargets="Build"', 'BeforeTargets="Pack"')) {
-        if ($sourceText.Contains($forbiddenToken, [System.StringComparison]::OrdinalIgnoreCase)) {
-          $failures.Add("Imported targets contain forbidden token: $forbiddenToken")
-        }
+      $compatibilityTarget = $targets.SelectSingleNode("//*[local-name()='Target' and @Name='ATAPValidateBuildToolingCompatibility']")
+      $diagnostics = @($compatibilityTarget.SelectNodes("*[local-name()='Error']") | ForEach-Object { $_.Code })
+      if ($null -eq $compatibilityTarget -or @(Compare-Object @('ATAPBUILD010', 'ATAPBUILD011', 'ATAPBUILD012') $diagnostics).Count -ne 0) {
+        $failures.Add('Compatibility target and diagnostics ATAPBUILD010-012 must be present exactly.')
       }
-
-      if ($failures.Count -ne 0) {
-        throw [System.InvalidOperationException]::new(($failures -join [Environment]::NewLine))
+      $sourceText = [IO.File]::ReadAllText($targetsPath)
+      foreach ($token in @('Get-SecretATAP', 'ProGetApiKey', 'NuGetApiKey', 'AfterTargets="Build"', 'BeforeTargets="Pack"')) {
+        if ($sourceText.Contains($token, [StringComparison]::OrdinalIgnoreCase)) { $failures.Add("Forbidden token: $token") }
       }
-
-      [PSCustomObject] @{
-        Project = $projectPath
-        Targets = $targetsPath
-        PackagePaths = @('build\', 'buildTransitive\')
-        BuildOutputTargetFolder = 'tools'
-        PrivateBuildPackageReferences = $buildReferences.Count
-        ContractVersion = 1
-        TargetElementCount = $targets.SelectNodes("//*[local-name()='Target']").Count
-        Result = 'Passed'
-      }
+      if ($failures.Count -ne 0) { throw [InvalidOperationException]::new(($failures -join [Environment]::NewLine)) }
+      [pscustomobject]@{ Result = 'Passed'; PackagePaths = $expectedPaths; ContractVersion = 1; Diagnostics = $diagnostics; TargetElementCount = 1 }
     } catch {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $_.Exception.Message
+      if (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $_.Exception.Message }
       throw
     }
   }
 
-  end {
-  }
+  end {}
+}
+
+if ($MyInvocation.InvocationName -ne '.' -and $MyInvocation.InvocationName -ne '&') {
+  Test-BuildToolingPackageContract -Confirm:$false
 }

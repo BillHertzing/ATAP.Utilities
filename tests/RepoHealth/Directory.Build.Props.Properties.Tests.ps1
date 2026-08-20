@@ -40,6 +40,17 @@ BeforeAll {
     QA = 'nuget-qa'
     Production = 'nuget-stable'
   }
+  foreach ($name in @('ATAP_ARTIFACTS_ROOT', 'ATAP_ARTIFACTS_WORKTREE_ID', 'ATAP_ARTIFACTS_EXECUTION_ID', 'ATAP_ARTIFACTS_PATH', 'ATAP_ARTIFACTS_OWNER')) {
+    if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name, 'Process'))) {
+      throw "RepoHealth requires process environment value $name."
+    }
+  }
+  $script:artifactPropertyArguments = @(
+    "-property:ATAPArtifactsRoot=$env:ATAP_ARTIFACTS_ROOT"
+    "-property:ATAPArtifactsWorktreeId=$env:ATAP_ARTIFACTS_WORKTREE_ID"
+    "-property:ATAPArtifactsExecutionId=$env:ATAP_ARTIFACTS_EXECUTION_ID"
+    "-property:ArtifactsPath=$env:ATAP_ARTIFACTS_PATH"
+  )
 
   function script:Get-EvaluatedMSBuildProperty {
     [CmdletBinding()]
@@ -48,7 +59,7 @@ BeforeAll {
       [Parameter(Mandatory)][string] $PropertyName
     )
 
-    $stdout = & dotnet msbuild $CsprojPath "-getProperty:$PropertyName" '-nologo' 2>&1
+    $stdout = & dotnet msbuild $CsprojPath "-getProperty:$PropertyName" '-nologo' @script:artifactPropertyArguments 2>&1
     if ($LASTEXITCODE -ne 0) {
       throw "dotnet msbuild -getProperty:$PropertyName failed for '$CsprojPath' (exit $LASTEXITCODE): $stdout"
     }
@@ -86,5 +97,13 @@ Describe 'Directory.Packages.props CPM default propagates to every included sour
 
     $value = Get-EvaluatedMSBuildProperty -CsprojPath $CsprojPath -PropertyName 'CentralPackageVersionOverrideEnabled'
     $value | Should -BeExactly 'false' -Because "'$CsprojName' must inherit the repository CPM default unless its package-SUT switch is explicitly enabled"
+  }
+}
+Describe 'External artifacts property propagation' -Tag 'RepoHealth', 'Integration', 'ArtifactsPath' {
+  It 'evaluates one canonical owner and SDK artifacts path' {
+    $project = Join-Path $script:repoRoot 'src\ATAP.Utilities.BuildTooling.CSharp\ATAP.Utilities.BuildTooling.CSharp.csproj'
+    Get-EvaluatedMSBuildProperty -CsprojPath $project -PropertyName 'UseArtifactsOutput' | Should -BeExactly 'true'
+    Get-EvaluatedMSBuildProperty -CsprojPath $project -PropertyName 'ArtifactsPath' | Should -BeExactly $env:ATAP_ARTIFACTS_PATH
+    Get-EvaluatedMSBuildProperty -CsprojPath $project -PropertyName 'ATAPArtifactsOwner' | Should -BeExactly $env:ATAP_ARTIFACTS_OWNER
   }
 }

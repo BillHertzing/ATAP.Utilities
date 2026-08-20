@@ -83,6 +83,11 @@
     Integration, QA, and Production after Development has restored the promoted
     package once and materialized the per-build `SUTVersion` lock state.
 
+.PARAMETER ArtifactsContext
+    Resolver result containing Root, WorktreeId, ExecutionId, ArtifactsPath,
+    BinlogPath, PackageStagingPath, and PublishStagingPath. ResultsPath is resolved
+    beneath this execution path and the owner marker must match before restore.
+
 .OUTPUTS
     [PSCustomObject] with:
       - OperationName    : Always 'Invoke-PromotedPackageTests'.
@@ -167,13 +172,54 @@ function Invoke-PromotedPackageTests {
         [string]$WorkingDirectory = (Get-Location).Path,
 
         [Parameter()]
-        [switch]$LockedRestore
+        [switch]$LockedRestore,
+
+        [Parameter(Mandatory)]
+        [ValidateNotNull()]
+        [psobject]$ArtifactsContext
     )
 
     begin {
         $fn = 'Invoke-PromotedPackageTests'
         $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn with Name='$Name' Version='$Version' Feed='$Feed' ProjectPath='$ProjectPath'" -Tag 'Trace'
+
+        foreach ($propertyName in @('Root', 'WorktreeId', 'ExecutionId', 'ArtifactsPath', 'BinlogPath', 'PackageStagingPath', 'PublishStagingPath')) {
+            if ($ArtifactsContext.PSObject.Properties.Name -notcontains $propertyName -or [string]::IsNullOrWhiteSpace([string]$ArtifactsContext.$propertyName)) {
+                throw "ArtifactsContext.$propertyName is required."
+            }
+        }
+        $artifactsRoot = [IO.Path]::GetFullPath([string]$ArtifactsContext.Root)
+        $artifactsPath = [IO.Path]::GetFullPath([string]$ArtifactsContext.ArtifactsPath)
+        $expectedArtifactsPath = [IO.Path]::GetFullPath((Join-Path $artifactsRoot 'dotnet' 'ATAP.Utilities' ([string]$ArtifactsContext.WorktreeId) ([string]$ArtifactsContext.ExecutionId)))
+        if ($artifactsPath -cne $expectedArtifactsPath -or $artifactsPath -match '(?i)[\\/]Dropbox[\\/]') {
+            throw "ArtifactsContext.ArtifactsPath '$artifactsPath' is not the canonical external path '$expectedArtifactsPath'."
+        }
+        $artifactsOwner = "ATAP.Utilities|$($ArtifactsContext.WorktreeId)|$($ArtifactsContext.ExecutionId)"
+        $ownerMarkerPath = Join-Path $artifactsPath '.atap-artifacts-owner'
+        if (-not (Test-Path -LiteralPath $ownerMarkerPath -PathType Leaf)) {
+            throw "Package-smoke owner marker is missing: '$ownerMarkerPath'."
+        }
+        $existingOwner = (Get-Content -LiteralPath $ownerMarkerPath -Raw).Trim()
+        if ($existingOwner -cne $artifactsOwner) {
+            throw "ArtifactsPath '$artifactsPath' is owned by '$existingOwner', not '$artifactsOwner'."
+        }
+        $resolvedResultsPath = if ([IO.Path]::IsPathRooted($ResultsPath)) {
+            [IO.Path]::GetFullPath($ResultsPath)
+        } else {
+            [IO.Path]::GetFullPath((Join-Path $artifactsPath $ResultsPath))
+        }
+        if (-not $resolvedResultsPath.StartsWith($artifactsPath + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+            throw "ResultsPath '$resolvedResultsPath' must remain beneath ArtifactsPath '$artifactsPath'."
+        }
+        $artifactArguments = @(
+            '--artifacts-path'
+            $artifactsPath
+            "/p:ATAPArtifactsRoot=$artifactsRoot"
+            "/p:ATAPArtifactsWorktreeId=$($ArtifactsContext.WorktreeId)"
+            "/p:ATAPArtifactsExecutionId=$($ArtifactsContext.ExecutionId)"
+        )
+        $resolvedBinlogPath = [IO.Path]::GetFullPath([string]$ArtifactsContext.BinlogPath)
     }
 
     process {
@@ -191,12 +237,13 @@ function Invoke-PromotedPackageTests {
                 Feed             = $Feed
                 ProjectPath      = $ProjectPath
                 TestFilter       = if ([string]::IsNullOrWhiteSpace($TestFilter)) { $null } else { $TestFilter }
-                ResultsPath      = $ResultsPath
+                ResultsPath      = $resolvedResultsPath
                 TrxPath          = $null
                 FailingTestCount = $null
                 LockedRestore    = [bool]$LockedRestore
                 RestoreExitCode  = $null
                 TestExitCode     = $null
+                ArtifactsPath    = $artifactsPath
                 ResponseSummary  = "WhatIf: would restore and test $target from feed '$Feed' (project: $ProjectPath)"
             }
         }
@@ -210,8 +257,8 @@ function Invoke-PromotedPackageTests {
 
         Push-Location -Path $WorkingDirectory
         try {
-            if (-not (Test-Path -Path $ResultsPath)) {
-                New-Item -ItemType Directory -Path $ResultsPath -Force | Out-Null
+            if (-not (Test-Path -Path $resolvedResultsPath)) {
+                New-Item -ItemType Directory -Path $resolvedResultsPath -Force | Out-Null
             }
 
             # ---- Step 1: restore the promoted package ----------------------
@@ -220,6 +267,7 @@ function Invoke-PromotedPackageTests {
                 $ProjectPath
                 '/p:UsePackageReferenceForSUT=true'
                 "/p:SUTVersion=$Version"
+                $artifactArguments
             )
             if (-not [string]::IsNullOrWhiteSpace($env:NBGV_BuildingRef)) {
                 $restoreArgs += "/p:NBGV_BuildingRef=$env:NBGV_BuildingRef"
@@ -249,13 +297,14 @@ function Invoke-PromotedPackageTests {
                     Feed             = $Feed
                     ProjectPath      = $ProjectPath
                     TestFilter       = if ([string]::IsNullOrWhiteSpace($TestFilter)) { $null } else { $TestFilter }
-                    ResultsPath      = $ResultsPath
+                    ResultsPath      = $resolvedResultsPath
                     TrxPath          = $null
                     FailingTestCount = $null
                     LockedRestore    = [bool]$LockedRestore
                     RestoreExitCode  = $restoreExitCode
                     TestExitCode     = $null
-                    ResponseSummary  = $summary
+                    ArtifactsPath    = $artifactsPath
+                ResponseSummary  = $summary
                 }
             }
 
@@ -274,7 +323,9 @@ function Invoke-PromotedPackageTests {
                 '--logger'
                 'trx'
                 '--results-directory'
-                $ResultsPath
+                $resolvedResultsPath
+                $artifactArguments
+                "/bl:$resolvedBinlogPath"
             )
             if (-not [string]::IsNullOrWhiteSpace($env:NBGV_BuildingRef)) {
                 $testArgs += "/p:NBGV_BuildingRef=$env:NBGV_BuildingRef"
@@ -294,7 +345,7 @@ function Invoke-PromotedPackageTests {
             $gatePass = ($testExitCode -eq 0)
 
             # ---- Step 3: locate and parse the TRX (best effort) ------------
-            $trxFile = Get-ChildItem -Path $ResultsPath -Filter '*.trx' -ErrorAction SilentlyContinue |
+            $trxFile = Get-ChildItem -Path $resolvedResultsPath -Filter '*.trx' -ErrorAction SilentlyContinue |
                 Sort-Object -Property LastWriteTime -Descending |
                 Select-Object -First 1
             if ($null -ne $trxFile) {
@@ -308,7 +359,7 @@ function Invoke-PromotedPackageTests {
                     $failingTestCount = $null
                 }
             } else {
-                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "No .trx file found under '$ResultsPath'"
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "No .trx file found under '$resolvedResultsPath'"
             }
 
             if ($gatePass) {
@@ -328,12 +379,13 @@ function Invoke-PromotedPackageTests {
                 Feed             = $Feed
                 ProjectPath      = $ProjectPath
                 TestFilter       = if ([string]::IsNullOrWhiteSpace($TestFilter)) { $null } else { $TestFilter }
-                ResultsPath      = $ResultsPath
+                ResultsPath      = $resolvedResultsPath
                 TrxPath          = $trxPath
                 FailingTestCount = $failingTestCount
                 LockedRestore    = [bool]$LockedRestore
                 RestoreExitCode  = $restoreExitCode
                 TestExitCode     = $testExitCode
+                ArtifactsPath    = $artifactsPath
                 ResponseSummary  = $summary
             }
         } catch {

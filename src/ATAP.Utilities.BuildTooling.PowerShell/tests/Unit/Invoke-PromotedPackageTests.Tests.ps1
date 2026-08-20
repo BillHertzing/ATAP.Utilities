@@ -5,6 +5,19 @@
 BeforeAll {
     $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
     . (Join-Path $publicDir 'Invoke-PromotedPackageTests.ps1')
+    $script:artifactsRoot = Join-Path ([IO.Path]::GetTempPath()) ('ATAP-Task15.180l-promoted-' + [guid]::NewGuid().ToString('N'))
+    $script:artifactsPath = Join-Path $script:artifactsRoot 'dotnet\ATAP.Utilities\wt-promoted\exec-promoted'
+    $script:artifactsContext = [pscustomobject]@{
+        Root = $script:artifactsRoot
+        WorktreeId = 'wt-promoted'
+        ExecutionId = 'exec-promoted'
+        ArtifactsPath = $script:artifactsPath
+        BinlogPath = Join-Path $script:artifactsPath 'logs\promoted.binlog'
+        PackageStagingPath = Join-Path $script:artifactsPath 'packages'
+        PublishStagingPath = Join-Path $script:artifactsPath 'publish'
+    }
+    $script:previousContextDefault = $PSDefaultParameterValues['Invoke-PromotedPackageTests:ArtifactsContext']
+    $PSDefaultParameterValues['Invoke-PromotedPackageTests:ArtifactsContext'] = $script:artifactsContext
 
     # Suppress PSFramework noise when the module is not loaded.
     if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
@@ -22,6 +35,8 @@ BeforeAll {
 }
 
 AfterAll {
+    if ($null -eq $script:previousContextDefault) { $PSDefaultParameterValues.Remove('Invoke-PromotedPackageTests:ArtifactsContext') }
+    else { $PSDefaultParameterValues['Invoke-PromotedPackageTests:ArtifactsContext'] = $script:previousContextDefault }
     Remove-Item function:global:dotnet -ErrorAction SilentlyContinue
 }
 
@@ -34,6 +49,7 @@ Describe 'Invoke-PromotedPackageTests' -Tag 'Unit' {
         Mock Pop-Location { }
         Mock New-Item { }
         Mock Test-Path { $true }
+        Mock Get-Content { 'ATAP.Utilities|wt-promoted|exec-promoted' }
         Mock Get-NumberOfFailingTestsFromTRX { 0 }
         Mock Get-ChildItem {
             [PSCustomObject]@{
@@ -98,6 +114,20 @@ Describe 'Invoke-PromotedPackageTests' -Tag 'Unit' {
             $result.ResponseSummary  | Should -Match 'passed'
 
             Assert-MockCalled dotnet -Times 2 -Exactly -Scope It
+        }
+
+        It 'Passes one artifacts path to restore and the dependent no-restore test call' {
+            $result = Invoke-PromotedPackageTests -Name 'ATAP.Utilities' -Version '0.1.0-Sprint.142' `
+                -Feed 'nuget-development' -ResultsPath 'testresults\development'
+
+            $result.ArtifactsPath | Should -BeExactly $script:artifactsPath
+            $result.ResultsPath | Should -BeLike "$($script:artifactsPath)*"
+            Assert-MockCalled dotnet -Times 2 -Exactly -Scope It -ParameterFilter {
+                ($rest -contains '--artifacts-path') -and ($rest -contains $script:artifactsPath)
+            }
+            Assert-MockCalled dotnet -Times 1 -Exactly -Scope It -ParameterFilter {
+                $rest[0] -eq 'test' -and ($rest -contains "/bl:$($script:artifactsContext.BinlogPath)")
+            }
         }
 
         It 'Passes UsePackageReferenceForSUT and SUTVersion to the restore call' {
@@ -241,7 +271,7 @@ Describe 'Invoke-PromotedPackageTests' -Tag 'Unit' {
             $result | Should -Not -BeNullOrEmpty
             foreach ($prop in @('OperationName', 'GatePass', 'Name', 'Version', 'Feed',
                     'ProjectPath', 'TestFilter', 'ResultsPath', 'TrxPath',
-                    'FailingTestCount', 'LockedRestore', 'RestoreExitCode', 'TestExitCode', 'ResponseSummary')) {
+                    'FailingTestCount', 'LockedRestore', 'RestoreExitCode', 'TestExitCode', 'ArtifactsPath', 'ResponseSummary')) {
                 $result.PSObject.Properties.Name | Should -Contain $prop
             }
         }

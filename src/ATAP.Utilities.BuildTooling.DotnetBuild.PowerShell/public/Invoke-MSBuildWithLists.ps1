@@ -4,18 +4,18 @@ function Invoke-MSBuildWithLists {
   Builds a project for each requested runtime, configuration, and target framework.
 
   .DESCRIPTION
-  Invokes `dotnet build` directly for the Cartesian product of the supplied
-  runtime targets, configurations, and target frameworks. Each result records
-  the arguments, captured output, and exit code. No command text is evaluated.
+  Invokes `dotnet build` for the Cartesian product of the supplied runtime targets,
+  configurations, and target frameworks. Every producing invocation consumes the same
+  validated artifacts context; independent OutputPath and BaseIntermediateOutputPath
+  overrides are forbidden.
 
   .PARAMETER Path
   Project or solution path passed to `dotnet build`.
 
-  .PARAMETER OutputPath
-  Output path passed as the `OutputPath` MSBuild property.
-
-  .PARAMETER BaseIntermediateOutputPath
-  Intermediate path passed as the `BaseIntermediateOutputPath` property.
+  .PARAMETER ArtifactsContext
+  Resolver result containing Root, WorktreeId, ExecutionId, ArtifactsPath, BinlogPath,
+  PackageStagingPath, and PublishStagingPath. Required for execution; omitted only for
+  a non-producing WhatIf compatibility preview.
 
   .PARAMETER RuntimeTargetList
   Runtime identifiers to build.
@@ -30,11 +30,10 @@ function Invoke-MSBuildWithLists {
   PSCustomObject for each build combination.
 
   .EXAMPLE
-  Invoke-MSBuildWithLists -Path '.\src\App\App.csproj' -RuntimeTargetList 'win-x64' -TargetFrameworkList 'net8.0'
+  Invoke-MSBuildWithLists -Path '.\src\App\App.csproj' -ArtifactsContext $context -RuntimeTargetList 'win-x64' -TargetFrameworkList 'net10.0'
 
   .NOTES
-  This implementation deliberately avoids Invoke-Expression so paths and
-  property values are passed to dotnet as discrete arguments.
+  Paths and property values are passed to dotnet as discrete arguments.
 
   .LINK
   https://learn.microsoft.com/dotnet/core/tools/dotnet-build
@@ -46,17 +45,14 @@ function Invoke-MSBuildWithLists {
     [ValidateNotNullOrEmpty()]
     [string] $Path = './',
 
-    [ValidateNotNullOrEmpty()]
-    [string] $OutputPath = './bin',
-
-    [ValidateNotNullOrEmpty()]
-    [string] $BaseIntermediateOutputPath = './obj',
+    [Parameter()]
+    [psobject] $ArtifactsContext,
 
     [ValidateNotNullOrEmpty()]
     [string[]] $RuntimeTargetList = @('win-x64', 'win-x86', 'linux-x64', 'linux-arm'),
 
     [ValidateNotNullOrEmpty()]
-    [string[]] $TargetFrameworkList = @('net8.0'),
+    [string[]] $TargetFrameworkList = @('net10.0'),
 
     [ValidateNotNullOrEmpty()]
     [string[]] $ConfigurationList = @('Debug', 'Release')
@@ -69,6 +65,33 @@ function Invoke-MSBuildWithLists {
 
     if (-not (Get-Command -Name 'dotnet' -ErrorAction SilentlyContinue)) {
       throw 'dotnet was not found on PATH.'
+    }
+
+    $artifactArguments = @()
+    if ($null -eq $ArtifactsContext) {
+      if (-not $WhatIfPreference) {
+        throw 'ArtifactsContext is required for a producing dotnet build invocation.'
+      }
+    } else {
+      $required = @('Root', 'WorktreeId', 'ExecutionId', 'ArtifactsPath', 'BinlogPath', 'PackageStagingPath', 'PublishStagingPath')
+      foreach ($name in $required) {
+        if ($ArtifactsContext.PSObject.Properties.Name -notcontains $name -or [string]::IsNullOrWhiteSpace([string]$ArtifactsContext.$name)) {
+          throw "ArtifactsContext.$name is required."
+        }
+      }
+      $root = [IO.Path]::GetFullPath([string]$ArtifactsContext.Root)
+      $artifactsPath = [IO.Path]::GetFullPath([string]$ArtifactsContext.ArtifactsPath)
+      $expected = [IO.Path]::GetFullPath((Join-Path $root 'dotnet' 'ATAP.Utilities' ([string]$ArtifactsContext.WorktreeId) ([string]$ArtifactsContext.ExecutionId)))
+      if (-not [IO.Path]::IsPathRooted($artifactsPath) -or $artifactsPath -cne $expected -or $artifactsPath -match '(?i)[\\/]Dropbox[\\/]') {
+        throw "ArtifactsContext.ArtifactsPath '$artifactsPath' is not the canonical external path '$expected'."
+      }
+      $artifactArguments = @(
+        '--artifacts-path'
+        $artifactsPath
+        "-p:ATAPArtifactsRoot=$root"
+        "-p:ATAPArtifactsWorktreeId=$($ArtifactsContext.WorktreeId)"
+        "-p:ATAPArtifactsExecutionId=$($ArtifactsContext.ExecutionId)"
+      )
     }
   }
 
@@ -83,9 +106,8 @@ function Invoke-MSBuildWithLists {
           $arguments = @(
             'build'
             $Path
-            "-p:OutputPath=$OutputPath"
-            "-p:BaseIntermediateOutputPath=$BaseIntermediateOutputPath"
-            "-p:RuntimeTarget=$runtimeTarget"
+            $artifactArguments
+            "-p:RuntimeIdentifier=$runtimeTarget"
             "-p:Configuration=$configuration"
             "-p:TargetFramework=$targetFramework"
           )
@@ -96,6 +118,7 @@ function Invoke-MSBuildWithLists {
               RuntimeTarget = $runtimeTarget
               Configuration = $configuration
               TargetFramework = $targetFramework
+              ArtifactsPath = if ($null -eq $ArtifactsContext) { $null } else { [string]$ArtifactsContext.ArtifactsPath }
               Arguments = $arguments
               Output = @()
               ExitCode = 0
@@ -119,6 +142,7 @@ function Invoke-MSBuildWithLists {
             RuntimeTarget = $runtimeTarget
             Configuration = $configuration
             TargetFramework = $targetFramework
+            ArtifactsPath = [string]$ArtifactsContext.ArtifactsPath
             Arguments = $arguments
             Output = $output
             ExitCode = $exitCode

@@ -5,6 +5,17 @@ BeforeAll {
   $script:repoRoot = (Resolve-Path -Path (Join-Path $testDirectory '..\..')).Path
   $script:projectPath = Join-Path $script:repoRoot 'src\ATAP.Utilities.RRSBS.Contracts\ATAP.Utilities.RRSBS.Contracts.csproj'
   $script:versionPath = Join-Path $script:repoRoot 'src\ATAP.Utilities.RRSBS.Contracts\version.json'
+  foreach ($name in @('ATAP_ARTIFACTS_ROOT', 'ATAP_ARTIFACTS_WORKTREE_ID', 'ATAP_ARTIFACTS_EXECUTION_ID', 'ATAP_ARTIFACTS_PATH')) {
+    if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name, 'Process'))) {
+      throw "RepoHealth requires process environment value $name."
+    }
+  }
+  $script:artifactPropertyArguments = @(
+    "-property:ATAPArtifactsRoot=$env:ATAP_ARTIFACTS_ROOT"
+    "-property:ATAPArtifactsWorktreeId=$env:ATAP_ARTIFACTS_WORKTREE_ID"
+    "-property:ATAPArtifactsExecutionId=$env:ATAP_ARTIFACTS_EXECUTION_ID"
+    "-property:ArtifactsPath=$env:ATAP_ARTIFACTS_PATH"
+  )
 
   function Get-EvaluatedMSBuildProperty {
     [CmdletBinding()]
@@ -13,7 +24,7 @@ BeforeAll {
       [Parameter(Mandatory)][string] $PropertyName
     )
 
-    $output = & dotnet msbuild $ProjectPath "-getProperty:$PropertyName" 2>&1
+    $output = & dotnet msbuild $ProjectPath "-getProperty:$PropertyName" @script:artifactPropertyArguments 2>&1
     if ($LASTEXITCODE -ne 0) {
       throw "dotnet msbuild -getProperty:$PropertyName failed for '$ProjectPath' (exit $LASTEXITCODE): $output"
     }
@@ -61,10 +72,10 @@ Describe 'ATAP.Utilities.RRSBS.Contracts packaging metadata' -Tag 'RepoHealth', 
     $targetFrameworks | Should -Not -Match '(^|;)net9\.0(;|$)'
   }
 
-  It 'uses the project-adjacent stable version 0.1.1' {
+  It 'uses the project-adjacent stable version 0.1.2' {
     $versionSource = Get-Content -LiteralPath $script:versionPath -Raw | ConvertFrom-Json
     $prerelease = if ($versionSource.version -match '-') { $versionSource.version.Substring($versionSource.version.IndexOf('-') + 1) } else { '' }
-    $versionSource.version | Should -BeExactly '0.1.1'
+    $versionSource.version | Should -BeExactly '0.1.2'
     Test-ContractsStableVersionContract -Version $versionSource.version -Prerelease $prerelease | Should -BeTrue
     @($versionSource.publicReleaseRefSpec) | Should -Contain '.*'
   }

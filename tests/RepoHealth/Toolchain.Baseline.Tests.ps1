@@ -3,8 +3,20 @@ BeforeAll {
   $script:repoRoot = (Resolve-Path -LiteralPath (Join-Path (Split-Path -Parent $PSCommandPath) '..\..')).Path
   $script:validator = Join-Path $script:repoRoot 'Build\Test-ToolchainBaseline.ps1'
   . $script:validator
-  $script:fixtureRoot = Join-Path $script:repoRoot (Join-Path '_generated\Sprint0015\Task15.180\j\T01\fixtures' ([guid]::NewGuid().ToString('N')))
+  $script:fixtureRoot = Join-Path $script:repoRoot (Join-Path '_generated\Sprint0015\Task15.180\l\T03\fixtures' ([guid]::NewGuid().ToString('N')))
   [IO.Directory]::CreateDirectory($script:fixtureRoot) | Out-Null
+  $script:artifactsRoot = Join-Path ([IO.Path]::GetTempPath()) ('ATAP-Task15.180l-' + [guid]::NewGuid().ToString('N'))
+  $script:artifactsWorktreeId = 'wt-toolchain'
+  $script:artifactsExecutionId = 'exec-toolchain'
+  $script:artifactsPath = Join-Path $script:artifactsRoot 'dotnet\ATAP.Utilities\wt-toolchain\exec-toolchain'
+  $script:previousArtifactEnvironment = @{}
+  foreach ($name in @('ATAP_ARTIFACTS_ROOT', 'ATAP_ARTIFACTS_WORKTREE_ID', 'ATAP_ARTIFACTS_EXECUTION_ID', 'ATAP_ARTIFACTS_PATH')) {
+    $script:previousArtifactEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
+  }
+  $env:ATAP_ARTIFACTS_ROOT = $script:artifactsRoot
+  $env:ATAP_ARTIFACTS_WORKTREE_ID = $script:artifactsWorktreeId
+  $env:ATAP_ARTIFACTS_EXECUTION_ID = $script:artifactsExecutionId
+  $env:ATAP_ARTIFACTS_PATH = $script:artifactsPath
   function New-Fixture {
     param([switch]$NoGlobalJson, [switch]$Malformed)
     $root = Join-Path $script:fixtureRoot ([guid]::NewGuid().ToString('N'))
@@ -36,6 +48,10 @@ BeforeAll {
   }
 }
 AfterAll {
+  foreach ($name in $script:previousArtifactEnvironment.Keys) {
+    [Environment]::SetEnvironmentVariable($name, $script:previousArtifactEnvironment[$name], 'Process')
+  }
+  if (Test-Path -LiteralPath $script:artifactsRoot) { Remove-Item -LiteralPath $script:artifactsRoot -Recurse -Force }
   [GC]::Collect()
   [GC]::WaitForPendingFinalizers()
   for ($attempt = 1; $attempt -le 20 -and (Test-Path -LiteralPath $script:fixtureRoot); $attempt++) {
@@ -53,6 +69,20 @@ Describe 'Toolchain baseline hermetic contract' -Tag RepoHealth,Toolchain {
     $actual.Success | Should -BeTrue -Because (($actual.Failures | ConvertTo-Json -Compress) -join '')
     Should -Invoke Invoke-ToolchainProcess -Times 5 -Exactly -ParameterFilter { $WorkingDirectory -eq $script:fixture }
     Should -Invoke Invoke-ToolchainProcess -Times 0 -ParameterFilter { ($ArgumentList -join ' ') -match 'workload' }
+  }
+  It 'passes the canonical artifacts properties only to the project-evaluation probe' {
+    $actual = Test-ToolchainBaseline -RepoRoot $script:fixture
+    $actual.Success | Should -BeTrue
+    $actual.Facts.ArtifactsPath | Should -BeExactly $script:artifactsPath
+    Should -Invoke Invoke-ToolchainProcess -Times 1 -Exactly -ParameterFilter {
+      ($ArgumentList -contains "-property:ATAPArtifactsRoot=$script:artifactsRoot") -and
+      ($ArgumentList -contains "-property:ATAPArtifactsWorktreeId=$script:artifactsWorktreeId") -and
+      ($ArgumentList -contains "-property:ATAPArtifactsExecutionId=$script:artifactsExecutionId") -and
+      ($ArgumentList -contains "-property:ArtifactsPath=$script:artifactsPath")
+    }
+    Should -Invoke Invoke-ToolchainProcess -Times 4 -Exactly -ParameterFilter {
+      -not ($ArgumentList -match 'ArtifactsPath')
+    }
   }
   It 'reports SDK, SDK-owned MSBuild, NuGet, and deterministic facts' {
     $actual=Test-ToolchainBaseline -RepoRoot $script:fixture
@@ -97,7 +127,7 @@ Describe 'Toolchain validator source safety' -Tag RepoHealth,Toolchain {
     $text | Should -Not -Match 'workload\s+list'
   }
   It 'uses a unique per-execution fixture beneath the assigned evidence path' {
-    $script:fixtureRoot | Should -Match '_generated[\\/]Sprint0015[\\/]Task15\.180[\\/]j[\\/]T01[\\/]fixtures[\\/][0-9a-f]{32}$'
+    $script:fixtureRoot | Should -Match '_generated[\\/]Sprint0015[\\/]Task15\.180[\\/]l[\\/]T03[\\/]fixtures[\\/][0-9a-f]{32}$'
   }
 }
 Describe 'SDK version parsing' -Tag RepoHealth,Toolchain {

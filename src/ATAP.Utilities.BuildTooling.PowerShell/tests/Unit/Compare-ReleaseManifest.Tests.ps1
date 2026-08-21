@@ -1,89 +1,42 @@
 #Requires -Version 7.0
-# Pester 5+ tests for Compare-ReleaseManifest (Stream I4).
-
 BeforeAll {
-    $moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-    $publicDir = Join-Path $moduleRoot 'public'
-    $fixtureDir = Join-Path $moduleRoot 'tests\fixtures\release-manifests'
-    . (Join-Path $publicDir 'Get-DeployedReleaseManifest.ps1')
-    . (Join-Path $publicDir 'Compare-ReleaseManifest.ps1')
-
-    if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
-        function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
-    }
-
-    $script:oldManifestPath = Join-Path $fixtureDir 'acecommander-1.4.0-manifest.json'
-    $script:newManifestPath = Join-Path $fixtureDir 'acecommander-1.4.1-manifest.json'
+  $moduleRoot=Split-Path -Parent (Split-Path -Parent $PSScriptRoot);$publicDir=Join-Path $moduleRoot 'public';$fixtureDir=Join-Path $moduleRoot 'tests\fixtures\release-manifests'
+  . (Join-Path $publicDir 'Get-DeployedReleaseManifest.ps1');. (Join-Path $publicDir 'Compare-ReleaseManifest.ps1')
+  if(-not(Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)){function global:Write-PSFMessage{param([Parameter(ValueFromRemainingArguments=$true)]$rest)}}
+  $script:old=Join-Path $fixtureDir 'acecommander-1.4.0-manifest.json';$script:new=Join-Path $fixtureDir 'acecommander-1.4.1-manifest.json'
 }
-
-Describe 'Compare-ReleaseManifest' -Tag 'Unit' {
-    It 'Accepts manifest paths and reports the expected known differences' {
-        $result = Compare-ReleaseManifest -Old $script:oldManifestPath -New $script:newManifestPath
-
-        $result.OperationName | Should -Be 'Compare-ReleaseManifest'
-        $result.OldReleaseVersion | Should -Be '1.4.0'
-        $result.NewReleaseVersion | Should -Be '1.4.1'
-        $result.HasDifferences | Should -BeTrue
-
-        $result.AddedLibraryPackages.Count | Should -Be 1
-        $result.AddedLibraryPackages[0].Id | Should -Be 'ATAP.Utilities.NewLibrary'
-        $result.AddedLibraryPackages[0].Version | Should -Be '1.0.0'
-
-        $result.RemovedLibraryPackages.Count | Should -Be 1
-        $result.RemovedLibraryPackages[0].Id | Should -Be 'ATAP.Utilities.Legacy'
-
-        $result.ChangedLibraryPackages.Count | Should -Be 1
-        $result.ChangedLibraryPackages[0].Id | Should -Be 'ATAP.Utilities.ETW'
-        $result.ChangedLibraryPackages[0].OldVersion | Should -Be '0.1.0-Beta.42'
-        $result.ChangedLibraryPackages[0].NewVersion | Should -Be '0.1.0-Beta.43'
-
-        $result.AddedMigrationFiles | Should -Contain 'db/flyway/V1.4.2__new_feature_tables.sql'
-        $result.RemovedMigrationFiles | Should -Contain 'db/flyway/V1.4.1__old_feature_tables.sql'
-
-        $result.ChangedChecksums.Count | Should -Be 1
-        $result.ChangedChecksums[0].Path | Should -Be 'app/bin/AceCommander.dll'
-        $result.ResponseSummary | Should -Match 'library packages \+1 -1 ~1'
-        $result.ResponseSummary | Should -Match 'migration files \+1 -1'
-        $result.ResponseSummary | Should -Match 'checksums ~1'
-    }
-
-    It 'Accepts parsed manifest objects' {
-        $oldManifest = Get-DeployedReleaseManifest -Path $script:oldManifestPath
-        $newManifest = Get-DeployedReleaseManifest -Path $script:newManifestPath
-
-        $result = Compare-ReleaseManifest -Old $oldManifest -New $newManifest
-
-        $result.NewReleaseVersion | Should -Be '1.4.1'
-        $result.ChangedLibraryPackages[0].Id | Should -Be 'ATAP.Utilities.ETW'
-    }
-
-    It 'Returns no differences when comparing the same manifest to itself' {
-        $manifest = Get-DeployedReleaseManifest -Path $script:oldManifestPath
-
-        $result = Compare-ReleaseManifest -Old $manifest -New $manifest
-
-        $result.HasDifferences | Should -BeFalse
-        $result.AddedLibraryPackages.Count | Should -Be 0
-        $result.RemovedLibraryPackages.Count | Should -Be 0
-        $result.ChangedLibraryPackages.Count | Should -Be 0
-        $result.AddedMigrationFiles.Count | Should -Be 0
-        $result.RemovedMigrationFiles.Count | Should -Be 0
-        $result.ChangedChecksums.Count | Should -Be 0
-    }
-
-    It 'Produces readable Format-List output with the important sections present' {
-        $result = Compare-ReleaseManifest -Old $script:oldManifestPath -New $script:newManifestPath
-
-        $formatted = $result | Format-List | Out-String
-
-        $formatted | Should -Match 'AddedLibraryPackages'
-        $formatted | Should -Match 'RemovedMigrationFiles'
-        $formatted | Should -Match 'ChangedChecksums'
-        $formatted | Should -Match 'ResponseSummary'
-    }
-
-    It 'Throws clearly when an input is neither a manifest object nor a path' {
-        { Compare-ReleaseManifest -Old 42 -New $script:newManifestPath } |
-            Should -Throw -ExpectedMessage '*expects a manifest object or a path*'
-    }
+Describe 'Compare-ReleaseManifest canonical v2' -Tag Unit {
+  It 'reports library payload component and database reference changes' {
+    $r=Compare-ReleaseManifest -Old $script:old -New $script:new
+    $r.OperationName|Should -BeExactly 'Compare-ReleaseManifest';$r.OldReleaseVersion|Should -BeExactly '1.4.0';$r.NewReleaseVersion|Should -BeExactly '1.4.1';$r.HasDifferences|Should -BeTrue
+    $r.AddedLibraryPackages[0].id|Should -BeExactly 'ATAP.Utilities.NewLibrary';$r.RemovedLibraryPackages[0].id|Should -BeExactly 'ATAP.Utilities.Legacy';$r.ChangedLibraryPackages[0].Id|Should -BeExactly 'ATAP.Utilities.Philote'
+    $r.AddedPayloadFiles[0].path|Should -BeExactly 'app/new.txt';$r.RemovedPayloadFiles[0].path|Should -BeExactly 'docs/RELEASE_NOTES.md';$r.ChangedPayloadFiles[0].Path|Should -BeExactly 'app/config/appsettings.template.json'
+    $r.ChangedApplicationComponents.Count|Should -Be 2;$r.DatabasePackageReferenceChanged|Should -BeTrue;$r.NewDatabasePackageReference.lifecycleCeiling|Should -BeExactly 'database-stable'
+    $r.ResponseSummary|Should -Match 'payload \+1 -1 ~1';$r.PSObject.Properties.Name|Should -Not -Contain 'AddedMigrationFiles'
+  }
+  It 'accepts parsed v2 objects and is stable for identical input' {
+    $m=Get-DeployedReleaseManifest -Path $script:old;$r=Compare-ReleaseManifest -Old $m -New $m
+    $r.HasDifferences|Should -BeFalse;$r.AddedPayloadFiles.Count|Should -Be 0;$r.ChangedApplicationComponents.Count|Should -Be 0;$r.DatabasePackageReferenceChanged|Should -BeFalse
+  }
+  It 'rejects ordinary v1 objects' {
+    $v1=[pscustomobject]@{schemaVersion=1;releaseVersion='1.0.0';migrationFiles=@('db/flyway/V1.sql')}
+    {Compare-ReleaseManifest -Old $v1 -New (Get-DeployedReleaseManifest -Path $script:new)}|Should -Throw -ExpectedMessage 'ATAPBUILD014:*v1*'
+  }
+  It 'rejects embedded database fields even on an object labeled v2' {
+    $m=Get-DeployedReleaseManifest -Path $script:old;$m|Add-Member migrationFiles @('db/flyway/V1.sql')
+    {Compare-ReleaseManifest -Old $m -New $m}|Should -Throw -ExpectedMessage 'ATAPBUILD015:*migrationFiles*'
+  }
+  It 'rejects unsupported input types' {{Compare-ReleaseManifest -Old 42 -New $script:new}|Should -Throw -ExpectedMessage '*expects a manifest object or a path*'}
+}
+Describe 'Compare-ReleaseManifest v2 adversarial identity and payload safety' {
+  It 'rejects case-colliding component project paths' {
+    $m=Get-DeployedReleaseManifest -Path $script:old
+    $m.applicationProvenance.components=@($m.applicationProvenance.components)+@([pscustomobject]@{id='AceCommander.Client.Collision';version='1.4.0';qualityTier='Production';projectPath='SRC/ACECOMMANDER.CLIENT/ACECOMMANDER.CLIENT.CSPROJ'})
+    {Compare-ReleaseManifest -Old $m -New $m}|Should -Throw -ExpectedMessage 'ATAPBUILD014:*duplicate ordinal key*'
+  }
+  It 'rejects an embedded database payload path' {
+    $m=Get-DeployedReleaseManifest -Path $script:old
+    $m.payloadFiles=@($m.payloadFiles)+@([pscustomobject]@{path='db/flyway/V1.sql';checksumSha256=('d'*64);sizeBytes=1})
+    {Compare-ReleaseManifest -Old $m -New $m}|Should -Throw -ExpectedMessage 'ATAPBUILD014:*schema validation*'
+  }
 }

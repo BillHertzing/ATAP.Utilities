@@ -1,256 +1,137 @@
 #Requires -Version 7.0
 <#
 .SYNOPSIS
-    Compares two release manifests and summarizes support-relevant changes.
-
+    Compares two canonical ReleaseBundle manifest-v2 records.
 .DESCRIPTION
-    Compare-ReleaseManifest accepts parsed manifest objects or paths to
-    manifest.json files. It returns a PSCustomObject that is intentionally
-    readable with Format-List and highlights the differences support staff
-    most often need: library package pins, Flyway migration files, and changed
-    checksums.
-
+    Reports deterministic changes in application provenance, library package pins,
+    application payload evidence, and the separate database-package reference.
+    Ordinary schema-v1 and embedded-database manifests are rejected.
 .PARAMETER Old
-    The earlier manifest as a parsed object, path string, or FileInfo.
-
+    Earlier manifest object or path.
 .PARAMETER New
-    The later manifest as a parsed object, path string, or FileInfo.
-
+    Later manifest object or path.
 .OUTPUTS
-    [PSCustomObject] summarizing added, removed, and changed manifest content.
+    PSCustomObject containing normalized added, removed, and changed records.
 #>
 function Compare-ReleaseManifest {
-    [CmdletBinding()]
-    [OutputType([PSCustomObject])]
-    param(
-        [Parameter(Mandatory)]
-        [ValidateNotNull()]
-        [object]$Old,
+  [CmdletBinding()]
+  [OutputType([PSCustomObject])]
+  param(
+    [Parameter(Mandatory)][ValidateNotNull()][object]$Old,
+    [Parameter(Mandatory)][ValidateNotNull()][object]$New
+  )
 
-        [Parameter(Mandatory)]
-        [ValidateNotNull()]
-        [object]$New
-    )
+  begin {
+    $fn = 'Compare-ReleaseManifest'
+    $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
 
-    begin {
-        $fn = 'Compare-ReleaseManifest'
-        $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
-
-        $ensureManifestReader = {
-            if (Get-Command -Name Get-DeployedReleaseManifest -CommandType Function -ErrorAction SilentlyContinue) {
-                return
-            }
-
-            $readerPath = Join-Path -Path $PSScriptRoot -ChildPath 'Get-DeployedReleaseManifest.ps1'
-            if (-not (Test-Path -LiteralPath $readerPath -PathType Leaf)) {
-                throw "Compare-ReleaseManifest needs Get-DeployedReleaseManifest, but '$readerPath' was not found."
-            }
-
-            . $readerPath
-        }
-
-        $resolveManifestInput = {
-            param(
-                [object]$InputObject,
-                [string]$ParameterName
-            )
-
-            if ($InputObject -is [string]) {
-                return Get-DeployedReleaseManifest -Path $InputObject
-            }
-
-            if ($InputObject -is [System.IO.FileInfo]) {
-                return Get-DeployedReleaseManifest -Path $InputObject.FullName
-            }
-
-            if ($InputObject -is [System.Management.Automation.PSCustomObject]) {
-                return $InputObject
-            }
-
-            if ($InputObject -is [System.Collections.IDictionary]) {
-                return [PSCustomObject]$InputObject
-            }
-
-            throw "Compare-ReleaseManifest -$ParameterName expects a manifest object or a path to manifest.json. Received '$($InputObject.GetType().FullName)'."
-        }
-
-        $getRequiredProperty = {
-            param(
-                [pscustomobject]$Manifest,
-                [string]$PropertyName,
-                [string]$ManifestName
-            )
-
-            $property = $Manifest.PSObject.Properties[$PropertyName]
-            if ($null -eq $property) {
-                throw "The $ManifestName manifest is missing required property '$PropertyName'."
-            }
-
-            return $property.Value
-        }
-
-        $getPackageMap = {
-            param(
-                [pscustomobject]$Manifest,
-                [string]$ManifestName
-            )
-
-            $map = @{}
-            $packages = & $getRequiredProperty $Manifest 'includedLibraryPackages' $ManifestName
-            foreach ($package in @($packages)) {
-                if ($null -eq $package) {
-                    continue
-                }
-
-                $id = [string]$package.id
-                $version = [string]$package.version
-                if ([string]::IsNullOrWhiteSpace($id) -or [string]::IsNullOrWhiteSpace($version)) {
-                    throw "The $ManifestName manifest contains an includedLibraryPackages entry without both id and version."
-                }
-
-                $map[$id] = [PSCustomObject]@{
-                    Id      = $id
-                    Version = $version
-                }
-            }
-
-            return $map
-        }
-
-        $getStringList = {
-            param(
-                [pscustomobject]$Manifest,
-                [string]$PropertyName,
-                [string]$ManifestName
-            )
-
-            $values = & $getRequiredProperty $Manifest $PropertyName $ManifestName
-            return @($values | ForEach-Object { [string]$_ })
-        }
-
-        $getChecksumMap = {
-            param(
-                [pscustomobject]$Manifest,
-                [string]$ManifestName
-            )
-
-            $map = @{}
-            $checksums = & $getRequiredProperty $Manifest 'checksums' $ManifestName
-            if ($checksums -is [System.Collections.IDictionary]) {
-                foreach ($key in $checksums.Keys) {
-                    $map[[string]$key] = [string]$checksums[$key]
-                }
-
-                return $map
-            }
-
-            foreach ($property in $checksums.PSObject.Properties) {
-                if ($property.MemberType -in 'NoteProperty', 'Property') {
-                    $map[[string]$property.Name] = [string]$property.Value
-                }
-            }
-
-            return $map
-        }
+    if (-not (Get-Command -Name Get-DeployedReleaseManifest -CommandType Function -ErrorAction SilentlyContinue)) {
+      $readerPath = Join-Path $PSScriptRoot 'Get-DeployedReleaseManifest.ps1'
+      if (-not (Test-Path -LiteralPath $readerPath -PathType Leaf)) {
+        throw "Compare-ReleaseManifest needs Get-DeployedReleaseManifest, but '$readerPath' was not found."
+      }
+      . $readerPath
     }
 
-    process {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn" -Tag 'Trace'
+    $moduleRoot = Split-Path -Parent $PSScriptRoot
+    $srcRoot = Split-Path -Parent $moduleRoot
+    $repoRoot = Split-Path -Parent $srcRoot
+    $schemaPath = Join-Path $repoRoot 'SolutionDocumentation\schemas\manifest.schema.json'
 
-        & $ensureManifestReader
+    $resolveManifest = {
+      param([object]$InputObject,[string]$Name)
+      if ($InputObject -is [string]) { $manifest = Get-DeployedReleaseManifest -Path $InputObject }
+      elseif ($InputObject -is [IO.FileInfo]) { $manifest = Get-DeployedReleaseManifest -Path $InputObject.FullName }
+      elseif ($InputObject -is [Collections.IDictionary]) { $manifest = [pscustomobject]$InputObject }
+      elseif ($InputObject -is [pscustomobject]) { $manifest = $InputObject }
+      else { throw "Compare-ReleaseManifest -$Name expects a manifest object or a path to manifest.json. Received '$($InputObject.GetType().FullName)'." }
 
-        $oldManifest = & $resolveManifestInput $Old 'Old'
-        $newManifest = & $resolveManifestInput $New 'New'
-
-        $oldPackages = & $getPackageMap $oldManifest 'Old'
-        $newPackages = & $getPackageMap $newManifest 'New'
-
-        $addedLibraryPackages = @(
-            foreach ($key in ($newPackages.Keys | Where-Object { -not $oldPackages.ContainsKey($_) } | Sort-Object)) {
-                $newPackages[$key]
-            }
-        )
-
-        $removedLibraryPackages = @(
-            foreach ($key in ($oldPackages.Keys | Where-Object { -not $newPackages.ContainsKey($_) } | Sort-Object)) {
-                $oldPackages[$key]
-            }
-        )
-
-        $changedLibraryPackages = @(
-            foreach ($key in ($oldPackages.Keys | Where-Object { $newPackages.ContainsKey($_) } | Sort-Object)) {
-                if ($oldPackages[$key].Version -ne $newPackages[$key].Version) {
-                    [PSCustomObject]@{
-                        Id         = $oldPackages[$key].Id
-                        OldVersion = $oldPackages[$key].Version
-                        NewVersion = $newPackages[$key].Version
-                    }
-                }
-            }
-        )
-
-        $oldMigrationFiles = & $getStringList $oldManifest 'migrationFiles' 'Old'
-        $newMigrationFiles = & $getStringList $newManifest 'migrationFiles' 'New'
-
-        $addedMigrationFiles = @(
-            foreach ($migrationFile in $newMigrationFiles) {
-                if ($oldMigrationFiles -notcontains $migrationFile) {
-                    $migrationFile
-                }
-            }
-        )
-
-        $removedMigrationFiles = @(
-            foreach ($migrationFile in $oldMigrationFiles) {
-                if ($newMigrationFiles -notcontains $migrationFile) {
-                    $migrationFile
-                }
-            }
-        )
-
-        $oldChecksums = & $getChecksumMap $oldManifest 'Old'
-        $newChecksums = & $getChecksumMap $newManifest 'New'
-
-        $changedChecksums = @(
-            foreach ($path in ($oldChecksums.Keys | Where-Object { $newChecksums.ContainsKey($_) } | Sort-Object)) {
-                if ($oldChecksums[$path] -ne $newChecksums[$path]) {
-                    [PSCustomObject]@{
-                        Path        = $path
-                        OldChecksum = $oldChecksums[$path]
-                        NewChecksum = $newChecksums[$path]
-                    }
-                }
-            }
-        )
-
-        $oldReleaseVersion = [string](& $getRequiredProperty $oldManifest 'releaseVersion' 'Old')
-        $newReleaseVersion = [string](& $getRequiredProperty $newManifest 'releaseVersion' 'New')
-        $differenceCount = $addedLibraryPackages.Count + $removedLibraryPackages.Count + $changedLibraryPackages.Count +
-            $addedMigrationFiles.Count + $removedMigrationFiles.Count + $changedChecksums.Count
-
-        $summary = "Compared release '$oldReleaseVersion' to '$newReleaseVersion': " +
-            "library packages +$($addedLibraryPackages.Count) -$($removedLibraryPackages.Count) ~$($changedLibraryPackages.Count); " +
-            "migration files +$($addedMigrationFiles.Count) -$($removedMigrationFiles.Count); " +
-            "checksums ~$($changedChecksums.Count)."
-
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message $summary
-
-        return [PSCustomObject]@{
-            OperationName           = 'Compare-ReleaseManifest'
-            OldReleaseVersion       = $oldReleaseVersion
-            NewReleaseVersion       = $newReleaseVersion
-            HasDifferences          = ($differenceCount -gt 0)
-            AddedLibraryPackages    = $addedLibraryPackages
-            RemovedLibraryPackages  = $removedLibraryPackages
-            ChangedLibraryPackages  = $changedLibraryPackages
-            AddedMigrationFiles     = $addedMigrationFiles
-            RemovedMigrationFiles   = $removedMigrationFiles
-            ChangedChecksums        = $changedChecksums
-            ResponseSummary         = $summary
+      if (($manifest.schemaVersion -isnot [int] -and $manifest.schemaVersion -isnot [long]) -or [long]$manifest.schemaVersion -ne 2) {
+        throw "ATAPBUILD014: $Name manifest must use numeric schemaVersion 2; ordinary v1 is rejected."
+      }
+      foreach ($legacy in @('databasePackageIncluded','dbChangeUnit','flywayTargetVersion','migrationFiles','seedDataFiles','checksums')) {
+        if ($manifest.PSObject.Properties.Name -contains $legacy) {
+          throw "ATAPBUILD015: $Name manifest contains forbidden legacy database field '$legacy'."
         }
+      }
+      try {
+        $manifestJson = $manifest | ConvertTo-Json -Depth 20
+        if (-not (Test-Json -Json $manifestJson -SchemaFile $schemaPath -ErrorAction Stop)) {
+          throw 'Test-Json returned false.'
+        }
+      } catch {
+        throw "ATAPBUILD014: $Name manifest failed canonical v2 schema validation. $($_.Exception.Message)"
+      }
+      return $manifest
     }
 
-    end {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving $fn" -Tag 'Trace'
+    $toMap = {
+      param([object[]]$Items,[string]$KeyName,[string]$Kind)
+      $map = [Collections.Generic.Dictionary[string,object]]::new([StringComparer]::OrdinalIgnoreCase)
+      foreach ($item in @($Items)) {
+        $key = [string]$item.$KeyName
+        if ([string]::IsNullOrWhiteSpace($key) -or $map.ContainsKey($key)) {
+          throw "ATAPBUILD014: $Kind contains a missing or duplicate ordinal key '$key'."
+        }
+        $map.Add($key,$item)
+      }
+      return $map
     }
+
+    $canonical = {
+      param([object]$Value)
+      $Value | ConvertTo-Json -Depth 10 -Compress
+    }
+  }
+
+  process {
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn" -Tag 'Trace'
+    $oldManifest = & $resolveManifest $Old 'Old'
+    $newManifest = & $resolveManifest $New 'New'
+
+    $oldPackages = & $toMap @($oldManifest.includedLibraryPackages) 'id' 'includedLibraryPackages'
+    $newPackages = & $toMap @($newManifest.includedLibraryPackages) 'id' 'includedLibraryPackages'
+    $addedPackages = @($newPackages.Keys | Where-Object { -not $oldPackages.ContainsKey($_) } | Sort-Object | ForEach-Object { $newPackages[$_] })
+    $removedPackages = @($oldPackages.Keys | Where-Object { -not $newPackages.ContainsKey($_) } | Sort-Object | ForEach-Object { $oldPackages[$_] })
+    $changedPackages = @($oldPackages.Keys | Where-Object { $newPackages.ContainsKey($_) -and $oldPackages[$_].version -cne $newPackages[$_].version } | Sort-Object | ForEach-Object {
+      [pscustomobject]@{Id=$_;OldVersion=$oldPackages[$_].version;NewVersion=$newPackages[$_].version}
+    })
+
+    $oldPayload = & $toMap @($oldManifest.payloadFiles) 'path' 'payloadFiles'
+    $newPayload = & $toMap @($newManifest.payloadFiles) 'path' 'payloadFiles'
+    $addedPayload = @($newPayload.Keys | Where-Object { -not $oldPayload.ContainsKey($_) } | Sort-Object | ForEach-Object { $newPayload[$_] })
+    $removedPayload = @($oldPayload.Keys | Where-Object { -not $newPayload.ContainsKey($_) } | Sort-Object | ForEach-Object { $oldPayload[$_] })
+    $changedPayload = @($oldPayload.Keys | Where-Object { $newPayload.ContainsKey($_) -and ((& $canonical $oldPayload[$_]) -cne (& $canonical $newPayload[$_])) } | Sort-Object | ForEach-Object {
+      [pscustomobject]@{Path=$_;OldChecksum=$oldPayload[$_].checksumSha256;NewChecksum=$newPayload[$_].checksumSha256;OldSizeBytes=$oldPayload[$_].sizeBytes;NewSizeBytes=$newPayload[$_].sizeBytes}
+    })
+
+    $oldComponents = & $toMap (@($oldManifest.applicationProvenance.root)+@($oldManifest.applicationProvenance.components)) 'projectPath' 'applicationProvenance'
+    $newComponents = & $toMap (@($newManifest.applicationProvenance.root)+@($newManifest.applicationProvenance.components)) 'projectPath' 'applicationProvenance'
+    $addedComponents = @($newComponents.Keys | Where-Object { -not $oldComponents.ContainsKey($_) } | Sort-Object | ForEach-Object { $newComponents[$_] })
+    $removedComponents = @($oldComponents.Keys | Where-Object { -not $newComponents.ContainsKey($_) } | Sort-Object | ForEach-Object { $oldComponents[$_] })
+    $changedComponents = @($oldComponents.Keys | Where-Object { $newComponents.ContainsKey($_) -and ((& $canonical $oldComponents[$_]) -cne (& $canonical $newComponents[$_])) } | Sort-Object | ForEach-Object {
+      [pscustomobject]@{ProjectPath=$_;Old=$oldComponents[$_];New=$newComponents[$_]}
+    })
+
+    $oldDatabase = $oldManifest.databasePackageReference
+    $newDatabase = $newManifest.databasePackageReference
+    $databaseChanged = (& $canonical $oldDatabase) -cne (& $canonical $newDatabase)
+    $differenceCount = $addedPackages.Count+$removedPackages.Count+$changedPackages.Count+$addedPayload.Count+$removedPayload.Count+$changedPayload.Count+$addedComponents.Count+$removedComponents.Count+$changedComponents.Count+[int]$databaseChanged
+    $summary = "Compared v2 release '$($oldManifest.releaseVersion)' to '$($newManifest.releaseVersion)': libraries +$($addedPackages.Count) -$($removedPackages.Count) ~$($changedPackages.Count); payload +$($addedPayload.Count) -$($removedPayload.Count) ~$($changedPayload.Count); components +$($addedComponents.Count) -$($removedComponents.Count) ~$($changedComponents.Count); database reference changed=$databaseChanged."
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message $summary
+
+    return [pscustomobject]@{
+      OperationName='Compare-ReleaseManifest';OldReleaseVersion=[string]$oldManifest.releaseVersion;NewReleaseVersion=[string]$newManifest.releaseVersion
+      HasDifferences=($differenceCount -gt 0)
+      AddedLibraryPackages=$addedPackages;RemovedLibraryPackages=$removedPackages;ChangedLibraryPackages=$changedPackages
+      AddedPayloadFiles=$addedPayload;RemovedPayloadFiles=$removedPayload;ChangedPayloadFiles=$changedPayload
+      AddedApplicationComponents=$addedComponents;RemovedApplicationComponents=$removedComponents;ChangedApplicationComponents=$changedComponents
+      DatabasePackageReferenceChanged=$databaseChanged;OldDatabasePackageReference=$oldDatabase;NewDatabasePackageReference=$newDatabase
+      ResponseSummary=$summary
+    }
+  }
+
+  end {
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving $fn" -Tag 'Trace'
+  }
 }

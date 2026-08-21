@@ -3,16 +3,14 @@
 BeforeAll {
   $moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
   $repoRoot = Split-Path -Parent (Split-Path -Parent $moduleRoot)
-  $publicDir = Join-Path $moduleRoot 'public'
-  . (Join-Path $publicDir 'New-ReleaseManifest.ps1')
+  . (Join-Path $moduleRoot 'public/New-ReleaseManifest.ps1')
 
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
   }
 
-  $script:fixtureRoot = Join-Path $moduleRoot 'tests/fixtures'
   $script:schemaPath = Join-Path $repoRoot 'SolutionDocumentation/schemas/manifest.schema.json'
-  $script:tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('NewReleaseManifestIntegration_' + [Guid]::NewGuid().ToString('N'))
+  $script:tempRoot = Join-Path ([IO.Path]::GetTempPath()) ('NewReleaseManifestIntegration_' + [Guid]::NewGuid().ToString('N'))
   New-Item -ItemType Directory -Path $script:tempRoot -Force | Out-Null
 }
 
@@ -22,47 +20,82 @@ AfterAll {
   }
 }
 
-Describe 'New-ReleaseManifest integration fixture' -Tag 'Integration', 'PromotedModuleHostSensitive' {
-  It 'Generates a schema-valid manifest for tests/fixtures/db/sample/releases/0.0.1.yml' {
+Describe 'New-ReleaseManifest v2 integration fixture' -Tag 'Integration' {
+  It 'generates byte-identical schema-valid manifests without database payload or sidecar' {
     $context = [PSCustomObject]@{
-      Application            = 'sample'
-      RepoRoot               = $script:fixtureRoot
-      SourceTag              = 'v0.0.1'
-      SourceCommit           = '0123456789abcdef0123456789abcdef01234567'
-      Branch                 = 'release/0.0.1'
-      ResolvedPackageVersion = '0.0.1'
-      MajorMinorPatch        = '0.0.1'
-      BuildUtc               = '2026-05-11T12:00:00Z'
-      BuildAgent             = 'utat022'
-      ManifestSchemaPath     = $script:schemaPath
+      RepoRoot = $repoRoot
+      ResolvedPackageVersion = '1.4.0'
+      SourceTag = 'v1.4.0'
+      SourceCommit = '0123456789abcdef0123456789abcdef01234567'
+      Branch = 'release/1.4.0'
+      BuildUtc = '2026-08-20T12:00:00Z'
+      BuildAgent = 'utat022'
+      ManifestSchemaPath = $script:schemaPath
+      ApplicationProvenance = [PSCustomObject]@{
+        ProductId = 'AceCommander'
+        Root = [PSCustomObject]@{
+          Id = 'AceCommander.Server'
+          Version = '1.4.1'
+          QualityTier = 'Production'
+          ProjectPath = 'src/AceCommander.Server/AceCommander.Server.csproj'
+        }
+        Components = @(
+          [PSCustomObject]@{ Id = 'AceCommander.Client'; Version = '1.4.7'; QualityTier = 'Production'; ProjectPath = 'src/AceCommander.Client/AceCommander.Client.csproj' },
+          [PSCustomObject]@{ Id = 'AceCommon'; Version = '3.0.0'; QualityTier = 'Production'; ProjectPath = 'src/AceCommon/AceCommon.csproj' }
+        )
+        ArtifactKind = 'HostedWebApplication'
+        Configuration = 'Release'
+        TargetFramework = 'net10.0'
+        RuntimeIdentifier = $null
+        PublishSettings = [PSCustomObject]@{
+          SelfContained = $false
+          PublishSingleFile = $false
+          PublishTrimmed = $false
+          UseAppHost = $false
+        }
+      }
+      IncludedLibraryPackages = @([PSCustomObject]@{ id = 'ATAP.Utilities.Philote'; version = '1.2.3' })
+      IncludedPowerShellModules = @()
+      DatabasePackageReference = [PSCustomObject]@{
+        Id = 'AceCommander.Database'
+        CompatibleVersionRange = '[1.3.0,1.5.0)'
+        PinnedVersion = '1.4.0'
+        LifecycleCeiling = 'database-stable'
+      }
+      PayloadFiles = @(
+        [PSCustomObject]@{ path = 'tests/server.trx'; checksumSha256 = ('c' * 64); sizeBytes = 1024 },
+        [PSCustomObject]@{ path = 'installer/Install-Application.ps1'; checksumSha256 = ('b' * 64); sizeBytes = 512 },
+        [PSCustomObject]@{ path = 'app/AceCommander.Server.dll'; checksumSha256 = ('a' * 64); sizeBytes = 4096 }
+      )
+      InstallerScripts = @('installer/Install-Application.ps1')
+      TestEvidence = @([PSCustomObject]@{ kind = 'xunit'; path = 'tests/server.trx'; checksumSha256 = ('c' * 64) })
+      Compatibility = [PSCustomObject]@{
+        OsFamilies = @('windows')
+        RuntimeIdentifiers = @()
+        DotnetRuntimeVersion = '10.0'
+      }
+      Rollback = [PSCustomObject]@{
+        Supported = $false
+        Notes = 'Restore the preceding immutable application bundle.'
+      }
     }
 
-    $result = New-ReleaseManifest -Context $context -OutputPath $script:tempRoot
-    $manifest = Get-Content -LiteralPath $result.FullName -Raw | ConvertFrom-Json
-    $dbManifestPath = Join-Path (Split-Path -Parent $result.FullName) 'db-manifest.json'
-    $dbManifestSchemaPath = Join-Path (Split-Path -Parent $script:schemaPath) 'db-manifest.schema.json'
+    $first = New-ReleaseManifest -Context $context -OutputPath (Join-Path $script:tempRoot 'first')
+    $second = New-ReleaseManifest -Context $context -OutputPath (Join-Path $script:tempRoot 'second')
+    $firstJson = [IO.File]::ReadAllText($first.FullName)
+    $manifest = $firstJson | ConvertFrom-Json
 
-    $result.Name | Should -Be 'manifest.json'
-    $manifest.dbChangeUnit | Should -Be 'sample-db-0.0.1'
-    $manifest.flywayTargetVersion | Should -Be '0.0.1'
-    $manifest.migrationFiles | Should -Be @(
-      'db/flyway/V0.0.1__baseline.sql',
-      'db/flyway/R__views.sql'
+    Test-Json -Json $firstJson -SchemaFile $script:schemaPath | Should -BeTrue
+    [IO.File]::ReadAllBytes($first.FullName) | Should -Be ([IO.File]::ReadAllBytes($second.FullName))
+    $manifest.schemaVersion | Should -Be 2
+    $manifest.payloadFiles.path | Should -Be @(
+      'app/AceCommander.Server.dll',
+      'installer/Install-Application.ps1',
+      'tests/server.trx'
     )
-    $manifest.seedFiles | Should -Be @('db/seed/S0_0_1_roles.csv')
-    $manifest.seedLoaderScripts | Should -Be @(
-      'db/seed/S0_0_1_roles_load.sql',
-      'db/seed/R__seed_lookup.sql'
-    )
-
-    $expectedMigrationHash = (Get-FileHash -LiteralPath (Join-Path $script:fixtureRoot 'db/sample/flyway/V0.0.1__baseline.sql') -Algorithm SHA256).Hash.ToLowerInvariant()
-    $manifest.checksums.'db/flyway/V0.0.1__baseline.sql' | Should -Be "sha256:$expectedMigrationHash"
-
-    $json = Get-Content -LiteralPath $result.FullName -Raw
-    Test-Json -Json $json -SchemaFile $script:schemaPath | Should -BeTrue
-
-    Test-Path -LiteralPath $dbManifestPath -PathType Leaf | Should -BeTrue
-    $dbManifestJson = Get-Content -LiteralPath $dbManifestPath -Raw
-    Test-Json -Json $dbManifestJson -SchemaFile $dbManifestSchemaPath | Should -BeTrue
+    $manifest.PSObject.Properties.Name | Should -Not -Contain 'migrationFiles'
+    $manifest.PSObject.Properties.Name | Should -Not -Contain 'checksums'
+    Test-Path (Join-Path $first.DirectoryName 'db-manifest.json') | Should -BeFalse
+    Test-Path (Join-Path $second.DirectoryName 'db-manifest.json') | Should -BeFalse
   }
 }

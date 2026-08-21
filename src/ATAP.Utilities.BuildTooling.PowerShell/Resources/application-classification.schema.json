@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atap.dev/schemas/application-classification.schema.json",
+  "title": "ATAP application classification manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "repository", "applications"],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "repository": { "type": "string", "minLength": 1 },
+    "applications": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/application" }
+    }
+  },
+  "$defs": {
+    "application": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projectPath", "classification", "shipping", "componentOf", "qualityTier"],
+      "properties": {
+        "projectPath": { "type": "string", "minLength": 1 },
+        "classification": {
+          "enum": [
+            "ShippingRoot", "ShippingComponent", "NonshippingApplicationCandidate",
+            "NonshippingSample", "TestFixtureExecutable"
+          ]
+        },
+        "shipping": { "type": "boolean" },
+        "componentOf": { "type": ["string", "null"] },
+        "qualityTier": { "const": "Production" },
+        "publish": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "configuration", "targetFramework", "runtimeIdentifier", "selfContained",
+            "publishSingleFile", "publishTrimmed", "useAppHost", "independentComponentPublish"
+          ],
+          "properties": {
+            "configuration": { "const": "Release" },
+            "targetFramework": { "const": "net10.0" },
+            "runtimeIdentifier": { "type": "null" },
+            "selfContained": { "const": false },
+            "publishSingleFile": { "const": false },
+            "publishTrimmed": { "const": false },
+            "useAppHost": { "const": false },
+            "independentComponentPublish": { "const": false }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,239 +1,206 @@
 #Requires -Version 7.0
-# Pester 5+ tests for New-ReleaseManifest (Stream I1).
 
 BeforeAll {
   $moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-  $publicDir = Join-Path $moduleRoot 'public'
-  . (Join-Path $publicDir 'New-ReleaseManifest.ps1')
+  . (Join-Path $moduleRoot 'public/New-ReleaseManifest.ps1')
 
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
   }
 
-  if (-not (Get-Command ConvertFrom-Yaml -ErrorAction SilentlyContinue)) {
-    function global:ConvertFrom-Yaml {
-      param([Parameter(ValueFromRemainingArguments = $true)]$args)
-      throw 'ConvertFrom-Yaml test stub must be mocked before use.'
-    }
-    $script:createdConvertFromYamlStub = $true
-  }
-
-  $script:tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('NewReleaseManifestUnit_' + [Guid]::NewGuid().ToString('N'))
-  New-Item -ItemType Directory -Path $script:tempRoot -Force | Out-Null
+  $script:tempRoot = Join-Path ([IO.Path]::GetTempPath()) ('NewReleaseManifestUnit_' + [Guid]::NewGuid().ToString('N'))
   $script:repoRoot = Join-Path $script:tempRoot 'repo'
   New-Item -ItemType Directory -Path $script:repoRoot -Force | Out-Null
-  $script:outputRoot = Join-Path $script:tempRoot 'out'
-  $script:ymlPath = Join-Path $script:repoRoot 'db/sample/releases/0.0.1.yml'
 
-  $script:baseContext = [PSCustomObject]@{
-    Application            = 'sample'
-    RepoRoot               = $script:repoRoot
-    SourceTag              = 'v0.0.1'
-    SourceCommit           = '0123456789abcdef0123456789abcdef01234567'
-    Branch                 = 'release/0.0.1'
-    ResolvedPackageVersion = '0.0.1'
-    MajorMinorPatch        = '0.0.1'
-    BuildUtc               = '2026-05-11T12:00:00Z'
-    BuildAgent             = 'utat022'
+  function New-TestContext {
+    [PSCustomObject]@{
+      RepoRoot = $script:repoRoot
+      ResolvedPackageVersion = '1.2.3'
+      SourceTag = 'v1.2.3'
+      SourceCommit = '0123456789ABCDEF0123456789ABCDEF01234567'
+      Branch = 'release/1.2.3'
+      BuildUtc = '2026-08-20T12:00:00Z'
+      BuildAgent = 'utat022'
+      ApplicationProvenance = [PSCustomObject]@{
+        ProductId = 'AceCommander'
+        Root = [PSCustomObject]@{
+          Id = 'AceCommander.Server'
+          Version = '1.4.1'
+          QualityTier = 'Production'
+          ProjectPath = 'src/AceCommander.Server/AceCommander.Server.csproj'
+        }
+        Components = @(
+          [PSCustomObject]@{ Id = 'AceCommander.Client'; Version = '1.4.7'; QualityTier = 'Production'; ProjectPath = 'src/AceCommander.Client/AceCommander.Client.csproj' },
+          [PSCustomObject]@{ Id = 'AceCommon'; Version = '3.0.0'; QualityTier = 'Production'; ProjectPath = 'src/AceCommon/AceCommon.csproj' }
+        )
+        ArtifactKind = 'HostedWebApplication'
+        Configuration = 'Release'
+        TargetFramework = 'net10.0'
+        RuntimeIdentifier = $null
+        PublishSettings = [PSCustomObject]@{
+          SelfContained = $false
+          PublishSingleFile = $false
+          PublishTrimmed = $false
+          UseAppHost = $false
+        }
+      }
+      IncludedLibraryPackages = @(
+        [PSCustomObject]@{ id = 'Zulu.Package'; version = '2.0.0' },
+        [PSCustomObject]@{ id = 'Alpha.Package'; version = '1.0.0' }
+      )
+      IncludedPowerShellModules = @([PSCustomObject]@{ id = 'ATAP.Utilities.PowerShell'; version = '3.0.0' })
+      DatabasePackageReference = [PSCustomObject]@{
+        Id = 'AceCommander.Database'
+        CompatibleVersionRange = '[1.2.0,1.3.0)'
+        PinnedVersion = '1.2.1'
+        LifecycleCeiling = 'database-stable'
+      }
+      PayloadFiles = @(
+        [PSCustomObject]@{ path = 'tests/server.trx'; checksumSha256 = ('c' * 64); sizeBytes = 1024 },
+        [PSCustomObject]@{ path = 'installer/Install-Application.ps1'; checksumSha256 = ('b' * 64); sizeBytes = 512 },
+        [PSCustomObject]@{ path = 'app/AceCommander.Server.dll'; checksumSha256 = ('a' * 64); sizeBytes = 4096 }
+      )
+      InstallerScripts = @('installer/Install-Application.ps1')
+      TestEvidence = @([PSCustomObject]@{ kind = 'xunit'; path = 'tests/server.trx'; checksumSha256 = ('c' * 64) })
+      Compatibility = [PSCustomObject]@{
+        OsFamilies = @('windows')
+        RuntimeIdentifiers = @()
+        DotnetRuntimeVersion = '10.0'
+      }
+      Rollback = [PSCustomObject]@{
+        Supported = $false
+        Notes = 'Restore the preceding immutable application bundle.'
+      }
+    }
   }
-
-  $script:yaml = @'
-appVersion: 0.0.1
-dbChangeUnit: sample-db-0.0.1
-flywayTargetVersion: 0.0.2
-migrations:
-  - V0.0.1__baseline.sql
-repeatables:
-  - R__views.sql
-seedFiles:
-  - S0_0_1_roles.csv
-seedLoaders:
-  - S0_0_1_roles_load.sql
-  - R__seed_lookup.sql
-expectedRowCounts:
-  Roles: 3
-notes: |
-  Unit fixture.
-'@
 }
 
 AfterAll {
   if ($script:tempRoot -and (Test-Path -LiteralPath $script:tempRoot)) {
     Remove-Item -LiteralPath $script:tempRoot -Recurse -Force -ErrorAction SilentlyContinue
   }
-  if ($script:createdConvertFromYamlStub) {
-    Remove-Item Function:\ConvertFrom-Yaml -ErrorAction SilentlyContinue
-  }
 }
 
-Describe 'New-ReleaseManifest' -Tag 'Unit', 'PromotedModuleHostSensitive' {
+Describe 'New-ReleaseManifest v2' -Tag 'Unit' {
   BeforeEach {
-    if (Test-Path -LiteralPath $script:outputRoot) {
-      Remove-Item -LiteralPath $script:outputRoot -Recurse -Force -ErrorAction SilentlyContinue
+    Get-ChildItem -LiteralPath $script:tempRoot -Directory -ErrorAction SilentlyContinue |
+      Where-Object { $_.Name -ne 'repo' } |
+      Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+  }
+
+  It 'emits schema v2 with exact application provenance and separate database reference' {
+    $result = New-ReleaseManifest -Context (New-TestContext) -OutputPath (Join-Path $script:tempRoot 'one')
+    $manifest = [IO.File]::ReadAllText($result.FullName) | ConvertFrom-Json
+
+    $manifest.schemaVersion | Should -Be 2
+    $manifest.applicationProvenance.productId | Should -Be 'AceCommander'
+    $manifest.releaseVersion | Should -Be '1.2.3'
+    $manifest.applicationProvenance.root.id | Should -Be 'AceCommander.Server'
+    $manifest.applicationProvenance.root.version | Should -Be '1.4.1'
+    $manifest.applicationProvenance.root.qualityTier | Should -Be 'Production'
+    $manifest.applicationProvenance.root.projectPath | Should -Be 'src/AceCommander.Server/AceCommander.Server.csproj'
+    $manifest.applicationProvenance.components.projectPath | Should -Be @('src/AceCommander.Client/AceCommander.Client.csproj', 'src/AceCommon/AceCommon.csproj')
+    $manifest.applicationProvenance.components.version | Should -Be @('1.4.7', '3.0.0')
+    $manifest.applicationProvenance.runtimeIdentifier | Should -BeNullOrEmpty
+    $manifest.applicationProvenance.publishSettings.selfContained | Should -BeFalse
+    $manifest.databasePackageReference.id | Should -Be 'AceCommander.Database'
+    $manifest.databasePackageReference.compatibleVersionRange | Should -Be '[1.2.0,1.3.0)'
+    $manifest.databasePackageReference.pinnedVersion | Should -Be '1.2.1'
+    $manifest.databasePackageReference.lifecycleCeiling | Should -Be 'database-stable'
+  }
+
+  It 'writes byte-identical output and deterministically sorts provenance and payloads' {
+    $first = New-ReleaseManifest -Context (New-TestContext) -OutputPath (Join-Path $script:tempRoot 'first')
+    $second = New-ReleaseManifest -Context (New-TestContext) -OutputPath (Join-Path $script:tempRoot 'second')
+
+    [IO.File]::ReadAllBytes($first.FullName) | Should -Be ([IO.File]::ReadAllBytes($second.FullName))
+    $manifest = [IO.File]::ReadAllText($first.FullName) | ConvertFrom-Json
+    $manifest.payloadFiles.path | Should -Be @(
+      'app/AceCommander.Server.dll',
+      'installer/Install-Application.ps1',
+      'tests/server.trx'
+    )
+    $manifest.includedLibraryPackages.id | Should -Be @('Alpha.Package', 'Zulu.Package')
+  }
+
+  It 'uses only payloadFiles path checksumSha256 and sizeBytes evidence' {
+    $result = New-ReleaseManifest -Context (New-TestContext) -OutputPath (Join-Path $script:tempRoot 'shape')
+    $manifest = [IO.File]::ReadAllText($result.FullName) | ConvertFrom-Json
+
+    $manifest.payloadFiles[0].PSObject.Properties.Name | Should -Be @('path', 'checksumSha256', 'sizeBytes')
+    $manifest.PSObject.Properties.Name | Should -Not -Contain 'checksums'
+    $manifest.PSObject.Properties.Name | Should -Not -Contain 'migrationFiles'
+    $manifest.PSObject.Properties.Name | Should -Not -Contain 'seedFiles'
+    $manifest.PSObject.Properties.Name | Should -Not -Contain 'databasePackageIncluded'
+    Test-Path (Join-Path $result.DirectoryName 'db-manifest.json') | Should -BeFalse
+  }
+
+  It 'rejects embedded database payloads and case-colliding paths' {
+    $dbContext = New-TestContext
+    $dbContext.PayloadFiles[0].path = 'db/flyway/V1__legacy.sql'
+    { New-ReleaseManifest -Context $dbContext -OutputPath (Join-Path $script:tempRoot 'db') } |
+      Should -Throw -ExpectedMessage '*forbidden embedded database payload*'
+
+    $collisionContext = New-TestContext
+    $collisionContext.PayloadFiles += [PSCustomObject]@{
+      path = 'APP/AceCommander.Server.dll'
+      checksumSha256 = ('d' * 64)
+      sizeBytes = 4096
     }
-
-    Mock Get-Command -ParameterFilter { $Name -eq 'ConvertFrom-Yaml' } -MockWith { $null }
-    Mock ConvertFrom-Yaml -MockWith { throw 'ConvertFrom-Yaml should not be used by simple-parser tests.' }
-    Mock Get-Content -ParameterFilter { $LiteralPath -eq $script:ymlPath -and $Raw } -MockWith { $script:yaml }
-    Mock Test-Path -ParameterFilter { $LiteralPath -eq $script:ymlPath -and $PathType -eq 'Leaf' } -MockWith { $true }
-    Mock Test-Path -ParameterFilter { [string]$LiteralPath -like '*SolutionDocumentation*manifest.schema.json' -and $PathType -eq 'Leaf' } -MockWith { $false }
-    Mock Test-Path -ParameterFilter { [string]$LiteralPath -like '*db*sample*flyway*' -and $PathType -eq 'Leaf' } -MockWith { $true }
-    Mock Test-Path -ParameterFilter { [string]$LiteralPath -like '*db*sample*seed*' -and $PathType -eq 'Leaf' } -MockWith { $true }
-    Mock Get-FileHash -MockWith {
-      param($LiteralPath, $Algorithm)
-      $leaf = Split-Path -Leaf $LiteralPath
-      $hashChar = switch -Regex ($leaf) {
-        '^V' { 'a'; break }
-        '^R__views' { 'b'; break }
-        '^S.*\.csv$' { 'c'; break }
-        '_load\.sql$' { 'd'; break }
-        default { 'e' }
-      }
-      [PSCustomObject]@{ Hash = ($hashChar * 64) }
-    }
+    { New-ReleaseManifest -Context $collisionContext -OutputPath (Join-Path $script:tempRoot 'collision') } |
+      Should -Throw -ExpectedMessage '*duplicate or case-colliding*'
   }
 
-  It 'Writes manifest.json to the default generated path and returns FileInfo' {
-    $result = New-ReleaseManifest -Context $script:baseContext -YamlParserMode Simple
+  It 'rejects invalid or ambiguous component provenance' {
+    $context = New-TestContext
+    $context.ApplicationProvenance.Components[0].ProjectPath = 'src\AceCommander.Client\AceCommander.Client.csproj'
+    { New-ReleaseManifest -Context $context -OutputPath (Join-Path $script:tempRoot 'backslash') } |
+      Should -Throw -ExpectedMessage '*must use forward slashes*'
 
-    $result | Should -BeOfType ([System.IO.FileInfo])
-    $result.FullName | Should -Be (Join-Path $script:repoRoot '_generated/release-manifest/0.0.1/manifest.json')
-    Test-Path -LiteralPath $result.FullName -PathType Leaf | Should -BeTrue
+    $context = New-TestContext
+    $context.ApplicationProvenance.Components[1].Id = 'acecommander.client'
+    { New-ReleaseManifest -Context $context -OutputPath (Join-Path $script:tempRoot 'duplicate-id') } |
+      Should -Throw -ExpectedMessage '*duplicate id*'
+
+    $context = New-TestContext
+    $context.ApplicationProvenance.Components[1].ProjectPath = 'SRC/ACECOMMANDER.CLIENT/ACECOMMANDER.CLIENT.CSPROJ'
+    { New-ReleaseManifest -Context $context -OutputPath (Join-Path $script:tempRoot 'duplicate-path') } |
+      Should -Throw -ExpectedMessage '*case-colliding projectPath*'
+  }
+  It 'fails closed when deterministic or provenance inputs are implicit' {
+    $context = New-TestContext
+    $context.PSObject.Properties.Remove('BuildUtc')
+    { New-ReleaseManifest -Context $context -OutputPath (Join-Path $script:tempRoot 'missing-time') } |
+      Should -Throw -ExpectedMessage "*missing required field 'BuildUtc'*"
+
+    $context = New-TestContext
+    $context.BuildUtc = '2026-08-20T12:00:00'
+    { New-ReleaseManifest -Context $context -OutputPath (Join-Path $script:tempRoot 'implicit-utc') } |
+      Should -Throw -ExpectedMessage '*explicit UTC date-time*'
+
+    $context = New-TestContext
+    $context.ApplicationProvenance.PSObject.Properties.Remove('RuntimeIdentifier')
+    { New-ReleaseManifest -Context $context -OutputPath (Join-Path $script:tempRoot 'missing-rid') } |
+      Should -Throw -ExpectedMessage "*use null for a RID-less publish*"
   }
 
-  It 'Parses the documented simple YAML shape without ConvertFrom-Yaml and emits required fields' {
-    $result = New-ReleaseManifest -Context $script:baseContext -OutputPath $script:outputRoot -YamlParserMode Simple
-    $manifest = [System.IO.File]::ReadAllText($result.FullName) | ConvertFrom-Json
+  It 'rejects installer and evidence references absent from payloadFiles' {
+    $context = New-TestContext
+    $context.InstallerScripts = @('installer/NotShipped.ps1')
+    { New-ReleaseManifest -Context $context -OutputPath (Join-Path $script:tempRoot 'installer') } |
+      Should -Throw -ExpectedMessage "*not present in PayloadFiles*"
 
-    $manifest.schemaVersion | Should -Be 1
-    $manifest.releaseVersion | Should -Be '0.0.1'
-    $manifest.sourceTag | Should -Be 'v0.0.1'
-    $manifest.sourceCommit | Should -Be '0123456789abcdef0123456789abcdef01234567'
-    $manifest.sourceBranch | Should -Be 'release/0.0.1'
-    $manifest.appPackageId | Should -Be 'sample'
-    $manifest.databasePackageIncluded | Should -BeTrue
-    $manifest.dbChangeUnit | Should -Be 'sample-db-0.0.1'
-    $manifest.flywayTargetVersion | Should -Be '0.0.2'
-    $manifest.migrationFiles | Should -Contain 'db/flyway/V0.0.1__baseline.sql'
-    $manifest.migrationFiles | Should -Contain 'db/flyway/R__views.sql'
-    $manifest.seedFiles | Should -Contain 'db/seed/S0_0_1_roles.csv'
-    $manifest.seedLoaderScripts | Should -Contain 'db/seed/S0_0_1_roles_load.sql'
-    $manifest.installerScripts.Count | Should -BeGreaterThan 0
-    $manifest.testEvidence.Count | Should -BeGreaterThan 0
-    $manifest.compatibility.requiredDotnet | Should -Be '10.0'
-    $manifest.rollback.supported | Should -BeFalse
+    $context = New-TestContext
+    $context.TestEvidence[0].path = 'tests/not-shipped.trx'
+    { New-ReleaseManifest -Context $context -OutputPath (Join-Path $script:tempRoot 'evidence') } |
+      Should -Throw -ExpectedMessage "*not present in PayloadFiles*"
   }
 
-  It 'Computes sha256-prefixed checksums for every referenced DB file' {
-    $result = New-ReleaseManifest -Context $script:baseContext -OutputPath $script:outputRoot -YamlParserMode Simple
-    $manifest = [System.IO.File]::ReadAllText($result.FullName) | ConvertFrom-Json
+  It 'honors WhatIf without writing output' {
+    $path = Join-Path $script:tempRoot 'whatif'
+    $result = New-ReleaseManifest -Context (New-TestContext) -OutputPath $path -WhatIf
 
-    $manifest.checksums.'db/flyway/V0.0.1__baseline.sql' | Should -Be ('sha256:' + ('a' * 64))
-    $manifest.checksums.'db/flyway/R__views.sql' | Should -Be ('sha256:' + ('b' * 64))
-    $manifest.checksums.'db/seed/S0_0_1_roles.csv' | Should -Be ('sha256:' + ('c' * 64))
-    $manifest.checksums.'db/seed/S0_0_1_roles_load.sql' | Should -Be ('sha256:' + ('d' * 64))
-    $manifest.checksums.'db/seed/R__seed_lookup.sql' | Should -Be ('sha256:' + ('e' * 64))
-    Assert-MockCalled Get-FileHash -Times 5 -Exactly -Scope It
-  }
-
-  It 'Writes a DB sub-manifest sidecar for bundle assembly' {
-    $result = New-ReleaseManifest -Context $script:baseContext -OutputPath $script:outputRoot -YamlParserMode Simple
-    $dbManifestPath = Join-Path (Split-Path -Parent $result.FullName) 'db-manifest.json'
-    $dbManifest = [System.IO.File]::ReadAllText($dbManifestPath) | ConvertFrom-Json
-
-    Test-Path -LiteralPath $dbManifestPath -PathType Leaf | Should -BeTrue
-    $dbManifest.schemaVersion | Should -Be 1
-    $dbManifest.dbChangeUnit | Should -Be 'sample-db-0.0.1'
-    $dbManifest.files.path | Should -Contain 'flyway/V0.0.1__baseline.sql'
-    $dbManifest.files.path | Should -Contain 'flyway/R__views.sql'
-    $dbManifest.files.kind | Should -Contain 'repeatable'
-    $dbManifest.files.path | Should -Contain 'seed/S0_0_1_roles_load.sql'
-    $dbManifest.expectedRowCounts.Roles | Should -Be 3
-  }
-
-  It 'Throws clearly when the DB release YAML is absent' {
-    Mock Test-Path -ParameterFilter { $LiteralPath -eq $script:ymlPath -and $PathType -eq 'Leaf' } -MockWith { $false }
-
-    { New-ReleaseManifest -Context $script:baseContext -OutputPath $script:outputRoot -YamlParserMode Simple } |
-      Should -Throw -ExpectedMessage '*DB release YAML not found*Database-Change-Unit-and-Flyway-Promotion.md section 2*'
-  }
-
-  It 'Throws clearly when a documented YAML field is missing' {
-    Mock Get-Content -ParameterFilter { $LiteralPath -eq $script:ymlPath -and $Raw } -MockWith {
-      $script:yaml -replace 'flywayTargetVersion: 0\.0\.2\r?\n', ''
-    }
-
-    { New-ReleaseManifest -Context $script:baseContext -OutputPath $script:outputRoot -YamlParserMode Simple } |
-      Should -Throw -ExpectedMessage "*missing required field 'flywayTargetVersion'*"
-  }
-
-  It 'Uses ConvertFrom-Yaml when it is available' {
-    Mock Get-Command -ParameterFilter { $Name -eq 'ConvertFrom-Yaml' } -MockWith { [PSCustomObject]@{ Name = 'ConvertFrom-Yaml' } }
-    Mock ConvertFrom-Yaml -MockWith {
-      [PSCustomObject]@{
-        appVersion          = '0.0.1'
-        dbChangeUnit        = 'sample-db-0.0.1'
-        flywayTargetVersion = '0.0.2'
-        migrations          = @('V0.0.1__baseline.sql')
-        repeatables         = @('R__views.sql')
-        seedFiles           = @('S0_0_1_roles.csv')
-        seedLoaders         = @('S0_0_1_roles_load.sql')
-        expectedRowCounts   = @{ Roles = 3 }
-        notes               = 'from mock parser'
-      }
-    }
-
-    New-ReleaseManifest -Context $script:baseContext -OutputPath $script:outputRoot -YamlParserMode Command | Out-Null
-
-    Assert-MockCalled ConvertFrom-Yaml -Times 1 -Exactly -Scope It
-  }
-
-  It 'Allows Context to override dependencies, test evidence, installer, compatibility, and rollback fields' {
-    $ctx = $script:baseContext.PSObject.Copy()
-    $ctx | Add-Member -NotePropertyName IncludedLibraryPackages -NotePropertyValue @([PSCustomObject]@{ id = 'ATAP.Utilities.Philote'; version = '1.2.3' })
-    $ctx | Add-Member -NotePropertyName IncludedPowerShellModules -NotePropertyValue @([PSCustomObject]@{ id = 'ATAP.Utilities.FileIO.PowerShell'; version = '2.3.4' })
-    $ctx | Add-Member -NotePropertyName InstallerScripts -NotePropertyValue @('installer/CustomInstall.ps1')
-    $ctx | Add-Member -NotePropertyName TestEvidence -NotePropertyValue @([PSCustomObject]@{ kind = 'unit'; path = 'tests/unit.trx'; checksumSha256 = ('f' * 64) })
-    $ctx | Add-Member -NotePropertyName Compatibility -NotePropertyValue ([PSCustomObject]@{
-        minDbVersion   = '0.0.0'
-        maxDbVersion   = '0.0.2'
-        supportedOs    = @('Windows 11')
-        requiredDotnet = '9.0'
-      })
-    $ctx | Add-Member -NotePropertyName Rollback -NotePropertyValue ([PSCustomObject]@{
-        supported = $true
-        notes     = 'Custom rollback path is documented.'
-      })
-
-    $result = New-ReleaseManifest -Context $ctx -OutputPath $script:outputRoot -YamlParserMode Simple
-    $manifest = [System.IO.File]::ReadAllText($result.FullName) | ConvertFrom-Json
-
-    $manifest.includedLibraryPackages[0].id | Should -Be 'ATAP.Utilities.Philote'
-    $manifest.includedPowerShellModules[0].version | Should -Be '2.3.4'
-    $manifest.installerScripts | Should -Be @('installer/CustomInstall.ps1')
-    $manifest.testEvidence[0].checksumSha256 | Should -Be ('f' * 64)
-    $manifest.compatibility.requiredDotnet | Should -Be '9.0'
-    $manifest.compatibility.supportedOs | Should -Be @('Windows 11')
-    $manifest.rollback.supported | Should -BeTrue
-    $manifest.rollback.notes | Should -Be 'Custom rollback path is documented.'
-  }
-
-  It 'Validates generated JSON with Test-Json when the schema exists' {
-    $schemaPath = Join-Path $script:repoRoot 'SolutionDocumentation/schemas/manifest.schema.json'
-    Mock Test-Path -ParameterFilter { $LiteralPath -eq $schemaPath -and $PathType -eq 'Leaf' } -MockWith { $true }
-    Mock Test-Json -ParameterFilter { $SchemaFile -eq $schemaPath } -MockWith { $true }
-
-    New-ReleaseManifest -Context $script:baseContext -OutputPath $script:outputRoot -YamlParserMode Simple | Out-Null
-
-    Assert-MockCalled Test-Json -Times 1 -Exactly -Scope It -ParameterFilter { $SchemaFile -eq $schemaPath }
-  }
-
-  It 'Throws when schema validation fails' {
-    $schemaPath = Join-Path $script:repoRoot 'SolutionDocumentation/schemas/manifest.schema.json'
-    Mock Test-Path -ParameterFilter { $LiteralPath -eq $schemaPath -and $PathType -eq 'Leaf' } -MockWith { $true }
-    Mock Test-Json -ParameterFilter { $SchemaFile -eq $schemaPath } -MockWith { $false }
-
-    { New-ReleaseManifest -Context $script:baseContext -OutputPath $script:outputRoot -YamlParserMode Simple } |
-      Should -Throw -ExpectedMessage '*does not validate against schema*'
+    $result | Should -BeNullOrEmpty
+    Test-Path -LiteralPath $path | Should -BeFalse
   }
 }

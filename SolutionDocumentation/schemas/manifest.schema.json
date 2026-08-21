@@ -1,217 +1,136 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://atap.example.com/schemas/manifest/v1.json",
-  "title": "ATAP Release Bundle manifest",
-  "description": "Schema for the top-level manifest.json contained in a Release Bundle.",
+  "$id": "https://atap.example.com/schemas/manifest/v2.json",
+  "title": "ATAP ReleaseBundle manifest v2",
+  "description": "Deterministic application ReleaseBundle manifest. Database packages are referenced, never embedded.",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schemaVersion",
-    "releaseVersion",
-    "sourceTag",
-    "sourceCommit",
-    "sourceBranch",
-    "buildUtc",
-    "buildAgent",
-    "appPackageId",
-    "appPackageVersion",
-    "includedLibraryPackages",
-    "includedPowerShellModules",
-    "databasePackageIncluded",
-    "dbChangeUnit",
-    "flywayTargetVersion",
-    "migrationFiles",
-    "seedFiles",
-    "seedLoaderScripts",
-    "installerScripts",
-    "testEvidence",
-    "checksums",
-    "compatibility",
-    "rollback"
+    "schemaVersion", "releaseVersion", "sourceTag", "sourceCommit", "sourceBranch",
+    "buildUtc", "buildAgent", "applicationProvenance", "includedLibraryPackages",
+    "includedPowerShellModules", "databasePackageReference", "payloadFiles",
+    "installerScripts", "testEvidence", "compatibility", "rollback"
   ],
   "properties": {
-    "schemaVersion": {
-      "type": "integer",
-      "const": 1,
-      "description": "Format version of this manifest schema."
+    "schemaVersion": { "type": "integer", "const": 2 },
+    "releaseVersion": { "$ref": "#/$defs/semVerString" },
+    "sourceTag": { "$ref": "#/$defs/nonEmptyToken" },
+    "sourceCommit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "sourceBranch": { "type": "string", "pattern": "^release/[^\\s]+$" },
+    "buildUtc": { "type": "string", "format": "date-time", "pattern": "Z$" },
+    "buildAgent": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9.-]*$" },
+    "applicationProvenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "productId", "root", "components", "artifactKind", "configuration",
+        "targetFramework", "runtimeIdentifier", "publishSettings"
+      ],
+      "properties": {
+        "productId": { "$ref": "#/$defs/packageId" },
+        "root": { "$ref": "#/$defs/applicationComponent" },
+        "components": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/applicationComponent" }
+        },
+        "artifactKind": { "enum": ["HostedWebApplication", "WindowsApplicationOrService"] },
+        "configuration": { "$ref": "#/$defs/nonEmptyToken" },
+        "targetFramework": { "type": "string", "pattern": "^net[0-9]+\\.[0-9]+(?:-[A-Za-z0-9.-]+)?$" },
+        "runtimeIdentifier": {
+          "oneOf": [
+            { "type": "null" },
+            { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)+$" }
+          ]
+        },
+        "publishSettings": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["selfContained", "publishSingleFile", "publishTrimmed", "useAppHost"],
+          "properties": {
+            "selfContained": { "type": "boolean" },
+            "publishSingleFile": { "type": "boolean" },
+            "publishTrimmed": { "type": "boolean" },
+            "useAppHost": { "type": "boolean" }
+          }
+        }
+      }
     },
-    "releaseVersion": {
-      "$ref": "#/$defs/semVerString",
-      "description": "The shipped version."
+    "includedLibraryPackages": { "$ref": "#/$defs/packageReferenceList" },
+    "includedPowerShellModules": { "$ref": "#/$defs/packageReferenceList" },
+    "databasePackageReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "compatibleVersionRange", "pinnedVersion", "lifecycleCeiling"],
+      "properties": {
+        "id": { "$ref": "#/$defs/packageId" },
+        "compatibleVersionRange": { "$ref": "#/$defs/nuGetVersionRange" },
+        "pinnedVersion": { "$ref": "#/$defs/semVerString" },
+        "lifecycleCeiling": {
+          "enum": [
+            "database-experimental", "database-development", "database-integration",
+            "database-qa", "database-stable"
+          ]
+        }
+      }
     },
-    "sourceTag": {
-      "type": "string",
-      "minLength": 1,
-      "pattern": "^\\S+$",
-      "description": "The release-branch tag that was built."
-    },
-    "sourceCommit": {
-      "type": "string",
-      "pattern": "^[0-9a-fA-F]{40}$",
-      "description": "Full git commit SHA for the release input."
-    },
-    "sourceBranch": {
-      "type": "string",
-      "pattern": "^release/[^\\s]+$",
-      "description": "Release branch name used for the build."
-    },
-    "buildUtc": {
-      "type": "string",
-      "format": "date-time",
-      "pattern": "Z$",
-      "description": "UTC timestamp when the bundle was built."
-    },
-    "buildAgent": {
-      "type": "string",
-      "minLength": 1,
-      "pattern": "^[A-Za-z0-9][A-Za-z0-9.-]*$",
-      "description": "BuildMaster agent hostname."
-    },
-    "appPackageId": {
-      "$ref": "#/$defs/packageId",
-      "description": "Application package identity."
-    },
-    "appPackageVersion": {
-      "$ref": "#/$defs/semVerString",
-      "description": "Application package version."
-    },
-    "includedLibraryPackages": {
-      "$ref": "#/$defs/packageReferenceList",
-      "description": "C# package dependencies pinned to exact versions."
-    },
-    "includedPowerShellModules": {
-      "$ref": "#/$defs/packageReferenceList",
-      "description": "PowerShell module dependencies pinned to exact versions."
-    },
-    "databasePackageIncluded": {
-      "type": "boolean",
-      "const": true,
-      "description": "Release Bundles ship with the database package included."
-    },
-    "dbChangeUnit": {
-      "$ref": "#/$defs/nonEmptyString",
-      "description": "Identity of the DB change unit."
-    },
-    "flywayTargetVersion": {
-      "$ref": "#/$defs/versionString",
-      "description": "Flyway version the DB will reach after install or upgrade."
-    },
-    "migrationFiles": {
-      "$ref": "#/$defs/fileList",
-      "description": "Versioned and repeatable Flyway scripts in this bundle."
-    },
-    "seedFiles": {
-      "$ref": "#/$defs/fileList",
-      "description": "Seed CSV files in this bundle."
-    },
-    "seedLoaderScripts": {
-      "$ref": "#/$defs/fileList",
-      "description": "SQL or PowerShell scripts that load seed CSV files."
+    "payloadFiles": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/fileEvidence" }
     },
     "installerScripts": {
-      "allOf": [
-        { "$ref": "#/$defs/fileList" },
-        { "minItems": 1 }
-      ],
-      "description": "Entry-point scripts called by package installers."
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/relativePath" }
     },
     "testEvidence": {
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "kind",
-          "path",
-          "checksumSha256"
-        ],
+        "required": ["kind", "path", "checksumSha256"],
         "properties": {
-          "kind": {
-            "$ref": "#/$defs/nonEmptyString",
-            "description": "Kind of test evidence."
-          },
-          "path": {
-            "$ref": "#/$defs/relativePath",
-            "description": "Bundle-relative path to the evidence artifact."
-          },
-          "checksumSha256": {
-            "$ref": "#/$defs/checksumSha256",
-            "description": "SHA-256 checksum for the evidence artifact."
-          }
+          "kind": { "$ref": "#/$defs/nonEmptyToken" },
+          "path": { "$ref": "#/$defs/relativePath" },
+          "checksumSha256": { "$ref": "#/$defs/checksumSha256" }
         }
-      },
-      "description": "Test results that validated this bundle."
-    },
-    "checksums": {
-      "type": "object",
-      "minProperties": 1,
-      "propertyNames": {
-        "$ref": "#/$defs/relativePath"
-      },
-      "additionalProperties": {
-        "$ref": "#/$defs/checksumValue"
-      },
-      "description": "Map of bundle-relative paths to SHA-256 checksums."
+      }
     },
     "compatibility": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "minDbVersion",
-        "maxDbVersion",
-        "supportedOs",
-        "requiredDotnet"
-      ],
+      "required": ["osFamilies", "runtimeIdentifiers", "dotnetRuntimeVersion"],
       "properties": {
-        "minDbVersion": {
-          "$ref": "#/$defs/versionString",
-          "description": "Smallest Flyway-version DB this app can run against."
-        },
-        "maxDbVersion": {
-          "$ref": "#/$defs/versionString",
-          "description": "Largest Flyway-version DB this app can run against."
-        },
-        "supportedOs": {
+        "osFamilies": {
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,
-          "items": {
-            "$ref": "#/$defs/nonEmptyString"
-          },
-          "description": "Human-readable supported OS list."
+          "items": { "enum": ["windows", "linux", "macos"] }
         },
-        "requiredDotnet": {
-          "$ref": "#/$defs/versionString",
-          "description": "Minimum .NET runtime version."
-        }
+        "runtimeIdentifiers": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)+$" }
+        },
+        "dotnetRuntimeVersion": { "$ref": "#/$defs/versionString" }
       }
     },
     "rollback": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "supported",
-        "notes"
-      ],
+      "required": ["supported", "notes"],
       "properties": {
-        "supported": {
-          "type": "boolean",
-          "description": "Whether downgrade from this version is supported by the install scripts."
-        },
-        "notes": {
-          "$ref": "#/$defs/nonEmptyString",
-          "description": "Operational guidance for rollback."
-        }
+        "supported": { "type": "boolean" },
+        "notes": { "$ref": "#/$defs/nonEmptyString" }
       }
     }
   },
   "$defs": {
-    "nonEmptyString": {
-      "type": "string",
-      "minLength": 1
-    },
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "nonEmptyToken": { "type": "string", "minLength": 1, "pattern": "^\\S+$" },
     "semVerString": {
       "type": "string",
       "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
@@ -225,62 +144,55 @@
       "minLength": 1,
       "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$"
     },
-    "packageReference": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "id",
-        "version"
-      ],
-      "properties": {
-        "id": {
-          "$ref": "#/$defs/packageId"
-        },
-        "version": {
-          "$ref": "#/$defs/semVerString"
-        }
-      }
-    },
-    "packageReferenceList": {
-      "type": "array",
-      "uniqueItems": true,
-      "items": {
-        "$ref": "#/$defs/packageReference"
-      }
+    "nuGetVersionRange": {
+      "type": "string",
+      "pattern": "^[\\[(](?:[0-9A-Za-z.+-]+)?\\s*,?\\s*(?:[0-9A-Za-z.+-]+)?[\\])]$"
     },
     "relativePath": {
       "type": "string",
       "minLength": 1,
       "pattern": "^(?![A-Za-z]:)(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
     },
-    "fileList": {
-      "type": "array",
-      "uniqueItems": true,
-      "items": {
-        "$ref": "#/$defs/relativePath"
+    "checksumSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "fileEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "checksumSha256", "sizeBytes"],
+      "properties": {
+        "path": {
+          "allOf": [
+            { "$ref": "#/$defs/relativePath" },
+            { "not": { "pattern": "^(?:[dD][bB]/|.*(?:^|/)[dD][bB]-manifest\\.json$)" } }
+          ]
+        },
+        "checksumSha256": { "$ref": "#/$defs/checksumSha256" },
+        "sizeBytes": { "type": "integer", "minimum": 1 }
       }
     },
-    "checksumSha256": {
-      "anyOf": [
-        {
-          "type": "string",
-          "pattern": "^[0-9a-fA-F]{64}$"
-        },
-        {
-          "const": "..."
-        }
-      ]
+    "applicationComponent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "qualityTier", "projectPath"],
+      "properties": {
+        "id": { "$ref": "#/$defs/packageId" },
+        "version": { "$ref": "#/$defs/semVerString" },
+        "qualityTier": { "const": "Production" },
+        "projectPath": { "$ref": "#/$defs/relativePath" }
+      }
     },
-    "checksumValue": {
-      "anyOf": [
-        {
-          "type": "string",
-          "pattern": "^sha256:[0-9a-fA-F]{64}$"
-        },
-        {
-          "const": "sha256:..."
-        }
-      ]
+    "packageReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": { "$ref": "#/$defs/packageId" },
+        "version": { "$ref": "#/$defs/semVerString" }
+      }
+    },
+    "packageReferenceList": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/packageReference" }
     }
   }
 }

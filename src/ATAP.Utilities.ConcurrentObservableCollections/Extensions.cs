@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading;
 using System.Diagnostics;
 using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
 using System.Reflection;
 using System.ComponentModel;
@@ -436,26 +435,37 @@ namespace ATAP.Utilities.ConcurrentObservableCollections
     /// <typeparam name="T">The type of object being copied.</typeparam>
     /// <param name="source">The object instance to copy.</param>
     /// <returns>The copied object.</returns>
+    /// <remarks>
+    /// Uses <see cref="DataContractSerializer"/> for an in-memory round trip. This
+    /// avoids the unsafe and obsolete <c>BinaryFormatter</c> implementation while
+    /// preserving object references within the cloned graph.
+    /// </remarks>
     public static T SerializableClone<T>(this T source)
     {
-      if (!source.GetType().IsSerializable)
-      {
-        throw new ArgumentException("The type must be serializable.", "source");
-      }
-
       // Don't serialize a null object, simply return the default for that object
       if (Object.ReferenceEquals(source, null))
       {
         return default(T);
       }
 
-      IFormatter formatter = new BinaryFormatter();
-      Stream stream = new MemoryStream();
-      using (stream)
+      Type runtimeType = source.GetType();
+      if (!runtimeType.IsDefined(typeof(SerializableAttribute), inherit: false))
       {
-        formatter.Serialize(stream, source);
+        throw new ArgumentException("The type must be serializable.", nameof(source));
+      }
+
+      DataContractSerializer serializer = new DataContractSerializer(
+        runtimeType,
+        new DataContractSerializerSettings
+        {
+          PreserveObjectReferences = true,
+        });
+
+      using (Stream stream = new MemoryStream())
+      {
+        serializer.WriteObject(stream, source);
         stream.Seek(0, SeekOrigin.Begin);
-        return (T)formatter.Deserialize(stream);
+        return (T)serializer.ReadObject(stream);
       }
     }
 

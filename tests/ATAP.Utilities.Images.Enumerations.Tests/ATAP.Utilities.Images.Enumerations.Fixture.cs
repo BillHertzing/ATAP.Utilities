@@ -7,7 +7,7 @@ using Xunit.Abstractions;
 
 namespace ATAP.Utilities.Images.Enumerations.Tests
 {
-  public class Fixture : DiFixture { }
+  public class Fixture { }
   public partial class EnumerationsUnitTests001 : IClassFixture<Fixture>
   {
     protected Fixture Fixture { get; }

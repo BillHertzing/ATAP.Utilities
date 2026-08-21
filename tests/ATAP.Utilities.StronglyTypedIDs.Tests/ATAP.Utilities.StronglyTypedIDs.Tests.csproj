@@ -34,6 +34,8 @@
   <ItemGroup>
   </ItemGroup>
 
+
+
      <!-- ATAP Utility Packages For the abstract Serializer -->
   <ItemGroup>
     <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer\Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
@@ -86,6 +88,7 @@
 
   <ItemGroup Condition="'$(UsePackageReferenceForSUT)' == 'false'">
     <ProjectReference Include="..\..\src\ATAP.Utilities.StronglyTypedId\Models\ATAP.Utilities.StronglyTypedId.Models.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.StronglyTypedId\JsonConverter.Shim.SystemTextJson\ATAP.Utilities.StronglyTypedId.JsonConverter.Shim.SystemTextJson.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.StronglyTypedId\Interfaces\ATAP.Utilities.StronglyTypedId.Interfaces.csproj" />
   </ItemGroup>
 

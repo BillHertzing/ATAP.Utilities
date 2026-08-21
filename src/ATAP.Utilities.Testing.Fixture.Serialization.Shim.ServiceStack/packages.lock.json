@@ -362,6 +362,15 @@
           "Microsoft.NETCore.Platforms": "1.1.0"
         }
       },
+      "Ninject.Extensions.Factory": {
+        "type": "Transitive",
+        "resolved": "3.3.2",
+        "contentHash": "H9s77i9WsbgF6s7OieQ+c51KoW90jJAQqb0ClEqi6SBtL7jySUjh/5HCjnYgyQ8iYcWhvhw9cFnYxX9CB1kL7Q==",
+        "dependencies": {
+          "Castle.Core": "4.2.0",
+          "Ninject": "3.3.3"
+        }
+      },
       "NuGet.Frameworks": {
         "type": "Transitive",
         "resolved": "5.0.0",
@@ -490,14 +499,14 @@
           "Microsoft.Extensions.DependencyInjection": "[10.0.2, )"
         }
       },
-      "atap.utilities.serializer.shim.systemtextjson": {
+      "atap.utilities.serializer.shim.servicestack": {
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
           "ATAP.Utilities.ETW": "[0.1.2, )",
           "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
-          "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
+          "ServiceStack.Text": "[8.10.0, )"
         }
       },
       "atap.utilities.serializer.stringconstants": {
@@ -515,6 +524,21 @@
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.NET.Test.Sdk": "[17.0.0, )",
           "Moq": "[4.16.1, )",
+          "xunit": "[2.4.1, )"
+        }
+      },
+      "atap.utilities.testing.di": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.Configuration.Extensions": "[0.1.1, )",
+          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.Testing": "[0.1.0-Alpha, )",
+          "FluentAssertions": "[6.2.0, )",
+          "Microsoft.Extensions.Configuration": "[9.0.0, )",
+          "Microsoft.NET.Test.Sdk": "[17.0.0, )",
+          "Moq": "[4.16.1, )",
+          "Ninject": "[3.3.6, )",
+          "Ninject.extensions.conventions": "[3.3.0, )",
           "xunit": "[2.4.1, )"
         }
       },
@@ -656,6 +680,21 @@
         "requested": "[13.0.4, )",
         "resolved": "13.0.4",
         "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
+      },
+      "Ninject": {
+        "type": "CentralTransitive",
+        "requested": "[3.3.6, )",
+        "resolved": "3.3.6",
+        "contentHash": "93avazUpbRL3IdwvTQF0DKSQB26TeqwMGhZsQNxi/RLSYewhxBkdGDhwWe9DAIRF1+zKDVMv3XkBk8HobKU6wA=="
+      },
+      "Ninject.Extensions.Conventions": {
+        "type": "CentralTransitive",
+        "requested": "[3.3.0, )",
+        "resolved": "3.3.0",
+        "contentHash": "bAMK7tRHIRQ+gjR1WxwTlNuP+/bKRIFf6NKObkWP3XVzFQhsLEKA0hEo73OXuBdpng0jczhqCGmwu630nIa/bg==",
+        "dependencies": {
+          "Ninject.Extensions.Factory": "3.3.2"
+        }
       },
       "System.Reactive": {
         "type": "CentralTransitive",
@@ -1041,6 +1080,15 @@
           "Microsoft.NETCore.Platforms": "1.1.0"
         }
       },
+      "Ninject.Extensions.Factory": {
+        "type": "Transitive",
+        "resolved": "3.3.2",
+        "contentHash": "H9s77i9WsbgF6s7OieQ+c51KoW90jJAQqb0ClEqi6SBtL7jySUjh/5HCjnYgyQ8iYcWhvhw9cFnYxX9CB1kL7Q==",
+        "dependencies": {
+          "Castle.Core": "4.2.0",
+          "Ninject": "3.3.3"
+        }
+      },
       "NuGet.Frameworks": {
         "type": "Transitive",
         "resolved": "5.0.0",
@@ -1184,14 +1232,14 @@
           "Microsoft.Extensions.DependencyInjection": "[10.0.2, )"
         }
       },
-      "atap.utilities.serializer.shim.systemtextjson": {
+      "atap.utilities.serializer.shim.servicestack": {
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
           "ATAP.Utilities.ETW": "[0.1.2, )",
           "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
-          "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
+          "ServiceStack.Text": "[8.10.0, )"
         }
       },
       "atap.utilities.serializer.stringconstants": {
@@ -1209,6 +1257,21 @@
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.NET.Test.Sdk": "[17.0.0, )",
           "Moq": "[4.16.1, )",
+          "xunit": "[2.4.1, )"
+        }
+      },
+      "atap.utilities.testing.di": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.Configuration.Extensions": "[0.1.1, )",
+          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.Testing": "[0.1.0-Alpha, )",
+          "FluentAssertions": "[6.2.0, )",
+          "Microsoft.Extensions.Configuration": "[9.0.0, )",
+          "Microsoft.NET.Test.Sdk": "[17.0.0, )",
+          "Moq": "[4.16.1, )",
+          "Ninject": "[3.3.6, )",
+          "Ninject.extensions.conventions": "[3.3.0, )",
           "xunit": "[2.4.1, )"
         }
       },
@@ -1352,6 +1415,21 @@
         "requested": "[13.0.4, )",
         "resolved": "13.0.4",
         "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
+      },
+      "Ninject": {
+        "type": "CentralTransitive",
+        "requested": "[3.3.6, )",
+        "resolved": "3.3.6",
+        "contentHash": "93avazUpbRL3IdwvTQF0DKSQB26TeqwMGhZsQNxi/RLSYewhxBkdGDhwWe9DAIRF1+zKDVMv3XkBk8HobKU6wA=="
+      },
+      "Ninject.Extensions.Conventions": {
+        "type": "CentralTransitive",
+        "requested": "[3.3.0, )",
+        "resolved": "3.3.0",
+        "contentHash": "bAMK7tRHIRQ+gjR1WxwTlNuP+/bKRIFf6NKObkWP3XVzFQhsLEKA0hEo73OXuBdpng0jczhqCGmwu630nIa/bg==",
+        "dependencies": {
+          "Ninject.Extensions.Factory": "3.3.2"
+        }
       },
       "System.Reactive": {
         "type": "CentralTransitive",
@@ -1749,6 +1827,15 @@
           "Microsoft.NETCore.Platforms": "1.1.0"
         }
       },
+      "Ninject.Extensions.Factory": {
+        "type": "Transitive",
+        "resolved": "3.3.2",
+        "contentHash": "H9s77i9WsbgF6s7OieQ+c51KoW90jJAQqb0ClEqi6SBtL7jySUjh/5HCjnYgyQ8iYcWhvhw9cFnYxX9CB1kL7Q==",
+        "dependencies": {
+          "Castle.Core": "4.2.0",
+          "Ninject": "3.3.3"
+        }
+      },
       "NuGet.Frameworks": {
         "type": "Transitive",
         "resolved": "5.0.0",
@@ -1882,14 +1969,14 @@
           "Microsoft.Extensions.DependencyInjection": "[10.0.2, )"
         }
       },
-      "atap.utilities.serializer.shim.systemtextjson": {
+      "atap.utilities.serializer.shim.servicestack": {
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
           "ATAP.Utilities.ETW": "[0.1.2, )",
           "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
-          "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
+          "ServiceStack.Text": "[8.10.0, )"
         }
       },
       "atap.utilities.serializer.stringconstants": {
@@ -1907,6 +1994,21 @@
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.NET.Test.Sdk": "[17.0.0, )",
           "Moq": "[4.16.1, )",
+          "xunit": "[2.4.1, )"
+        }
+      },
+      "atap.utilities.testing.di": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.Configuration.Extensions": "[0.1.1, )",
+          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.Testing": "[0.1.0-Alpha, )",
+          "FluentAssertions": "[6.2.0, )",
+          "Microsoft.Extensions.Configuration": "[9.0.0, )",
+          "Microsoft.NET.Test.Sdk": "[17.0.0, )",
+          "Moq": "[4.16.1, )",
+          "Ninject": "[3.3.6, )",
+          "Ninject.extensions.conventions": "[3.3.0, )",
           "xunit": "[2.4.1, )"
         }
       },
@@ -2049,6 +2151,21 @@
         "requested": "[13.0.4, )",
         "resolved": "13.0.4",
         "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
+      },
+      "Ninject": {
+        "type": "CentralTransitive",
+        "requested": "[3.3.6, )",
+        "resolved": "3.3.6",
+        "contentHash": "93avazUpbRL3IdwvTQF0DKSQB26TeqwMGhZsQNxi/RLSYewhxBkdGDhwWe9DAIRF1+zKDVMv3XkBk8HobKU6wA=="
+      },
+      "Ninject.Extensions.Conventions": {
+        "type": "CentralTransitive",
+        "requested": "[3.3.0, )",
+        "resolved": "3.3.0",
+        "contentHash": "bAMK7tRHIRQ+gjR1WxwTlNuP+/bKRIFf6NKObkWP3XVzFQhsLEKA0hEo73OXuBdpng0jczhqCGmwu630nIa/bg==",
+        "dependencies": {
+          "Ninject.Extensions.Factory": "3.3.2"
+        }
       },
       "System.Reactive": {
         "type": "CentralTransitive",

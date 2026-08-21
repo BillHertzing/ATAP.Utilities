@@ -155,6 +155,32 @@
           "xunit.extensibility.core": "[2.4.1]"
         }
       },
+      "atap.utilities.collection.extensions": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "System.Reactive": "[5.0.0, )"
+        }
+      },
+      "atap.utilities.etw": {
+        "type": "Project"
+      },
+      "atap.utilities.stronglytypedid.interfaces": {
+        "type": "Project"
+      },
+      "atap.utilities.stronglytypedid.jsonconverter.shim.systemtextjson": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.stronglytypedid.models": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+        }
+      },
       "Fody": {
         "type": "CentralTransitive",
         "requested": "[6.9.3, )",
@@ -166,6 +192,12 @@
         "requested": "[13.0.4, )",
         "resolved": "13.0.4",
         "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
+      },
+      "System.Reactive": {
+        "type": "CentralTransitive",
+        "requested": "[5.0.0, )",
+        "resolved": "5.0.0",
+        "contentHash": "erBZjkQHWL9jpasCE/0qKAryzVBJFxGHVBAvgRN1bzM0q2s1S4oYREEEL0Vb+1kA/6BKb5FjUZMp5VXmy+gzkQ=="
       }
     },
     "net10.0/linux-x64": {},
@@ -324,6 +356,32 @@
           "xunit.extensibility.core": "[2.4.1]"
         }
       },
+      "atap.utilities.collection.extensions": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "System.Reactive": "[5.0.0, )"
+        }
+      },
+      "atap.utilities.etw": {
+        "type": "Project"
+      },
+      "atap.utilities.stronglytypedid.interfaces": {
+        "type": "Project"
+      },
+      "atap.utilities.stronglytypedid.jsonconverter.shim.systemtextjson": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.stronglytypedid.models": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+        }
+      },
       "Fody": {
         "type": "CentralTransitive",
         "requested": "[6.9.3, )",
@@ -335,6 +393,12 @@
         "requested": "[13.0.4, )",
         "resolved": "13.0.4",
         "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
+      },
+      "System.Reactive": {
+        "type": "CentralTransitive",
+        "requested": "[5.0.0, )",
+        "resolved": "5.0.0",
+        "contentHash": "erBZjkQHWL9jpasCE/0qKAryzVBJFxGHVBAvgRN1bzM0q2s1S4oYREEEL0Vb+1kA/6BKb5FjUZMp5VXmy+gzkQ=="
       }
     },
     "net8.0/linux-x64": {},
@@ -493,6 +557,32 @@
           "xunit.extensibility.core": "[2.4.1]"
         }
       },
+      "atap.utilities.collection.extensions": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "System.Reactive": "[5.0.0, )"
+        }
+      },
+      "atap.utilities.etw": {
+        "type": "Project"
+      },
+      "atap.utilities.stronglytypedid.interfaces": {
+        "type": "Project"
+      },
+      "atap.utilities.stronglytypedid.jsonconverter.shim.systemtextjson": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )"
+        }
+      },
+      "atap.utilities.stronglytypedid.models": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+        }
+      },
       "Fody": {
         "type": "CentralTransitive",
         "requested": "[6.9.3, )",
@@ -504,6 +594,12 @@
         "requested": "[13.0.4, )",
         "resolved": "13.0.4",
         "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
+      },
+      "System.Reactive": {
+        "type": "CentralTransitive",
+        "requested": "[5.0.0, )",
+        "resolved": "5.0.0",
+        "contentHash": "erBZjkQHWL9jpasCE/0qKAryzVBJFxGHVBAvgRN1bzM0q2s1S4oYREEEL0Vb+1kA/6BKb5FjUZMp5VXmy+gzkQ=="
       }
     },
     "net9.0/linux-x64": {},

@@ -1,6 +1,6 @@
 using System;
 using System.Linq;
-using ServiceStack.OrmLite.SqlServer;
+using ServiceStack.OrmLite;
 using Xunit;
 
 namespace ATAP.Utilities.Persistence.Tests;

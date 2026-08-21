@@ -159,7 +159,7 @@ namespace ATAP.Utilities.Persistence.Tests
         object[] objArray = containersToInsert[i].ToArray();
         //string[] strArray =  as string[];
 
-        dataToInsert[i] = objArray.Select(x => x.ToString()) as string[];
+        dataToInsert[i] = objArray.Select(x => x.ToString()!).ToArray();
       }
 
       var insertResults = insertFunc(dataToInsert);

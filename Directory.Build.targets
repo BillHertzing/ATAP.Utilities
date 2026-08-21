@@ -324,7 +324,6 @@
             Log.LogError("ATAPBUILD004: ArtifactsPath '{0}' is not writable: {1}", actual, ex.Message);
             return false;
         }
-        return true;
       ]]></Code>
     </Task>
   </UsingTask>

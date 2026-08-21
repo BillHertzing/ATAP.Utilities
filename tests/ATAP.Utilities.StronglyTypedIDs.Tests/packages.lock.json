@@ -487,6 +487,13 @@
       "atap.utilities.stronglytypedid.interfaces": {
         "type": "Project"
       },
+      "atap.utilities.stronglytypedid.jsonconverter.shim.systemtextjson": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )"
+        }
+      },
       "atap.utilities.stronglytypedid.models": {
         "type": "Project",
         "dependencies": {
@@ -1206,6 +1213,13 @@
       },
       "atap.utilities.stronglytypedid.interfaces": {
         "type": "Project"
+      },
+      "atap.utilities.stronglytypedid.jsonconverter.shim.systemtextjson": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )"
+        }
       },
       "atap.utilities.stronglytypedid.models": {
         "type": "Project",
@@ -1935,6 +1949,13 @@
       },
       "atap.utilities.stronglytypedid.interfaces": {
         "type": "Project"
+      },
+      "atap.utilities.stronglytypedid.jsonconverter.shim.systemtextjson": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )"
+        }
       },
       "atap.utilities.stronglytypedid.models": {
         "type": "Project",

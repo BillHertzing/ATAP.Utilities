@@ -11,7 +11,6 @@ using System.Linq;
 using FluentAssertions;
 using ATAP.Utilities.Testing;
 using ATAP.Utilities.Serializer;
-using ATAP.Utilities.Serializer.DataForTests;
 
 namespace ATAP.Utilities.Serializer.Tests {
 

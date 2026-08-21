@@ -1,32 +1,16 @@
-
-using System;
 using System.Text.Json;
-
-using Xunit.Abstractions;
+using Xunit;
 
 namespace ATAP.Utilities.Collection.Tests {
-  // The SerializationFixtureSystemTextJson can only be setup one time, before all tests are run
-  //  because JsonSerializerSettings cannot be modified after any Serialization/Deserialization operations have been performed
-  public class SerializationFixtureSystemTextJson {
-    public JsonSerializerOptions JsonSerializerOptions { get; set; }
-    public SerializationFixtureSystemTextJson() {
-      JsonSerializerOptions = new JsonSerializerOptions();
-      // Add Converters
-      JsonSerializerOptions.Converters.Add(new ATAP.Utilities.Collections.JsonConverterSystemTextJson.StronglyTypedIdJsonConverterFactory());
-    }
+  public sealed class SerializationFixtureSystemTextJson {
+    public JsonSerializerOptions JsonSerializerOptions { get; } = Startup.CreateSerializerOptions();
   }
 
-  public partial class StronglyTypedIDSerializationSystemTextJsonUnitTests001 {
+  public partial class StronglyTypedIdSerializationSystemTextJsonUnitTests001 : IClassFixture<SerializationFixtureSystemTextJson> {
     protected SerializationFixtureSystemTextJson SerializationFixture { get; }
-    protected ITestOutputHelper TestOutput { get; }
 
-    public StronglyTypedIDSerializationSystemTextJsonUnitTests001(ITestOutputHelper testOutput, SerializationFixtureSystemTextJson serializationFixture) {
+    public StronglyTypedIdSerializationSystemTextJsonUnitTests001(SerializationFixtureSystemTextJson serializationFixture) {
       SerializationFixture = serializationFixture;
-      TestOutput = testOutput;
-      if (SerializationFixture == null) { TestOutput.WriteLine("SerializationFixture is null"); }
-      if (SerializationFixture.Serializer == null) { TestOutput.WriteLine("SerializationFixture.Serializer is null"); }
-
-      // ToDo: Ensure the System.StringComparison.CurrentCulture is configured properly to match the test data, for String.StartsWith used in the tests
     }
   }
 }

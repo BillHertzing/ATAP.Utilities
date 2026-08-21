@@ -1,48 +1,60 @@
-using System.Collections.Generic;
-using System.Collections;
-using ATAP.Utilities.Collection;
 using System;
-
+using System.Collections;
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.Collection.Tests {
+  public sealed record GuidStronglyTypedIdSerializationTestData(GuidStronglyTypedId InstanceTestData, string SerializedTestData);
 
-  //ToDo add validation tests to ensure illegal values are not allowed.  This applies to all XxTestDataGenerator classes
-  public class CollectionExtensionSerializationTestData<T> {
-    public IEnumerable<T> InstanceTestData { get; set; }
-    public string SerializedTestData { get; set; }
-
-    public CollectionExtensionSerializationTestData() {
+  public sealed class GuidStronglyTypedIdSerializationTestDataGenerator : IEnumerable<object[]> {
+    public static IEnumerable<object[]> Data() {
+      yield return new object[] { new GuidStronglyTypedIdSerializationTestData(new GuidStronglyTypedId(Guid.Empty), "\"00000000-0000-0000-0000-000000000000\"") };
+      yield return new object[] { new GuidStronglyTypedIdSerializationTestData(new GuidStronglyTypedId(new Guid("01234567-abcd-9876-cdef-456789abcdef")), "\"01234567-abcd-9876-cdef-456789abcdef\"") };
+      yield return new object[] { new GuidStronglyTypedIdSerializationTestData(new GuidStronglyTypedId(new Guid("a1234567-abcd-9876-cdef-456789abcdef")), "\"a1234567-abcd-9876-cdef-456789abcdef\"") };
     }
 
-    public CollectionExtensionSerializationTestData(IEnumerable<T> instanceTestData, string serializedTestData) {
-      InstanceTestData = instanceTestData;
-      SerializedTestData = serializedTestData ?? throw new ArgumentNullException(nameof(serializedTestData));
-    }
+    public IEnumerator<object[]> GetEnumerator() => Data().GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
   }
 
-  public class CollectionExtensionSerializationTestDataGenerator<T> : IEnumerable<object[]> {
-    public static IEnumerable<object[]> StronglyTypedIdSerializationTestData() {
-      switch (typeof(T)) {
-        case Type guidType when typeof(T) == typeof(Guid): {
-            yield return new CollectionExtensionSerializationTestData<T>[] { new CollectionExtensionSerializationTestData<T> { InstanceTestData = (ATAP.Utilities.Collection.IEnumerable<T>)new GuidStronglyTypedId(Guid.Empty), SerializedTestData = "\"00000000-0000-0000-0000-000000000000\"" } };
-            yield return new CollectionExtensionSerializationTestData<T>[] { new CollectionExtensionSerializationTestData<T> { InstanceTestData = (ATAP.Utilities.Collection.IEnumerable<T>)new GuidStronglyTypedId(new Guid("01234567-abcd-9876-cdef-456789abcdef")), SerializedTestData = "\"01234567-abcd-9876-cdef-456789abcdef\"" } };
-            yield return new CollectionExtensionSerializationTestData<T>[] { new CollectionExtensionSerializationTestData<T> { InstanceTestData = (ATAP.Utilities.Collection.IEnumerable<T>)new GuidStronglyTypedId(Guid.NewGuid()), SerializedTestData = "" } };
-          }
-          break;
-        case Type intType when typeof(T) == typeof(int): {
-            yield return new CollectionExtensionSerializationTestData<T>[] { new CollectionExtensionSerializationTestData<T> { InstanceTestData = (ATAP.Utilities.Collection.IEnumerable<T>)new IntStronglyTypedId(0), SerializedTestData = "0" } };
-            yield return new CollectionExtensionSerializationTestData<T>[] { new CollectionExtensionSerializationTestData<T> { InstanceTestData = (ATAP.Utilities.Collection.IEnumerable<T>)new IntStronglyTypedId(1234567), SerializedTestData = "1234567" } };
-            yield return new CollectionExtensionSerializationTestData<T>[] { new CollectionExtensionSerializationTestData<T> { InstanceTestData = (ATAP.Utilities.Collection.IEnumerable<T>)new IntStronglyTypedId(new Random().Next()), SerializedTestData = "" } };
-          }
-          break;
-        // ToDo: replace with new custom exception and localization of exception message
-        default:
-          throw new Exception(FormattableString.Invariant($"Invalid T type {typeof(T)}"));
-      }
+  public sealed record IntStronglyTypedIdSerializationTestData(IntStronglyTypedId InstanceTestData, string SerializedTestData);
+
+  public sealed class IntStronglyTypedIdSerializationTestDataGenerator : IEnumerable<object[]> {
+    public static IEnumerable<object[]> Data() {
+      yield return new object[] { new IntStronglyTypedIdSerializationTestData(new IntStronglyTypedId(int.MinValue), int.MinValue.ToString(System.Globalization.CultureInfo.InvariantCulture)) };
+      yield return new object[] { new IntStronglyTypedIdSerializationTestData(new IntStronglyTypedId(-1), "-1") };
+      yield return new object[] { new IntStronglyTypedIdSerializationTestData(new IntStronglyTypedId(0), "0") };
+      yield return new object[] { new IntStronglyTypedIdSerializationTestData(new IntStronglyTypedId(1234567), "1234567") };
+      yield return new object[] { new IntStronglyTypedIdSerializationTestData(new IntStronglyTypedId(int.MaxValue), int.MaxValue.ToString(System.Globalization.CultureInfo.InvariantCulture)) };
     }
 
-    public IEnumerator<object[]> GetEnumerator() { return StronglyTypedIdSerializationTestData().GetEnumerator(); }
-    IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
+    public IEnumerator<object[]> GetEnumerator() => Data().GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
   }
 
+  public sealed record CollectionExtensionSerializationTestData<T>(IReadOnlyList<T> InstanceTestData, string SerializedTestData);
+
+  public static class CollectionExtensionSerializationTestDataGenerator {
+    public static IEnumerable<object[]> GuidData() {
+      yield return new object[] {
+        new CollectionExtensionSerializationTestData<GuidStronglyTypedId>(
+          new[] { new GuidStronglyTypedId(Guid.Empty), new GuidStronglyTypedId(new Guid("01234567-abcd-9876-cdef-456789abcdef")) },
+          "[\"00000000-0000-0000-0000-000000000000\",\"01234567-abcd-9876-cdef-456789abcdef\"]")
+      };
+      yield return new object[] {
+        new CollectionExtensionSerializationTestData<GuidStronglyTypedId>(Array.Empty<GuidStronglyTypedId>(), "[]")
+      };
+    }
+
+    public static IEnumerable<object[]> IntData() {
+      yield return new object[] {
+        new CollectionExtensionSerializationTestData<IntStronglyTypedId>(
+          new[] { new IntStronglyTypedId(int.MinValue), new IntStronglyTypedId(0), new IntStronglyTypedId(int.MaxValue) },
+          "[-2147483648,0,2147483647]")
+      };
+      yield return new object[] {
+        new CollectionExtensionSerializationTestData<IntStronglyTypedId>(Array.Empty<IntStronglyTypedId>(), "[]")
+      };
+    }
+  }
 }

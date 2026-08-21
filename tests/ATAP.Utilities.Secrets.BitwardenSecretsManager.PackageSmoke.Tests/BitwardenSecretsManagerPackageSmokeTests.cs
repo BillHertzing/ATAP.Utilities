@@ -2,10 +2,14 @@ using ATAP.Utilities.Secrets;
 using ATAP.Utilities.Secrets.BitwardenSecretsManager;
 using ATAP.Utilities.Secrets.BitwardenSecretsManager.Windows;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using System.Runtime.Versioning;
 using Xunit;
 
 namespace ATAP.Utilities.Secrets.BitwardenSecretsManager.PackageSmoke.Tests;
 
+[SupportedOSPlatform("windows")]
 public sealed class BitwardenSecretsManagerPackageSmokeTests
 {
   [Fact]
@@ -26,6 +30,7 @@ public sealed class BitwardenSecretsManagerPackageSmokeTests
       VaultGroupingId = bitwardenOptions.VaultGroupingId,
     };
     var services = new ServiceCollection();
+    services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
 
     services.AddWindowsDpapiBwsReadOnlyAccessTokenSource(windowsOptions);
     services.AddBitwardenSecretsManager(bitwardenOptions);

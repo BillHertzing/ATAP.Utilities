@@ -32,7 +32,7 @@ namespace ATAP.Utilities.MessageQueue.Shim.RabbitMQT {
     public bool Durable { get; set; }
     public bool Exclusive { get; set; }
     public bool AutoDelete { get; set; }
-    public IDictionary<string, object> Arguments { get; set; }
+    public IDictionary<string, object?> Arguments { get; set; }
   }
 
   public class RabbitMQMessageQueueOptions : MessageQueueOptionsAbstract, IRabbitMQMessageQueueOptions {
@@ -40,14 +40,14 @@ namespace ATAP.Utilities.MessageQueue.Shim.RabbitMQT {
     public bool Durable { get; set; }
     public bool Exclusive { get; set; }
     public bool AutoDelete { get; set; }
-    public IDictionary<string, object> Arguments { get; set; }
+    public IDictionary<string, object?> Arguments { get; set; }
   }
 
   public class RabbitMQMessageQueue<TSendMessageResults> : MessageQueueAbstract<TSendMessageResults> where TSendMessageResults : ISendMessageResultsAbstract,  new() {
 
     public RabbitMQMessageServerOptions RabbitMQMessageServerOptions { get; set; }
     public RabbitMQMessageQueueOptions RabbitMQMessageQueueOptions { get; set; }
-    public IModel Channel { get; set; }
+    public IChannel Channel { get; set; }
     public IConnection Connection { get; set; }
 
     //public Func<Byte[], TSendMessageResults> SendFunc { get; init; }
@@ -88,7 +88,7 @@ namespace ATAP.Utilities.MessageQueue.Shim.RabbitMQT {
           Durable = false,
           Exclusive = false,
           AutoDelete = false,
-          Arguments = new Dictionary<string, object>()
+          Arguments = new Dictionary<string, object?>()
         };
       }
       CreateConnection();
@@ -98,7 +98,7 @@ namespace ATAP.Utilities.MessageQueue.Shim.RabbitMQT {
 
     public TSendMessageResults SendMessage(Byte[] message) {
       if (message == null) { throw new ArgumentNullException(nameof(message)); }
-      Channel.BasicPublish(exchange: "", routingKey: RabbitMQMessageQueueOptions.QueueName, basicProperties: null, body: message);
+      Channel.BasicPublishAsync(exchange: "", routingKey: RabbitMQMessageQueueOptions.QueueName, mandatory: false, basicProperties: new BasicProperties(), body: message).AsTask().GetAwaiter().GetResult();
       //Serilog.Log.Debug("{0} {1}: Message sent {2}", "PluginVA", "SendToMQ.SendMessage", message);
 
       return new TSendMessageResults() { Success = true };    // Basic RabbitMQ publish has nothing to return // Later bindings will return at least the ack for more sophisticated messagequeue
@@ -131,23 +131,23 @@ namespace ATAP.Utilities.MessageQueue.Shim.RabbitMQT {
       var attempt = 0;
       retryPolicy.Execute(() => {
         Serilog.Log.Debug("{0} {1}: attempt {2} at CreateConnection", "RabbitMQMessageQueue", "CreateConnection", attempt++);
-        Connection = factory.CreateConnection();
+        Connection = factory.CreateConnectionAsync().GetAwaiter().GetResult();
       });
 
     }
     public void CreateChannel() {
       //ToDO: wrap with Polly
-      Channel = Connection.CreateModel();
+      Channel = Connection.CreateChannelAsync().GetAwaiter().GetResult();
     }
-    public void DeclareQueue(string queueName, bool durable, bool exclusive, bool autoDelete, IDictionary<string, object> arguments) {
+    public void DeclareQueue(string queueName, bool durable, bool exclusive, bool autoDelete, IDictionary<string, object?> arguments) {
       //ToDO: wrap with Polly
       //Execute the Channel's QueueDeclare wrapped in  retry policy
-      Channel.QueueDeclare(queue: RabbitMQMessageQueueOptions.QueueName, durable: RabbitMQMessageQueueOptions.Durable, exclusive: RabbitMQMessageQueueOptions.Exclusive, autoDelete: RabbitMQMessageQueueOptions.AutoDelete, arguments: RabbitMQMessageQueueOptions.Arguments);
+      Channel.QueueDeclareAsync(queue: RabbitMQMessageQueueOptions.QueueName, durable: RabbitMQMessageQueueOptions.Durable, exclusive: RabbitMQMessageQueueOptions.Exclusive, autoDelete: RabbitMQMessageQueueOptions.AutoDelete, arguments: RabbitMQMessageQueueOptions.Arguments, passive: false, noWait: false).GetAwaiter().GetResult();
     }
 
     #region IDisposable Support
     private bool disposedValue = false; // To detect redundant calls
-    protected virtual void Dispose(bool disposing) {
+    protected override void Dispose(bool disposing) {
       if (!disposedValue) {
         if (disposing) {
           Channel.Dispose();
@@ -155,11 +155,7 @@ namespace ATAP.Utilities.MessageQueue.Shim.RabbitMQT {
         }
         disposedValue = true;
       }
-    }
-    // This code added to correctly implement the disposable pattern.
-    public void Dispose() {
-      // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-      Dispose(true);
+      base.Dispose(disposing);
     }
     #endregion
 

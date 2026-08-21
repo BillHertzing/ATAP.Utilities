@@ -403,6 +403,13 @@
           "xunit.extensibility.core": "[2.4.1]"
         }
       },
+      "atap.utilities.collection.extensions": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "System.Reactive": "[5.0.0, )"
+        }
+      },
       "atap.utilities.configuration.extensions": {
         "type": "Project",
         "dependencies": {
@@ -437,6 +444,16 @@
           "Microsoft.Extensions.DependencyInjection": "[10.0.2, )"
         }
       },
+      "atap.utilities.serializer.shim.systemtextjson": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
+          "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
+        }
+      },
       "atap.utilities.serializer.stringconstants": {
         "type": "Project",
         "dependencies": {
@@ -452,6 +469,21 @@
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.NET.Test.Sdk": "[17.0.0, )",
           "Moq": "[4.16.1, )",
+          "xunit": "[2.4.1, )"
+        }
+      },
+      "atap.utilities.testing.di": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.Configuration.Extensions": "[0.1.1, )",
+          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.Testing": "[0.1.0-Alpha, )",
+          "FluentAssertions": "[6.2.0, )",
+          "Microsoft.Extensions.Configuration": "[9.0.0, )",
+          "Microsoft.NET.Test.Sdk": "[17.0.0, )",
+          "Moq": "[4.16.1, )",
+          "Ninject": "[3.3.6, )",
+          "Ninject.extensions.conventions": "[3.3.0, )",
           "xunit": "[2.4.1, )"
         }
       },
@@ -593,6 +625,12 @@
         "requested": "[13.0.4, )",
         "resolved": "13.0.4",
         "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
+      },
+      "System.Reactive": {
+        "type": "CentralTransitive",
+        "requested": "[5.0.0, )",
+        "resolved": "5.0.0",
+        "contentHash": "erBZjkQHWL9jpasCE/0qKAryzVBJFxGHVBAvgRN1bzM0q2s1S4oYREEEL0Vb+1kA/6BKb5FjUZMp5VXmy+gzkQ=="
       },
       "System.Security.Cryptography.ProtectedData": {
         "type": "CentralTransitive",
@@ -1028,6 +1066,13 @@
           "xunit.extensibility.core": "[2.4.1]"
         }
       },
+      "atap.utilities.collection.extensions": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "System.Reactive": "[5.0.0, )"
+        }
+      },
       "atap.utilities.configuration.extensions": {
         "type": "Project",
         "dependencies": {
@@ -1062,6 +1107,16 @@
           "Microsoft.Extensions.DependencyInjection": "[10.0.2, )"
         }
       },
+      "atap.utilities.serializer.shim.systemtextjson": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
+          "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
+        }
+      },
       "atap.utilities.serializer.stringconstants": {
         "type": "Project",
         "dependencies": {
@@ -1077,6 +1132,21 @@
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.NET.Test.Sdk": "[17.0.0, )",
           "Moq": "[4.16.1, )",
+          "xunit": "[2.4.1, )"
+        }
+      },
+      "atap.utilities.testing.di": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.Configuration.Extensions": "[0.1.1, )",
+          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.Testing": "[0.1.0-Alpha, )",
+          "FluentAssertions": "[6.2.0, )",
+          "Microsoft.Extensions.Configuration": "[9.0.0, )",
+          "Microsoft.NET.Test.Sdk": "[17.0.0, )",
+          "Moq": "[4.16.1, )",
+          "Ninject": "[3.3.6, )",
+          "Ninject.extensions.conventions": "[3.3.0, )",
           "xunit": "[2.4.1, )"
         }
       },
@@ -1220,6 +1290,12 @@
         "requested": "[13.0.4, )",
         "resolved": "13.0.4",
         "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
+      },
+      "System.Reactive": {
+        "type": "CentralTransitive",
+        "requested": "[5.0.0, )",
+        "resolved": "5.0.0",
+        "contentHash": "erBZjkQHWL9jpasCE/0qKAryzVBJFxGHVBAvgRN1bzM0q2s1S4oYREEEL0Vb+1kA/6BKb5FjUZMp5VXmy+gzkQ=="
       },
       "System.Security.Cryptography.ProtectedData": {
         "type": "CentralTransitive",
@@ -1657,6 +1733,13 @@
           "xunit.extensibility.core": "[2.4.1]"
         }
       },
+      "atap.utilities.collection.extensions": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "System.Reactive": "[5.0.0, )"
+        }
+      },
       "atap.utilities.configuration.extensions": {
         "type": "Project",
         "dependencies": {
@@ -1691,6 +1774,16 @@
           "Microsoft.Extensions.DependencyInjection": "[10.0.2, )"
         }
       },
+      "atap.utilities.serializer.shim.systemtextjson": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
+          "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
+        }
+      },
       "atap.utilities.serializer.stringconstants": {
         "type": "Project",
         "dependencies": {
@@ -1706,6 +1799,21 @@
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.NET.Test.Sdk": "[17.0.0, )",
           "Moq": "[4.16.1, )",
+          "xunit": "[2.4.1, )"
+        }
+      },
+      "atap.utilities.testing.di": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.Configuration.Extensions": "[0.1.1, )",
+          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.Testing": "[0.1.0-Alpha, )",
+          "FluentAssertions": "[6.2.0, )",
+          "Microsoft.Extensions.Configuration": "[9.0.0, )",
+          "Microsoft.NET.Test.Sdk": "[17.0.0, )",
+          "Moq": "[4.16.1, )",
+          "Ninject": "[3.3.6, )",
+          "Ninject.extensions.conventions": "[3.3.0, )",
           "xunit": "[2.4.1, )"
         }
       },
@@ -1848,6 +1956,12 @@
         "requested": "[13.0.4, )",
         "resolved": "13.0.4",
         "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
+      },
+      "System.Reactive": {
+        "type": "CentralTransitive",
+        "requested": "[5.0.0, )",
+        "resolved": "5.0.0",
+        "contentHash": "erBZjkQHWL9jpasCE/0qKAryzVBJFxGHVBAvgRN1bzM0q2s1S4oYREEEL0Vb+1kA/6BKb5FjUZMp5VXmy+gzkQ=="
       },
       "System.Security.Cryptography.ProtectedData": {
         "type": "CentralTransitive",

@@ -877,6 +877,18 @@
           "ATAP.Utilities.ETW": "[0.1.2, )"
         }
       },
+      "atap.utilities.testing": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.Configuration.Extensions": "[0.1.1, )",
+          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "FluentAssertions": "[6.2.0, )",
+          "Microsoft.Extensions.Configuration": "[9.0.0, )",
+          "Microsoft.NET.Test.Sdk": "[17.0.0, )",
+          "Moq": "[4.16.1, )",
+          "xunit": "[2.4.1, )"
+        }
+      },
       "Fody": {
         "type": "CentralTransitive",
         "requested": "[6.9.3, )",
@@ -1999,6 +2011,18 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ETW": "[0.1.2, )"
+        }
+      },
+      "atap.utilities.testing": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.Configuration.Extensions": "[0.1.1, )",
+          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "FluentAssertions": "[6.2.0, )",
+          "Microsoft.Extensions.Configuration": "[9.0.0, )",
+          "Microsoft.NET.Test.Sdk": "[17.0.0, )",
+          "Moq": "[4.16.1, )",
+          "xunit": "[2.4.1, )"
         }
       },
       "Fody": {
@@ -3126,6 +3150,18 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ETW": "[0.1.2, )"
+        }
+      },
+      "atap.utilities.testing": {
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.Configuration.Extensions": "[0.1.1, )",
+          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "FluentAssertions": "[6.2.0, )",
+          "Microsoft.Extensions.Configuration": "[9.0.0, )",
+          "Microsoft.NET.Test.Sdk": "[17.0.0, )",
+          "Moq": "[4.16.1, )",
+          "xunit": "[2.4.1, )"
         }
       },
       "Fody": {

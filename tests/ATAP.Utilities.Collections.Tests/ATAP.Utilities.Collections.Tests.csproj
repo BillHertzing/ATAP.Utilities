@@ -17,4 +17,12 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Collection.Extensions\ATAP.Utilities.Collection.Extensions.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.StronglyTypedId\Models\ATAP.Utilities.StronglyTypedId.Models.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.StronglyTypedId\JsonConverter.Shim.SystemTextJson\ATAP.Utilities.StronglyTypedId.JsonConverter.Shim.SystemTextJson.csproj" />
+  </ItemGroup>
+
+
+
 </Project>

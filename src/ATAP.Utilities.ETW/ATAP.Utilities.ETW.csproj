@@ -6,6 +6,13 @@
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
+    <DisableFody>true</DisableFody>
     <Description>ETW (Event Tracing for Windows) log attribute and provider using Fody MethodBoundaryAspect for automatic method entry, exit, and exception tracing.</Description>
   </PropertyGroup>
+  <ItemGroup>
+    <!-- The provider owns the aspect base type but must never weave itself (L1). -->
+    <PackageReference Include="MethodBoundaryAspect.Fody">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
 </Project>

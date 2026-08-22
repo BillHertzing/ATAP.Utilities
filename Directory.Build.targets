@@ -114,13 +114,16 @@
     </PackageReference>
   </ItemGroup>
 
-  <!-- Fody IL weaving for every project.
+  <!-- Fody IL weaving is explicit opt-in for projects whose ETW disposition has passed
+       the layering, cycle, async, and payload gates. In particular, contracts (L0),
+       the provider/aspect runtime (L1), and projects with no approved disposition must
+       not acquire MethodBoundaryAspect.Fody merely because they share this repository.
        Fody core (6.9.3+) is required for .NET 10 / MSBuildMajorVersion=18 support.
        MethodBoundaryAspect.Fody weaves method-entry/exit/exception tracing on any class
-       decorated with [MethodBoundaryAspect] attributes; projects with no such attributes
-       are unaffected. It is a build-time tool — PrivateAssets=all ensures neither it nor the
-       Fody core it pulls in is emitted as a runtime dependency in the generated nuspec. -->
-  <ItemGroup Condition="'$(DisableFody)' != 'true' And '$(ATAPDeferredOpenHardwareMonitorLib)' != 'True'">
+       decorated with [MethodBoundaryAspect] attributes. It is a build-time tool —
+       PrivateAssets=all ensures neither it nor the Fody core it pulls in is emitted as
+       a runtime dependency in the generated nuspec. -->
+  <ItemGroup Condition="'$(ATAPEnableFody)' == 'true' And '$(DisableFody)' != 'true' And '$(ATAPDeferredOpenHardwareMonitorLib)' != 'True'">
     <!-- Fody core flows transitively from MethodBoundaryAspect.Fody and is centrally pinned. -->
     <PackageReference Include="MethodBoundaryAspect.Fody">
       <PrivateAssets>all</PrivateAssets>

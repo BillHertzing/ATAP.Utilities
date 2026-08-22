@@ -34,9 +34,13 @@ Describe 'Task 15.180.j canonical Fody configuration' -Tag 'RepoHealth', 'Fody' 
     ([string] $props.Project.PropertyGroup.FodyGenerateXsd).Trim() | Should -BeExactly 'false'
   }
 
-  It 'honors explicit DisableFody and excludes the deferred project' {
+  It 'requires an approved project opt-in, honors DisableFody, and excludes the deferred project' {
     $targetsText = Get-Content -LiteralPath (Join-Path $script:repoRoot 'Directory.Build.targets') -Raw
+    $targetsText | Should -Match "'\$\(ATAPEnableFody\)' == 'true'"
     $targetsText | Should -Match "'\$\(DisableFody\)' != 'true'"
     $targetsText | Should -Match 'ATAPDeferredOpenHardwareMonitorLib'
+    $providerProject = Get-Content -LiteralPath (Join-Path $script:repoRoot 'src\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj') -Raw
+    $providerProject | Should -Match '<DisableFody>true</DisableFody>'
+    $providerProject | Should -Match '<PackageReference Include="MethodBoundaryAspect.Fody">'
   }
 }

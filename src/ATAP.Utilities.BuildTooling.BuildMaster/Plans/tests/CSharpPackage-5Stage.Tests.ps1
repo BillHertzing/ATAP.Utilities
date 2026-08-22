@@ -219,6 +219,11 @@ Describe 'V4-C02 runner shape: Invoke-CSharpPackageBuildMasterStage.ps1 contract
         $ciMatches.Count | Should -BeGreaterOrEqual 2
     }
 
+    It 'runner marks its explicit Prepare build as an authorized publication invocation' {
+        $publicationInvocationMatches = [regex]::Matches($script:RunnerText, 'ATAPExplicitPublicationInvocation=true')
+        $publicationInvocationMatches.Count | Should -Be 2
+    }
+
     It 'runner resolves stable Visual Studio Build Tools with the NuGet Build Tools component' {
         $script:RunnerText | Should -Match 'function\s+Resolve-DeterministicNuGetMSBuild'
         $script:RunnerText | Should -Match '-requires\s+Microsoft\.VisualStudio\.Component\.NuGet\.BuildTools'

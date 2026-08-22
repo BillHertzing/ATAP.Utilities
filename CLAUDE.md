@@ -12,9 +12,9 @@ Entity Framework Core abstractions, Flyway migration helpers
 
 | Source File    | Last Modified            |
 | -------------- | ------------------------ |
-| main-instructions.md | 2026-08-13 12:10:12 |
+| main-instructions.md | 2026-08-22 10:48:31 |
 | ai-local.md | 2026-08-13 12:27:38 |
-| CLAUDE.md (combined) | 2026-08-13 12:27:47 |
+| CLAUDE.md (combined) | 2026-08-22 11:07:31 |
 
 ---
 
@@ -82,14 +82,14 @@ Sprint (`${SPRINT_WORKTREE_PATH_*}`) placeholders — the active sprint branch w
 - `${SPRINT_WORKTREE_PATH_ATAP_UTILITIES}` — ATAP.Utilities sprint worktree path.
 - `${SPRINT_WORKTREE_PATH_ATAP_IAC}` — ATAP.IAC (Infrastructure-as-Code) sprint worktree path.
 - `${SPRINT_WORKTREE_PATH_ATAP_PLANNING}` — _Planning sprint worktree path.
-- `${SPRINT_WORKTREE_PATH_ACECOMMANDER}` — Ace repository sprint worktree path.
+- `${SPRINT_WORKTREE_PATH_ACE}` — Ace repository sprint worktree path.
 - `${SPRINT_WORKTREE_PATH_EPHEMERAL}` — Abstract sprint worktree path (used in examples not tied to a specific repository).
 
 Stable (`${STABLE_WORKTREE_PATH_*}`) placeholders — the permanent stable-branch worktree for a
 repo (the closed-state path used after a sprint ends). The same five repository suffixes apply:
 `${STABLE_WORKTREE_PATH_SHAREDVSCODE}`, `${STABLE_WORKTREE_PATH_ATAP_UTILITIES}`,
 `${STABLE_WORKTREE_PATH_ATAP_IAC}`, `${STABLE_WORKTREE_PATH_ATAP_PLANNING}`, and
-`${STABLE_WORKTREE_PATH_ACECOMMANDER}`.
+`${STABLE_WORKTREE_PATH_ACE}`.
 
 These placeholders are not real paths; tools and AI agents should recognize them as variables
 that represent stable or ephemeral sprint branch worktrees, rather than hard-coded directories.

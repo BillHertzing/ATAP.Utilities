@@ -267,6 +267,7 @@ function Invoke-PromotedPackageTests {
                 $ProjectPath
                 '/p:UsePackageReferenceForSUT=true'
                 "/p:SUTVersion=$Version"
+                '/p:ATAPExplicitPublicationInvocation=true'
                 $artifactArguments
             )
             if (-not [string]::IsNullOrWhiteSpace($env:NBGV_BuildingRef)) {
@@ -319,6 +320,7 @@ function Invoke-PromotedPackageTests {
                 'Release'
                 '/p:UsePackageReferenceForSUT=true'
                 "/p:SUTVersion=$Version"
+                '/p:ATAPExplicitPublicationInvocation=true'
                 '--no-restore'
                 '--logger'
                 'trx'

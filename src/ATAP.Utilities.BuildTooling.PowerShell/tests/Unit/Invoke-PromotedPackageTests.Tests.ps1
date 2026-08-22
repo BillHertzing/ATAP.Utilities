@@ -137,7 +137,8 @@ Describe 'Invoke-PromotedPackageTests' -Tag 'Unit' {
             Assert-MockCalled dotnet -Times 1 -Exactly -Scope It -ParameterFilter {
                 $rest[0] -eq 'restore' -and
                 ($rest -contains '/p:UsePackageReferenceForSUT=true') -and
-                ($rest -contains '/p:SUTVersion=0.1.0-Sprint.142')
+                ($rest -contains '/p:SUTVersion=0.1.0-Sprint.142') -and
+                ($rest -contains '/p:ATAPExplicitPublicationInvocation=true')
             }
         }
 

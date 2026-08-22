@@ -119,9 +119,6 @@ namespace ATAP.Utilities.HostedServices {
     #endregion
   }
 
-#if TRACE
-  [ETWLogAttribute]
-#endif
   // A service that provides a reactive (IObservable) stream (watcher) that aggregates a number of FileSystemWatcher events into an IObservable stream
   class FileSystemWatchersAsObservableKey { int Key { get; set; } }
   public class FileSystemWatchersHostedServiceData : IDisposable, IFileSystemWatchersHostedServiceData {

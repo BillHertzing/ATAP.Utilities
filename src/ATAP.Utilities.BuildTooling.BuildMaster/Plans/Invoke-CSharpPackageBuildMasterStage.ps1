@@ -11,15 +11,15 @@
   per-tier idempotent completion markers, run-context JSON, ProGet API-key
   resolution, ceiling-clamp enforcement, and the publish/promote/test loop.
 
-  For Experimental the script runs `dotnet build`, then uses the stable Visual
+  For Experimental Prepare the script runs `dotnet build`, then uses the stable Visual
   Studio Build Tools MSBuild/NuGet pack implementation against the per-build
   run-context output directory. The runner rejects NuGet versions older than
   7.8 because they do not honor deterministic pack. It captures the resulting `.nupkg` for
-  the configured `$MetaPackageName`, publishes it (and any sibling roll-up
-  `.nupkg` files dotnet pack emits) to the Experimental feed via
-  Publish-NuGetPackageToProGet (which resolves the supplied SecretName at its
-  authenticated leaf and applies --skip-duplicate), records the immutable package version on
-  build-context.json, and writes a per-tier completion marker.
+  the configured `$MetaPackageName`, persists an immutable prepared-manifest
+  SHA, and stops without feed mutation. Inspect re-hashes the packages; Approve
+  persists the named operator and exact inspected SHA; only Publish may call
+  Publish-NuGetPackageToProGet after re-validating that state. Publish then
+  records the immutable package version and writes the completion marker.
 
   For Development/Integration/QA/Production it promotes the captured immutable
   version from the previous tier's feed to the destination feed via
@@ -36,7 +36,12 @@
   Path to the ATAP.Utilities.BuildTooling.PowerShell module manifest or folder.
 
 .PARAMETER SourcePath
-  Working copy / repository root. _generated/buildmaster lives beneath this.
+  Working copy / repository root.
+
+.PARAMETER ArtifactsPath
+  Canonical external execution path in the form
+  <root>\dotnet\ATAP.Utilities\<worktree-id>\<execution-id>. All build, pack,
+  smoke-test, binlog, and provenance output is rooted beneath this path.
 
 .PARAMETER BuildMasterBuildId
   BuildMaster build id used as the per-build run-context folder name.
@@ -103,6 +108,7 @@
   pwsh -File Invoke-CSharpPackageBuildMasterStage.ps1 `
     -BuildToolingModulePath C:\src\repo\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1 `
     -SourcePath C:\src\repo `
+    -ArtifactsPath C:\ATAPArtifacts\dotnet\ATAP.Utilities\wt137\build-12345 `
     -BuildMasterBuildId 12345 `
     -ApplicationName ATAP.Utilities `
     -MetaPackageName ATAP.Utilities.StronglyTypedId `
@@ -132,6 +138,10 @@ param(
   [Parameter(Mandatory)]
   [ValidateNotNullOrEmpty()]
   [string]$SourcePath,
+
+  [Parameter(Mandatory)]
+  [ValidateNotNullOrEmpty()]
+  [string]$ArtifactsPath,
 
   [Parameter(Mandatory)]
   [ValidateNotNullOrEmpty()]
@@ -170,6 +180,15 @@ param(
   [AllowEmptyString()]
   [string]$Stage = '',
 
+  [ValidateSet('Prepare', 'Inspect', 'Approve', 'Publish')]
+  [string]$ApprovalAction = 'Prepare',
+
+  [AllowEmptyString()]
+  [string]$ExpectedPreparedManifestSha256 = '',
+
+  [AllowEmptyString()]
+  [string]$ApprovedBy = '',
+
   [AllowEmptyString()]
   [string]$PackageOutputPath = '',
 
@@ -192,8 +211,9 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-# Initialize host settings using the standalone loader (Task 9.38). This populates
-# the settings and configRootKeys globals in memory in this profileless shell.
+# Initialize host settings using the standalone loader (Task 9.38). The
+# BuildMaster plan intentionally allows the PowerShell profile to load first;
+# this loader then resolves the repository/host settings contract explicitly.
 
 if (-not (Get-Command -Name Write-PSFMessage -CommandType Function, Cmdlet -ErrorAction SilentlyContinue)) {
   function Write-PSFMessage {
@@ -211,99 +231,8 @@ if (-not (Get-Command -Name Write-PSFMessage -CommandType Function, Cmdlet -Erro
 }
 
 . (Join-Path -Path $PSScriptRoot -ChildPath 'BuildMasterRunContext.Common.ps1')
+. (Join-Path -Path $PSScriptRoot -ChildPath 'CSharpPackageApprovalBoundary.ps1')
 Initialize-LocalHostSettings -SourcePath $SourcePath
-
-function Set-NoProfileProGetFeedSettings {
-  <#
-  .SYNOPSIS
-    Bootstraps minimal $global:Settings and $global:configRootKeys so that
-    Publish-NuGetPackageToProGet -> Resolve-ProGetFeedFromSettings works
-    under -NoProfile.
-  .DESCRIPTION
-    Publish-NuGetPackageToProGet resolves feed URIs through
-    Resolve-ProGetFeedFromSettings, which reads $global:Settings and
-    $global:configRootKeys. Under -NoProfile (BuildMaster's invocation
-    pattern, and ours) the user profile that populates those globals never
-    loaded. We populate exactly the keys the resolver needs: the canonical
-    five NuGet feed entries derived from ProGetUrl + feed names. Existing
-    globals are left untouched if they are already populated (so a
-    profile-loaded host wins over this fallback).
-  .NOTES
-    AI assisted using Powershell.instructions.md as guidelines.
-    Tracked by V4-B02 (no-profile audit) and V4-G05 for a structural fix in
-    Resolve-ProGetFeedFromSettings.
-  #>
-  [CmdletBinding()]
-  param(
-    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ProGetUrl,
-    [ValidateNotNullOrEmpty()][string]$ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key',
-    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ExperimentalFeed,
-    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$DevelopmentFeed,
-    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$IntegrationFeed,
-    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$QAFeed,
-    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ProductionFeed
-  )
-
-  BEGIN {
-    $fn = 'Set-NoProfileProGetFeedSettings'
-    $mn = 'ATAP.Utilities.BuildTooling.BuildMaster'
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Starting $fn"
-  }
-
-  PROCESS {
-    # Set-StrictMode -Version Latest is active in BuildMasterRunContext.Common.ps1.
-    # Reading an undeclared global throws under strict mode, so check via Get-Variable
-    # before dereferencing.
-    $collectionKey = 'ProGetFeedCollection'
-
-    $configRootKeysVar = Get-Variable -Name 'configRootKeys' -Scope Global -ErrorAction SilentlyContinue
-    $existingConfigRootKeys = if ($null -ne $configRootKeysVar) { $configRootKeysVar.Value } else { $null }
-    if ($null -eq $existingConfigRootKeys -or -not ($existingConfigRootKeys -is [System.Collections.IDictionary])) {
-      $global:configRootKeys = @{}
-    }
-    if (-not $global:configRootKeys.Contains('ProGetFeedCollectionConfigRootKey')) {
-      $global:configRootKeys['ProGetFeedCollectionConfigRootKey'] = $collectionKey
-    } else {
-      $collectionKey = [string]$global:configRootKeys['ProGetFeedCollectionConfigRootKey']
-    }
-
-    $settingsVar = Get-Variable -Name 'Settings' -Scope Global -ErrorAction SilentlyContinue
-    $existingSettings = if ($null -ne $settingsVar) { $settingsVar.Value } else { $null }
-    if ($null -eq $existingSettings -or -not ($existingSettings -is [System.Collections.IDictionary])) {
-      $global:Settings = @{}
-    }
-    if (-not $global:Settings.Contains($collectionKey) -or $null -eq $global:Settings[$collectionKey]) {
-      $trimmed = $ProGetUrl.TrimEnd('/')
-      $tierByFeed = [ordered]@{
-        $ExperimentalFeed = 'experimental'
-        $DevelopmentFeed  = 'development'
-        $IntegrationFeed  = 'integration'
-        $QAFeed           = 'qa'
-        $ProductionFeed   = 'stable'
-      }
-      $feedCollection = @{}
-      foreach ($feedName in $tierByFeed.Keys) {
-        $tier = $tierByFeed[$feedName]
-        $feedCollection[$feedName] = @{
-          FeedType    = 'nuget'
-          Tier        = $tier
-          FeedName    = $feedName
-          Uri         = "$trimmed/nuget/$feedName/"
-          NuGetV3Uri  = "$trimmed/nuget/$feedName/v3/index.json"
-          ApiKeySecretName = $ProGetApiKeySecretName
-        }
-      }
-      $global:Settings[$collectionKey] = $feedCollection
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Bootstrapped no-profile ProGet feed settings ($($feedCollection.Keys.Count) feeds) from ProGetUrl='$ProGetUrl'."
-    } else {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Existing ProGet feed settings under '$collectionKey' preserved; no-profile bootstrap skipped."
-    }
-  }
-
-  END {
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Finished $fn"
-  }
-}
 
 function Add-GitSafeDirectoryForCurrentProcess {
   <#
@@ -340,6 +269,78 @@ function Add-GitSafeDirectoryForCurrentProcess {
   END {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Finished $fn"
   }
+}
+
+function Resolve-CSharpPackageArtifactsContext {
+  <#
+  .SYNOPSIS
+    Validates the canonical external artifact path and establishes its owner marker.
+  .OUTPUTS
+    PSCustomObject compatible with the shared ArtifactsContext contract.
+  #>
+  [CmdletBinding()]
+  [OutputType([PSCustomObject])]
+  param(
+    [Parameter(Mandatory)]
+    [ValidateNotNullOrEmpty()]
+    [string]$ArtifactsPath
+  )
+
+  $resolvedArtifactsPath = [System.IO.Path]::GetFullPath($ArtifactsPath)
+  if (-not [System.IO.Path]::IsPathRooted($resolvedArtifactsPath) -or $resolvedArtifactsPath -match '(?i)[\\/]Dropbox[\\/]') {
+    throw "ArtifactsPath '$ArtifactsPath' must be an absolute external path outside Dropbox."
+  }
+
+  $executionDirectory = [System.IO.DirectoryInfo]::new($resolvedArtifactsPath)
+  $worktreeDirectory = $executionDirectory.Parent
+  $repositoryDirectory = if ($null -ne $worktreeDirectory) { $worktreeDirectory.Parent } else { $null }
+  $dotnetDirectory = if ($null -ne $repositoryDirectory) { $repositoryDirectory.Parent } else { $null }
+  $artifactsRootDirectory = if ($null -ne $dotnetDirectory) { $dotnetDirectory.Parent } else { $null }
+  if (
+    $null -eq $artifactsRootDirectory -or
+    $dotnetDirectory.Name -cne 'dotnet' -or
+    $repositoryDirectory.Name -cne 'ATAP.Utilities' -or
+    [string]::IsNullOrWhiteSpace($worktreeDirectory.Name) -or
+    [string]::IsNullOrWhiteSpace($executionDirectory.Name)
+  ) {
+    throw "ArtifactsPath '$resolvedArtifactsPath' must match '<root>\\dotnet\\ATAP.Utilities\\<worktree-id>\\<execution-id>'."
+  }
+
+  $context = [pscustomobject]@{
+    Root               = $artifactsRootDirectory.FullName
+    WorktreeId         = $worktreeDirectory.Name
+    ExecutionId        = $executionDirectory.Name
+    ArtifactsPath      = $resolvedArtifactsPath
+    BinlogPath         = Join-Path $resolvedArtifactsPath 'binlogs/experimental-build.binlog'
+    PackageStagingPath = Join-Path $resolvedArtifactsPath 'packages'
+    PublishStagingPath = Join-Path $resolvedArtifactsPath 'publish'
+  }
+
+  [System.IO.Directory]::CreateDirectory($resolvedArtifactsPath) | Out-Null
+  $artifactsOwner = "ATAP.Utilities|$($context.WorktreeId)|$($context.ExecutionId)"
+  $ownerMarkerPath = Join-Path $resolvedArtifactsPath '.atap-artifacts-owner'
+  if (Test-Path -LiteralPath $ownerMarkerPath -PathType Leaf) {
+    $existingOwner = ([System.IO.File]::ReadAllText($ownerMarkerPath)).Trim()
+    if ($existingOwner -cne $artifactsOwner) {
+      throw "ArtifactsPath '$resolvedArtifactsPath' is owned by '$existingOwner', not '$artifactsOwner'."
+    }
+  }
+  else {
+    try {
+      $stream = [System.IO.FileStream]::new($ownerMarkerPath, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::Read)
+      try {
+        $writer = [System.IO.StreamWriter]::new($stream, [System.Text.UTF8Encoding]::new($false))
+        try { $writer.Write($artifactsOwner) } finally { $writer.Dispose() }
+      }
+      finally { $stream.Dispose() }
+    }
+    catch [System.IO.IOException] {
+      $existingOwner = ([System.IO.File]::ReadAllText($ownerMarkerPath)).Trim()
+      if ($existingOwner -cne $artifactsOwner) { throw }
+    }
+  }
+
+  return $context
 }
 
 function Get-CSharpPackagePackageVersionFromNupkgPath {
@@ -733,6 +734,7 @@ function Invoke-CSharpPackageBuildMasterStage {
   param(
     [Parameter(Mandatory)][string]$BuildToolingModulePath,
     [Parameter(Mandatory)][string]$SourcePath,
+    [Parameter(Mandatory)][string]$ArtifactsPath,
     [Parameter(Mandatory)][string]$BuildMasterBuildId,
     [AllowEmptyString()][string]$BuildNumber = '',
     [AllowEmptyString()][string]$ExecutionId = '',
@@ -744,6 +746,9 @@ function Invoke-CSharpPackageBuildMasterStage {
     [string]$Configuration = 'Release',
     [AllowEmptyString()][string]$Branch = '',
     [AllowEmptyString()][string]$Stage = '',
+    [ValidateSet('Prepare', 'Inspect', 'Approve', 'Publish')][string]$ApprovalAction = 'Prepare',
+    [AllowEmptyString()][string]$ExpectedPreparedManifestSha256 = '',
+    [AllowEmptyString()][string]$ApprovedBy = '',
     [AllowEmptyString()][string]$PackageOutputPath = '',
     [AllowEmptyString()][string]$NupkgPathFile = '',
     [Parameter(Mandatory)][string]$ProGetUrl,
@@ -759,15 +764,6 @@ function Invoke-CSharpPackageBuildMasterStage {
     $fn = 'Invoke-CSharpPackageBuildMasterStage'
     $mn = 'ATAP.Utilities.BuildTooling.BuildMaster'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Starting $fn for BuildId='$BuildMasterBuildId'; MetaPackage='$MetaPackageName'"
-
-    Set-NoProfileProGetFeedSettings `
-      -ProGetUrl $ProGetUrl `
-      -ProGetApiKeySecretName $ProGetApiKeySecretName `
-      -ExperimentalFeed $ExperimentalFeed `
-      -DevelopmentFeed $DevelopmentFeed `
-      -IntegrationFeed $IntegrationFeed `
-      -QAFeed $QAFeed `
-      -ProductionFeed $ProductionFeed
 
     $script:buildToolingRoot = Split-Path -Parent $BuildToolingModulePath
   }
@@ -921,7 +917,9 @@ function Invoke-CSharpPackageBuildMasterStage {
 
     Add-GitSafeDirectoryForCurrentProcess -RepositoryPath $SourcePath
 
-    $contextDirectory = Initialize-BuildMasterRunContextDirectory -SourcePath $SourcePath -BuildMasterBuildId $BuildMasterBuildId
+    $artifactsContext = Resolve-CSharpPackageArtifactsContext -ArtifactsPath $ArtifactsPath
+    $resolvedArtifactsPath = [string]$artifactsContext.ArtifactsPath
+    $contextDirectory = Initialize-BuildMasterRunContextDirectory -SourcePath $resolvedArtifactsPath -BuildMasterBuildId $BuildMasterBuildId
     $contextParameters = @{
       Application = $ApplicationName
       ProjectPath = $projectDirectory
@@ -994,7 +992,7 @@ function Invoke-CSharpPackageBuildMasterStage {
       -PrereleaseLabel $capturedPrereleaseLabel `
       -AllowDecisions $allowDecisions `
       -StateFiles $stateFiles `
-      -AdditionalData @{ PipelineKind = 'CSharpPackage'; MetaPackageName = $MetaPackageName; PackageName = $PackageName; SolutionPath = $resolvedSolutionPath; Configuration = $Configuration } | Out-Null
+      -AdditionalData @{ PipelineKind = 'CSharpPackage'; MetaPackageName = $MetaPackageName; PackageName = $PackageName; SolutionPath = $resolvedSolutionPath; Configuration = $Configuration; ArtifactsPath = $resolvedArtifactsPath; BinlogPath = $artifactsContext.BinlogPath } | Out-Null
 
     $packBuildOutputRoot = Join-Path -Path $contextDirectory -ChildPath "nuget/$MetaPackageName"
     if ([string]::IsNullOrWhiteSpace($PackageOutputPath)) {
@@ -1107,6 +1105,15 @@ function Invoke-CSharpPackageBuildMasterStage {
 
         $resultsPath = Join-Path -Path $contextDirectory -ChildPath "$($Tier)TestResults"
         $testFilter = Get-CSharpPackageTestFilterForTier -Tier $Tier
+        $testArtifactsContext = [pscustomobject]@{
+          Root               = $artifactsContext.Root
+          WorktreeId         = $artifactsContext.WorktreeId
+          ExecutionId        = $artifactsContext.ExecutionId
+          ArtifactsPath      = $artifactsContext.ArtifactsPath
+          BinlogPath         = Join-Path (Split-Path -Parent $artifactsContext.BinlogPath) "$($Tier.ToLowerInvariant())-smoke-test.binlog"
+          PackageStagingPath = $artifactsContext.PackageStagingPath
+          PublishStagingPath = $artifactsContext.PublishStagingPath
+        }
         $testParameters = @{
           Name             = $PackageName
           Version          = $PromotedPackageVersion
@@ -1115,6 +1122,7 @@ function Invoke-CSharpPackageBuildMasterStage {
           ProjectPath      = $resolvedSolutionPath
           ProGetUrl        = $ProGetUrl
           WorkingDirectory = $SourcePath
+          ArtifactsContext = $testArtifactsContext
         }
         if (-not [string]::IsNullOrWhiteSpace($testFilter)) {
           $testParameters['TestFilter'] = $testFilter
@@ -1167,6 +1175,48 @@ function Invoke-CSharpPackageBuildMasterStage {
       throw "C# package stage '$tier' exceeds version ceiling '$ceilingTier' for build '$BuildMasterBuildId'. Refusing deployment so BuildMaster does not advance stages above the package ceiling."
     }
 
+    $approvalDirectory = Join-Path $contextDirectory 'approval-boundary'
+    $preparedManifestPath = Join-Path $approvalDirectory 'prepared.json'
+    $approvalRecordPath = Join-Path $approvalDirectory 'approved.json'
+    if ($tier -eq 'Experimental' -and $ApprovalAction -ne 'Prepare') {
+      switch ($ApprovalAction) {
+        'Inspect' {
+          $inspection = Get-CSharpPackagePreparedManifestInspection -ManifestPath $preparedManifestPath
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Prepared manifest inspected; SHA256='$($inspection.PreparedManifestSha256)'; packages=$($inspection.Packages.Count). No feed was mutated."
+          return
+        }
+        'Approve' {
+          if ([string]::IsNullOrWhiteSpace($ExpectedPreparedManifestSha256) -or [string]::IsNullOrWhiteSpace($ApprovedBy)) {
+            throw 'Approve requires ExpectedPreparedManifestSha256 and ApprovedBy.'
+          }
+          $approval = Approve-CSharpPackagePreparedManifest `
+            -ManifestPath $preparedManifestPath `
+            -ExpectedPreparedManifestSha256 $ExpectedPreparedManifestSha256 `
+            -ApprovedBy $ApprovedBy `
+            -ApprovalPath $approvalRecordPath
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Prepared manifest approved by '$ApprovedBy'; approval SHA256='$($approval.ApprovalSha256)'. No feed was mutated."
+          return
+        }
+        'Publish' {
+          $authorization = Assert-CSharpPackagePublicationAuthorized -ManifestPath $preparedManifestPath -ApprovalPath $approvalRecordPath
+          foreach ($package in $authorization.Packages) {
+            $publishResult = Publish-NuGetPackageToProGet `
+              -NupkgPath $package.Path `
+              -Feed $ExperimentalFeed `
+              -ProGetApiKeySecretName $ProGetApiKeySecretName
+            Assert-BuildMasterOperationSucceeded -Result $publishResult -OperationName 'Publish-NuGetPackageToProGet'
+          }
+          $packageVersionForRun = [string]$authorization.Manifest.PackageVersion
+          $metaPackageNupkg = Find-CSharpMetaPackageNupkg -PackageDirectory $PackageOutputPath -MetaPackageName $MetaPackageName
+          $metaPackageNupkg.FullName | Set-Content -LiteralPath $NupkgPathFile -Encoding utf8 -NoNewline
+          Update-CSharpPackagePackageContext -PackageVersion $packageVersionForRun -NupkgPath $metaPackageNupkg.FullName
+          Set-CSharpPackageStageCompleted -ContextDirectory $contextDirectory -MetaPackageName $MetaPackageName -Tier 'Experimental' -PackageVersion $packageVersionForRun
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Authorized Experimental publish complete for '$MetaPackageName' version '$packageVersionForRun'; approved SHA256='$($authorization.PreparedManifestSha256)'."
+          return
+        }
+      }
+    }
+
     $tierOrder = @(Get-TierOrder)
     $currentTierIndex = $tierOrder.IndexOf($tier)
     $ceilingTierIndex = $tierOrder.IndexOf($ceilingTier)
@@ -1202,6 +1252,7 @@ function Invoke-CSharpPackageBuildMasterStage {
           'Experimental' {
             New-Item -ItemType Directory -Path (Split-Path -Parent $NupkgPathFile) -Force | Out-Null
             New-Item -ItemType Directory -Path $PackageOutputPath -Force | Out-Null
+            New-Item -ItemType Directory -Path (Split-Path -Parent $artifactsContext.BinlogPath) -Force | Out-Null
 
             $publishTracePath = Join-Path -Path $contextDirectory -ChildPath "$MetaPackageName.publish.log"
             Add-BuildMasterPublishTrace -Path $publishTracePath -Message "dotnet build '$resolvedProjectPath' -c '$Configuration' (deterministic)."
@@ -1210,7 +1261,12 @@ function Invoke-CSharpPackageBuildMasterStage {
               'build', $resolvedProjectPath,
               '--configuration', $Configuration,
               '--no-incremental',
-              '-p:ContinuousIntegrationBuild=true'
+              '--artifacts-path', $resolvedArtifactsPath,
+              '-p:ContinuousIntegrationBuild=true',
+              "-p:ATAPArtifactsRoot=$($artifactsContext.Root)",
+              "-p:ATAPArtifactsWorktreeId=$($artifactsContext.WorktreeId)",
+              "-p:ATAPArtifactsExecutionId=$($artifactsContext.ExecutionId)",
+              "/bl:$($artifactsContext.BinlogPath)"
             )
             # Retry dotnet build up to 3 times. Mirrors Invoke-ModuleBuildWithRetry
             # from the PowerShell-module runner; specifically catches transient
@@ -1257,6 +1313,11 @@ function Invoke-CSharpPackageBuildMasterStage {
                 '/p:ContinuousIntegrationBuild=true',
                 '/p:Deterministic=true',
                 "/p:DeterministicTimestamp=$sourceDateEpoch",
+                "/p:ArtifactsPath=$resolvedArtifactsPath",
+                "/p:ATAPArtifactsRoot=$($artifactsContext.Root)",
+                "/p:ATAPArtifactsWorktreeId=$($artifactsContext.WorktreeId)",
+                "/p:ATAPArtifactsExecutionId=$($artifactsContext.ExecutionId)",
+                "/bl:$(Join-Path (Split-Path -Parent $artifactsContext.BinlogPath) "pack-run-$packRun.binlog")",
                 '/m:1',
                 '/nr:false'
               )
@@ -1317,20 +1378,20 @@ function Invoke-CSharpPackageBuildMasterStage {
             Add-BuildMasterPublishTrace -Path $publishTracePath -Message "Captured meta-package '$($metaPackageNupkg.Name)' version '$packageVersionForRun'."
 
             $allNupkgs = @(Get-ChildItem -LiteralPath $PackageOutputPath -Filter '*.nupkg' -File)
-            foreach ($nupkg in $allNupkgs) {
-              Add-BuildMasterPublishTrace -Path $publishTracePath -Message "Publishing '$($nupkg.Name)' to '$ExperimentalFeed'."
-              try {
-                $publishResult = Publish-NuGetPackageToProGet -NupkgPath $nupkg.FullName -Feed $ExperimentalFeed -ProGetApiKeySecretName $ProGetApiKeySecretName
-              }
-              catch {
-                Add-BuildMasterPublishTrace -Path $publishTracePath -Message "ERROR: $($_.Exception.GetType().FullName): $($_.Exception.Message)"
-                throw
-              }
-              if ($null -ne $publishResult -and $publishResult.PSObject.Properties.Name -contains 'ResponseSummary') {
-                Add-BuildMasterPublishTrace -Path $publishTracePath -Message $publishResult.ResponseSummary
-              }
+            $sourceCommit = (& git -C $SourcePath rev-parse HEAD 2>$null).Trim()
+            if ($LASTEXITCODE -ne 0 -or $sourceCommit -notmatch '^[0-9a-fA-F]{40}$') {
+              throw "Cannot prepare publication because Git HEAD could not be resolved for '$SourcePath'."
             }
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Experimental publish complete for '$MetaPackageName' version '$packageVersionForRun'. Ceiling='$ceilingTier'."
+            $prepared = New-CSharpPackagePreparedManifest `
+              -ArtifactsPath $resolvedArtifactsPath `
+              -ManifestPath $preparedManifestPath `
+              -NupkgPath $allNupkgs.FullName `
+              -BuildMasterBuildId $BuildMasterBuildId `
+              -SourceCommit $sourceCommit `
+              -PackageVersion $packageVersionForRun
+            Add-BuildMasterPublishTrace -Path $publishTracePath -Message "Prepared immutable package set; manifest SHA256='$($prepared.PreparedManifestSha256)'. No feed was mutated."
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Experimental preparation complete for '$MetaPackageName' version '$packageVersionForRun'; inspect '$preparedManifestPath' and approve SHA256='$($prepared.PreparedManifestSha256)' before Publish. No feed was mutated."
+            return
           }
           default {
             if ([string]::IsNullOrWhiteSpace($packageVersionForRun)) {
@@ -1378,6 +1439,7 @@ function Invoke-CSharpPackageBuildMasterStage {
 Invoke-CSharpPackageBuildMasterStage `
   -BuildToolingModulePath $BuildToolingModulePath `
   -SourcePath $SourcePath `
+  -ArtifactsPath $ArtifactsPath `
   -BuildMasterBuildId $BuildMasterBuildId `
   -BuildNumber $BuildNumber `
   -ExecutionId $ExecutionId `
@@ -1389,6 +1451,9 @@ Invoke-CSharpPackageBuildMasterStage `
   -Configuration $Configuration `
   -Branch $Branch `
   -Stage $Stage `
+  -ApprovalAction $ApprovalAction `
+  -ExpectedPreparedManifestSha256 $ExpectedPreparedManifestSha256 `
+  -ApprovedBy $ApprovedBy `
   -PackageOutputPath $PackageOutputPath `
   -NupkgPathFile $NupkgPathFile `
   -ProGetUrl $ProGetUrl `

@@ -9,9 +9,11 @@ BeforeAll {
     $script:RepoRoot       = Resolve-Path -LiteralPath (Join-Path $script:BuildMasterDir '..\..')
     $script:PlanPath       = Join-Path $script:PlansDir 'CSharpPackage-5Stage.otter'
     $script:RunnerPath     = Join-Path $script:PlansDir 'Invoke-CSharpPackageBuildMasterStage.ps1'
+    $script:InitializerPath = Join-Path $script:PlansDir 'Initialize-CSharpPackageBuildContext.ps1'
     $script:MonitorPath    = Join-Path $script:BuildMasterDir 'Monitors/CSharpPackage-RepositoryMonitors.otter'
     $script:PlanText       = Get-Content -LiteralPath $script:PlanPath -Raw
     $script:RunnerText     = Get-Content -LiteralPath $script:RunnerPath -Raw
+    $script:InitializerText = Get-Content -LiteralPath $script:InitializerPath -Raw
     $script:MonitorText    = Get-Content -LiteralPath $script:MonitorPath -Raw
 }
 
@@ -31,9 +33,10 @@ Describe 'V4-C02 plan shape: CSharpPackage-5Stage.otter is a thin runner plan' {
         $execMatches.Count | Should -Be 1
     }
 
-    It 'the single Exec invokes pwsh -File with the runner script' {
+    It 'the single Exec invokes pwsh -File with profiles enabled' {
         $script:PlanText | Should -Match 'FileName:\s*pwsh'
-        $script:PlanText | Should -Match '-NoProfile\s+-File\s+"\$InvokeCSharpPackageStageScript"'
+        $script:PlanText | Should -Match 'Arguments:\s*>>-File\s+"\$InvokeCSharpPackageStageScript"'
+        $script:PlanText | Should -Not -Match '(?i)-NoProfile'
     }
 
     It 'plan does not call dotnet build or dotnet pack inline (runner owns them)' {
@@ -58,6 +61,10 @@ Describe 'V4-C02 plan shape: CSharpPackage-5Stage.otter is a thin runner plan' {
     }
 
     It 'plan passes the canonical smoke-target variables to the runner' {
+        $script:PlanText | Should -Match '-ArtifactsPath\s+"\$ArtifactsPath"'
+        $script:PlanText | Should -Match '-ApprovalAction\s+"\$ApprovalAction"'
+        $script:PlanText | Should -Match '-ExpectedPreparedManifestSha256\s+"\$ExpectedPreparedManifestSha256"'
+        $script:PlanText | Should -Match '-ApprovedBy\s+"\$ApprovedBy"'
         $script:PlanText | Should -Match '-MetaPackageName\s+"\$MetaPackageName"'
         $script:PlanText | Should -Match '-PackageName\s+"\$PackageName"'
         $script:PlanText | Should -Match '-ProjectPath\s+"\$ProjectPath"'
@@ -157,6 +164,7 @@ Describe 'V4-C02 runner shape: Invoke-CSharpPackageBuildMasterStage.ps1 contract
         foreach ($param in @(
             'BuildToolingModulePath',
             'SourcePath',
+            'ArtifactsPath',
             'BuildMasterBuildId',
             'BuildNumber',
             'ExecutionId',
@@ -184,6 +192,13 @@ Describe 'V4-C02 runner shape: Invoke-CSharpPackageBuildMasterStage.ps1 contract
     It 'runner invokes Publish-NuGetPackageToProGet (no inline dotnet nuget push)' {
         $script:RunnerText | Should -Match 'Publish-NuGetPackageToProGet'
         $script:RunnerText | Should -Not -Match 'dotnet\s+nuget\s+push'
+    }
+
+    It 'defaults to Prepare and places publication behind exact persisted authorization' {
+        $script:RunnerText | Should -Match "ApprovalAction\s*=\s*'Prepare'"
+        $script:RunnerText | Should -Match "(?s)'Publish'\s*\{.*Assert-CSharpPackagePublicationAuthorized.*Publish-NuGetPackageToProGet"
+        $script:RunnerText | Should -Match '(?s)New-CSharpPackagePreparedManifest.*No feed was mutated.*return'
+        $script:RunnerText | Should -Match "(?s)'Approve'\s*\{.*ExpectedPreparedManifestSha256.*ApprovedBy.*No feed was mutated.*return"
     }
 
     It 'runner invokes Promote-ProGetPackage for non-Experimental tiers' {
@@ -246,6 +261,23 @@ Describe 'V4-C02 runner shape: Invoke-CSharpPackageBuildMasterStage.ps1 contract
     It 'runner uses the canonical per-build run-context directory' {
         $script:RunnerText | Should -Match 'Initialize-BuildMasterRunContextDirectory'
         $script:RunnerText | Should -Match "Join-Path[^\r\n]*PSScriptRoot[^\r\n]*BuildMasterRunContext\.Common\.ps1"
+        $script:RunnerText | Should -Match 'Initialize-BuildMasterRunContextDirectory\s+-SourcePath\s+\$resolvedArtifactsPath'
+    }
+
+    It 'propagates one external ArtifactsContext through build, pack, tests, binlogs, and provenance' {
+        $script:RunnerText | Should -Match 'Resolve-CSharpPackageArtifactsContext\s+-ArtifactsPath\s+\$ArtifactsPath'
+        $script:RunnerText | Should -Match '''--artifacts-path'',\s+\$resolvedArtifactsPath'
+        $script:RunnerText | Should -Match '"/p:ArtifactsPath=\$resolvedArtifactsPath"'
+        $script:RunnerText | Should -Match 'ArtifactsContext\s*=\s*\$testArtifactsContext'
+        $script:RunnerText | Should -Match 'smoke-test\.binlog'
+        $script:RunnerText | Should -Match '/bl:\$\(\$artifactsContext\.BinlogPath\)'
+        $script:RunnerText | Should -Match 'AdditionalData[^\r\n]+ArtifactsPath[^\r\n]+BinlogPath'
+    }
+
+    It 'initializer roots run context beneath the explicit external ArtifactsPath' {
+        $script:InitializerText | Should -Match '\[string\]\$ArtifactsPath'
+        $script:InitializerText | Should -Match 'Initialize-BuildMasterRunContextDirectory\s+-SourcePath\s+\$resolvedArtifactsPath'
+        $script:InitializerText | Should -Match 'AdditionalData[^\r\n]+ArtifactsPath'
     }
 
     It 'runner writes per-package per-tier completion markers' {
@@ -278,6 +310,44 @@ Describe 'V4-C02 runner shape: Invoke-CSharpPackageBuildMasterStage.ps1 contract
         [System.Management.Automation.Language.Parser]::ParseFile(
             $script:RunnerPath, [ref]$tokens, [ref]$parseErrors) | Out-Null
         $parseErrors | Should -BeNullOrEmpty
+    }
+}
+
+Describe 'Task 15.181.h S1 isolated ArtifactsPath contract' {
+    BeforeAll {
+        $tokens = $null
+        $parseErrors = $null
+        $runnerAst = [System.Management.Automation.Language.Parser]::ParseFile(
+            $script:RunnerPath, [ref]$tokens, [ref]$parseErrors)
+        $parseErrors | Should -BeNullOrEmpty
+        $resolverAst = $runnerAst.Find(
+            { param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Resolve-CSharpPackageArtifactsContext' },
+            $true)
+        $resolverAst | Should -Not -BeNullOrEmpty
+        Invoke-Expression $resolverAst.Extent.Text
+    }
+
+    It 'derives the context and writes the exact owner marker without invoking a feed' {
+        $path = Join-Path $TestDrive 'root/dotnet/ATAP.Utilities/wt137/exec-h-s1'
+        $context = Resolve-CSharpPackageArtifactsContext -ArtifactsPath $path
+
+        $context.Root | Should -BeExactly (Join-Path $TestDrive 'root')
+        $context.WorktreeId | Should -BeExactly 'wt137'
+        $context.ExecutionId | Should -BeExactly 'exec-h-s1'
+        $context.ArtifactsPath | Should -BeExactly ([System.IO.Path]::GetFullPath($path))
+        (Get-Content -LiteralPath (Join-Path $path '.atap-artifacts-owner') -Raw) |
+            Should -BeExactly 'ATAP.Utilities|wt137|exec-h-s1'
+    }
+
+    It 'fails closed for an in-worktree path or an ownership mismatch' {
+        { Resolve-CSharpPackageArtifactsContext -ArtifactsPath 'C:\Dropbox\repo\_generated' } |
+            Should -Throw '*absolute external path outside Dropbox*'
+
+        $path = Join-Path $TestDrive 'root/dotnet/ATAP.Utilities/wt137/exec-owned'
+        New-Item -ItemType Directory -Path $path -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $path '.atap-artifacts-owner') -Value 'ATAP.Utilities|other|owner' -NoNewline
+        { Resolve-CSharpPackageArtifactsContext -ArtifactsPath $path } |
+            Should -Throw '*is owned by*'
     }
 }
 

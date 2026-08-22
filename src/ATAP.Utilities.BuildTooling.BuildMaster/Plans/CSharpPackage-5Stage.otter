@@ -20,6 +20,8 @@
 #   $ApplicationName  - BuildMaster application name, e.g. "ATAP.Utilities"
 #   $Branch           - source branch name supplied by monitor/poller
 #   $SourcePath       - absolute path to the developer/build worktree
+#   $ArtifactsPath    - canonical external execution path:
+#                       <root>\dotnet\ATAP.Utilities\<worktree-id>\<execution-id>
 #   $MetaPackageName  - roll-up NuGet package id, e.g. "ATAP.Utilities.StronglyTypedId"
 #   $PackageName      - ProGet package id used for promotion / test; defaults to $MetaPackageName
 #   $ProjectPath      - path (relative to $SourcePath or absolute) to the .csproj
@@ -30,6 +32,10 @@
 #                       (e.g. "ATAP.Utilities.Production.slnf"); defaults to
 #                       "ATAP.Utilities.sln" inside the runner
 #   $Configuration    - MSBuild configuration, defaults to Release
+#   $ApprovalAction   - Prepare (automatic default), Inspect, Approve, or
+#                       Publish. Approve/Publish require the exact prepared SHA.
+#   $ExpectedPreparedManifestSha256 - operator-inspected SHA for Approve.
+#   $ApprovedBy       - named operator identity recorded by Approve.
 #   ProGet API key    - Arguments carry only ProGet.BuildMaster.API.Key as a
 #                       SecretName. Authenticated leaves resolve it through
 #                       Get-SecretATAP; no environment fallback is permitted.
@@ -41,11 +47,13 @@
 #                       version.json prerelease label and stored under the
 #                       build-id context (owned by the runner script)
 #
-# Experimental builds and packs the C# package once and publishes it (and any
-# sibling roll-up .nupkg files dotnet pack emits) to nuget-experimental. Later
-# stages promote that same immutable .nupkg and run Invoke-PromotedPackageTests
-# against the promoted package through $CeilingTier; they do not rebuild or
-# repack above Experimental.
+# Experimental Prepare builds and packs the C# package once, persists the
+# immutable package-set manifest and SHA, and stops without mutating a feed.
+# Inspect and Approve are also non-feed actions. A separate Publish action may
+# write to nuget-experimental only after the approved record matches the exact
+# prepared SHA and every package re-hashes unchanged. Later stages promote that
+# same immutable .nupkg and run Invoke-PromotedPackageTests through $CeilingTier;
+# they do not rebuild or repack above Experimental.
 #
 # Immutable build strategy:
 #   Adheres to the immutable build strategy: build occurs only in the
@@ -76,7 +84,7 @@ set $BuildMasterExecutionId = $ExecutionId;
 Exec
 (
     FileName: pwsh,
-    Arguments: >>-NoProfile -File "$InvokeCSharpPackageStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -MetaPackageName "$MetaPackageName" -PackageName "$PackageName" -ProjectPath "$ProjectPath" -SolutionPath "$SolutionPath" -Configuration "$Configuration" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName">>,
+    Arguments: >>-File "$InvokeCSharpPackageStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -ArtifactsPath "$ArtifactsPath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -MetaPackageName "$MetaPackageName" -PackageName "$PackageName" -ProjectPath "$ProjectPath" -SolutionPath "$SolutionPath" -Configuration "$Configuration" -Branch "$Branch" -Stage "$PipelineStageName" -ApprovalAction "$ApprovalAction" -ExpectedPreparedManifestSha256 "$ExpectedPreparedManifestSha256" -ApprovedBy "$ApprovedBy" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName">>,
     WorkingDirectory: $SourcePath,
     SuccessExitCode: 0
 );

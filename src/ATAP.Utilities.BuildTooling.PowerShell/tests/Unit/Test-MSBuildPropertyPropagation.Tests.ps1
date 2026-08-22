@@ -194,3 +194,78 @@ Describe 'Task 15.180 exact VersionOverride fixture allowlist' -Tag 'Unit', 'CPM
     $script:overrideAllowlist | Should -Not -Match 'OpenHardwareMonitorLib'
   }
 }
+Describe 'Task 15.181 production and verification solution-filter contract' -Tag 'Unit', 'SolutionFilter' {
+  BeforeAll {
+    $productionFilterPath = Join-Path $script:repoRoot 'ATAP.Utilities.Production.slnf'
+    $verificationFilterPath = Join-Path $script:repoRoot 'ATAP.Utilities.ProductionVerification.slnf'
+    $script:productionFilter = Get-Content -LiteralPath $productionFilterPath -Raw | ConvertFrom-Json
+    $script:verificationFilter = Get-Content -LiteralPath $verificationFilterPath -Raw | ConvertFrom-Json
+    $script:productionPaths = @($script:productionFilter.solution.projects | ForEach-Object { $_.Replace('\', '/') })
+    $script:verificationPaths = @($script:verificationFilter.solution.projects | ForEach-Object { $_.Replace('\', '/') })
+    $script:verificationOnlyPaths = @($script:verificationPaths | Where-Object { $_ -cnotin $script:productionPaths })
+  }
+
+  It 'uses the same solution and exact ratified ordered project universes' {
+    $script:productionFilter.solution.path | Should -BeExactly 'ATAP.Utilities.sln'
+    $script:verificationFilter.solution.path | Should -BeExactly 'ATAP.Utilities.sln'
+
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try {
+      $productionHash = [Convert]::ToHexString($sha256.ComputeHash(
+          [Text.Encoding]::UTF8.GetBytes(($script:productionPaths -join "`n")))).ToLowerInvariant()
+      $verificationHash = [Convert]::ToHexString($sha256.ComputeHash(
+          [Text.Encoding]::UTF8.GetBytes(($script:verificationPaths -join "`n")))).ToLowerInvariant()
+    } finally {
+      $sha256.Dispose()
+    }
+
+    $productionHash | Should -BeExactly '471dfd7ff0243573f1b4638d1464994613fc4df946992c6f18c80fe4af9d7994'
+    $verificationHash | Should -BeExactly '214e3d14151ebae0b145d9f96bf1a6712dc5f4808618c29408321ea2f8a75230'
+  }
+
+  It 'keeps all 145 shipping projects and zero tests in production' {
+    $script:productionPaths.Count | Should -Be 145
+    @($script:productionPaths | Where-Object { $_ -match '(?i)^tests/' }).Count | Should -Be 0
+  }
+
+  It 'contains every production path plus exactly the 32 current tests in verification' {
+    $script:verificationPaths.Count | Should -Be 177
+    @($script:productionPaths | Where-Object { $_ -cnotin $script:verificationPaths }).Count | Should -Be 0
+    $script:verificationOnlyPaths.Count | Should -Be 32
+    @($script:verificationOnlyPaths | Where-Object { $_ -notmatch '(?i)^tests/' }).Count | Should -Be 0
+    @($script:verificationPaths | Where-Object { $_ -cnotin @($script:productionPaths + $script:verificationOnlyPaths) }).Count |
+      Should -Be 0
+  }
+
+  It 'excludes all deferred GenerateProgram projects from both filters' {
+    @($script:productionPaths | Where-Object { $_ -match '(?i)GenerateProgram' }).Count | Should -Be 0
+    @($script:verificationPaths | Where-Object { $_ -match '(?i)GenerateProgram' }).Count | Should -Be 0
+  }
+
+  It 'has no duplicate or case-variant project paths' {
+    @($script:productionPaths | Sort-Object -Unique -CaseSensitive).Count | Should -Be $script:productionPaths.Count
+    @($script:productionPaths | Sort-Object -Unique).Count | Should -Be $script:productionPaths.Count
+    @($script:verificationPaths | Sort-Object -Unique -CaseSensitive).Count | Should -Be $script:verificationPaths.Count
+    @($script:verificationPaths | Sort-Object -Unique).Count | Should -Be $script:verificationPaths.Count
+  }
+
+  It 'places both VersionOverride PackageSmoke fixtures only in verification' {
+    $packageSmokeFixtures = @(
+      'tests/ATAP.Utilities.Secrets.BitwardenSecretsManager.PackageSmoke.Tests/ATAP.Utilities.Secrets.BitwardenSecretsManager.PackageSmoke.Tests.csproj'
+      'tests/ATAP.Utilities.Serializer.Interfaces.PackageSmoke.Tests/ATAP.Utilities.Serializer.Interfaces.PackageSmoke.Tests.csproj'
+    )
+
+    foreach ($fixture in $packageSmokeFixtures) {
+      $script:verificationPaths | Should -Contain $fixture
+      $script:productionPaths | Should -Not -Contain $fixture
+    }
+  }
+
+  It 'keeps future ETW performance-test projects verification-only by excluding all tests from production' {
+    $performanceTestPaths = @($script:verificationPaths | Where-Object {
+        $_ -match '(?i)^tests/.+(performance|benchmark).+\.csproj$'
+      })
+    @($performanceTestPaths | Where-Object { $_ -cin $script:productionPaths }).Count | Should -Be 0
+    @($script:productionPaths | Where-Object { $_ -match '(?i)^tests/' }).Count | Should -Be 0
+  }
+}

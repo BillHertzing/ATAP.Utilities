@@ -658,10 +658,10 @@ function Get-CSharpPackageTestFilterForTier {
 
   PROCESS {
     switch ($Tier) {
-      'Development' { return 'Category=Unit' }
-      'Integration' { return 'Category=Unit|Category=Integration' }
+      'Development' { return '' }
+      'Integration' { return '' }
       'QA'          { return '' }
-      'Production'  { return 'Category=Smoke' }
+      'Production'  { return '' }
       default        { return '' }
     }
   }

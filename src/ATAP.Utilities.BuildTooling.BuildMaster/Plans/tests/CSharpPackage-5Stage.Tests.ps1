@@ -201,6 +201,12 @@ Describe 'V4-C02 runner shape: Invoke-CSharpPackageBuildMasterStage.ps1 contract
         $script:RunnerText | Should -Match "(?s)'Approve'\s*\{.*ExpectedPreparedManifestSha256.*ApprovedBy.*No feed was mutated.*return"
     }
 
+    It 'uses no category filter at promoted-package tiers' {
+        $script:RunnerText | Should -Match "'Development' \{ return '' \}"
+        $script:RunnerText | Should -Match "'Integration' \{ return '' \}"
+        $script:RunnerText | Should -Match "'QA'\s+\{ return '' \}"
+        $script:RunnerText | Should -Match "'Production'\s+\{ return '' \}"
+    }
     It 'runner invokes Promote-ProGetPackage for non-Experimental tiers' {
         $script:RunnerText | Should -Match 'Promote-ProGetPackage'
     }

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0",
+  "description": "Approved source-content fingerprints for manually versioned shipping packages. RepoHealth fails when an entry version is reused with a changed protected fingerprint.",
+  "packages": [
+    {
+      "packageId": "ATAP.Utilities.Configuration",
+      "projectPath": "src/ATAP.Utilities.Configuration",
+      "version": "0.1.2",
+      "contentFingerprintSha256": "f50d2e1439b3c9c036286e2b8e948c927fceebfd7accbd3b3521a11319d6c9d7",
+      "protectedContent": "All tracked project files except version.json and generated bin/, obj/, and _generated/ content; fingerprint input is sorted repo-relative path plus file SHA-256."
+    }
+  ]
+}

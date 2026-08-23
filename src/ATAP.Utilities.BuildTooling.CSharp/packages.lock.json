@@ -75,6 +75,9 @@
         "resolved": "9.0.0",
         "contentHash": "qd01+AqPhbAG14KtdtIqFk+cxHQFZ/oqRSCoxU1F+Q6Kv0cl726sl7RzU9yLFGd4BUOKdN4XojXF0pQf/R6YeA=="
       },
+      "atap.utilities.etw": {
+        "type": "Project"
+      },
       "Fody": {
         "type": "CentralTransitive",
         "requested": "[6.9.3, )",
@@ -190,6 +193,9 @@
         "type": "Transitive",
         "resolved": "9.0.0",
         "contentHash": "GxJTSFPQpoVd0vQRgq8hwesicxgZoHTbYMvR/UMM4IzhkHMT+ebZE11c2C1gUyxz55zWtGCWktMTHvmgLzob9g=="
+      },
+      "atap.utilities.etw": {
+        "type": "Project"
       },
       "Fody": {
         "type": "CentralTransitive",
@@ -307,6 +313,9 @@
         "type": "Transitive",
         "resolved": "9.0.0",
         "contentHash": "qd01+AqPhbAG14KtdtIqFk+cxHQFZ/oqRSCoxU1F+Q6Kv0cl726sl7RzU9yLFGd4BUOKdN4XojXF0pQf/R6YeA=="
+      },
+      "atap.utilities.etw": {
+        "type": "Project"
       },
       "Fody": {
         "type": "CentralTransitive",

@@ -3,6 +3,7 @@
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
+    <ATAPEnableFody>true</ATAPEnableFody>
   </PropertyGroup>
 
   <ItemGroup>

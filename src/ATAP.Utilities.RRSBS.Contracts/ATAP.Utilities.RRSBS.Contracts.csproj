@@ -10,6 +10,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <DisableFody>true</DisableFody>
+    <ATAPEnableFody>true</ATAPEnableFody>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
+  </ItemGroup>
 </Project>

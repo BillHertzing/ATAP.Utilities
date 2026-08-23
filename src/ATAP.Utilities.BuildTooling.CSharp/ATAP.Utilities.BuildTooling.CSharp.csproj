@@ -13,12 +13,14 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <ATAPEnableFody>true</ATAPEnableFody>
   </PropertyGroup>
 
   <!-- Required only by the custom MSBuild task assembly. -->
   <ItemGroup>
     <PackageReference Include="Microsoft.Build.Framework" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Build.Utilities.Core" PrivateAssets="all" />
+    <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>
 
   <ItemGroup>

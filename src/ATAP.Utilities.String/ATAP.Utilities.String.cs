@@ -2,11 +2,13 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using ATAP.Utilities.ETW;
 
 namespace ATAP.Utilities.String {
 
   public static class Extensions {
     // https://stackoverflow.com/questions/8809354/replace-first-occurrence-of-pattern-in-a-string
+    [ETWLog]
     public static string ReplaceFirst(this string text, string search, string replace) {
       int pos = text.IndexOf(search);
       if (pos < 0) {

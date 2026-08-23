@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
+using ATAP.Utilities.ETW;
 
 namespace ATAP.Utilities.BuildTooling {
   /// <summary>
@@ -121,6 +122,7 @@ namespace ATAP.Utilities.BuildTooling {
         revision = (int)(now.TimeOfDay.TotalSeconds) / 2;
     }
 
+      [ETWLog]
       public static string MakePackageVersion(int Major, int Minor, int Patch, string LifeCycleStage, string Label, int LabelCount) {
           // removing patchStringFormat. It appears the NuSpec created by MSBuild only uses a single digit
           // ToDo: test to ensure that restore picks .10 over .9

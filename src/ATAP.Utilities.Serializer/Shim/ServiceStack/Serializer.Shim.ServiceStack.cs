@@ -1,4 +1,5 @@
 using System;
+using ATAP.Utilities.ETW;
 using Microsoft.Extensions.Configuration;
 using ServiceStack.Text;
 
@@ -69,6 +70,7 @@ public class SerializerOptions : SerializerOptionsAbstract
   {
   }
 
+  [ETWLog]
   private static Config CreateDefaultConfig() => new()
   {
     TextCase = TextCase.CamelCase,

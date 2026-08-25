@@ -93,7 +93,8 @@ FunctionsToExport = @(
   'Test-SprintCheckpointCoverage', 'Test-SprintEndBoundaryState', 'Test-SprintEndCommandSurface',
   'Test-SprintEndPullOverlap', 'Test-SprintEndWorktreeState', 'Test-SprintEndWriteTarget',
   'Test-SprintInfrastructureHealth',
-  'Test-SprintPrerequisites'
+  'Test-SprintPrerequisites',
+  'Write-GatherCallRecord'
 )
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.

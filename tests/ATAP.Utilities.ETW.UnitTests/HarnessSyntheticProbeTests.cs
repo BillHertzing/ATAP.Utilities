@@ -20,27 +20,24 @@ public sealed class HarnessSyntheticProbeTests {
   }
 
   [Fact]
-  public void Success_EmitsOneStartAndOneTerminal() {
+  public void Success_InNonWeavableTestAssembly_EmitsNoEvents() {
     using var listener = new Listener(enableProvider: true);
     Synthetic.Success("safe");
-    Assert.Equal(2, listener.Events.Count(item => item.EventId == 3));
-    Assert.Contains(listener.Events, item => item.Payload.EndsWith(".Success", StringComparison.Ordinal));
+    Assert.Empty(listener.Events);
   }
 
   [Fact]
-  public void Fault_EmitsOneStartAndOneFaultTerminal() {
+  public void Fault_InNonWeavableTestAssembly_EmitsNoEvents() {
     using var listener = new Listener(enableProvider: true);
     Assert.Throws<InvalidOperationException>(() => Synthetic.Fault("safe"));
-    Assert.Single(listener.Events.Where(item => item.EventId == 3));
-    Assert.Single(listener.Events.Where(item => item.EventId == 1 && item.Payload.Contains(typeof(InvalidOperationException).FullName!, StringComparison.Ordinal)));
+    Assert.Empty(listener.Events);
   }
 
   [Fact]
-  public void Cancelled_EmitsOneStartAndOneFaultTerminal() {
+  public void Cancelled_InNonWeavableTestAssembly_EmitsNoEvents() {
     using var listener = new Listener(enableProvider: true);
     Assert.Throws<OperationCanceledException>(() => Synthetic.Cancelled("safe"));
-    Assert.Single(listener.Events.Where(item => item.EventId == 3));
-    Assert.Single(listener.Events.Where(item => item.EventId == 1 && item.Payload.Contains(typeof(OperationCanceledException).FullName!, StringComparison.Ordinal)));
+    Assert.Empty(listener.Events);
   }
 
   [ETWLogAttribute]

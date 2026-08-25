@@ -123,7 +123,7 @@
        decorated with [MethodBoundaryAspect] attributes. It is a build-time tool —
        PrivateAssets=all ensures neither it nor the Fody core it pulls in is emitted as
        a runtime dependency in the generated nuspec. -->
-  <ItemGroup Condition="'$(ATAPEnableFody)' == 'true' And '$(DisableFody)' != 'true' And '$(ATAPDeferredOpenHardwareMonitorLib)' != 'True'">
+  <ItemGroup Condition="'$(ATAPEnableFody)' == 'true' And '$(DisableFody)' != 'true' And '$(ATAPDeferredOpenHardwareMonitorLib)' != 'True' And '$(ATAPFodyRuntimeDependency)' != 'true'">
     <!-- Fody core flows transitively from MethodBoundaryAspect.Fody and is centrally pinned. -->
     <PackageReference Include="MethodBoundaryAspect.Fody">
       <PrivateAssets>all</PrivateAssets>

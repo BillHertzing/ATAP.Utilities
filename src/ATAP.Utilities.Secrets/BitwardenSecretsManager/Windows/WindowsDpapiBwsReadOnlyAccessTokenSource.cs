@@ -22,9 +22,8 @@ public sealed class WindowsDpapiBwsReadOnlyAccessTokenSource : IBwsReadOnlyAcces
     var sam = _identity.SamAccountName.ToLowerInvariant();
     var enabledSlots = ValidateAndGetEnabledSlots();
     var root = Path.GetFullPath(_options.CredentialRootDirectory ?? Path.Combine(_identity.ProgramDataDirectory, "ATAP", "BitwardenCredentials"));
-    var directory = Path.GetFullPath(Path.Combine(root, sam)); EnsureContained(root, directory);
-    if (!Directory.Exists(directory) || (File.GetAttributes(directory) & FileAttributes.ReparsePoint) != 0)
-      throw new BwsException(BwsFailureKind.TokenFolderMissing, "The identity-specific token directory is missing or unsafe.");
+    var directory = Path.GetFullPath(Path.Combine(root, sam));
+    EnsureContained(root, directory);
     var candidates = enabledSlots.Select(slot =>
     {
       var path = Path.GetFullPath(Path.Combine(directory, RenderFilename(slot.FilenamePattern, host, sam)));
@@ -33,6 +32,8 @@ public sealed class WindowsDpapiBwsReadOnlyAccessTokenSource : IBwsReadOnlyAcces
     }).ToArray();
     if (candidates.Select(candidate => candidate.Path).Distinct(StringComparer.OrdinalIgnoreCase).Count() != candidates.Length)
       throw new BwsException(BwsFailureKind.TokenCandidateAmbiguous, "Enabled BWS token slots resolve to duplicate candidate paths.");
+    if (!Directory.Exists(directory) || (File.GetAttributes(directory) & FileAttributes.ReparsePoint) != 0)
+      throw new BwsException(BwsFailureKind.TokenFolderMissing, "The identity-specific token directory is missing or unsafe.");
     candidates = candidates.Where(candidate => File.Exists(candidate.Path)).ToArray();
     if (candidates.Length == 0) throw new BwsException(BwsFailureKind.TokenFileMissing, "No enabled identity-bound BWS token file was found.");
     if (candidates.Length != 1) throw new BwsException(BwsFailureKind.TokenCandidateAmbiguous, "More than one enabled BWS token file exists.");

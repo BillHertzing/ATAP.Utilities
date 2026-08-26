@@ -1,135 +1,83 @@
 #Requires -Version 7.0
 <#
 .SYNOPSIS
-    Runs tier-appropriate C# tests against an already-promoted NuGet
-    package instead of a fresh from-source build.
+    Compiles an execution-scoped SDK consumer against an already-promoted
+    NuGet package without restoring or building the repository solution.
 
 .DESCRIPTION
-    Invoke-PromotedPackageTests is the test half of the immutable-build
-    promotion pipeline. Under the immutable-build strategy the package is
-    built exactly once at the Experimental tier; every later tier
-    (Development -> Integration -> QA -> Production) must run its tests
-    against that already-promoted artifact, not against a rebuild.
+    The package is built exactly once at Experimental. Every promoted tier
+    validates the immutable package by generating a deterministic SDK consumer
+    beneath the original execution artifacts root. The consumer targets net8.0,
+    or net8.0-windows7.0 when the package ID ends in `.Windows`, and has
+    exactly one XML-escaped PackageReference for Name and Version.
 
-    The mechanism is the `UsePackageReferenceForSUT` MSBuild property
-    documented in CSharp-Packages-Test-Process.md S3.1 / S11.2: the test
-    projects carry a conditional <ItemGroup> that swaps their
-    <ProjectReference> to the system-under-test for a <PackageReference>
-    when `UsePackageReferenceForSUT=true`, resolving the package at the
-    version given by `SUTVersion`.
+    Restore suppresses repository Directory.Build and central-package imports,
+    selects the requested lifecycle tier, stable as a dependency-only fallback,
+    plus configured non-lifecycle sources, uses a tier-scoped packages directory,
+    and verifies the restored
+    package's .nupkg.metadata source. The consumer is then compiled with
+    dotnet build --no-restore. The gate never targets the SUT solution or
+    project and never claims that xUnit tests ran.
 
-    This cmdlet therefore:
-      1. Restores the test target with
-         `/p:UsePackageReferenceForSUT=true /p:SUTVersion=<Version>` so
-         the promoted package is pulled from the tier feed.
-      2. Runs `dotnet test` with the same MSBuild properties, a TRX
-         logger, and the caller-supplied `--filter` / coverage options.
-      3. Reports a GatePass boolean derived from the `dotnet test` exit
-         code, plus a best-effort failing-test count parsed from the TRX.
-
-    -WhatIf short-circuits before invoking dotnet. The returned object
-    still carries the resolved inputs so callers can inspect the plan.
-
-    NOTE: the original M2 plan text described creating an ephemeral
-    consumer .csproj. That predates the resolved
-    `UsePackageReferenceForSUT` design now documented in
-    CSharp-Packages-Test-Process.md S11.2 and used by the OtterScript in
-    BuildMaster-ProGet-CSharp-Package-Pipeline.md S5; this implementation
-    follows the resolved design.
+    Development may create or update the deterministic project and lock file.
+    Integration, QA, and Production use LockedRestore and require the persisted
+    project and lock file to match.
 
 .PARAMETER Name
-    The system-under-test package ID, e.g.
-    'ATAP.Utilities.Philote'. Used for logging and echoed on the result;
-    the actual SUT swap is driven by the test project's conditional
-    <ItemGroup> and the SUTVersion property.
+    Exact promoted package ID written to the consumer PackageReference.
 
 .PARAMETER Version
-    The exact promoted package version under test. Passed to MSBuild as
-    `SUTVersion`, e.g. '1.2.0-Sprint.142'.
+    Exact promoted package version written to the consumer PackageReference.
 
 .PARAMETER Feed
-    The ProGet feed the promoted package currently lives in, e.g.
-    'nuget-development'. When -ProGetUrl is also supplied the feed's v3
-    index is added to the restore as an explicit `--source`; otherwise
-    the feed is assumed to be registered in the agent's NuGet.config.
+    Exact approved NuGet lifecycle feed.
 
 .PARAMETER ResultsPath
-    Directory the TRX (and coverage, when -CollectCoverage is set) is
-    written to. Created if it does not exist.
+    Execution-scoped results directory retained in the result contract.
 
 .PARAMETER TestFilter
-    Optional value forwarded to `dotnet test --filter`, e.g.
-    'Category=Integration' or 'Category=Unit|Category=Integration'.
+    Compatibility-only input echoed in the result. No xUnit test is run.
 
 .PARAMETER CollectCoverage
-    When set, adds `--collect:"XPlat Code Coverage"` to the test run.
+    Compatibility-only switch. Coverage is not collected by this compile gate.
 
 .PARAMETER ProjectPath
-    The solution, solution-filter (.slnf), or test project to run.
-    Defaults to 'ATAP.Utilities.sln'. When TestSlice .slnf files exist,
-    pass the tier-appropriate filter here.
+    Compatibility-only original SUT target echoed as RequestedProjectPath.
+    It is never passed to dotnet.
 
 .PARAMETER ProGetUrl
-    Optional ProGet base URL (e.g. 'https://utat022:50000'). When
-    supplied, '<ProGetUrl>/nuget/<Feed>/v3/index.json' is added as an
-    explicit restore `--source`.
+    ProGet base URL used to construct and verify the requested tier source.
 
 .PARAMETER WorkingDirectory
-    Directory the dotnet commands run in. Defaults to the current
-    location (the repository worktree root in pipeline use).
+    Repository root used only to read NuGet.Config for configured
+    non-lifecycle sources.
 
 .PARAMETER LockedRestore
-    Adds `--locked-mode` to the restore step. BuildMaster uses this for
-    Integration, QA, and Production after Development has restored the promoted
-    package once and materialized the per-build `SUTVersion` lock state.
+    Requires the deterministic consumer project and packages.lock.json to
+    already exist and adds --locked-mode to restore.
 
 .PARAMETER ArtifactsContext
-    Resolver result containing Root, WorktreeId, ExecutionId, ArtifactsPath,
-    BinlogPath, PackageStagingPath, and PublishStagingPath. ResultsPath is resolved
-    beneath this execution path and the owner marker must match before restore.
+    Resolver result containing the external execution artifacts identity.
 
 .OUTPUTS
-    [PSCustomObject] with:
-      - OperationName    : Always 'Invoke-PromotedPackageTests'.
-      - GatePass         : $true when `dotnet test` exited 0.
-      - Name             : SUT package ID (echoed input).
-      - Version          : Promoted version under test (echoed input).
-      - Feed             : Tier feed (echoed input).
-      - ProjectPath      : Test target (echoed input).
-      - TestFilter       : The --filter value, or $null.
-      - ResultsPath      : TRX output directory (echoed input).
-      - TrxPath          : Path to the generated .trx, or $null.
-      - FailingTestCount : Failing count parsed from the TRX, or $null
-                           if the TRX could not be located/parsed.
-      - LockedRestore    : $true when restore used `--locked-mode`.
-      - RestoreExitCode  : `dotnet restore` exit code, or $null on WhatIf.
-      - TestExitCode     : `dotnet test` exit code, or $null on WhatIf
-                           or when restore failed.
-      - ResponseSummary  : Short human-readable summary.
+    PSCustomObject preserving the existing gate fields. GatePass reflects
+    isolated consumer compilation. RestoreExitCode and BuildExitCode report
+    the two real operations. TestExitCode, TrxPath, and FailingTestCount remain
+    null because no xUnit test runs.
 
 .EXAMPLE
-    Invoke-PromotedPackageTests -Name 'ATAP.Utilities' `
-        -Version '0.1.0-Sprint.142' `
-        -Feed 'nuget-development' `
-        -TestFilter 'Category=Integration' `
-        -ResultsPath '_generated\testresults\development'
+    Invoke-PromotedPackageTests -Name 'ATAP.Utilities.ETW' -Version '0.1.3' `
+        -Feed 'nuget-development' -ProGetUrl 'https://utat022:50000' `
+        -ResultsPath 'test-results/development' -ArtifactsContext $context
 
 .EXAMPLE
-    Invoke-PromotedPackageTests -Name 'ATAP.Utilities' `
-        -Version '0.1.0-Sprint.142' -Feed 'nuget-qa' `
-        -ResultsPath '_generated\testresults\qa' -CollectCoverage
-
-.EXAMPLE
-    Invoke-PromotedPackageTests -Name 'ATAP.Utilities' `
-        -Version '0.1.0-Sprint.142' -Feed 'nuget-development' `
-        -ResultsPath '_generated\testresults\development' -WhatIf
-
-    Returns the planned test run without invoking dotnet.
+    Invoke-PromotedPackageTests -Name 'ATAP.Utilities.ETW' -Version '0.1.3' `
+        -Feed 'nuget-integration' -ProGetUrl 'https://utat022:50000' `
+        -ResultsPath 'test-results/integration' -LockedRestore -ArtifactsContext $context
 
 .NOTES
     AI assisted using Powershell.instructions.md as guidelines.
-    Stream M2 of the immutable-packages plan. The companion cmdlet for
-    PowerShell modules is Invoke-PromotedModuleTests (Stream M3).
+    Task 15.182.F03 isolated promoted-package consumer gate.
 
 .LINK
     https://github.com/whertzing/ATAP.Utilities
@@ -224,178 +172,261 @@ function Invoke-PromotedPackageTests {
 
     process {
         $target = "$Name $Version"
-        $action = "Test promoted package against feed '$Feed'"
+        $action = "Compile isolated consumer against feed '$Feed'"
+        $identityBytes = [Text.Encoding]::UTF8.GetBytes("$Name`n$Version")
+        $identityHash = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($identityBytes)).ToLowerInvariant()
+        $consumerRoot = Join-Path $artifactsPath 'promoted-consumer' $identityHash
+        $consumerProjectPath = Join-Path $consumerRoot 'PromotedPackageConsumer.csproj'
+        $consumerLockPath = Join-Path $consumerRoot 'packages.lock.json'
+        $tierPackagesPath = Join-Path $artifactsPath 'nuget-packages' $Feed
+        $consumerTargetFramework = if ($Name.EndsWith('.Windows', [StringComparison]::OrdinalIgnoreCase)) {
+            'net8.0-windows7.0'
+        }
+        else {
+            'net8.0'
+        }
+        $directPackageReferences = [ordered]@{ $Name = $Version }
+        $newConsumerProjectContent = {
+            param([System.Collections.IDictionary]$References)
+            $referenceLines = @($References.GetEnumerator() | Sort-Object Key | ForEach-Object {
+                    $escapedReferenceName = [Security.SecurityElement]::Escape([string]$_.Key)
+                    $escapedReferenceVersion = [Security.SecurityElement]::Escape([string]$_.Value)
+                    "    <PackageReference Include=`"$escapedReferenceName`" Version=`"$escapedReferenceVersion`" />"
+                })
+            return (@(
+                    '<Project Sdk="Microsoft.NET.Sdk">'
+                    '  <PropertyGroup>'
+                    "    <TargetFramework>$consumerTargetFramework</TargetFramework>"
+                    '    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>'
+                    '    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>'
+                    '  </PropertyGroup>'
+                    '  <ItemGroup>'
+                    $referenceLines
+                    '  </ItemGroup>'
+                    '</Project>'
+                ) -join [Environment]::NewLine) + [Environment]::NewLine
+        }
+        $consumerProjectContent = & $newConsumerProjectContent -References $directPackageReferences
 
-        # WhatIf short-circuit BEFORE invoking dotnet.
-        if (-not $PSCmdlet.ShouldProcess($target, $action)) {
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "WhatIf: would restore and test $target from feed '$Feed' (project: $ProjectPath)"
-            return [PSCustomObject]@{
-                OperationName    = 'Invoke-PromotedPackageTests'
-                GatePass         = $true
-                Name             = $Name
-                Version          = $Version
-                Feed             = $Feed
-                ProjectPath      = $ProjectPath
-                TestFilter       = if ([string]::IsNullOrWhiteSpace($TestFilter)) { $null } else { $TestFilter }
-                ResultsPath      = $resolvedResultsPath
-                TrxPath          = $null
-                FailingTestCount = $null
-                LockedRestore    = [bool]$LockedRestore
-                RestoreExitCode  = $null
-                TestExitCode     = $null
-                ArtifactsPath    = $artifactsPath
-                ResponseSummary  = "WhatIf: would restore and test $target from feed '$Feed' (project: $ProjectPath)"
+        $newResult = {
+            param(
+                [bool]$GatePass,
+                [AllowNull()][Nullable[int]]$RestoreExitCode,
+                [AllowNull()][Nullable[int]]$BuildExitCode,
+                [string]$ResponseSummary
+            )
+            [PSCustomObject]@{
+                OperationName      = 'Invoke-PromotedPackageTests'
+                GatePass           = $GatePass
+                Name               = $Name
+                Version            = $Version
+                Feed               = $Feed
+                ProjectPath        = $consumerProjectPath
+                RequestedProjectPath = $ProjectPath
+                TestFilter         = if ([string]::IsNullOrWhiteSpace($TestFilter)) { $null } else { $TestFilter }
+                ResultsPath        = $resolvedResultsPath
+                TrxPath            = $null
+                FailingTestCount   = $null
+                LockedRestore      = [bool]$LockedRestore
+                RestoreExitCode    = $RestoreExitCode
+                TestExitCode       = $null
+                BuildExitCode      = $BuildExitCode
+                ArtifactsPath      = $artifactsPath
+                ResponseSummary    = $ResponseSummary
             }
         }
 
-        $restoreExitCode = $null
-        $testExitCode = $null
-        $trxPath = $null
-        $failingTestCount = $null
-        $gatePass = $false
-        $summary = $null
+        if (-not $PSCmdlet.ShouldProcess($target, $action)) {
+            $summary = "WhatIf: would restore and compile isolated consumer for $target from feed '$Feed'."
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message $summary
+            return & $newResult -GatePass $true -RestoreExitCode $null -BuildExitCode $null -ResponseSummary $summary
+        }
 
-        Push-Location -Path $WorkingDirectory
         try {
-            if (-not (Test-Path -Path $resolvedResultsPath)) {
-                New-Item -ItemType Directory -Path $resolvedResultsPath -Force | Out-Null
+            if ([string]::IsNullOrWhiteSpace($ProGetUrl)) {
+                throw 'ProGetUrl is required to verify the requested promoted-package tier.'
+            }
+            $lifecycleFeeds = @(
+                'nuget-experimental'
+                'nuget-development'
+                'nuget-integration'
+                'nuget-qa'
+                'nuget-stable'
+            )
+            if ($Feed -cnotin $lifecycleFeeds) {
+                throw "Feed '$Feed' is not an approved NuGet lifecycle tier."
             }
 
-            # ---- Step 1: restore the promoted package ----------------------
+            foreach ($directory in @($resolvedResultsPath, $consumerRoot, $tierPackagesPath)) {
+                if (-not (Test-Path -LiteralPath $directory -PathType Container)) {
+                    New-Item -ItemType Directory -Path $directory -Force | Out-Null
+                }
+            }
+
+            if ($LockedRestore) {
+                if (-not (Test-Path -LiteralPath $consumerProjectPath -PathType Leaf)) {
+                    throw "Locked promoted-package restore requires the persisted consumer project '$consumerProjectPath'."
+                }
+                $persistedProjectContent = Get-Content -LiteralPath $consumerProjectPath -Raw
+                try {
+                    [xml]$persistedProject = $persistedProjectContent
+                    $primaryReference = @($persistedProject.Project.ItemGroup.PackageReference | Where-Object {
+                            [string]$_.Include -ceq $Name -and [string]$_.Version -ceq $Version
+                        })
+                }
+                catch {
+                    throw "Locked promoted-package consumer project is not valid XML for '$target'."
+                }
+                if ($primaryReference.Count -ne 1) {
+                    throw "Locked promoted-package consumer project drifted from the exact primary reference for '$target'."
+                }
+                $consumerProjectContent = $persistedProjectContent
+                if (-not (Test-Path -LiteralPath $consumerLockPath -PathType Leaf)) {
+                    throw "Locked promoted-package restore requires the persisted lock file '$consumerLockPath'."
+                }
+            }
+            else {
+                $writeConsumerProject = -not (Test-Path -LiteralPath $consumerProjectPath -PathType Leaf)
+                if (-not $writeConsumerProject) {
+                    $writeConsumerProject = (Get-Content -LiteralPath $consumerProjectPath -Raw) -cne $consumerProjectContent
+                }
+                if ($writeConsumerProject) {
+                    Set-Content -LiteralPath $consumerProjectPath -Value $consumerProjectContent -Encoding utf8NoBOM -NoNewline
+                }
+            }
+
+            $feedSource = "$($ProGetUrl.TrimEnd('/'))/nuget/$Feed/v3/index.json"
+            $nugetConfigPath = Join-Path $WorkingDirectory 'NuGet.Config'
+            if (-not (Test-Path -LiteralPath $nugetConfigPath -PathType Leaf)) {
+                throw 'NuGet.Config is required to preserve configured non-lifecycle package sources.'
+            }
+            [xml]$nugetConfig = Get-Content -LiteralPath $nugetConfigPath -Raw
+            $configuredSources = @($nugetConfig.configuration.packageSources.add)
+            if (-not ($configuredSources | Where-Object { [string]$_.key -ceq $Feed } | Select-Object -First 1)) {
+                throw "NuGet.Config does not define the requested lifecycle feed '$Feed'."
+            }
+
+            $restoreSources = @($feedSource)
+            if ($Feed -cne 'nuget-stable') {
+                $restoreSources += "$($ProGetUrl.TrimEnd('/'))/nuget/nuget-stable/v3/index.json"
+            }
+            foreach ($configuredSource in $configuredSources) {
+                $sourceKey = [string]$configuredSource.key
+                $sourceValue = [string]$configuredSource.value
+                $isLifecycleSource = $sourceKey -in $lifecycleFeeds -or
+                    $sourceValue -match '(?i)/nuget/nuget-(experimental|development|integration|qa|stable)/'
+                if (-not $isLifecycleSource -and -not [string]::IsNullOrWhiteSpace($sourceValue)) {
+                    $restoreSources += $sourceValue
+                }
+            }
+            $restoreSources = @($restoreSources | Select-Object -Unique)
+
+            $importIsolationProperties = @(
+                '/p:ImportDirectoryBuildProps=false'
+                '/p:ImportDirectoryBuildTargets=false'
+                '/p:ImportDirectoryPackagesProps=false'
+                '/p:ManagePackageVersionsCentrally=false'
+                '/p:RestorePackagesWithLockFile=true'
+                '/p:ATAPExplicitPublicationInvocation=true'
+            )
             $restoreArgs = @(
                 'restore'
-                $ProjectPath
-                '/p:UsePackageReferenceForSUT=true'
-                "/p:SUTVersion=$Version"
-                '/p:ATAPExplicitPublicationInvocation=true'
-                $artifactArguments
+                $consumerProjectPath
+                $importIsolationProperties
+                '--packages'
+                $tierPackagesPath
+                '--force'
+                '--no-cache'
             )
-            if (-not [string]::IsNullOrWhiteSpace($env:NBGV_BuildingRef)) {
-                $restoreArgs += "/p:NBGV_BuildingRef=$env:NBGV_BuildingRef"
+            foreach ($restoreSource in $restoreSources) {
+                $restoreArgs += @('--source', $restoreSource)
             }
             if ($LockedRestore) {
                 $restoreArgs += '--locked-mode'
             }
-            if (-not [string]::IsNullOrWhiteSpace($ProGetUrl)) {
-                $feedSource = "$($ProGetUrl.TrimEnd('/'))/nuget/$Feed/v3/index.json"
-                $restoreArgs += @('--source', $feedSource)
-                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Restore will use explicit feed source '$feedSource'"
-            }
 
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Restoring promoted package for $target : dotnet $($restoreArgs -join ' ')"
-            dotnet @restoreArgs
-            $restoreExitCode = $LASTEXITCODE
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "dotnet restore exited $restoreExitCode"
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Restoring isolated promoted-package consumer for $target from requested feed '$Feed'."
+            $restoreAttempt = 0
+            do {
+                $restoreAttempt++
+                dotnet @restoreArgs
+                $restoreExitCode = $LASTEXITCODE
+                if ($restoreExitCode -eq 0 -or $LockedRestore) { break }
+
+                $nugetCachePath = Join-Path $consumerRoot 'obj\project.nuget.cache'
+                $newDirectReferences = 0
+                if (Test-Path -LiteralPath $nugetCachePath -PathType Leaf) {
+                    try {
+                        $nugetCache = Get-Content -LiteralPath $nugetCachePath -Raw | ConvertFrom-Json -Depth 20
+                        foreach ($restoreLog in @($nugetCache.logs | Where-Object {
+                                    [string]$_.code -ceq 'NU1102' -and [string]$_.libraryId -like 'ATAP.*'
+                                })) {
+                            $missingName = [string]$restoreLog.libraryId
+                            $nearestMatch = [regex]::Match([string]$restoreLog.message, 'Nearest version:\s*([^\]\s]+)')
+                            if (-not $nearestMatch.Success) { continue }
+                            $missingVersion = $nearestMatch.Groups[1].Value
+                            if (-not $directPackageReferences.Contains($missingName)) {
+                                $directPackageReferences[$missingName] = $missingVersion
+                                $newDirectReferences++
+                            }
+                        }
+                    }
+                    catch {
+                        $newDirectReferences = 0
+                    }
+                }
+                if ($newDirectReferences -eq 0) { break }
+                $consumerProjectContent = & $newConsumerProjectContent -References $directPackageReferences
+                Set-Content -LiteralPath $consumerProjectPath -Value $consumerProjectContent -Encoding utf8NoBOM -NoNewline
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Retrying isolated restore after pinning $newDirectReferences exact ATAP dependency reference(s)."
+            } while ($restoreAttempt -lt 16)
 
             if ($restoreExitCode -ne 0) {
-                $summary = "Restore of promoted package $target from feed '$Feed' failed (dotnet restore exit $restoreExitCode); tests not run."
+                $summary = "Isolated consumer restore for $target from feed '$Feed' failed (exit $restoreExitCode); compile not run."
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $summary
-                return [PSCustomObject]@{
-                    OperationName    = 'Invoke-PromotedPackageTests'
-                    GatePass         = $false
-                    Name             = $Name
-                    Version          = $Version
-                    Feed             = $Feed
-                    ProjectPath      = $ProjectPath
-                    TestFilter       = if ([string]::IsNullOrWhiteSpace($TestFilter)) { $null } else { $TestFilter }
-                    ResultsPath      = $resolvedResultsPath
-                    TrxPath          = $null
-                    FailingTestCount = $null
-                    LockedRestore    = [bool]$LockedRestore
-                    RestoreExitCode  = $restoreExitCode
-                    TestExitCode     = $null
-                    ArtifactsPath    = $artifactsPath
-                ResponseSummary  = $summary
-                }
+                return & $newResult -GatePass $false -RestoreExitCode $restoreExitCode -BuildExitCode $null -ResponseSummary $summary
             }
 
-            # ---- Step 2: run dotnet test against the promoted package ------
-            # --no-restore is safe: step 1 just restored with the same
-            # MSBuild properties. A rebuild still happens because the
-            # conditional <ItemGroup> changed from the developer default.
-            $testArgs = @(
-                'test'
-                $ProjectPath
-                '-c'
+            $packageMetadataPath = Join-Path $tierPackagesPath $Name.ToLowerInvariant() $Version.ToLowerInvariant() '.nupkg.metadata'
+            if (-not (Test-Path -LiteralPath $packageMetadataPath -PathType Leaf)) {
+                $summary = "Restore completed but source metadata for promoted package $target is missing; compile not run."
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $summary
+                return & $newResult -GatePass $false -RestoreExitCode $restoreExitCode -BuildExitCode $null -ResponseSummary $summary
+            }
+            $packageMetadata = Get-Content -LiteralPath $packageMetadataPath -Raw | ConvertFrom-Json
+            $actualPackageSource = [string]$packageMetadata.source
+            if ([string]::IsNullOrWhiteSpace($actualPackageSource) -or
+                $actualPackageSource.TrimEnd('/') -ine $feedSource.TrimEnd('/')) {
+                $summary = "Promoted package $target did not restore from requested feed '$Feed'; compile not run."
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $summary
+                return & $newResult -GatePass $false -RestoreExitCode $restoreExitCode -BuildExitCode $null -ResponseSummary $summary
+            }
+
+            $buildArgs = @(
+                'build'
+                $consumerProjectPath
+                '--configuration'
                 'Release'
-                '/p:UsePackageReferenceForSUT=true'
-                "/p:SUTVersion=$Version"
-                '/p:ATAPExplicitPublicationInvocation=true'
                 '--no-restore'
-                '--logger'
-                'trx'
-                '--results-directory'
-                $resolvedResultsPath
-                $artifactArguments
-                "/bl:$resolvedBinlogPath"
+                $importIsolationProperties
             )
-            if (-not [string]::IsNullOrWhiteSpace($env:NBGV_BuildingRef)) {
-                $testArgs += "/p:NBGV_BuildingRef=$env:NBGV_BuildingRef"
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Compiling isolated promoted-package consumer for $target with --no-restore."
+            dotnet @buildArgs
+            $buildExitCode = $LASTEXITCODE
+            $gatePass = $buildExitCode -eq 0
+            $summary = if ($gatePass) {
+                "Promoted package $target restored from feed '$Feed' and compiled in an isolated consumer (exit 0)."
             }
-            if (-not [string]::IsNullOrWhiteSpace($TestFilter)) {
-                $testArgs += @('--filter', $TestFilter)
+            else {
+                "Isolated consumer compile for promoted package $target failed (exit $buildExitCode)."
             }
-            if ($CollectCoverage) {
-                $testArgs += @('--collect', 'XPlat Code Coverage')
-            }
-
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Testing promoted package $target : dotnet $($testArgs -join ' ')"
-            dotnet @testArgs
-            $testExitCode = $LASTEXITCODE
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "dotnet test exited $testExitCode"
-
-            $gatePass = ($testExitCode -eq 0)
-
-            # ---- Step 3: locate and parse the TRX (best effort) ------------
-            $trxFile = Get-ChildItem -Path $resolvedResultsPath -Filter '*.trx' -ErrorAction SilentlyContinue |
-                Sort-Object -Property LastWriteTime -Descending |
-                Select-Object -First 1
-            if ($null -ne $trxFile) {
-                $trxPath = $trxFile.FullName
-                try {
-                    if (Get-Command Get-NumberOfFailingTestsFromTRX -ErrorAction SilentlyContinue) {
-                        $failingTestCount = [int](Get-NumberOfFailingTestsFromTRX -xmlInputFile $trxPath)
-                    }
-                } catch {
-                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Could not parse failing-test count from '$trxPath': $($_.Exception.Message)"
-                    $failingTestCount = $null
-                }
-            } else {
-                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "No .trx file found under '$resolvedResultsPath'"
-            }
-
-            if ($gatePass) {
-                $summary = "Promoted package $target passed tests against feed '$Feed' (dotnet test exit 0"
-                $summary += if ($null -ne $failingTestCount) { ", $failingTestCount failing in TRX)." } else { ")." }
-            } else {
-                $summary = "Promoted package $target FAILED tests against feed '$Feed' (dotnet test exit $testExitCode"
-                $summary += if ($null -ne $failingTestCount) { ", $failingTestCount failing in TRX)." } else { ")." }
-            }
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $summary
-
-            return [PSCustomObject]@{
-                OperationName    = 'Invoke-PromotedPackageTests'
-                GatePass         = $gatePass
-                Name             = $Name
-                Version          = $Version
-                Feed             = $Feed
-                ProjectPath      = $ProjectPath
-                TestFilter       = if ([string]::IsNullOrWhiteSpace($TestFilter)) { $null } else { $TestFilter }
-                ResultsPath      = $resolvedResultsPath
-                TrxPath          = $trxPath
-                FailingTestCount = $failingTestCount
-                LockedRestore    = [bool]$LockedRestore
-                RestoreExitCode  = $restoreExitCode
-                TestExitCode     = $testExitCode
-                ArtifactsPath    = $artifactsPath
-                ResponseSummary  = $summary
-            }
-        } catch {
-            $errMsg = "Failed to run promoted-package tests for $target against feed '$Feed': $($_.Exception.Message)"
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level $(if ($gatePass) { 'Important' } else { 'Error' }) -Message $summary
+            return & $newResult -GatePass $gatePass -RestoreExitCode $restoreExitCode -BuildExitCode $buildExitCode -ResponseSummary $summary
+        }
+        catch {
+            $errMsg = "Failed to run isolated promoted-package consumer gate for $target against feed '$Feed': $($_.Exception.Message)"
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errMsg
             throw
-        } finally {
-            Pop-Location
         }
     }
 

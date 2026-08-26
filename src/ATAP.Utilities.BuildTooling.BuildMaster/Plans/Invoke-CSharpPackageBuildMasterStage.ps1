@@ -89,6 +89,10 @@
   Optional file path that receives the captured .nupkg path; defaults to
   $contextDirectory/$MetaPackageName.nupkg-path.tmp.
 
+.PARAMETER BwsExecutablePath
+  Optional non-secret absolute path to bws.exe. Used only when bws is absent
+  from the current process PATH; only its parent is prepended at process scope.
+
 .PARAMETER ProGetUrl
   Base URL of the ProGet server hosting the NuGet feeds.
 
@@ -190,6 +194,15 @@ param(
   [string]$ApprovedBy = '',
 
   [AllowEmptyString()]
+  [string]$AuthenticodeApprovalPath = '',
+
+  [AllowEmptyString()]
+  [string]$SignToolPath = '',
+
+  [AllowEmptyString()]
+  [string]$BwsExecutablePath = '',
+
+  [AllowEmptyString()]
   [string]$PackageOutputPath = '',
 
   [AllowEmptyString()]
@@ -232,6 +245,8 @@ if (-not (Get-Command -Name Write-PSFMessage -CommandType Function, Cmdlet -Erro
 
 . (Join-Path -Path $PSScriptRoot -ChildPath 'BuildMasterRunContext.Common.ps1')
 . (Join-Path -Path $PSScriptRoot -ChildPath 'CSharpPackageApprovalBoundary.ps1')
+. (Join-Path -Path $PSScriptRoot -ChildPath 'CSharpPackageAuthenticodeSigning.ps1')
+
 Initialize-LocalHostSettings -SourcePath $SourcePath
 
 function Add-GitSafeDirectoryForCurrentProcess {
@@ -271,6 +286,87 @@ function Add-GitSafeDirectoryForCurrentProcess {
   }
 }
 
+function Enable-BwsExecutableForCurrentProcess {
+  <#
+  .SYNOPSIS
+    Makes an explicitly supplied bws.exe discoverable at process scope when needed.
+  .DESCRIPTION
+    Leaves PATH unchanged when bws is already an application command. Otherwise,
+    validates a non-secret absolute bws.exe path, prepends only its parent directory
+    to process PATH, and verifies command discovery resolves to that exact file.
+  .OUTPUTS
+    System.String containing the resolved bws.exe path.
+  #>
+  [CmdletBinding()]
+  [OutputType([string])]
+  param(
+    [AllowEmptyString()]
+    [string]$BwsExecutablePath = ''
+  )
+
+  BEGIN {
+    $fn = 'Enable-BwsExecutableForCurrentProcess'
+    $mn = 'ATAP.Utilities.BuildTooling.BuildMaster'
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Starting $fn"
+  }
+
+  PROCESS {
+    $existingBws = Get-Command -Name 'bws' -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($null -ne $existingBws) {
+      return [System.IO.Path]::GetFullPath([string]$existingBws.Source)
+    }
+
+    if ([string]::IsNullOrWhiteSpace($BwsExecutablePath)) {
+      throw 'bws was not found on the current process PATH and BwsExecutablePath was not supplied. No secret was resolved and no feed was mutated.'
+    }
+    if ($BwsExecutablePath -match '\$[A-Za-z][A-Za-z0-9_]*') {
+      throw 'BwsExecutablePath contains an unresolved variable token. No secret was resolved and no feed was mutated.'
+    }
+    if (-not [System.IO.Path]::IsPathRooted($BwsExecutablePath)) {
+      throw 'BwsExecutablePath must be absolute. No secret was resolved and no feed was mutated.'
+    }
+
+    $candidatePath = [System.IO.Path]::GetFullPath($BwsExecutablePath)
+    if ([System.IO.Path]::GetFileName($candidatePath) -cne 'bws.exe') {
+      throw 'BwsExecutablePath must name exactly bws.exe. No secret was resolved and no feed was mutated.'
+    }
+    if (-not (Test-Path -LiteralPath $candidatePath -PathType Leaf)) {
+      throw 'BwsExecutablePath must identify an existing leaf. No secret was resolved and no feed was mutated.'
+    }
+
+    $resolvedBwsPath = [string](Resolve-Path -LiteralPath $candidatePath -ErrorAction Stop).ProviderPath
+    $bwsDirectory = Split-Path -Parent $resolvedBwsPath
+    $originalProcessPath = [Environment]::GetEnvironmentVariable('PATH', [EnvironmentVariableTarget]::Process)
+    $pathSeparator = [System.IO.Path]::PathSeparator
+    $updatedProcessPath = if ([string]::IsNullOrWhiteSpace($originalProcessPath)) {
+      $bwsDirectory
+    }
+    else {
+      "$bwsDirectory$pathSeparator$originalProcessPath"
+    }
+
+    [Environment]::SetEnvironmentVariable('PATH', $updatedProcessPath, [EnvironmentVariableTarget]::Process)
+    try {
+      $resolvedCommand = Get-Command -Name 'bws' -CommandType Application -ErrorAction Stop | Select-Object -First 1
+      $resolvedCommandPath = [System.IO.Path]::GetFullPath([string]$resolvedCommand.Source)
+      if (-not $resolvedCommandPath.Equals($resolvedBwsPath, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw 'Process PATH verification did not resolve bws to the approved executable.'
+      }
+    }
+    catch {
+      [Environment]::SetEnvironmentVariable('PATH', $originalProcessPath, [EnvironmentVariableTarget]::Process)
+      throw 'BwsExecutablePath could not be verified for process-local command discovery. No secret was resolved and no feed was mutated.'
+    }
+
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Configured process-local bws executable discovery from the explicit non-secret path.'
+    return $resolvedBwsPath
+  }
+
+  END {
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Finished $fn"
+  }
+}
+
 function Resolve-CSharpPackageArtifactsContext {
   <#
   .SYNOPSIS
@@ -283,10 +379,24 @@ function Resolve-CSharpPackageArtifactsContext {
   param(
     [Parameter(Mandatory)]
     [ValidateNotNullOrEmpty()]
-    [string]$ArtifactsPath
+    [string]$ArtifactsPath,
+
+    [Parameter(Mandatory = $false)]
+    [string]$ExecutionId = ''
   )
 
-  $resolvedArtifactsPath = [System.IO.Path]::GetFullPath($ArtifactsPath)
+  $effectiveArtifactsPath = $ArtifactsPath
+  if ($effectiveArtifactsPath.Contains('$ExecutionId', [System.StringComparison]::Ordinal)) {
+    if ([string]::IsNullOrWhiteSpace($ExecutionId)) {
+      throw "ArtifactsPath '$ArtifactsPath' contains the BuildMaster execution token, but ExecutionId was empty."
+    }
+    $effectiveArtifactsPath = $effectiveArtifactsPath.Replace('$ExecutionId', $ExecutionId, [System.StringComparison]::Ordinal)
+  }
+  if ($effectiveArtifactsPath -match '\$[A-Za-z][A-Za-z0-9_]*') {
+    throw "ArtifactsPath '$ArtifactsPath' contains an unresolved variable token after execution-id binding."
+  }
+
+  $resolvedArtifactsPath = [System.IO.Path]::GetFullPath($effectiveArtifactsPath)
   if (-not [System.IO.Path]::IsPathRooted($resolvedArtifactsPath) -or $resolvedArtifactsPath -match '(?i)[\\/]Dropbox[\\/]') {
     throw "ArtifactsPath '$ArtifactsPath' must be an absolute external path outside Dropbox."
   }
@@ -749,6 +859,9 @@ function Invoke-CSharpPackageBuildMasterStage {
     [ValidateSet('Prepare', 'Inspect', 'Approve', 'Publish')][string]$ApprovalAction = 'Prepare',
     [AllowEmptyString()][string]$ExpectedPreparedManifestSha256 = '',
     [AllowEmptyString()][string]$ApprovedBy = '',
+    [AllowEmptyString()][string]$AuthenticodeApprovalPath = '',
+    [AllowEmptyString()][string]$SignToolPath = '',
+    [AllowEmptyString()][string]$BwsExecutablePath = '',
     [AllowEmptyString()][string]$PackageOutputPath = '',
     [AllowEmptyString()][string]$NupkgPathFile = '',
     [Parameter(Mandatory)][string]$ProGetUrl,
@@ -899,6 +1012,15 @@ function Invoke-CSharpPackageBuildMasterStage {
     if ([string]::IsNullOrWhiteSpace($PackageName)) { $PackageName = $MetaPackageName }
     if ([string]::IsNullOrWhiteSpace($SolutionPath)) { $SolutionPath = 'ATAP.Utilities.sln' }
 
+    $authenticodeContract = Get-CSharpPackageAuthenticodeContract -PackageName $PackageName
+    if ($null -eq $authenticodeContract -and
+      (-not [string]::IsNullOrWhiteSpace($AuthenticodeApprovalPath) -or -not [string]::IsNullOrWhiteSpace($SignToolPath))) {
+      throw "Authenticode signing parameters are forbidden for package '$PackageName'; it is outside the exact F03 eight-package allowlist."
+    }
+    if ($null -ne $authenticodeContract -and $MetaPackageName -cne $PackageName) {
+      throw 'F03 Authenticode release packages require MetaPackageName and PackageName to be the same exact allowlisted package id.'
+    }
+
     $resolvedProjectPath = if ([System.IO.Path]::IsPathRooted($ProjectPath)) {
       $ProjectPath
     } else {
@@ -917,7 +1039,7 @@ function Invoke-CSharpPackageBuildMasterStage {
 
     Add-GitSafeDirectoryForCurrentProcess -RepositoryPath $SourcePath
 
-    $artifactsContext = Resolve-CSharpPackageArtifactsContext -ArtifactsPath $ArtifactsPath
+    $artifactsContext = Resolve-CSharpPackageArtifactsContext -ArtifactsPath $ArtifactsPath -ExecutionId $ExecutionId
     $resolvedArtifactsPath = [string]$artifactsContext.ArtifactsPath
     $contextDirectory = Initialize-BuildMasterRunContextDirectory -SourcePath $resolvedArtifactsPath -BuildMasterBuildId $BuildMasterBuildId
     $contextParameters = @{
@@ -1083,6 +1205,7 @@ function Invoke-CSharpPackageBuildMasterStage {
         $global:ProGetBaseUrl = $ProGetUrl
 
         Write-PSFMessage -FunctionName $f -ModuleName $m -Level Important -Message "Promoting '$PackageName' version '$PromotedPackageVersion' from '$sourceFeed' to '$destinationFeed'."
+        $null = Enable-BwsExecutableForCurrentProcess -BwsExecutablePath $BwsExecutablePath
         try {
           $promotionResult = Promote-ProGetPackage `
             -Name $PackageName `
@@ -1178,6 +1301,8 @@ function Invoke-CSharpPackageBuildMasterStage {
     $approvalDirectory = Join-Path $contextDirectory 'approval-boundary'
     $preparedManifestPath = Join-Path $approvalDirectory 'prepared.json'
     $approvalRecordPath = Join-Path $approvalDirectory 'approved.json'
+    $packageVersionForRun = $null
+    $resumePromotionAfterExperimentalPublish = $false
     if ($tier -eq 'Experimental' -and $ApprovalAction -ne 'Prepare') {
       switch ($ApprovalAction) {
         'Inspect' {
@@ -1199,26 +1324,51 @@ function Invoke-CSharpPackageBuildMasterStage {
         }
         'Publish' {
           $authorization = Assert-CSharpPackagePublicationAuthorized -ManifestPath $preparedManifestPath -ApprovalPath $approvalRecordPath
-          foreach ($package in $authorization.Packages) {
-            $publishResult = Publish-NuGetPackageToProGet `
-              -NupkgPath $package.Path `
-              -Feed $ExperimentalFeed `
-              -ProGetApiKeySecretName $ProGetApiKeySecretName
-            Assert-BuildMasterOperationSucceeded -Result $publishResult -OperationName 'Publish-NuGetPackageToProGet'
-          }
           $packageVersionForRun = [string]$authorization.Manifest.PackageVersion
-          $metaPackageNupkg = Find-CSharpMetaPackageNupkg -PackageDirectory $PackageOutputPath -MetaPackageName $MetaPackageName
-          $metaPackageNupkg.FullName | Set-Content -LiteralPath $NupkgPathFile -Encoding utf8 -NoNewline
-          Update-CSharpPackagePackageContext -PackageVersion $packageVersionForRun -NupkgPath $metaPackageNupkg.FullName
-          Set-CSharpPackageStageCompleted -ContextDirectory $contextDirectory -MetaPackageName $MetaPackageName -Tier 'Experimental' -PackageVersion $packageVersionForRun
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Authorized Experimental publish complete for '$MetaPackageName' version '$packageVersionForRun'; approved SHA256='$($authorization.PreparedManifestSha256)'."
-          return
+          $expectedMetaPackageFileName = "$MetaPackageName.$packageVersionForRun.nupkg"
+          $approvedMetaPackages = @($authorization.Packages | Where-Object { [string]$_.Name -ceq $expectedMetaPackageFileName })
+          if ($approvedMetaPackages.Count -ne 1) {
+            throw "Authorized package set must contain exactly one '$expectedMetaPackageFileName'; found $($approvedMetaPackages.Count)."
+          }
+          $approvedMetaPackagePath = [string]$approvedMetaPackages[0].Path
+          $approvedMetaPackagePath | Set-Content -LiteralPath $NupkgPathFile -Encoding utf8 -NoNewline
+          Update-CSharpPackagePackageContext -PackageVersion $packageVersionForRun -NupkgPath $approvedMetaPackagePath
+
+          $experimentalCompletionPath = Get-CSharpPackageStageCompletionMarkerPath -ContextDirectory $contextDirectory -MetaPackageName $MetaPackageName -Tier 'Experimental'
+          $experimentalAlreadyCompleted = Test-CSharpPackageStageCompleted -ContextDirectory $contextDirectory -MetaPackageName $MetaPackageName -Tier 'Experimental'
+          if ($experimentalAlreadyCompleted) {
+            $experimentalCompletion = Get-Content -LiteralPath $experimentalCompletionPath -Raw | ConvertFrom-Json
+            if ([string]$experimentalCompletion.Tier -cne 'Experimental' -or
+              [string]$experimentalCompletion.PackageVersion -cne $packageVersionForRun) {
+              throw "Experimental completion marker does not match authorized package '$MetaPackageName' version '$packageVersionForRun'."
+            }
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Experimental completion already persisted for '$MetaPackageName' version '$packageVersionForRun'; authorized bytes were revalidated, publication is skipped, and immutable promotion resumes at Development."
+          }
+          else {
+            $authorization = Assert-CSharpPackagePublicationAuthorized -ManifestPath $preparedManifestPath -ApprovalPath $approvalRecordPath
+            $null = Enable-BwsExecutableForCurrentProcess -BwsExecutablePath $BwsExecutablePath
+            foreach ($package in $authorization.Packages) {
+              $publishResult = Publish-NuGetPackageToProGet `
+                -NupkgPath $package.Path `
+                -Feed $ExperimentalFeed `
+                -ProGetApiKeySecretName $ProGetApiKeySecretName
+              Assert-BuildMasterOperationSucceeded -Result $publishResult -OperationName 'Publish-NuGetPackageToProGet'
+            }
+            Set-CSharpPackageStageCompleted -ContextDirectory $contextDirectory -MetaPackageName $MetaPackageName -Tier 'Experimental' -PackageVersion $packageVersionForRun
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Authorized Experimental publish complete for '$MetaPackageName' version '$packageVersionForRun'; approved SHA256='$($authorization.PreparedManifestSha256)'. Resuming immutable promotion at Development without build or pack."
+          }
+          $resumePromotionAfterExperimentalPublish = $true
         }
       }
     }
 
     $tierOrder = @(Get-TierOrder)
-    $currentTierIndex = $tierOrder.IndexOf($tier)
+    $currentTierIndex = if ($resumePromotionAfterExperimentalPublish) {
+      $tierOrder.IndexOf('Development')
+    }
+    else {
+      $tierOrder.IndexOf($tier)
+    }
     $ceilingTierIndex = $tierOrder.IndexOf($ceilingTier)
     if ($currentTierIndex -lt 0) { throw "Unsupported BuildMaster tier '$tier'." }
     if ($ceilingTierIndex -lt 0) { throw "Unsupported BuildMaster ceiling tier '$ceilingTier'." }
@@ -1229,7 +1379,29 @@ function Invoke-CSharpPackageBuildMasterStage {
     }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "C# package runner will execute tier(s): $($tiersToRun -join ', ') (current='$tier'; ceiling='$ceilingTier')."
 
-    $packageVersionForRun = $null
+    # The separate feed-authorization gate is consumed on the original
+    # prepared build's transition from Experimental to Development. This
+    # publishes the already-approved Experimental bytes and then lets the
+    # normal immutable promotion loop move those same bytes upward. No new
+    # build or pack occurs on this branch.
+    if ($tier -eq 'Development' -and $ApprovalAction -eq 'Publish') {
+      $authorization = Assert-CSharpPackagePublicationAuthorized -ManifestPath $preparedManifestPath -ApprovalPath $approvalRecordPath
+      $null = Enable-BwsExecutableForCurrentProcess -BwsExecutablePath $BwsExecutablePath
+      foreach ($package in $authorization.Packages) {
+        $publishResult = Publish-NuGetPackageToProGet `
+          -NupkgPath $package.Path `
+          -Feed $ExperimentalFeed `
+          -ProGetApiKeySecretName $ProGetApiKeySecretName
+        Assert-BuildMasterOperationSucceeded -Result $publishResult -OperationName 'Publish-NuGetPackageToProGet'
+      }
+      $packageVersionForRun = [string]$authorization.Manifest.PackageVersion
+      $metaPackageNupkg = Find-CSharpMetaPackageNupkg -PackageDirectory $PackageOutputPath -MetaPackageName $MetaPackageName
+      $metaPackageNupkg.FullName | Set-Content -LiteralPath $NupkgPathFile -Encoding utf8 -NoNewline
+      Update-CSharpPackagePackageContext -PackageVersion $packageVersionForRun -NupkgPath $metaPackageNupkg.FullName
+      Set-CSharpPackageStageCompleted -ContextDirectory $contextDirectory -MetaPackageName $MetaPackageName -Tier 'Experimental' -PackageVersion $packageVersionForRun
+      Add-BuildMasterPublishTrace -Path (Join-Path $contextDirectory "$MetaPackageName.publish.log") -Message "Authorized Experimental publish complete during the original build's Development transition; approved SHA256='$($authorization.PreparedManifestSha256)'."
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Authorized Experimental publish complete for '$MetaPackageName' version '$packageVersionForRun' on the original prepared build; continuing immutable promotion."
+    }
 
     Push-Location -LiteralPath $SourcePath
     try {
@@ -1262,7 +1434,9 @@ function Invoke-CSharpPackageBuildMasterStage {
               '--configuration', $Configuration,
               '--no-incremental',
               '--artifacts-path', $resolvedArtifactsPath,
+              '-p:RestoreLockedMode=true',
               '-p:ContinuousIntegrationBuild=true',
+              '-p:GeneratePackageOnBuild=false',
               '-p:ATAPExplicitPublicationInvocation=true',
               "-p:ATAPArtifactsRoot=$($artifactsContext.Root)",
               "-p:ATAPArtifactsWorktreeId=$($artifactsContext.WorktreeId)",
@@ -1296,6 +1470,25 @@ function Invoke-CSharpPackageBuildMasterStage {
             }
             if ($buildExit -ne 0) {
               throw "dotnet build failed for '$resolvedProjectPath' after $maxBuildAttempts attempt(s); last exit code $buildExit."
+            }
+
+            $signingResult = $null
+            $authenticodePackEvidence = @()
+            if ($null -ne $authenticodeContract) {
+              if ([string]::IsNullOrWhiteSpace($AuthenticodeApprovalPath) -or [string]::IsNullOrWhiteSpace($SignToolPath)) {
+                throw "F03 package '$PackageName' requires a named machine-readable AuthenticodeApprovalPath and approved SignToolPath before any certificate or signing access."
+              }
+              $signingEvidencePath = Join-Path $contextDirectory 'authenticode'
+              $signingResult = Invoke-CSharpPackageAuthenticodeStageSigning `
+                -Contract $authenticodeContract `
+                -ProjectPath $resolvedProjectPath `
+                -Configuration $Configuration `
+                -ArtifactsPath $resolvedArtifactsPath `
+                -ApprovalPath $AuthenticodeApprovalPath `
+                -SignToolPath $SignToolPath `
+                -EvidencePath $signingEvidencePath `
+                -Confirm:$false
+              Add-BuildMasterPublishTrace -Path $publishTracePath -Message "Authenticode-signed exactly three staged ATAP Foundation DLL assets for '$PackageName' after the single locked build and before both pack runs."
             }
 
             $deterministicPackTool = Resolve-DeterministicNuGetMSBuild
@@ -1351,6 +1544,14 @@ function Invoke-CSharpPackageBuildMasterStage {
               if ($packRecords.Count -eq 0) {
                 throw "Deterministic pack run $packRun emitted no NuGet packages under '$packRunOutputPath'."
               }
+              if ($null -ne $signingResult) {
+                $signedPackage = Find-CSharpMetaPackageNupkg -PackageDirectory $packRunOutputPath -MetaPackageName $MetaPackageName
+                $authenticodePackEvidence += Assert-CSharpPackageAuthenticodeNupkg `
+                  -NupkgPath $signedPackage.FullName `
+                  -SigningResult $signingResult `
+                  -SignToolPath $SignToolPath `
+                  -ScratchRoot $contextDirectory
+              }
               $packRecordsByRun += ,$packRecords
             }
 
@@ -1383,6 +1584,36 @@ function Invoke-CSharpPackageBuildMasterStage {
             $sourceCommit = (& git -C $SourcePath rev-parse HEAD 2>$null).Trim()
             if ($LASTEXITCODE -ne 0 -or $sourceCommit -notmatch '^[0-9a-fA-F]{40}$') {
               throw "Cannot prepare publication because Git HEAD could not be resolved for '$SourcePath'."
+            }
+            if ($null -ne $signingResult) {
+              $finalPackageEvidence = Assert-CSharpPackageAuthenticodeNupkg `
+                -NupkgPath $metaPackageNupkg.FullName `
+                -SigningResult $signingResult `
+                -SignToolPath $SignToolPath `
+                -ScratchRoot $contextDirectory
+              $tamperEvidence = Test-CSharpPackageAuthenticodeTamperNegative `
+                -SourcePath $signingResult.Assets[0].Path `
+                -SignToolPath $SignToolPath `
+                -ScratchRoot $contextDirectory
+              [ordered]@{
+                schemaVersion = '1.0.0'
+                taskId = '15.182.F03'
+                packageName = $PackageName
+                sourceCommit = $sourceCommit
+                approvalSha256 = (Get-FileHash -LiteralPath $AuthenticodeApprovalPath -Algorithm SHA256).Hash.ToLowerInvariant()
+                signer = [ordered]@{
+                  publisher = [string]$signingResult.Approval.publisher
+                  subject = [string]$signingResult.Approval.certificate.subject
+                  sha1Thumbprint = [string]$signingResult.Approval.certificate.sha1Thumbprint
+                  sha256Fingerprint = [string]$signingResult.Approval.certificate.sha256Fingerprint
+                  timestampAuthority = [string]$signingResult.Approval.timestampAuthority.uri
+                }
+                stagedAssets = @($signingResult.Assets | Sort-Object PackageTargetFramework)
+                packRuns = @($authenticodePackEvidence)
+                finalPackage = $finalPackageEvidence
+                tamperNegative = $tamperEvidence
+                vendorDllsSigned = 0
+              } | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath (Join-Path $signingEvidencePath "$PackageName.authenticode-release.json") -Encoding utf8NoBOM
             }
             $prepared = New-CSharpPackagePreparedManifest `
               -ArtifactsPath $resolvedArtifactsPath `
@@ -1456,6 +1687,9 @@ Invoke-CSharpPackageBuildMasterStage `
   -ApprovalAction $ApprovalAction `
   -ExpectedPreparedManifestSha256 $ExpectedPreparedManifestSha256 `
   -ApprovedBy $ApprovedBy `
+  -AuthenticodeApprovalPath $AuthenticodeApprovalPath `
+  -SignToolPath $SignToolPath `
+  -BwsExecutablePath $BwsExecutablePath `
   -PackageOutputPath $PackageOutputPath `
   -NupkgPathFile $NupkgPathFile `
   -ProGetUrl $ProGetUrl `

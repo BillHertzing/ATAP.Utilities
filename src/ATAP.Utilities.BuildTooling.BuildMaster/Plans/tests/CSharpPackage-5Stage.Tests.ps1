@@ -65,6 +65,9 @@ Describe 'V4-C02 plan shape: CSharpPackage-5Stage.otter is a thin runner plan' {
         $script:PlanText | Should -Match '-ApprovalAction\s+"\$ApprovalAction"'
         $script:PlanText | Should -Match '-ExpectedPreparedManifestSha256\s+"\$ExpectedPreparedManifestSha256"'
         $script:PlanText | Should -Match '-ApprovedBy\s+"\$ApprovedBy"'
+        $script:PlanText | Should -Match '-AuthenticodeApprovalPath\s+"\$AuthenticodeApprovalPath"'
+        $script:PlanText | Should -Match '-SignToolPath\s+"\$SignToolPath"'
+        $script:PlanText | Should -Match '-BwsExecutablePath\s+"\$BwsExecutablePath"'
         $script:PlanText | Should -Match '-MetaPackageName\s+"\$MetaPackageName"'
         $script:PlanText | Should -Match '-PackageName\s+"\$PackageName"'
         $script:PlanText | Should -Match '-ProjectPath\s+"\$ProjectPath"'
@@ -176,6 +179,9 @@ Describe 'V4-C02 runner shape: Invoke-CSharpPackageBuildMasterStage.ps1 contract
             'Configuration',
             'Branch',
             'Stage',
+            'AuthenticodeApprovalPath',
+            'SignToolPath',
+            'BwsExecutablePath',
             'ProGetUrl',
             'ProGetApiKeySecretName'
         )) {
@@ -223,6 +229,13 @@ Describe 'V4-C02 runner shape: Invoke-CSharpPackageBuildMasterStage.ps1 contract
     It 'runner forces ContinuousIntegrationBuild=true on both build and pack' {
         $ciMatches = [regex]::Matches($script:RunnerText, 'ContinuousIntegrationBuild=true')
         $ciMatches.Count | Should -BeGreaterOrEqual 2
+    }
+
+    It 'runner makes its only build locked and disables implicit package generation' {
+        ([regex]::Matches($script:RunnerText, '''build'',\s*\$resolvedProjectPath')).Count | Should -Be 1
+        $script:RunnerText | Should -Match "'-p:RestoreLockedMode=true'"
+        $script:RunnerText | Should -Not -Match "'--locked-mode'"
+        $script:RunnerText | Should -Match "'-p:GeneratePackageOnBuild=false'"
     }
 
     It 'runner marks its explicit Prepare build as an authorized publication invocation' {
@@ -276,8 +289,12 @@ Describe 'V4-C02 runner shape: Invoke-CSharpPackageBuildMasterStage.ps1 contract
     }
 
     It 'propagates one external ArtifactsContext through build, pack, tests, binlogs, and provenance' {
-        $script:RunnerText | Should -Match 'Resolve-CSharpPackageArtifactsContext\s+-ArtifactsPath\s+\$ArtifactsPath'
+        $script:RunnerText | Should -Match 'Resolve-CSharpPackageArtifactsContext\s+-ArtifactsPath\s+\$ArtifactsPath\s+-ExecutionId\s+\$ExecutionId'
+        $script:RunnerText | Should -Match 'Contains\(''\$ExecutionId'''
+        $script:RunnerText | Should -Match 'Replace\(''\$ExecutionId'',\s*\$ExecutionId'
         $script:RunnerText | Should -Match '''--artifacts-path'',\s+\$resolvedArtifactsPath'
+        $script:RunnerText | Should -Match '''-p:RestoreLockedMode=true'''
+        $script:RunnerText | Should -Not -Match "'--locked-mode'"
         $script:RunnerText | Should -Match '"/p:ArtifactsPath=\$resolvedArtifactsPath"'
         $script:RunnerText | Should -Match 'ArtifactsContext\s*=\s*\$testArtifactsContext'
         $script:RunnerText | Should -Match 'smoke-test\.binlog'
@@ -359,6 +376,97 @@ Describe 'Task 15.181.h S1 isolated ArtifactsPath contract' {
         Set-Content -LiteralPath (Join-Path $path '.atap-artifacts-owner') -Value 'ATAP.Utilities|other|owner' -NoNewline
         { Resolve-CSharpPackageArtifactsContext -ArtifactsPath $path } |
             Should -Throw '*is owned by*'
+    }
+}
+
+Describe 'Task 15.182.F03 process-local bws executable discovery' {
+    BeforeAll {
+        $tokens = $null
+        $parseErrors = $null
+        $runnerAst = [System.Management.Automation.Language.Parser]::ParseFile(
+            $script:RunnerPath, [ref]$tokens, [ref]$parseErrors)
+        $parseErrors | Should -BeNullOrEmpty
+        $resolverAst = $runnerAst.Find(
+            { param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Enable-BwsExecutableForCurrentProcess' },
+            $true)
+        $resolverAst | Should -Not -BeNullOrEmpty
+        Invoke-Expression $resolverAst.Extent.Text
+    }
+
+    BeforeEach {
+        $script:OriginalProcessPath = [Environment]::GetEnvironmentVariable('PATH', [EnvironmentVariableTarget]::Process)
+        $script:OriginalUserPath = [Environment]::GetEnvironmentVariable('PATH', [EnvironmentVariableTarget]::User)
+        $script:OriginalMachinePath = [Environment]::GetEnvironmentVariable('PATH', [EnvironmentVariableTarget]::Machine)
+        [Environment]::SetEnvironmentVariable('PATH', '', [EnvironmentVariableTarget]::Process)
+    }
+
+    AfterEach {
+        [Environment]::SetEnvironmentVariable('PATH', $script:OriginalProcessPath, [EnvironmentVariableTarget]::Process)
+    }
+
+    It 'uses an existing bws application without validating the fallback or changing PATH' {
+        $bin = Join-Path $TestDrive 'existing'
+        New-Item -ItemType Directory -Path $bin -Force | Out-Null
+        $bws = Join-Path $bin 'bws.exe'
+        [System.IO.File]::WriteAllBytes($bws, [byte[]](0))
+        [Environment]::SetEnvironmentVariable('PATH', $bin, [EnvironmentVariableTarget]::Process)
+        $before = [Environment]::GetEnvironmentVariable('PATH', [EnvironmentVariableTarget]::Process)
+
+        Enable-BwsExecutableForCurrentProcess -BwsExecutablePath 'relative\ignored.exe' |
+            Should -BeExactly ([System.IO.Path]::GetFullPath($bws))
+        [Environment]::GetEnvironmentVariable('PATH', [EnvironmentVariableTarget]::Process) |
+            Should -BeExactly $before
+    }
+
+    It 'prepends only the valid explicit parent at process scope and resolves the exact bws.exe' {
+        $bin = Join-Path $TestDrive 'fallback'
+        New-Item -ItemType Directory -Path $bin -Force | Out-Null
+        $bws = Join-Path $bin 'bws.exe'
+        [System.IO.File]::WriteAllBytes($bws, [byte[]](0))
+
+        Enable-BwsExecutableForCurrentProcess -BwsExecutablePath $bws |
+            Should -BeExactly ([System.IO.Path]::GetFullPath($bws))
+        [Environment]::GetEnvironmentVariable('PATH', [EnvironmentVariableTarget]::Process) |
+            Should -BeExactly ([System.IO.Path]::GetFullPath($bin))
+        (Get-Command bws -CommandType Application).Source |
+            Should -BeExactly ([System.IO.Path]::GetFullPath($bws))
+        [Environment]::GetEnvironmentVariable('PATH', [EnvironmentVariableTarget]::User) |
+            Should -BeExactly $script:OriginalUserPath
+        [Environment]::GetEnvironmentVariable('PATH', [EnvironmentVariableTarget]::Machine) |
+            Should -BeExactly $script:OriginalMachinePath
+    }
+
+    It 'fails closed for missing, relative, wrong-filename, unresolved-token, or absent paths' {
+        $wrongName = Join-Path $TestDrive 'tool.exe'
+        [System.IO.File]::WriteAllBytes($wrongName, [byte[]](0))
+        $missingBws = Join-Path $TestDrive 'missing/bws.exe'
+
+        { Enable-BwsExecutableForCurrentProcess } | Should -Throw '*not supplied*No secret was resolved*no feed was mutated*'
+        { Enable-BwsExecutableForCurrentProcess -BwsExecutablePath 'relative\bws.exe' } | Should -Throw '*must be absolute*No secret was resolved*'
+        { Enable-BwsExecutableForCurrentProcess -BwsExecutablePath $wrongName } | Should -Throw '*name exactly bws.exe*No secret was resolved*'
+        { Enable-BwsExecutableForCurrentProcess -BwsExecutablePath '$BwsRoot\bws.exe' } | Should -Throw '*unresolved variable token*No secret was resolved*'
+        { Enable-BwsExecutableForCurrentProcess -BwsExecutablePath $missingBws } | Should -Throw '*existing leaf*No secret was resolved*'
+        [Environment]::GetEnvironmentVariable('PATH', [EnvironmentVariableTarget]::Process) | Should -BeExactly ''
+    }
+
+    It 'initializes discovery immediately before every BWS-dependent publish or promotion leaf' {
+        ([regex]::Matches($script:RunnerText, '\$null\s*=\s*Enable-BwsExecutableForCurrentProcess\s+-BwsExecutablePath\s+\$BwsExecutablePath')).Count |
+            Should -Be 3
+        ([regex]::Matches(
+            $script:RunnerText,
+            '(?s)Assert-CSharpPackagePublicationAuthorized[^\r\n]*\r?\n\s*\$null\s*=\s*Enable-BwsExecutableForCurrentProcess[^\r\n]*\r?\n\s*foreach\s*\(\$package\s+in\s+\$authorization\.Packages\)')).Count |
+            Should -Be 2
+        $script:RunnerText | Should -Match '(?s)\$null\s*=\s*Enable-BwsExecutableForCurrentProcess[^\r\n]*\r?\n\s*try\s*\{\s*\r?\n\s*\$promotionResult\s*=\s*Promote-ProGetPackage'
+    }
+
+    It 'propagates only the non-secret path contract and embeds no token, API key, or workstation path' {
+        $script:PlanText | Should -Match '-BwsExecutablePath\s+"\$BwsExecutablePath"'
+        $script:RunnerText | Should -Match '\[string\]\$BwsExecutablePath\s*=\s*'''''
+        $script:PlanText | Should -Not -Match 'BWS_ACCESS_TOKEN|AppData[\\/]Local[\\/]Programs[\\/]Bitwarden'
+        $script:RunnerText | Should -Not -Match 'BWS_ACCESS_TOKEN|AppData[\\/]Local[\\/]Programs[\\/]Bitwarden'
+        $script:RunnerText | Should -Not -Match 'Write-PSFMessage[^\r\n]*(?:ProGetApiKey|BWS_ACCESS_TOKEN)'
+        $script:RunnerText | Should -Match 'SetEnvironmentVariable\(''PATH'',\s*\$updatedProcessPath,\s*\[EnvironmentVariableTarget\]::Process\)'
+        $script:RunnerText | Should -Not -Match "SetEnvironmentVariable\('PATH'[^\r\n]*(?:User|Machine)"
     }
 }
 

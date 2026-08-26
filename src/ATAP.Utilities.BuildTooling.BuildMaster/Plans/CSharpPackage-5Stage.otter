@@ -36,6 +36,13 @@
 #                       Publish. Approve/Publish require the exact prepared SHA.
 #   $ExpectedPreparedManifestSha256 - operator-inspected SHA for Approve.
 #   $ApprovedBy       - named operator identity recorded by Approve.
+#   $AuthenticodeApprovalPath - named machine-readable F03 Foundation signing
+#                       approval. Mandatory only for the exact eight-package
+#                       allowlist during Prepare; never contains key material.
+#   $SignToolPath     - exact signtool.exe whose hash/version are bound by the
+#                       F03 approval record.
+#   $BwsExecutablePath - optional non-secret absolute path to bws.exe, used only
+#                       when the BuildMaster service process cannot find bws on PATH.
 #   ProGet API key    - Arguments carry only ProGet.BuildMaster.API.Key as a
 #                       SecretName. Authenticated leaves resolve it through
 #                       Get-SecretATAP; no environment fallback is permitted.
@@ -84,7 +91,7 @@ set $BuildMasterExecutionId = $ExecutionId;
 Exec
 (
     FileName: pwsh,
-    Arguments: >>-File "$InvokeCSharpPackageStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -ArtifactsPath "$ArtifactsPath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -MetaPackageName "$MetaPackageName" -PackageName "$PackageName" -ProjectPath "$ProjectPath" -SolutionPath "$SolutionPath" -Configuration "$Configuration" -Branch "$Branch" -Stage "$PipelineStageName" -ApprovalAction "$ApprovalAction" -ExpectedPreparedManifestSha256 "$ExpectedPreparedManifestSha256" -ApprovedBy "$ApprovedBy" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName">>,
+    Arguments: >>-File "$InvokeCSharpPackageStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -ArtifactsPath "$ArtifactsPath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -MetaPackageName "$MetaPackageName" -PackageName "$PackageName" -ProjectPath "$ProjectPath" -SolutionPath "$SolutionPath" -Configuration "$Configuration" -Branch "$Branch" -Stage "$PipelineStageName" -ApprovalAction "$ApprovalAction" -ExpectedPreparedManifestSha256 "$ExpectedPreparedManifestSha256" -ApprovedBy "$ApprovedBy" -AuthenticodeApprovalPath "$AuthenticodeApprovalPath" -SignToolPath "$SignToolPath" -BwsExecutablePath "$BwsExecutablePath" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName">>,
     WorkingDirectory: $SourcePath,
     SuccessExitCode: 0
 );

@@ -3,10 +3,13 @@ function Test-ApplicationClassification {
   .SYNOPSIS
     Validates a repository's executable-project classification manifest.
   .DESCRIPTION
-    Discovers project files, excludes named paths before reading XML, combines declared
-    SDK/OutputType signals with evaluated MSBuild properties, and requires a case-safe
-    one-to-one disposition for every executable shape. Shipping topology and the ratified
-    AG02 Release/net10.0/RID-less portable publish matrix are fail-closed.
+    Discovers the input universe of project files, excludes named paths before reading
+    XML, combines declared SDK/OutputType signals with evaluated MSBuild properties, and
+    requires a case-safe one-to-one disposition for every detected non-test application
+    shape. The input universe intentionally includes libraries and test projects; it is
+    not synonymous with the detected-application set or either production solution
+    filter. Shipping topology and the ratified AG02 Release/net10.0/RID-less portable
+    publish matrix are fail-closed.
   .PARAMETER RepositoryRoot
     Repository root containing the projects described by the manifest.
   .PARAMETER ManifestPath
@@ -20,7 +23,8 @@ function Test-ApplicationClassification {
   .PARAMETER EvaluationThrottleLimit
     Maximum number of concurrent read-only MSBuild property evaluations.
   .OUTPUTS
-    PSCustomObject containing deterministic normalized output and validation counts.
+    PSCustomObject containing deterministic normalized output, the complete input-project
+    path set, the detected non-test application path set, and validation counts.
   .EXAMPLE
     Test-ApplicationClassification -RepositoryRoot . -ManifestPath .\Build\ApplicationClassification.json -ExcludedProjectPath OpenHardwareMonitorLib/OpenHardwareMonitorLib.csproj
   .NOTES
@@ -191,6 +195,7 @@ function Test-ApplicationClassification {
       ForEach-Object { $null = $detectedSet.Add($_) }
     @($evaluated | Where-Object EvaluatedExecutable).RelativePath | ForEach-Object { $null = $detectedSet.Add($_) }
     $detected = @($detectedSet | Sort-Object)
+    $inputProjectPaths = @($projectFiles.RelativePath | Sort-Object)
 
     $actualPathByCaseFold = @{}
     foreach ($project in $projectFiles) { $actualPathByCaseFold[$project.RelativePath.ToLowerInvariant()] = $project.RelativePath }
@@ -296,6 +301,7 @@ function Test-ApplicationClassification {
       schemaVersion = [string] $manifest.schemaVersion
       repository = [string] $manifest.repository
       applications = $normalizedApplications
+      inputProjectPaths = $inputProjectPaths
       detectedExecutablePaths = $detected
       excludedProjectPaths = $excluded
     }
@@ -314,6 +320,12 @@ function Test-ApplicationClassification {
     [pscustomobject]@{
       Success = $true
       Repository = [string] $manifest.repository
+      InputProjectCount = $projectFiles.Count
+      InputProjectPaths = $inputProjectPaths
+      DetectedApplicationCount = $detected.Count
+      DetectedApplicationPaths = $detected
+      # Compatibility aliases retained for existing callers. New callers should use the
+      # explicit InputProject* and DetectedApplication* properties above.
       ProjectCount = $projectFiles.Count
       ParsedProjectCount = $declared.Count
       EvaluatedProjectCount = $evaluated.Count

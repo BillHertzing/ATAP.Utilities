@@ -43,6 +43,19 @@ Describe 'Test-ApplicationClassification valid contract' -Tag 'Unit', 'Task15.18
     $second = Invoke-ClassificationCase $root
 
     $first.Success | Should -BeTrue
+    $first.InputProjectCount | Should -Be 4
+    $first.InputProjectPaths | Should -Be @(
+      'Client/Client.csproj'
+      'Imported/Imported.csproj'
+      'Library/Library.csproj'
+      'Root/Root.csproj'
+    )
+    $first.DetectedApplicationCount | Should -Be 3
+    $first.DetectedApplicationPaths | Should -Be @(
+      'Client/Client.csproj'
+      'Imported/Imported.csproj'
+      'Root/Root.csproj'
+    )
     $first.ExecutableCount | Should -Be 3
     $first.ClassifiedCount | Should -Be 3
     $first.ParsedProjectCount | Should -Be 4
@@ -51,6 +64,28 @@ Describe 'Test-ApplicationClassification valid contract' -Tag 'Unit', 'Task15.18
     $first.NormalizedJson | Should -BeExactly $second.NormalizedJson
     $first.NormalizedJson | Should -Match 'Client/Client.csproj'
     $first.NormalizedJson | Should -Match 'Imported/Imported.csproj'
+  }
+
+  It 'includes executable test projects in the input universe but not the detected application set' {
+    $root = New-ClassificationCase 'test-project-input'
+    $testProjectDirectory = Join-Path $root 'ExecutableTests'
+    $null = New-Item -ItemType Directory -Path $testProjectDirectory
+    @(
+      '<Project Sdk="Microsoft.NET.Sdk">'
+      '  <PropertyGroup>'
+      '    <OutputType>Exe</OutputType>'
+      '    <IsTestProject>true</IsTestProject>'
+      '  </PropertyGroup>'
+      '</Project>'
+    ) | Set-Content -LiteralPath (Join-Path $testProjectDirectory 'ExecutableTests.csproj') -Encoding utf8NoBOM
+
+    $result = Invoke-ClassificationCase $root
+
+    $result.InputProjectCount | Should -Be 5
+    $result.InputProjectPaths | Should -Contain 'ExecutableTests/ExecutableTests.csproj'
+    $result.DetectedApplicationCount | Should -Be 3
+    $result.DetectedApplicationPaths | Should -Not -Contain 'ExecutableTests/ExecutableTests.csproj'
+    $result.ClassifiedCount | Should -Be 3
   }
 
   It 'automatically excludes OpenHardwareMonitorLib before XML parsing without caller input' {

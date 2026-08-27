@@ -337,9 +337,14 @@ function Write-GatherCallRecord {
       Line            [string]        — the serialized line, only with -PassThruLine
       Error           [string]        — null on success; the write failure otherwise
 
+    Every example below binds `-WorktreeRoot` explicitly. That is not incidental style: an
+    omitted root is a terminating error (see `.PARAMETER WorktreeRoot`), so an example that
+    left it out would teach the failure mode. All example values are synthetic.
+
   .EXAMPLE
     $envelope = Get-Content ./response.json -Raw
     Write-GatherCallRecord -Tags @('handoff','schema') -AgentName 'junior-dev-coder-sh' `
+      -WorktreeRoot 'C:/GitHub/ExampleRepo-wt-1-Sprint-0015-work-items' `
       -TaskId '15.183.B01' -Prompt 'Context for the recorder unit' -Response $envelope
 
     Writes one record for a completed call. Because retrieval is stubbed the envelope
@@ -348,6 +353,7 @@ function Write-GatherCallRecord {
   .EXAMPLE
     try { $envelope = ... } catch {
       Write-GatherCallRecord -Tags @('handoff') -AgentName 'junior-dev-coder-jm' `
+        -WorktreeRoot 'C:/GitHub/ExampleRepo-wt-1-Sprint-0015-work-items' `
         -NoResponse -ErrorMessage $_.Exception.Message
     }
 
@@ -416,6 +422,71 @@ function Write-GatherCallRecord {
       * Redaction failure does not fail the write. The record is written with
         `prompt: null`, `redacted: true`, and `redactionCount: -1`, signalling
         "redaction unavailable, content withheld" rather than writing unredacted text.
+
+    THE THREE MESSAGES A CALLER ACTUALLY MEETS, quoted so they are greppable:
+      * Unbound root — TERMINATING `[System.ArgumentException]` on `WorktreeRoot`:
+        "WorktreeRoot is required and must be a resolvable path. The recorder does not
+        infer a worktree root by walking up to the nearest .git ancestor: an inferred root
+        is indistinguishable downstream from a stated one, and it also selects the durable
+        store destination. Supply -WorktreeRoot explicitly."
+      * No `_Planning` sprint worktree — NON-terminating write fault, returned as `Error`:
+        "No _Planning sprint worktree for Sprint <NNNN> was found beneath Git root
+        '<root>'. Supply -PlanningRoot or -StoreRoot, or use -StoreTarget Generated."
+      * Two `_Planning` sprint worktrees for one sprint — NON-terminating write fault,
+        naming BOTH candidates rather than picking one:
+        "Ambiguous _Planning sprint worktree for Sprint <NNNN> beneath '<root>':
+        <name>, <name>. Supply -PlanningRoot to state which one."
+      The last two are non-terminating on purpose: store resolution is a WRITE fault, and
+      a recorder must never fail the gather call it is recording.
+
+    MEASURED BEHAVIOUR AND CONSUMER-FACING CAVEATS (Task 15.183.e, 62 real records):
+
+      * ORDINALS ARE NEITHER DENSE NOR UNIQUE. 30 concurrent records in one session scope
+        collapsed onto 11 distinct `ordinal` values — gapped as well as duplicated, with
+        two values assigned five times each. This is inherent to the unbound-`-Ordinal`
+        fallback, which counts existing records in the scope and is therefore racy. A
+        consumer MUST NOT read a gap as a missing record, and MUST NOT treat `ordinal` as
+        a unique key. Total order stays well defined through contract § 8's four keys,
+        whose final tiebreaker is the unique `invocationId`. Honest limit: in the measured
+        run the millisecond `timestampUtc` already separated every colliding-ordinal pair,
+        so the `invocationId` tiebreaker was never load-bearing and its behaviour under a
+        true four-key tie is reasoned, not proven. Supplying `-Ordinal` avoids the race
+        entirely and is preferred.
+      * REDACTION IS KEYWORD-ANCHORED, NOT A SECRET SCANNER. The same 32-character
+        high-entropy value is redacted when it follows `password=` and passes through
+        untouched when it stands alone. Contract § 5.5 permits this — detection is
+        best-effort — and adding an entropy heuristic would trade false passes for false
+        redactions across every prompt. Treat the pattern list in `Invoke-RecordRedaction`
+        as the coverage boundary, and do not paste a bare secret into a prompt on the
+        assumption the recorder will catch it.
+      * RESPONSE CONTENT IS PROTECTED BY NON-PERSISTENCE, NOT BY REDACTION. The redactor
+        never sees `items[]`, because contract § 4 forbids persisting it at all; only the
+        digest and status are stored. A record whose response carried a secret therefore
+        records `redactionCount: 0`, correctly. Any future field that DID copy response
+        text into a record would land outside the redaction surface and would need its own
+        treatment.
+      * COVERAGE CAVEAT. ContentSummary retrieval is stubbed
+        (`CONTENT_SUMMARY_RETRIEVAL_NOT_IMPLEMENTED`, blocked on RDB-190, RDB-260, and
+        Stream D), so today `items` is always `[]`, `itemCount` is always 0, and
+        `responseDigest.value` is always the empty-array constant. The digest has no
+        discriminating power until retrieval lands; the tags and prompt, which are caller
+        inputs, are real seed data regardless.
+
+    RELATED CONTRACTS — which are binding and which are parked:
+      * `gather-call-record.contract.v1.md` — LIVE AND BINDING. This function implements it.
+      * `worker-handoff-changed-file.contract.v1.md` and `correlated-corpus.contract.v1.md`
+        — PARKED with the handoff-correlation half on 2026-08-26. They describe a future
+        feature, not current behaviour; the design is carried forward in
+        `handoff-correlation.deferred.v1.md`. Do not implement against them as though they
+        were binding.
+      All four live in
+      `_Planning/InformationForTheFuture/Sprint0015/StreamM/Task15.183/`.
+
+    NO HARVESTER EXISTS. References to "the harvester" above and in the contract describe
+    the reader the format was designed for, not a function you can call: the harvesting
+    function (Task 15.183.c) and the SprintEnd integration (Task 15.183.d) were parked in
+    the same 2026-08-26 rescope. Records accumulate durably and are read by whatever
+    consumes them next; nothing in this module reads them back.
 
     WHATIF: `-WhatIf` performs every computation — id, timestamp, redaction, normalization,
     digest, destination path — and skips only the two filesystem effects, creating the

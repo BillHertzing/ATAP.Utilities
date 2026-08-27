@@ -164,7 +164,7 @@ function Invoke-BWSReadOnlyTokenBootstrap {
     }
 
     $workerPath = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\private\Invoke-BWSReadOnlyBootstrapWorker.ps1'))
-    $pwshPath = (Get-Command -Name 'pwsh.exe' -CommandType Application -ErrorAction Stop).Source
+    $pwshPath = @(Get-Command -Name 'pwsh.exe' -CommandType Application -ErrorAction Stop)[0].Source
     $quote = {
       param([string]$Value)
       "'$($Value.Replace("'", "''"))'"

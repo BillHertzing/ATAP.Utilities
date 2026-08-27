@@ -6,9 +6,9 @@
 function Write-GatherCallRecord {
   <#
   .SYNOPSIS
-    Appends exactly one gather-call record to the append-only record store under a sprint
-    worktree's `_generated` tree, concurrency-safely, for a single
-    `gather-content-summary` invocation.
+    Appends exactly one gather-call record to the append-only record store — by default
+    the DURABLE store under the `_Planning` sprint worktree — concurrency-safely, for a
+    single `gather-content-summary` invocation.
 
   .DESCRIPTION
     Implements `gather-call-record.contract.v1` (recordVersion 1.0.0) for Task 15.183.B01.
@@ -24,9 +24,50 @@ function Write-GatherCallRecord {
 
         <yyyyMMddTHHmmssfff>Z-<invocationId>.jsonl
 
-    beneath
+    beneath the store directory chosen by `-StoreTarget` (see WHERE RECORDS GO below).
+
+    WHERE RECORDS GO — a switchable decision, not a constant
+    -------------------------------------------------------
+    `-StoreTarget Durable` (the DEFAULT) writes beneath the `_Planning` sprint worktree:
+
+        <_Planning sprint worktree>/InformationForTheFuture/Sprint<NNNN>/<Stream>/<TaskFolder>/gather-calls/
+
+    `-StoreTarget Generated` writes the layout contract § 6.2 proposes, beneath the
+    CALLING worktree:
 
         <WorktreeRoot>/_generated/Sprint<NNNN>/<Stream>/gather-calls/
+
+    Durable is the default because Task 15.183 was rescoped on 2026-08-26: the
+    handoff-correlation half was parked, and these records are no longer point-in-time
+    verification evidence. They are seed data for the Tags database and the initial
+    prompt-to-tag associations — information for the FUTURE, and therefore R-38 material.
+    `_generated/` beneath an ephemeral sprint worktree is git-ignored and deleted at
+    sprint end, so a record written there would not survive the sprint that produced it.
+    That was the bug. Contract § 6.2 still shows the `_generated` layout, but it is headed
+    "File layout (proposed)" and its rationale — "this is point-in-time evidence" — is the
+    premise the rescope overturned; § 6.2 also defers the durable artifact to
+    `correlated-corpus.contract.v1.md`, which is precisely the half that got parked.
+
+    OPERATOR INTENT, recorded here on purpose: durable is the target FOR NOW. The records
+    move back under `_generated` once the bugs are worked out. That is why the target is a
+    documented parameter with a default rather than a constant buried in the resolver —
+    reversing it is one argument, not a code change, and neither path is hardcoded at a
+    call site. Both are composed from resolved sprint context by
+    `Resolve-GatherCallStoreDirectory`.
+
+    WHICH ROOT IS "THE" ROOT — two different jobs, kept distinct
+    ------------------------------------------------------------
+    Since the durable store lives under a DIFFERENT worktree than the caller's, "the
+    worktree root" now means two things, and conflating them would be a silent corruption:
+
+      * The record BODY's `worktreePath` and `repositoryName` always describe the CALLING
+        worktree — the one the gather call actually ran in. These did not change.
+      * The write DESTINATION is derived from the `_Planning` sprint worktree, found from
+        the calling root's PARENT (the Git root holding every worktree side by side) and
+        the resolved sprint number.
+
+    Only the destination moved. A consumer reading a record still learns which repository
+    the call came from, even though the file no longer sits in that repository.
 
     A directory of single-line `.jsonl` files is the maximal application of the sharding
     refinement in contract § 6.2 ("a recorder MAY shard ... the harvester MUST treat all
@@ -201,10 +242,41 @@ function Write-GatherCallRecord {
     caller not working a board task.
 
   .PARAMETER WorktreeRoot
-    Absolute path of the worktree root the caller is running in. When omitted it is found
-    by walking up from the current location to the nearest directory containing a `.git`
-    entry — the repository's normal resolution path, with no host path hardcoded. Recorded
-    as `worktreePath` with forward slashes and no trailing slash.
+    Absolute path of the worktree root the caller is running in. REQUIRED IN EFFECT: an
+    omitted, blank, or unresolvable value is a TERMINATING error. The recorder does not
+    walk up from the current location to the nearest `.git` ancestor, and there is no
+    switch to re-enable that — the C00 gate ratified fail-closed here.
+
+    Two independent reasons, both pointing the same way. An inferred root is
+    indistinguishable downstream from a stated one, which would poison `worktreePath`, the
+    one field whose whole job is to say which repository a call came from. And since the
+    durable store is located from this root's PARENT, a guessed root would write a
+    sprint's seed data under whatever repository the shell happened to be sitting in.
+
+    Recorded as `worktreePath` with forward slashes and no trailing slash. This is the
+    CALLING worktree and stays so under `-StoreTarget Durable`, where the file itself
+    lands under `_Planning`.
+
+  .PARAMETER StoreTarget
+    Which store layout to write. `Durable` (default) writes under the `_Planning` sprint
+    worktree so records merge to stable at sprint end; `Generated` writes the contract
+    § 6.2 layout under the calling worktree's `_generated` tree. See WHERE RECORDS GO —
+    this is the switch that reverses the decision when the records move back.
+
+  .PARAMETER TaskFolder
+    Task folder segment beneath the stream folder in the DURABLE layout only. Defaults to
+    `Task15.183`, matching the folder that already holds this record type's contract.
+
+  .PARAMETER PlanningRoot
+    The `_Planning` sprint worktree to write the durable store into. Supplying it skips
+    discovery, which is how a test points the writer at a fixture without a real
+    `_Planning` worktree. When omitted it is discovered beneath `-GitRoot` by the sprint
+    worktree folder grammar, pinned to the resolved sprint number.
+
+  .PARAMETER GitRoot
+    The directory holding every repository and sprint worktree side by side. Defaults to
+    the parent of `-WorktreeRoot`, which is a derivation from a stated value rather than
+    an inference from ambient state. Used only to discover `-PlanningRoot`.
 
   .PARAMETER RepositoryName
     The stable repository name with any `-wt-*` sprint suffix stripped. When omitted it is
@@ -234,9 +306,11 @@ function Write-GatherCallRecord {
     Stream folder segment under the sprint folder. Defaults to `StreamM`.
 
   .PARAMETER StoreRoot
-    The `gather-calls` directory itself. Supplying it bypasses worktree and sprint
-    resolution entirely, which is how a test points the writer at a temporary directory.
-    Aliases: `RecordRoot`, `GatherCallsRoot`, `Path`.
+    The `gather-calls` directory itself. Supplying it bypasses sprint, planning, and
+    store-target resolution entirely, which is how a test points the writer at a temporary
+    directory. It does NOT bypass `-WorktreeRoot`, which is still required because it
+    feeds the record body rather than the path. Aliases: `RecordRoot`, `GatherCallsRoot`,
+    `Path`.
 
   .PARAMETER PassThruLine
     Include the serialized JSON line on the returned object. Off by default so that a
@@ -282,20 +356,46 @@ function Write-GatherCallRecord {
 
   .EXAMPLE
     Write-GatherCallRecord -Tags @('drift') -AgentName 'junior-dev-coder-jl' `
-      -StoreRoot (Join-Path $TestDrive 'gather-calls') -WhatIf
+      -WorktreeRoot $root -StoreRoot (Join-Path $TestDrive 'gather-calls') -WhatIf
 
     Computes the record and the destination path, returns the object, and writes nothing.
+    `-WorktreeRoot` is supplied even though `-StoreRoot` fixes the path, because it is the
+    record's `worktreePath`, not a way of finding the directory.
 
   .EXAMPLE
-    $r = Write-GatherCallRecord -Tags @('drift') -AgentName 'x' -StoreRoot $dir
+    Write-GatherCallRecord -Tags @('drift') -AgentName 'x' -WorktreeRoot $root `
+      -StoreTarget 'Generated'
+
+    Writes the legacy contract § 6.2 layout under the calling worktree's `_generated`
+    tree. This is the one argument that reverses the durable default when the records
+    move back.
+
+  .EXAMPLE
+    $r = Write-GatherCallRecord -Tags @('drift') -AgentName 'x' -WorktreeRoot $root -StoreRoot $dir
     if (-not $r.Ok) { Write-PSFMessage -Level Error -Message $r.Error }
 
     The non-blocking failure contract: a recorder failure must never fail the gather call
     or the worker, so the failure is returned rather than thrown.
 
   .NOTES
-    Task 15.183.B01 (Sprint 0015, Stream M). Implements
+    Task 15.183.B02 (Sprint 0015, Stream M), amending Task 15.183.B01. Implements
     `gather-call-record.contract.v1.md` recordVersion 1.0.0.
+
+    B02 changed three things and deliberately changed nothing else:
+      1. The default write target moved from `_generated` to the durable `_Planning`
+         store, because the rescope made these records information for the future rather
+         than point-in-time evidence (R-38). `-StoreTarget` switches it back.
+      2. An unbound `-WorktreeRoot` now fails closed instead of walking up to the nearest
+         `.git` ancestor.
+      3. The five nested helpers moved to `private/`, one function per file, joined by
+         `Resolve-GatherCallStoreDirectory`.
+
+    The record FORMAT is untouched: same field set, same ordinal key order, same
+    minification, encoding, terminator, and file-name grammar. The agent-authored half in
+    `.ai/agents/gather-content-summary.agent.md` still produces byte-format-identical
+    records. KNOWN DIVERGENCE, reported rather than worked around: that agent file writes
+    to the `_generated` location and is outside this unit's writable scope, so until it is
+    updated the two halves agree on format but not on directory.
 
     ERRORS AND WARNINGS — how failure surfaces:
       * Argument faults are TERMINATING. An empty `Tags`, a malformed `TaskId`, a
@@ -432,6 +532,24 @@ function Write-GatherCallRecord {
     [string]$Stream = 'StreamM',
 
     [Parameter(Mandatory = $false)]
+    [ValidateSet('Durable', 'Generated')]
+    [string]$StoreTarget = 'Durable',
+
+    [Parameter(Mandatory = $false)]
+    [ValidateNotNullOrEmpty()]
+    [string]$TaskFolder = 'Task15.183',
+
+    [Parameter(Mandatory = $false)]
+    [AllowNull()]
+    [AllowEmptyString()]
+    [string]$PlanningRoot,
+
+    [Parameter(Mandatory = $false)]
+    [AllowNull()]
+    [AllowEmptyString()]
+    [string]$GitRoot,
+
+    [Parameter(Mandatory = $false)]
     [Alias('RecordRoot', 'GatherCallsRoot', 'Path')]
     [AllowNull()]
     [AllowEmptyString()]
@@ -445,204 +563,31 @@ function Write-GatherCallRecord {
     $fn = $MyInvocation.MyCommand.Name
     $mn = 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
-
-    # --- nested helpers -----------------------------------------------------------
-    # Defined here rather than at file scope so that dot-sourcing this file during module
-    # import defines the public function and nothing else, per the repo module standard.
-
-    # RFC 8785 (JCS) serialization of the value subset this record uses: null, boolean,
-    # integer, floating point, string, array, and object. Object keys are sorted by UTF-16
-    # code unit, which is both the JCS rule and the rule that makes the record line
-    # reproducible by a caller that has no serializer at all.
-    function ConvertTo-JcsJson {
-      param([Parameter(Mandatory = $false)][AllowNull()][object]$Value)
-
-      if ($null -eq $Value) { return 'null' }
-
-      if ($Value -is [string]) {
-        # if/elseif rather than switch: `continue` inside a switch nested in a loop has
-        # loop-continuation semantics that are easy to get subtly wrong, and a mis-escaped
-        # control character would produce an unparseable record line.
-        $sb = [System.Text.StringBuilder]::new()
-        [void]$sb.Append('"')
-        foreach ($ch in $Value.ToCharArray()) {
-          $code = [int]$ch
-          if ($code -eq 0x22) { [void]$sb.Append('\"') }
-          elseif ($code -eq 0x5C) { [void]$sb.Append('\\') }
-          elseif ($code -eq 0x08) { [void]$sb.Append('\b') }
-          elseif ($code -eq 0x09) { [void]$sb.Append('\t') }
-          elseif ($code -eq 0x0A) { [void]$sb.Append('\n') }
-          elseif ($code -eq 0x0C) { [void]$sb.Append('\f') }
-          elseif ($code -eq 0x0D) { [void]$sb.Append('\r') }
-          elseif ($code -lt 0x20) { [void]$sb.Append(('\u{0:x4}' -f $code)) }
-          else { [void]$sb.Append($ch) }
-        }
-        [void]$sb.Append('"')
-        return $sb.ToString()
-      }
-
-      if ($Value -is [bool]) { return $(if ($Value) { 'true' } else { 'false' }) }
-
-      if ($Value -is [int] -or $Value -is [long] -or $Value -is [int16] -or $Value -is [byte]) {
-        return ([long]$Value).ToString([System.Globalization.CultureInfo]::InvariantCulture)
-      }
-
-      if ($Value -is [double] -or $Value -is [single] -or $Value -is [decimal]) {
-        $d = [double]$Value
-        if ([double]::IsNaN($d) -or [double]::IsInfinity($d)) {
-          throw "ConvertTo-JcsJson: NaN and Infinity have no JSON representation."
-        }
-        if ($d -eq [Math]::Floor($d) -and [Math]::Abs($d) -lt 1e15) {
-          return ([long]$d).ToString([System.Globalization.CultureInfo]::InvariantCulture)
-        }
-        return $d.ToString('R', [System.Globalization.CultureInfo]::InvariantCulture)
-      }
-
-      if ($Value -is [System.Collections.IDictionary]) {
-        $keys = [string[]]@($Value.Keys)
-        [array]::Sort($keys, [System.StringComparer]::Ordinal)
-        $parts = foreach ($k in $keys) {
-          '{0}:{1}' -f (ConvertTo-JcsJson -Value $k), (ConvertTo-JcsJson -Value $Value[$k])
-        }
-        return '{' + ($parts -join ',') + '}'
-      }
-
-      # Compared by full type name rather than with -is, because -is unwraps the PSObject
-      # adapter and the result for a PSCustomObject is not dependable across hosts.
-      if ($Value.GetType().FullName -eq 'System.Management.Automation.PSCustomObject') {
-        $keys = [string[]]@($Value.PSObject.Properties.Name)
-        [array]::Sort($keys, [System.StringComparer]::Ordinal)
-        $parts = foreach ($k in $keys) {
-          '{0}:{1}' -f (ConvertTo-JcsJson -Value $k), (ConvertTo-JcsJson -Value $Value.$k)
-        }
-        return '{' + ($parts -join ',') + '}'
-      }
-
-      if ($Value -is [System.Collections.IEnumerable]) {
-        $parts = foreach ($item in $Value) { ConvertTo-JcsJson -Value $item }
-        return '[' + ($parts -join ',') + ']'
-      }
-
-      # Anything else is recorded by its invariant string form rather than dropped, so an
-      # unexpected type degrades to a readable value instead of a silent null.
-      return (ConvertTo-JcsJson -Value ([string]$Value))
-    }
-
-    function Get-Sha256Base16 {
-      param([Parameter(Mandatory = $true)][string]$Text)
-      $sha = [System.Security.Cryptography.SHA256]::Create()
-      try {
-        $bytes = [System.Text.UTF8Encoding]::new($false).GetBytes($Text)
-        $hash = $sha.ComputeHash($bytes)
-        return -join ($hash | ForEach-Object { $_.ToString('x2') })
-      } finally {
-        $sha.Dispose()
-      }
-    }
-
-    # Best-effort, fail-safe-toward-redaction. Ordered most-specific first so that a PEM
-    # body is not first partially eaten by the generic credential pattern.
-    function Invoke-RecordRedaction {
-      param([Parameter(Mandatory = $false)][AllowNull()][AllowEmptyString()][string]$Text)
-
-      if ([string]::IsNullOrEmpty($Text)) {
-        return [PSCustomObject]@{ Text = $Text; Count = 0 }
-      }
-
-      $patterns = @(
-        @{ Kind = 'key'; Pattern = '-----BEGIN[A-Z ]*PRIVATE KEY-----[\s\S]*?-----END[A-Z ]*PRIVATE KEY-----' },
-        @{ Kind = 'key'; Pattern = '-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----' },
-        # Only the genuinely sensitive keys of a connection string. `Server`, `Data
-        # Source`, `Initial Catalog`, and `User Id` are not secret VALUES, and matching
-        # them bought no safety while causing real collateral: the value class runs to the
-        # next `;` or end of line, so a match on a trailing non-secret segment swallowed
-        # the rest of the prompt — including text a later pattern would have classified
-        # more precisely. Over-redaction is the correct direction, but not at the cost of
-        # mislabelling every following token as part of a connection string.
-        # The value class stops at whitespace as well as at `;`. Running to the next `;` or
-        # end of line meant a prompt like `prefix Password=x suffix` lost ` suffix` along
-        # with the secret — a silent deletion, which contract 5.2 forbids: redaction must be
-        # VISIBLE, because a silently shortened prompt is indistinguishable from a short
-        # one. Secret values in connection strings do not contain spaces, so bounding at
-        # whitespace costs no coverage; a value that genuinely contained a space would have
-        # its leading portion redacted and the remainder is caught by the credential
-        # pattern below.
-        @{ Kind = 'connection-string'; Pattern = '(?i)\b(?:password|pwd|accountkey|shared\s*access\s*key)\s*=\s*[^;''"\s\r\n]+' },
-        @{ Kind = 'token'; Pattern = '(?i)\bbearer\s+[A-Za-z0-9._~+/\-]{16,}=*' },
-        @{ Kind = 'token'; Pattern = '\bgh[pousr]_[A-Za-z0-9]{16,}' },
-        @{ Kind = 'token'; Pattern = '\beyJ[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,}' },
-        @{ Kind = 'token'; Pattern = '(?i)\bxox[baprs]-[A-Za-z0-9\-]{10,}' },
-        @{ Kind = 'credential'; Pattern = '(?i)\b(?:password|passwd|pass|secret|apikey|api[_\-]?key|access[_\-]?key|client[_\-]?secret|token|credential)\s*[:=]\s*["'']?[^\s"''`;,\r\n]{6,}' },
-        @{ Kind = 'secret'; Pattern = '(?i)\b(?:AKIA|ASIA)[A-Z0-9]{16}\b' }
-      )
-
-      # SINGLE PASS over the ORIGINAL text, first-pattern-wins on overlap.
-      #
-      # Applying the patterns in sequence, each to the output of the last, double-counts
-      # and mislabels: a `token: ghp_xxx` fragment is redacted once by the token pattern,
-      # and the generic credential pattern then matches the SURVIVING `token: [REDACTED..]`
-      # and redacts it again. That inflates `redactionCount` — which consumers use to
-      # decide whether a record needs review — and overwrites the precise `token` kind with
-      # the vague `credential` one. Collecting spans against the original text and
-      # resolving overlaps in pattern order fixes both: the count is exactly the number of
-      # distinct secrets found, and each span keeps the kind of the most specific pattern
-      # that claimed it.
-      $spans = [System.Collections.Generic.List[object]]::new()
-      foreach ($p in $patterns) {
-        foreach ($m in [regex]::Matches($Text, $p.Pattern)) {
-          $start = $m.Index
-          $end = $m.Index + $m.Length
-          $overlaps = $false
-          foreach ($s in $spans) {
-            if ($start -lt $s.End -and $end -gt $s.Start) { $overlaps = $true; break }
-          }
-          if (-not $overlaps) {
-            [void]$spans.Add([PSCustomObject]@{ Start = $start; End = $end; Kind = $p.Kind })
-          }
+    # --- private helpers ----------------------------------------------------------
+    # ConvertTo-JcsJson, Get-Sha256Base16, Invoke-RecordRedaction, Get-EnvelopeMember,
+    # Resolve-WorktreeRootFromPath, and Resolve-GatherCallStoreDirectory live in
+    # `private/`, one function per file, per the module convention. Task 15.183.B02 moved
+    # them there: they were nested inside this `begin` block only because `private/` was
+    # outside the implementing unit's writable scope, never because that was their home.
+    #
+    # The `.psm1` dot-sources every `private/*.ps1` at import, so under a normal
+    # Import-Module these are already defined and the loop below is a no-op. The fallback
+    # exists for the OTHER supported entry point: dot-sourcing this single file from
+    # source, which the regression suite does - including inside `ForEach-Object
+    # -Parallel` runspaces, which inherit nothing and would otherwise lose every helper.
+    #
+    # It sits in BEGIN, not at file scope, because top-level executable code in a module
+    # .ps1 runs on EVERY Import-Module. `$PSScriptRoot` still resolves correctly here.
+    foreach ($helperName in @(
+        'ConvertTo-JcsJson', 'Get-Sha256Base16', 'Invoke-RecordRedaction',
+        'Get-EnvelopeMember', 'Resolve-WorktreeRootFromPath',
+        'Resolve-GatherCallStoreDirectory')) {
+      if (-not (Get-Command -Name $helperName -CommandType Function -ErrorAction SilentlyContinue)) {
+        $helperPath = Join-Path $PSScriptRoot '..' 'private' "$helperName.ps1"
+        if (Test-Path -LiteralPath $helperPath -PathType Leaf) {
+          . $helperPath
         }
       }
-
-      if ($spans.Count -eq 0) {
-        return [PSCustomObject]@{ Text = $Text; Count = 0 }
-      }
-
-      $ordered = @($spans | Sort-Object -Property Start)
-      $sb = [System.Text.StringBuilder]::new()
-      $cursor = 0
-      foreach ($s in $ordered) {
-        [void]$sb.Append($Text.Substring($cursor, $s.Start - $cursor))
-        [void]$sb.Append('[REDACTED:{0}]' -f $s.Kind)
-        $cursor = $s.End
-      }
-      [void]$sb.Append($Text.Substring($cursor))
-
-      return [PSCustomObject]@{ Text = $sb.ToString(); Count = $ordered.Count }
-    }
-
-    function Get-EnvelopeMember {
-      param(
-        [Parameter(Mandatory = $true)][AllowNull()][object]$Envelope,
-        [Parameter(Mandatory = $true)][string]$Name
-      )
-      if ($null -eq $Envelope) { return $null }
-      if ($Envelope -is [System.Collections.IDictionary]) {
-        if ($Envelope.Contains($Name)) { return $Envelope[$Name] }
-        return $null
-      }
-      $prop = $Envelope.PSObject.Properties[$Name]
-      if ($null -eq $prop) { return $null }
-      return $prop.Value
-    }
-
-    function Resolve-WorktreeRootFromPath {
-      param([Parameter(Mandatory = $true)][string]$StartPath)
-      $dir = $null
-      try { $dir = [System.IO.DirectoryInfo]::new($StartPath) } catch { return $null }
-      while ($null -ne $dir) {
-        if (Test-Path -LiteralPath (Join-Path $dir.FullName '.git')) { return $dir.FullName }
-        $dir = $dir.Parent
-      }
-      return $null
     }
   }
 
@@ -700,12 +645,29 @@ function Write-GatherCallRecord {
       throw [System.ArgumentException]::new($msg, 'TaskId')
     }
 
-    $resolvedWorktree = & $nullIfBlank $WorktreeRoot
+    # FAIL CLOSED on an unbound root — ratified at the C00 gate (item 3), implemented at
+    # Task 15.183.B02. This used to fall back to walking up from the current location to
+    # the nearest `.git` ancestor. That was fail-OPEN, and it was wrong twice over:
+    #
+    #   * IDENTITY. `worktreePath` exists to say WHICH repository root a call came from.
+    #     A walked-up value is inferred from ambient state, and downstream it is
+    #     indistinguishable from one the caller stated — the same class of defect as an
+    #     invented `conversationTitle`, which this record format refuses everywhere else.
+    #   * DESTINATION. Since B02 the durable store is derived from this root's PARENT, so
+    #     a walked-up root would not merely mislabel the record, it would write a
+    #     sprint's seed data into whatever repository the shell happened to be sitting in.
+    #
+    # There is deliberately no opt-in switch to restore the walk. This is a terminating
+    # argument fault rather than a returned write fault because a record carrying a
+    # guessed worktreePath is malformed, and per the ERRORS section above a malformed
+    # record is worse than a loud stop. Note the distinction the durable target forces:
+    # the root recorded in the BODY is always the CALLING worktree, while the write
+    # DESTINATION is the _Planning sprint worktree. Only the destination moved.
+    $resolvedWorktree = Resolve-WorktreeRootFromPath -StartPath $WorktreeRoot
     if ($null -eq $resolvedWorktree) {
-      $resolvedWorktree = Resolve-WorktreeRootFromPath -StartPath (Get-Location).Path
-    }
-    if ($null -ne $resolvedWorktree) {
-      $resolvedWorktree = ($resolvedWorktree -replace '\\', '/').TrimEnd('/')
+      $msg = 'WorktreeRoot is required and must be a resolvable path. The recorder does not infer a worktree root by walking up to the nearest .git ancestor: an inferred root is indistinguishable downstream from a stated one, and it also selects the durable store destination. Supply -WorktreeRoot explicitly.'
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg -Tag 'GatherCallRecord', 'Argument'
+      throw [System.ArgumentException]::new($msg, 'WorktreeRoot')
     }
 
     $repositoryNameValue = & $nullIfBlank $RepositoryName
@@ -870,31 +832,35 @@ function Write-GatherCallRecord {
 
     # ---------------------------------------------------------------------------
     # 5. Store location. Supplying -StoreRoot bypasses all resolution, which is the
-    #    seam a test uses; nothing here hardcodes a host path.
+    #    seam a test uses; nothing here hardcodes a host path. Otherwise the target is
+    #    composed by Resolve-GatherCallStoreDirectory from the sprint context, and which
+    #    of the two layouts it composes is the caller-visible -StoreTarget decision.
+    #
+    #    Resolution failures come back as Ok=$false with an actionable message rather
+    #    than as exceptions, because a store that cannot be resolved is a WRITE fault
+    #    (contract 6.4, non-terminating) — unlike the unbound root above, which is an
+    #    argument fault. The one exception is a malformed explicit -SprintNumber, which
+    #    the resolver throws for, preserving this function's prior behaviour.
     # ---------------------------------------------------------------------------
     $ok = $true
     $writeError = $null
     $storeDirectory = & $nullIfBlank $StoreRoot
 
     if ($null -eq $storeDirectory) {
-      if ($null -eq $resolvedWorktree) {
-        $writeError = "Could not resolve a worktree root from '$((Get-Location).Path)' (no ancestor contains a .git entry). Supply -WorktreeRoot or -StoreRoot."
-        $ok = $false
+      $storeResolution = Resolve-GatherCallStoreDirectory `
+        -StoreTarget $StoreTarget `
+        -WorktreeRoot $resolvedWorktree `
+        -SprintNumber $SprintNumber `
+        -Stream $Stream `
+        -TaskFolder $TaskFolder `
+        -PlanningRoot $PlanningRoot `
+        -GitRoot $GitRoot
+
+      if ($storeResolution.Ok) {
+        $storeDirectory = $storeResolution.Directory
       } else {
-        $sprint = & $nullIfBlank $SprintNumber
-        if ($null -eq $sprint -and $resolvedWorktree -match '-Sprint-(\d{4})-work-items') {
-          $sprint = $Matches[1]
-        }
-        if ($null -eq $sprint) {
-          $writeError = "Could not resolve a sprint number from worktree '$resolvedWorktree'. Supply -SprintNumber or -StoreRoot."
-          $ok = $false
-        } elseif ($sprint -notmatch '^\d{4}$') {
-          $msg = "SprintNumber '$sprint' is not four digits."
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg -Tag 'GatherCallRecord', 'Argument'
-          throw [System.ArgumentException]::new($msg, 'SprintNumber')
-        } else {
-          $storeDirectory = Join-Path (Join-Path (Join-Path (Join-Path $resolvedWorktree '_generated') ("Sprint$sprint")) $Stream) 'gather-calls'
-        }
+        $writeError = $storeResolution.Error
+        $ok = $false
       }
     }
 

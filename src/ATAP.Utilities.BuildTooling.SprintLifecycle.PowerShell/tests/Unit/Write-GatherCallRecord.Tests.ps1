@@ -58,11 +58,44 @@ BeforeAll {
   # array and is therefore a known constant. This is SHA-256 of the two bytes "[]".
   $script:EmptyItemsDigest = '4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945'
 
+  # Task 15.183.B02 moved the DEFAULT write target from the calling worktree's
+  # `_generated` tree to the durable `_Planning` store, so a fixture is no longer a lone
+  # directory: it is a miniature Git root holding the calling worktree and a `_Planning`
+  # sprint worktree side by side, which is the layout the durable resolver discovers.
+  # Everything still lives under $TestDrive - no test touches a real worktree.
+  #
+  # The returned path is the CALLING worktree, because that is what -WorktreeRoot means
+  # and what the record body's worktreePath records. The store the record lands in is the
+  # _Planning sibling, which is the distinction B02 introduced.
+  $script:FixtureSprint = '0015'
+  $script:FixturePlanningLeaf = '_Planning-wt-35-Sprint-0015-work-items'
+  $script:FixtureWorktreeLeaf = 'ATAP.Utilities-wt-137-Sprint-0015-work-items'
+
   function New-WorktreeFixture {
-    param([string]$Name)
-    $root = Join-Path $script:fixtureRoot ($Name + '-' + [guid]::NewGuid().ToString('N').Substring(0, 8))
-    New-Item -ItemType Directory -Path $root -Force | Out-Null
-    $root
+    param(
+      [string]$Name,
+      # Overridable so a test can supply a leaf that the repositoryName derivation must
+      # NOT recognize, without giving up the surrounding durable-store layout.
+      [string]$WorktreeLeafName = $script:FixtureWorktreeLeaf
+    )
+    $gitRoot = Join-Path $script:fixtureRoot ($Name + '-' + [guid]::NewGuid().ToString('N').Substring(0, 8))
+    New-Item -ItemType Directory -Path $gitRoot -Force | Out-Null
+    New-Item -ItemType Directory -Path (Join-Path $gitRoot $script:FixturePlanningLeaf) -Force | Out-Null
+    $worktree = Join-Path $gitRoot $WorktreeLeafName
+    New-Item -ItemType Directory -Path $worktree -Force | Out-Null
+    $worktree
+  }
+
+  # The durable `gather-calls` directory for a fixture, stated explicitly so one test can
+  # pin the exact path while the rest stay location-agnostic.
+  function Get-FixtureDurableStore {
+    param([string]$WorktreePath)
+    Join-Path (Split-Path -Path $WorktreePath -Parent) $script:FixturePlanningLeaf |
+      Join-Path -ChildPath 'InformationForTheFuture' |
+      Join-Path -ChildPath "Sprint$script:FixtureSprint" |
+      Join-Path -ChildPath 'StreamM' |
+      Join-Path -ChildPath 'Task15.183' |
+      Join-Path -ChildPath 'gather-calls'
   }
 
   function New-StubEnvelope {
@@ -136,11 +169,15 @@ BeforeAll {
     Write-GatherCallRecord @splat
   }
 
+  # Searches the whole fixture Git root rather than one hardcoded subtree, so the suite
+  # does not re-encode the store location in sixty places. Exactly one test pins the
+  # durable path explicitly; the rest assert on record CONTENT and should keep passing if
+  # the store moves again - which, per the operator's stated intent, it will.
   function Get-RecordFile {
     param([string]$WorktreePath)
-    $generated = Join-Path $WorktreePath '_generated'
-    if (-not (Test-Path -LiteralPath $generated)) { return @() }
-    @(Get-ChildItem -LiteralPath $generated -Recurse -File -Filter '*.jsonl' -ErrorAction SilentlyContinue)
+    $gitRoot = Split-Path -Path $WorktreePath -Parent
+    if (-not (Test-Path -LiteralPath $gitRoot)) { return @() }
+    @(Get-ChildItem -LiteralPath $gitRoot -Recurse -File -Filter '*.jsonl' -ErrorAction SilentlyContinue)
   }
 
   function Get-RecordLine {
@@ -243,11 +280,26 @@ Describe 'Write-GatherCallRecord [public]' -Tag 'Unit' {
       (Get-RecordLine -WorktreePath $script:successRoot).Count | Should -Be 1
     }
 
-    It 'writes beneath the _generated gather-calls location the contract specifies' {
+    It 'writes beneath the durable _Planning gather-calls location, not _generated' {
+      # Task 15.183.B02. The rescope made these records seed data for the Tags database
+      # rather than point-in-time evidence, so R-38 applies: `_generated` under an
+      # ephemeral sprint worktree is deleted at sprint end and the seed data would not
+      # survive the sprint that produced it. Contract section 6.2 still shows the
+      # `_generated` layout but is headed "File layout (proposed)"; the normative format
+      # sections say nothing about location.
       $files = Get-RecordFile -WorktreePath $script:successRoot
       $files.Count | Should -BeGreaterThan 0
       $directory = ($files[0].DirectoryName -replace '\\', '/')
-      $directory | Should -Match '/_generated/Sprint0015/StreamM/gather-calls$'
+      $directory | Should -Match '/_Planning-wt-\d+-Sprint-0015-work-items/InformationForTheFuture/Sprint0015/StreamM/Task15\.183/gather-calls$'
+      $directory | Should -Not -Match '/_generated/' -Because 'a record deleted at sprint end is the bug B02 fixes'
+    }
+
+    It 'records the CALLING worktree in the body even though the file lands under _Planning' {
+      # The two roots do different jobs and must stay distinct: only the DESTINATION
+      # moved to _Planning; worktreePath still says which repository the call came from.
+      $record = (Get-Record -WorktreePath $script:successRoot)[0]
+      $record.worktreePath | Should -Be ($script:successRoot -replace '\\', '/')
+      $record.worktreePath | Should -Not -Match '_Planning'
     }
 
     It 'emits every required field, present even when null' {
@@ -653,7 +705,7 @@ Describe 'Write-GatherCallRecord [public]' -Tag 'Unit' {
       # Contract 6.3.4: a recorder failure must not fail the gather call, but the
       # pinned interface requires it be surfaced rather than silently dropped.
       $root = New-WorktreeFixture -Name 'writefail'
-      $blockedDirectory = Join-Path $root '_generated\Sprint0015\StreamM\gather-calls\gather-calls.jsonl'
+      $blockedDirectory = Join-Path (Get-FixtureDurableStore -WorktreePath $root) 'gather-calls.jsonl'
       New-Item -ItemType Directory -Path $blockedDirectory -Force | Out-Null
 
       $psfErrors = [System.Collections.Generic.List[string]]::new()
@@ -695,7 +747,12 @@ Describe 'Write-GatherCallRecord [public]' -Tag 'Unit' {
   Context 'Unavailable metadata is recorded as absent, never invented' {
 
     BeforeAll {
-      $script:absentRoot = New-WorktreeFixture -Name 'absent'
+      # Unrecognizable leaf on purpose. This Context is about metadata that is genuinely
+      # UNAVAILABLE, and repositoryName is only unavailable when it cannot be derived from
+      # the worktree path. Since B02 the default fixture leaf is a valid sprint-worktree
+      # name, from which contract section 3.2 says repositoryName MUST be derived, so
+      # leaving it here would have tested derivation rather than absence.
+      $script:absentRoot = New-WorktreeFixture -Name 'absent' -WorktreeLeafName 'not-a-recognizable-worktree-name'
       $argument = New-RecorderArgument -WorktreePath $script:absentRoot
       $argument.ConversationId = $null
       $argument.ConversationTitle = $null
@@ -740,11 +797,131 @@ Describe 'Write-GatherCallRecord [public]' -Tag 'Unit' {
     }
 
     It 'does not infer repositoryName from an unrecognizable worktree path' {
-      $root = New-WorktreeFixture -Name 'norepo'
+      # The leaf is overridden explicitly: since B02 the DEFAULT fixture worktree name is
+      # a valid sprint-worktree name, from which repositoryName is legitimately derived.
+      # This test needs the other case, and says so rather than relying on the fixture.
+      $root = New-WorktreeFixture -Name 'norepo' -WorktreeLeafName 'not-a-recognizable-worktree-name'
       $argument = New-RecorderArgument -WorktreePath $root
       $argument.RepositoryName = $null
       Invoke-Recorder -Argument $argument
       (Get-Record -WorktreePath $root)[0].repositoryName | Should -BeNullOrEmpty
+    }
+  }
+
+  Context 'Write target - durable by default, switchable, fail-closed root' {
+
+    It 'fails closed when no worktree root is bound, rather than walking up to a .git ancestor' {
+      # C00 gate item 3. The old fallback walked up from the current location, which made
+      # worktreePath an inferred identity indistinguishable downstream from a stated one -
+      # and, since B02, would have selected the durable destination from whatever
+      # repository the shell happened to be in.
+      $argument = New-RecorderArgument -WorktreePath (New-WorktreeFixture -Name 'failclosed')
+      $argument.Remove('WorktreeRoot')
+      { Invoke-Recorder -Argument $argument } |
+        Should -Throw -ExceptionType ([System.ArgumentException]) `
+        -Because 'an unbound root is a terminating argument fault, not a silent walk-up'
+    }
+
+    It 'fails closed on a blank worktree root too' {
+      $argument = New-RecorderArgument -WorktreePath (New-WorktreeFixture -Name 'failclosed-blank')
+      $argument.WorktreeRoot = '   '
+      { Invoke-Recorder -Argument $argument } | Should -Throw -ExceptionType ([System.ArgumentException])
+    }
+
+    It 'exposes no switch that re-enables the walk-up' {
+      # "No opt-in switch" was ratified explicitly, so it is pinned explicitly: an escape
+      # hatch would be the same fail-open defect under a longer name.
+      $command = Get-Command -Name 'Write-GatherCallRecord' -CommandType Function
+      foreach ($forbidden in @('Walk', 'WalkUp', 'ResolveRoot', 'AllowWalkUp', 'InferRoot')) {
+        $command.Parameters.Keys | Should -Not -Contain $forbidden
+      }
+    }
+
+    It 'writes the legacy _generated layout when -StoreTarget Generated is stated' {
+      $root = New-WorktreeFixture -Name 'target-generated'
+      $argument = New-RecorderArgument -WorktreePath $root
+      $argument.StoreTarget = 'Generated'
+      Invoke-Recorder -Argument $argument
+
+      $files = Get-RecordFile -WorktreePath $root
+      $files.Count | Should -Be 1
+      ($files[0].DirectoryName -replace '\\', '/') |
+        Should -Match '/_generated/Sprint0015/StreamM/gather-calls$' `
+        -Because 'the operator intends to move the records back once the bugs are worked out'
+    }
+
+    It 'produces a byte-format-identical record whichever target is chosen' {
+      # The FORMAT is contract-governed and did not change; only the directory did. Same
+      # key set, same ordinal key order, same minification, same terminator.
+      $durableRoot = New-WorktreeFixture -Name 'fmt-durable'
+      $generatedRoot = New-WorktreeFixture -Name 'fmt-generated'
+
+      Invoke-Recorder -Argument (New-RecorderArgument -WorktreePath $durableRoot)
+      $generatedArgument = New-RecorderArgument -WorktreePath $generatedRoot
+      $generatedArgument.StoreTarget = 'Generated'
+      Invoke-Recorder -Argument $generatedArgument
+
+      $durableBytes = [System.IO.File]::ReadAllBytes((Get-RecordFile -WorktreePath $durableRoot)[0].FullName)
+      $generatedBytes = [System.IO.File]::ReadAllBytes((Get-RecordFile -WorktreePath $generatedRoot)[0].FullName)
+
+      # Terminator and encoding are byte-level facts, so assert them on the bytes.
+      $durableBytes[-1] | Should -Be 10
+      $generatedBytes[-1] | Should -Be 10
+      $durableBytes[0] | Should -Be ([byte][char]'{') -Because 'UTF-8 without BOM'
+      $generatedBytes[0] | Should -Be ([byte][char]'{')
+
+      # The two records differ only where they MUST: the per-call invocationId and
+      # timestamp, and worktreePath, which names each record's own calling worktree.
+      $durable = (Get-Record -WorktreePath $durableRoot)[0]
+      $generated = (Get-Record -WorktreePath $generatedRoot)[0]
+      @($generated.PSObject.Properties.Name) |
+        Should -Be @($durable.PSObject.Properties.Name) -Because 'key set and key ORDER are part of the format'
+
+      foreach ($field in @('recordVersion', 'agentName', 'tags', 'tagsRaw', 'depth', 'width',
+          'instance', 'prompt', 'outcome', 'responseStatus', 'stubMarker', 'redacted',
+          'redactionCount', 'ordinal', 'ordinalScope', 'repositoryName')) {
+        ($generated.$field | ConvertTo-Json -Compress -Depth 10) |
+          Should -Be ($durable.$field | ConvertTo-Json -Compress -Depth 10) -Because "$field is format, not location"
+      }
+      $durable.responseDigest.value | Should -Be $generated.responseDigest.value
+    }
+
+    It 'reports a write fault, without throwing, when no _Planning sprint worktree exists' {
+      # A missing durable store is a WRITE fault (contract 6.4, non-terminating), unlike
+      # the unbound root above which is an ARGUMENT fault. The distinction is deliberate:
+      # a recorder must never fail the worker, but it must never write a malformed record
+      # either.
+      $orphan = Join-Path $script:fixtureRoot ('orphan-' + [guid]::NewGuid().ToString('N').Substring(0, 8))
+      $worktree = Join-Path $orphan 'ATAP.Utilities-wt-137-Sprint-0015-work-items'
+      New-Item -ItemType Directory -Path $worktree -Force | Out-Null
+
+      # Assigned outside a Should scriptblock on purpose: a scriptblock handed to
+      # Should -Not -Throw runs in a child scope, so an assignment inside it does not
+      # reach the It and the later assertions would silently inspect $null.
+      $argument = New-RecorderArgument -WorktreePath $worktree
+      $result = $null
+      $threw = $false
+      try {
+        $result = Invoke-Recorder -Argument $argument -ErrorAction SilentlyContinue
+      } catch {
+        $threw = $true
+      }
+      $threw | Should -BeFalse -Because 'a recorder failure must never fail the gather call'
+      $result.Ok | Should -BeFalse
+      $result.Error | Should -Match '_Planning'
+    }
+
+    It 'refuses to guess when two _Planning sprint worktrees claim the same sprint' {
+      # Choosing one would scatter a sprint's seed data across two stores.
+      $ambiguous = Join-Path $script:fixtureRoot ('ambiguous-' + [guid]::NewGuid().ToString('N').Substring(0, 8))
+      $worktree = Join-Path $ambiguous 'ATAP.Utilities-wt-137-Sprint-0015-work-items'
+      New-Item -ItemType Directory -Path $worktree -Force | Out-Null
+      New-Item -ItemType Directory -Path (Join-Path $ambiguous '_Planning-wt-35-Sprint-0015-work-items') -Force | Out-Null
+      New-Item -ItemType Directory -Path (Join-Path $ambiguous '_Planning-wt-36-Sprint-0015-work-items') -Force | Out-Null
+
+      $result = Invoke-Recorder -Argument (New-RecorderArgument -WorktreePath $worktree) -ErrorAction SilentlyContinue
+      $result.Ok | Should -BeFalse
+      $result.Error | Should -Match 'Ambiguous'
     }
   }
 

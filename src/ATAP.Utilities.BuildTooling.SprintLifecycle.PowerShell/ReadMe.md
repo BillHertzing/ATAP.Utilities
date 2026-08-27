@@ -2,7 +2,11 @@
 
 Sprint lifecycle commands for SprintStart, SprintEnd, worktree teardown, checkpoint archival, and sprint-boundary validation.
 
-Version 0.1.14 is installed AllUsers on UTAT01 and UTAT022. Service-profile fallback discovery is bounded to `SvcBuildMaster`, `SvcProGet`, and `SvcSQLServer`; an authenticated service identity manages only its own profile, while an operator session may deploy the approved set. Focused discovery tests pass 8/8, isolated SprintEnd lifecycle tests pass 25/25, and all six host/account targets are idempotent at the canonical profile hash.
+Version 0.1.34 is the current release and is the version a name-only
+`Import-Module` resolves to from the AllUsers path; it is the first release to export
+`Write-GatherCallRecord`. Version 0.1.14 remains the accepted **two-host** deploy state for
+service-profile discovery — the claims in the rest of this paragraph were verified at 0.1.14 on both
+UTAT01 and UTAT022 and have not been re-verified on UTAT022 since. Service-profile fallback discovery is bounded to `SvcBuildMaster`, `SvcProGet`, and `SvcSQLServer`; an authenticated service identity manages only its own profile, while an operator session may deploy the approved set. Focused discovery tests pass 8/8, isolated SprintEnd lifecycle tests pass 25/25, and all six host/account targets are idempotent at the canonical profile hash.
 
 SprintEnd handoffs invoke `Remove-SprintWorktreeSafely`: teardown is blocked for active
 Codex/VS Code roots, retries are bounded, and an incomplete teardown leaves a minimal

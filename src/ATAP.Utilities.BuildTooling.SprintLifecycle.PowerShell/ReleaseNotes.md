@@ -1,5 +1,33 @@
 # Release notes
 
+## 0.1.34
+
+- Task 15.183: export `Write-GatherCallRecord`. It records each
+  `gather-content-summary` call — the submitted tags, the prompt, the minted
+  invocation id, the request/response-pair ordinal, and the conversation id and
+  title when the harness exposes them — as one immutable record per call. The
+  function has existed in source since Task 15.183.B01, but no released version
+  exported it, so no installed module could write a record.
+- Task 15.183: records land in durable storage by default, beneath
+  `_Planning/InformationForTheFuture/Sprint<NNNN>/StreamM/Task15.183/gather-calls/`,
+  which survives sprint end. They are deliberately not written to the
+  git-ignored `_generated/` tree under the ephemeral sprint worktree, where a
+  record would be deleted by the very sprint that produced it. `-StoreTarget
+  Generated` still selects the `_generated` layout for a caller that wants it.
+- Task 15.183: `-WorktreeRoot` is fail-closed. An omitted, blank, or
+  unresolvable value is a terminating error, and the recorder does not walk up
+  to a nearest `.git` ancestor to guess one. Every Example in the help binds it
+  explicitly, so no example teaches the failure mode.
+- Task 15.183: **consumer-facing caveat** — `ordinal` is neither dense nor
+  unique. With `-Ordinal` unbound the fallback counts existing records in the
+  scope and is therefore racy: in the Task 15.183.e measurement, 30 concurrent
+  records in one session scope collapsed onto 11 distinct `ordinal` values,
+  gapped as well as duplicated, with two values assigned five times each. No
+  record is lost, and total order remains well defined through the contract
+  ordering keys whose final tiebreaker is the unique `invocationId`, but a
+  consumer must not read a gap as a missing record and must not treat `ordinal`
+  as a unique key. Supplying `-Ordinal` avoids the race entirely.
+
 ## 0.1.31
 
 - Task 14.13: `Save-SprintWorkSession` no longer resolves the Claude Code memory

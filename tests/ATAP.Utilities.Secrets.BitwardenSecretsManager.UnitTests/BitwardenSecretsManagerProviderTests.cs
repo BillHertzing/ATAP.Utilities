@@ -15,7 +15,7 @@ public sealed class BitwardenSecretsManagerProviderTests
     var runner = new FakeRunner(SecretJson("Database.Password", "correct"));
     var provider = CreateProvider(runner, "Database.Password");
     Assert.Equal("correct", await provider.GetSecretAsync("Database.Password"));
-    Assert.Equal(new[] { "secret", "get", SecretId, "--output", "json", "--color", "never" }, runner.Arguments);
+    Assert.Equal(new[] { "secret", "get", SecretId, "--output", "json", "--color", "no" }, runner.Arguments);
   }
 
   [Fact]

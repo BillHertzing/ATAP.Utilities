@@ -65,7 +65,7 @@ public sealed class BitwardenSecretsManagerProvider : SecretsAbstract
       return null;
     }
 
-    var result = await _runner.RunAsync(["secret", "get", secretId, "--output", "json", "--color", "never"], cancellationToken).ConfigureAwait(false);
+    var result = await _runner.RunAsync(["secret", "get", secretId, "--output", "json", "--color", "no"], cancellationToken).ConfigureAwait(false);
     try
     {
       var utf8 = Encoding.UTF8.GetBytes(result.StandardOutput);

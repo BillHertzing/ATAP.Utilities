@@ -27,6 +27,35 @@ public sealed class WindowsTokenSourceConfigurationTests
   }
 
   [Theory]
+  [InlineData("acecommander-application")]
+  [InlineData("acecommander-developer")]
+  public void AddWindowsDpapiBwsReadOnlyAccessTokenSource_BindsRegisteredAceCommanderProfile(string slotId)
+  {
+    var configuration = CreateConfiguration(slotId);
+    var services = new ServiceCollection();
+
+    services.AddWindowsDpapiBwsReadOnlyAccessTokenSource(configuration);
+
+    var registration = Assert.Single(services.Where(descriptor => descriptor.ServiceType == typeof(WindowsBwsTokenSourceOptions)));
+    var options = Assert.IsType<WindowsBwsTokenSourceOptions>(registration.ImplementationInstance);
+    Assert.Equal(slotId, options.EnabledSlotId);
+    Assert.Equal("AceCommander", options.ApplicationId);
+    Assert.Equal("AceCommander", options.VaultGroupingId);
+    Assert.Equal(WindowsBwsTokenPhysicalFormat.AtapBwsDpapiEnvelopeV1, options.ResolveConfiguredSlot().PhysicalFormat);
+  }
+
+  [Fact]
+  public void RegisteredProfiles_KeepAceCommanderAndAceOutpostApplicationIdentitiesDisjoint()
+  {
+    var aceCommander = WindowsBwsTokenSlotProfile.Registered["acecommander-application"];
+    var aceOutpost = WindowsBwsTokenSlotProfile.Registered["aceoutpost-application"];
+
+    Assert.NotEqual(aceOutpost.ApplicationId, aceCommander.ApplicationId);
+    Assert.NotEqual(aceOutpost.VaultGroupingId, aceCommander.VaultGroupingId);
+    Assert.Equal(BwsTokenPurpose.ReadOnly, aceCommander.Descriptor.Purpose);
+  }
+
+  [Theory]
   [InlineData("unknown-slot")]
   [InlineData("application-envelope")]
   public void AddWindowsDpapiBwsReadOnlyAccessTokenSource_UnknownOrUnregisteredSlotId_ThrowsTypedStartupFailure(string slotId)

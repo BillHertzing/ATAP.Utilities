@@ -68,6 +68,8 @@ public sealed record WindowsBwsTokenSlotProfile(
     {
       ["aceoutpost-application"] = new("aceoutpost-application", WindowsBwsTokenSlotDescriptor.ApplicationEnvelope, "AceOutpost", "AceOutpost"),
       ["aceoutpost-developer"] = new("aceoutpost-developer", WindowsBwsTokenSlotDescriptor.ApplicationEnvelope, "AceOutpost", "AceOutpost"),
+      ["acecommander-application"] = new("acecommander-application", WindowsBwsTokenSlotDescriptor.ApplicationEnvelope, "AceCommander", "AceCommander"),
+      ["acecommander-developer"] = new("acecommander-developer", WindowsBwsTokenSlotDescriptor.ApplicationEnvelope, "AceCommander", "AceCommander"),
     };
 }
 

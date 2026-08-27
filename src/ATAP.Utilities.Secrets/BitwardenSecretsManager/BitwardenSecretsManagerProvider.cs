@@ -17,7 +17,7 @@ public sealed class BitwardenSecretsManagerProvider : SecretsAbstract
   public override async Task<string?> GetSecretAsync(string secretName, string? fieldName = null, CancellationToken cancellationToken = default)
   {
     ArgumentException.ThrowIfNullOrWhiteSpace(secretName);
-    var secret = SelectOne(await ListProjectSecretsAsync(cancellationToken).ConfigureAwait(false), secretName, required: true)!;
+    var secret = await GetSecretByNameAsync(secretName, required: true, cancellationToken).ConfigureAwait(false);
     return SelectField(secret.Value, secretName, fieldName);
   }
 
@@ -28,34 +28,60 @@ public sealed class BitwardenSecretsManagerProvider : SecretsAbstract
     if (mappingArray.Any(x => string.IsNullOrWhiteSpace(x.ConfigurationKey) || string.IsNullOrWhiteSpace(x.SecretName)) ||
         mappingArray.Select(x => x.ConfigurationKey).Distinct(StringComparer.OrdinalIgnoreCase).Count() != mappingArray.Length)
       throw new BwsException(BwsFailureKind.InvalidConfiguration, "Configuration keys and SecretNames must be non-empty and configuration keys must be unique.");
-    var secrets = await ListProjectSecretsAsync(cancellationToken).ConfigureAwait(false);
     var result = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+    var secrets = new Dictionary<string, BwsSecret>(StringComparer.Ordinal);
     foreach (var mapping in mappingArray)
     {
-      var secret = SelectOne(secrets, mapping.SecretName, mapping.Required);
-      if (secret is not null) result.Add(mapping.ConfigurationKey, SelectField(secret.Value, mapping.SecretName, mapping.FieldName));
+      if (!secrets.TryGetValue(mapping.SecretName, out var secret))
+      {
+        var resolved = await GetSecretByNameAsync(mapping.SecretName, mapping.Required, cancellationToken).ConfigureAwait(false);
+        if (resolved is null) continue;
+        secret = resolved;
+        secrets.Add(mapping.SecretName, secret);
+      }
+      result.Add(mapping.ConfigurationKey, SelectField(secret.Value, mapping.SecretName, mapping.FieldName));
     }
     return result;
   }
 
   public async Task ValidateRequiredSecretsAsync(CancellationToken cancellationToken = default)
   {
-    var secrets = await ListProjectSecretsAsync(cancellationToken).ConfigureAwait(false);
-    foreach (var secretName in _options.RequiredSecretNames) _ = SelectOne(secrets, secretName, required: true);
+    foreach (var secretName in _options.RequiredSecretNames)
+      _ = await GetSecretByNameAsync(secretName, required: true, cancellationToken).ConfigureAwait(false);
   }
 
   public override async Task<bool> SecretExistsAsync(string secretName, CancellationToken cancellationToken = default)
   {
     ArgumentException.ThrowIfNullOrWhiteSpace(secretName);
-    return SelectOne(await ListProjectSecretsAsync(cancellationToken).ConfigureAwait(false), secretName, required: false) is not null;
+    return await GetSecretByNameAsync(secretName, required: false, cancellationToken).ConfigureAwait(false) is not null;
   }
 
-  private BwsSecret? SelectOne(IReadOnlyList<BwsSecret> secrets, string secretName, bool required)
+  private async Task<BwsSecret?> GetSecretByNameAsync(string secretName, bool required, CancellationToken cancellationToken)
   {
-    var matches = secrets.Where(secret => string.Equals(secret.Key, secretName, StringComparison.Ordinal)).ToArray();
-    if (matches.Length == 0 && required) throw new BwsException(BwsFailureKind.SecretMissing, $"SecretName '{secretName}' was not found in the configured project.");
-    if (matches.Length > 1) throw new BwsException(BwsFailureKind.SecretDuplicate, $"SecretName '{secretName}' is not unique in the configured project.");
-    return matches.SingleOrDefault();
+    if (!_options.SecretIdsByName.TryGetValue(secretName, out var secretId))
+    {
+      if (required)
+        throw new BwsException(BwsFailureKind.InvalidConfiguration, $"SecretName '{secretName}' does not have an exact Secret ID mapping.");
+      return null;
+    }
+
+    var result = await _runner.RunAsync(["secret", "get", secretId, "--output", "json", "--color", "never"], cancellationToken).ConfigureAwait(false);
+    try
+    {
+      var utf8 = Encoding.UTF8.GetBytes(result.StandardOutput);
+      RejectDuplicateJsonMembers(utf8);
+      var secret = JsonSerializer.Deserialize<BwsSecret>(utf8, SerializerOptions);
+      if (secret is null || secret.Value is null ||
+          !string.Equals(secret.Id, secretId, StringComparison.OrdinalIgnoreCase) ||
+          !string.Equals(secret.ProjectId, _options.ProjectId, StringComparison.OrdinalIgnoreCase) ||
+          !string.Equals(secret.Key, secretName, StringComparison.Ordinal))
+        throw new JsonException();
+      return secret;
+    }
+    catch (JsonException exception)
+    {
+      throw new BwsException(BwsFailureKind.CliJsonInvalid, "bws returned an invalid or mismatched secret-get response.", exception);
+    }
   }
 
   private string? SelectField(string value, string secretName, string? fieldName)
@@ -76,21 +102,6 @@ public sealed class BitwardenSecretsManagerProvider : SecretsAbstract
     throw new BwsException(BwsFailureKind.SecretFieldMissing, $"Field '{fieldName}' was not found in SecretName '{secretName}'.");
   }
 
-  private async Task<IReadOnlyList<BwsSecret>> ListProjectSecretsAsync(CancellationToken cancellationToken)
-  {
-    var result = await _runner.RunAsync(["secret", "list", _options.ProjectId, "--output", "json", "--color", "never"], cancellationToken).ConfigureAwait(false);
-    try
-    {
-      var utf8 = Encoding.UTF8.GetBytes(result.StandardOutput);
-      RejectDuplicateJsonMembers(utf8);
-      var secrets = JsonSerializer.Deserialize<List<BwsSecret>>(utf8, SerializerOptions);
-      if (secrets is null || secrets.Any(secret => string.IsNullOrEmpty(secret.Key) || secret.Value is null) ||
-          secrets.Any(secret => !string.Equals(secret.ProjectId, _options.ProjectId, StringComparison.OrdinalIgnoreCase))) throw new JsonException();
-      return secrets;
-    }
-    catch (JsonException exception) { throw new BwsException(BwsFailureKind.CliJsonInvalid, "bws returned an invalid secret-list response.", exception); }
-  }
-
   private static void RejectDuplicateJsonMembers(ReadOnlySpan<byte> json)
   {
     var reader = new Utf8JsonReader(json, new JsonReaderOptions { AllowTrailingCommas = false, CommentHandling = JsonCommentHandling.Disallow, MaxDepth = 32 });
@@ -104,5 +115,9 @@ public sealed class BitwardenSecretsManagerProvider : SecretsAbstract
   }
 
   private static readonly JsonSerializerOptions SerializerOptions = new() { PropertyNameCaseInsensitive = false, UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip };
-  private sealed record BwsSecret([property: JsonPropertyName("projectId")] string ProjectId, [property: JsonPropertyName("key")] string Key, [property: JsonPropertyName("value")] string Value);
+  private sealed record BwsSecret(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("projectId")] string ProjectId,
+    [property: JsonPropertyName("key")] string Key,
+    [property: JsonPropertyName("value")] string Value);
 }

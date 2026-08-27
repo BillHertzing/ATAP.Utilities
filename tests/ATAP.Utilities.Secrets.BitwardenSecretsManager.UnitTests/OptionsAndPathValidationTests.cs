@@ -75,6 +75,8 @@ public sealed class OptionsAndPathValidationTests
   {
     var accepted = ValidProviderOptions();
     accepted.RequiredSecretNames = new HashSet<string>(["Database.Password", "database.password"], StringComparer.Ordinal);
+    accepted.SecretIdsByName["Database.Password"] = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+    accepted.SecretIdsByName["database.password"] = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
     var rejected = ValidProviderOptions();
     rejected.RequiredSecretNames.Add(" ");
 
@@ -83,6 +85,23 @@ public sealed class OptionsAndPathValidationTests
 
     Assert.Equal(2, accepted.RequiredSecretNames.Count);
     Assert.Equal(BwsFailureKind.InvalidConfiguration, error.Kind);
+  }
+
+  [Fact]
+  public void ProviderConstructor_SecretIdMappingsRequireUniqueUuidsAndExactRequiredNames()
+  {
+    var invalidId = ValidProviderOptions();
+    invalidId.SecretIdsByName["Key"] = "not-a-uuid";
+    var duplicateIds = ValidProviderOptions();
+    duplicateIds.SecretIdsByName["One"] = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+    duplicateIds.SecretIdsByName["Two"] = "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA";
+    var missingExactName = ValidProviderOptions();
+    missingExactName.RequiredSecretNames.Add("Database.Password");
+    missingExactName.SecretIdsByName["database.password"] = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+
+    Assert.Equal(BwsFailureKind.InvalidConfiguration, Assert.Throws<BwsException>(() => new BitwardenSecretsManagerProvider(invalidId, new UnusedRunner())).Kind);
+    Assert.Equal(BwsFailureKind.InvalidConfiguration, Assert.Throws<BwsException>(() => new BitwardenSecretsManagerProvider(duplicateIds, new UnusedRunner())).Kind);
+    Assert.Equal(BwsFailureKind.InvalidConfiguration, Assert.Throws<BwsException>(() => new BitwardenSecretsManagerProvider(missingExactName, new UnusedRunner())).Kind);
   }
 
   [Fact]

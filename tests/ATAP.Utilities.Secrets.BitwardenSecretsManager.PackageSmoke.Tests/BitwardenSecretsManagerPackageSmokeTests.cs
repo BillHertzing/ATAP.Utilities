@@ -23,6 +23,10 @@ public sealed class BitwardenSecretsManagerPackageSmokeTests
       VaultGroupingId = "PackageSmoke",
       BwsExecutablePath = @"C:\Windows\System32\cmd.exe",
       RequiredSecretNames = new HashSet<string>(StringComparer.Ordinal) { "PackageSmoke.RequiredSecret" },
+      SecretIdsByName = new Dictionary<string, string>(StringComparer.Ordinal)
+      {
+        ["PackageSmoke.RequiredSecret"] = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      },
     };
     var windowsOptions = new WindowsBwsTokenSourceOptions
     {

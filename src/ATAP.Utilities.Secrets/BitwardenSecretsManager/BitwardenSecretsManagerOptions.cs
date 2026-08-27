@@ -34,6 +34,8 @@ public sealed class BitwardenSecretsManagerOptions
 
   public HashSet<string> RequiredSecretNames { get; set; } = new(StringComparer.Ordinal);
 
+  public Dictionary<string, string> SecretIdsByName { get; set; } = new(StringComparer.Ordinal);
+
   internal void Validate()
   {
     if (string.IsNullOrWhiteSpace(ApplicationId))
@@ -76,6 +78,17 @@ public sealed class BitwardenSecretsManagerOptions
     if (RequiredSecretNames.Any(string.IsNullOrWhiteSpace) || RequiredSecretNames.Count != RequiredSecretNames.Distinct(StringComparer.Ordinal).Count())
     {
       throw new BwsException(BwsFailureKind.InvalidConfiguration, "Required SecretNames must be non-empty and ordinally unique.");
+    }
+
+    if (SecretIdsByName.Any(entry => string.IsNullOrWhiteSpace(entry.Key) || !Guid.TryParse(entry.Value, out _)) ||
+        SecretIdsByName.Values.Distinct(StringComparer.OrdinalIgnoreCase).Count() != SecretIdsByName.Count)
+    {
+      throw new BwsException(BwsFailureKind.InvalidConfiguration, "Secret ID mappings must use non-empty ordinal SecretNames and unique UUID values.");
+    }
+
+    if (RequiredSecretNames.Any(secretName => !SecretIdsByName.ContainsKey(secretName)))
+    {
+      throw new BwsException(BwsFailureKind.InvalidConfiguration, "Every required SecretName must have an exact Secret ID mapping.");
     }
   }
 }

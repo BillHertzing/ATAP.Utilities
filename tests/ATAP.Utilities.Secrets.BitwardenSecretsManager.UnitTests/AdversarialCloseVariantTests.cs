@@ -8,30 +8,28 @@ namespace ATAP.Utilities.Secrets.BitwardenSecretsManager.UnitTests;
 public sealed class AdversarialCloseVariantTests
 {
   private const string ProjectId = "abcdefab-cdef-abcd-efab-cdefabcdefab";
+  private const string SecretId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
   private const string SyntheticValue = "synthetic-close-variant-value";
 
   [Fact]
   public async Task GetSecretAsync_CaseAndSubstringNeighborsCannotReplaceExactSecretName()
   {
-    var provider = CreateProvider(ListJson(
-      (ProjectId, "Database.Password", SyntheticValue),
-      (ProjectId, "database.password", "case-neighbor"),
-      (ProjectId, "Database.Password.Extended", "substring-neighbor")));
+    var provider = CreateProvider(SecretJson(ProjectId, "Database.Password", SyntheticValue), "Database.Password");
 
     Assert.Equal(SyntheticValue, await provider.GetSecretAsync("Database.Password"));
     foreach (var nearVariant in new[] { "DATABASE.PASSWORD", "Database.Pass", "Password" })
     {
       var error = await Assert.ThrowsAsync<BwsException>(() => provider.GetSecretAsync(nearVariant));
-      Assert.Equal(BwsFailureKind.SecretMissing, error.Kind);
+      Assert.Equal(BwsFailureKind.InvalidConfiguration, error.Kind);
     }
   }
 
   [Fact]
-  public async Task GetSecretAsync_DuplicateNameAcrossVisibleProjectsFailsClosed()
+  public async Task GetSecretAsync_ForeignProjectForConfiguredSecretIdFailsClosed()
   {
-    var provider = CreateProvider(ListJson(
-      (ProjectId, "Shared.Name", SyntheticValue),
-      ("11111111-1111-1111-1111-111111111111", "Shared.Name", "foreign-project-value")));
+    var provider = CreateProvider(
+      SecretJson("11111111-1111-1111-1111-111111111111", "Shared.Name", "foreign-project-value"),
+      "Shared.Name");
 
     var error = await Assert.ThrowsAsync<BwsException>(() => provider.GetSecretAsync("Shared.Name"));
 
@@ -47,7 +45,7 @@ public sealed class AdversarialCloseVariantTests
   [InlineData("{\"field\":[1,2]}", "[1,2]")]
   public async Task GetSecretAsync_JsonScalarObjectNullAndArrayFieldsHaveDeterministicProjection(string value, string expected)
   {
-    var provider = CreateProvider(ListJson((ProjectId, "Structured", value)));
+    var provider = CreateProvider(SecretJson(ProjectId, "Structured", value), "Structured");
 
     var actual = await provider.GetSecretAsync("Structured", "field");
 
@@ -83,8 +81,12 @@ public sealed class AdversarialCloseVariantTests
     Assert.False(Directory.Exists(absentProgramData));
   }
 
-  private static BitwardenSecretsManagerProvider CreateProvider(string output) =>
-    new(ValidOptions(), new FakeRunner(output));
+  private static BitwardenSecretsManagerProvider CreateProvider(string output, params string[] mappedNames)
+  {
+    var options = ValidOptions();
+    foreach (var name in mappedNames) options.SecretIdsByName.Add(name, SecretId);
+    return new(options, new FakeRunner(output));
+  }
 
   private static BitwardenSecretsManagerOptions ValidOptions() => new()
   {
@@ -94,13 +96,8 @@ public sealed class AdversarialCloseVariantTests
     BwsExecutablePath = Path.Combine(Path.GetTempPath(), "bws.exe"),
   };
 
-  private static string ListJson(params (string ProjectId, string Key, string Value)[] entries) =>
-    JsonSerializer.Serialize(entries.Select(entry => new
-    {
-      projectId = entry.ProjectId,
-      key = entry.Key,
-      value = entry.Value,
-    }));
+  private static string SecretJson(string projectId, string key, string value) =>
+    JsonSerializer.Serialize(new { id = SecretId, projectId, key, value });
 
   private sealed class FakeRunner(string output) : IBwsProcessRunner
   {

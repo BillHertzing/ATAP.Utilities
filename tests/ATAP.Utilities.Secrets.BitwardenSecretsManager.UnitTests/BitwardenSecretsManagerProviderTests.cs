@@ -7,37 +7,38 @@ namespace ATAP.Utilities.Secrets.BitwardenSecretsManager.UnitTests;
 public sealed class BitwardenSecretsManagerProviderTests
 {
   private const string ProjectId = "11111111-1111-1111-1111-111111111111";
+  private const string SecretId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 
   [Fact]
   public async Task GetSecretAsync_UsesProjectAndExactOrdinalSecretName()
   {
-    var runner = new FakeRunner($$"""[{"projectId":"{{ProjectId}}","key":"Database.Password","value":"correct"},{"projectId":"{{ProjectId}}","key":"database.password","value":"wrong"}]""");
-    var provider = CreateProvider(runner);
+    var runner = new FakeRunner(SecretJson("Database.Password", "correct"));
+    var provider = CreateProvider(runner, "Database.Password");
     Assert.Equal("correct", await provider.GetSecretAsync("Database.Password"));
-    Assert.Equal(new[] { "secret", "list", ProjectId, "--output", "json", "--color", "never" }, runner.Arguments);
+    Assert.Equal(new[] { "secret", "get", SecretId, "--output", "json", "--color", "never" }, runner.Arguments);
   }
 
   [Fact]
   public async Task GetSecretAsync_CaseMismatchIsMissing()
   {
-    var provider = CreateProvider(new FakeRunner($$"""[{"projectId":"{{ProjectId}}","key":"Database.Password","value":"value"}]"""));
+    var provider = CreateProvider(new FakeRunner(SecretJson("Database.Password", "value")), "database.password");
     var error = await Assert.ThrowsAsync<BwsException>(() => provider.GetSecretAsync("database.password"));
-    Assert.Equal(BwsFailureKind.SecretMissing, error.Kind);
+    Assert.Equal(BwsFailureKind.CliJsonInvalid, error.Kind);
   }
 
   [Fact]
-  public async Task GetSecretAsync_DuplicateExactNamesFailClosed()
+  public async Task GetSecretAsync_RejectsMismatchedSecretId()
   {
-    var json = $$"""[{"projectId":"{{ProjectId}}","key":"Key","value":"one"},{"projectId":"{{ProjectId}}","key":"Key","value":"two"}]""";
-    var error = await Assert.ThrowsAsync<BwsException>(() => CreateProvider(new FakeRunner(json)).GetSecretAsync("Key"));
-    Assert.Equal(BwsFailureKind.SecretDuplicate, error.Kind);
+    var json = $$"""{"id":"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb","projectId":"{{ProjectId}}","key":"Key","value":"value"}""";
+    var error = await Assert.ThrowsAsync<BwsException>(() => CreateProvider(new FakeRunner(json), "Key").GetSecretAsync("Key"));
+    Assert.Equal(BwsFailureKind.CliJsonInvalid, error.Kind);
   }
 
   [Fact]
   public async Task GetSecretAsync_RejectsSecretFromDifferentProject()
   {
-    var json = """[{"projectId":"22222222-2222-2222-2222-222222222222","key":"Key","value":"value"}]""";
-    var error = await Assert.ThrowsAsync<BwsException>(() => CreateProvider(new FakeRunner(json)).GetSecretAsync("Key"));
+    var json = $$"""{"id":"{{SecretId}}","projectId":"22222222-2222-2222-2222-222222222222","key":"Key","value":"value"}""";
+    var error = await Assert.ThrowsAsync<BwsException>(() => CreateProvider(new FakeRunner(json), "Key").GetSecretAsync("Key"));
     Assert.Equal(BwsFailureKind.CliJsonInvalid, error.Kind);
   }
 
@@ -45,8 +46,8 @@ public sealed class BitwardenSecretsManagerProviderTests
   public async Task GetSecretAsync_ReturnsNamedJsonField()
   {
     var encoded = "{\"username\":\"ace\",\"port\":1433}".Replace("\"", "\\\"");
-    var json = $$"""[{"projectId":"{{ProjectId}}","key":"Database","value":"{{encoded}}"}]""";
-    var provider = CreateProvider(new FakeRunner(json));
+    var json = $$"""{"id":"{{SecretId}}","projectId":"{{ProjectId}}","key":"Database","value":"{{encoded}}"}""";
+    var provider = CreateProvider(new FakeRunner(json), "Database");
     Assert.Equal("ace", await provider.GetSecretAsync("Database", "username"));
     Assert.Equal("1433", await provider.GetSecretAsync("Database", "port"));
   }
@@ -54,7 +55,7 @@ public sealed class BitwardenSecretsManagerProviderTests
   [Fact]
   public async Task SecretExistsAsync_ReturnsDeterministicResult()
   {
-    var provider = CreateProvider(new FakeRunner($$"""[{"projectId":"{{ProjectId}}","key":"Present","value":"value"}]"""));
+    var provider = CreateProvider(new FakeRunner(SecretJson("Present", "value")), "Present");
     Assert.True(await provider.SecretExistsAsync("Present"));
     Assert.False(await provider.SecretExistsAsync("Absent"));
   }
@@ -62,20 +63,20 @@ public sealed class BitwardenSecretsManagerProviderTests
   [Fact]
   public async Task GetSecretAsync_RejectsDuplicateJsonMember()
   {
-    var json = $$"""[{"projectId":"{{ProjectId}}","key":"Key","key":"Other","value":"value"}]""";
-    var error = await Assert.ThrowsAsync<BwsException>(() => CreateProvider(new FakeRunner(json)).GetSecretAsync("Key"));
+    var json = $$"""{"id":"{{SecretId}}","projectId":"{{ProjectId}}","key":"Key","key":"Other","value":"value"}""";
+    var error = await Assert.ThrowsAsync<BwsException>(() => CreateProvider(new FakeRunner(json), "Key").GetSecretAsync("Key"));
     Assert.Equal(BwsFailureKind.CliJsonInvalid, error.Kind);
   }
 
   [Fact]
-  public async Task ConfigurationLoader_ListsProjectOnceAndFailsRequiredMissing()
+  public async Task ConfigurationLoader_GetsEachDistinctConfiguredSecretOnce()
   {
-    var runner = new FakeRunner($$"""[{"projectId":"{{ProjectId}}","key":"One","value":"first"},{"projectId":"{{ProjectId}}","key":"Two","value":"second"}]""");
-    var loader = new BitwardenSecretsManagerConfigurationLoader(CreateProvider(runner));
+    var runner = new FakeRunner(SecretJson("One", "first"));
+    var loader = new BitwardenSecretsManagerConfigurationLoader(CreateProvider(runner, "One"));
     var builder = new ConfigurationBuilder();
-    await builder.AddBitwardenSecretsManagerConfigurationAsync(loader, [new("A", "One"), new("B", "Two"), new("Optional", "Missing", Required: false)]);
+    await builder.AddBitwardenSecretsManagerConfigurationAsync(loader, [new("A", "One"), new("B", "One"), new("Optional", "Missing", Required: false)]);
     var configuration = builder.Build();
-    Assert.Equal("first", configuration["A"]); Assert.Equal("second", configuration["B"]); Assert.Null(configuration["Optional"]); Assert.Equal(1, runner.CallCount);
+    Assert.Equal("first", configuration["A"]); Assert.Equal("first", configuration["B"]); Assert.Null(configuration["Optional"]); Assert.Equal(1, runner.CallCount);
   }
   [Fact]
   public async Task WindowsTokenSource_RejectsUnsafeLegacyTokenLabelBeforeFileAccess()
@@ -98,8 +99,15 @@ public sealed class BitwardenSecretsManagerProviderTests
     Assert.Equal(BwsFailureKind.InvalidConfiguration, error.Kind);
   }
 
-  private static BitwardenSecretsManagerProvider CreateProvider(FakeRunner runner) => new(Options(), runner);
-  private static BitwardenSecretsManagerOptions Options() => new() { ApplicationId = "AceCommander", ProjectId = ProjectId, ProjectName = "AceCommander", BwsExecutablePath = @"C:\tools\bws.exe" };
+  private static BitwardenSecretsManagerProvider CreateProvider(FakeRunner runner, params string[] secretNames) => new(Options(secretNames), runner);
+  private static BitwardenSecretsManagerOptions Options(IEnumerable<string> secretNames)
+  {
+    var options = new BitwardenSecretsManagerOptions { ApplicationId = "AceCommander", ProjectId = ProjectId, ProjectName = "AceCommander", BwsExecutablePath = @"C:\tools\bws.exe" };
+    foreach (var secretName in secretNames) options.SecretIdsByName.Add(secretName, SecretId);
+    return options;
+  }
+  private static string SecretJson(string key, string value) =>
+    $$"""{"id":"{{SecretId}}","projectId":"{{ProjectId}}","key":"{{key}}","value":"{{value}}"}""";
 
   private sealed class FakeRunner(string json) : IBwsProcessRunner
   {

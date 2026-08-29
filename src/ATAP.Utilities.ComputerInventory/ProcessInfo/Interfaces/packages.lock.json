@@ -8,15 +8,6 @@
         "resolved": "1.6.2",
         "contentHash": "fk0FLxBt6pRgrEo69IdzMqV51Wha7iK0ZTkNZyhsEZ2n67gooF8GgGE2ag85w5ewUuHVIu+v97c0YRDn448riA=="
       },
-      "MethodBoundaryAspect.Fody": {
-        "type": "Direct",
-        "requested": "[2.0.150, )",
-        "resolved": "2.0.150",
-        "contentHash": "cR7BJGl2420ORLRPO+itrzgveYaiwkmbfgQtVUziUdvmuOBkanz0927t0Kesj08XLrLG1NHXn1I+2+b2XyyEyQ==",
-        "dependencies": {
-          "Fody": "6.7.0"
-        }
-      },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
         "requested": "[8.0.0, )",
@@ -79,12 +70,6 @@
       },
       "atap.utilities.stronglytypedid.interfaces": {
         "type": "Project"
-      },
-      "Fody": {
-        "type": "CentralTransitive",
-        "requested": "[6.9.3, )",
-        "resolved": "6.9.3",
-        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
       }
     },
     "net10.0/linux-x64": {},
@@ -95,15 +80,6 @@
         "requested": "[1.6.2, )",
         "resolved": "1.6.2",
         "contentHash": "fk0FLxBt6pRgrEo69IdzMqV51Wha7iK0ZTkNZyhsEZ2n67gooF8GgGE2ag85w5ewUuHVIu+v97c0YRDn448riA=="
-      },
-      "MethodBoundaryAspect.Fody": {
-        "type": "Direct",
-        "requested": "[2.0.150, )",
-        "resolved": "2.0.150",
-        "contentHash": "cR7BJGl2420ORLRPO+itrzgveYaiwkmbfgQtVUziUdvmuOBkanz0927t0Kesj08XLrLG1NHXn1I+2+b2XyyEyQ==",
-        "dependencies": {
-          "Fody": "6.7.0"
-        }
       },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
@@ -171,12 +147,6 @@
       "atap.utilities.stronglytypedid.interfaces": {
         "type": "Project"
       },
-      "Fody": {
-        "type": "CentralTransitive",
-        "requested": "[6.9.3, )",
-        "resolved": "6.9.3",
-        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
-      },
       "System.Collections.Immutable": {
         "type": "CentralTransitive",
         "requested": "[9.0.0, )",
@@ -192,15 +162,6 @@
         "requested": "[1.6.2, )",
         "resolved": "1.6.2",
         "contentHash": "fk0FLxBt6pRgrEo69IdzMqV51Wha7iK0ZTkNZyhsEZ2n67gooF8GgGE2ag85w5ewUuHVIu+v97c0YRDn448riA=="
-      },
-      "MethodBoundaryAspect.Fody": {
-        "type": "Direct",
-        "requested": "[2.0.150, )",
-        "resolved": "2.0.150",
-        "contentHash": "cR7BJGl2420ORLRPO+itrzgveYaiwkmbfgQtVUziUdvmuOBkanz0927t0Kesj08XLrLG1NHXn1I+2+b2XyyEyQ==",
-        "dependencies": {
-          "Fody": "6.7.0"
-        }
       },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
@@ -264,12 +225,6 @@
       },
       "atap.utilities.stronglytypedid.interfaces": {
         "type": "Project"
-      },
-      "Fody": {
-        "type": "CentralTransitive",
-        "requested": "[6.9.3, )",
-        "resolved": "6.9.3",
-        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
       }
     },
     "net9.0/linux-x64": {},

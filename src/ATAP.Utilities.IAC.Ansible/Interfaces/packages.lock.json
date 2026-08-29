@@ -2,15 +2,6 @@
   "version": 2,
   "dependencies": {
     "net10.0": {
-      "MethodBoundaryAspect.Fody": {
-        "type": "Direct",
-        "requested": "[2.0.150, )",
-        "resolved": "2.0.150",
-        "contentHash": "cR7BJGl2420ORLRPO+itrzgveYaiwkmbfgQtVUziUdvmuOBkanz0927t0Kesj08XLrLG1NHXn1I+2+b2XyyEyQ==",
-        "dependencies": {
-          "Fody": "6.7.0"
-        }
-      },
       "Microsoft.Extensions.Configuration": {
         "type": "Direct",
         "requested": "[9.0.0, )",
@@ -158,7 +149,7 @@
       "atap.utilities.collection.extensions": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "System.Reactive": "[5.0.0, )"
         }
       },
@@ -183,12 +174,6 @@
           "Microsoft.Extensions.Configuration.Json": "[9.0.0, )",
           "UnitsNet": "[5.60.0, )"
         }
-      },
-      "Fody": {
-        "type": "CentralTransitive",
-        "requested": "[6.9.3, )",
-        "resolved": "6.9.3",
-        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
       },
       "Microsoft.Extensions.Configuration.Abstractions": {
         "type": "CentralTransitive",
@@ -246,15 +231,6 @@
       }
     },
     "net8.0": {
-      "MethodBoundaryAspect.Fody": {
-        "type": "Direct",
-        "requested": "[2.0.150, )",
-        "resolved": "2.0.150",
-        "contentHash": "cR7BJGl2420ORLRPO+itrzgveYaiwkmbfgQtVUziUdvmuOBkanz0927t0Kesj08XLrLG1NHXn1I+2+b2XyyEyQ==",
-        "dependencies": {
-          "Fody": "6.7.0"
-        }
-      },
       "Microsoft.Extensions.Configuration": {
         "type": "Direct",
         "requested": "[9.0.0, )",
@@ -413,7 +389,7 @@
       "atap.utilities.collection.extensions": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "System.Reactive": "[5.0.0, )"
         }
       },
@@ -438,12 +414,6 @@
           "Microsoft.Extensions.Configuration.Json": "[9.0.0, )",
           "UnitsNet": "[5.60.0, )"
         }
-      },
-      "Fody": {
-        "type": "CentralTransitive",
-        "requested": "[6.9.3, )",
-        "resolved": "6.9.3",
-        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
       },
       "Microsoft.Extensions.Configuration.Abstractions": {
         "type": "CentralTransitive",
@@ -521,15 +491,6 @@
       }
     },
     "net9.0": {
-      "MethodBoundaryAspect.Fody": {
-        "type": "Direct",
-        "requested": "[2.0.150, )",
-        "resolved": "2.0.150",
-        "contentHash": "cR7BJGl2420ORLRPO+itrzgveYaiwkmbfgQtVUziUdvmuOBkanz0927t0Kesj08XLrLG1NHXn1I+2+b2XyyEyQ==",
-        "dependencies": {
-          "Fody": "6.7.0"
-        }
-      },
       "Microsoft.Extensions.Configuration": {
         "type": "Direct",
         "requested": "[9.0.0, )",
@@ -677,7 +638,7 @@
       "atap.utilities.collection.extensions": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "System.Reactive": "[5.0.0, )"
         }
       },
@@ -702,12 +663,6 @@
           "Microsoft.Extensions.Configuration.Json": "[9.0.0, )",
           "UnitsNet": "[5.60.0, )"
         }
-      },
-      "Fody": {
-        "type": "CentralTransitive",
-        "requested": "[6.9.3, )",
-        "resolved": "6.9.3",
-        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
       },
       "Microsoft.Extensions.Configuration.Abstractions": {
         "type": "CentralTransitive",

@@ -2,15 +2,6 @@
   "version": 2,
   "dependencies": {
     "net10.0": {
-      "MethodBoundaryAspect.Fody": {
-        "type": "Direct",
-        "requested": "[2.0.150, )",
-        "resolved": "2.0.150",
-        "contentHash": "cR7BJGl2420ORLRPO+itrzgveYaiwkmbfgQtVUziUdvmuOBkanz0927t0Kesj08XLrLG1NHXn1I+2+b2XyyEyQ==",
-        "dependencies": {
-          "Fody": "6.7.0"
-        }
-      },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
         "requested": "[8.0.0, )",
@@ -326,7 +317,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.GraphDataStructures.Interfaces": "[0.1.0-Alpha, )"
         }
       },
@@ -371,12 +362,6 @@
         "dependencies": {
           "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
         }
-      },
-      "Fody": {
-        "type": "CentralTransitive",
-        "requested": "[6.9.3, )",
-        "resolved": "6.9.3",
-        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
       },
       "MedallionShell": {
         "type": "CentralTransitive",
@@ -517,15 +502,6 @@
       }
     },
     "net8.0": {
-      "MethodBoundaryAspect.Fody": {
-        "type": "Direct",
-        "requested": "[2.0.150, )",
-        "resolved": "2.0.150",
-        "contentHash": "cR7BJGl2420ORLRPO+itrzgveYaiwkmbfgQtVUziUdvmuOBkanz0927t0Kesj08XLrLG1NHXn1I+2+b2XyyEyQ==",
-        "dependencies": {
-          "Fody": "6.7.0"
-        }
-      },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
         "requested": "[8.0.0, )",
@@ -866,7 +842,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.GraphDataStructures.Interfaces": "[0.1.0-Alpha, )"
         }
       },
@@ -911,12 +887,6 @@
         "dependencies": {
           "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
         }
-      },
-      "Fody": {
-        "type": "CentralTransitive",
-        "requested": "[6.9.3, )",
-        "resolved": "6.9.3",
-        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
       },
       "MedallionShell": {
         "type": "CentralTransitive",
@@ -1073,15 +1043,6 @@
       }
     },
     "net9.0": {
-      "MethodBoundaryAspect.Fody": {
-        "type": "Direct",
-        "requested": "[2.0.150, )",
-        "resolved": "2.0.150",
-        "contentHash": "cR7BJGl2420ORLRPO+itrzgveYaiwkmbfgQtVUziUdvmuOBkanz0927t0Kesj08XLrLG1NHXn1I+2+b2XyyEyQ==",
-        "dependencies": {
-          "Fody": "6.7.0"
-        }
-      },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
         "requested": "[8.0.0, )",
@@ -1416,7 +1377,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.GraphDataStructures.Interfaces": "[0.1.0-Alpha, )"
         }
       },
@@ -1461,12 +1422,6 @@
         "dependencies": {
           "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
         }
-      },
-      "Fody": {
-        "type": "CentralTransitive",
-        "requested": "[6.9.3, )",
-        "resolved": "6.9.3",
-        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
       },
       "MedallionShell": {
         "type": "CentralTransitive",

@@ -1,6 +1,8 @@
 BeforeAll {
   $moduleRoot = Join-Path $PSScriptRoot '..\..'
   Import-Module (Join-Path $moduleRoot 'ATAP.Utilities.BuildTooling.GitWorktree.PowerShell.psd1') -Force
+  # The installed BuildTooling module can lag this source slice; bind the gate under test directly.
+  . (Join-Path $moduleRoot '..\ATAP.Utilities.BuildTooling.PowerShell\public\Get-AllFilesChangedByCommit.ps1')
 
   # Build a throwaway git repo whose '.claude' folder is tracked concrete content but
   # is currently occupied by an NTFS junction (the stable-worktree drift this function
@@ -39,6 +41,24 @@ BeforeAll {
 
     [pscustomobject]@{ Root = $root; Claude = $claude; Target = $target }
   }
+
+  function global:New-HistoryFreezeFixtureRepo {
+    $root = Join-Path ([System.IO.Path]::GetTempPath()) ("history-freeze-" + [System.Guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Path $root -Force | Out-Null
+    git -C $root init -q | Out-Null
+    git -C $root config user.email 'test@atap.local' | Out-Null
+    git -C $root config user.name 'ATAP Test' | Out-Null
+    git -C $root config commit.gpgsign false | Out-Null
+    git -C $root config core.autocrlf true | Out-Null
+    [System.IO.File]::WriteAllText((Join-Path $root 'tracked.txt'), "line-one`nline-two`n")
+    git -C $root add -A | Out-Null
+    git -C $root commit -q -m 'seed history fixture' | Out-Null
+    [pscustomobject]@{
+      Root = $root
+      Temp = Join-Path $root 'ignored-output'
+      OriginalLocation = (Get-Location).Path
+    }
+  }
 }
 
 Describe 'Convert-StableWorktreeToConcreteAdapters' -Tag 'Unit' {
@@ -47,6 +67,10 @@ Describe 'Convert-StableWorktreeToConcreteAdapters' -Tag 'Unit' {
     $fx = New-JunctionFixtureRepo
     try {
       (Get-Item -LiteralPath $fx.Claude -Force).LinkType | Should -Be 'Junction'
+      git -C $fx.Root diff --quiet -- '.claude'
+      $LASTEXITCODE | Should -Be 1 -Because 'the fixture carries an unstaged tracked deletion'
+      $untracked = @(git -C $fx.Root ls-files --others --exclude-standard -- '.claude')
+      $untracked | Should -Contain '.claude/target-only.txt'
 
       $res = Convert-StableWorktreeToConcreteAdapters -RepoRoot $fx.Root -FolderNames '.claude' -Confirm:$false
 
@@ -131,6 +155,94 @@ Describe 'Convert-StableWorktreeToConcreteAdapters' -Tag 'Unit' {
     } finally {
       cmd /c rmdir "$($fx.Claude)" 2>$null | Out-Null
       Remove-Item -LiteralPath $fx.Root, $fx.Target -Recurse -Force -ErrorAction SilentlyContinue
+    }
+  }
+}
+
+Describe 'Get-AllFilesChangedByCommit content freeze' -Tag 'Unit' {
+  It 'passes a clean repository through to commit validation' {
+    $fx = New-HistoryFreezeFixtureRepo
+    try {
+      { Get-AllFilesChangedByCommit -CommitSHA 'not-a-commit' -TempPath $fx.Temp -currentRepositoryPath $fx.Root } |
+        Should -Throw '*CommitSHA is not valid*'
+    } finally {
+      Set-Location -LiteralPath $fx.OriginalLocation
+      Remove-Item -LiteralPath $fx.Root -Recurse -Force -ErrorAction SilentlyContinue
+    }
+  }
+
+  It 'passes an EOL-only worktree representation through to commit validation' {
+    $fx = New-HistoryFreezeFixtureRepo
+    try {
+      [System.IO.File]::WriteAllText((Join-Path $fx.Root 'tracked.txt'), "line-one`r`nline-two`r`n")
+      git -C $fx.Root diff --quiet --
+      $LASTEXITCODE | Should -Be 0
+      { Get-AllFilesChangedByCommit -CommitSHA 'not-a-commit' -TempPath $fx.Temp -currentRepositoryPath $fx.Root } |
+        Should -Throw '*CommitSHA is not valid*'
+    } finally {
+      Set-Location -LiteralPath $fx.OriginalLocation
+      Remove-Item -LiteralPath $fx.Root -Recurse -Force -ErrorAction SilentlyContinue
+    }
+  }
+
+  It 'rejects a staged content modification' {
+    $fx = New-HistoryFreezeFixtureRepo
+    try {
+      Set-Content -LiteralPath (Join-Path $fx.Root 'tracked.txt') -Value 'staged-content' -NoNewline
+      git -C $fx.Root add -- 'tracked.txt' | Out-Null
+      { Get-AllFilesChangedByCommit -CommitSHA 'not-a-commit' -TempPath $fx.Temp -currentRepositoryPath $fx.Root } |
+        Should -Throw '*content changes*Staged: M*tracked.txt*'
+    } finally {
+      Set-Location -LiteralPath $fx.OriginalLocation
+      Remove-Item -LiteralPath $fx.Root -Recurse -Force -ErrorAction SilentlyContinue
+    }
+  }
+
+  It 'rejects an unstaged content modification' {
+    $fx = New-HistoryFreezeFixtureRepo
+    try {
+      Set-Content -LiteralPath (Join-Path $fx.Root 'tracked.txt') -Value 'unstaged-content' -NoNewline
+      { Get-AllFilesChangedByCommit -CommitSHA 'not-a-commit' -TempPath $fx.Temp -currentRepositoryPath $fx.Root } |
+        Should -Throw '*content changes*Unstaged: M*tracked.txt*'
+    } finally {
+      Set-Location -LiteralPath $fx.OriginalLocation
+      Remove-Item -LiteralPath $fx.Root -Recurse -Force -ErrorAction SilentlyContinue
+    }
+  }
+
+  It 'rejects a deleted tracked path' {
+    $fx = New-HistoryFreezeFixtureRepo
+    try {
+      Remove-Item -LiteralPath (Join-Path $fx.Root 'tracked.txt') -Force
+      { Get-AllFilesChangedByCommit -CommitSHA 'not-a-commit' -TempPath $fx.Temp -currentRepositoryPath $fx.Root } |
+        Should -Throw '*content changes*Unstaged: D*tracked.txt*'
+    } finally {
+      Set-Location -LiteralPath $fx.OriginalLocation
+      Remove-Item -LiteralPath $fx.Root -Recurse -Force -ErrorAction SilentlyContinue
+    }
+  }
+
+  It 'rejects a staged rename' {
+    $fx = New-HistoryFreezeFixtureRepo
+    try {
+      git -C $fx.Root mv -- 'tracked.txt' 'renamed.txt' | Out-Null
+      { Get-AllFilesChangedByCommit -CommitSHA 'not-a-commit' -TempPath $fx.Temp -currentRepositoryPath $fx.Root } |
+        Should -Throw '*content changes*Staged: R*tracked.txt*renamed.txt*'
+    } finally {
+      Set-Location -LiteralPath $fx.OriginalLocation
+      Remove-Item -LiteralPath $fx.Root -Recurse -Force -ErrorAction SilentlyContinue
+    }
+  }
+
+  It 'rejects an untracked path through the explicit untracked policy' {
+    $fx = New-HistoryFreezeFixtureRepo
+    try {
+      Set-Content -LiteralPath (Join-Path $fx.Root 'untracked.txt') -Value 'untracked-content' -NoNewline
+      { Get-AllFilesChangedByCommit -CommitSHA 'not-a-commit' -TempPath $fx.Temp -currentRepositoryPath $fx.Root } |
+        Should -Throw '*content changes*Untracked: untracked.txt*'
+    } finally {
+      Set-Location -LiteralPath $fx.OriginalLocation
+      Remove-Item -LiteralPath $fx.Root -Recurse -Force -ErrorAction SilentlyContinue
     }
   }
 }

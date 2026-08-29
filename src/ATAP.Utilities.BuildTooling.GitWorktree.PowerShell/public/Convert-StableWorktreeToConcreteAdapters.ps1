@@ -13,8 +13,9 @@ checkout on stable sees a junction where the branch actually has real tracked fi
 For each requested folder name under RepoRoot, this function:
   1. Skips the folder if it does not exist, or if it exists but is not a junction
      (nothing to convert).
-  2. Refuses to touch a folder if `git status --porcelain` reports staged (index)
-     changes under that folder — the caller must resolve those first.
+  2. Refuses to touch a folder if the index carries a normalized content delta under
+     that folder — the caller must resolve those staged changes first. Worktree-only
+     and untracked paths remain outside this deliberately index-only quarantine.
   3. Removes the junction with `cmd /c rmdir` (NEVER `Remove-Item -Recurse`, which
      deletes the junction TARGET's contents rather than the junction pointer itself).
   4. Runs `git -C <RepoRoot> checkout -- <folder>` to restore the tracked concrete
@@ -124,18 +125,21 @@ function Convert-StableWorktreeToConcreteAdapters {
         $entry.WasJunction = $true
         $entry.JunctionTarget = $item.Target | Select-Object -First 1
 
-        # Refuse to touch a folder with staged (index) changes under it. Porcelain v1
-        # column 1 (index status) is non-space/non-'?' for any staged add/mod/delete/
-        # rename/copy; untracked ('??') and unmodified-worktree-only rows are safe to
-        # de-junction under.
-        $statusLines = @(git -C $resolvedRepoRoot status --porcelain -- $folderName 2>&1)
-        if ($LASTEXITCODE -ne 0) {
-          throw "git status failed for '$folderName': $($statusLines -join '; ')"
+        # This quarantine is intentionally index-only. Git's diff machinery compares
+        # normalized blob content, so an EOL-only worktree representation does not
+        # become a false staged change. Worktree-only and untracked paths remain safe.
+        git -C $resolvedRepoRoot diff --cached --quiet -- $folderName
+        $stagedDiffExitCode = $LASTEXITCODE
+        if ($stagedDiffExitCode -gt 1) {
+          throw "git diff --cached --quiet failed for '$folderName' (exit code $stagedDiffExitCode)"
         }
-        $stagedLines = @($statusLines | Where-Object { $_.Length -ge 1 -and $_[0] -match '[MADRC]' })
-        if ($stagedLines.Count -gt 0) {
+        if ($stagedDiffExitCode -eq 1) {
+          $stagedLines = @(git -C $resolvedRepoRoot diff --cached --name-status -- $folderName 2>&1)
+          if ($LASTEXITCODE -ne 0) {
+            throw "git diff --cached --name-status failed for '$folderName': $($stagedLines -join '; ')"
+          }
           $entry.StagedChangesBlocked = $true
-          $entry.SkipReason = "Refusing to convert '$folderName': staged changes present ($($stagedLines -join '; '))"
+          $entry.SkipReason = "Refusing to convert '$folderName': staged content changes present ($($stagedLines -join '; '))"
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $entry.SkipReason
           $errors.Add($entry.SkipReason)
           $results.Add([PSCustomObject]$entry)

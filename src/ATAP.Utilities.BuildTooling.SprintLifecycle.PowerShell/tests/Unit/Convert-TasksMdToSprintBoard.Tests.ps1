@@ -438,5 +438,158 @@ Last updated: 2026-08-05
       }
     }
   }
+
+  Context 'Task 15.181.f - closed tasks require closed explicit prerequisites' {
+    BeforeAll {
+      $script:prerequisiteInvariantDirs = [System.Collections.Generic.List[string]]::new()
+      function script:New-PrerequisiteBoardFixture {
+        param(
+          [Parameter(Mandatory)]
+          [string[]]$TaskLines
+        )
+
+        $dir = Join-Path ([System.IO.Path]::GetTempPath()) "tasksboard_15181f_$([guid]::NewGuid().ToString('N'))"
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+        $script:prerequisiteInvariantDirs.Add($dir)
+        $tasksMdPath = Join-Path $dir 'Tasks.Sprint0015.md'
+        $outputPath = Join-Path $dir 'Tasks.Sprint0015.html'
+        $markdownLines = @(
+          '# Current Sprint: Sprint 15 - Prerequisite Invariant'
+          ''
+          'Source: TEST-15181F (2026-08-21)'
+          'Last updated: 2026-08-21'
+          ''
+          '## Goal'
+          ''
+          '**PRIMARY - Verify prerequisite declarations.**'
+          ''
+          '## Stream Z - Prerequisite Stream [PRIORITY 1]'
+          ''
+        ) + $TaskLines
+        $markdownLines | Set-Content -LiteralPath $tasksMdPath -Encoding UTF8
+        return [PSCustomObject]@{
+          TasksFilePath = $tasksMdPath
+          OutputPath = $outputPath
+        }
+      }
+    }
+
+    AfterAll {
+      foreach ($dir in $script:prerequisiteInvariantDirs) {
+        Remove-Item -Path $dir -Recurse -Force -ErrorAction SilentlyContinue
+      }
+    }
+
+    It 'Returns zero violations when an explicit prerequisite is completed' {
+      $fixture = script:New-PrerequisiteBoardFixture -TaskLines @(
+        '- [x] **Task 15.181.a** [ATAP.Utilities] - Complete the prerequisite.'
+        '- [x] **Task 15.181.b** [ATAP.Utilities] - Continue after Task 15.181.a.'
+      )
+
+      $result = Convert-TasksMdToSprintBoard -TasksFilePath $fixture.TasksFilePath -OutputPath $fixture.OutputPath
+
+      $result.PrerequisiteViolationCount | Should -Be 0
+      @($result.PrerequisiteViolations).Count | Should -Be 0
+      Test-Path -LiteralPath $fixture.OutputPath | Should -BeTrue
+    }
+
+    It 'Fails closed with an actionable record for <Label>' -TestCases @(
+      @{
+        Label = 'an open prerequisite using after-id syntax'
+        TaskLines = @(
+          '- [ ] **Task 15.181.a** [ATAP.Utilities] - Keep the prerequisite open.'
+          '- [x] **Task 15.181.b** [ATAP.Utilities] - Continue after 15.181.a.'
+        )
+        ExpectedKind = 'PrerequisiteNotClosed'
+        ExpectedTaskId = '15.181.b'
+        ExpectedPrerequisiteId = '15.181.a'
+        ExpectedStatus = 'open'
+      }
+      @{
+        Label = 'a partial prerequisite using after-Task-id syntax'
+        TaskLines = @(
+          '- [~] **Task 15.181.a** [ATAP.Utilities] - Keep the prerequisite partial.'
+          '- [x] **Task 15.181.b** [ATAP.Utilities] - Continue after Task 15.181.a.'
+        )
+        ExpectedKind = 'PrerequisiteNotClosed'
+        ExpectedTaskId = '15.181.b'
+        ExpectedPrerequisiteId = '15.181.a'
+        ExpectedStatus = 'partial'
+      }
+      @{
+        Label = 'an unknown prerequisite'
+        TaskLines = @(
+          '- [x] **Task 15.181.b** [ATAP.Utilities] - Continue after Task 15.181.unknown.'
+        )
+        ExpectedKind = 'UnknownPrerequisite'
+        ExpectedTaskId = '15.181.b'
+        ExpectedPrerequisiteId = '15.181.unknown'
+        ExpectedStatus = 'unknown'
+      }
+      @{
+        Label = 'a self-reference'
+        TaskLines = @(
+          '- [x] **Task 15.181.b** [ATAP.Utilities] - Continue after 15.181.b.'
+        )
+        ExpectedKind = 'SelfReference'
+        ExpectedTaskId = '15.181.b'
+        ExpectedPrerequisiteId = '15.181.b'
+        ExpectedStatus = 'closed'
+      }
+    ) {
+      param($Label, $TaskLines, $ExpectedKind, $ExpectedTaskId, $ExpectedPrerequisiteId, $ExpectedStatus)
+
+      $fixture = script:New-PrerequisiteBoardFixture -TaskLines $TaskLines
+      $caught = $null
+      try {
+        Convert-TasksMdToSprintBoard -TasksFilePath $fixture.TasksFilePath -OutputPath $fixture.OutputPath
+      } catch {
+        $caught = $_
+      }
+
+      $caught | Should -Not -BeNullOrEmpty
+      $caught.Exception.Message | Should -Match ([regex]::Escape($ExpectedKind))
+      $caught.Exception.Message | Should -Match ([regex]::Escape($ExpectedTaskId))
+      $caught.Exception.Message | Should -Match ([regex]::Escape($ExpectedPrerequisiteId))
+      $caught.Exception.Message | Should -Match ([regex]::Escape($ExpectedStatus))
+      Test-Path -LiteralPath $fixture.OutputPath | Should -BeFalse
+    }
+
+    It 'Does not enforce declarations made by an open task' {
+      $fixture = script:New-PrerequisiteBoardFixture -TaskLines @(
+        '- [ ] **Task 15.181.b** [ATAP.Utilities] - Continue after Task 15.181.404.'
+      )
+
+      $result = Convert-TasksMdToSprintBoard -TasksFilePath $fixture.TasksFilePath -OutputPath $fixture.OutputPath
+
+      $result.PrerequisiteViolationCount | Should -Be 0
+      Test-Path -LiteralPath $fixture.OutputPath | Should -BeTrue
+    }
+
+    It 'Ignores prerequisite-like prose outside the task row title' {
+      $fixture = script:New-PrerequisiteBoardFixture -TaskLines @(
+        '- [ ] **Task 15.181.a** [ATAP.Utilities] - Keep the prerequisite open.'
+        '- [x] **Task 15.181.b** [ATAP.Utilities] - Narrative remains non-declarative.'
+        '  - Acceptance: run after Task 15.181.a is discussed here, not declared.'
+        '  - Evidence: a note after 15.181.a is also non-declarative.'
+      )
+
+      $result = Convert-TasksMdToSprintBoard -TasksFilePath $fixture.TasksFilePath -OutputPath $fixture.OutputPath
+
+      $result.PrerequisiteViolationCount | Should -Be 0
+      Test-Path -LiteralPath $fixture.OutputPath | Should -BeTrue
+    }
+
+    It 'Ignores near-variant task-title prose that is not an explicit declaration' {
+      $fixture = script:New-PrerequisiteBoardFixture -TaskLines @(
+        '- [x] **Task 15.181.b** [ATAP.Utilities] - Document aftermath 15.181.404 and after-task 15.181.405.'
+      )
+
+      $result = Convert-TasksMdToSprintBoard -TasksFilePath $fixture.TasksFilePath -OutputPath $fixture.OutputPath
+
+      $result.PrerequisiteViolationCount | Should -Be 0
+      Test-Path -LiteralPath $fixture.OutputPath | Should -BeTrue
+    }
+  }
 }
 

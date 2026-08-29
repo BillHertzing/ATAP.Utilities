@@ -344,6 +344,7 @@ function Convert-TasksMdToSprintBoard {
 
       $streams = [System.Collections.Generic.List[object]]::new()
       $allTasks = [System.Collections.Generic.List[object]]::new()
+      $taskPrerequisiteDeclarations = [System.Collections.Generic.List[object]]::new()
 
       for ($streamIndex = 0; $streamIndex -lt $streamStarts.Count; $streamIndex++) {
         $startIndex = $streamStarts[$streamIndex]
@@ -406,6 +407,22 @@ function Convert-TasksMdToSprintBoard {
             $taskTitle = ($taskTitle + $Matches['extraTags']).Trim()
           }
 
+          # Prerequisite declarations are intentionally limited to task-row title prose.
+          # Narrative, acceptance, status, and evidence bullets may describe dependencies
+          # without declaring a board-order invariant. Supported declarations are explicit
+          # task ids in forms such as "after 15.181.d" and "after Task 15.140".
+          $prerequisiteMatches = [regex]::Matches(
+            $taskTitle,
+            '(?i)\bafter\s+(?:Task\s+)?(?<id>\d+\.\d+(?:\.[A-Za-z0-9]+)?)\b')
+          foreach ($prerequisiteMatch in $prerequisiteMatches) {
+            $taskPrerequisiteDeclarations.Add([PSCustomObject]@{
+                TaskId = $taskId
+                TaskTitle = $taskTitle
+                PrerequisiteTaskId = $prerequisiteMatch.Groups['id'].Value
+                Declaration = $prerequisiteMatch.Value
+              })
+          }
+
           # @() wrapper required: a task with zero detail lines makes the slice's empty
           # pipeline output collapse to $null on assignment, and $null fails to bind to
           # the next call's mandatory -Lines parameter (Task 12.34).
@@ -453,6 +470,50 @@ function Convert-TasksMdToSprintBoard {
             purpose = $purposeText
             tasks = @($streamTasks)
           })
+      }
+
+      $taskMap = @{}
+      foreach ($task in $allTasks) {
+        $taskMap[$task.id] = $task
+      }
+
+      $prerequisiteViolationRecords = [System.Collections.Generic.List[object]]::new()
+      foreach ($declaration in $taskPrerequisiteDeclarations) {
+        $task = $taskMap[$declaration.TaskId]
+        if ($task.status -ne 'closed') {
+          continue
+        }
+
+        $violationKind = $null
+        $prerequisiteStatus = $null
+        if ($declaration.PrerequisiteTaskId -eq $declaration.TaskId) {
+          $violationKind = 'SelfReference'
+          $prerequisiteStatus = $task.status
+        } elseif (-not $taskMap.ContainsKey($declaration.PrerequisiteTaskId)) {
+          $violationKind = 'UnknownPrerequisite'
+          $prerequisiteStatus = 'unknown'
+        } else {
+          $prerequisiteStatus = $taskMap[$declaration.PrerequisiteTaskId].status
+          if ($prerequisiteStatus -ne 'closed') {
+            $violationKind = 'PrerequisiteNotClosed'
+          }
+        }
+
+        if ($violationKind) {
+          $prerequisiteViolationRecords.Add([PSCustomObject]@{
+              ViolationKind = $violationKind
+              TaskId = $declaration.TaskId
+              TaskTitle = $declaration.TaskTitle
+              PrerequisiteTaskId = $declaration.PrerequisiteTaskId
+              PrerequisiteStatus = $prerequisiteStatus
+              Declaration = $declaration.Declaration
+            })
+        }
+      }
+
+      if ($prerequisiteViolationRecords.Count -gt 0) {
+        $violationJson = $prerequisiteViolationRecords | ConvertTo-Json -Depth 4 -Compress
+        throw "Board prerequisite invariant failed for $($prerequisiteViolationRecords.Count) completed task declaration(s): $violationJson"
       }
 
       $lostResolutionRecords = [System.Collections.Generic.List[object]]::new()
@@ -662,6 +723,8 @@ render();
         StatusCounts = [PSCustomObject]$statusCounts
         ReconciliationReportPath = $reconciliationReportPath
         LostResolutionCount = $lostResolutionRecords.Count
+        PrerequisiteViolationCount = $prerequisiteViolationRecords.Count
+        PrerequisiteViolations = @($prerequisiteViolationRecords)
       }
     } catch {
       $errorMessage = "Failed to generate sprint board from '$TasksFilePath': $($_.Exception.Message)"

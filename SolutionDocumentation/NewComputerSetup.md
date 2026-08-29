@@ -145,7 +145,7 @@ features this runbook does not require. Do **not** substitute the built-in Windo
 Memory Diagnostic — it is far weaker and misses marginal faults.
 
 1. Download the **MemTest86 Free Edition — Image for creating bootable USB Drive**
-   from `https://www.memtest86.com/download.htm` on a *known-good* machine.
+   from `https://www.memtest86.com/download.htm` on a _known-good_ machine.
 2. Extract the ZIP. It contains `imageUSB.exe` and the `memtest86-usb.img` image.
 3. Insert a USB stick of 1 GB or larger. **Its contents are destroyed.**
 4. Run `imageUSB.exe` elevated, select the USB drive, choose
@@ -189,10 +189,10 @@ An enabled EXPO/XMP profile is a factory overclock, not a JEDEC-guaranteed speed
 is a common source of exactly the mixed-bugcheck pattern described in 0.1. Test in
 the order below and record which configuration passed:
 
-| Order | Firmware setting | Interpretation of a failure |
-| --- | --- | --- |
-| 1 | EXPO/XMP **enabled** (rated speed) | The profile is unstable on this silicon; continue to test 2. |
-| 2 | EXPO/XMP **disabled** (JEDEC, e.g. DDR5-4800) | The DIMMs themselves are faulty; RMA them. |
+| Order | Firmware setting                              | Interpretation of a failure                                  |
+| ----- | --------------------------------------------- | ------------------------------------------------------------ |
+| 1     | EXPO/XMP **enabled** (rated speed)            | The profile is unstable on this silicon; continue to test 2. |
+| 2     | EXPO/XMP **disabled** (JEDEC, e.g. DDR5-4800) | The DIMMs themselves are faulty; RMA them.                   |
 
 If the host passes at JEDEC but fails at the rated profile, either run it at JEDEC
 permanently or step the profile down (for example 6000 → 5600) and re-validate with a
@@ -592,11 +592,11 @@ if ($LASTEXITCODE -notin 0, 3010) {
 ```
 
 Verify the stable installation and the exact pack task that MSBuild will load.
-Do not add the `vswhere -prerelease` switch.
+Do not add the `vSWhere -prerelease` switch.
 
 ```powershell
-$vswhere = 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe'
-$installPath = & $vswhere -latest `
+$vSWhere = 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vSWhere.exe'
+$installPath = & $vSWhere -latest `
   -products Microsoft.VisualStudio.Product.BuildTools `
   -requires Microsoft.VisualStudio.Workload.MSBuildTools `
   -requires Microsoft.VisualStudio.Component.NuGet.BuildTools `
@@ -923,7 +923,7 @@ $bwsVersion = '2.1.0'
 $bwsAsset   = "bws-x86_64-pc-windows-msvc-$bwsVersion.zip"
 $bwsUrl     = "https://github.com/bitwarden/sdk-sm/releases/download/bws-v$bwsVersion/$bwsAsset"
 
-$installDir = 'C:\Program Files\Bitwarden\bws'
+$installDir = 'C:\Program Files\Bitwarden'
 New-Item -ItemType Directory -Path $installDir -Force | Out-Null
 
 $zipPath = Join-Path $env:TEMP $bwsAsset
@@ -943,7 +943,7 @@ launched with `-NoProfile`, which is why it is used here instead of the profile 
 injection used for `nbgv`:
 
 ```powershell
-$installDir = 'C:\Program Files\Bitwarden\bws'
+$installDir = 'C:\Program Files\Bitwarden'
 $machinePath = [Environment]::GetEnvironmentVariable('Path', 'Machine')
 $entries = $machinePath -split ';' | Where-Object { $_ }
 if ($entries -notcontains $installDir) {
@@ -954,6 +954,24 @@ if ($entries -notcontains $installDir) {
   Write-Host "$installDir already on Machine PATH."
 }
 ```
+
+> **Migrating from the older `C:\Program Files\Bitwarden\bws` layout.** Earlier revisions
+> of this step installed into a `bws` subfolder. A machine provisioned against those
+> revisions carries a stale `C:\Program Files\Bitwarden\bws` entry on the Machine `PATH`
+> that points at a directory this step no longer creates, so `bws` resolves for nobody —
+> including `SvcBuildMaster`, whose BuildMaster deployments then fail at
+> `Get-SecretATAP` with "Bitwarden Secrets Manager CLI (bws) was not found on PATH".
+> Run the install block above, then remove the stale entry from an **elevated** session:
+>
+> ```powershell
+> $stale = 'C:\Program Files\Bitwarden\bws'
+> $entries = [Environment]::GetEnvironmentVariable('Path', 'Machine') -split ';' |
+>   Where-Object { $_ -and $_ -ne $stale }
+> [Environment]::SetEnvironmentVariable('Path', ($entries -join ';'), 'Machine')
+> ```
+>
+> Restart `INEDOBMSVC` and `INEDOPROGETSVC` afterwards so the services pick up the
+> corrected `PATH`.
 
 A Machine `PATH` change is composed into a process's environment only at process
 creation, and a child process inherits its **parent's** in-memory environment block —
@@ -981,7 +999,7 @@ $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' +
 Windows **services** and scheduled tasks likewise inherit the new `PATH` only after a
 service restart (or a reboot).
 
-Both must print a path under `C:\Program Files\Bitwarden\bws` and the version. The
+Both must print a path under `C:\Program Files\Bitwarden` and the version. The
 `-NoProfile` line is the important one: it proves the binary is visible to the
 `-NoProfile` service-account contexts described in Step 9.4.10, independent of any
 PowerShell profile.
@@ -1024,7 +1042,7 @@ Get-Content $out
 Remove-Item $out -ErrorAction SilentlyContinue
 ```
 
-Expected — the resolved path under `C:\Program Files\Bitwarden\bws` and the `bws`
+Expected — the resolved path under `C:\Program Files\Bitwarden` and the `bws`
 version, printed from the service account's own `-NoProfile` context.
 
 > **Upgrading.** Bump `$bwsVersion` and re-run the download/extract block; the PATH and
@@ -1057,12 +1075,12 @@ with the exact Java executable selected by the gate.
 Create these Bitwarden items in the `ComputerLogins` collection before installing any
 third-party service. Each item must contain a username and password field.
 
-| Bitwarden item name                | Local Windows account | Used by                                         |
-| ---------------------------------- | --------------------- | ----------------------------------------------- |
-| `SvcSQLServer.<COMPUTERNAME>`      | `SvcSQLServer`        | SQL Server Database Engine and SQL Server Agent |
-| `SvcProGet.<COMPUTERNAME>`         | `SvcProGet`           | ProGet service                                  |
-| `SvcBuildMaster.<COMPUTERNAME>`    | `SvcBuildMaster`      | BuildMaster service                             |
-| `SvcAnsibleAdmin.<COMPUTERNAME>`   | `SvcAnsibleAdmin`     | Elevation broker, if it runs on this host       |
+| Bitwarden item name              | Local Windows account | Used by                                         |
+| -------------------------------- | --------------------- | ----------------------------------------------- |
+| `SvcSQLServer.<COMPUTERNAME>`    | `SvcSQLServer`        | SQL Server Database Engine and SQL Server Agent |
+| `SvcProGet.<COMPUTERNAME>`       | `SvcProGet`           | ProGet service                                  |
+| `SvcBuildMaster.<COMPUTERNAME>`  | `SvcBuildMaster`      | BuildMaster service                             |
+| `SvcAnsibleAdmin.<COMPUTERNAME>` | `SvcAnsibleAdmin`     | Elevation broker, if it runs on this host       |
 
 > **Corrected 2026-08-12 against the live vault.** These names previously carried a
 > `.Login.` middle field. **No such field exists.** Enumerating all 66 Bitwarden Secrets
@@ -1151,13 +1169,13 @@ Install or verify these permanent instances:
 All SQL Server named instances use TCP with fixed, high-range ports; do not use
 dynamic ports. This is the intended configuration on every host:
 
-| Instance | TCP port |
-| --- | ---: |
-| `Production` | 50020 |
-| `QA` | 50025 |
-| `Integration` | 50030 |
-| `DevWhertzing` | 50035 |
-| `ExpWhertzing` | 50040 |
+| Instance       | TCP port |
+| -------------- | -------: |
+| `Production`   |    50020 |
+| `QA`           |    50025 |
+| `Integration`  |    50030 |
+| `DevWhertzing` |    50035 |
+| `ExpWhertzing` |    50040 |
 
 Use the database-management helper:
 
@@ -1256,14 +1274,14 @@ after creating it.**
 
 The standing allocation for a 32 GB host:
 
-| Instance | Cap (MB) | Rationale |
-| --- | --- | --- |
-| `Production` | 7936 | Hosts the ProGet and BuildMaster databases; the only instance under sustained real load. |
-| `QA` | 1792 | Promotion target; intermittent load. |
-| `Integration` | 1024 | Integration runs only. |
-| `Dev<user>` | 768 | Per-developer scratch. |
-| `Exp<user>` | 768 | Per-developer experimental. |
-| **Total** | **12288** | 12 GB of 32 GB, leaving headroom for the OS, builds, and agent processes. |
+| Instance      | Cap (MB)  | Rationale                                                                                |
+| ------------- | --------- | ---------------------------------------------------------------------------------------- |
+| `Production`  | 7936      | Hosts the ProGet and BuildMaster databases; the only instance under sustained real load. |
+| `QA`          | 1792      | Promotion target; intermittent load.                                                     |
+| `Integration` | 1024      | Integration runs only.                                                                   |
+| `Dev<user>`   | 768       | Per-developer scratch.                                                                   |
+| `Exp<user>`   | 768       | Per-developer experimental.                                                              |
+| **Total**     | **12288** | 12 GB of 32 GB, leaving headroom for the OS, builds, and agent processes.                |
 
 Scale proportionally on hosts with different physical memory, keeping the total at
 roughly one third of RAM and leaving `Production` the clear majority.
@@ -1407,13 +1425,13 @@ Get-Service -Name 'MSSQL$*' |
       $cmd.CommandText = "SELECT CONVERT(bigint, value_in_use) FROM sys.configurations WHERE name = 'max server memory (MB)'"
       $maxMb = $cmd.ExecuteScalar()
       $c.Close()
-      [pscustomobject] @{
+      [PSCustomobject] @{
         Instance = $instance
         MaxMB    = $maxMb
         Status   = if ($maxMb -eq 2147483647) { 'UNCAPPED - fix' } else { 'ok' }
       }
     } catch {
-      [pscustomobject] @{ Instance = $instance; MaxMB = 'unreachable'; Status = $_.Exception.Message }
+      [PSCustomobject] @{ Instance = $instance; MaxMB = 'unreachable'; Status = $_.Exception.Message }
     }
   } | Format-Table -AutoSize
 ```
@@ -2034,11 +2052,11 @@ An administrator must complete this checklist on each participating host:
    supply the run-as credential during registration; Task Scheduler uses it to
    authorize registration while preserving S4U/no stored password in the task.
 10. Run the peer audit, primary audit, and primary comparison in that order; require
-   successful task-result JSON, fresh snapshots, a drift report, and no secret values
-   in evidence.
+    successful task-result JSON, fresh snapshots, a drift report, and no secret values
+    in evidence.
 11. Do not start the clean-month clock until SQL and package collection is trustworthy
-   on both hosts. Then run Daily for one verified clean month before re-registering as
-   BiWeekly; the earlier blind period does not count.
+    on both hosts. Then run Daily for one verified clean month before re-registering as
+    BiWeekly; the earlier blind period does not count.
 
 The required but not-yet-granted least-privilege baseline is: Chocolatey machine-path
 read/execute; SQL `VIEW ANY DEFINITION` and `VIEW SERVER STATE`; an `msdb` user in
@@ -2133,7 +2151,7 @@ Run this on every host that runs or calls BuildMaster/ProGet, including `utat022
 
 BuildMaster and ProGet already bind **all** IPv4 and IPv6 addresses — their
 `Urls="http://*:PORT/"` configuration is correct and must not be changed. The failure this
-step catches is a *host networking* problem: if the machine advertises global IPv6
+step catches is a _host networking_ problem: if the machine advertises global IPv6
 addresses that are not actually routable, clients resolving the hostname try those first
 and hang, producing 30-second timeouts that look like a broken service.
 
@@ -2243,10 +2261,10 @@ Two junctions are needed per repository, because Claude Code and the checkpoint 
 resolve different slugs:
 
 - **Main-repo slug** — Claude Code derives it from `git rev-parse --git-common-dir`, so for
-  a worktree it resolves to the *main* repository. This is where Claude Code reads and
+  a worktree it resolves to the _main_ repository. This is where Claude Code reads and
   writes memory, which is why memory is shared across all worktrees of a repo.
 - **Sprint-worktree slug** — `Save-SprintWorkSession` derives its path from the transcript
-  slug, which *is* the worktree. This is where `/checkpoint` looks for memory to archive.
+  slug, which _is_ the worktree. This is where `/checkpoint` looks for memory to archive.
 
 ```powershell
 # Directory junctions do NOT require elevation.
@@ -2321,7 +2339,7 @@ Prerequisites: the `SvcAnsibleAdmin` account and its Bitwarden secret from Step 
 ProGet feeds from Step 9.
 
 **Bootstrap order matters.** The broker is what installs modules AllUsers, so it must be
-provisioned *before* the module-install machinery works. Run the provisioning function from
+provisioned _before_ the module-install machinery works. Run the provisioning function from
 the **git clone**, not from an installed module:
 
 ```powershell
@@ -2717,14 +2735,14 @@ scene-only sprints. Only Manim-upgrade sprints require a fresh venv in the sprin
 **Items holding an absolute path to `manim.exe`/`python.exe`** that must track the active
 worktree (updated when a Manim-affecting sprint starts, reverted when it ends):
 
-| Item                                                       | Storage location                                               | Scene-only sprint                             | Manim-upgrade sprint                |
-| ---------------------------------------------------------- | -------------------------------------------------------------- | --------------------------------------------- | ----------------------------------- |
-| `manim.exe` path in `IOptions<ManimVideoGeneratorOptions>` | `DefaultSettings` config override or `MANIM_EXE_PATH` env var  | **No change** — reuse main worktree venv path | Update to sprint worktree venv path |
-| VS Code **Manim Sideview: Default Manim Path**             | VS Code user settings (or workspace override)                  | **No change**                                 | Update to sprint worktree venv path |
-| VS Code **Python: Select Interpreter**                     | Workspace settings or command palette selection                | **No change**                                 | Update to sprint worktree venv      |
-| `scenes/` content (`.py` files)                            | Tracked in git on the sprint branch                            | Normal git workflow                           | Normal git workflow                 |
-| `requirements.txt`                                         | Tracked in git on the sprint branch                            | Normal git workflow                           | Update, then `pip install -r requirements.txt` |
-| `media/` rendered output                                   | **Tracked in git** on the sprint branch                        | Committed and merged into main with the PR    | Committed and merged into main with the PR |
+| Item                                                       | Storage location                                              | Scene-only sprint                             | Manim-upgrade sprint                           |
+| ---------------------------------------------------------- | ------------------------------------------------------------- | --------------------------------------------- | ---------------------------------------------- |
+| `manim.exe` path in `IOptions<ManimVideoGeneratorOptions>` | `DefaultSettings` config override or `MANIM_EXE_PATH` env var | **No change** — reuse main worktree venv path | Update to sprint worktree venv path            |
+| VS Code **Manim Sideview: Default Manim Path**             | VS Code user settings (or workspace override)                 | **No change**                                 | Update to sprint worktree venv path            |
+| VS Code **Python: Select Interpreter**                     | Workspace settings or command palette selection               | **No change**                                 | Update to sprint worktree venv                 |
+| `scenes/` content (`.py` files)                            | Tracked in git on the sprint branch                           | Normal git workflow                           | Normal git workflow                            |
+| `requirements.txt`                                         | Tracked in git on the sprint branch                           | Normal git workflow                           | Update, then `pip install -r requirements.txt` |
+| `media/` rendered output                                   | **Tracked in git** on the sprint branch                       | Committed and merged into main with the PR    | Committed and merged into main with the PR     |
 
 **Recommended pattern — `MANIM_EXE_PATH` environment variable.** For scene-only sprints this
 variable never changes. For Manim-upgrade sprints, storing the path in a **User-scope**
@@ -3010,14 +3028,14 @@ the SQL/ProGet/BuildMaster pipeline and can be skipped without affecting builds.
 
 ### H.0 Decision: which path?
 
-| | **Path A — CPU-only** | **Path B — GPU-accelerated** |
-| --- | --- | --- |
-| **Requires** | Any x64 CPU | NVIDIA GPU (e.g. RTX 3080) + recent driver (CUDA 12.x class) |
-| **Packages** | `torch` (cpu build), `onnxruntime` | CUDA `torch` (`+cuXXX`), `onnxruntime-gpu` |
-| **First compress** | Multi-minute cold model load | Seconds (after one-time model download) |
-| **Steady-state compress** | CPU-bound (slow on large payloads) | GPU-accelerated |
-| **Proxy wrap overhead** | ~550ms+/request (observed on CPU) | Lower |
-| **Use when** | No NVIDIA GPU present | NVIDIA GPU present — **preferred** |
+|                           | **Path A — CPU-only**              | **Path B — GPU-accelerated**                                 |
+| ------------------------- | ---------------------------------- | ------------------------------------------------------------ |
+| **Requires**              | Any x64 CPU                        | NVIDIA GPU (e.g. RTX 3080) + recent driver (CUDA 12.x class) |
+| **Packages**              | `torch` (cpu build), `onnxruntime` | CUDA `torch` (`+cuXXX`), `onnxruntime-gpu`                   |
+| **First compress**        | Multi-minute cold model load       | Seconds (after one-time model download)                      |
+| **Steady-state compress** | CPU-bound (slow on large payloads) | GPU-accelerated                                              |
+| **Proxy wrap overhead**   | ~550ms+/request (observed on CPU)  | Lower                                                        |
+| **Use when**              | No NVIDIA GPU present              | NVIDIA GPU present — **preferred**                           |
 
 Verify GPU presence before choosing:
 
@@ -3116,6 +3134,7 @@ touches the GPU until swapped.
 ```
 
 Path B is correct when:
+
 - `torch.cuda.is_available()` prints **`True`** and names your GPU, **and**
 - `onnxruntime.get_available_providers()` includes **`CUDAExecutionProvider`**.
 
@@ -3131,7 +3150,7 @@ compression ran **24.8 minutes without completing**). It looks like a CPU/GPU/mo
 problem but is not.
 
 **Root cause:** Headroom's Rust extension `headroom._core.detect_content_type` (the magika
-content-type detector that the compression pipeline calls *first*, before any model) uses
+content-type detector that the compression pipeline calls _first_, before any model) uses
 the Rust `ort` crate, which by default tries to **locate/download its own onnxruntime**.
 On this environment that probe blocks forever — the process sits at 0% CPU, 1 thread, no
 completed network connection. It hangs on **every** input, even an 11-character string.
@@ -3273,7 +3292,7 @@ if (-not (netstat -ano 2>$null | Select-String ":8787.*LISTENING")) {
 Headroom can fully auto-wrap **CLI processes** because the wrapper controls their launch
 environment. Desktop apps and VS Code extensions are different: they usually run in their
 own host process and often ignore `OPENAI_BASE_URL` / `ANTHROPIC_BASE_URL`. For those,
-Headroom works only when the app/extension exposes a custom base URL, BYOK provider, or
+Headroom works only when the app/extension exposes a custom base URL, "Bring Your Own Key (BYOK)" provider, or
 compatible local-proxy setting.
 
 Recommended baseline:
@@ -3323,18 +3342,18 @@ intentionally enabled.
 
 Desktop app / VS Code extension handling:
 
-| Client surface | Headroom approach |
-| --- | --- |
-| Claude Code CLI | Fully auto-wrap with `headroom wrap claude ...`. |
-| Codex CLI | Fully auto-wrap with `headroom wrap codex ...`; ensure `C:\Users\whertzing\AppData\Local\OpenAI\Codex\bin` is on `PATH`. |
-| GitHub Copilot CLI | Fully auto-wrap with `headroom wrap copilot ...`; requires the `copilot` CLI on `PATH` and a model/provider supported by Copilot CLI BYOK mode. |
-| Codex desktop app | Prefer MCP tools only. Do **not** keep a global Headroom provider/base URL override in `C:\Users\whertzing\.codex\config.toml`; it can make the app show only conversations created under `model_provider = headroom`. Use the wrapped Codex CLI for guaranteed proxy routing. |
-| Claude desktop app | Only route through Headroom if the app exposes a custom Anthropic base URL or inherits `ANTHROPIC_BASE_URL`; otherwise use Claude Code CLI for guaranteed routing. |
-| VS Code launched from shell | Launch from a shell that has `OPENAI_BASE_URL`, `ANTHROPIC_BASE_URL`, and `HEADROOM_TELEMETRY=off`: `code <workspace>`. This only helps extensions that actually inherit and honor those variables. |
-| GitHub Copilot VS Code extension | Do **not** assume it is wrapped. The first-party extension may use GitHub-hosted Copilot endpoints and may ignore OpenAI/Anthropic base URL variables. Use Copilot CLI through `headroom wrap copilot` for guaranteed Headroom routing, or configure BYOK/custom-model base URL only if the installed extension version exposes that setting. |
-| Cline VS Code extension | Run `headroom wrap cline --no-proxy`, then configure Cline's API Base URL in VS Code settings to `http://127.0.0.1:8787/v1` for OpenAI-compatible mode or the matching Anthropic-compatible URL if using Anthropic mode. |
-| Continue VS Code / JetBrains extension | Run `headroom wrap continue --no-proxy`, then set each model's `apiBase` in `.continue/config.json` / `.continue/config.yaml` to the Headroom proxy URL. |
-| Cursor app | Run `headroom wrap cursor --no-proxy`, then set Cursor's OpenAI override base URL to `http://127.0.0.1:8787/v1`. |
+| Client surface                         | Headroom approach                                                                                                                                                                                                                                                                                                                             |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Claude Code CLI                        | Fully auto-wrap with `headroom wrap claude ...`.                                                                                                                                                                                                                                                                                              |
+| Codex CLI                              | Fully auto-wrap with `headroom wrap codex ...`; ensure `C:\Users\whertzing\AppData\Local\OpenAI\Codex\bin` is on `PATH`.                                                                                                                                                                                                                      |
+| GitHub Copilot CLI                     | Fully auto-wrap with `headroom wrap copilot ...`; requires the `copilot` CLI on `PATH` and a model/provider supported by Copilot CLI BYOK mode.                                                                                                                                                                                               |
+| Codex desktop app                      | Prefer MCP tools only. Do **not** keep a global Headroom provider/base URL override in `C:\Users\whertzing\.codex\config.toml`; it can make the app show only conversations created under `model_provider = headroom`. Use the wrapped Codex CLI for guaranteed proxy routing.                                                                |
+| Claude desktop app                     | Only route through Headroom if the app exposes a custom Anthropic base URL or inherits `ANTHROPIC_BASE_URL`; otherwise use Claude Code CLI for guaranteed routing.                                                                                                                                                                            |
+| VS Code launched from shell            | Launch from a shell that has `OPENAI_BASE_URL`, `ANTHROPIC_BASE_URL`, and `HEADROOM_TELEMETRY=off`: `code <workspace>`. This only helps extensions that actually inherit and honor those variables.                                                                                                                                           |
+| GitHub Copilot VS Code extension       | Do **not** assume it is wrapped. The first-party extension may use GitHub-hosted Copilot endpoints and may ignore OpenAI/Anthropic base URL variables. Use Copilot CLI through `headroom wrap copilot` for guaranteed Headroom routing, or configure BYOK/custom-model base URL only if the installed extension version exposes that setting. |
+| Cline VS Code extension                | Run `headroom wrap cline --no-proxy`, then configure Cline's API Base URL in VS Code settings to `http://127.0.0.1:8787/v1` for OpenAI-compatible mode or the matching Anthropic-compatible URL if using Anthropic mode.                                                                                                                      |
+| Continue VS Code / JetBrains extension | Run `headroom wrap continue --no-proxy`, then set each model's `apiBase` in `.continue/config.json` / `.continue/config.yaml` to the Headroom proxy URL.                                                                                                                                                                                      |
+| Cursor app                             | Run `headroom wrap cursor --no-proxy`, then set Cursor's OpenAI override base URL to `http://127.0.0.1:8787/v1`.                                                                                                                                                                                                                              |
 
 For app/extension surfaces, the acceptance test is not "the app launched" - it is "the proxy
 saw traffic":
@@ -3393,17 +3412,17 @@ provider override that does not partition or hide existing conversation history.
 
 ### H.9 Troubleshooting
 
-| Symptom | Cause / Fix |
-| --- | --- |
-| MCP server shows "failed to connect" | Registered as bare `headroom` (PATH-dependent). Re-add with the absolute `...\.venvs\headroom\Scripts\headroom.exe` path. |
+| Symptom                                                    | Cause / Fix                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| MCP server shows "failed to connect"                       | Registered as bare `headroom` (PATH-dependent). Re-add with the absolute `...\.venvs\headroom\Scripts\headroom.exe` path.                                                                                                                                                                                                                                                                                                                   |
 | Codex desktop shows `No Chats` after `headroom wrap codex` | Check `C:\Users\whertzing\.codex\config.toml` for a global `model_provider = "headroom"` / `openai_base_url = "http://127.0.0.1:8787/v1"` override. Back up the file, remove only that override, keep `[mcp_servers.headroom]`, then fully restart Codex. Confirm history still exists with Python's built-in `sqlite3` module by querying `C:\Users\whertzing\.codex\state_5.sqlite` and grouping `threads` by `model_provider` and `cwd`. |
-| `headroom wrap codex` reports telemetry enabled | Set `[Environment]::SetEnvironmentVariable('HEADROOM_TELEMETRY', 'off', 'User')`, open a fresh shell, and relaunch. |
-| `headroom wrap codex` says `codex` not found | Add `C:\Users\whertzing\AppData\Local\OpenAI\Codex\bin` to user `PATH`, open a fresh shell, and verify `Get-Command codex`. |
-| App or VS Code extension shows no proxy traffic | It is not inheriting or honoring the proxy base URL. Configure the extension's custom base URL/BYOK setting if available; otherwise use the wrapped CLI. |
-| First compression hangs for minutes | CPU model cold-load (Path A). Expected once per process; switch to **Path B** for GPU. |
-| `headroom_retrieve` returns nothing | Local/proxy retention window expired — reacquire the original content. |
-| `pip` cert errors during install | Add `--use-feature=truststore` (Windows cert store). |
-| Cargo `CRYPT_E_NO_REVOCATION_CHECK` | Set `CARGO_HTTP_CHECK_REVOKE=false` before the install (see §H.3). |
-| `link.exe` / `cl.exe` not found | Load `VsDevCmd.bat` (§H.3) so the MSVC toolchain is on PATH. |
-| Path B still CPU-only | CUDA `torch` / `onnxruntime-gpu` mismatch with driver CUDA level; reinstall the matching `cuXXX` wheel. |
-| Proxy window flashes / steals focus | Use the `cscript` VBScript wrapper (§H.5), not a `cmd`/`pwsh` task action. |
+| `headroom wrap codex` reports telemetry enabled            | Set `[Environment]::SetEnvironmentVariable('HEADROOM_TELEMETRY', 'off', 'User')`, open a fresh shell, and relaunch.                                                                                                                                                                                                                                                                                                                         |
+| `headroom wrap codex` says `codex` not found               | Add `C:\Users\whertzing\AppData\Local\OpenAI\Codex\bin` to user `PATH`, open a fresh shell, and verify `Get-Command codex`.                                                                                                                                                                                                                                                                                                                 |
+| App or VS Code extension shows no proxy traffic            | It is not inheriting or honoring the proxy base URL. Configure the extension's custom base URL/BYOK setting if available; otherwise use the wrapped CLI.                                                                                                                                                                                                                                                                                    |
+| First compression hangs for minutes                        | CPU model cold-load (Path A). Expected once per process; switch to **Path B** for GPU.                                                                                                                                                                                                                                                                                                                                                      |
+| `headroom_retrieve` returns nothing                        | Local/proxy retention window expired — reacquire the original content.                                                                                                                                                                                                                                                                                                                                                                      |
+| `pip` cert errors during install                           | Add `--use-feature=truststore` (Windows cert store).                                                                                                                                                                                                                                                                                                                                                                                        |
+| Cargo `CRYPT_E_NO_REVOCATION_CHECK`                        | Set `CARGO_HTTP_CHECK_REVOKE=false` before the install (see §H.3).                                                                                                                                                                                                                                                                                                                                                                          |
+| `link.exe` / `cl.exe` not found                            | Load `VsDevCmd.bat` (§H.3) so the MSVC toolchain is on PATH.                                                                                                                                                                                                                                                                                                                                                                                |
+| Path B still CPU-only                                      | CUDA `torch` / `onnxruntime-gpu` mismatch with driver CUDA level; reinstall the matching `cuXXX` wheel.                                                                                                                                                                                                                                                                                                                                     |
+| Proxy window flashes / steals focus                        | Use the `cscript` VBScript wrapper (§H.5), not a `cmd`/`pwsh` task action.                                                                                                                                                                                                                                                                                                                                                                  |

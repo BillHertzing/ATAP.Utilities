@@ -336,7 +336,7 @@ and what it must never do.
 - **Execute:** § 4.1–4.6 — profile source from the ATAP.IAC template via HostSettings;
   `Set-UserScopeProfile` for developer and service-account classes (never a symlink, never a
   hand copy); PSGallery modules at `-Scope AllUsers` from an elevated shell; `nbgv` to
-  `C:\ProgramData\dotnet\tools`; `bws` to `C:\Program Files\Bitwarden\bws` with the install
+  `C:\ProgramData\dotnet\tools`; `bws` to `C:\Program Files\Bitwarden` with the install
   dir appended to the **Machine** `PATH`.
 - **Exit:** in a **brand-new** shell (not a child of the install session, which inherits a
   stale environment block), both of these resolve for `nbgv` and `bws`:

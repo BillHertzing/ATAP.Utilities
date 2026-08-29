@@ -4,6 +4,7 @@ using ATAP.Utilities.ConcurrentObservableCollections;
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using UnitsNet;
@@ -49,7 +50,14 @@ namespace ATAP.Utilities.CryptoMiner.Models
 
       try
       {
-        responsebuffer = await Tcp.FetchAsync(host, port, message);
+        using var tcpClient = new TcpClient();
+        await tcpClient.ConnectAsync(host, port);
+        await using NetworkStream stream = tcpClient.GetStream();
+        var requestBuffer = Encoding.UTF8.GetBytes(message);
+        await stream.WriteAsync(requestBuffer, 0, requestBuffer.Length);
+        var readBuffer = new byte[1024];
+        var bytesRead = await stream.ReadAsync(readBuffer, 0, readBuffer.Length);
+        responsebuffer = readBuffer[..bytesRead];
       }
       catch (Exception)
       {

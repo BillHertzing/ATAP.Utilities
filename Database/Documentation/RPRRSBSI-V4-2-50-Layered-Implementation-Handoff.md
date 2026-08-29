@@ -1,22 +1,37 @@
-# RPRRSBSI-V4 Layered Implementation Handoff
+# RPRRSBSI-V4-2 Layered Implementation Handoff
 
 Status: reconciled task-authoring handoff for Task 15.140.b. This document authorizes
 documentation and task decomposition only. It does not authorize SQL, Flyway changes,
 seed publication, package/feed work, deployment, or a live database action.
 
+## V4-2 prioritized service track
+
+The broad V4 layers remain the long-term dependency model. Task 15.140.b.2 adds a narrow service track:
+
+1. freeze and classify the `Get-ContentSummary` agent and PowerShell envelopes;
+2. supply the minimum durable Tag/as-of read dependency;
+3. implement idempotent Outpost scheduled ingestion and the three Ace ContentSummary aggregates;
+4. implement Claude/Codex AISupervisor adapters and exchange/header/metric aggregates with body capture disabled;
+5. implement authorized AceCommander raw, Tag-set, and token-timeline queries; and
+6. prove restart, replay, redaction, authorization-before-aggregation, and incomplete token-count behavior.
+
+This track defers arbitrary plugin DDL, automatic ATAP publication, full Ace parity,
+broader expert systems, and external-effecting manifestation. See
+[the initial slice](RPRRSBSI-V4-2-55-Initial-Capability-Slice.md).
+
 Editable diagram source:
-[RPRRSBSI-V4-Layered-Delivery.puml](RPRRSBSI-V4-Layered-Delivery.puml). The previously
+[RPRRSBSI-V4-2-Layered-Delivery.puml](RPRRSBSI-V4-2-Layered-Delivery.puml). The previously
 rendered SVG is not embedded because this source changed and rendering is a
 coordinator-owned step.
 
 ## Authority and decision boundary
 
 The Task 15.140.a operator record is authoritative for decision status. The
-[V4 overview](RPRRSBSI-V4-00-Specification-Overview.md),
-[core schema](RPRRSBSI-V4-10-Core-Schema-Enhancements.md),
-[seed contract](RPRRSBSI-V4-20-Seed-Data-And-Loaders.md),
-[Tags specification](RPRRSBSI-V4-30-Tags-Expert-System.md), and
-[Mechanized Engineering specification](RPRRSBSI-V4-40-Mechanized-Engineering.md) are
+[V4 overview](RPRRSBSI-V4-2-00-Specification-Overview.md),
+[core schema](RPRRSBSI-V4-2-10-Core-Schema-Enhancements.md),
+[seed contract](RPRRSBSI-V4-2-20-Seed-Data-And-Loaders.md),
+[Tags specification](RPRRSBSI-V4-2-30-Tags-Expert-System.md), and
+[Mechanized Engineering specification](RPRRSBSI-V4-2-40-Mechanized-Engineering.md) are
 the reconciled implementation inputs.
 
 - D-1 and D-3 through D-8 were ratified through C-01 through C-07.
@@ -212,19 +227,19 @@ bytes. Rebuilding between tiers is not promotion evidence.
 
 ## Task-authoring and release rules
 
-- **V4-HANDOFF-001:** Every task SHALL cite the V4 requirement and decision IDs it
+- **V4-2-HANDOFF-001:** Every task SHALL cite the V4 requirement and decision IDs it
   satisfies.
-- **V4-HANDOFF-002:** Every schema task SHALL cover migration, GUID registry, CSV/loader,
+- **V4-2-HANDOFF-002:** Every schema task SHALL cover migration, GUID registry, CSV/loader,
   fresh, V3-upgrade, negative, semantic/as-of, documentation, and evidence impacts.
-- **V4-HANDOFF-003:** No task SHALL combine an unresolved design choice with schema or
+- **V4-2-HANDOFF-003:** No task SHALL combine an unresolved design choice with schema or
   live mutation. Ratify first, then implement.
-- **V4-HANDOFF-004:** No layer crosses a pending-authority or live-action gate.
-- **V4-HANDOFF-005:** Task slices SHOULD be small: decision closure; logical schema;
+- **V4-2-HANDOFF-004:** No layer crosses a pending-authority or live-action gate.
+- **V4-2-HANDOFF-005:** Task slices SHOULD be small: decision closure; logical schema;
   migration; registered seeds; loader; resolution; tests; documentation/evidence;
   experimental deployment; then one task per promotion.
-- **V4-HANDOFF-006:** A layer is complete only when schema, seeds, loader behavior,
+- **V4-2-HANDOFF-006:** A layer is complete only when schema, seeds, loader behavior,
   tests, diagrams, explanations, and deploy-state evidence agree.
-- **V4-HANDOFF-007:** Plans, logs, and evidence SHALL contain no credential, connection
+- **V4-2-HANDOFF-007:** Plans, logs, and evidence SHALL contain no credential, connection
   string, token, or secret value.
 
 ## Adversarial release checklist

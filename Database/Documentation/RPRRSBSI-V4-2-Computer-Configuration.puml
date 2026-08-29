@@ -89,4 +89,10 @@ note bottom of Plan
   It does not mean approved for purchasing,
   provisioning, execution, or deployment.
 end note
+
+note top of Plan
+  V4-2 priority: Mechanized Engineering is a later
+  consumer. It does not widen the initial Outpost
+  Tags/ContentSummary and AISupervisor service.
+end note
 @enduml

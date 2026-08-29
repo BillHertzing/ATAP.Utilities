@@ -1,15 +1,29 @@
-# RPRRSBSI-V4 Specification Overview
+# RPRRSBSI-V4-2 Specification Overview
 
-Status: reconciled task-authoring specification for Sprint 0015 Stream N.
+Status: expanded task-authoring specification for Sprint 0015 Task 15.140.b.2.
 
-This document set expands the implemented RPRRSBSI V3/PTV database design into V4. It
-consolidates the explicit operator record, the active V3 design, selectively recovered
-V2 concepts, and the source inventory named by `RRSBSISourceDocList.md`. It is an input
+This document set versions the RPRRSBSI V4 design as V4-2. It retains the implemented
+V3/PTV baseline and every ratified V4 decision, then incorporates the database-expansion
+inputs for plugins, AceCommander, AceOutpost, ContentSummary, and AISupervisor. It is an input
 to task creation; it does not authorize SQL, migrations, seeds, deployment, package/feed
 changes, or a live database change.
 
+## V4-2 expansion priority
+
+- **V4-2-EXP-001:** The first vertical slice SHALL schedule AceOutpost ingestion of Tags
+  and ContentSummary output from the `Get-ContentSummary` agent and PowerShell function.
+- **V4-2-EXP-002:** AISupervisor SHALL provide explicit Claude and Codex proxy adapters
+  that store safe request/response metadata, headers after redaction, token counts, and
+  controlled additional metrics in the `Ace` schema.
+- **V4-2-EXP-003:** AceCommander SHALL visualize raw ContentSummary data, deterministic
+  `Any`/`All` Tag-set queries, and UTC token series grouped by harness and model.
+- **V4-2-EXP-004:** The initial implementation SHALL remain narrower than the broader
+  plugin, synchronization, Git, photo/NFT, outdoor-activity, and manifestation platform.
+- **V4-2-EXP-005:** New mutable data belongs to the Ace working plane; scheduled
+  ingestion or synchronization SHALL NOT publish authoritative ATAPUtilities definitions.
+
 Layered delivery is maintained in the editable diagram source:
-[RPRRSBSI-V4-Layered-Delivery.puml](RPRRSBSI-V4-Layered-Delivery.puml). A rendered SVG
+[RPRRSBSI-V4-2-Layered-Delivery.puml](RPRRSBSI-V4-2-Layered-Delivery.puml). A rendered SVG
 is intentionally not embedded here because the tracked render may lag the editable
 source until the coordinator-owned render gate runs.
 
@@ -54,19 +68,19 @@ prose. Text explicitly marked `HITL-PENDING` or non-normative is not a requireme
 
 ## Baseline and design posture
 
-- **V4-BASE-001:** The exact V3 baseline is the eleven-table schema: `Philote`,
+- **V4-2-BASE-001:** The exact V3 baseline is the eleven-table schema: `Philote`,
   `PhiloteValidityPeriod`, `RuleKind`, `RulePrimitive`, `RulePrimitiveInput`, `Rule`,
   `RuleSet`, `RuleSetRule`, `BuildSet`, `BuildSetRuleSet`, and `Instantiation`.
-- **V4-BASE-002:** V4 SHALL extend V3 with forward-only Flyway migrations. It SHALL NOT
+- **V4-2-BASE-002:** V4 SHALL extend V3 with forward-only Flyway migrations. It SHALL NOT
   rewrite already-applied V3 migrations.
-- **V4-BASE-003:** V4 SHALL retain Philote identity and half-open business validity
+- **V4-2-BASE-003:** V4 SHALL retain Philote identity and half-open business validity
   `[ValidFromUtc, ValidToUtc)` as its temporal backbone.
-- **V4-BASE-004:** V2 concepts SHALL be recovered selectively where they satisfy a V4
+- **V4-2-BASE-004:** V2 concepts SHALL be recovered selectively where they satisfy a V4
   requirement. V2 physical tables and internal revision-number patterns SHALL NOT be
   copied wholesale.
-- **V4-BASE-005:** Every migration layer SHALL be independently deployable and
+- **V4-2-BASE-005:** Every migration layer SHALL be independently deployable and
   verifiable before a later layer is started.
-- **V4-BASE-006:** Reference seeds SHALL use fixed registered GUIDs and deterministic
+- **V4-2-BASE-006:** Reference seeds SHALL use fixed registered GUIDs and deterministic
   loader behavior. Production reference data SHALL NOT depend on `NEWID()`.
 
 ## Ratified D-1 through D-8 decisions
@@ -149,12 +163,32 @@ in the editable companion.
 
 | Document | Task-authoring purpose |
 | --- | --- |
-| [RPRRSBSI-V4 Source Synthesis and Design Traceability](RPRRSBSI-V4-05-Source-Synthesis-And-Traceability.md) | Normalized requirements and explicit V3-retained/V2-recovered design mapping. |
-| [RPRRSBSI-V4 Core Schema Enhancements](RPRRSBSI-V4-10-Core-Schema-Enhancements.md) | Tables, keys, constraints, overlay semantics, graphs, and execution state. |
-| [RPRRSBSI-V4 Seed Data and Loader Specification](RPRRSBSI-V4-20-Seed-Data-And-Loaders.md) | CSV inventory, loader contract, reference seeds, and migration quality gates. |
-| [RPRRSBSI-V4 Tags Expert System Specification](RPRRSBSI-V4-30-Tags-Expert-System.md) | The first specific expert system and its graph semantics. |
-| [RPRRSBSI-V4 Mechanized Engineering Specification](RPRRSBSI-V4-40-Mechanized-Engineering.md) | Initial computer-system configuration inputs, rules, and outputs. |
-| [RPRRSBSI-V4 Layered Implementation Handoff](RPRRSBSI-V4-50-Layered-Implementation-Handoff.md) | Ordered work packages, tests, promotion gates, and definition of done. |
+| [RPRRSBSI-V4-2 Source Synthesis and Design Traceability](RPRRSBSI-V4-2-05-Source-Synthesis-And-Traceability.md) | Normalized requirements and explicit V3-retained/V2-recovered design mapping. |
+| [RPRRSBSI-V4-2 Core Schema Enhancements](RPRRSBSI-V4-2-10-Core-Schema-Enhancements.md) | Tables, keys, constraints, overlay semantics, graphs, and execution state. |
+| [RPRRSBSI-V4-2 Seed Data and Loader Specification](RPRRSBSI-V4-2-20-Seed-Data-And-Loaders.md) | CSV inventory, loader contract, reference seeds, and migration quality gates. |
+| [RPRRSBSI-V4-2 Tags Expert System Specification](RPRRSBSI-V4-2-30-Tags-Expert-System.md) | The first specific expert system and its graph semantics. |
+| [RPRRSBSI-V4-2 Mechanized Engineering Specification](RPRRSBSI-V4-2-40-Mechanized-Engineering.md) | Initial computer-system configuration inputs, rules, and outputs. |
+| [RPRRSBSI-V4-2 Layered Implementation Handoff](RPRRSBSI-V4-2-50-Layered-Implementation-Handoff.md) | Ordered work packages, tests, promotion gates, and definition of done. |
+| [Plugin Database Expansion](RPRRSBSI-V4-2-15-Plugin-Database-Expansion.md) | Plugin ownership, migration, isolation, and publication boundaries. |
+| [ContentSummary Data Contract](RPRRSBSI-V4-2-25-ContentSummary-Data-Contract.md) | Initial ingestion, storage, Tag association, and query model. |
+| [AISupervisor Telemetry](RPRRSBSI-V4-2-35-AISupervisor-Request-Response-Telemetry.md) | Claude/Codex exchange, safe headers, token counts, and extensible metrics. |
+| [Edge Persistence and Synchronization](RPRRSBSI-V4-2-45-Edge-Persistence-And-Synchronization.md) | Provider-neutral Outpost projection and provider-selection criteria. |
+| [Initial Capability Slice](RPRRSBSI-V4-2-55-Initial-Capability-Slice.md) | Narrow delivery sequence and explicit deferrals. |
+| [AceOutpost and AceCommander Integration](RPRRSBSI-V4-2-Ace-Outpost-Commander-Integration/README.md) | Application service and visualization architecture. |
+
+## V4-2 expansion HITL register
+
+| ID | Decision needed before physical implementation |
+| --- | --- |
+| V4-2-H-01 | Exact agent and PowerShell ContentSummary envelope, field classification, and compatibility policy. |
+| V4-2-H-02 | ContentSummary storage location, prompt/source retention, ranking, freshness, and maximum result contract. |
+| V4-2-H-03 | Claude/Codex integration points, supported harness versions, endpoint allowlist, and proxy failure behavior. |
+| V4-2-H-04 | Header allowlist/redaction/hashing and whether any request, response, prompt, or tool body may be retained. |
+| V4-2-H-05 | Semantics and controlled codes for thinking/reasoning, cache, tool, and later provider metrics. |
+| V4-2-H-06 | Phase-one Outpost device matrix, persistence provider, encryption/store split, and key custody. |
+| V4-2-H-07 | Projection, transport, conflict, deletion, retention, retry, cursor, and synchronization policies. |
+| V4-2-H-08 | Plugin migration lineage, isolation mode, signing/trust, revocation, and removal-data disposition. |
+| V4-2-H-09 | Exact initial table/key/index/API/DTO inventory after the preceding gates close. |
 
 ## Scope boundary
 

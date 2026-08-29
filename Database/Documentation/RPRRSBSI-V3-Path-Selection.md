@@ -10,6 +10,18 @@ It adds no Path primitive and makes no grammar amendment. The retained catalog h
 is exactly `HelloWorld.ps1`, selected under the retained `<relative-path>`
 primitive, as directed by the HITL-reviewed V3 plan.
 
+## V4 successor annotation
+
+This record remains the historical V3 Path selection fact. V4 adopts the retained
+13-primitive Path catalog, the 21 named structured input declarations, the zero-input
+specialized primitive, and the exact initial `HelloWorld.ps1` selection. V4 adapts their
+use through richer typed definitions and variant/state contracts; it does not amend the
+retained Path grammar or allocate a new primitive in Task 15.140.b.
+
+The decision-level citation and disposition are recorded as V3-03 and V3-D02 in
+[`RPRRSBSI-V4-05-Source-Synthesis-And-Traceability.md`](RPRRSBSI-V4-05-Source-Synthesis-And-Traceability.md).
+This annotation does not classify any D3 edge case; all eight remain `HITL-PENDING`.
+
 ## Retained catalog
 
 The retained compendium declares **13** Path Rule Primitives: 12 grammar

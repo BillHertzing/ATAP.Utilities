@@ -148,4 +148,19 @@ note bottom of ExpertSystemState
   internal semantic history uses State or Variant,
   not Version.
 end note
+
+package "V4-2 focused integration aggregates" #E8F4FA {
+  entity "Ace.ContentSummaryIngestion / Item / ItemTag" as CS
+  entity "Ace.AISupervisorExchange / Header / Metric" as AIS
+  entity "Outpost Run / Checkpoint / OutboundEnvelope" as OUT
+}
+CS ..> Entity : typed content endpoint
+CS ..> Philote : durable TagId resolves through focused Tags model
+AIS ..> Entity : tenant-authorized observation
+OUT ..> CS : idempotent projection and sync
+
+note bottom of AIS
+  Detailed columns live in the focused V4-2 diagrams.
+  Request/response body capture is off initially.
+end note
 @enduml

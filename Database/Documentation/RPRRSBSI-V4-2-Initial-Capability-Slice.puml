@@ -1,0 +1,37 @@
+@startuml
+title RPRRSBSI V4-2 Initial Tags, ContentSummary, and AISupervisor Slice
+skinparam defaultFontName Segoe UI
+skinparam shadowing false
+left to right direction
+
+component "Get-ContentSummary\nagent + PowerShell" as Producer
+component "AceOutpost scheduled\ningestion task" as Ingest
+database "Outpost local\nprojection + outbox" as Local
+component "Ace sync/API" as Api
+database "Ace ContentSummary\nand AISupervisor tables" as Ace
+component "Claude adapter" as Claude
+component "Codex adapter" as Codex
+component "AISupervisor proxy" as Proxy
+component "AceCommander\nvisualizers" as UI
+
+Producer --> Ingest : Tags + summaries
+Ingest --> Local : raw + normalized,\nidempotent checkpoint
+Local --> Api : durable envelope
+Api --> Ace
+Claude --> Proxy : request/response
+Codex --> Proxy : request/response
+Proxy --> Ace : safe metadata,\nheaders, token metrics
+Ace --> UI : raw summaries
+Ace --> UI : Tag Any/All query
+Ace --> UI : UTC token series
+
+note bottom of Proxy
+  Body capture off initially.
+  Secret headers never stored.
+end note
+
+note bottom of Ingest
+  Inferred Rules remain Ace overlays/candidates.
+  No automatic ATAP publication.
+end note
+@enduml

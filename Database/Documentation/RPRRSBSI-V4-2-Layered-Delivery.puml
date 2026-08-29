@@ -21,6 +21,15 @@ note right
   C-16..C-27, FU-4, FU-6
 end note
 
+:V4-2 narrow service track\nfreeze Get-ContentSummary envelope;
+note right
+  Minimum Tag/as-of dependency
+  Scheduled idempotent Outpost ingestion
+  Claude/Codex AISupervisor metadata proxy
+  AceCommander raw/Tag-set/token views
+  Body capture and automatic publication deferred
+end note
+
 :Layer 0\ncharacterize V3 baseline;
 if (V3 fixture and eleven-table\ncontract verified?) then (yes)
   :Layer 1\nidentities, catalogs, generic root;

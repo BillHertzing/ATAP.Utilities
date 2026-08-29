@@ -1,10 +1,49 @@
-# RPRRSBSI-V4 Source Synthesis and Design Traceability
+# RPRRSBSI-V4-2 Source Synthesis and Design Traceability
 
 ## Evidence reviewed
 
-This first draft is based on four evidence classes: the user's RPRRSBSI V4 mobile conversation normalized to remove greetings, acknowledgements, dictation repairs, and repeated requests while preserving design intent; the active RPRRSBSI V3 schema, migrations, seeds, and core-schema documentation; the archived RRSBS/RPRRSBSI V2 logical models, decisions, migrations, and seed concepts; and every file or directory named by Sprint 0015 `InformationForTheFuture/RRSBSISourceDocList.md`.
+This V4-2 synthesis is based on five evidence classes: the RPRRSBSI V4 operator record;
+the active V3 schema, migrations, seeds, and core-schema documentation; the archived
+V2 logical models and decisions; the existing V4 specification family and Ace/mobile
+requirements companion; and
+`_Planning/InformationForTheFuture/Sprint0015/StreamN/Task-15.140.b.2/DB-Design-Expansion-Consolidated-Inputs.md`.
 
 This document records the synthesis, not a verbatim transcript. The conversation remains the authority for wording disputes; this set converts it into testable requirements.
+
+## V4-2 expansion disposition
+
+| Expansion source area | V4-2 disposition | Governing document |
+| --- | --- | --- |
+| Plugin-owned expert systems and database expansion | adopted with host-mediated writes and governed migrations | `RPRRSBSI-V4-2-15-Plugin-Database-Expansion.md` |
+| Tags and ContentSummary scheduled ingestion | adopted as the first Outpost vertical slice | `RPRRSBSI-V4-2-25-ContentSummary-Data-Contract.md` |
+| AI-agent request/response proxy | adopted under Ace AISupervisor, with secret-bearing header values prohibited | `RPRRSBSI-V4-2-35-AISupervisor-Request-Response-Telemetry.md` |
+| Remote persistence and synchronization | adopted as provider-neutral architecture; provider selection remains pending | `RPRRSBSI-V4-2-45-Edge-Persistence-And-Synchronization.md` |
+| AceCommander visualizers | adopted as initial application consumers | `RPRRSBSI-V4-2-Ace-Outpost-Commander-Integration/30-AceCommander-Visualization.md` |
+| Git history, code-to-Rules, photo/NFT, outdoor activity, and broader manifestation | retained as later consumers; deferred from the initial slice | `RPRRSBSI-V4-2-55-Initial-Capability-Slice.md` |
+
+The raw-input consolidation's conservative Proposed status for C-01, C-02, and C-03
+does not downgrade them. The existing V4 operator authority records their ratification;
+V4-2 preserves that later status while retaining the raw transcript as source evidence.
+
+## V4-2 findings
+
+- **V4-2-FIND-001:** No reviewed, versioned output envelope for both the
+  `Get-ContentSummary` agent and PowerShell function is present in the source set; a
+  representative fixture is the first implementation prerequisite.
+- **V4-2-FIND-002:** The existing two-column
+  `AceOutpostContentSummaryPrototype` migration cannot satisfy Tags association,
+  tenancy, provenance, synchronization, or query requirements. It remains evidence from
+  another task and is not modified or adopted as V4-2 authority.
+- **V4-2-FIND-003:** Request and response body retention is unnecessary for the initial
+  token visualizer and materially enlarges the security boundary; V4-2 defaults it off
+  pending an explicit ruling.
+- **V4-2-FIND-004:** A controlled metric child permits provider metadata evolution
+  without converting the primary exchange into an untyped property bag.
+- **V4-2-FIND-005:** The AceCommander `Any`/`All` and time-series views require
+  authorization before filtering and aggregation, not only at final-row presentation.
+- **V4-2-FIND-006:** Remote persistence technology cannot be selected responsibly until
+  the phase-one device matrix, threat model, encryption boundary, and synchronization
+  requirements are approved.
 
 ## Normalized user requirement themes
 
@@ -49,14 +88,14 @@ This document records the synthesis, not a verbatim transcript. The conversation
 
 ## V2 decisions not carried forward
 
-- **V4-TRACE-001:** V2 physical schemas and table names are not implementation authority; only aligned concepts and constraints are recovered.
-- **V4-TRACE-002:** Internal `Version` or revision-number rows are replaced by GUID-identified `State` and `Variant` rows with Philote validity.
-- **V4-TRACE-003:** Free-form polymorphic GUID endpoints are replaced by typed `Entity` endpoints.
-- **V4-TRACE-004:** One all-purpose graph is rejected; workflow and calculation graphs have different invariants and tables.
-- **V4-TRACE-005:** Copying a full Rule to override one context is rejected; a RuleVariant reuses the basic Rule identity.
-- **V4-TRACE-006:** Table-per-plugin duplication is not the default ACE extension strategy.
-- **V4-TRACE-007:** Tags are not an authorization mechanism.
-- **V4-TRACE-008:** External-effecting manifestation is not coupled to definition or validation; it requires later plan and approval boundaries.
+- **V4-2-TRACE-001:** V2 physical schemas and table names are not implementation authority; only aligned concepts and constraints are recovered.
+- **V4-2-TRACE-002:** Internal `Version` or revision-number rows are replaced by GUID-identified `State` and `Variant` rows with Philote validity.
+- **V4-2-TRACE-003:** Free-form polymorphic GUID endpoints are replaced by typed `Entity` endpoints.
+- **V4-2-TRACE-004:** One all-purpose graph is rejected; workflow and calculation graphs have different invariants and tables.
+- **V4-2-TRACE-005:** Copying a full Rule to override one context is rejected; a RuleVariant reuses the basic Rule identity.
+- **V4-2-TRACE-006:** Table-per-plugin duplication is not the default ACE extension strategy.
+- **V4-2-TRACE-007:** Tags are not an authorization mechanism.
+- **V4-2-TRACE-008:** External-effecting manifestation is not coupled to definition or validation; it requires later plan and approval boundaries.
 
 ## Relationship traceability
 
@@ -75,9 +114,9 @@ Plan -> Approval -> Run -> Artifact/Event/Usage (deferred Layer 7)
 
 ## Traceability rule for future tasks
 
-- **V4-TRACE-020:** A derived task SHALL cite a V4 requirement ID and identify whether its authority is V3-retained, V2-recovered, user-new, or an open decision.
-- **V4-TRACE-021:** If a task changes a working open decision, it SHALL update every affected schema, seed, diagram, query, and test contract before implementation begins.
-- **V4-TRACE-022:** Historical documents may explain intent but SHALL NOT override the active V3 baseline or a ratified V4 decision.
+- **V4-2-TRACE-020:** A derived task SHALL cite a V4 requirement ID and identify whether its authority is V3-retained, V2-recovered, user-new, or an open decision.
+- **V4-2-TRACE-021:** If a task changes a working open decision, it SHALL update every affected schema, seed, diagram, query, and test contract before implementation begins.
+- **V4-2-TRACE-022:** Historical documents may explain intent but SHALL NOT override the active V3 baseline or a ratified V4 decision.
 
 ## Inherited-decision disposition matrix
 
@@ -92,15 +131,15 @@ work.
 | ID | Historical V2 decision or decision family | Disposition | V4 successor meaning | Historical citation |
 | --- | --- | --- | --- | --- |
 | V2-01 | Physical V2 schema/table names as implementation authority | superseded | V4 recovers concepts only; V3/PTV is the physical starting baseline. | `_Planning/InformationForTheFuture/RRSBS-V2-Design-Archive/INDEX.md`; fragment catalog |
-| V2-02 | Durable EntityType/Entity registry and typed generic endpoints | adapted | Typed endpoints remain useful, but free-form polymorphic GUID use is rejected and exact relations use typed contracts. | `fragments__RDB-400-410__Foundation-Kind-Primitive.sql`; V4-TRACE-003 |
+| V2-02 | Durable EntityType/Entity registry and typed generic endpoints | adapted | Typed endpoints remain useful, but free-form polymorphic GUID use is rejected and exact relations use typed contracts. | `fragments__RDB-400-410__Foundation-Kind-Primitive.sql`; V4-2-TRACE-003 |
 | V2-03 | Authority, Expert, ExpertiseDomain, Tag, attribution, and assignment model | adapted | Authority/provenance concepts are retained selectively; Tags follow C08-C15 and authorization remains separate. | `fragments__RDB-400-410__Foundation-Kind-Primitive.sql`; C08-C15 operator record |
 | V2-04 | RuleKind, primitive, value-type, executor, and structured-value foundation | adapted | Stable kind/primitive identity is retained while internal Version rows become State/Variant contracts. | `fragments__RDB-400-410__Foundation-Kind-Primitive.sql`; C06 |
-| V2-05 | Rule composition, definitions, defaults, outputs, nodes, and bindings | adapted | V4 separates workflow and calculation graphs and adds typed output/input bindings. | `fragments__RDB-420__Rule-Composition.sql`; V4-TRACE-004 |
+| V2-05 | Rule composition, definitions, defaults, outputs, nodes, and bindings | adapted | V4 separates workflow and calculation graphs and adds typed output/input bindings. | `fragments__RDB-420__Rule-Composition.sql`; V4-2-TRACE-004 |
 | V2-06 | RuleSet/BuildSet version-member rows | adapted | Collection meaning is retained through identified occurrences; V2/V3 pair-key membership is not the V4 composition authority. | `fragments__RDB-430__RuleSet-BuildSet.sql`; retained D2; C03 |
-| V2-07 | Instantiation, edit session, InputBlock, binding resolution, and permission-grant model | adapted | V4 recovers grouped inputs and immutable snapshots but keeps authorization as an independently approved boundary. | `fragments__RDB-440__Instantiation-InputBlock.sql`; V4-TRACE-008 |
-| V2-08 | SourceArtifact, context, ContentSummary, AgentText, and provenance model | adapted | Explanation/ingestion concepts return only through typed provenance relationships and separately approved layer contracts. | `fragments__RDB-460-470__Context-Content-Retained.sql`; V4-TRACE-020 |
+| V2-07 | Instantiation, edit session, InputBlock, binding resolution, and permission-grant model | adapted | V4 recovers grouped inputs and immutable snapshots but keeps authorization as an independently approved boundary. | `fragments__RDB-440__Instantiation-InputBlock.sql`; V4-2-TRACE-008 |
+| V2-08 | SourceArtifact, context, ContentSummary, AgentText, and provenance model | adapted | Explanation/ingestion concepts return only through typed provenance relationships and separately approved layer contracts. | `fragments__RDB-460-470__Context-Content-Retained.sql`; V4-2-TRACE-020 |
 | V2-09 | Separate physical `Tags` schema and legacy Tags tables | rejected | C08 places Tags inside `ATAPUtilities`; C09-C15 define the durable-root/State successor shape. | `fragments__RDB-460-470__Context-Content-Retained.sql`; C08-C15 |
-| V2-10 | Generic Gmail, Repository, Organization, and other retained-context tables as automatic V4 scope | rejected | A source-list entry or historical table is not V4 scope without a ratified requirement. | `fragments__RDB-460-470__Context-Content-Retained.sql`; V4-TRACE-022 |
+| V2-10 | Generic Gmail, Repository, Organization, and other retained-context tables as automatic V4 scope | rejected | A source-list entry or historical table is not V4 scope without a ratified requirement. | `fragments__RDB-460-470__Context-Content-Retained.sql`; V4-2-TRACE-022 |
 | V2-11 | RDB-500 language/domain catalog fragments A/B/C/D/E/F/H/I/O/P | adapted | The catalog evidence is preserved; exact V2 rows and GUIDs are not V4 seed authority. | `_Planning/InformationForTheFuture/RRSBS-V2-Design-Archive/INDEX.md`; RDB-500 fragments |
 | V2-12 | RDB-010D proposed consumer routing | superseded | Its proposals remain recovery evidence; V4 work requires current consumer discovery and an approved contract. | `RDB-010D__ConsumerMap.md` |
 | V2-13 | RDB-010F structured-GUID origin recommendations | superseded | C01 governs GUID text/value handling; V3 registry GUIDs remain baseline identities only. | `RDB-010F__structured-guid-origin-analysis.md`; C01 |

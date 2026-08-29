@@ -52,4 +52,11 @@ note bottom of InputDefinition
   The eight documented edge cases remain
   HITL-PENDING and explicitly unclassified.
 end note
+
+note top of Attempt
+  V4-2 scheduled ContentSummary ingestion uses
+  the same explicit attempt, checkpoint, idempotency,
+  and provenance principles, but remains a separate
+  host-service workflow from the calculation DAG.
+end note
 @enduml

@@ -8,6 +8,28 @@ the active `V00010__Create_ATAPUtilities_Initial_Schema_And_Seed.sql` source.
 Documentation of this contract does not itself authorize database creation,
 package publication, promotion, or deployment.
 
+### V4 successor annotation
+
+This dictionary remains the factual historical description of the implemented V3/PTV
+baseline. V4 is a forward successor, not a retroactive correction. The complete
+decision-level disposition is in
+[`RPRRSBSI-V4-05-Source-Synthesis-And-Traceability.md`](RPRRSBSI-V4-05-Source-Synthesis-And-Traceability.md).
+
+- The eleven-table baseline and its constraints are adopted as the migration starting
+  state, not as the complete V4 endpoint.
+- `Philote`, `PhiloteValidityPeriod`, `RuleKind`, `RulePrimitive`,
+  `RulePrimitiveInput`, `Rule`, `RuleSet`, `BuildSet`, and `Instantiation` are adapted
+  by additive V4 state, variant, occurrence, input, provenance, Tags, and execution
+  contracts.
+- `RuleSetRule` and `BuildSetRuleSet` remain historical V3 facts but are superseded for
+  V4 composition by separately identified occurrence rows.
+- The V3 prohibition on internal `Version` tables is adapted to ratified V4 terminology:
+  semantic history uses `State` or `Variant`, while software-release `Version` retains
+  its normal meaning.
+
+No statement here decides D3 edge cases, C16 through C27, FU-4, or FU-6; all remain
+`HITL-PENDING`.
+
 Content retrieval was requested with retrieval labels [RPRRSBSI,V3,physical-schema,data-dictionary], depth 3, width 2, production. gather-content-summary was unavailable (no registered command), so the direct-read fallback used the amended V3 plan, IPhilote.cs, and retained Path and PowerShell compendiums.
 
 All objects are in schema ATAPUtilities. Every foreign key has ON DELETE NO ACTION and ON UPDATE NO ACTION. Identifiers have no defaults and come from the seed registry. Every Ordinal is zero-based int NOT NULL with CHECK (Ordinal >= 0). No audit, extension, property-bag, ownership, or soft-delete column is allowed.

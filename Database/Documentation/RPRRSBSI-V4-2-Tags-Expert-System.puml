@@ -91,6 +91,21 @@ package "ATAPUtilities (C-08)" {
   entity "C-14 namespace/code collision trigger" as AliasTrigger <<trigger>>
   entity "C-15 transactional retraction procedure" as RetractPath <<write path>>
   entity "C-15 sanctioned as-of resolver" as ResolvePath <<read path>>
+
+  entity "Ace.ContentSummaryItem" as ContentSummaryItem {
+    * ContentSummaryItemId : identity <<PK>>
+    --
+    UserId : tenant identity
+    OrganizationId : tenant identity
+    ContentHash : immutable digest
+  }
+
+  entity "Ace.ContentSummaryItemTag" as ContentSummaryItemTag {
+    * ContentSummaryItemId : identity <<FK>>
+    * TagId : durable identity <<FK>>
+    --
+    AssignedAsOfUtc : instant
+  }
 }
 
 TagNamespace ||--o{ TagNamespaceSteward : records history
@@ -111,6 +126,8 @@ RetractPath ..> PhiloteValidityPeriod : closes or gaps
 RetractPath ..> TagState : appends terminal state
 ResolvePath ..> PhiloteValidityPeriod : resolves identity as-of
 ResolvePath ..> TagState : resolves payload as-of
+ContentSummaryItem ||--o{ ContentSummaryItemTag : classified by
+Tag ||--o{ ContentSummaryItemTag : durable endpoint
 
 note right of TagNamespaceSteward
   Self-steward on namespace creation.
@@ -148,5 +165,6 @@ legend bottom
   HITL-PENDING: D-3 cases, C-16 through C-27, FU-4, FU-6.
   No SQL, seed identity, live inventory, tenant, localization,
   ordering, authorization invariant, or successor-chain rule is inferred.
+  V4-2 ContentSummary associations are Ace-owned and tenant-scoped.
 endlegend
 @enduml

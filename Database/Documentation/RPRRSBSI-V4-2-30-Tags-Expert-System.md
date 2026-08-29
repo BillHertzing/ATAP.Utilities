@@ -1,11 +1,18 @@
-# RPRRSBSI-V4 Tags Expert System Specification
+# RPRRSBSI-V4-2 Tags Expert System Specification
 
 Status: reconciled documentation-only design contract for Task 15.140.b. This document
 defines no SQL, migration, CSV identity, live inventory, package/feed action, or
 deployment.
 
+## V4-2 ContentSummary integration
+
+- **V4-2-TAG-080:** Ace ContentSummary items SHALL associate to durable `TagId` roots; active labels and descriptions resolve through `TagState` at an explicit as-of instant.
+- **V4-2-TAG-081:** Scheduled ingestion MAY propose Tag assignments, but each assignment SHALL preserve producer, plugin/version, source hash, asserted time, recorded time, and policy/approval status once C-16 is ratified.
+- **V4-2-TAG-082:** AceCommander Tag-set search SHALL specify `Any` or `All` and return matched Tags and provenance. Tags SHALL never authorize returned content.
+- **V4-2-TAG-083:** Inferred Tags Rules and ContentSummary Rules remain Ace overlays or publication candidates. Ingestion SHALL NOT mutate immutable reference Rules.
+
 The editable diagram source is
-[RPRRSBSI-V4-Tags-Expert-System.puml](RPRRSBSI-V4-Tags-Expert-System.puml).
+[RPRRSBSI-V4-2-Tags-Expert-System.puml](RPRRSBSI-V4-2-Tags-Expert-System.puml).
 The tracked SVG is not embedded because the PlantUML source changed during this
 source-only reconciliation and no render was authorized for this worker unit.
 

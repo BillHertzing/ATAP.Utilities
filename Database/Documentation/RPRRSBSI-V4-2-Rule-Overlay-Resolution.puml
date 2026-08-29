@@ -50,5 +50,9 @@ note right
   D-4 RATIFIED:
   Override selects a RuleVariant of the same RuleId.
   The basic Rule is never copied for an overlay.
+
+  V4-2: Tags/ContentSummary ingestion may create
+  an Ace candidate or same-RuleId Override only.
+  It never publishes an ATAP Rule directly.
 end note
 @enduml

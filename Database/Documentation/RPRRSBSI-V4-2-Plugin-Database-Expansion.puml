@@ -1,0 +1,36 @@
+@startuml
+title RPRRSBSI V4-2 Plugin Database Expansion
+skinparam defaultFontName Segoe UI
+skinparam shadowing false
+left to right direction
+
+artifact "Signed plugin manifest" as Manifest
+component "Plugin host\ncapability mediation" as Host
+component "Host repositories" as Repo
+database "Outpost local projection" as Edge
+database "Ace mutable plane" as Ace
+database "ATAPUtilities\npublished reference" as Atap
+component "Isolated change workspace" as Workspace
+component "Ace migration gate" as AceGate
+component "productionPublishNewOrModifiedPlugin" as Publish
+
+Manifest --> Host : identity, version,\npermissions, data contract
+Host --> Repo : no arbitrary SQL
+Repo --> Edge
+Repo --> Ace
+Manifest --> Workspace : bounded proposal
+Workspace --> AceGate : validated immutable package
+AceGate --> Ace : forward-only declared effects
+Ace --> Publish : content-addressed candidate
+Publish --> Atap : approved new release
+
+note bottom of Host
+  Runtime plugin installation performs no DDL.
+  Tags never grant permissions.
+end note
+
+note bottom of Publish
+  Synchronization is not publication.
+  Ordinary Ace principals have no ATAP write.
+end note
+@enduml

@@ -1,31 +1,38 @@
-# RPRRSBSI-V4 Mechanized Engineering Specification
+# RPRRSBSI-V4-2 Mechanized Engineering Specification
 
 Status: reconciled documentation-only contract. It defines no SQL, allocates no GUID,
 and grants no live-system authority.
 
+## V4-2 platform relationship
+
+Mechanized Engineering remains a later consumer of the plugin, ContentSummary, Tags,
+edge-projection, and AISupervisor contracts. It is not part of the initial AceOutpost
+service. This preserves the D-8 validated-plan boundary and prevents purchasing or
+provisioning from widening the first Tags/ContentSummary and token-telemetry slice.
+
 Editable source:
-[RPRRSBSI-V4-Computer-Configuration.puml](RPRRSBSI-V4-Computer-Configuration.puml).
+[RPRRSBSI-V4-2-Computer-Configuration.puml](RPRRSBSI-V4-2-Computer-Configuration.puml).
 The previously rendered SVG is not embedded because the source changed; rendering is a
 coordinator-owned step.
 
 ## Authority and first-output boundary
 
 This specification consumes D-1 through D-8 from the
-[V4 overview](RPRRSBSI-V4-00-Specification-Overview.md), the reconciled
-[traceability](RPRRSBSI-V4-05-Source-Synthesis-And-Traceability.md),
-[core schema](RPRRSBSI-V4-10-Core-Schema-Enhancements.md), and
-[seed contract](RPRRSBSI-V4-20-Seed-Data-And-Loaders.md). It does not extend them.
+[V4 overview](RPRRSBSI-V4-2-00-Specification-Overview.md), the reconciled
+[traceability](RPRRSBSI-V4-2-05-Source-Synthesis-And-Traceability.md),
+[core schema](RPRRSBSI-V4-2-10-Core-Schema-Enhancements.md), and
+[seed contract](RPRRSBSI-V4-2-20-Seed-Data-And-Loaders.md). It does not extend them.
 
 Mechanized Engineering is the initial computer-system configuration expert system. Its
 first output SHALL stop at an explained, schema-valid **validated
 database-change/configuration plan**. The plan is information for review, not an
 approval, order, reservation, deployment instruction, or provisioning payload.
 
-- **V4-ME-001:** The first manifestation SHALL NOT purchase hardware, reserve inventory,
+- **V4-2-ME-001:** The first manifestation SHALL NOT purchase hardware, reserve inventory,
   invoke vendor APIs, change a live database, mutate infrastructure, or execute Ansible.
-- **V4-ME-002:** Purchasing, provisioning, execution, and deployment remain deferred
+- **V4-2-ME-002:** Purchasing, provisioning, execution, and deployment remain deferred
   behind separately named tasks and HITL gates.
-- **V4-ME-003:** No `HITL-PENDING` item gains normative force from an example, proposed
+- **V4-2-ME-003:** No `HITL-PENDING` item gains normative force from an example, proposed
   field, diagram element, or seed-file name here.
 
 ## ATAP reference and ACE overlay boundary
@@ -38,35 +45,35 @@ Ratified D-5 is an ownership rule independent of deployment topology.
 | Overlay/session | ACE user RuleSets, same-`RuleId` overlay RuleVariants, BuildSet occurrences, sessions, inputs, and plans. | ACE SHALL NOT copy an ATAP Rule to override it. |
 | Effective read | Topology-neutral union of authorized reference and overlay candidates. | No cross-database FK or location-based precedence. |
 
-- **V4-ME-010:** ATAP SHALL own immutable reference definitions; ACE SHALL own user
+- **V4-2-ME-010:** ATAP SHALL own immutable reference definitions; ACE SHALL own user
   overlays and sessions.
-- **V4-ME-011:** A topology-neutral union provider SHALL expose one logical candidate
+- **V4-2-ME-011:** A topology-neutral union provider SHALL expose one logical candidate
   shape whether the planes are co-located, separate, or read through an adapter.
-- **V4-ME-012:** Each candidate SHALL retain `SourceAuthority`, durable identity,
+- **V4-2-ME-012:** Each candidate SHALL retain `SourceAuthority`, durable identity,
   State/Variant identity, as-of applicability, RuleSet occurrence, membership role, and
   explicit precedence. Transport location SHALL NOT supply precedence.
-- **V4-ME-013:** Resolution SHALL occur once after union. Separately resolved ATAP and
+- **V4-2-ME-013:** Resolution SHALL occur once after union. Separately resolved ATAP and
   ACE results SHALL NOT be merged by an implicit caller rule.
-- **V4-ME-014:** ATAP SHALL NOT require a foreign key into an ACE database.
+- **V4-2-ME-014:** ATAP SHALL NOT require a foreign key into an ACE database.
 
 ## Identity, change, and overlay conformance
 
-- **V4-ME-020 (D-1):** GUID text at CSV/API boundaries SHALL use canonical lowercase
+- **V4-2-ME-020 (D-1):** GUID text at CSV/API boundaries SHALL use canonical lowercase
   dashed `D` format. Database equality, joins, and duplicates SHALL compare native GUID
   values, not text, case, or collation.
-- **V4-ME-021 (D-3):** A classified material declared-type change SHALL create a new
+- **V4-2-ME-021 (D-3):** A classified material declared-type change SHALL create a new
   registered semantic identity and leave earlier meaning immutable. Classified material
   cases are rule-kind changes, scalar-to-different-scalar changes, scalar/heap-object
   crossings, and any heap/object-type change, including single value to collection.
-- **V4-ME-022 (D-3):** Default-value-only and display-only-text changes are non-material
+- **V4-2-ME-022 (D-3):** Default-value-only and display-only-text changes are non-material
   and MAY preserve semantic identity through a new State or Variant. The eight edge cases
   remain `HITL-PENDING` and SHALL NOT become positive fixtures.
-- **V4-ME-023 (D-4):** An ACE overlay SHALL be a distinct `RuleVariant` of the same
+- **V4-2-ME-023 (D-4):** An ACE overlay SHALL be a distinct `RuleVariant` of the same
   durable `RuleId`, selected by an occurrence with role `Override`; the Rule SHALL NOT be
   copied.
-- **V4-ME-024 (D-2):** Higher `BuildSetRuleSetOccurrence.Ordinal` SHALL win through
+- **V4-2-ME-024 (D-2):** Higher `BuildSetRuleSetOccurrence.Ordinal` SHALL win through
   `Ordinal DESC`; duplicate ordinals in one BuildSet are invalid.
-- **V4-ME-025:** A plan SHALL bind effective RuleVariants and reference facts by durable
+- **V4-2-ME-025:** A plan SHALL bind effective RuleVariants and reference facts by durable
   identity and as-of instant so later definition changes cannot rewrite its explanation.
 
 ## Required inputs and normalization
@@ -82,12 +89,12 @@ Ratified D-5 is an ownership rule independent of deployment topology.
 | Power/thermal | Available power, PSU margin, acoustic/thermal envelope, cooling. |
 | Workload | Local LLM context, software build/test workload, and concurrency. |
 
-- **V4-ME-030:** Every input SHALL declare type, unit where applicable,
+- **V4-2-ME-030:** Every input SHALL declare type, unit where applicable,
   required/default status, normalization, constraints, and provenance.
-- **V4-ME-031:** Currency and quantities SHALL be normalized before calculation while
+- **V4-2-ME-031:** Currency and quantities SHALL be normalized before calculation while
   retaining the submitted representation for explanation.
-- **V4-ME-032:** Unknown, omitted, and intentionally unconstrained SHALL remain distinct.
-- **V4-ME-033:** Input validation SHALL reject non-canonical GUID boundary text even
+- **V4-2-ME-032:** Unknown, omitted, and intentionally unconstrained SHALL remain distinct.
+- **V4-2-ME-033:** Input validation SHALL reject non-canonical GUID boundary text even
   when it parses to an existing native GUID. Formatting validation remains distinct from
   native-value identity comparison.
 
@@ -103,21 +110,21 @@ The first manifestation has one non-effecting pipeline:
 5. Validate plan completeness, identity bindings, explanations, and findings.
 6. Emit the validated plan and stop.
 
-- **V4-ME-040:** Compatibility rules SHALL evaluate socket/platform, memory, form
+- **V4-2-ME-040:** Compatibility rules SHALL evaluate socket/platform, memory, form
   factor, interfaces, power connectors, physical clearances, and supported capacities.
-- **V4-ME-041:** Cost SHALL produce line items, subtotal, contingency, and total from
+- **V4-2-ME-041:** Cost SHALL produce line items, subtotal, contingency, and total from
   as-of price facts. Missing or stale prices become findings, never implicit zeroes.
-- **V4-ME-042:** Power and thermal rules SHALL expose load estimates, required margin,
+- **V4-2-ME-042:** Power and thermal rules SHALL expose load estimates, required margin,
   inputs, and assumptions.
-- **V4-ME-043:** Memory adequacy SHALL account for workload reserve and local-LLM
+- **V4-2-ME-043:** Memory adequacy SHALL account for workload reserve and local-LLM
   context, exposing assumptions and inputs.
-- **V4-ME-044:** Workload scores SHALL remain separated and explainable, not one opaque
+- **V4-2-ME-044:** Workload scores SHALL remain separated and explainable, not one opaque
   ranking.
-- **V4-ME-045:** Violations SHALL carry severity, Rule identity, implicated inputs or
+- **V4-2-ME-045:** Violations SHALL carry severity, Rule identity, implicated inputs or
   components, explanation, and suggested remediation.
-- **V4-ME-046:** A budget change SHALL dirty cost, budget findings, and reachable plan
+- **V4-2-ME-046:** A budget change SHALL dirty cost, budget findings, and reachable plan
   outputs, but SHALL NOT dirty unrelated compatibility calculations.
-- **V4-ME-047:** Identical normalized inputs, effective definitions, reference facts,
+- **V4-2-ME-047:** Identical normalized inputs, effective definitions, reference facts,
   and as-of instant SHALL produce canonically identical plan content.
 
 ## Validated plan contract
@@ -137,16 +144,16 @@ result is explicit.
 | Deferred acquisition | Non-executing suggestions and alternatives; no order or reservation instruction. |
 | Unresolved choices | Missing or conflicting requirements preventing a complete configuration. |
 
-- **V4-ME-050:** `Validated` SHALL mean that plan schema, identity bindings, effective
+- **V4-2-ME-050:** `Validated` SHALL mean that plan schema, identity bindings, effective
   resolution, calculations, and required findings passed. It SHALL NOT mean approved for
   purchasing, provisioning, execution, or deployment.
-- **V4-ME-051:** Failed or incomplete validation SHALL emit diagnostics and SHALL NOT be
+- **V4-2-ME-051:** Failed or incomplete validation SHALL emit diagnostics and SHALL NOT be
   relabeled as a validated plan.
-- **V4-ME-052:** Recommendations SHALL explain which RuleVariant and reference fact
+- **V4-2-ME-052:** Recommendations SHALL explain which RuleVariant and reference fact
   caused each selection or rejection.
-- **V4-ME-053:** The plan SHALL retain shadowed candidates for explanation while
+- **V4-2-ME-053:** The plan SHALL retain shadowed candidates for explanation while
   exposing exactly one effective candidate per resolved RuleId.
-- **V4-ME-054:** The plan SHALL contain no credential, secret value, executable SQL,
+- **V4-2-ME-054:** The plan SHALL contain no credential, secret value, executable SQL,
   vendor checkout payload, provisioning command, or live target instruction.
 
 ## Required overlay conformance scenario

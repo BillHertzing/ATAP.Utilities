@@ -22,7 +22,7 @@ public sealed class WindowsTokenSourceConfigurationTests
     var options = Assert.IsType<WindowsBwsTokenSourceOptions>(registration.ImplementationInstance);
     Assert.Equal(slotId, options.EnabledSlotId);
     Assert.Equal("AceOutpost", options.ApplicationId);
-    Assert.Equal("AceOutpost", options.VaultGroupingId);
+    Assert.Equal("Ace", options.VaultGroupingId);
     Assert.Equal(WindowsBwsTokenPhysicalFormat.AtapBwsDpapiEnvelopeV1, options.ResolveConfiguredSlot().PhysicalFormat);
   }
 
@@ -40,18 +40,19 @@ public sealed class WindowsTokenSourceConfigurationTests
     var options = Assert.IsType<WindowsBwsTokenSourceOptions>(registration.ImplementationInstance);
     Assert.Equal(slotId, options.EnabledSlotId);
     Assert.Equal("AceCommander", options.ApplicationId);
-    Assert.Equal("AceCommander", options.VaultGroupingId);
+    Assert.Equal("Ace", options.VaultGroupingId);
     Assert.Equal(WindowsBwsTokenPhysicalFormat.AtapBwsDpapiEnvelopeV1, options.ResolveConfiguredSlot().PhysicalFormat);
   }
 
   [Fact]
-  public void RegisteredProfiles_KeepAceCommanderAndAceOutpostApplicationIdentitiesDisjoint()
+  public void RegisteredProfiles_ShareAceVaultGroupingButKeepApplicationIdentitiesDisjoint()
   {
     var aceCommander = WindowsBwsTokenSlotProfile.Registered["acecommander-application"];
     var aceOutpost = WindowsBwsTokenSlotProfile.Registered["aceoutpost-application"];
 
     Assert.NotEqual(aceOutpost.ApplicationId, aceCommander.ApplicationId);
-    Assert.NotEqual(aceOutpost.VaultGroupingId, aceCommander.VaultGroupingId);
+    Assert.Equal("Ace", aceOutpost.VaultGroupingId);
+    Assert.Equal(aceOutpost.VaultGroupingId, aceCommander.VaultGroupingId);
     Assert.Equal(BwsTokenPurpose.ReadOnly, aceCommander.Descriptor.Purpose);
   }
 

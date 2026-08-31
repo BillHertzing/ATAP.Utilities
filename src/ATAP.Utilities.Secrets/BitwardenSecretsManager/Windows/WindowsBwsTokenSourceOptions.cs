@@ -66,10 +66,10 @@ public sealed record WindowsBwsTokenSlotProfile(
   public static IReadOnlyDictionary<string, WindowsBwsTokenSlotProfile> Registered { get; } =
     new Dictionary<string, WindowsBwsTokenSlotProfile>(StringComparer.Ordinal)
     {
-      ["aceoutpost-application"] = new("aceoutpost-application", WindowsBwsTokenSlotDescriptor.ApplicationEnvelope, "AceOutpost", "AceOutpost"),
-      ["aceoutpost-developer"] = new("aceoutpost-developer", WindowsBwsTokenSlotDescriptor.ApplicationEnvelope, "AceOutpost", "AceOutpost"),
-      ["acecommander-application"] = new("acecommander-application", WindowsBwsTokenSlotDescriptor.ApplicationEnvelope, "AceCommander", "AceCommander"),
-      ["acecommander-developer"] = new("acecommander-developer", WindowsBwsTokenSlotDescriptor.ApplicationEnvelope, "AceCommander", "AceCommander"),
+      ["aceoutpost-application"] = new("aceoutpost-application", WindowsBwsTokenSlotDescriptor.ApplicationEnvelope, "AceOutpost", "Ace"),
+      ["aceoutpost-developer"] = new("aceoutpost-developer", WindowsBwsTokenSlotDescriptor.ApplicationEnvelope, "AceOutpost", "Ace"),
+      ["acecommander-application"] = new("acecommander-application", WindowsBwsTokenSlotDescriptor.ApplicationEnvelope, "AceCommander", "Ace"),
+      ["acecommander-developer"] = new("acecommander-developer", WindowsBwsTokenSlotDescriptor.ApplicationEnvelope, "AceCommander", "Ace"),
     };
 }
 

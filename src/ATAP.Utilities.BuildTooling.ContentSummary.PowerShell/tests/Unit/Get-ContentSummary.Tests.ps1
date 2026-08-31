@@ -1,13 +1,31 @@
 BeforeAll {
   $script:moduleRoot = Split-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -Parent
+  $script:moduleName = 'ATAP.Utilities.BuildTooling.ContentSummary.PowerShell'
   Import-Module -Name 'ATAP.Utilities.Powershell' -MinimumVersion '0.2.1' -Force
   Import-Module -Name 'ATAP.Utilities.BuildTooling.Common.PowerShell' -MinimumVersion '0.1.10' -Force
   Import-Module -Name 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell' -MinimumVersion '0.1.34' -Force
-  Import-Module -Name (Join-Path $script:moduleRoot 'ATAP.Utilities.BuildTooling.ContentSummary.PowerShell.psm1') -Force
-  $script:moduleName = 'ATAP.Utilities.BuildTooling.ContentSummary.PowerShell'
+  $promotedManifest = [System.Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'Process')
+  $moduleToTest = if ([string]::IsNullOrWhiteSpace($promotedManifest)) {
+    Join-Path $script:moduleRoot 'ATAP.Utilities.BuildTooling.ContentSummary.PowerShell.psd1'
+  } else {
+    $promotedManifest
+  }
+  Remove-Module -Name $script:moduleName -Force -ErrorAction SilentlyContinue
+  Import-Module -Name $moduleToTest -Force -ErrorAction Stop
 }
 
 Describe 'Get-ContentSummary [public]' -Tag 'Unit' {
+  It 'loads exactly one target module from the selected manifest' {
+    $loadedModules = @(Get-Module -Name $script:moduleName)
+    $loadedModules.Count | Should -Be 1
+
+    $promotedManifest = [System.Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'Process')
+    if (-not [string]::IsNullOrWhiteSpace($promotedManifest)) {
+      [System.IO.Path]::GetFullPath($loadedModules[0].ModuleBase) |
+        Should -BeExactly ([System.IO.Path]::GetFullPath((Split-Path -Path $promotedManifest -Parent)))
+    }
+  }
+
   BeforeEach {
     $global:settings = @{
       AceOutpost = @{

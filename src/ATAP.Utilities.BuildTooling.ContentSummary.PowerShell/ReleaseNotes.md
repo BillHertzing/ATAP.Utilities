@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.1.3
+
+- Ship the REST02-compatible UUID `Idempotency-Key` client as the immutable stable
+  replacement. Version 0.1.2 was the verified source candidate and was not published.
+
+## 0.1.2
+
+- Send a distinct UUID `Idempotency-Key` header for each logical `Get-ContentSummary`
+  invocation while preserving the four-field JSON body and SQL-free PowerShell boundary.
+
 ## 0.1.1
 
 - Correct the promoted-artifact test loader so it imports exactly the manifest selected by

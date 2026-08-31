@@ -196,7 +196,8 @@ function Get-ContentSummary {
       }
       else {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling $($uri.AbsoluteUri)" -Tag 'RestCall'
-        $response = Invoke-RestMethod -Uri $uri -Method Post -ContentType 'application/json' -Body $body -ErrorAction Stop
+        $headers = @{ 'Idempotency-Key' = [guid]::NewGuid().ToString('D') }
+        $response = Invoke-RestMethod -Uri $uri -Method Post -Headers $headers -ContentType 'application/json' -Body $body -ErrorAction Stop
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from $($uri.AbsoluteUri)" -Tag 'RestCall'
 
         $responseStatus = if ($null -ne $response.PSObject.Properties['status'] -and -not [string]::IsNullOrWhiteSpace([string]$response.status)) { [string]$response.status } else { 'ok' }

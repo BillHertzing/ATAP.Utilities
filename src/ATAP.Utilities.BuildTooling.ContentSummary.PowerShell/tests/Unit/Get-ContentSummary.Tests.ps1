@@ -65,6 +65,9 @@ Describe 'Get-ContentSummary [public]' -Tag 'Unit' {
       $Method -eq 'Post' -and
       $ContentType -eq 'application/json' -and
       $Uri.AbsoluteUri -eq 'https://localhost:50042/api/v1/gather-content' -and
+      $Headers.Count -eq 1 -and
+      $Headers.ContainsKey('Idempotency-Key') -and
+      [guid]::Parse([string]$Headers['Idempotency-Key']) -ne [guid]::Empty -and
       (($Body | ConvertFrom-Json).PSObject.Properties.Name -join ',') -eq 'tags,depth,width,instance'
     }
     Should -Invoke Write-GatherCallRecord -ModuleName $script:moduleName -Times 1 -ParameterFilter {
@@ -144,6 +147,22 @@ Describe 'Get-ContentSummary [public]' -Tag 'Unit' {
     Should -Invoke Invoke-RestMethod -ModuleName $script:moduleName -Times 1 -ParameterFilter {
       $Body -notmatch 'super-secret|token|prompt|authorization|connectionstring'
     }
+  }
+
+  It 'generates a distinct idempotency UUID for each logical invocation' {
+    $script:observedIdempotencyKeys = [System.Collections.Generic.List[string]]::new()
+    Mock -CommandName Invoke-RestMethod -ModuleName $script:moduleName {
+      $script:observedIdempotencyKeys.Add([string]$Headers['Idempotency-Key'])
+      [pscustomobject]@{ agent = 'gather-content-summary'; status = 'success'; items = @(); truncated = $false }
+    }
+
+    Get-ContentSummary -Tags @('first') -Port 50041 -WorktreeRoot 'C:\fixture\repo' | Out-Null
+    Get-ContentSummary -Tags @('second') -Port 50041 -WorktreeRoot 'C:\fixture\repo' | Out-Null
+
+    $script:observedIdempotencyKeys.Count | Should -Be 2
+    [guid]::Parse($script:observedIdempotencyKeys[0]) | Should -Not -Be ([guid]::Empty)
+    [guid]::Parse($script:observedIdempotencyKeys[1]) | Should -Not -Be ([guid]::Empty)
+    $script:observedIdempotencyKeys[0] | Should -Not -BeExactly $script:observedIdempotencyKeys[1]
   }
 
   It 'returns the stable six-member agent envelope' {

@@ -6,7 +6,8 @@ function Test-SprintCheckpointCoverage {
   .DESCRIPTION
   Reads the canonical Planning roster and verifies that every selected sprint
   worktree has a latest entry whose conversation archive is reachable beneath
-  SprintWorkSessionConversations. Memory is accepted beneath
+  SprintWorkSessionConversations, and that the archive actually holds that
+  worktree's session (ConversationState; see SC-0327). Memory is accepted beneath
   SprintWorkSessionMemorys when the agent supports a memory snapshot. No
   Claude-, Codex-, Copilot-, or Antigravity-local path is needed for discovery.
 
@@ -95,6 +96,8 @@ function Test-SprintCheckpointCoverage {
           Agent = $null
           RecordedAt = $null
           ConversationArchiveReachable = $false
+          ConversationState = 'MissingRosterEntry'
+          ConversationSelectionRule = $null
           MemoryState = 'MissingRosterEntry'
           Ok = $false
         }
@@ -119,6 +122,38 @@ function Test-SprintCheckpointCoverage {
         [void]$failures.Add(
           "$worktreeName latest checkpoint archive is not reachable beneath the canonical conversation root."
         )
+      }
+
+      # SC-0327: a reachable archive proves a FILE was written, not that it holds
+      # THIS worktree's session. Before transcript selection was pinned to the
+      # invoking session id, a row could satisfy coverage by worktree name while its
+      # archive held an unrelated session's conversation. Save-SprintWorkSession now
+      # records which rule chose the transcript, so classify that here instead of
+      # accepting any archive as equivalent.
+      #   VerifiedSession   -> chosen by session id; the row covers the session it names
+      #   UnverifiedSession -> chosen by newest-mtime; may be a different session
+      #   NotCaptured       -> the session's transcript was not found; nothing archived
+      #   Unrecorded        -> a legacy row written before the rule was recorded
+      $conversationState = if ($entry.PSObject.Properties.Name -notcontains 'ConversationSelectionRule' -or
+        [string]::IsNullOrWhiteSpace([string]$entry.ConversationSelectionRule)) {
+        'Unrecorded'
+      } elseif ([string]$entry.ConversationSkipKind -eq 'NotFound') {
+        'NotCaptured'
+      } elseif ([string]$entry.ConversationSelectionRule -in @('ExplicitSessionId', 'EnvironmentSessionId', 'SessionIdCrossStore')) {
+        'VerifiedSession'
+      } else {
+        'UnverifiedSession'
+      }
+
+      if ($conversationState -eq 'NotCaptured') {
+        [void]$failures.Add(
+          "$worktreeName latest checkpoint archived no conversation: $([string]$entry.ConversationSkipReason)"
+        )
+      } elseif ($conversationState -eq 'UnverifiedSession') {
+        # Not a failure: agents that expose no session id legitimately land here, and
+        # failing would strand them. But it must be visible, because the archive cannot
+        # be assumed to be the session this row names.
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "$worktreeName latest checkpoint selected its transcript by '$([string]$entry.ConversationSelectionRule)'; the archived conversation is not confirmed to be that worktree's session."
       }
 
       $memoryState = if ([bool]$entry.MemorySnapshotCreated) {
@@ -156,8 +191,10 @@ function Test-SprintCheckpointCoverage {
         RecordedAt = $entry.RecordedAt
         ConversationArchivePath = $archivePath
         ConversationArchiveReachable = $archiveReachable
+        ConversationState = $conversationState
+        ConversationSelectionRule = [string]$entry.ConversationSelectionRule
         MemoryState = $memoryState
-        Ok = ($archiveReachable -and $memoryState -notin @(
+        Ok = ($archiveReachable -and $conversationState -ne 'NotCaptured' -and $memoryState -notin @(
             'MissingCanonicalMemory',
             'MemoryNotCaptured'
           ))

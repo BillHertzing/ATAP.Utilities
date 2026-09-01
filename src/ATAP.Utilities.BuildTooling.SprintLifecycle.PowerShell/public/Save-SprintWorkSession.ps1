@@ -16,8 +16,14 @@ function Save-SprintWorkSession {
 
     Four agent families are supported via -Agent:
 
-      * ClaudeCode  (default) — transcript JSONL under ~\.claude\projects\<slug>\;
-        memory from the same slug's memory\ folder.
+      * ClaudeCode  (default) — transcript JSONL under ~\.claude\projects\<slug>\,
+        named <session-id>.jsonl; memory from a project store's memory\ folder.
+        The transcript is selected by session id (-SessionId, else
+        $env:CLAUDE_CODE_SESSION_ID), searching this repository's project store,
+        then the stable-repo store, then every store — because a session rooted in
+        one worktree routinely checkpoints work done in another.  Newest-by-mtime
+        is used only when no session id is available, and the roster row then
+        records ConversationSelectionRule = 'NewestInProjectStore' (SC-0327).
       * Antigravity (Google DeepMind / Gemini) — transcript under the brain folder
         ~\.gemini\antigravity\brain\<ConversationId>\.system_generated\logs\
         (transcript_full.jsonl, falling back to transcript.jsonl); memory is every
@@ -47,9 +53,18 @@ function Save-SprintWorkSession {
     'Antigravity'), the most-recently-modified brain folder is auto-detected.
 
 .PARAMETER SessionId
-    Codex session UUID embedded in the rollout transcript filename
-    (rollout-<ISO-timestamp>-<SessionId>.jsonl).  When omitted (and -Agent is
-    'Codex'), the most-recently-modified rollout JSONL is auto-detected.
+    The invoking agent session's own UUID.
+
+    For 'Codex' it is the id embedded in the rollout transcript filename
+    (rollout-<ISO-timestamp>-<SessionId>.jsonl); when omitted, the
+    most-recently-modified rollout JSONL is auto-detected.
+
+    For 'ClaudeCode' it is the id that names the transcript
+    (<SessionId>.jsonl) under ~\.claude\projects\<slug>\.  When omitted, it
+    falls back to $env:CLAUDE_CODE_SESSION_ID, and only if that is absent does
+    the function fall back to newest-by-mtime.  Pass it whenever the caller knows
+    it: it is the only input that identifies the invoking session exactly, and a
+    project store routinely holds transcripts from several concurrent sessions.
 
 .PARAMETER ConversationFile
     Copilot-only: path to a pre-written markdown file containing the reconstructed
@@ -77,7 +92,11 @@ function Save-SprintWorkSession {
     Defaults to ~\.claude\projects.
 
 .OUTPUTS
-    [void]
+    [PSCustomObject] — the same facts appended to the sprint session roster,
+    including ConversationJsonlPath, ConversationSelectionRule (which rule chose
+    the transcript), ConversationSkipKind / ConversationSkipReason (set when no
+    transcript could be resolved, or when one was chosen by an unverified rule),
+    and the corresponding Memory* fields.
 
 .EXAMPLE
     Save-SprintWorkSession
@@ -102,6 +121,12 @@ function Save-SprintWorkSession {
 .EXAMPLE
     Save-SprintWorkSession -Agent Codex -SessionId '019eced5-2e16-7c80-bfc0-333ccd663db1'
     # Checkpoint a Codex session by its rollout session id (auto-detected when omitted).
+
+.EXAMPLE
+    Save-SprintWorkSession -Agent ClaudeCode -SessionId $env:CLAUDE_CODE_SESSION_ID
+    # Checkpoint THIS Claude Code session, wherever its transcript lives. Required
+    # form when the session's own project store differs from the repository being
+    # checkpointed, which is the normal shape of cross-repository work here.
 
 .NOTES
     AI assisted using Powershell.instructions.md as guidelines
@@ -390,6 +415,21 @@ function Save-SprintWorkSession {
             $slug = $null
             $agentSessionKey = $null
             $conversationDbPath = $null
+            # Which rule actually chose $jsonl (SC-0327). A checkpoint that cannot say
+            # HOW it picked a transcript cannot be audited, and the newest-by-mtime
+            # heuristic is wrong whenever more than one session writes to a store.
+            #   ExplicitSessionId    -> caller passed -SessionId
+            #   EnvironmentSessionId -> resolved from the agent's own session-id variable
+            #   SessionIdCrossStore  -> as above, but the transcript lives under a project
+            #                           store other than the checkpointed repository's
+            #   NewestInProjectStore -> no session id was available; newest mtime was used
+            #   NotApplicable        -> agent whose store is keyed some other way
+            $conversationSelectionRule = 'NotApplicable'
+            # Discriminated conversation-skip outcome, mirroring MemorySkipKind:
+            #   NotFound  -> the invoking session is known and its transcript is not on disk
+            #   Ambiguous -> no session id, and the store holds several candidate transcripts
+            $conversationSkipKind = $null
+            $conversationSkipReason = $null
 
             switch ($Agent) {
                 'ClaudeCode' {
@@ -412,14 +452,86 @@ function Save-SprintWorkSession {
                     $stableSlug = if ($stableCwd -ne $cwd) { & $makeSlug $stableCwd } else { $null }
 
                     $sessionDir = Resolve-CaseInsensitiveChildDirectory -ParentPath $ClaudeProjectsRoot -ChildName $slug
-                    $jsonl = Get-ChildItem -Path $sessionDir -Filter '*.jsonl' -ErrorAction SilentlyContinue |
-                        Sort-Object LastWriteTime -Descending |
-                        Select-Object -First 1
 
-                    if (-not $jsonl) {
-                        # Worktree fallback: use the stable repo slug computed above and
-                        # search there.
+                    # ── Transcript selection (SC-0327) ────────────────────────────────
+                    # Claude Code names each transcript '<session-id>.jsonl', so the
+                    # invoking session's id identifies its transcript EXACTLY. Prefer it
+                    # over any heuristic:
+                    #
+                    #   1. -SessionId, when the caller passes it.
+                    #   2. The runtime's own session-id environment variable.
+                    #   3. Newest-by-mtime in the project store (legacy fallback only).
+                    #
+                    # Rule 3 is not a tie-breaker, it is a guess, and it is wrong in the
+                    # normal case here: a session rooted in one worktree routinely does its
+                    # writing in another, and several agents write to one store
+                    # concurrently. Twice observed archiving an unrelated session's
+                    # transcript while reporting success. Keep it only for runtimes that
+                    # expose no session id, and record on the roster row that a guess was
+                    # made.
+                    $claudeSessionId = if ($SessionId) {
+                        $conversationSelectionRule = 'ExplicitSessionId'
+                        $SessionId
+                    } elseif ($env:CLAUDE_CODE_SESSION_ID) {
+                        $conversationSelectionRule = 'EnvironmentSessionId'
+                        $env:CLAUDE_CODE_SESSION_ID
+                    } else {
+                        $null
+                    }
+
+                    if ($claudeSessionId) {
+                        # Search the two keys tied to this repository first so the common
+                        # case stays cheap and the reported store is the expected one, then
+                        # sweep every project store. The cross-store sweep is what makes a
+                        # checkpoint run from a DIFFERENT repository than the session's own
+                        # root find the right transcript instead of a wrong one.
+                        $transcriptName = "$claudeSessionId.jsonl"
+                        $orderedStores = @($sessionDir)
                         if ($stableSlug) {
+                            $orderedStores += Resolve-CaseInsensitiveChildDirectory -ParentPath $ClaudeProjectsRoot -ChildName $stableSlug
+                        }
+
+                        foreach ($store in $orderedStores) {
+                            $candidate = Join-Path $store $transcriptName
+                            if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+                                $jsonl = Get-Item -LiteralPath $candidate
+                                $slug = Split-Path -Path $store -Leaf
+                                $sessionDir = $store
+                                break
+                            }
+                        }
+
+                        if (-not $jsonl) {
+                            $crossStoreHit = Get-ChildItem -LiteralPath $ClaudeProjectsRoot -Directory -ErrorAction SilentlyContinue |
+                                ForEach-Object { Join-Path $_.FullName $transcriptName } |
+                                Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } |
+                                Select-Object -First 1
+                            if ($crossStoreHit) {
+                                $jsonl = Get-Item -LiteralPath $crossStoreHit
+                                $sessionDir = Split-Path -Path $crossStoreHit -Parent
+                                $slug = Split-Path -Path $sessionDir -Leaf
+                                $conversationSelectionRule = 'SessionIdCrossStore'
+                                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Session '$claudeSessionId' transcript found under project store '$slug', not under the checkpointed repository's store '$sprintSlug'. This is normal for a cross-repository session."
+                            }
+                        }
+
+                        if (-not $jsonl) {
+                            # The invoking session is KNOWN and its transcript is not on
+                            # disk. Falling back to newest-by-mtime here would reintroduce
+                            # exactly the silent wrong-file success this contract exists to
+                            # prevent, so report the skip instead of guessing.
+                            $conversationSkipKind = 'NotFound'
+                            $conversationSkipReason = "No transcript named '$transcriptName' found under any project store in '$ClaudeProjectsRoot'. The invoking session id is known, so no newest-file fallback was attempted."
+                            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "$conversationSkipReason — conversation archive skipped."
+                        }
+                    } else {
+                        # No session id available. Legacy newest-by-mtime, sprint key then
+                        # stable key, flagged so the roster row never implies certainty.
+                        $jsonl = Get-ChildItem -Path $sessionDir -Filter '*.jsonl' -ErrorAction SilentlyContinue |
+                            Sort-Object LastWriteTime -Descending |
+                            Select-Object -First 1
+
+                        if (-not $jsonl -and $stableSlug) {
                             $stableSessionDir = Resolve-CaseInsensitiveChildDirectory -ParentPath $ClaudeProjectsRoot -ChildName $stableSlug
                             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "No JSONL at sprint slug '$slug'; trying stable slug '$stableSlug'"
                             $jsonl = Get-ChildItem -Path $stableSessionDir -Filter '*.jsonl' -ErrorAction SilentlyContinue |
@@ -431,10 +543,26 @@ function Save-SprintWorkSession {
                                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Using stable repo slug '$slug' — Claude Code was launched from the main repo root"
                             }
                         }
+
+                        if ($jsonl) {
+                            $conversationSelectionRule = 'NewestInProjectStore'
+                            $storeTranscriptCount = @(Get-ChildItem -Path $sessionDir -Filter '*.jsonl' -ErrorAction SilentlyContinue).Count
+                            if ($storeTranscriptCount -gt 1) {
+                                # Not fatal — but the caller must never read this row as an
+                                # assertion that the invoking session was captured.
+                                $conversationSkipKind = 'Ambiguous'
+                                $conversationSkipReason = "No session id was available and project store '$slug' holds $storeTranscriptCount transcripts; '$($jsonl.Name)' was chosen by newest modification time and may belong to a different session. Pass -SessionId to select the invoking session."
+                                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message $conversationSkipReason
+                            }
+                        } else {
+                            $conversationSkipKind = 'NotFound'
+                            $conversationSkipReason = "No JSONL found in '$sessionDir' and no session id was available. Slug derived: $slug"
+                            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "$conversationSkipReason — conversation archive skipped."
+                        }
                     }
 
-                    if (-not $jsonl) {
-                        throw "No JSONL found in '$sessionDir' — verify the slug is correct. Slug derived: $slug"
+                    if ($jsonl) {
+                        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Conversation transcript selected by rule '$conversationSelectionRule': $($jsonl.FullName)"
                     }
 
                     # Memory lives under a project slug, but NOT necessarily the same slug
@@ -446,9 +574,17 @@ function Save-SprintWorkSession {
                     # Probe order is sprint key first, then stable key: a live sprint store
                     # must never be shadowed by a staler stable one. Neither is under the
                     # _Planning slug.
+                    #
+                    # The store the transcript was resolved from is a LAST candidate
+                    # (SC-0327): when the invoking session lives under a third project
+                    # store, its memory is there and nowhere else, but a live store keyed
+                    # to the repository being checkpointed still takes precedence.
                     $memoryCandidateSlugs = @($sprintSlug)
                     if ($stableSlug -and $stableSlug -ne $sprintSlug) {
                         $memoryCandidateSlugs += $stableSlug
+                    }
+                    if ($slug -and $memoryCandidateSlugs -notcontains $slug) {
+                        $memoryCandidateSlugs += $slug
                     }
 
                     $memSrcDir = $null
@@ -475,7 +611,10 @@ function Save-SprintWorkSession {
                     }
 
                     $memoryCopyMode = 'ClaudeMd'
-                    $agentSessionKey = $slug
+                    # Prefer the session id: the slug only identifies a project store, and
+                    # a store holds many sessions, so a slug alone cannot answer "which
+                    # session does this roster row cover?" (SC-0327).
+                    $agentSessionKey = if ($claudeSessionId) { $claudeSessionId } else { $slug }
                 }
 
                 'Antigravity' {
@@ -486,6 +625,8 @@ function Save-SprintWorkSession {
                     if (-not (Test-Path $brainRoot)) {
                         throw "Antigravity brain root not found: '$brainRoot'. Pass -AntigravityRoot to override."
                     }
+
+                    $conversationSelectionRule = if ($ConversationId) { 'ExplicitSessionId' } else { 'NewestInProjectStore' }
 
                     if (-not $ConversationId) {
                         $newestBrain = Get-ChildItem -Path $brainRoot -Directory -ErrorAction SilentlyContinue |
@@ -537,6 +678,7 @@ function Save-SprintWorkSession {
                     # first, then archived_sessions.
                     $sessionsRoot = Join-Path $CodexRoot 'sessions'
                     $archivedRoot = Join-Path $CodexRoot 'archived_sessions'
+                    $conversationSelectionRule = if ($SessionId) { 'ExplicitSessionId' } else { 'NewestInProjectStore' }
                     $rollFilter = if ($SessionId) { "rollout-*-$SessionId.jsonl" } else { 'rollout-*.jsonl' }
 
                     foreach ($root in @($sessionsRoot, $archivedRoot)) {
@@ -601,9 +743,15 @@ function Save-SprintWorkSession {
             # The durable archive retains the descriptive $convName; only its transient
             # input lives under the system temporary directory.
             $snapshotDir = Join-Path ([IO.Path]::GetTempPath()) "ATAP-checkpoint-$($nameComponents.Disambiguator)"
-            $snapshot = Join-Path $snapshotDir $jsonl.Name
+            $snapshot = if ($jsonl) { Join-Path $snapshotDir $jsonl.Name } else { $null }
 
-            if ($PSCmdlet.ShouldProcess($archive, "Archive conversation JSONL '$($jsonl.Name)'")) {
+            if (-not $jsonl) {
+                # Transcript selection reported a skip (SC-0327). Continue so the memory
+                # snapshot and the roster row are still written -- but write a row that
+                # says plainly no conversation was captured, rather than one that archives
+                # some other session's transcript and reports success.
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "No conversation transcript resolved ($conversationSkipKind); conversation archive skipped. $conversationSkipReason"
+            } elseif ($PSCmdlet.ShouldProcess($archive, "Archive conversation JSONL '$($jsonl.Name)'")) {
                 try {
                     New-Item -ItemType Directory -Path $snapshotDir -Force | Out-Null
                     Copy-ConversationSnapshot -SourcePath $jsonl.FullName -DestinationPath $snapshot
@@ -701,7 +849,10 @@ function Save-SprintWorkSession {
                 WorktreePath               = $cwd
                 Branch                     = $branch
                 SessionSlug                = $slug
-                ConversationJsonlPath      = $jsonl.FullName
+                ConversationJsonlPath      = if ($jsonl) { $jsonl.FullName } else { $null }
+                ConversationSelectionRule  = $conversationSelectionRule
+                ConversationSkipKind       = $conversationSkipKind
+                ConversationSkipReason     = $conversationSkipReason
                 ConversationArchivePath    = $archive
                 ConversationArchiveCreated = $archiveCreated
                 ConversationDbPath         = $conversationDbPath

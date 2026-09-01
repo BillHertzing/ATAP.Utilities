@@ -326,7 +326,7 @@ Describe 'New-DatabaseChangePackage — output validation' {
 
     # Count staged db files
     $dbDir = Join-Path $stagingDir 'db'
-    $stagedCount = (Get-ChildItem -Recurse -File $dbDir).Count
+    $stagedCount = @(Get-ChildItem -Recurse -File $dbDir).Count
     $evidence.files.Count | Should -Be $stagedCount
   }
 }

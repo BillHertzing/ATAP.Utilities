@@ -543,6 +543,7 @@ Describe 'Task 9.10 behavior: per-tier apply + rehearsal helpers' {
             $r = Invoke-DatabasePackageTierRehearsal -NupkgPath $script:FakeNupkg `
                 -Application 'ATAPUtilities' -Tier 'Development' -BuildId '123' `
                 -ConnectionStringSecretName 'dbConnectionString-x'
+            @($r).Count | Should -Be 1
             $r.Success | Should -BeTrue
             Remove-Item Function:\Invoke-DatabasePackageRehearsal -ErrorAction SilentlyContinue
         }

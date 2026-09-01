@@ -593,13 +593,20 @@ function Invoke-DatabasePackageTierRehearsal {
     }
 
     if ($PSCmdlet.ShouldProcess("$Application ($Tier)", 'Invoke-DatabasePackageRehearsal')) {
-      $result = Invoke-DatabasePackageRehearsal @rehearsalParameters
-      if ($null -eq $result -or -not [bool]$result.Success) {
+      $rehearsalOutput = @(Invoke-DatabasePackageRehearsal @rehearsalParameters)
+      $structuredResults = @($rehearsalOutput | Where-Object {
+          $null -ne $_ -and $_.PSObject.Properties.Name -contains 'Success'
+        })
+      if ($structuredResults.Count -ne 1) {
+        throw "Exact-package Flyway rehearsal returned $($structuredResults.Count) structured results from $($rehearsalOutput.Count) output records for '$Application' tier '$Tier'; expected exactly one."
+      }
+      $result = $structuredResults[0]
+      if (-not [bool]$result.Success) {
         $summary = if ($null -ne $result) { $result.ValidateOutput } else { '<no result>' }
         throw "Exact-package Flyway rehearsal FAILED for '$Application' tier '$Tier'; stage action blocked. Detail: $summary"
       }
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-        -Message "Exact-package rehearsal PASSED for '$Application' tier '$Tier'."
+        -Message "Exact-package rehearsal PASSED for '$Application' tier '$Tier'." | Out-Null
       return $result
     }
   }

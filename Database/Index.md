@@ -4,7 +4,7 @@ This file lists all subfolders and key documents in the `Database/` folder of th
 
 ## Subfolders
 
-- [Flyway/](Flyway/) — Canonical source for `ATAPUtilities.Database` `0.1.0`. The active V3 package contains exactly one migration, `SQL/V00010__Create_ATAPUtilities_Initial_Schema_And_Seed.sql`, and eleven seed CSVs under `Data/`; `Repeatable/` currently contributes no package content. [package-content-allowlist.json](Flyway/package-content-allowlist.json) freezes the exact path, kind, and SHA-256 of all twelve database-content files and the package builder fails closed when active content differs. Historical V1/V2 and pre-adoption V3 migrations remain under `Archive/` and are never traversed by the active package builder.
+- [Flyway/](Flyway/) — Canonical source for the unbuilt `ATAPUtilities.Database` `0.1.5` candidate. The active lineage contains immutable V00010/V00030/V00040/V00050 plus Task 15.185.b V00060, and eleven seed CSVs under `Data/`; `Repeatable/` currently contributes no package content. [package-content-allowlist.json](Flyway/package-content-allowlist.json) freezes the exact path, kind, and SHA-256 of all sixteen database-content files and the package builder fails closed when active content differs. Historical V1/V2 and pre-adoption V3 migrations remain under `Archive/` and are never traversed by the active package builder.
 
   > **Running Flyway:** use `Database/Flyway/flyway.toml`, whose only migration location is `SQL/`. Never add a package-content file without deliberately updating and reviewing the allowlist, and never fold forward changes into an already-applied migration.
 - [Documentation/](Documentation/Index.md) — PlantUML diagrams and Markdown design documents for the database schema and package promotion pipeline. See [Documentation/Index.md](Documentation/Index.md) for the full contents list.
@@ -17,6 +17,7 @@ This file lists all subfolders and key documents in the `Database/` folder of th
 ## Key Root Documents
 
 - [../SolutionDocumentation/ATAPUtilities-Database-0.1.0-V3-Experimental-Release-Record.md](../SolutionDocumentation/ATAPUtilities-Database-0.1.0-V3-Experimental-Release-Record.md) — Durable release record for the active V3 `0.1.0` package deployed only to logical Experimental and exact `ATAPUtilities` on `utat022\expWhertzing`.
+- [../SolutionDocumentation/ATAPUtilities-Database-0.1.4-V50-Experimental-Release-Record.md](../SolutionDocumentation/ATAPUtilities-Database-0.1.4-V50-Experimental-Release-Record.md) — Durable record for immutable package 0.1.4 and deployed V00050 on `UTAT022\EXPWHERTZING\ATAPUtilities`; V00060/0.1.5 is not included in that release.
 - [../SolutionDocumentation/ATAPUtilities-Database-0.1.3-Release-Record.md](../SolutionDocumentation/ATAPUtilities-Database-0.1.3-Release-Record.md) — Historical release record for the retired pre-V3 package lineage. It is not the active package definition.
 - [Documentation/FolderStructure.md](Documentation/FolderStructure.md) — Annotated tree of the entire `Database/` folder structure.
 - [Documentation/README.RRSBS.md](Documentation/README.RRSBS.md) — Overview of the Rules, Rule Sets, and Build Sets subsystem in the ATAPUtilities database.

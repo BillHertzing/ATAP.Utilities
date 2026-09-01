@@ -27,10 +27,10 @@ reconciliation.
 ## Decision boundary
 
 D-1 through D-7 are normative here: D-1 and D-3 through D-7 were ratified on
-2026-08-16, and D-2 is the retained ratified precedence rule. The eight D-3 edge cases,
-C-16 through C-27, FU-4, and FU-6 remain `HITL-PENDING`. Pending items are recorded as
-questions only and SHALL NOT be encoded as constraints, defaults, inferred
-classifications, or execution behavior.
+2026-08-16, and D-2 is the retained ratified precedence rule. C-16, C-20, C-26, FU-4,
+and FU-6 were ruled on 2026-08-30. The eight D-3 edge cases, C-17 through C-19,
+C-21 through C-25, and C-27 remain `HITL-PENDING`; those pending items SHALL NOT be
+encoded as constraints, defaults, inferred classifications, or execution behavior.
 
 ## Identity and temporal foundation
 
@@ -189,11 +189,19 @@ source-only reconciliation.
 - **V4-2-CORE-075:** D-6 is normative for the Tags layer: Tag relations and assignments SHALL target durable `TagId` roots, and the applicable `TagState` SHALL be resolved as-of. This core model SHALL NOT substitute a state-row endpoint for that durable identity.
 - **V4-2-CORE-076:** D-7 is normative: internal semantic history SHALL use `State` or `Variant`. The term `Version` is reserved here for external software, package, firmware, and protocol versions.
 
-## Pending design questions
+## Tags authority boundary
 
-C-16 through C-27, FU-4, and FU-6 are `HITL-PENDING`. In particular, this document does
-not decide actor/provenance fields, authorization semantics, additional valid uses of
-`Ordinal`, weighted Tag traversal, tenant/store topology, generic Tag assignment type
-codes, Tag relation state endpoints, localization, legacy taxonomy migration, live
-schema inventory, Tag-code collation, assignment confidence, SQL Server edition, or
-successor-chain behavior.
+C-16, C-20, C-26, FU-4, and FU-6 were ruled distinctly on 2026-08-30. The initial Tag
+contract SHALL use opaque `PrincipalId`, active namespace stewardship as its authoring
+gate, source reference and occurred/recorded UTC timestamps, one authoritative
+`ATAPUtilities` catalog with no tenant discriminator, and
+`Latin1_General_100_CI_AS_SC` for canonical/alias code comparison. SQL Server Express is
+the target and trigger behavior/performance SHALL be validated there. Successor chains
+may be multi-hop, reject cycles, and resolve to the first active terminal successor;
+erroneous withdrawal requires a reason and has no successor as an explicit C-15
+exception. A generalized approval workflow is deferred.
+
+C-17 through C-19, C-21 through C-25, and C-27 remain `HITL-PENDING`. This document does
+not decide authorization semantics, additional valid uses of `Ordinal`, weighted Tag
+traversal, generic Tag assignment type codes, Tag relation state endpoints, localization,
+legacy taxonomy migration, live schema inventory, or assignment confidence.

@@ -1,5 +1,5 @@
 @startuml
-title RPRRSBSI-V4 Tags Expert System — C-08 through C-15
+title RPRRSBSI-V4 Tags Expert System — ruled Tag slice through 2026-08-30
 skinparam linetype ortho
 skinparam defaultFontName Segoe UI
 skinparam defaultFontSize 10
@@ -19,7 +19,10 @@ package "ATAPUtilities (C-08)" {
     * TagNamespaceStewardId : identity <<PK>>
     --
     TagNamespaceId : identity <<FK>>
-    StewardPrincipal : pending C-16
+    PrincipalId : required opaque actor
+    SourceReference : provenance
+    OccurredAtUtc : source event instant
+    RecordedAtUtc : recording instant
     StewardHistory : retained
   }
 
@@ -47,7 +50,8 @@ package "ATAPUtilities (C-08)" {
     ValidToUtc : instant?
     Label : temporal payload
     Description : temporal payload
-    SuccessorTagId : required on retraction <<FK>>
+    SuccessorTagId : required unless erroneous <<FK>>
+    WithdrawalReason : required when erroneous
   }
 
   entity TagAliasType {
@@ -103,7 +107,7 @@ TagRelationType ||--o{ TagRelation : types
 Tag ||--o{ TagRelation : durable endpoint A
 Tag ||--o{ TagRelation : durable endpoint B
 Tag ||--o{ TagAssignment : durable endpoint
-TagState }o--> Tag : required successor on retraction
+TagState }o--> Tag : successor unless erroneous
 
 AliasTrigger ..> Tag : checks canonical codes
 AliasTrigger ..> TagAlias : checks every alias ever
@@ -115,20 +119,24 @@ ResolvePath ..> TagState : resolves payload as-of
 note right of TagNamespaceSteward
   Self-steward on namespace creation.
   Co-stewards and transfer history required.
-  Actor/provenance shape is HITL-PENDING C-16.
+  Active stewardship gates initial authoring.
+  Generalized approval workflow is deferred.
 end note
 
 note right of TagState
   No Philote on TagState.
   State interval must be contained by
   the Tag Philote validity coverage.
-  FU-6 successor semantics remain pending.
+  Multi-hop is allowed; cycles are rejected.
+  Resolve to first active terminal successor.
+  Erroneous withdrawal has reason, no successor.
 end note
 
 note bottom of TagAlias
   Temporal as-of alias, but permanent code claim.
   Retired aliases are included in trigger checks.
-  Collation is HITL-PENDING C-26.
+  Codes use Latin1_General_100_CI_AS_SC.
+  Trigger behavior/performance validates on Express.
 end note
 
 note bottom of TagRelation
@@ -139,14 +147,15 @@ end note
 
 note bottom of TagAssignment
   Active TagState resolves as-of.
-  C-21 EntityType codes, C-16 provenance,
-  and C-27 confidence are HITL-PENDING.
+  C-21 EntityType codes and C-27 confidence
+  are HITL-PENDING. C-16 provenance is required.
 end note
 
 legend bottom
-  Normative slice: C-08 through C-15 only.
-  HITL-PENDING: D-3 cases, C-16 through C-27, FU-4, FU-6.
-  No SQL, seed identity, live inventory, tenant, localization,
-  ordering, authorization invariant, or successor-chain rule is inferred.
+  Normative slice includes C-16, C-20, C-26, FU-4, FU-6.
+  One authoritative ATAPUtilities catalog; no initial tenant discriminator.
+  HITL-PENDING: D-3 cases, C-17..C-19, C-21..C-25, C-27.
+  No SQL, seed identity, live inventory, localization,
+  ordering, or authorization invariant is inferred.
 endlegend
 @enduml

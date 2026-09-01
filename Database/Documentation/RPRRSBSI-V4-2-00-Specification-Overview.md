@@ -44,7 +44,9 @@ The current status boundary is:
 - C-08 through C-15 were ruled in the direct operator session on 2026-08-18. Their
   propagation into the Sprint 0015 Decision Register is follow-up bookkeeping, not a
   reason to describe the rulings as pending.
-- D-3 edge cases 1 through 8, C-16 through C-27, FU-4, and FU-6 remain
+- C-16, C-20, C-26, FU-4, and FU-6 were distinctly ruled on 2026-08-30 and are
+  normative only to the extent stated below.
+- D-3 edge cases 1 through 8, C-17 through C-19, C-21 through C-25, and C-27 remain
   `HITL-PENDING`. They are questions only and have no normative force.
 
 ## Intended outcomes
@@ -106,12 +108,17 @@ These rulings came from the direct 2026-08-18 operator session recorded in Task
 | --- | --- | --- |
 | C-08 | Ruled 2026-08-18 | Tags SHALL live inside `ATAPUtilities`; there is no separate `Tags` schema. |
 | C-09 | Ruled 2026-08-18 | The durable `Tag` root SHALL own the Philote/GUID and immutable `(namespace, code)` natural key. `TagState` SHALL have no Philote. Codes are frozen for the Tag lifetime; aliases handle renames and state carries changeable display text. |
-| C-10 | Ruled 2026-08-18 | Stewardship SHALL be recorded as data and enforced during authoring. The creator is the namespace's default steward; co-stewards are allowed and transfers retain history. The actor details needed for enforcement remain gated by C-16. |
+| C-10 | Ruled 2026-08-18 | Stewardship SHALL be recorded as data and enforced during authoring. The creator is the namespace's default steward; co-stewards are allowed and transfers retain history. C-16 supplies the opaque principal and provenance contract. |
 | C-11 | Ruled 2026-08-18 | `PhiloteValidityPeriod` SHALL represent Tag identity lifespan and `TagState` as-of ranges SHALL represent payload history. No `TagState` may be active outside its Philote validity. |
 | C-12 | Ruled 2026-08-18 | Typed Tag-to-Tag relations and generic `(EntityType, EntityId)` assignments are approved. Assignments SHALL target durable `TagId`; active `TagState` resolves as-of. Allowed EntityType codes remain gated by C-21. |
-| C-13 | Ruled 2026-08-18 | The temporal payload row SHALL be named `TagState`, not `TagVersion`; label and description SHALL live on that state. Localization remains gated by C-20/C-23. |
-| C-14 | Ruled 2026-08-18 | Aliases SHALL be temporal, namespace-local, typed by controlled vocabulary, and not reissued to another Tag after retirement. The durable root keeps the canonical code; the alias registry holds non-canonical aliases. Cross-registry uniqueness SHALL be trigger-enforced. FU-4 retains the SQL Server edition/platform confirmation gate. |
-| C-15 | Ruled 2026-08-18 | Retraction SHALL close/gap identity validity and write a terminal `TagState`, without delete or `IsActive`; foreign keys remain `ON DELETE NO ACTION`. One transactional write path and one sanctioned read path SHALL coordinate both layers. A successor pointer is required, while FU-6 retains its unresolved semantics. |
+| C-13 | Ruled 2026-08-18 | The temporal payload row SHALL be named `TagState`, not `TagVersion`; label and description SHALL live on that state. Localization remains gated by C-23. |
+| C-14 | Ruled 2026-08-18 | Aliases SHALL be temporal, namespace-local, typed by controlled vocabulary, and not reissued to another Tag after retirement. The durable root keeps the canonical code; the alias registry holds non-canonical aliases. Cross-registry uniqueness SHALL be trigger-enforced using C-26 collation and validated on SQL Server Express under FU-4. |
+| C-15 | Ruled 2026-08-18 | Retraction SHALL close/gap identity validity and write a terminal `TagState`, without delete or `IsActive`; foreign keys remain `ON DELETE NO ACTION`. One transactional write path and one sanctioned read path SHALL coordinate both layers. A successor is generally required, subject to FU-6's explicit erroneous-withdrawal exception. |
+| C-16 | Ruled 2026-08-30 | Actor identity SHALL be a required opaque `PrincipalId`; active namespace stewardship SHALL gate initial authoring; provenance SHALL retain a source reference and occurred-at/recorded-at UTC timestamps. A generalized approval workflow is deferred. |
+| C-20 | Ruled 2026-08-30 | The initial design SHALL use one authoritative logical catalog in `ATAPUtilities` and SHALL NOT add a tenant discriminator. |
+| C-26 | Ruled 2026-08-30 | Canonical and alias Tag-code comparisons SHALL use explicit `Latin1_General_100_CI_AS_SC`. |
+| FU-4 | Ruled 2026-08-30 | SQL Server Express SHALL be the target free edition; trigger behavior and performance SHALL be validated there. |
+| FU-6 | Ruled 2026-08-30 | Successor chains MAY be multi-hop, SHALL reject cycles, and SHALL resolve to the first active terminal successor. Erroneous withdrawal SHALL require a reason and have no successor as an explicit C-15 exception. |
 
 ## Non-normative pending gates
 
@@ -134,30 +141,27 @@ inform HITL review but SHALL NOT be implemented as if ruled.
 These cases neither narrow nor widen D-3 until an explicit operator ruling is recorded
 in the editable companion.
 
-### C-16 through C-27
+### Remaining C decisions
 
 | Decision | Question only; no normative answer | Status |
 | --- | --- | --- |
-| C-16 | Provenance, actor, timestamps, and approval/policy gate | `HITL-PENDING` |
 | C-17 | Tags as a hard non-authorization invariant | `HITL-PENDING` |
 | C-18 | Absence of Tag ordering and valid uses of `Ordinal` | `HITL-PENDING` |
 | C-19 | Typed weighted relation behavior beyond the already ruled relation existence/endpoints | `HITL-PENDING` |
-| C-20 | Tenant scope, authoritative catalog, and physical-store topology | `HITL-PENDING` |
 | C-21 | Allowed `EntityType` codes, including `rule` and `instantiation` | `HITL-PENDING` |
 | C-22 | Whether Tag relations join durable roots or exact states | `HITL-PENDING` |
 | C-23 | Whether localization is required in the first migration | `HITL-PENDING` |
 | C-24 | Whether to migrate any legacy filing taxonomy rows | `HITL-PENDING` |
 | C-25 | Whether a live `Tags` schema exists; any inventory requires separate authorization | `HITL-PENDING` |
-| C-26 | Tag-code collation | `HITL-PENDING` |
 | C-27 | Per-assignment confidence or relevance | `HITL-PENDING` |
 
-### Follow-up gates
+### Ruled follow-ups
 
-- **FU-4 — `HITL-PENDING`:** confirm the target free SQL Server edition/platform and
-  its trigger support/constraints. Do not infer Express versus Developer.
-- **FU-6 — `HITL-PENDING`:** define successor-pointer chain, cycle, termination, and
-  erroneous-withdrawal behavior. The required pointer from C-15 does not decide these
-  semantics.
+- **FU-4 — RULED 2026-08-30:** target SQL Server Express and validate trigger behavior
+  and performance there.
+- **FU-6 — RULED 2026-08-30:** allow multi-hop successor chains, reject cycles, resolve
+  to the first active terminal successor, and require a reason with no successor for
+  erroneous withdrawal as an explicit C-15 exception.
 
 ## Document map
 

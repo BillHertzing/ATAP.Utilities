@@ -73,6 +73,7 @@
     'Expand-DatabaseChangePackage',
     'Export-InstantiationManifestation',
     'Get-DatabaseCredentialsKey', 'Get-DatabasePackageManifest',
+    'Get-SqlServiceLoginGrantTarget',
     'Get-InstalledDatabaseInformation', 'Get-InstantiationSourceModuleInventory',
     'Get-InstantiationVersionRuleGraph',
     'Initialize-SqlServiceLogin', 'Install-SqlServerInstance',

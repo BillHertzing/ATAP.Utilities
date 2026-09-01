@@ -6,6 +6,13 @@ BeforeAll {
   $sqlDirectory = Join-Path $repoRoot 'Database\Flyway\SQL'
   $dataDirectory = Join-Path $repoRoot 'Database\Flyway\Data'
   $migrationName = 'V00010__Create_ATAPUtilities_Initial_Schema_And_Seed.sql'
+  $expectedMigrationNames = @(
+    'V00010__Create_ATAPUtilities_Initial_Schema_And_Seed.sql'
+    'V00030__Create_AceOutpostContentSummaryPrototype.sql'
+    'V00040__Add_PhiloteValidityPeriod_SameIdentity_Key.sql'
+    'V00050__Create_ATAPUtilities_Tag_Root.sql'
+    'V00060__Create_Ace_GatherContent_Submission.sql'
+  )
   $migrationPath = Join-Path $sqlDirectory $migrationName
   $migrationSql = Get-Content -LiteralPath $migrationPath -Raw
 
@@ -80,16 +87,25 @@ BeforeAll {
     )
   }
 
+  function Get-LogicalContentSha256 {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string] $LiteralPath)
+
+    $text = [IO.File]::ReadAllText($LiteralPath)
+    $normalizedText = $text.Replace("`r`n", "`n").Replace("`r", "`n")
+    $bytes = [Text.Encoding]::UTF8.GetBytes($normalizedText)
+    [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes))
+  }
+
   $outerParse = Parse-TemporalSql -Sql $migrationSql
   $dynamicDefinitions = Get-DynamicDefinitions -Sql $migrationSql
 }
 
 Describe 'Philote temporal-validity active source contract' {
-  It 'contains exactly one active versioned migration' {
-    $migrations = @(Get-ChildItem -LiteralPath $sqlDirectory -Filter 'V*.sql' -File)
+  It 'contains the exact ordered active migration inventory through V00060' {
+    $migrations = @(Get-ChildItem -LiteralPath $sqlDirectory -Filter 'V*.sql' -File | Sort-Object Name)
 
-    $migrations.Count | Should -Be 1
-    $migrations[0].Name | Should -Be $migrationName
+    @($migrations.Name) | Should -Be $expectedMigrationNames
   }
 
   It 'contains the exact active seed-input inventory without TimeBlock' {
@@ -99,11 +115,11 @@ Describe 'Philote temporal-validity active source contract' {
     Test-Path -LiteralPath (Join-Path $dataDirectory 'TimeBlock.csv') | Should -BeFalse
   }
 
-  It 'pins the exact approved PhiloteValidityPeriod CSV contract' {
+  It 'pins the line-ending-stable approved PhiloteValidityPeriod CSV contract' {
     $path = Join-Path $dataDirectory 'PhiloteValidityPeriod.csv'
     $rows = @(Import-Csv -LiteralPath $path)
 
-    (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash |
+    Get-LogicalContentSha256 -LiteralPath $path |
       Should -Be 'FA5EE83E5A9B67307E1BBE1BC38773681FB280F63952678A7F236152271DEF21'
     (Get-Content -LiteralPath $path -First 1) |
       Should -Be 'PhiloteValidityPeriodId,PhiloteId,PreviousValidToUtc,ValidFromUtc,ValidToUtc'

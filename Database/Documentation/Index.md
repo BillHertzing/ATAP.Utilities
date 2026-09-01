@@ -7,11 +7,11 @@ for the folder's purpose and scope.
 
 ## Canonical ATAPUtilities Source Layout
 
-`Database/Flyway/` is the single source root for the unpublished
-`ATAPUtilities.Database` `0.1.0` package. `version.json` supplies package
-metadata; `SQL/` contains only
-`V00010__Create_ATAPUtilities_Initial_Schema_And_Seed.sql`; and `Data/` contains
-the eleven approved CSV inputs. The superseded pre-adoption V3 sequence and
+`Database/Flyway/` is the single source root for the unbuilt
+`ATAPUtilities.Database` `0.1.5` candidate. `version.json` supplies package
+metadata; `SQL/` contains immutable V00010/V00030/V00040/V00050 plus the
+Task 15.185.b V00060 Ace gather-content increment; and `Data/` contains the
+eleven approved CSV inputs. The superseded pre-adoption V3 sequence and
 older lineages are preserved under `Archive/` and are excluded from the Flyway
 location. Publication, promotion, installation, and deployment remain behind
 their later human gates.

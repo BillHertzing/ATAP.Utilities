@@ -1,4 +1,21 @@
 # ATAPUtilities.Database release notes
+
+## 0.1.6
+
+Status: source and disposable-database verified; unbuilt, unpublished, and not applied
+to any permanent database.
+
+- Retains the immutable V00010 through V00060 migration bytes.
+- Adds V00070 with the bounded Ace-owned AISupervisor persistence contract:
+  append-only exchange, sanitized-prompt, Tag-occurrence, physical-attempt,
+  provider-usage, controlled-metric catalog, and metric records.
+- Adds procedure-only capture and AceCommander timeline-read roles. The token
+  query preserves missing counts as `NULL` and reports completeness explicitly.
+- Excludes raw prompts, response/tool bodies, credentials, header values, the
+  D2-EXC troubleshooting store, Windows identities, and role memberships.
+- Does not authorize package publication, permanent-database application,
+  proxy/listener activation, provider traffic, or service grants.
+
 ## 0.1.5
 
 Status: source and disposable-database verified; unbuilt, unpublished, and not

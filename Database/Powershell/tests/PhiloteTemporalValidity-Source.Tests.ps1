@@ -12,6 +12,7 @@ BeforeAll {
     'V00040__Add_PhiloteValidityPeriod_SameIdentity_Key.sql'
     'V00050__Create_ATAPUtilities_Tag_Root.sql'
     'V00060__Create_Ace_GatherContent_Submission.sql'
+    'V00070__Create_Ace_AISupervisor_Telemetry.sql'
   )
   $migrationPath = Join-Path $sqlDirectory $migrationName
   $migrationSql = Get-Content -LiteralPath $migrationPath -Raw

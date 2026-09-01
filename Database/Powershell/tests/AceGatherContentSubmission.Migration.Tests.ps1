@@ -10,7 +10,9 @@ Describe 'V00060 Ace gather-content submission static contract' {
         $migrationName = 'V00060__Create_Ace_GatherContent_Submission.sql'
         $migrationPath = Join-Path $sqlDirectory $migrationName
         $migration = Get-Content -LiteralPath $migrationPath -Raw
-        $activeMigrations = @(Get-ChildItem -LiteralPath $sqlDirectory -File -Filter 'V*.sql' | Sort-Object Name)
+        $migrationsThroughV00060 = @(Get-ChildItem -LiteralPath $sqlDirectory -File -Filter 'V*.sql' |
+            Where-Object Name -LE $migrationName |
+            Sort-Object Name)
         $dynamicBodies = @([regex]::Matches(
                 $migration,
                 "(?s)EXEC\s+sys\.sp_executesql\s+N'(?<body>(?:''|[^'])*)';") |
@@ -23,7 +25,7 @@ Describe 'V00060 Ace gather-content submission static contract' {
     }
 
     It 'allocates the unique next active version after deployed V00050' {
-        $names = @($activeMigrations.Name)
+        $names = @($migrationsThroughV00060.Name)
         $versions = @($names | ForEach-Object {
                 if ($_ -notmatch '^(V\d+)__') { throw "Invalid migration name: $_" }
                 $matches[1]

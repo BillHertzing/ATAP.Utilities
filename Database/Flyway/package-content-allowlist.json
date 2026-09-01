@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageId": "ATAPUtilities.Database",
-  "sourceVersion": "0.1.5",
+  "sourceVersion": "0.1.6",
   "files": [
     {
       "path": "SQL/V00010__Create_ATAPUtilities_Initial_Schema_And_Seed.sql",
@@ -27,6 +27,11 @@
       "path": "SQL/V00060__Create_Ace_GatherContent_Submission.sql",
       "kind": "migration",
       "sha256": "953705FEE9678B532FFF52D780182AA8A7EF3D000DB96873DB9EB58AAAEB46FB"
+    },
+    {
+      "path": "SQL/V00070__Create_Ace_AISupervisor_Telemetry.sql",
+      "kind": "migration",
+      "sha256": "501B2C9486C81C706C7C07BB8912053FBE91A5559865C43B57527DDB7E5453C8"
     },
     {
       "path": "Data/BuildSet.csv",

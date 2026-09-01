@@ -22,7 +22,9 @@
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     -->
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
-    <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
+    <!-- Runtime identifiers are project- or publish-bound inputs. Keeping this default
+         empty prevents platform-neutral libraries from acquiring RID-specific lock
+         groups merely because they are evaluated inside this repository. -->
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 

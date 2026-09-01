@@ -110,8 +110,6 @@
         }
       }
     },
-    "net10.0/linux-x64": {},
-    "net10.0/win-x64": {},
     "net8.0": {
       "Microsoft.Extensions.Configuration": {
         "type": "Direct",
@@ -227,8 +225,6 @@
         }
       }
     },
-    "net8.0/linux-x64": {},
-    "net8.0/win-x64": {},
     "net9.0": {
       "Microsoft.Extensions.Configuration": {
         "type": "Direct",
@@ -343,8 +339,6 @@
           "Microsoft.Extensions.Primitives": "9.0.0"
         }
       }
-    },
-    "net9.0/linux-x64": {},
-    "net9.0/win-x64": {}
+    }
   }
 }

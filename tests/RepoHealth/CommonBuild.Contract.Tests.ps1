@@ -90,14 +90,20 @@ Describe 'Task 15.180.j common-build root contract' -Tag 'RepoHealth', 'CommonBu
     $result.Text | Should -Match 'ATAPBUILD007'
   }
 
-  It 'fails a non-forced load-bearing lock validation with ATAPBUILD008' {
+  It 'fails load-bearing lock validation without locked mode with ATAPBUILD008' {
     $result = Invoke-CommonBuildTarget -Execution 'lock-invalid' -Properties @{ ATAPLoadBearingLockValidation = 'true' }
     $result.ExitCode | Should -Not -Be 0
     $result.Text | Should -Match 'ATAPBUILD008'
   }
 
-  It 'accepts forced locked validation flags' {
-    $result = Invoke-CommonBuildTarget -Execution 'lock-valid' -Properties @{ ATAPLoadBearingLockValidation = 'true'; RestoreForceEvaluate = 'true'; RestoreLockedMode = 'true' }
+  It 'rejects contradictory force-evaluate and locked validation flags' {
+    $result = Invoke-CommonBuildTarget -Execution 'lock-contradictory' -Properties @{ ATAPLoadBearingLockValidation = 'true'; RestoreForceEvaluate = 'true'; RestoreLockedMode = 'true' }
+    $result.ExitCode | Should -Not -Be 0
+    $result.Text | Should -Match 'ATAPBUILD008'
+  }
+
+  It 'accepts immutable locked validation without force-evaluate' {
+    $result = Invoke-CommonBuildTarget -Execution 'lock-valid' -Properties @{ ATAPLoadBearingLockValidation = 'true'; RestoreLockedMode = 'true' }
     $result.ExitCode | Should -Be 0 -Because $result.Text
   }
 
@@ -128,5 +134,28 @@ Describe 'Task 15.180.j deterministic and publication boundaries' -Tag 'RepoHeal
   It 'contains no credential, push, or feed-mutation command in the common target' {
     $node = $script:targets.SelectSingleNode("//*[local-name()='Target' and @Name='ValidateATAPCommonBuildContract']")
     $node.OuterXml | Should -Not -Match 'Get-SecretATAP|NuGetApiKey|ProGetApiKey|dotnet nuget push|Move-ProGet|PublishRepository'
+  }
+}
+
+Describe 'Task 15.186 immutable secrets package dependency closure' -Tag 'RepoHealth', 'CommonBuild', 'Packaging' {
+  BeforeAll {
+    [xml] $script:dependencyTargets = Get-Content -LiteralPath (Join-Path $script:repoRoot 'Directory.Build.targets') -Raw
+  }
+
+  It 'pins the portable provider to the published Interfaces and Model 0.1.3 packages' {
+    $target = $script:dependencyTargets.SelectSingleNode("//*[local-name()='Target' and @Name='PinStableSecretsReleaseDependencyVersions']")
+    $target | Should -Not -BeNullOrEmpty
+    $update = $target.SelectSingleNode(".//*[local-name()='_ProjectReferencesWithVersions']")
+    $update.ProjectVersion | Should -BeExactly '[0.1.3]'
+    $update.Condition | Should -Match 'ATAP.Utilities.Secrets.Interfaces'
+    $update.Condition | Should -Match 'ATAP.Utilities.Secrets.Model'
+  }
+
+  It 'pins the Windows provider to the corrected portable provider 0.1.5 package' {
+    $target = $script:dependencyTargets.SelectSingleNode("//*[local-name()='Target' and @Name='PinStableWindowsSecretsReleaseDependencyVersion']")
+    $target | Should -Not -BeNullOrEmpty
+    $update = $target.SelectSingleNode(".//*[local-name()='_ProjectReferencesWithVersions']")
+    $update.ProjectVersion | Should -BeExactly '[0.1.5]'
+    $update.Condition | Should -Match 'ATAP.Utilities.Secrets.BitwardenSecretsManager'
   }
 }

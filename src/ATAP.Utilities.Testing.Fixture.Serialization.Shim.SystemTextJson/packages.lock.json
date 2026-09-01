@@ -379,14 +379,14 @@
       "atap.utilities.collection.extensions": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "System.Reactive": "[5.0.0, )"
         }
       },
       "atap.utilities.configuration.extensions": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.CommandLine": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.EnvironmentVariables": "[9.0.0, )",
@@ -402,14 +402,14 @@
       "atap.utilities.serializer.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
         }
       },
       "atap.utilities.serializer.model": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
@@ -421,7 +421,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
-          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
@@ -430,14 +430,14 @@
       "atap.utilities.serializer.stringconstants": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[0.1.2, )"
+          "ATAP.Utilities.ETW": "[0.1.3, )"
         }
       },
       "atap.utilities.testing": {
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Configuration.Extensions": "[0.1.1, )",
-          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "FluentAssertions": "[6.2.0, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.NET.Test.Sdk": "[17.0.0, )",
@@ -449,7 +449,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Configuration.Extensions": "[0.1.1, )",
-          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )",
@@ -605,20 +605,6 @@
         "requested": "[9.0.4, )",
         "resolved": "9.0.4",
         "contentHash": "o94k2RKuAce3GeDMlUvIXlhVa1kWpJw95E6C9LwW0KlG0nj5+SgCiIxJ2Eroqb9sLtG1mEMbFttZIBZ13EJPvQ=="
-      }
-    },
-    "net10.0/linux-x64": {
-      "System.Diagnostics.EventLog": {
-        "type": "Transitive",
-        "resolved": "9.0.0",
-        "contentHash": "qd01+AqPhbAG14KtdtIqFk+cxHQFZ/oqRSCoxU1F+Q6Kv0cl726sl7RzU9yLFGd4BUOKdN4XojXF0pQf/R6YeA=="
-      }
-    },
-    "net10.0/win-x64": {
-      "System.Diagnostics.EventLog": {
-        "type": "Transitive",
-        "resolved": "9.0.0",
-        "contentHash": "qd01+AqPhbAG14KtdtIqFk+cxHQFZ/oqRSCoxU1F+Q6Kv0cl726sl7RzU9yLFGd4BUOKdN4XojXF0pQf/R6YeA=="
       }
     },
     "net8.0": {
@@ -1017,14 +1003,14 @@
       "atap.utilities.collection.extensions": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "System.Reactive": "[5.0.0, )"
         }
       },
       "atap.utilities.configuration.extensions": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.CommandLine": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.EnvironmentVariables": "[9.0.0, )",
@@ -1040,14 +1026,14 @@
       "atap.utilities.serializer.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
         }
       },
       "atap.utilities.serializer.model": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
@@ -1059,7 +1045,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
-          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
@@ -1068,14 +1054,14 @@
       "atap.utilities.serializer.stringconstants": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[0.1.2, )"
+          "ATAP.Utilities.ETW": "[0.1.3, )"
         }
       },
       "atap.utilities.testing": {
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Configuration.Extensions": "[0.1.1, )",
-          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "FluentAssertions": "[6.2.0, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.NET.Test.Sdk": "[17.0.0, )",
@@ -1087,7 +1073,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Configuration.Extensions": "[0.1.1, )",
-          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )",
@@ -1255,30 +1241,6 @@
           "System.IO.Pipelines": "10.0.2",
           "System.Text.Encodings.Web": "10.0.2"
         }
-      }
-    },
-    "net8.0/linux-x64": {
-      "System.Diagnostics.EventLog": {
-        "type": "Transitive",
-        "resolved": "9.0.0",
-        "contentHash": "qd01+AqPhbAG14KtdtIqFk+cxHQFZ/oqRSCoxU1F+Q6Kv0cl726sl7RzU9yLFGd4BUOKdN4XojXF0pQf/R6YeA=="
-      },
-      "System.Text.Encodings.Web": {
-        "type": "Transitive",
-        "resolved": "10.0.2",
-        "contentHash": "Ro4cLT4qpRy64crfLAy3ekihtXckeXrD5eI6qb6NDSEVyHcHsmH7KgN4dbnIuiBmXIoaCslx4SynLYxag1SLSQ=="
-      }
-    },
-    "net8.0/win-x64": {
-      "System.Diagnostics.EventLog": {
-        "type": "Transitive",
-        "resolved": "9.0.0",
-        "contentHash": "qd01+AqPhbAG14KtdtIqFk+cxHQFZ/oqRSCoxU1F+Q6Kv0cl726sl7RzU9yLFGd4BUOKdN4XojXF0pQf/R6YeA=="
-      },
-      "System.Text.Encodings.Web": {
-        "type": "Transitive",
-        "resolved": "10.0.2",
-        "contentHash": "Ro4cLT4qpRy64crfLAy3ekihtXckeXrD5eI6qb6NDSEVyHcHsmH7KgN4dbnIuiBmXIoaCslx4SynLYxag1SLSQ=="
       }
     },
     "net9.0": {
@@ -1664,14 +1626,14 @@
       "atap.utilities.collection.extensions": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "System.Reactive": "[5.0.0, )"
         }
       },
       "atap.utilities.configuration.extensions": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.CommandLine": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.EnvironmentVariables": "[9.0.0, )",
@@ -1687,14 +1649,14 @@
       "atap.utilities.serializer.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
         }
       },
       "atap.utilities.serializer.model": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
@@ -1706,7 +1668,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
-          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
@@ -1715,14 +1677,14 @@
       "atap.utilities.serializer.stringconstants": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[0.1.2, )"
+          "ATAP.Utilities.ETW": "[0.1.3, )"
         }
       },
       "atap.utilities.testing": {
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Configuration.Extensions": "[0.1.1, )",
-          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "FluentAssertions": "[6.2.0, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.NET.Test.Sdk": "[17.0.0, )",
@@ -1734,7 +1696,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.Configuration.Extensions": "[0.1.1, )",
-          "ATAP.Utilities.ETW": "[0.1.2, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
           "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )",
@@ -1891,20 +1853,6 @@
         "requested": "[9.0.4, )",
         "resolved": "9.0.4",
         "contentHash": "o94k2RKuAce3GeDMlUvIXlhVa1kWpJw95E6C9LwW0KlG0nj5+SgCiIxJ2Eroqb9sLtG1mEMbFttZIBZ13EJPvQ=="
-      }
-    },
-    "net9.0/linux-x64": {
-      "System.Diagnostics.EventLog": {
-        "type": "Transitive",
-        "resolved": "9.0.0",
-        "contentHash": "qd01+AqPhbAG14KtdtIqFk+cxHQFZ/oqRSCoxU1F+Q6Kv0cl726sl7RzU9yLFGd4BUOKdN4XojXF0pQf/R6YeA=="
-      }
-    },
-    "net9.0/win-x64": {
-      "System.Diagnostics.EventLog": {
-        "type": "Transitive",
-        "resolved": "9.0.0",
-        "contentHash": "qd01+AqPhbAG14KtdtIqFk+cxHQFZ/oqRSCoxU1F+Q6Kv0cl726sl7RzU9yLFGd4BUOKdN4XojXF0pQf/R6YeA=="
       }
     }
   }

@@ -96,8 +96,6 @@
         }
       }
     },
-    "net10.0/linux-x64": {},
-    "net10.0/win-x64": {},
     "net8.0": {
       "MethodBoundaryAspect.Fody": {
         "type": "Direct",
@@ -199,8 +197,6 @@
         }
       }
     },
-    "net8.0/linux-x64": {},
-    "net8.0/win-x64": {},
     "net9.0": {
       "MethodBoundaryAspect.Fody": {
         "type": "Direct",
@@ -301,8 +297,6 @@
           "System.Diagnostics.DiagnosticSource": "10.0.2"
         }
       }
-    },
-    "net9.0/linux-x64": {},
-    "net9.0/win-x64": {}
+    }
   }
 }

@@ -60,8 +60,6 @@
         }
       }
     },
-    "net10.0/linux-x64": {},
-    "net10.0/win-x64": {},
     "net8.0": {
       "Microsoft.Extensions.Configuration.Abstractions": {
         "type": "Direct",
@@ -121,8 +119,6 @@
         }
       }
     },
-    "net8.0/linux-x64": {},
-    "net8.0/win-x64": {},
     "net9.0": {
       "Microsoft.Extensions.Configuration.Abstractions": {
         "type": "Direct",
@@ -181,8 +177,6 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.2, )"
         }
       }
-    },
-    "net9.0/linux-x64": {},
-    "net9.0/win-x64": {}
+    }
   }
 }

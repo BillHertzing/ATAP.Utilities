@@ -132,14 +132,6 @@
         }
       }
     },
-    "net10.0-windows7.0/win-x64": {
-      "System.IO.FileSystem.AccessControl": {
-        "type": "Direct",
-        "requested": "[5.0.0, )",
-        "resolved": "5.0.0",
-        "contentHash": "SxHB3nuNrpptVk+vZ/F+7OHEpoHUIKKMl02bUmYHQr1r+glbZQxs7pRtsf4ENO29TVm2TH3AEeep2fJcy92oYw=="
-      }
-    },
     "net8.0-windows7.0": {
       "Microsoft.Extensions.DependencyInjection.Abstractions": {
         "type": "Direct",
@@ -277,14 +269,6 @@
         }
       }
     },
-    "net8.0-windows7.0/win-x64": {
-      "System.IO.FileSystem.AccessControl": {
-        "type": "Direct",
-        "requested": "[5.0.0, )",
-        "resolved": "5.0.0",
-        "contentHash": "SxHB3nuNrpptVk+vZ/F+7OHEpoHUIKKMl02bUmYHQr1r+glbZQxs7pRtsf4ENO29TVm2TH3AEeep2fJcy92oYw=="
-      }
-    },
     "net9.0-windows7.0": {
       "Microsoft.Extensions.DependencyInjection.Abstractions": {
         "type": "Direct",
@@ -420,14 +404,6 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.2",
           "System.Diagnostics.DiagnosticSource": "10.0.2"
         }
-      }
-    },
-    "net9.0-windows7.0/win-x64": {
-      "System.IO.FileSystem.AccessControl": {
-        "type": "Direct",
-        "requested": "[5.0.0, )",
-        "resolved": "5.0.0",
-        "contentHash": "SxHB3nuNrpptVk+vZ/F+7OHEpoHUIKKMl02bUmYHQr1r+glbZQxs7pRtsf4ENO29TVm2TH3AEeep2fJcy92oYw=="
       }
     }
   }

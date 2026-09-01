@@ -131,8 +131,6 @@
         }
       }
     },
-    "net10.0/linux-x64": {},
-    "net10.0/win-x64": {},
     "net8.0": {
       "MedallionShell": {
         "type": "Direct",
@@ -272,8 +270,6 @@
         "contentHash": "QhkXUl2gNrQtvPmtBTQHb0YsUrDiDQ2QS09YbtTTiSjGcf7NBqtYbrG/BE06zcBPCKEwQGzIv13IVdXNOSub2w=="
       }
     },
-    "net8.0/linux-x64": {},
-    "net8.0/win-x64": {},
     "net9.0": {
       "MedallionShell": {
         "type": "Direct",
@@ -403,8 +399,6 @@
           "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
         }
       }
-    },
-    "net9.0/linux-x64": {},
-    "net9.0/win-x64": {}
+    }
   }
 }

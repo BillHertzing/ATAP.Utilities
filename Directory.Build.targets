@@ -173,7 +173,7 @@
       <_ProjectReferencesWithVersions
         Update="@(_ProjectReferencesWithVersions)"
         Condition="'%(Filename)' == 'ATAP.Utilities.Secrets.Interfaces' or '%(Filename)' == 'ATAP.Utilities.Secrets.Model'"
-        ProjectVersion="[0.1.2]" />
+        ProjectVersion="[0.1.3]" />
     </ItemGroup>
   </Target>
 
@@ -185,7 +185,7 @@
       <_ProjectReferencesWithVersions
         Update="@(_ProjectReferencesWithVersions)"
         Condition="'%(Filename)' == 'ATAP.Utilities.Secrets.BitwardenSecretsManager'"
-        ProjectVersion="[0.1.1]" />
+        ProjectVersion="[0.1.5]" />
     </ItemGroup>
   </Target>
 
@@ -345,8 +345,8 @@
            Code="ATAPBUILD006" Text="Fody must use one repository-root FodyWeavers.xml, FodyGenerateXsd=false, and zero nested XML/XSD files." />
     <Error Condition="'$(ATAPRequestedGeneratePackageOnBuild)' == 'true' And '$(ATAPExplicitPublicationInvocation)' != 'true'"
            Code="ATAPBUILD007" Text="GeneratePackageOnBuild couples ordinary Build to publication. Remove it or invoke an explicit authorized publication path." />
-    <Error Condition="'$(ATAPLoadBearingLockValidation)' == 'true' And ('$(RestoreForceEvaluate)' != 'true' Or '$(RestoreLockedMode)' != 'true')"
-           Code="ATAPBUILD008" Text="Load-bearing lock validation requires forced graph evaluation and locked mode." />
+    <Error Condition="'$(ATAPLoadBearingLockValidation)' == 'true' And ('$(RestoreLockedMode)' != 'true' Or '$(RestoreForceEvaluate)' == 'true')"
+           Code="ATAPBUILD008" Text="Load-bearing lock validation requires immutable locked mode and forbids force-evaluate. Regenerate locks in a separate intentional update operation." />
     <Error Condition="'$(CentralPackageVersionOverrideEnabled)' == 'true' And !$([System.String]::Copy('$(MSBuildProjectFullPath)').EndsWith('tests\ATAP.Utilities.Philote.Tests\ATAP.Utilities.Philote.Tests.csproj', System.StringComparison.OrdinalIgnoreCase)) And !$([System.String]::Copy('$(MSBuildProjectFullPath)').EndsWith('tests\ATAP.Utilities.StronglyTypedIDs.Tests\ATAP.Utilities.StronglyTypedIDs.Tests.csproj', System.StringComparison.OrdinalIgnoreCase)) And !$([System.String]::Copy('$(MSBuildProjectFullPath)').EndsWith('tests\ATAP.Utilities.Serializer.Interfaces.PackageSmoke.Tests\ATAP.Utilities.Serializer.Interfaces.PackageSmoke.Tests.csproj', System.StringComparison.OrdinalIgnoreCase)) And !$([System.String]::Copy('$(MSBuildProjectFullPath)').EndsWith('tests\ATAP.Utilities.Secrets.BitwardenSecretsManager.PackageSmoke.Tests\ATAP.Utilities.Secrets.BitwardenSecretsManager.PackageSmoke.Tests.csproj', System.StringComparison.OrdinalIgnoreCase))"
            Code="ATAPBUILD009" Text="Central package VersionOverride is enabled outside the exact four-fixture allowlist." />
     <Error Condition="'$(ATAPRequireBuildToolingPackage)' == 'true' And '$(ATAPBuildToolingImported)' != 'true'"

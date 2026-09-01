@@ -48,8 +48,6 @@
         "type": "Project"
       }
     },
-    "net10.0/linux-x64": {},
-    "net10.0/win-x64": {},
     "net8.0": {
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
@@ -97,8 +95,6 @@
         "type": "Project"
       }
     },
-    "net8.0/linux-x64": {},
-    "net8.0/win-x64": {},
     "net9.0": {
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
@@ -145,8 +141,6 @@
       "atap.utilities.stronglytypedid.interfaces": {
         "type": "Project"
       }
-    },
-    "net9.0/linux-x64": {},
-    "net9.0/win-x64": {}
+    }
   }
 }

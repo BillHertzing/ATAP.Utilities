@@ -12,9 +12,10 @@ function Initialize-SqlServiceLogin {
         Batch 1 (master): Creates a Windows server-level login if one does not already
           exist, using CREATE LOGIN ... FROM WINDOWS.
 
-        Batch 2 (target database): Creates a database user mapped to that login if
-          absent, then adds the user to the db_owner fixed database role using
-          ALTER ROLE [db_owner] ADD MEMBER.
+        Batch 2 (target database): Locates any existing database user mapped to the
+          login SID regardless of username. If no mapping exists, creates a short-name
+          database user, then adds the actual mapped user to the db_owner fixed database
+          role using ALTER ROLE [db_owner] ADD MEMBER.
 
         All dynamic identifier construction uses QUOTENAME() inside SQL EXEC() calls
         to prevent SQL-injection via account or database names.
@@ -140,19 +141,31 @@ END;
 USE [$($DatabaseName.Replace(']', ']]'))];
 DECLARE @login NVARCHAR(256) = N'$loginEscaped';
 DECLARE @user  NVARCHAR(128) = N'$userEscaped';
-IF NOT EXISTS (
-    SELECT 1
+DECLARE @mappedUser sysname = (
+    SELECT TOP (1) [name]
     FROM   sys.database_principals
-    WHERE  [name] = @user
+    WHERE  [sid] = SUSER_SID(@login)
       AND  [type] IN ('U', 'G')
-)
+    ORDER BY [principal_id]
+);
+IF @mappedUser IS NULL
 BEGIN
     DECLARE @sqlUser NVARCHAR(512) = N'CREATE USER ' + QUOTENAME(@user) + N' FOR LOGIN ' + QUOTENAME(@login) + N';';
     EXEC (@sqlUser);
+    SET @mappedUser = @user;
 END;
-IF IS_ROLEMEMBER(N'db_owner', @user) = 0
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.database_role_members AS drm
+    INNER JOIN sys.database_principals AS rolePrincipal
+      ON rolePrincipal.[principal_id] = drm.[role_principal_id]
+    INNER JOIN sys.database_principals AS memberPrincipal
+      ON memberPrincipal.[principal_id] = drm.[member_principal_id]
+    WHERE rolePrincipal.[name] = N'db_owner'
+      AND memberPrincipal.[name] = @mappedUser
+)
 BEGIN
-    DECLARE @sqlRole NVARCHAR(512) = N'ALTER ROLE [db_owner] ADD MEMBER ' + QUOTENAME(@user) + N';';
+    DECLARE @sqlRole NVARCHAR(512) = N'ALTER ROLE [db_owner] ADD MEMBER ' + QUOTENAME(@mappedUser) + N';';
     EXEC (@sqlRole);
 END;
 "@

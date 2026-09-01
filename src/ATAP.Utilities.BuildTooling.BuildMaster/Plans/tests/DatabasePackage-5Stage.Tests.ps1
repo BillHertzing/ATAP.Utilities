@@ -225,9 +225,9 @@ Describe 'Task 9.10 runner contract: per-tier apply + rehearsal-before-promotion
         $rehearsalIdx | Should -BeLessThan $promoteIdx
     }
 
-    It 'runner blocks promotion when the rehearsal fails (throws on non-Success)' {
+    It 'runner blocks the stage action when the rehearsal fails (throws on non-Success)' {
         $script:RunnerText | Should -Match 'rehearsal FAILED'
-        $script:RunnerText | Should -Match 'promotion blocked'
+        $script:RunnerText | Should -Match 'stage action blocked'
     }
 
     It 'runner applies the package to the tier database via Invoke-Flyway migrate' {
@@ -235,22 +235,45 @@ Describe 'Task 9.10 runner contract: per-tier apply + rehearsal-before-promotion
         $script:RunnerText | Should -Match 'Invoke-Flyway @flywayParameters'
     }
 
-    It 'publishes Experimental to ProGet before applying the exact package to ExpDeveloper' {
+    It 'publishes and rehearses Experimental before applying the exact package to ExpDeveloper' {
         $publishIdx = $script:RunnerText.IndexOf('$publishResult = Publish-DatabaseChangePackageToProGet')
-        $applyIdx   = $script:RunnerText.IndexOf('Invoke-DatabasePackageStageApply `', $publishIdx)
+        $rehearsalIdx = $script:RunnerText.IndexOf('$rehearsalResult = Invoke-DatabasePackageTierRehearsal `', $publishIdx)
+        $applyIdx   = $script:RunnerText.IndexOf('Invoke-DatabasePackageStageApply `', $rehearsalIdx)
         $publishIdx | Should -BeGreaterThan 0
-        $applyIdx   | Should -BeGreaterThan $publishIdx
+        $rehearsalIdx | Should -BeGreaterThan $publishIdx
+        $applyIdx   | Should -BeGreaterThan $rehearsalIdx
     }
 
     It 'reuses the captured immutable Experimental package after publish succeeds but apply fails' {
         $resumeIdx = $script:RunnerText.IndexOf("Resume exact published package '")
+        $retryRehearsalIdx = $script:RunnerText.IndexOf('$rehearsalResult = Invoke-DatabasePackageTierRehearsal `', $resumeIdx)
+        $retryApplyIdx = $script:RunnerText.IndexOf('Invoke-DatabasePackageStageApply `', $retryRehearsalIdx)
         $buildIdx = $script:RunnerText.IndexOf('$nupkgPath = New-DatabaseChangePackage')
 
         $resumeIdx | Should -BeGreaterThan 0
+        $retryRehearsalIdx | Should -BeGreaterThan $resumeIdx
+        $retryApplyIdx | Should -BeGreaterThan $retryRehearsalIdx
+        $retryRehearsalIdx | Should -BeLessThan $buildIdx
         $buildIdx | Should -BeGreaterThan $resumeIdx
         $script:RunnerText | Should -Match 'Experimental retry package drift'
         $script:RunnerText | Should -Match 'build and publish skipped'
         $script:RunnerText | Should -Match 'Get-FileHash\s+-LiteralPath\s+\$capturedNupkgPath\s+-Algorithm\s+SHA256'
+    }
+
+    It 'fails closed on Experimental -SkipRehearsal before build or publish' {
+        $guardIdx = $script:RunnerText.IndexOf("if (`$Stage -eq 'Experimental' -and `$SkipRehearsal)")
+        $buildIdx = $script:RunnerText.IndexOf('$nupkgPath = New-DatabaseChangePackage')
+        $publishIdx = $script:RunnerText.IndexOf('$publishResult = Publish-DatabaseChangePackageToProGet')
+
+        $guardIdx | Should -BeGreaterThan 0
+        $guardIdx | Should -BeLessThan $buildIdx
+        $guardIdx | Should -BeLessThan $publishIdx
+        $script:RunnerText | Should -Match "cannot build, publish, rehearse, apply, or complete package '.+' while -SkipRehearsal is supplied"
+    }
+
+    It 'passes the exact Experimental package and configured target to both rehearsal paths' {
+        $script:RunnerText | Should -Match '(?s)Rehearsing exact captured package.+?-NupkgPath\s+\$capturedNupkgPath.+?-Application\s+\$DatabaseApplication.+?-Tier\s+\$Stage.+?-BuildId\s+\$BuildMasterBuildId.+?-ConnectionStringSecretName\s+\$tierConnectionSecretName'
+        $script:RunnerText | Should -Match '(?s)Rehearsing exact published package.+?-NupkgPath\s+\$nupkgPath.+?-Application\s+\$DatabaseApplication.+?-Tier\s+\$Stage.+?-BuildId\s+\$BuildMasterBuildId.+?-ConnectionStringSecretName\s+\$tierConnectionSecretName'
     }
 
     It 'promotes each later ProGet tier before applying the exact package to its database' {
@@ -499,7 +522,7 @@ Describe 'Task 9.10 behavior: per-tier apply + rehearsal helpers' {
     }
 
     Context 'Invoke-DatabasePackageTierRehearsal enforcement' {
-        It 'throws (blocks promotion) when the rehearsal reports Success=$false' {
+        It 'throws (blocks Experimental apply or later promotion) when rehearsal reports Success=$false' {
             function global:Invoke-DatabasePackageRehearsal {
                 param([Parameter(ValueFromRemainingArguments)]$a)
                 $null = $a

@@ -13,7 +13,8 @@
   the canonical Database/<App>/ source folder, then calls
   New-DatabaseChangePackage to produce the .nupkg and
   Publish-DatabaseChangePackageToProGet to push it to the
-  database-experimental feed.
+  database-experimental feed. It then rehearses that exact immutable package
+  against a backup/restore clone before applying it to Experimental.
 
   For Development/Integration/QA/Production it promotes the captured immutable
   version from the previous tier's feed to the destination feed via
@@ -85,7 +86,8 @@
 .PARAMETER SkipRehearsal
   Bypasses the rehearsal-before-promotion gate even when a tier connection
   secret name is supplied. Intended for disaster recovery and audited manual
-  promotions only; logged as a warning.
+  promotions only; logged as a warning. Experimental rejects this switch
+  because its exact-package rehearsal is mandatory before apply.
 
 .PARAMETER SkipApply
   Retained for caller compatibility but rejected by the stage preflight.
@@ -94,8 +96,8 @@
 
 .OUTPUTS
   None. Side effects: New-DatabaseChangePackage, ProGet publish/promote,
-  per-tier Flyway rehearsal (before promotion) and apply/migrate (after
-  promotion/publish) against the tier database, run-context JSON / state
+  exact-package Flyway rehearsal before Experimental apply and before each
+  later-tier promotion, apply/migrate against the tier database, run-context JSON / state
   files / completion markers under
   _generated/buildmaster/<BuildMasterBuildId>.
 
@@ -547,12 +549,12 @@ function Invoke-DatabasePackageTierRehearsal {
   <#
   .SYNOPSIS
     Runs the package-aware Flyway rehearsal that must pass before a database
-    package is promoted into a tier.
+    package is applied to Experimental or promoted into a later tier.
   .DESCRIPTION
     Wraps Invoke-DatabasePackageRehearsal so the BuildMaster stage runner can
-    enforce rehearsal-before-promotion in code. Throws when the rehearsal does
-    not report Success, so the caller aborts before calling
-    Promote-DatabaseChangePackage.
+    enforce exact-package rehearsal in code. Throws when the rehearsal does
+    not report Success, so the caller aborts before Experimental apply or
+    later-tier promotion.
   .OUTPUTS
     [PSCustomObject] the rehearsal result (Success/PackagePath/...).
   .NOTES
@@ -594,10 +596,10 @@ function Invoke-DatabasePackageTierRehearsal {
       $result = Invoke-DatabasePackageRehearsal @rehearsalParameters
       if ($null -eq $result -or -not [bool]$result.Success) {
         $summary = if ($null -ne $result) { $result.ValidateOutput } else { '<no result>' }
-        throw "Pre-promotion Flyway rehearsal FAILED for '$Application' tier '$Tier'; promotion blocked. Detail: $summary"
+        throw "Exact-package Flyway rehearsal FAILED for '$Application' tier '$Tier'; stage action blocked. Detail: $summary"
       }
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-        -Message "Pre-promotion rehearsal PASSED for '$Application' tier '$Tier'."
+        -Message "Exact-package rehearsal PASSED for '$Application' tier '$Tier'."
       return $result
     }
   }
@@ -1038,6 +1040,9 @@ function Invoke-DatabasePackageBuildMasterStage {
     if ($SkipApply) {
       throw "Database stage '$Stage' cannot publish, promote, or complete package '$databasePackageId' while -SkipApply is supplied."
     }
+    if ($Stage -eq 'Experimental' -and $SkipRehearsal) {
+      throw "Database stage 'Experimental' cannot build, publish, rehearse, apply, or complete package '$databasePackageId' while -SkipRehearsal is supplied."
+    }
 
     $stateFiles = [ordered]@{
       CeilingTier       = Join-Path -Path $contextDirectory -ChildPath "$databasePackageId.ceiling-tier.tmp"
@@ -1119,6 +1124,18 @@ function Invoke-DatabasePackageBuildMasterStage {
         Add-DatabasePackagePublishTrace -Path $tracePath `
           -Message "Resume exact published package '$capturedNupkgPath' (SHA256=$capturedPackageHash); build and publish skipped."
 
+        Add-DatabasePackagePublishTrace -Path $tracePath `
+          -Message "Rehearsing exact captured package '$capturedNupkgPath' before Experimental apply."
+        $rehearsalResult = Invoke-DatabasePackageTierRehearsal `
+          -NupkgPath $capturedNupkgPath `
+          -Application $DatabaseApplication `
+          -Tier $Stage `
+          -BuildId $BuildMasterBuildId `
+          -ConnectionStringSecretName $tierConnectionSecretName `
+          -LogPath $tracePath
+        Add-DatabasePackagePublishTrace -Path $tracePath `
+          -Message "Experimental exact-package rehearsal passed (elapsed=$($rehearsalResult.ElapsedSeconds)s); apply may proceed."
+
         Invoke-DatabasePackageStageApply `
           -ContextDirectory $contextDirectory `
           -DatabasePackageId $databasePackageId `
@@ -1199,6 +1216,18 @@ function Invoke-DatabasePackageBuildMasterStage {
           NupkgPath           = $nupkgPath
           PackageVersion      = $resolvedVersion
         } | Out-Null
+
+      Add-DatabasePackagePublishTrace -Path $tracePath `
+        -Message "Rehearsing exact published package '$nupkgPath' before Experimental apply."
+      $rehearsalResult = Invoke-DatabasePackageTierRehearsal `
+        -NupkgPath $nupkgPath `
+        -Application $DatabaseApplication `
+        -Tier $Stage `
+        -BuildId $BuildMasterBuildId `
+        -ConnectionStringSecretName $tierConnectionSecretName `
+        -LogPath $tracePath
+      Add-DatabasePackagePublishTrace -Path $tracePath `
+        -Message "Experimental exact-package rehearsal passed (elapsed=$($rehearsalResult.ElapsedSeconds)s); apply may proceed."
 
       # Apply the freshly built package to the Experimental tier database
       # (Database-Change-Unit-and-Flyway-Promotion.md section 5: "Apply migrations

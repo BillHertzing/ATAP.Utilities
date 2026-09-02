@@ -36,6 +36,7 @@ ModuleVersion        = '0.1.3'
     'Resolve-FeatureSlug'
     'Resolve-PSModuleMetadata'
     'Start-DabMcpServer'
+    'Stop-ZombieMcpServerProcess'
     'Test-DabInstallation'
     'Test-DabMcpConfiguration'
   )

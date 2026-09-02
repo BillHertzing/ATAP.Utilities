@@ -100,19 +100,37 @@
 
   <!-- NuGet Package information for all assemblies in the solution -->
   <PropertyGroup>
-    <Company></Company>
+    <Company>ATAP Consulting</Company>
     <Copyright>William Hertzing</Copyright>
     <Authors>William Hertzing</Authors>
     <Product>ATAP.Utilities</Product>
     <ProductName>ATAP.Utilities</ProductName>
     <RepositoryUrl>https://github.com/BillHertzing/ATAP.Utilities</RepositoryUrl>
     <RepositoryType>GitHub</RepositoryType>
+    <!--
+      Task 15.185.j, option P1 (operator-ratified 2026-09-01): the SPDX expression stays,
+      and the root LICENSE file is additionally packed as package content below.
+      PackageLicenseFile must NOT be set: NuGet treats expression and file as mutually
+      exclusive, and declaring both is an error.
+    -->
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>www.project.url</PackageProjectUrl>
-    <PackageIconUrl>www.icon.url</PackageIconUrl>
+    <PackageProjectUrl>https://github.com/BillHertzing/ATAP.Utilities</PackageProjectUrl>
     <PackageTags>Testing, experimental, alpha, ATAP, ATAP.Utilities</PackageTags>
     <PackageReleaseNotes>Initial implementation/test of ATAP.Utilities Nuget packaging</PackageReleaseNotes>
   </PropertyGroup>
+
+  <!--
+    Task 15.185.j: deliver the license text inside the package bytes.
+    PackageLicenseExpression is gallery metadata, not a notice; MIT conditions its grant
+    on the license and copyright notice accompanying copies of the software, so an
+    offline consumer of the .nupkg must find the text in the package itself.
+  -->
+  <ItemGroup Condition=" Exists('$(MSBuildThisFileDirectory)LICENSE') ">
+    <None Include="$(MSBuildThisFileDirectory)LICENSE"
+          Pack="true"
+          PackagePath="/"
+          Visible="false" />
+  </ItemGroup>
 
   <!-- NuGet Local Feed location, using an environment variable and fallback -->
   <PropertyGroup>

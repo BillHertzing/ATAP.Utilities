@@ -1,0 +1,358 @@
+{
+  "_comment": "Task 15.185.j dependency license tripwire. Regenerate ONLY as a deliberate, reviewed act: a changed license here is a licensing event, not a maintenance event. AutoMapper v15+ and FluentAssertions v8+ are the known cases where a version bump moved a dependency to a paid commercial license.",
+  "_generated": "2026-09-01",
+  "packages": {
+    "System.Drawing.Common": {
+      "version": "8.0.2",
+      "license": "SPDX MIT"
+    },
+    "System.Security.Cryptography.Xml": {
+      "version": "10.0.10",
+      "license": "SPDX MIT"
+    },
+    "System.Security.Cryptography.ProtectedData": {
+      "version": "9.0.4",
+      "license": "SPDX MIT"
+    },
+    "System.IO.FileSystem.AccessControl": {
+      "version": "5.0.0",
+      "license": "SPDX MIT"
+    },
+    "DotNet.Contracts": {
+      "version": "1.10.20606.1",
+      "license": "url: https://github.com/Microsoft/CodeContracts/blob/master/LICENSE.txt"
+    },
+    "FSharp.Core": {
+      "version": "4.3.4",
+      "license": "url: https://github.com/Microsoft/visualfsharp/blob/master/License.txt"
+    },
+    "FSharpx.Collections.Experimental": {
+      "version": "2.1.3",
+      "license": "url: http://github.com/fsprojects/FSharpx.Collections/blob/master/LICENSE.txt"
+    },
+    "Microsoft.Diagnostics.Tracing.TraceEvent": {
+      "version": "3.2.6",
+      "license": "SPDX MIT"
+    },
+    "McMaster.NETCore.Plugins": {
+      "version": "1.4.0",
+      "license": "SPDX Apache-2.0"
+    },
+    "Newtonsoft.Json": {
+      "version": "13.0.4",
+      "license": "SPDX MIT"
+    },
+    "System.Collections.Immutable": {
+      "version": "9.0.0",
+      "license": "SPDX MIT"
+    },
+    "System.Reactive": {
+      "version": "5.0.0",
+      "license": "SPDX MIT"
+    },
+    "System.Speech": {
+      "version": "5.0.0",
+      "license": "SPDX MIT"
+    },
+    "YC.QuickGraph": {
+      "version": "3.7.4",
+      "license": "url: http://github.com/YaccConstructor/QuickGraph/blob/master/LICENSE.txt"
+    },
+    "ServiceStack": {
+      "version": "8.10.0",
+      "license": "url: https://servicestack.net/terms"
+    },
+    "ServiceStack.HttpClient": {
+      "version": "8.10.0",
+      "license": "url: https://servicestack.net/terms"
+    },
+    "ServiceStack.OrmLite": {
+      "version": "8.10.0",
+      "license": "url: https://servicestack.net/terms"
+    },
+    "ServiceStack.OrmLite.Core": {
+      "version": "8.10.0",
+      "license": "url: https://servicestack.net/terms"
+    },
+    "ServiceStack.OrmLite.MySQL.Core": {
+      "version": "8.10.0",
+      "license": "url: https://servicestack.net/terms"
+    },
+    "ServiceStack.OrmLite.Sqlite.Core": {
+      "version": "8.10.0",
+      "license": "url: https://servicestack.net/terms"
+    },
+    "ServiceStack.OrmLite.SqlServer.Data": {
+      "version": "8.10.0",
+      "license": "url: https://servicestack.net/terms"
+    },
+    "ServiceStack.OrmLite.SqlServer.Data.Core": {
+      "version": "8.10.0",
+      "license": "url: https://servicestack.net/terms"
+    },
+    "ServiceStack.Text": {
+      "version": "8.10.0",
+      "license": "url: https://servicestack.net/terms"
+    },
+    "ServiceStack.Text.EnumMemberSerializer": {
+      "version": "3.0.0.50044",
+      "license": "url: https://github.com/Chatham/ServiceStack.Text.EnumMemberSerializer/blob/master/LICENSE"
+    },
+    "TimePeriodLibrary.NET": {
+      "version": "2.1.5",
+      "license": "SPDX MIT"
+    },
+    "Microsoft.Extensions.Configuration": {
+      "version": "9.0.0",
+      "license": "SPDX MIT"
+    },
+    "Microsoft.Extensions.Configuration.Abstractions": {
+      "version": "9.0.0",
+      "license": "SPDX MIT"
+    },
+    "Microsoft.Extensions.Configuration.Binder": {
+      "version": "9.0.0",
+      "license": "SPDX MIT"
+    },
+    "Microsoft.Extensions.Configuration.CommandLine": {
+      "version": "9.0.0",
+      "license": "SPDX MIT"
+    },
+    "Microsoft.Extensions.Configuration.EnvironmentVariables": {
+      "version": "9.0.0",
+      "license": "SPDX MIT"
+    },
+    "Microsoft.Extensions.Configuration.Json": {
+      "version": "9.0.0",
+      "license": "SPDX MIT"
+    },
+    "Microsoft.Extensions.DependencyInjection": {
+      "version": "10.0.2",
+      "license": "SPDX MIT"
+    },
+    "Microsoft.Extensions.DependencyInjection.Abstractions": {
+      "version": "10.0.2",
+      "license": "SPDX MIT"
+    },
+    "Microsoft.Extensions.Hosting": {
+      "version": "9.0.0",
+      "license": "SPDX MIT"
+    },
+    "Microsoft.Extensions.Localization": {
+      "version": "9.0.0",
+      "license": "SPDX MIT"
+    },
+    "Microsoft.Extensions.Options.DataAnnotations": {
+      "version": "9.0.0",
+      "license": "SPDX MIT"
+    },
+    "Microsoft.SemanticKernel": {
+      "version": "1.71.0",
+      "license": "SPDX MIT"
+    },
+    "Microsoft.Extensions.Logging": {
+      "version": "9.0.0",
+      "license": "SPDX MIT"
+    },
+    "Microsoft.Extensions.Logging.Abstractions": {
+      "version": "10.0.2",
+      "license": "SPDX MIT"
+    },
+    "Ninject": {
+      "version": "3.3.6",
+      "license": "url: https://github.com/ninject/ninject/raw/master/LICENSE.txt"
+    },
+    "Ninject.extensions.conventions": {
+      "version": "3.3.0",
+      "license": "url: https://github.com/ninject/Ninject.Extensions.Conventions/raw/master/LICENSE.txt"
+    },
+    "Polly": {
+      "version": "8.5.0",
+      "license": "SPDX BSD-3-Clause"
+    },
+    "Polly.Contrib.WaitAndRetry": {
+      "version": "1.1.1",
+      "license": "SPDX BSD-3-Clause"
+    },
+    "Polly.Extensions.Http": {
+      "version": "3.0.0",
+      "license": "SPDX BSD-3-Clause"
+    },
+    "System.IO.Abstractions": {
+      "version": "21.1.3",
+      "license": "SPDX MIT"
+    },
+    "System.IO.Abstractions.TestingHelpers": {
+      "version": "21.1.3",
+      "license": "SPDX MIT"
+    },
+    "Fody": {
+      "version": "6.9.3",
+      "license": "SPDX MIT"
+    },
+    "MethodBoundaryAspect.Fody": {
+      "version": "2.0.150",
+      "license": "SPDX MIT"
+    },
+    "RabbitMQ.Client": {
+      "version": "7.0.0",
+      "license": "SPDX Apache-2.0 OR MPL-2.0"
+    },
+    "System.Threading.Tasks.Dataflow": {
+      "version": "9.0.0",
+      "license": "SPDX MIT"
+    },
+    "docfx.console": {
+      "version": "2.48.1",
+      "license": "url: https://github.com/dotnet/docfx/blob/master/LICENSE"
+    },
+    "Microsoft.Build.Framework": {
+      "version": "17.14.28",
+      "license": "SPDX MIT"
+    },
+    "Microsoft.Build.Utilities.Core": {
+      "version": "17.14.28",
+      "license": "SPDX MIT"
+    },
+    "Nerdbank.GitVersioning": {
+      "version": "3.9.50",
+      "license": "SPDX MIT"
+    },
+    "Microsoft.SourceLink.GitHub": {
+      "version": "8.0.0",
+      "license": "SPDX MIT"
+    },
+    "Seq.Extensions.Logging": {
+      "version": "6.0.0",
+      "license": "SPDX Apache-2.0"
+    },
+    "Serilog": {
+      "version": "4.1.0",
+      "license": "SPDX Apache-2.0"
+    },
+    "Serilog.Enrichers.Thread": {
+      "version": "4.0.0",
+      "license": "SPDX Apache-2.0"
+    },
+    "Serilog.Exceptions": {
+      "version": "7.1.0",
+      "license": "SPDX MIT"
+    },
+    "Serilog.Extensions.Hosting": {
+      "version": "4.1.2",
+      "license": "SPDX Apache-2.0"
+    },
+    "Serilog.Extensions.Logging": {
+      "version": "3.0.1",
+      "license": "url: http://www.apache.org/licenses/LICENSE-2.0"
+    },
+    "Serilog.Settings.Configuration": {
+      "version": "8.0.4",
+      "license": "SPDX Apache-2.0"
+    },
+    "Serilog.Sinks.Console": {
+      "version": "4.0.0",
+      "license": "SPDX Apache-2.0"
+    },
+    "Serilog.Sinks.File": {
+      "version": "5.0.0",
+      "license": "SPDX Apache-2.0"
+    },
+    "Serilog.Sinks.Seq": {
+      "version": "5.0.0",
+      "license": "SPDX Apache-2.0"
+    },
+    "SerilogAnalyzer": {
+      "version": "0.15.0",
+      "license": "url: https://github.com/Suchiman/SerilogAnalyzer/blob/master/LICENSE"
+    },
+    "MedallionShell": {
+      "version": "1.6.2",
+      "license": "SPDX MIT"
+    },
+    "UnitsNet": {
+      "version": "5.60.0",
+      "license": "SPDX MIT-0"
+    },
+    "Scrutor": {
+      "version": "3.3.0",
+      "license": "SPDX MIT"
+    },
+    "coverlet.collector": {
+      "version": "3.1.0",
+      "license": "SPDX MIT"
+    },
+    "FluentAssertions": {
+      "version": "6.2.0",
+      "license": "SPDX Apache-2.0"
+    },
+    "Microsoft.NET.Test.Sdk": {
+      "version": "17.0.0",
+      "license": "file: LICENSE_NET.txt"
+    },
+    "Moq": {
+      "version": "4.16.1",
+      "license": "url: https://raw.githubusercontent.com/moq/moq4/master/License.txt"
+    },
+    "xunit": {
+      "version": "2.4.1",
+      "license": "url: https://raw.githubusercontent.com/xunit/xunit/master/license.txt"
+    },
+    "Xunit.DependencyInjection": {
+      "version": "7.1.0",
+      "license": "NONE-DECLARED"
+    },
+    "xunit.runner.console": {
+      "version": "2.4.1",
+      "license": "url: https://raw.githubusercontent.com/xunit/xunit/master/license.txt"
+    },
+    "xunit.runner.visualstudio": {
+      "version": "2.4.3",
+      "license": "SPDX MIT"
+    },
+    "Microsoft.CodeAnalysis.Common": {
+      "version": "3.3.1",
+      "license": "SPDX Apache-2.0"
+    },
+    "Microsoft.CSharp": {
+      "version": "4.7.0",
+      "license": "SPDX MIT"
+    },
+    "NLog": {
+      "version": "4.7.0",
+      "license": "url: https://github.com/NLog/NLog/blob/master/LICENSE.txt"
+    },
+    "NLog.Config": {
+      "version": "4.7.0",
+      "license": "url: https://github.com/NLog/NLog/blob/master/LICENSE.txt"
+    },
+    "TaskScheduler": {
+      "version": "2.11.0",
+      "license": "SPDX MIT"
+    },
+    "System.Text.Json": {
+      "version": "10.0.2",
+      "license": "SPDX MIT"
+    },
+    "Microsoft.Build.Locator": {
+      "version": "1.2.2",
+      "license": "url: http://go.microsoft.com/fwlink/?LinkId=329770"
+    },
+    "Microsoft.CodeAnalysis.Analyzers": {
+      "version": "2.9.8",
+      "license": "SPDX Apache-2.0"
+    },
+    "Microsoft.CodeAnalysis.CSharp.Workspaces": {
+      "version": "3.3.1",
+      "license": "SPDX Apache-2.0"
+    },
+    "Microsoft.CodeAnalysis.VisualBasic.Workspaces": {
+      "version": "3.3.1",
+      "license": "SPDX Apache-2.0"
+    },
+    "Microsoft.CodeAnalysis.Workspaces.MSBuild": {
+      "version": "3.3.1",
+      "license": "SPDX Apache-2.0"
+    }
+  }
+}

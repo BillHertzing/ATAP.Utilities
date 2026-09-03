@@ -100,4 +100,11 @@ Describe 'Application release fail-closed preparation' {
     $schema.properties.sourceBranch['$ref'] | Should -Be '#/$defs/nonEmptyToken'
     $schema.properties.releaseVersion['$ref'] | Should -Be '#/$defs/semVerString'
   }
+  It 'uses the native form-encoded promotion endpoint for releasebundle feeds' {
+    $source = Get-Content (Join-Path $PSScriptRoot '../Invoke-ApplicationReleaseStage.ps1') -Raw
+    $source | Should -Match '/api/promotions/promote'
+    $source | Should -Match 'application/x-www-form-urlencoded'
+    $source | Should -Not -Match 'Promote-ProGetPackage'
+    $source | Should -Match 'fromFeed=\$sourceFeed;toFeed=\$feed'
+  }
 }

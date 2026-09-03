@@ -70,7 +70,6 @@ function Invoke-ApplicationReleaseStage {
     if (-not $PSCmdlet.ShouldProcess("$($context.productId) $($context.version) -> $feed", 'Verify and advance immutable application bundle')) { return }
     Import-Module PSFramework -ErrorAction Stop
     $null = Get-Command Get-SecretATAP -ErrorAction Stop
-    $null = Get-Command Promote-ProGetPackage -ErrorAction Stop
     . $context.bundleVerifier
     [IO.Directory]::CreateDirectory($runRoot) | Out-Null
     $attemptRoot = Join-Path $runRoot ($Stage + '-' + [guid]::NewGuid().ToString('N'))
@@ -121,7 +120,17 @@ function Invoke-ApplicationReleaseStage {
         } else {
           $sourceFeed = 'releasebundle-' + $tiers[$position - 1].ToLowerInvariant()
           $null = Get-VerifiedReleaseDownload -Url "$baseUrl/upack/$sourceFeed/download/$($context.productId)/$($context.version)" -Path (Join-Path $attemptRoot 'source.upack') -Hash $context.bundleSha256
-          Promote-ProGetPackage -Name $context.productId -Version $context.version -FromFeed $sourceFeed -ToFeed $feed -CeilingTier Production -ProGetBaseUrl $baseUrl -ProGetApiKeySecretName $secretName -Reason "COMMANDER02 approved stable release; BuildMaster build $BuildId" | Out-Null
+          # The shared package wrapper does not classify releasebundle-* feeds.
+          # The fixed five-tier ladder above is the authority for this application.
+          $key = $null
+          try {
+            $key = [string](Get-SecretATAP -SecretName $secretName -SecretStoreType BitwardenSecretsManager -ErrorAction Stop)
+            $promotion = @{name=$context.productId;version=$context.version;fromFeed=$sourceFeed;toFeed=$feed;comments="COMMANDER02 approved stable release; BuildMaster build $BuildId"}
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Promoting approved bytes from $sourceFeed to $feed" -Tag RestCall
+            Invoke-RestMethod -Uri "$baseUrl/api/promotions/promote" -Method Post -Body $promotion -ContentType 'application/x-www-form-urlencoded' -Headers @{'X-ApiKey'=$key} -TimeoutSec 60 -ErrorAction Stop | Out-Null
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Promotion returned; destination verification follows.' -Tag RestCall
+          } catch { throw "Application promotion failed ($($_.Exception.GetType().Name)); verify destination before retry." }
+          finally { $key = $null }
         }
       }
       $downloadPath = Join-Path $attemptRoot 'destination-verified.upack'

@@ -106,5 +106,8 @@ Describe 'Application release fail-closed preparation' {
     $source | Should -Match 'application/x-www-form-urlencoded'
     $source | Should -Not -Match 'Promote-ProGetPackage'
     $source | Should -Match 'fromFeed=\$sourceFeed;toFeed=\$feed'
+    $source | Should -Match '/upload" -Method Post'
+    $source | Should -Match "ContentType 'application/zip'"
+    ([regex]::Matches($source, '-MaximumRedirection 0')).Count | Should -Be 3
   }
 }

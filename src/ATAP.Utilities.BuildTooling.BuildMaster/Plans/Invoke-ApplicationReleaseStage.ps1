@@ -93,7 +93,7 @@ function Invoke-ApplicationReleaseStage {
         try {
           $key = [string](Get-SecretATAP -SecretName $secretName -SecretStoreType BitwardenSecretsManager -ErrorAction Stop)
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Reading $Url" -Tag RestCall
-          Invoke-WebRequest -Uri $Url -Headers @{'X-ApiKey'=$key} -OutFile $Path -TimeoutSec 120 -ErrorAction Stop | Out-Null
+          Invoke-WebRequest -Uri $Url -Headers @{'X-ApiKey'=$key} -OutFile $Path -MaximumRedirection 0 -TimeoutSec 120 -ErrorAction Stop | Out-Null
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Download completed.' -Tag RestCall
         } catch {
           if ($AllowMissing -and [int]$_.Exception.Response.StatusCode -eq 404) { return $false }
@@ -113,7 +113,7 @@ function Invoke-ApplicationReleaseStage {
           try {
             $key = [string](Get-SecretATAP -SecretName $secretName -SecretStoreType BitwardenSecretsManager -ErrorAction Stop)
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Publishing approved bytes to $feed" -Tag RestCall
-            Invoke-RestMethod -Uri "$baseUrl/upack/$feed/" -Method Put -InFile $context.bundlePath -ContentType 'application/octet-stream' -Headers @{'X-ApiKey'=$key} -TimeoutSec 180 -ErrorAction Stop | Out-Null
+            Invoke-RestMethod -Uri "$baseUrl/upack/$feed/upload" -Method Post -InFile $context.bundlePath -ContentType 'application/zip' -Headers @{'X-ApiKey'=$key} -MaximumRedirection 0 -TimeoutSec 180 -ErrorAction Stop | Out-Null
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Publication returned.' -Tag RestCall
           } catch { throw "Experimental publication failed ($($_.Exception.GetType().Name)); verify destination before retry." }
           finally { $key = $null }
@@ -127,7 +127,7 @@ function Invoke-ApplicationReleaseStage {
             $key = [string](Get-SecretATAP -SecretName $secretName -SecretStoreType BitwardenSecretsManager -ErrorAction Stop)
             $promotion = @{name=$context.productId;version=$context.version;fromFeed=$sourceFeed;toFeed=$feed;comments="COMMANDER02 approved stable release; BuildMaster build $BuildId"}
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Promoting approved bytes from $sourceFeed to $feed" -Tag RestCall
-            Invoke-RestMethod -Uri "$baseUrl/api/promotions/promote" -Method Post -Body $promotion -ContentType 'application/x-www-form-urlencoded' -Headers @{'X-ApiKey'=$key} -TimeoutSec 60 -ErrorAction Stop | Out-Null
+            Invoke-RestMethod -Uri "$baseUrl/api/promotions/promote" -Method Post -Body $promotion -ContentType 'application/x-www-form-urlencoded' -Headers @{'X-ApiKey'=$key} -MaximumRedirection 0 -TimeoutSec 60 -ErrorAction Stop | Out-Null
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Promotion returned; destination verification follows.' -Tag RestCall
           } catch { throw "Application promotion failed ($($_.Exception.GetType().Name)); verify destination before retry." }
           finally { $key = $null }

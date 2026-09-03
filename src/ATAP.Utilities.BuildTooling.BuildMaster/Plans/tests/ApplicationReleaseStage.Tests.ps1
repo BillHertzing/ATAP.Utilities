@@ -90,4 +90,14 @@ Describe 'Application release fail-closed preparation' {
     }
     @($pipeline.EventListeners).Count | Should -Be 0
   }
+  It 'accepts exact stable .NET informational provenance but not prerelease provenance' {
+    $schema = Get-Content (Join-Path $PSScriptRoot '../../../../SolutionDocumentation/schemas/manifest.schema.json') -Raw | ConvertFrom-Json -AsHashtable
+    $pattern = $schema['$defs'].applicationComponent.properties.version.pattern
+    '0.1.1.1+8f98cb8a30' | Should -Match $pattern
+    '0.1.1' | Should -Match $pattern
+    '0.1.1-Sprint.1' | Should -Not -Match $pattern
+    '0.1.1.1-Sprint.1' | Should -Not -Match $pattern
+    $schema.properties.sourceBranch['$ref'] | Should -Be '#/$defs/nonEmptyToken'
+    $schema.properties.releaseVersion['$ref'] | Should -Be '#/$defs/semVerString'
+  }
 }

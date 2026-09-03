@@ -16,7 +16,7 @@
     "releaseVersion": { "$ref": "#/$defs/semVerString" },
     "sourceTag": { "$ref": "#/$defs/nonEmptyToken" },
     "sourceCommit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
-    "sourceBranch": { "type": "string", "pattern": "^release/[^\\s]+$" },
+    "sourceBranch": { "$ref": "#/$defs/nonEmptyToken" },
     "buildUtc": { "type": "string", "format": "date-time", "pattern": "Z$" },
     "buildAgent": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9.-]*$" },
     "applicationProvenance": {
@@ -175,7 +175,7 @@
       "required": ["id", "version", "qualityTier", "projectPath"],
       "properties": {
         "id": { "$ref": "#/$defs/packageId" },
-        "version": { "$ref": "#/$defs/semVerString" },
+        "version": { "type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:\\.(0|[1-9][0-9]*))?(?:\\+[0-9A-Za-z.-]+)?$" },
         "qualityTier": { "const": "Production" },
         "projectPath": { "$ref": "#/$defs/relativePath" }
       }

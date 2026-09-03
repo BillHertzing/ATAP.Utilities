@@ -3,9 +3,12 @@
 .SYNOPSIS
     Creates or verifies a deterministic schema-v2 ReleaseBundle archive.
 .DESCRIPTION
-    Composes manifest.json and declared app/, installer/, tests/, and docs/
-    payloads only. Schema v1 and embedded database content are rejected. ZIP
-    entries use ordinal order, fixed timestamps, and fixed permission metadata.
+    Composes root upack.json identity metadata, manifest.json, and declared
+    app/, installer/, tests/, and docs/ payloads only. The existing roots are
+    Universal Package metacontent for this custom consumer, not package/
+    content for generic upack installation. Schema v1 and embedded database
+    content are rejected. ZIP entries use ordinal order, fixed timestamps, and
+    fixed permission metadata.
     Every completed archive is reopened, safely extracted to a fresh path, and
     verified against payloadFiles SHA-256 and size values.
 .PARAMETER Manifest
@@ -28,6 +31,8 @@
     Performs no feed, BuildMaster, credential, database, installation, or live action.
 .LINK
     New-ReleaseManifest
+.LINK
+    https://docs.inedo.com/docs/proget/feeds/universal/universal-packages
 #>
 function New-ReleaseBundle {
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'Assemble')]
@@ -95,7 +100,7 @@ function New-ReleaseBundle {
         }
 
         function Normalize-EntryPath {
-            param([string]$Path, [string]$Purpose, [switch]$AllowManifest)
+            param([string]$Path, [string]$Purpose, [switch]$AllowMetadata)
             if ([string]::IsNullOrWhiteSpace($Path)) {
                 throw "ATAPBUILD014: $Purpose path must not be empty."
             }
@@ -118,7 +123,7 @@ function New-ReleaseBundle {
                     throw "ATAPBUILD014: $Purpose path '$Path' contains a Windows-unsafe segment '$segment'."
                 }
             }
-            if ($AllowManifest -and $normalized -ceq 'manifest.json') {
+            if ($AllowMetadata -and $normalized -in @('manifest.json', 'upack.json')) {
                 return $normalized
             }
             if ($allowedRoots -notcontains $segments[0]) {
@@ -230,6 +235,41 @@ function New-ReleaseBundle {
             }
         }
 
+        function Get-UpackMetadataBytes {
+            param([pscustomobject]$ManifestData)
+            if ($ManifestData.ProductId -cnotmatch '^[A-Za-z0-9_.-]{1,50}$') {
+                throw 'ATAPBUILD014: Universal Package name must contain 1-50 ASCII letters, digits, periods, underscores, or dashes.'
+            }
+            # The v2 schema permits some prerelease strings that SemVer2 does not.
+            $semVerPattern = '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-((?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$'
+            if ($ManifestData.Version -cnotmatch $semVerPattern) {
+                throw 'ATAPBUILD014: Universal Package version must be a valid SemVer2 version.'
+            }
+            $metadata = [ordered]@{ name = $ManifestData.ProductId; version = $ManifestData.Version }
+            return [Text.Encoding]::UTF8.GetBytes(($metadata | ConvertTo-Json -Compress))
+        }
+
+        function Assert-UpackMetadata {
+            param([byte[]]$Bytes, [pscustomobject]$ManifestData)
+            try {
+                $metadata = [Text.Encoding]::UTF8.GetString($Bytes) | ConvertFrom-Json -ErrorAction Stop
+            } catch {
+                throw "ATAPBUILD014: Unable to parse upack.json metadata: $($_.Exception.Message)"
+            }
+            if ($metadata -isnot [pscustomobject] -or
+                -not (Has-Property $metadata 'name') -or -not (Has-Property $metadata 'version') -or
+                $metadata.name -isnot [string] -or $metadata.name -cne $ManifestData.ProductId -or
+                $metadata.version -isnot [string] -or $metadata.version -cne $ManifestData.Version) {
+                throw 'ATAPBUILD014: upack.json name/version must exactly match the ReleaseBundle manifest identity.'
+            }
+            $expectedBytes = Get-UpackMetadataBytes $ManifestData
+            # Exact canonical bytes also reject duplicate fields, alternate identity
+            # casing, an injected group, and unapproved additional metadata.
+            if ((Get-Hash $Bytes) -cne (Get-Hash $expectedBytes)) {
+                throw 'ATAPBUILD014: upack.json must contain only canonical deterministic name/version metadata.'
+            }
+        }
+
         function Add-Root {
             param([Collections.Generic.List[string]]$List, [string]$Path)
             $full = [IO.Path]::GetFullPath($Path)
@@ -245,7 +285,9 @@ function New-ReleaseBundle {
             try {
                 $zip = [IO.Compression.ZipArchive]::new($file, [IO.Compression.ZipArchiveMode]::Create, $true, [Text.Encoding]::UTF8)
                 try {
-                    foreach ($name in @($Entries.Keys | Sort-Object -CaseSensitive)) {
+                    $names = [string[]]@($Entries.Keys)
+                    [Array]::Sort($names, [StringComparer]::Ordinal)
+                    foreach ($name in $names) {
                         $entry = $zip.CreateEntry($name, [IO.Compression.CompressionLevel]::Optimal)
                         $entry.LastWriteTime = $fixedTimestamp
                         $entry.ExternalAttributes = [int]$fixedAttributes
@@ -283,7 +325,7 @@ function New-ReleaseBundle {
                         if ([string]::IsNullOrEmpty($entry.Name)) {
                             throw "ATAPBUILD014: Archive contains unexpected directory entry '$($entry.FullName)'."
                         }
-                        $name = Normalize-EntryPath $entry.FullName 'archive entry' -AllowManifest
+                        $name = Normalize-EntryPath $entry.FullName 'archive entry' -AllowMetadata
                         if (-not $entries.TryAdd($name, $entry)) {
                             throw "ATAPBUILD014: Archive contains duplicate entry '$name'."
                         }
@@ -298,7 +340,8 @@ function New-ReleaseBundle {
                         }
                         $order.Add($name)
                     }
-                    $sorted = @($order | Sort-Object -CaseSensitive)
+                    $sorted = [string[]]@($order)
+                    [Array]::Sort($sorted, [StringComparer]::Ordinal)
                     if (-not $entries.ContainsKey('manifest.json')) {
                         throw "ATAPBUILD014: Archive is missing 'manifest.json'."
                     }
@@ -312,8 +355,22 @@ function New-ReleaseBundle {
                     $manifestData = Read-Manifest $memory.ToArray()
                     $memory.Dispose()
 
+                    if (-not $entries.ContainsKey('upack.json')) {
+                        throw "ATAPBUILD014: Archive is missing 'upack.json'."
+                    }
+                    $metadataMemory = [IO.MemoryStream]::new()
+                    $metadataStream = $entries['upack.json'].Open()
+                    try {
+                        $metadataStream.CopyTo($metadataMemory)
+                        Assert-UpackMetadata $metadataMemory.ToArray() $manifestData
+                    } finally {
+                        $metadataStream.Dispose()
+                        $metadataMemory.Dispose()
+                    }
+
                     $expected = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
                     $null = $expected.Add('manifest.json')
+                    $null = $expected.Add('upack.json')
                     foreach ($payload in $manifestData.Payload) {
                         $null = $expected.Add($payload.Path)
                     }
@@ -333,8 +390,8 @@ function New-ReleaseBundle {
                         }
                     }
                     foreach ($name in $sorted) {
-                        $destination = if ($name -ceq 'manifest.json') {
-                            Join-Path $ExtractPath 'manifest.json'
+                        $destination = if ($name -cin @('manifest.json', 'upack.json')) {
+                            Join-Path $ExtractPath $name
                         } else {
                             Resolve-SafePath $ExtractPath $name 'extraction'
                         }
@@ -358,10 +415,12 @@ function New-ReleaseBundle {
                 $file.Dispose()
             }
 
-            $actual = @(Get-ChildItem -LiteralPath $ExtractPath -Recurse -File | ForEach-Object {
+            $actual = [string[]]@(Get-ChildItem -LiteralPath $ExtractPath -Recurse -File | ForEach-Object {
                     [IO.Path]::GetRelativePath($ExtractPath, $_.FullName).Replace('\', '/')
-                } | Sort-Object -CaseSensitive)
-            $expectedNames = @(@('manifest.json') + @($manifestData.Payload.Path) | Sort-Object -CaseSensitive)
+                })
+            [Array]::Sort($actual, [StringComparer]::Ordinal)
+            $expectedNames = [string[]](@('manifest.json', 'upack.json') + @($manifestData.Payload.Path))
+            [Array]::Sort($expectedNames, [StringComparer]::Ordinal)
             if (($actual -join [Environment]::NewLine) -cne ($expectedNames -join [Environment]::NewLine)) {
                 throw 'ATAPBUILD014: Fresh extraction contains missing or unexpected files.'
             }
@@ -410,6 +469,7 @@ function New-ReleaseBundle {
 
         $manifestBytes = [IO.File]::ReadAllBytes((Get-Item -LiteralPath $Manifest.FullName).FullName)
         $manifestData = Read-Manifest $manifestBytes
+        $upackBytes = Get-UpackMetadataBytes $manifestData
         $baseName = '{0}.{1}' -f $manifestData.ProductId, $manifestData.Version
         if ($baseName.IndexOfAny([IO.Path]::GetInvalidFileNameChars()) -ge 0) {
             throw "ATAPBUILD014: Bundle identity '$baseName' contains invalid file-name characters."
@@ -444,6 +504,7 @@ function New-ReleaseBundle {
 
         $bytesByEntry = [Collections.Specialized.OrderedDictionary]::new([StringComparer]::Ordinal)
         $bytesByEntry.Add('manifest.json', $manifestBytes)
+        $bytesByEntry.Add('upack.json', $upackBytes)
         foreach ($payload in $manifestData.Payload) {
             $sourcePath = $null
             foreach ($root in $roots) {

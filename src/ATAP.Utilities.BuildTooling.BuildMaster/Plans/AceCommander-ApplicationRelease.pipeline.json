@@ -1,0 +1,13 @@
+{
+  "Name": "AceCommander-ApplicationRelease-5Stage",
+  "Description": "Commander-only immutable ReleaseBundle v2 promotion; no database apply or external distribution.",
+  "Stages": [
+    { "Name": "Experimental", "Targets": [{ "ScriptId": "AceCommander-ApplicationRelease.otter", "ServerNames": ["localhost"], "ServerRoleNames": [], "DefaultServerContext": 1 }], "Gate": { "UserApprovals": [], "GroupApprovals": [], "DeploymentWindows": [], "AutomaticApprovals": [] }, "AllowMultipleActiveBuilds": false },
+    { "Name": "Development", "Targets": [{ "ScriptId": "AceCommander-ApplicationRelease.otter", "ServerNames": ["localhost"], "ServerRoleNames": [], "DefaultServerContext": 1 }], "Gate": { "UserApprovals": [], "GroupApprovals": [], "DeploymentWindows": [], "AutomaticApprovals": [] }, "AllowMultipleActiveBuilds": false },
+    { "Name": "Integration", "Targets": [{ "ScriptId": "AceCommander-ApplicationRelease.otter", "ServerNames": ["localhost"], "ServerRoleNames": [], "DefaultServerContext": 1 }], "Gate": { "UserApprovals": [], "GroupApprovals": [], "DeploymentWindows": [], "AutomaticApprovals": [] }, "AllowMultipleActiveBuilds": false },
+    { "Name": "QA", "Targets": [{ "ScriptId": "AceCommander-ApplicationRelease.otter", "ServerNames": ["localhost"], "ServerRoleNames": [], "DefaultServerContext": 1 }], "Gate": { "UserApprovals": [], "GroupApprovals": [], "DeploymentWindows": [], "AutomaticApprovals": [] }, "AllowMultipleActiveBuilds": false },
+    { "Name": "Production", "Targets": [{ "ScriptId": "AceCommander-ApplicationRelease.otter", "ServerNames": ["localhost"], "ServerRoleNames": [], "DefaultServerContext": 1 }], "Gate": { "UserApprovals": [], "GroupApprovals": [], "DeploymentWindows": [], "AutomaticApprovals": [] }, "AllowMultipleActiveBuilds": false }
+  ],
+  "TemplateVariables": [],
+  "EventListeners": []
+}

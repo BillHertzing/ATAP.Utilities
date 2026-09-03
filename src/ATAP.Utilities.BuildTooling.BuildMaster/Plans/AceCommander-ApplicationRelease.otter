@@ -1,0 +1,10 @@
+# Commander-only thin adapter. Same Exec/>> literal shape as deployed CSharpPackage-5Stage.otter.
+# No database apply, rebuilding above Experimental, service mutation, or distribution.
+set $ReleaseBuildId = $BuildMasterId(build);
+InedoCore::Exec
+(
+    FileName: pwsh,
+    Arguments: >>-NonInteractive -File "$ApplicationReleaseRunner" -ContextPath "$ApplicationReleaseContext" -ExpectedContextSha256 "$ApplicationReleaseContextSha256" -Stage "$PipelineStageName" -BuildId "$ReleaseBuildId">>,
+    WorkingDirectory: $ApplicationReleaseWorkingDirectory,
+    SuccessExitCode: 0
+);

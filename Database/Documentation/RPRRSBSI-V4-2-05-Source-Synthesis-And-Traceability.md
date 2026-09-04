@@ -178,7 +178,7 @@ work.
 | --- | --- | --- | --- | --- |
 | C01 | Canonical lowercase dashed GUID text; database comparison by value | adopted | Normative for CSV/API fixtures and database comparisons. | Operator Input section 2 |
 | D2 | Higher BuildSet occurrence ordinal wins; duplicate ordinals invalid | adopted | Normative precedence rule. | Operator Input section 2, retained D2 |
-| C02 | Material declared-type change creates new semantic identity | adopted | Normative for classified cases only; edge cases remain pending. | Operator Input C02 |
+| C02 | Material declared-type change creates new semantic identity | adopted | Normative for the general rule and all eight edge classifications ruled 2026-09-04. | Operator Input C02 and D-3 companion |
 | C03 | Overlay is a same-RuleId RuleVariant selected by Override occurrence | adopted | Replaces copied-rule overlay behavior. | Operator Input C03 |
 | C04 | ATAP immutable references; ACE overlays/sessions; topology-neutral union | adopted | Normative ownership/topology boundary. | Operator Input C04 |
 | C05 | Durable Tag endpoints with active TagState resolved as-of | adopted | Normative Tags endpoint rule. | Operator Input C05 |
@@ -188,8 +188,8 @@ work.
 | C09 | Durable Tag root owns Philote and immutable namespace/code; TagState has no Philote | adopted | Governs Tags identity and natural key. | Operator Input C09 |
 | C10 | Namespace stewardship is data and an authoring gate with history/co-stewards | adopted | Governs stewardship model; C16 supplies the opaque principal/provenance contract. | Operator Input C10 |
 | C11 | Philote validity is identity lifespan; TagState is payload timeline | adopted | Governs dual temporal model and containment invariant. | Operator Input C11 |
-| C12 | Typed relations and generic assignment; assignment targets durable TagId | adopted | Governs relation and assignment endpoints; C21/C22 remain pending. | Operator Input C12 |
-| C13 | TagVersion becomes TagState; label/description live on state | adopted | Governs state terminology and display payload; localization remains pending. | Operator Input C13 |
+| C12 | Typed relations and generic assignment; assignment targets durable TagId | adopted | Governs relation and assignment endpoints; C21/C22 are ruled 2026-09-04. | Operator Input C12 |
+| C13 | TagVersion becomes TagState; label/description live on state | adopted | Governs state terminology and display payload; C23 omits initial localization. | Operator Input C13 |
 | C14 | Temporal aliases, namespace-local, no reissue, controlled type, trigger uniqueness | adopted | C26 fixes collation; FU-4 fixes SQL Server Express and its validation burden. | Operator Input C14; 2026-08-30 rulings |
 | C15 | Dual-layer retraction, one write/read path, required successor pointer | adopted | FU-6 defines multi-hop, cycle, terminal-resolution, and erroneous-withdrawal semantics. | Operator Input C15; 2026-08-30 rulings |
 | C16 | Opaque principal, active-steward authoring gate, source reference, dual UTC timestamps | adopted | Generalized approval workflow remains deferred. | 2026-08-30 operator ruling |
@@ -197,16 +197,22 @@ work.
 | C26 | Explicit `Latin1_General_100_CI_AS_SC` Tag-code collation | adopted | Governs canonical and alias comparisons. | 2026-08-30 operator ruling |
 | FU-4 | SQL Server Express target with trigger behavior/performance validation | adopted | Governs target-platform evidence. | 2026-08-30 operator ruling |
 | FU-6 | Multi-hop successors, cycle rejection, first active terminal resolution, erroneous-withdrawal exception | adopted | Governs successor behavior and C15 exception. | 2026-08-30 operator ruling |
+| D3-1..8 | Eight declared-type edge classifications | adopted | All eight exact material/non-material boundaries are normative. | 2026-09-04 operator ruling; D-3 companion |
+| C17 | Tags never authorize | adopted | Hard architecture and negative-test invariant. | 2026-09-04 operator ruling |
+| C18 | No intrinsic Tag ordering | adopted | `Ordinal` is used only on genuinely ordered collections. | 2026-09-04 operator ruling |
+| C19 | Typed, directed, optionally weighted Tag relations | adopted | Storage is governed here; traversal behavior is deferred to Task 15.50.b. | 2026-09-04 operator ruling |
+| C21 | Initial assignment EntityType allow-list | adopted | Initial codes are `rule` and `instantiation`. | 2026-09-04 operator ruling |
+| C22 | Durable-root relation endpoints | adopted | No exact-state relation FK. | 2026-09-04 operator ruling |
+| C23 | No initial localization | adopted | Reserve an additive localization child. | 2026-09-04 operator ruling |
+| C24 | No automatic legacy taxonomy migration | adopted | Reviewed terms may be re-authored later. | 2026-09-04 operator ruling |
+| C25 | Recorded metadata inventory pre-live gate | adopted | Requires separate authorization; does not itself authorize inventory. | 2026-09-04 operator ruling |
+| C27 | No initial assignment confidence/relevance | adopted | Add only after demonstrated ContentSummary need. | 2026-09-04 operator ruling |
 
-## Non-normative pending boundary
+## Ratification boundary
 
-The following items have no disposition because they are not decisions yet. They stay
-non-normative and must not be inferred from neighboring adopted decisions.
-
-| Pending authority item | Status | Permitted use in V4 design |
-| --- | --- | --- |
-| D3 edge cases 1 through 8 | HITL-PENDING | Cite the ratified general C02 rule, but do not classify an edge case. |
-| C17 through C19, C21 through C25, and C27 | HITL-PENDING | Record the question and recommendation only; do not implement the recommendation as a ruling. |
+The D-3 and Tags items formerly held here were all ruled on 2026-09-04 and now have
+explicit adopted rows above. No item in that enumerated packet remains pending. Newly
+discovered architecture questions still require their own operator ruling.
 
 Authority: `_Planning/InformationForTheFuture/Sprint0015/StreamN/Task-15.140.a/RPRRSBSI-V4-Operator-Input.md`
 and its companion

@@ -64,10 +64,13 @@ Ratified D-5 is an ownership rule independent of deployment topology.
 - **V4-2-ME-021 (D-3):** A classified material declared-type change SHALL create a new
   registered semantic identity and leave earlier meaning immutable. Classified material
   cases are rule-kind changes, scalar-to-different-scalar changes, scalar/heap-object
-  crossings, and any heap/object-type change, including single value to collection.
+  crossings, heap/object-type changes, nullability, precision/scale, collection element
+  type, container cardinality/shape, string-length/declared-domain constraint, declared
+  contract-type rename, and code/fixture/contract-consumed text changes.
 - **V4-2-ME-022 (D-3):** Default-value-only and display-only-text changes are non-material
-  and MAY preserve semantic identity through a new State or Variant. The eight edge cases
-  remain `HITL-PENDING` and SHALL NOT become positive fixtures.
+  and MAY preserve semantic identity through a new State or Variant. A simultaneous
+  type/default change is one material transition whose default is the new definition's
+  initial state; a separate display alias remains non-material.
 - **V4-2-ME-023 (D-4):** An ACE overlay SHALL be a distinct `RuleVariant` of the same
   durable `RuleId`, selected by an occurrence with role `Override`; the Rule SHALL NOT be
   copied.
@@ -196,12 +199,15 @@ The first data SHOULD be small, synthetic, and license-safe. A later approved
 implementation SHALL register every semantic identity before packaging seeds and SHALL
 use the shared deterministic loader contract.
 
-## Pending gates and adversarial boundaries
+## Ruled boundaries and adversarial cases
 
-The eight D-3 edge cases and C-16 through C-27 remain `HITL-PENDING` and non-normative.
-This document does not decide actor/provenance policy, authorization, Tags ordering or
-traversal, tenant/store topology, generic Tag entity codes, localization, live-schema
-inventory, Tag collation, assignment confidence, or successor-chain behavior.
+C-16/C-20/C-26/FU-4/FU-6 and the 2026-09-04 D-3/Tags decisions are ruled inputs: use opaque principal/provenance, one
+non-tenant-discriminated `ATAPUtilities` catalog, the explicit Tag-code collation, SQL
+Server Express validation, and the ruled successor semantics.
+Tags never authorize; Tags have no intrinsic ordering; relation traversal stays deferred
+to Task 15.50.b; assignment codes initially include `rule` and `instantiation`; relations
+use durable roots; localization, legacy taxonomy, and confidence are omitted initially;
+and recorded metadata inventory remains a separately authorized pre-live gate.
 
 Close variants outside the first manifestation include:
 
@@ -211,7 +217,7 @@ Close variants outside the first manifestation include:
 - a database-change plan reinterpreted as permission to execute Flyway;
 - a copied Rule presented as an overlay;
 - text-form GUID comparison used as identity equality;
-- an unruled D-3 edge case classified by a loader or fixture; and
+- a ruled D-3 material edge case reusing its former identity; and
 - a topology adapter whose location changes resolution precedence.
 
 Each case SHALL fail closed or remain an unresolved finding. The first output stops at

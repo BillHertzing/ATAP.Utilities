@@ -29,8 +29,7 @@ reconciliation.
 D-1 through D-7 are normative here: D-1 and D-3 through D-7 were ratified on
 2026-08-16, and D-2 is the retained ratified precedence rule. C-16, C-20, C-26, FU-4,
 and FU-6 were ruled on 2026-08-30. The eight D-3 edge cases, C-17 through C-19,
-C-21 through C-25, and C-27 remain `HITL-PENDING`; those pending items SHALL NOT be
-encoded as constraints, defaults, inferred classifications, or execution behavior.
+C-21 through C-25, and C-27 were ruled on 2026-09-04.
 
 ## Identity and temporal foundation
 
@@ -73,15 +72,22 @@ V3 has a basic `Rule` and set-membership joins. V4 keeps the basic identity and 
 
 | Table                       | Required columns and constraints                                                                                            |
 | --------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `RuleVariant`               | PK and Philote; same-basic-rule `RuleId` FK; owning `RuleSetId` FK; unique variant code within owner.                       |
+| `RuleVariant`               | PK and Philote; same-basic-rule `RuleId` FK; owning `RuleSetId` FK; unique variant code within owner; unique `(RuleVariantId, OwningRuleSetId)` owner key. |
 | `RuleVariantState`          | PK; `RuleVariantId`; matching validity period; purpose; executor contract; normalized body/configuration; lifecycle status. |
-| `RuleSetRuleOccurrence`     | PK; `RuleSetId`; `RuleVariantId`; membership role; `Ordinal`; optional condition; unique ordinal within RuleSet.            |
+| `RuleSetRuleOccurrence`     | PK; `RuleSetId`; `RuleVariantId`; membership role; `Ordinal`; optional condition; unique ordinal within RuleSet; composite FK `(RuleVariantId, RuleSetId)` to the variant owner key. |
 | `BuildSetRuleSetOccurrence` | PK; `BuildSetId`; `RuleSetId`; `Ordinal`; optional condition; unique ordinal within BuildSet.                               |
 | `RuleSetMembershipRole`     | Fixed values `Add`, `Override`, `Suppress`.                                                                                 |
 
 - **V4-2-CORE-030:** `RuleVariant.RuleId` SHALL identify the basic semantic rule being varied.
 - **V4-2-CORE-031:** A baseline ATAP variant and an ACE override variant MAY reference the same `RuleId`; their `RuleVariantId` and owning RuleSet SHALL differ.
 - **V4-2-CORE-031A:** D-4 is normative: an overlay SHALL be a `RuleVariant` of the same `RuleId`, and an occurrence with membership role `Override` SHALL select it. An implementation SHALL NOT copy the basic `Rule` to represent an overlay.
+- **V4-2-CORE-031B:** A `RuleSetRuleOccurrence` SHALL select only a `RuleVariant` owned by
+  that same RuleSet. Cross-owner selection is prohibited. The physical contract SHALL
+  expose `UNIQUE (RuleVariantId, OwningRuleSetId)` and enforce the occurrence pair
+  `(RuleVariantId, RuleSetId)` through a composite foreign key to that owner key.
+- **V4-2-CORE-031C:** Conformance tests SHALL reject an occurrence whose `RuleSetId`
+  differs from the selected variant's `OwningRuleSetId`, even when the variant shares the
+  expected `RuleId` and the occurrence role is `Override`.
 - **V4-2-CORE-032:** Membership and BuildSet composition SHALL use occurrence identities; the V3 composite join tables remain readable during transition but SHALL NOT constrain V4 to one occurrence per pair.
 - **V4-2-CORE-033:** A RuleSet SHALL reject duplicate occurrence ordinals. A BuildSet SHALL reject duplicate `BuildSetRuleSetOccurrence.Ordinal` values; duplicate ordinals in one BuildSet are invalid input and SHALL NOT be tie-broken.
 - **V4-2-CORE-034:** D-2 is normative: effective resolution SHALL order BuildSet RuleSet occurrences by `Ordinal DESC`; the higher ordinal has higher precedence.
@@ -123,25 +129,64 @@ source-only reconciliation.
 - **V4-2-CORE-042:** Defaults SHALL be distinguishable from user-supplied, imported, calculated, and inherited values.
 - **V4-2-CORE-043:** Every normalization operation SHALL be deterministic, identified, and included in execution provenance.
 - **V4-2-CORE-044:** D-3 is normative: a material declared-type change SHALL create a new basic semantic identity. Existing identities SHALL NOT be mutated to carry a materially different meaning.
-- **V4-2-CORE-045:** Material changes are exactly the ratified classes: (1) any rule-kind change; (2) scalar-to-different-scalar; (3) scalar/heap-object boundary crossing; and (4) any heap/object-type change, including single value to collection. This statement does not classify same-scalar nullability, precision, scale, length, or constraint changes.
+- **V4-2-CORE-045:** The 2026-08-16 material classes are (1) any rule-kind change;
+  (2) scalar-to-different-scalar; (3) scalar/heap-object boundary crossing; and (4) any
+  heap/object-type change, including single value to collection. V4-2-CORE-045A and
+  V4-2-CORE-045B add the edge classifications ruled on 2026-09-04.
+- **V4-2-CORE-045A:** The 2026-09-04 edge rulings additionally classify nullability,
+  precision/scale, collection element type, container cardinality/shape, and string-length
+  or declared-domain constraint changes as material. A declared contract-type rename is
+  material; a separate display alias is non-material. Text consumed by code, fixtures,
+  or contracts is material.
+- **V4-2-CORE-045B:** A simultaneous type/default change is one material transition; the
+  default is the replacement definition's initial state.
 - **V4-2-CORE-046:** A default-value change and a change to text used only for visual display are non-material and MAY retain the existing semantic identity, while still using the applicable state/validity history.
+
+### Material-change identity transition contract
+
+The identity that changes is the durable semantic row that owns the changed declaration,
+not an arbitrary ancestor and not a formatting-only state row. The following table is the
+fixture-binding authority for the ratified D-3 classes, including the eight edge rulings.
+
+| Ratified change class | Required new identity | Identity retained | Reference transition and retained history |
+| --- | --- | --- | --- |
+| Rule-kind change | New `RuleId`, new baseline `RuleVariantId`, and new input/output definition IDs for the replacement Rule | No Rule identity is reused | New occurrences and bindings reference the replacement Rule graph. The prior Rule, variants, definitions, occurrences, instantiation bindings, results, and provenance remain immutable and queryable. |
+| Scalar to different scalar on an input or output | New `RuleInputDefinitionId` or `RuleOutputDefinitionId` plus a new `RuleVariantId` for the changed definition set; the parent `RuleId` remains the same | Basic Rule identity | New occurrences select the replacement variant and its registered definition IDs. Existing occurrences and frozen instantiation bindings retain the prior variant and definitions. |
+| Scalar/heap-object boundary crossing on an input or output | New `RuleInputDefinitionId` or `RuleOutputDefinitionId` plus a new `RuleVariantId`; the parent `RuleId` remains the same | Basic Rule identity | Same transition and history-retention rule as scalar-to-different-scalar. No declared type or storage discriminant is updated in place. |
+| Heap/object-type change, including single value to collection, on an input or output | New `RuleInputDefinitionId` or `RuleOutputDefinitionId` plus a new `RuleVariantId`; the parent `RuleId` remains the same | Basic Rule identity | Same transition and history-retention rule as scalar-to-different-scalar. Old object/collection contracts remain bound to their original definitions. |
+| Default-value-only change | New validity-bounded default row/state; no new Rule, variant, or input-definition identity | `RuleId`, `RuleVariantId`, `RuleInputDefinitionId` | The prior default remains queryable as-of; only the default state/value reference changes. |
+| Display-only text change | New applicable `State` row for the display payload; no new semantic definition identity | The owning Rule, variant, input/output definition, or catalog identity | Historical display state remains queryable as-of. Text that feeds code or fixtures is still D-3 edge case 8 and is not covered by this control. |
+| Same-scalar nullability or precision/scale change | New input/output definition ID plus new `RuleVariantId` | Basic `RuleId` | Prior accepted-value domain remains bound to its original definition. |
+| Collection element-type or container cardinality/shape change | New input/output definition ID plus new `RuleVariantId` | Basic `RuleId` | Prior collection contract remains immutable and queryable. |
+| Declared contract-type rename | New input/output definition ID plus new `RuleVariantId` | Basic `RuleId` | A separate display alias may retain identity; the contract declaration may not. |
+| Simultaneous type/default change | One new input/output definition ID plus new `RuleVariantId`; default recorded as the new definition's initial state | Basic `RuleId` | No artificial intermediate definition is created; prior definition/default history remains intact. |
+| String-length or declared-domain constraint change | New input/output definition ID plus new `RuleVariantId` | Basic `RuleId` | Prior constraint/domain remains bound to its original definition. |
+| Text consumed by code, fixtures, or contracts | New owning semantic definition identity plus new `RuleVariantId` where rule-bound | Basic `RuleId` when applicable | Genuinely visual display-only text remains the non-material control. |
+
+- **V4-2-CORE-046A:** Every new identity in the table SHALL receive a separately
+  registered GUID before it is referenced by seed, migration, API, or fixture data.
+- **V4-2-CORE-046B:** No implementation SHALL update `RuleId`, `RuleVariantId`,
+  `RuleInputDefinitionId`, `RuleOutputDefinitionId`, declared type, or storage
+  discriminant in place to simulate a material transition.
+- **V4-2-CORE-046C:** Positive fixtures SHALL prove all four material rows allocate the
+  required identities and preserve old references. Negative fixtures SHALL attempt the
+  prohibited in-place update. The two non-material controls SHALL prove identity reuse
+  through explicit State/default history, not through overwriting prior history.
 
 ### D-3 edge-case clarification register
 
-The classifications above are ratified. Each case below is explicitly unclassified.
-No implementation may treat a recommendation, a likely interpretation, or absence from
-the ratified list as a constraint.
+The classifications below were explicitly ruled on 2026-09-04.
 
 | # | Edge case | Classification | Status |
 | -: | --- | --- | --- |
-| 1 | Same-scalar nullability change | Unclassified | `HITL-PENDING` |
-| 2 | Same-scalar precision or scale change | Unclassified | `HITL-PENDING` |
-| 3 | Collection element-type change | Unclassified | `HITL-PENDING` |
-| 4 | Renamed type with unchanged shape and semantics | Unclassified | `HITL-PENDING` |
-| 5 | Default-value change combined with a type change | Unclassified | `HITL-PENDING` |
-| 6 | Container cardinality or shape change with unchanged element type | Unclassified | `HITL-PENDING` |
-| 7 | String length or constraint change | Unclassified | `HITL-PENDING` |
-| 8 | Display text that also feeds generated code or fixtures | Unclassified | `HITL-PENDING` |
+| 1 | Same-scalar nullability change | Material | Ruled 2026-09-04 |
+| 2 | Same-scalar precision or scale change | Material | Ruled 2026-09-04 |
+| 3 | Collection element-type change | Material | Ruled 2026-09-04 |
+| 4 | Declared contract-type rename; separate display alias | Material; display alias non-material | Ruled 2026-09-04 |
+| 5 | Default-value change combined with a type change | One material transition; default is initial state | Ruled 2026-09-04 |
+| 6 | Container cardinality or shape change with unchanged element type | Material | Ruled 2026-09-04 |
+| 7 | String length or declared-domain constraint change | Material | Ruled 2026-09-04 |
+| 8 | Display text consumed by code, fixtures, or contracts | Material | Ruled 2026-09-04 |
 
 ## Separate workflow and calculation graphs
 
@@ -201,7 +246,9 @@ may be multi-hop, reject cycles, and resolve to the first active terminal succes
 erroneous withdrawal requires a reason and has no successor as an explicit C-15
 exception. A generalized approval workflow is deferred.
 
-C-17 through C-19, C-21 through C-25, and C-27 remain `HITL-PENDING`. This document does
-not decide authorization semantics, additional valid uses of `Ordinal`, weighted Tag
-traversal, generic Tag assignment type codes, Tag relation state endpoints, localization,
-legacy taxonomy migration, live schema inventory, or assignment confidence.
+C-17 through C-19, C-21 through C-25, and C-27 are ruled: Tags never authorize; Tags
+have no intrinsic order; relations are typed, directed, and optionally weighted while
+traversal is deferred to Task 15.50.b; initial assignment types are `rule` and
+`instantiation`; relations use durable roots; initial localization and legacy taxonomy
+migration are omitted; a separately authorized recorded metadata inventory gates live
+work; and assignment confidence/relevance is omitted until demonstrated consumer need.

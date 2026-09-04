@@ -38,8 +38,8 @@ the reconciled implementation inputs.
 - D-2 is the retained ratified precedence and duplicate-rejection decision.
 - C-08 through C-15 were ruled on 2026-08-18 and are normative.
 - C-16, C-20, C-26, FU-4, and FU-6 were distinctly ruled on 2026-08-30.
-- D-3 edge cases 1 through 8, C-17 through C-19, C-21 through C-25, and C-27 remain
-  `HITL-PENDING` stop gates.
+- D-3 edge cases 1 through 8, C-17 through C-19, C-21 through C-25, and C-27 were
+  distinctly ruled on 2026-09-04 and are normative implementation inputs.
 - Task 15.140.b ends with design. Task 15.140.c is the separate forward-only
   migration implementation. Every live `expwhertzing` increment requires its own built
   implementation task, but execution under that task requires no separate explicit HITL
@@ -51,14 +51,14 @@ the reconciled implementation inputs.
 | --- | --- |
 | C-01 / D-1 interface | CSV and API fixtures contain canonical lowercase dashed `D` GUID text. Non-canonical text is rejected even when parseable. |
 | C-01 / D-1 database | Equality, joins, uniqueness, registry checks, and duplicate detection compare native database `uniqueidentifier` values, not text spelling, case, or collation; a database-value test proves equivalent GUID spellings resolve to the same value. |
-| C-02 / D-3 | A classified material declared-type change creates a new semantic identity. Classified cases are rule-kind changes, scalar-to-different-scalar changes, scalar/heap-object crossings, and heap/object-type changes, including single value to collection. Default-value-only and display-only-text changes retain identity through State/Variant history. |
+| C-02 / D-3 | A material declared-type change creates a new semantic identity. The 2026-09-04 edge rulings cover nullability, precision/scale, element type, container shape/cardinality, declared contract rename, combined type/default, declared-domain constraint, and code/fixture/contract-consumed text; only genuine display aliases/text and default-only changes retain identity. |
 | C-03 / D-4 | Baseline and overlay have distinct `RuleVariantId` values but the same `RuleId`. An `Override` occurrence selects the overlay; no copied Rule represents it. |
 | C-04 / D-5 | ATAP immutable references and ACE overlays/sessions remain separate ownership planes behind one topology-neutral union contract; storage location never supplies precedence. |
 | C-05 / D-6 | Tag relations and assignments use durable `TagId` endpoints and resolve the applicable `TagState` as-of. |
 | C-06 / D-7 | Internal history is named `State` or `Variant`; `Version` remains reserved for external software/package/firmware/protocol versions. |
 | C-07 / D-8 | The first manifestation emits a validated database-change/configuration plan and stops; it does not purchase, provision, or apply the plan. |
 | D-2 | Resolution orders `BuildSetRuleSetOccurrence.Ordinal DESC`; the higher ordinal wins and duplicates are rejected, never tie-broken. |
-| C-08 through C-15 | Tests map individually to the Tags contracts below. Pending fields are absent or explicitly blocked, never guessed. |
+| C-08 through C-27 | Tests map individually to the ruled Tags contracts below; separately authorized pre-live inventory remains mandatory under C-25. |
 
 ## Ordered implementation layers
 
@@ -83,8 +83,8 @@ and one domain-neutral expert system.
 Gate: fresh and V3-upgrade paths pass; identities and loads are deterministic; C-01/D-1
 interface and native-value tests pass; a generic definition is queryable as-of.
 
-Blocked: C-21 prevents seeding pending Tag-assignment `EntityType` codes, including
-`rule` and `instantiation`.
+C-21 permits `rule` and `instantiation`; fixed GUID registration and seed implementation
+remain work for the owning implementation task.
 
 ### Layer 2 — variants, occurrences, overlays, and resolution
 
@@ -107,13 +107,13 @@ create new identities; default/display-only changes retain identity through hist
 dirty propagation is reachable-only; identical inputs and definitions reproduce output
 and provenance.
 
-Stop gate: D-3 edges 1 through 8 receive no fixture, schema default, loader
-classification, or executor behavior until individually ruled.
+The eight D-3 edge classifications are ruled; Layer 3 fixtures must prove their exact
+new-identity and retained-history behavior.
 
 ### Layer 4 — Tags expert system
 
-Permitted now: the C-08 through C-15 documentation-level logical slice, reference-file
-contracts allocating no pending rows, as-of/retraction/collision test designs, and a
+Permitted now: the C-08 through C-27 documentation-level logical slice, reference-file
+contracts respecting the ruled omissions, as-of/retraction/collision test designs, and a
 database-change plan that cannot apply itself.
 
 | Decision | Required contract |
@@ -122,13 +122,15 @@ database-change plan that cannot apply itself.
 | C-09 | Only durable `Tag` owns Philote/GUID and immutable namespace-local code. `TagState` has no Philote. `UNIQUE(TagNamespaceId, TagCode)` is non-temporal. |
 | C-10/C-16 | `TagNamespace` is first-class; stewardship is data; self-stewardship, co-stewards, and transfer history are required. Opaque `PrincipalId`, active stewardship, source reference, and occurred/recorded UTC timestamps govern initial authoring; generalized approval is deferred. |
 | C-11 | `PhiloteValidityPeriod` carries identity lifespan and `TagState` payload history. State intervals are fully covered by validity; reinstatement gaps are allowed. |
-| C-12 | Typed relations and assignments use durable `TagId` and resolve `TagState` as-of. C-21 blocks allowed assignment types; C-22 retains relation-endpoint reconciliation. |
-| C-13/C-20 | Payload history is `TagState`; label/description live there. One authoritative `ATAPUtilities` catalog has no initial tenant discriminator; C-23 alone blocks localization. |
+| C-12/C-21/C-22 | Typed relations and assignments use durable `TagId` and resolve `TagState` as-of. Initial assignment types are `rule` and `instantiation`; relations use durable roots. |
+| C-13/C-20/C-23 | Payload history is `TagState`; label/description live there. One authoritative `ATAPUtilities` catalog has no initial tenant discriminator; localization is omitted initially with an additive child reserved. |
+| C-17/C-18/C-19 | Tags never authorize and have no intrinsic order. Relations are typed, directed, and optionally weighted; traversal is deferred to Task 15.50.b. |
+| C-24/C-25/C-27 | No legacy taxonomy migrates automatically; separately authorized recorded metadata inventory gates live work; assignment confidence/relevance is omitted until demonstrated consumer need. |
 | C-14/C-26/FU-4 | Aliases are namespace-local, temporal, controlled-type, and permanently claimed. One trigger using `Latin1_General_100_CI_AS_SC` prevents canonical/alias reissue/collision; behavior/performance must validate on SQL Server Express. |
 | C-15/FU-6 | Retraction closes/gaps identity validity and writes terminal `TagState` in one transaction; sanctioned reads consult both; no delete/`IsActive`; `ON DELETE NO ACTION`. Multi-hop successors reject cycles and resolve to the first active terminal successor; erroneous withdrawal requires a reason and no successor. |
 
-Gate: applicable ruled scenarios pass; every C-17 through C-19, C-21 through C-25, and
-C-27 field is absent or disabled. Plan application remains disabled.
+Gate: applicable ruled scenarios pass, including required negative/omission cases. Plan
+application remains disabled until C-25 inventory and the Task 15.140.c protocol pass.
 
 ### Layer 5 — Mechanized Engineering starter
 
@@ -152,8 +154,8 @@ Directional deliverables: edit-session ownership, optimistic concurrency, repeat
 inputs, compound/nested instantiation, user Tag/overlay storage, and topology-neutral
 reads.
 
-Blocked release: C-21 must close assignment types and a session/compound-design packet
-must be ratified. C-16 and C-20 govern the initial Tag slice but do not independently
+Blocked release: a session/compound-design packet must be ratified. C-16, C-20, and
+C-21 govern the initial Tag slice but do not independently
 ratify ACE session/compound design. D-5 ownership alone is not physical design authority.
 
 ### Layer 7 — manifestation lifecycle
@@ -170,34 +172,26 @@ plan, permitted tier, authorized executor, and immutable-input binding.
 Directional deliverables: backup/restore, retention, disaster recovery, topology
 validation, performance budgets, concurrency, authorization, and security tests.
 
-Blocked release: C-17 authorization, C-20 topology, FU-4 platform, Layers 6/7 closure,
+Blocked release: C-17 authorization tests, C-20 topology evidence, FU-4 platform evidence, Layers 6/7 closure,
 and named Production HITL are required. A build or local test is not deploy-state
 evidence.
 
-## Pending-authority stop matrix
+## Ruled-authority implementation matrix
 
-Each row is mandatory blocked scope. A task may record the question, but SHALL NOT
-choose a value or implement the named field or behavior.
+Each row is a ruled input whose executable evidence remains Task 15.140.c or later work.
 
-| Pending authority | Blocked layer(s) and exact field, constraint, seed, or behavior |
+| Authority | Required implementation behavior |
 | --- | --- |
-| D-3 edge 1 | Layer 3+: nullability-only classification and identity fixture. |
-| D-3 edge 2 | Layer 3+: precision/scale widening or narrowing classification and fixture. |
-| D-3 edge 3 | Layer 3+: collection element-type classification and fixture. |
-| D-3 edge 4 | Layer 3+: renamed-same-shape type and code-generation identity behavior. |
-| D-3 edge 5 | Layer 3+: combined default/type-change decomposition and identity count. |
-| D-3 edge 6 | Layer 3+: list/set, ordering, and cardinality-shape classification. |
-| D-3 edge 7 | Layer 3+: string length/pattern/constraint classification and fixtures. |
-| D-3 edge 8 | Layer 3+: whether generated-code or fixture identifiers are display-only. |
-| C-17 | Layers 4, 8: hard “Tags never authorize” invariant and negative authorization tests. No Tag is treated as a grant while pending. |
-| C-18 | Layer 4: Tag ordering semantics, Tag `Ordinal` field/default, and tie-break. |
-| C-19 | Layer 4: relation weight/direction aggregation, traversal, limits, and explanations beyond typed existence. |
-| C-21 | Layers 1, 4: allowed assignment `EntityType` rows, including `rule` and `instantiation`; no GUID/code seed. |
-| C-22 | Layer 4: relation root-versus-state reconciliation. Current D-6/C-05 and C-12 durable roots remain; no alternate state FK. |
-| C-23 | Layer 4: `TagStateLocalization`, locale keys, fallback, and seeds. |
-| C-24 | Layer 4: migration, mapping, GUIDs, or seeds for the legacy 35-row taxonomy. |
-| C-25 | Layer 4 / Task 15.140.c: live `Tags` schema inventory and its disposition; inventory requires separate authority. |
-| C-27 | Layer 4: assignment confidence/relevance field, range, null/default, and fixtures. |
+| D-3 edges 1-8 | Layer 3+ fixtures prove every exact classification, new identity, and retained-history boundary. |
+| C-17 | Layers 4/8 prove Tags never authorize through negative tests. |
+| C-18 | Layer 4 omits intrinsic Tag ordering and limits `Ordinal` to genuinely ordered collections. |
+| C-19 | Layer 4 stores typed, directed, optionally weighted relations; Task 15.50.b owns traversal behavior. |
+| C-21 | Layers 1/4 register fixed identities and seed only `rule` and `instantiation` initially. |
+| C-22 | Layer 4 uses durable relation roots and no alternate state FK. |
+| C-23 | Layer 4 omits first-migration localization and reserves an additive child. |
+| C-24 | Layer 4 migrates no legacy taxonomy automatically. |
+| C-25 | Task 15.140.c obtains separately authorized, recorded live metadata inventory before live work. |
+| C-27 | Layer 4 omits confidence/relevance until demonstrated ContentSummary need. |
 
 ## Task 15.140.c forward-only delivery protocol
 

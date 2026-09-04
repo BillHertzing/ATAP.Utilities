@@ -1,5 +1,10 @@
 # RPRRSBSI-V4 Core Schema Enhancements
 
+> **Historical predecessor — superseded for current task authoring.** Use
+> [RPRRSBSI-V4-2 Core Schema Enhancements](RPRRSBSI-V4-2-10-Core-Schema-Enhancements.md)
+> as the current authority. The V4 body below is retained unchanged as historical design
+> context; its decision-status statements do not override V4-2 or the operator record.
+
 Status: reconciled task-authoring design. This document defines no migration, seed,
 deployment, or live-database action.
 

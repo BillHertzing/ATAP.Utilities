@@ -27,8 +27,10 @@ decision-level disposition is in
   semantic history uses `State` or `Variant`, while software-release `Version` retains
   its normal meaning.
 
-No statement here decides D3 edge cases, C16 through C27, FU-4, or FU-6; all remain
-`HITL-PENDING`.
+Historical V3 facts remain unchanged. In the V4 successor authority, C-16, C-20, C-26,
+FU-4, and FU-6 were ruled on 2026-08-30. D-3 edge cases 1 through 8, C-17 through C-19,
+C-21 through C-25, and C-27 remain `HITL-PENDING`; this V3 document does not decide
+them.
 
 Content retrieval was requested with retrieval labels [RPRRSBSI,V3,physical-schema,data-dictionary], depth 3, width 2, production. gather-content-summary was unavailable (no registered command), so the direct-read fallback used the amended V3 plan, IPhilote.cs, and retained Path and PowerShell compendiums.
 

@@ -24,10 +24,8 @@ The [V3 data dictionary](RPRRSBSI-V3-Data-Dictionary.md),
 [V3 GUID registry](RPRRSBSI-V3-GUID-Registry.csv) are retained baseline evidence; they
 do not allocate V4 identities or decide a V4 pending gate.
 
-D-1, retained D-2, D-3/C-02 for its explicitly classified cases, D-4/C-03, and
-C-08 through C-15 are normative inputs. The eight D-3 edge cases, C-16 through C-27,
-FU-4, and FU-6 remain `HITL-PENDING`. A pending question SHALL NOT be converted into a
-catalog row, fixture value, default, validation rule, loader branch, or inferred GUID.
+D-1, retained D-2, D-3/C-02 including all eight edge classifications, D-4/C-03,
+C-08 through C-27, FU-4, and FU-6 are normative inputs as ruled through 2026-09-04.
 
 ## Package classes and isolation
 
@@ -84,11 +82,11 @@ The V3 consolidation currently establishes these minimum row counts: Philote 22,
 - **V4-2-SEED-015:** The loader SHALL reject a classified material change that reuses the
   original semantic identity, and SHALL reject a purported new identity absent from the
   registry.
-- **V4-2-SEED-016:** No fixture SHALL classify or seed any of the eight D-3 edge cases
-  while they are `HITL-PENDING`: same-scalar nullability; same-scalar precision/scale;
-  collection element type; renamed type with unchanged shape and semantics; combined
-  default and type change; container cardinality/shape with unchanged element type;
-  string length/constraint; or display text that feeds generated code or fixtures.
+- **V4-2-SEED-016:** Fixtures SHALL cover all eight D-3 edge rulings: material
+  nullability, precision/scale, collection element-type, container shape/cardinality,
+  string-length/declared-domain, and code/fixture/contract-consumed text changes; the
+  contract-rename/display-alias boundary; and the one-transition combined type/default
+  rule whose default is the replacement definition's initial state.
 
 ## Loader phases
 
@@ -120,7 +118,7 @@ The V3 consolidation currently establishes these minimum row counts: Philote 22,
 
 | File                          | Seed content                                                                                        |
 | ----------------------------- | --------------------------------------------------------------------------------------------------- |
-| `EntityType.csv`              | Approved generic-association entity kinds only; row population is blocked by C-21.                  |
+| `EntityType.csv`              | Approved generic-association entity kinds only; initial rows are `rule` and `instantiation` after their fixed GUIDs are registered. |
 | `RulePurpose.csv`             | Validation, calculation, selection, normalization, explanation, planning.                           |
 | `ValueType.csv`               | Semantic value types.                                                                               |
 | `ScalarStorageKind.csv`       | Physical scalar discriminants.                                                                      |
@@ -160,6 +158,13 @@ The V3 consolidation currently establishes these minimum row counts: Philote 22,
   instant and `Ordinal` SHALL be explicit; CSV row order supplies neither time nor
   precedence.
 - **V4-2-SEED-024:** Changing the effective budget SHALL dirty cost and downstream violation/output work but SHALL NOT dirty unrelated calculations.
+- **V4-2-SEED-025:** Each of the four ratified material-change classes SHALL have a
+  positive transition fixture matching the identity table in the core contract. The old
+  Rule/variant/definition graph and frozen instantiation references SHALL remain
+  queryable, and every replacement identity SHALL resolve through the GUID registry.
+- **V4-2-SEED-026:** Default-value-only and display-only-text controls SHALL retain their
+  semantic identities and add validity-bounded default or State history. Display text
+  that feeds code or fixtures remains excluded as D-3 edge case 8.
 
 Fixture names and semantic roles in this section are not allocated codes or GUID values.
 An implementation SHALL replace each identity symbol only with a separately registered
@@ -173,6 +178,7 @@ identity and SHALL cite that registry entry in its manifest.
 | Override without base | An `Override` occurrence has no visible lower-precedence candidate for the same `RuleId`. |
 | Override with different basic Rule | The overlay `RuleVariant.RuleId` differs from the lower-precedence candidate's `RuleId`. |
 | Copied-rule overlay | An overlay introduces a copied basic Rule instead of a same-`RuleId` `RuleVariant`. |
+| Cross-owner RuleVariant occurrence | `RuleSetRuleOccurrence.RuleSetId` differs from the selected `RuleVariant.OwningRuleSetId`; reject through the composite owner foreign key even when `RuleId` and `Override` are otherwise valid. |
 | Add collision | An `Add` collides with an already visible candidate for the same `RuleId`. |
 | Reused material-change identity | A classified material declared-type change retains the original semantic identity. |
 | Unregistered replacement identity | A classified material change supplies a new GUID that has no registry entry. |
@@ -183,28 +189,33 @@ A row-order perturbation positive fixture SHALL reorder CSV records while keepin
 explicit ordinals unchanged; the effective result SHALL remain unchanged. This proves
 that file order is not an accidental D-2 tie-break.
 
-## Pending-item seed embargo
+## Ruled seed boundaries
 
-The following exclusions are release gates, not implementation suggestions:
+The following requirements and exclusions are binding:
 
-- **C-21 — `HITL-PENDING`:** Do not populate `EntityType.csv` with inferred codes,
-  including `rule` or `instantiation`. A filename reservation is not a row allocation.
-- **C-24 — `HITL-PENDING`:** Do not migrate or seed legacy filing-taxonomy rows, even
-  when a plausible mapping exists.
-- **C-26 — `HITL-PENDING`:** Do not choose Tag-code collation or create fixtures whose
-  expected validity depends on case, accent, width, or kana equivalence.
-- **C-27 — `HITL-PENDING`:** Do not add or seed per-assignment confidence or relevance.
-- **C-16 through C-20, C-22, C-23, and C-25 — `HITL-PENDING`:** Do not materialize
-  actor/provenance policy, authorization semantics, Tag ordering, weighted traversal,
-  tenant/store topology, relation-state endpoints, localization, or live-schema
-  inventory.
-- **FU-4 — `HITL-PENDING`:** Do not encode an assumed SQL Server edition or
-  edition-sensitive enforcement path.
-- **FU-6 — `HITL-PENDING`:** Do not seed successor chains, cycles, termination behavior,
-  or erroneous-withdrawal behavior beyond the ruled requirement that a successor pointer
-  exists on retraction.
-- **D-3 edge cases 1 through 8 — `HITL-PENDING`:** Do not create positive or negative
-  classification fixtures until the operator records the classification.
+- C-17 negative fixtures SHALL prove Tags never authorize.
+- C-18 SHALL allocate no intrinsic Tag ordinal; `Ordinal` appears only on genuinely
+  ordered collections.
+- C-19 MAY represent typed, directed, optionally weighted relations; traversal behavior
+  remains deferred to Task 15.50.b.
+- C-21 reference seeds SHALL include `rule` and `instantiation` only after their fixed
+  GUIDs are registered by the implementation task.
+- C-22 relation fixtures SHALL use durable Tag roots, never exact state endpoints.
+- C-23 SHALL allocate no first-migration localization row; reserve an additive child.
+- C-24 SHALL migrate no legacy taxonomy row automatically.
+- C-25 requires separately authorized recorded metadata inventory before live work.
+- C-27 SHALL allocate no confidence/relevance field or seed until demonstrated consumer need.
+
+- C-16 fixtures SHALL use opaque `PrincipalId`, require active namespace stewardship for
+  initial authoring, and carry source reference plus occurred-at and recorded-at UTC.
+- C-20 fixtures SHALL use one authoritative `ATAPUtilities` catalog and no tenant
+  discriminator.
+- C-26 comparison fixtures SHALL use `Latin1_General_100_CI_AS_SC` for canonical and alias
+  Tag codes.
+- FU-4 validation SHALL target SQL Server Express and cover the required trigger's
+  behavior and measured burden.
+- FU-6 fixtures SHALL cover a valid multi-hop successor, cycle rejection, first-active-
+  terminal resolution, and erroneous withdrawal with a reason and no successor.
 
 An implementation task SHALL re-read the authority documents and remove only the
 specific embargo whose ruling is recorded. Silence, a recommendation, or an example from

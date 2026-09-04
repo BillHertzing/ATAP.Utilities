@@ -1,5 +1,10 @@
 # RPRRSBSI-V4 Mechanized Engineering Specification
 
+> **Historical predecessor — superseded for current task authoring.** Use
+> [RPRRSBSI-V4-2 Mechanized Engineering Specification](RPRRSBSI-V4-2-40-Mechanized-Engineering.md)
+> as the current authority. The V4 body below is retained unchanged as historical design
+> context; its decision-status statements do not override V4-2 or the operator record.
+
 Status: reconciled documentation-only contract. It defines no SQL, allocates no GUID,
 and grants no live-system authority.
 

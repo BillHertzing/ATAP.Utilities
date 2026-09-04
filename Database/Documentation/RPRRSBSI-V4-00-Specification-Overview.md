@@ -1,5 +1,10 @@
 # RPRRSBSI-V4 Specification Overview
 
+> **Historical predecessor — superseded for current task authoring.** Use
+> [RPRRSBSI-V4-2 Specification Overview](RPRRSBSI-V4-2-00-Specification-Overview.md)
+> as the current authority. The V4 body below is retained unchanged as historical design
+> context; its decision-status statements do not override V4-2 or the operator record.
+
 Status: reconciled task-authoring specification for Sprint 0015 Stream N.
 
 This document set expands the implemented RPRRSBSI V3/PTV database design into V4. It

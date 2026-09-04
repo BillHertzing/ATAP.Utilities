@@ -1,5 +1,10 @@
 # RPRRSBSI-V4 Tags Expert System Specification
 
+> **Historical predecessor — superseded for current task authoring.** Use
+> [RPRRSBSI-V4-2 Tags Expert System Specification](RPRRSBSI-V4-2-30-Tags-Expert-System.md)
+> as the current authority. The V4 body below is retained unchanged as historical design
+> context; its decision-status statements do not override V4-2 or the operator record.
+
 Status: reconciled documentation-only design contract for Task 15.140.b. This document
 defines no SQL, migration, CSV identity, live inventory, package/feed action, or
 deployment.

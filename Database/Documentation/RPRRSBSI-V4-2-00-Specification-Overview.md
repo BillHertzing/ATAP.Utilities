@@ -33,7 +33,7 @@ The decision/status authority for this overview is the Task 15.140.a structured
 operator record at
 `_Planning/InformationForTheFuture/Sprint0015/StreamN/Task-15.140.a/RPRRSBSI-V4-Operator-Input.md`
 and its editable D-3 companion. The operator record distinguishes Decision Register
-rulings from the direct 2026-08-18 operator session. The source list and historical
+rulings from the direct 2026-08-18, 2026-08-30, and 2026-09-04 operator sessions. The source list and historical
 V2/V3 material supply traceability and recovery evidence, but they do not override an
 operator ruling or decide a pending item.
 
@@ -46,8 +46,8 @@ The current status boundary is:
   reason to describe the rulings as pending.
 - C-16, C-20, C-26, FU-4, and FU-6 were distinctly ruled on 2026-08-30 and are
   normative only to the extent stated below.
-- D-3 edge cases 1 through 8, C-17 through C-19, C-21 through C-25, and C-27 remain
-  `HITL-PENDING`. They are questions only and have no normative force.
+- D-3 edge cases 1 through 8, C-17 through C-19, C-21 through C-25, and C-27 were
+  distinctly ruled on 2026-09-04 and are normative only to the extent stated below.
 
 ## Intended outcomes
 
@@ -91,7 +91,7 @@ prose. Text explicitly marked `HITL-PENDING` or non-normative is not a requireme
 | --- | --- | --- |
 | D-1 / C-01 | Ratified 2026-08-16 | CSV and API GUID text SHALL use canonical lowercase dashed `D` format. Database GUID equality and joins SHALL compare native GUID values, not formatted text. |
 | D-2 | Retained ratified decision | Within a BuildSet, a higher `BuildSetRuleSetOccurrence.Ordinal` SHALL have higher precedence. Resolution SHALL use `Ordinal DESC`; duplicate ordinals in one BuildSet are invalid. |
-| D-3 / C-02 | Ratified 2026-08-16 | A material declared-type change SHALL create a new semantic identity and SHALL NOT mutate meaning in place. Material changes are any rule-kind change, scalar-to-different-scalar change, scalar/heap-object boundary crossing, or any heap/object-type change, including single value to collection. Default-value and display-only text changes are non-material. The eight unclassified edge cases remain pending and are not exceptions or extensions to this rule. |
+| D-3 / C-02 | Ratified 2026-08-16; edges ruled 2026-09-04 | A material declared-type change SHALL create a new semantic identity and SHALL NOT mutate meaning in place. Material changes include rule-kind, scalar-to-different-scalar, scalar/heap-object boundary, heap/object-type, nullability, precision/scale, collection element-type, container shape/cardinality, and string-length/declared-domain constraint changes. A declared contract-type rename is material; a separate display alias is non-material. A simultaneous type/default change is one material transition whose new definition receives the default as its initial state. Text consumed by code, fixtures, or contracts is material; default-only and genuinely visual display-only changes are non-material. |
 | D-4 / C-03 | Ratified 2026-08-16 | An overlay SHALL be a `RuleVariant` of the same `RuleId`, selected by an occurrence whose membership role is `Override`. The Rule SHALL NOT be copied to represent an overlay. |
 | D-5 / C-04 | Ratified 2026-08-16 | ATAP SHALL own immutable reference definitions; ACE SHALL own user overlays and sessions; cross-store reads SHALL use a topology-neutral union contract. |
 | D-6 / C-05 | Ratified 2026-08-16 | Tag relationships and assignments SHALL point to durable `TagId` roots, with active `TagState` resolved as-of. |
@@ -101,8 +101,8 @@ prose. Text explicitly marked `HITL-PENDING` or non-normative is not a requireme
 ## Ruled C-08 through C-15 Tags decisions
 
 These rulings came from the direct 2026-08-18 operator session recorded in Task
-15.140.a. They are normative even though the follow-up to copy them into the Sprint
-0015 Decision Register remains open.
+15.140.a. They are normative and have been propagated into the Sprint 0015 Decision
+Register.
 
 | Decision | Status | Normative specification |
 | --- | --- | --- |
@@ -110,8 +110,8 @@ These rulings came from the direct 2026-08-18 operator session recorded in Task
 | C-09 | Ruled 2026-08-18 | The durable `Tag` root SHALL own the Philote/GUID and immutable `(namespace, code)` natural key. `TagState` SHALL have no Philote. Codes are frozen for the Tag lifetime; aliases handle renames and state carries changeable display text. |
 | C-10 | Ruled 2026-08-18 | Stewardship SHALL be recorded as data and enforced during authoring. The creator is the namespace's default steward; co-stewards are allowed and transfers retain history. C-16 supplies the opaque principal and provenance contract. |
 | C-11 | Ruled 2026-08-18 | `PhiloteValidityPeriod` SHALL represent Tag identity lifespan and `TagState` as-of ranges SHALL represent payload history. No `TagState` may be active outside its Philote validity. |
-| C-12 | Ruled 2026-08-18 | Typed Tag-to-Tag relations and generic `(EntityType, EntityId)` assignments are approved. Assignments SHALL target durable `TagId`; active `TagState` resolves as-of. Allowed EntityType codes remain gated by C-21. |
-| C-13 | Ruled 2026-08-18 | The temporal payload row SHALL be named `TagState`, not `TagVersion`; label and description SHALL live on that state. Localization remains gated by C-23. |
+| C-12 | Ruled 2026-08-18; C-21 ruled 2026-09-04 | Typed Tag-to-Tag relations and generic `(EntityType, EntityId)` assignments are approved. Assignments SHALL target durable `TagId`; active `TagState` resolves as-of. Initial allowed EntityType codes are `rule` and `instantiation`. |
+| C-13 | Ruled 2026-08-18; C-23 ruled 2026-09-04 | The temporal payload row SHALL be named `TagState`, not `TagVersion`; label and description SHALL live on that state. Initial localization is omitted and an additive child is reserved. |
 | C-14 | Ruled 2026-08-18 | Aliases SHALL be temporal, namespace-local, typed by controlled vocabulary, and not reissued to another Tag after retirement. The durable root keeps the canonical code; the alias registry holds non-canonical aliases. Cross-registry uniqueness SHALL be trigger-enforced using C-26 collation and validated on SQL Server Express under FU-4. |
 | C-15 | Ruled 2026-08-18 | Retraction SHALL close/gap identity validity and write a terminal `TagState`, without delete or `IsActive`; foreign keys remain `ON DELETE NO ACTION`. One transactional write path and one sanctioned read path SHALL coordinate both layers. A successor is generally required, subject to FU-6's explicit erroneous-withdrawal exception. |
 | C-16 | Ruled 2026-08-30 | Actor identity SHALL be a required opaque `PrincipalId`; active namespace stewardship SHALL gate initial authoring; provenance SHALL retain a source reference and occurred-at/recorded-at UTC timestamps. A generalized approval workflow is deferred. |
@@ -120,40 +120,34 @@ These rulings came from the direct 2026-08-18 operator session recorded in Task
 | FU-4 | Ruled 2026-08-30 | SQL Server Express SHALL be the target free edition; trigger behavior and performance SHALL be validated there. |
 | FU-6 | Ruled 2026-08-30 | Successor chains MAY be multi-hop, SHALL reject cycles, and SHALL resolve to the first active terminal successor. Erroneous withdrawal SHALL require a reason and have no successor as an explicit C-15 exception. |
 
-## Non-normative pending gates
-
-Nothing in this section is approved design. Recommendations in the operator record may
-inform HITL review but SHALL NOT be implemented as if ruled.
+## Ruled 2026-09-04 D-3 and Tags decisions
 
 ### D-3 edge cases
 
-| Case | Unresolved classification | Status |
+| Case | Classification | Status |
 | --- | --- | --- |
-| 1 | Same-scalar nullability change | `HITL-PENDING` |
-| 2 | Same-scalar precision or scale change | `HITL-PENDING` |
-| 3 | Collection element-type change | `HITL-PENDING` |
-| 4 | Renamed type with unchanged shape and semantics | `HITL-PENDING` |
-| 5 | Default-value and type change in the same revision | `HITL-PENDING` |
-| 6 | Container cardinality or shape change with unchanged element type | `HITL-PENDING` |
-| 7 | String length or constraint change | `HITL-PENDING` |
-| 8 | Display text that also feeds generated code or fixtures | `HITL-PENDING` |
+| 1 | Same-scalar nullability change is material. | Ruled 2026-09-04 |
+| 2 | Same-scalar precision or scale change is material. | Ruled 2026-09-04 |
+| 3 | Collection element-type change is material. | Ruled 2026-09-04 |
+| 4 | A declared contract-type rename is material; a separate display alias is non-material. | Ruled 2026-09-04 |
+| 5 | A simultaneous default/type change is one material transition; the default is the new definition's initial state. | Ruled 2026-09-04 |
+| 6 | Container cardinality or shape change is material. | Ruled 2026-09-04 |
+| 7 | String length or declared-domain constraint change is material. | Ruled 2026-09-04 |
+| 8 | Display text consumed by code, fixtures, or contracts is material. | Ruled 2026-09-04 |
 
-These cases neither narrow nor widen D-3 until an explicit operator ruling is recorded
-in the editable companion.
+### Remaining C decisions ruled 2026-09-04
 
-### Remaining C decisions
-
-| Decision | Question only; no normative answer | Status |
+| Decision | Normative answer | Status |
 | --- | --- | --- |
-| C-17 | Tags as a hard non-authorization invariant | `HITL-PENDING` |
-| C-18 | Absence of Tag ordering and valid uses of `Ordinal` | `HITL-PENDING` |
-| C-19 | Typed weighted relation behavior beyond the already ruled relation existence/endpoints | `HITL-PENDING` |
-| C-21 | Allowed `EntityType` codes, including `rule` and `instantiation` | `HITL-PENDING` |
-| C-22 | Whether Tag relations join durable roots or exact states | `HITL-PENDING` |
-| C-23 | Whether localization is required in the first migration | `HITL-PENDING` |
-| C-24 | Whether to migrate any legacy filing taxonomy rows | `HITL-PENDING` |
-| C-25 | Whether a live `Tags` schema exists; any inventory requires separate authorization | `HITL-PENDING` |
-| C-27 | Per-assignment confidence or relevance | `HITL-PENDING` |
+| C-17 | Tags classify and advise but never authorize. | Ruled 2026-09-04 |
+| C-18 | Tags have no intrinsic ordering; `Ordinal` is valid only for genuinely ordered collections. | Ruled 2026-09-04 |
+| C-19 | Relations use typed, directed, optionally weighted storage; traversal behavior is deferred to Task 15.50.b. | Ruled 2026-09-04 |
+| C-21 | Initial assignment `EntityType` allow-list contains `rule` and `instantiation`. | Ruled 2026-09-04 |
+| C-22 | Tag relations join durable roots. | Ruled 2026-09-04 |
+| C-23 | Localization is omitted from the first migration; an additive child is reserved. | Ruled 2026-09-04 |
+| C-24 | No legacy taxonomy rows migrate automatically; reviewed terms may be re-authored later. | Ruled 2026-09-04 |
+| C-25 | A separately authorized, recorded metadata inventory is a pre-live gate. | Ruled 2026-09-04 |
+| C-27 | Assignment confidence/relevance is omitted until a ContentSummary consumer demonstrates need. | Ruled 2026-09-04 |
 
 ### Ruled follow-ups
 

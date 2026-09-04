@@ -1,5 +1,10 @@
 # RPRRSBSI-V4 Seed Data and Loader Specification
 
+> **Historical predecessor — superseded for current task authoring.** Use
+> [RPRRSBSI-V4-2 Seed Data and Loader Specification](RPRRSBSI-V4-2-20-Seed-Data-And-Loaders.md)
+> as the current authority. The V4 body below is retained unchanged as historical design
+> context; its decision-status statements do not override V4-2 or the operator record.
+
 Status: reconciled documentation-only seed and loader contract. This document allocates
 no GUID, creates no CSV or SQL, authorizes no migration, and performs no database or
 package/feed action.

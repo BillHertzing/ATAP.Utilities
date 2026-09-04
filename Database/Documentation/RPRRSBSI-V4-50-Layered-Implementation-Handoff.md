@@ -1,5 +1,10 @@
 # RPRRSBSI-V4 Layered Implementation Handoff
 
+> **Historical predecessor — superseded for current task authoring.** Use
+> [RPRRSBSI-V4-2 Layered Implementation Handoff](RPRRSBSI-V4-2-50-Layered-Implementation-Handoff.md)
+> as the current authority. The V4 body below is retained unchanged as historical design
+> context; its decision-status statements do not override V4-2 or the operator record.
+
 Status: reconciled task-authoring handoff for Task 15.140.b. This document authorizes
 documentation and task decomposition only. It does not authorize SQL, Flyway changes,
 seed publication, package/feed work, deployment, or a live database action.

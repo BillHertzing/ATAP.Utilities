@@ -493,6 +493,54 @@ Last updated: 2026-08-05
       Test-Path -LiteralPath $fixture.OutputPath | Should -BeTrue
     }
 
+    It 'Resolves complete nested prerequisite <PrerequisiteId> while its parent stays open' -TestCases @(
+      @{ PrerequisiteId = '15.140.c.T0' }
+      @{ PrerequisiteId = '15.140.c.T0.deep' }
+      @{ PrerequisiteId = '15.185.b.REST-DB02' }
+    ) {
+      param($PrerequisiteId)
+      $parentId = $PrerequisiteId.Substring(0, $PrerequisiteId.LastIndexOf('.'))
+      $fixture = script:New-PrerequisiteBoardFixture -TaskLines @(
+        "- [ ] **Task $parentId** [ATAP.Utilities] - Keep unrelated parent work open."
+        "- [x] **Task $PrerequisiteId** [ATAP.Utilities] - Complete the bounded prerequisite."
+        "- [x] **Task 15.999** [ATAP.Utilities] - Continue after Task $PrerequisiteId."
+      )
+      $result = Convert-TasksMdToSprintBoard -TasksFilePath $fixture.TasksFilePath -OutputPath $fixture.OutputPath
+      $result.PrerequisiteViolationCount | Should -Be 0
+      Test-Path -LiteralPath $fixture.OutputPath | Should -BeTrue
+    }
+
+    It 'Does not substitute a closed parent for a nested prerequisite that is <ChildStatus>' -TestCases @(
+      @{ ChildStatus = 'open'; ChildLine = '- [ ] **Task 15.140.c.T0** [ATAP.Utilities] - Pending.'; Kind = 'PrerequisiteNotClosed' }
+      @{ ChildStatus = 'partial'; ChildLine = '- [~] **Task 15.140.c.T0** [ATAP.Utilities] - Partial.'; Kind = 'PrerequisiteNotClosed' }
+      @{ ChildStatus = 'unknown'; ChildLine = ''; Kind = 'UnknownPrerequisite' }
+    ) {
+      param($ChildStatus, $ChildLine, $Kind)
+      $fixture = script:New-PrerequisiteBoardFixture -TaskLines @(
+        '- [x] **Task 15.140.c** [ATAP.Utilities] - Parent complete.'
+        if ($ChildLine) { $ChildLine }
+        '- [x] **Task 15.999** [ATAP.Utilities] - Continue after 15.140.c.T0.'
+      )
+      $caught = $null
+      try {
+        $null = Convert-TasksMdToSprintBoard -TasksFilePath $fixture.TasksFilePath -OutputPath $fixture.OutputPath
+      } catch { $caught = $_ }
+      $caught | Should -Not -BeNullOrEmpty
+      $caught.Exception.Message | Should -Match $Kind
+      $caught.Exception.Message | Should -Match '"PrerequisiteTaskId":"15\.140\.c\.T0"'
+      Test-Path -LiteralPath $fixture.OutputPath | Should -BeFalse
+    }
+
+    It 'Rejects a nested self-reference without truncating its identity' {
+      $fixture = script:New-PrerequisiteBoardFixture -TaskLines @(
+        '- [x] **Task 15.140.c** [ATAP.Utilities] - Parent complete.'
+        '- [x] **Task 15.140.c.T1** [ATAP.Utilities] - Continue after Task 15.140.c.T1.'
+      )
+      { Convert-TasksMdToSprintBoard -TasksFilePath $fixture.TasksFilePath -OutputPath $fixture.OutputPath } |
+        Should -Throw '*SelfReference*'
+      Test-Path -LiteralPath $fixture.OutputPath | Should -BeFalse
+    }
+
     It 'Fails closed with an actionable record for <Label>' -TestCases @(
       @{
         Label = 'an open prerequisite using after-id syntax'

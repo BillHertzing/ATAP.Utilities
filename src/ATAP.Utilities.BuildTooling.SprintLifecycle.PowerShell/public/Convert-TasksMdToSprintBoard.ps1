@@ -411,9 +411,10 @@ function Convert-TasksMdToSprintBoard {
           # Narrative, acceptance, status, and evidence bullets may describe dependencies
           # without declaring a board-order invariant. Supported declarations are explicit
           # task ids in forms such as "after 15.181.d" and "after Task 15.140".
+          # Keep every nested/hyphenated segment: a parent status cannot stand in for a child.
           $prerequisiteMatches = [regex]::Matches(
             $taskTitle,
-            '(?i)\bafter\s+(?:Task\s+)?(?<id>\d+\.\d+(?:\.[A-Za-z0-9]+)?)\b')
+            '(?i)\bafter\s+(?:Task\s+)?(?<id>\d+\.\d+(?:\.[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*)*)\b')
           foreach ($prerequisiteMatch in $prerequisiteMatches) {
             $taskPrerequisiteDeclarations.Add([PSCustomObject]@{
                 TaskId = $taskId

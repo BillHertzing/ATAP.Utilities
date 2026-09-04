@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.1.4
+
+- Use the current Windows identity for the ratified Negotiate authentication contract.
+- Disable redirects and proxy detours; retain certificate validation and bounded timeouts.
+- Preserve the request envelope, idempotency header, and mandatory gather-call recorder.
+
 ## 0.1.3
 
 - Ship the REST02-compatible UUID `Idempotency-Key` client as the immutable stable

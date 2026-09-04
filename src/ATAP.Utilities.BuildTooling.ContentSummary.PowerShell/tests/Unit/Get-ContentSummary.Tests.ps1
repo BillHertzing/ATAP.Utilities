@@ -75,6 +75,43 @@ Describe 'Get-ContentSummary [public]' -Tag 'Unit' {
     }
   }
 
+  It 'protects the authenticated request to <EndpointHost>' -ForEach @(
+    @{ EndpointHost = 'localhost' }
+    @{ EndpointHost = '127.0.0.1' }
+    @{ EndpointHost = '::1' }
+  ) {
+    $script:transportCall = $null
+    Mock -CommandName Invoke-RestMethod -ModuleName $script:moduleName {
+      $script:transportCall = @{} + $PesterBoundParameters
+      [pscustomobject]@{ status = 'ok'; items = @(); truncated = $false }
+    }
+
+    $result = Get-ContentSummary -Tags @('transport') -HostName $EndpointHost -Port 50041 -WorktreeRoot 'C:\fixture\repo'
+
+    $result.status | Should -BeExactly 'ok'
+    $script:transportCall.UseDefaultCredentials | Should -BeTrue
+    $script:transportCall.ContainsKey('MaximumRedirection') | Should -BeTrue
+    $script:transportCall.MaximumRedirection | Should -Be 0
+    $script:transportCall.NoProxy | Should -BeTrue
+    $timeoutParameter = if ($script:transportCall.ContainsKey('ConnectionTimeoutSeconds')) { 'ConnectionTimeoutSeconds' } else { 'TimeoutSec' }
+    $script:transportCall[$timeoutParameter] | Should -Be 30
+    if ((Get-Command Invoke-RestMethod).Parameters.ContainsKey('OperationTimeoutSeconds')) {
+      $script:transportCall.OperationTimeoutSeconds | Should -Be 30
+    }
+    foreach ($forbiddenParameter in @('Credential', 'Proxy', 'ProxyCredential', 'ProxyUseDefaultCredentials', 'SkipCertificateCheck', 'AllowInsecureRedirect', 'PreserveAuthorizationOnRedirect')) {
+      $script:transportCall.ContainsKey($forbiddenParameter) | Should -BeFalse
+    }
+    Should -Invoke Invoke-RestMethod -ModuleName $script:moduleName -Times 1
+    Should -Invoke Write-GatherCallRecord -ModuleName $script:moduleName -Times 1
+  }
+
+  It 'does not authenticate or record a valid WhatIf request' {
+    $result = Get-ContentSummary -Tags @('whatif') -Port 50041 -WorktreeRoot 'C:\fixture\repo' -WhatIf
+
+    $result.status | Should -BeExactly 'WhatIf'
+    Should -Invoke Invoke-RestMethod -ModuleName $script:moduleName -Times 0
+    Should -Invoke Write-GatherCallRecord -ModuleName $script:moduleName -Times 0
+  }
   It 'gives explicit endpoint parameters precedence over global settings' {
     Get-ContentSummary -Tags @('precedence') -Scheme https -HostName 127.0.0.1 -Port 50041 -Path '/custom/gather' -WorktreeRoot 'C:\fixture\repo' | Out-Null
 

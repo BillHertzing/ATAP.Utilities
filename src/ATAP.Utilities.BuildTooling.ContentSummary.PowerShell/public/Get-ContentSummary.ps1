@@ -4,7 +4,7 @@ function Get-ContentSummary {
     Retrieves authorized ContentSummary items from the local AceOutpost service.
   .DESCRIPTION
     Sends a JSON query to the configured AceOutpost gather-content endpoint. The function
-    accepts only HTTPS loopback endpoints, performs no SQL access, does not send credentials,
+    accepts only HTTPS loopback endpoints, uses ambient Windows authentication, performs no SQL access,
     and records each actual invocation through Write-GatherCallRecord.
   .PARAMETER Tags
     One or more exact retrieval tags.
@@ -36,8 +36,9 @@ function Get-ContentSummary {
   .EXAMPLE
     Get-ContentSummary -Tags @('schema', 'migration') -Port 50041
   .NOTES
-    Certificate validation is mandatory and is never bypassed. The function sends no secret
-    value, authorization header, connection string, or database command.
+    Certificate validation is mandatory and is never bypassed. Redirects and proxies are disabled.
+    Windows Integrated Authentication uses the current identity; no explicit credential or secret
+    is resolved by this function. Connection and supported operation timeouts are 30 seconds.
   .LINK
     Write-GatherCallRecord
   #>
@@ -197,7 +198,17 @@ function Get-ContentSummary {
       else {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling $($uri.AbsoluteUri)" -Tag 'RestCall'
         $headers = @{ 'Idempotency-Key' = [guid]::NewGuid().ToString('D') }
-        $response = Invoke-RestMethod -Uri $uri -Method Post -Headers $headers -ContentType 'application/json' -Body $body -ErrorAction Stop
+        $transportArguments = @{
+          UseDefaultCredentials = $true
+          MaximumRedirection = 0
+          NoProxy = $true
+          TimeoutSec = 30
+        }
+        # PowerShell 7.4 split connection and operation timeouts; retain the 7.0 alias.
+        if ((Get-Command -Name Invoke-RestMethod).Parameters.ContainsKey('OperationTimeoutSeconds')) {
+          $transportArguments.OperationTimeoutSeconds = 30
+        }
+        $response = Invoke-RestMethod -Uri $uri -Method Post -Headers $headers -ContentType 'application/json' -Body $body @transportArguments -ErrorAction Stop
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from $($uri.AbsoluteUri)" -Tag 'RestCall'
 
         $responseStatus = if ($null -ne $response.PSObject.Properties['status'] -and -not [string]::IsNullOrWhiteSpace([string]$response.status)) { [string]$response.status } else { 'ok' }

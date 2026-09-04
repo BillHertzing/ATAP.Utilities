@@ -1,5 +1,21 @@
 # ATAPUtilities.Database release notes
 
+## 0.1.7
+
+Status: source and disposable-database verified; unbuilt, unpublished, and not
+applied to any permanent database.
+
+- Retains the immutable V00010 through V00070 migration bytes.
+- Adds V00080 with typed Rule input/output identities, temporal display and
+  default history, owner-bound RuleVariants, controlled Add/Override/Suppress
+  occurrences, and ordered BuildSet composition.
+- Adds deterministic as-of resolution that validates overlay graphs and returns
+  selected, suppressed, and shadowed candidates with occurrence provenance.
+- Rejects cross-owner variants, duplicate ordinals, missing override/suppression
+  baselines, Add collisions, and in-place semantic definition mutations.
+- Excludes live or permanent database application, package publication,
+  promotion, installation, and deployment.
+
 ## 0.1.6
 
 Status: source and disposable-database verified; unbuilt, unpublished, and not applied

@@ -1,0 +1,282 @@
+{
+  "schemaVersion": "1.0",
+  "scope": "RPRRSBSI V4 ratified acceptance contract",
+  "guidContract": {
+    "canonicalBoundaryValues": [
+      "10000000-0000-4000-8000-000000000001",
+      "abcdef01-2345-4678-9abc-def012345678"
+    ],
+    "rejectedBoundaryValues": [
+      "ABCDEF01-2345-4678-9ABC-DEF012345678",
+      "{abcdef01-2345-4678-9abc-def012345678}",
+      "(abcdef01-2345-4678-9abc-def012345678)",
+      "abcdef01234546789abcdef012345678",
+      " abcdef01-2345-4678-9abc-def012345678"
+    ],
+    "nativeValueComparisons": [
+      {
+        "name": "case-does-not-change-native-value",
+        "left": "abcdef01-2345-4678-9abc-def012345678",
+        "right": "ABCDEF01-2345-4678-9ABC-DEF012345678",
+        "equivalent": true
+      },
+      {
+        "name": "braces-do-not-change-native-value",
+        "left": "abcdef01-2345-4678-9abc-def012345678",
+        "right": "{abcdef01-2345-4678-9abc-def012345678}",
+        "equivalent": true
+      },
+      {
+        "name": "different-guid-is-not-equivalent",
+        "left": "abcdef01-2345-4678-9abc-def012345678",
+        "right": "abcdef01-2345-4678-9abc-def012345679",
+        "equivalent": false
+      }
+    ]
+  },
+  "identityChangeScenarios": [
+    {
+      "name": "rule-kind-change",
+      "classification": "material",
+      "before": {
+        "ruleId": "20000000-0000-4000-8000-000000000001",
+        "ruleVariantId": "21000000-0000-4000-8000-000000000001",
+        "inputDefinitionId": "22000000-0000-4000-8000-000000000001",
+        "outputDefinitionId": "23000000-0000-4000-8000-000000000001"
+      },
+      "after": {
+        "ruleId": "20000000-0000-4000-8000-000000000002",
+        "ruleVariantId": "21000000-0000-4000-8000-000000000002",
+        "inputDefinitionId": "22000000-0000-4000-8000-000000000002",
+        "outputDefinitionId": "23000000-0000-4000-8000-000000000002"
+      },
+      "expectedTransitions": {
+        "ruleId": "new",
+        "ruleVariantId": "new",
+        "inputDefinitionId": "new",
+        "outputDefinitionId": "new"
+      },
+      "historyMechanism": "replacement-rule-graph",
+      "priorHistoryPreserved": true,
+      "prohibitedMutation": "reuse-existing-semantic-identity",
+      "inPlaceMutationRejected": true
+    },
+    {
+      "name": "scalar-to-different-scalar-input",
+      "classification": "material",
+      "before": {
+        "ruleId": "20000000-0000-4000-8000-000000000010",
+        "ruleVariantId": "21000000-0000-4000-8000-000000000010",
+        "inputDefinitionId": "22000000-0000-4000-8000-000000000010",
+        "outputDefinitionId": "23000000-0000-4000-8000-000000000010"
+      },
+      "after": {
+        "ruleId": "20000000-0000-4000-8000-000000000010",
+        "ruleVariantId": "21000000-0000-4000-8000-000000000011",
+        "inputDefinitionId": "22000000-0000-4000-8000-000000000011",
+        "outputDefinitionId": "23000000-0000-4000-8000-000000000010"
+      },
+      "expectedTransitions": {
+        "ruleId": "retained",
+        "ruleVariantId": "new",
+        "inputDefinitionId": "new",
+        "outputDefinitionId": "retained"
+      },
+      "historyMechanism": "replacement-variant-and-input-definition",
+      "priorHistoryPreserved": true,
+      "prohibitedMutation": "reuse-existing-semantic-identity",
+      "inPlaceMutationRejected": true
+    },
+    {
+      "name": "scalar-to-heap-object-output",
+      "classification": "material",
+      "before": {
+        "ruleId": "20000000-0000-4000-8000-000000000020",
+        "ruleVariantId": "21000000-0000-4000-8000-000000000020",
+        "inputDefinitionId": "22000000-0000-4000-8000-000000000020",
+        "outputDefinitionId": "23000000-0000-4000-8000-000000000020"
+      },
+      "after": {
+        "ruleId": "20000000-0000-4000-8000-000000000020",
+        "ruleVariantId": "21000000-0000-4000-8000-000000000021",
+        "inputDefinitionId": "22000000-0000-4000-8000-000000000020",
+        "outputDefinitionId": "23000000-0000-4000-8000-000000000021"
+      },
+      "expectedTransitions": {
+        "ruleId": "retained",
+        "ruleVariantId": "new",
+        "inputDefinitionId": "retained",
+        "outputDefinitionId": "new"
+      },
+      "historyMechanism": "replacement-variant-and-output-definition",
+      "priorHistoryPreserved": true,
+      "prohibitedMutation": "reuse-existing-semantic-identity",
+      "inPlaceMutationRejected": true
+    },
+    {
+      "name": "heap-object-type-change-input",
+      "classification": "material",
+      "before": {
+        "ruleId": "20000000-0000-4000-8000-000000000030",
+        "ruleVariantId": "21000000-0000-4000-8000-000000000030",
+        "inputDefinitionId": "22000000-0000-4000-8000-000000000030",
+        "outputDefinitionId": "23000000-0000-4000-8000-000000000030"
+      },
+      "after": {
+        "ruleId": "20000000-0000-4000-8000-000000000030",
+        "ruleVariantId": "21000000-0000-4000-8000-000000000031",
+        "inputDefinitionId": "22000000-0000-4000-8000-000000000031",
+        "outputDefinitionId": "23000000-0000-4000-8000-000000000030"
+      },
+      "expectedTransitions": {
+        "ruleId": "retained",
+        "ruleVariantId": "new",
+        "inputDefinitionId": "new",
+        "outputDefinitionId": "retained"
+      },
+      "historyMechanism": "replacement-variant-and-input-definition",
+      "priorHistoryPreserved": true,
+      "prohibitedMutation": "reuse-existing-semantic-identity",
+      "inPlaceMutationRejected": true
+    },
+    {
+      "name": "default-value-only-change",
+      "classification": "non-material-control",
+      "before": {
+        "ruleId": "20000000-0000-4000-8000-000000000040",
+        "ruleVariantId": "21000000-0000-4000-8000-000000000040",
+        "inputDefinitionId": "22000000-0000-4000-8000-000000000040",
+        "outputDefinitionId": "23000000-0000-4000-8000-000000000040"
+      },
+      "after": {
+        "ruleId": "20000000-0000-4000-8000-000000000040",
+        "ruleVariantId": "21000000-0000-4000-8000-000000000040",
+        "inputDefinitionId": "22000000-0000-4000-8000-000000000040",
+        "outputDefinitionId": "23000000-0000-4000-8000-000000000040"
+      },
+      "expectedTransitions": {
+        "ruleId": "retained",
+        "ruleVariantId": "retained",
+        "inputDefinitionId": "retained",
+        "outputDefinitionId": "retained"
+      },
+      "historyMechanism": "new-validity-bounded-default-row",
+      "priorHistoryPreserved": true,
+      "prohibitedMutation": "overwrite-prior-history",
+      "inPlaceMutationRejected": true
+    },
+    {
+      "name": "display-only-text-change",
+      "classification": "non-material-control",
+      "before": {
+        "ruleId": "20000000-0000-4000-8000-000000000050",
+        "ruleVariantId": "21000000-0000-4000-8000-000000000050",
+        "inputDefinitionId": "22000000-0000-4000-8000-000000000050",
+        "outputDefinitionId": "23000000-0000-4000-8000-000000000050"
+      },
+      "after": {
+        "ruleId": "20000000-0000-4000-8000-000000000050",
+        "ruleVariantId": "21000000-0000-4000-8000-000000000050",
+        "inputDefinitionId": "22000000-0000-4000-8000-000000000050",
+        "outputDefinitionId": "23000000-0000-4000-8000-000000000050"
+      },
+      "expectedTransitions": {
+        "ruleId": "retained",
+        "ruleVariantId": "retained",
+        "inputDefinitionId": "retained",
+        "outputDefinitionId": "retained"
+      },
+      "historyMechanism": "new-display-state-row",
+      "priorHistoryPreserved": true,
+      "prohibitedMutation": "overwrite-prior-history",
+      "inPlaceMutationRejected": true
+    }
+  ],
+  "overlayScenario": {
+    "ruleId": "30000000-0000-4000-8000-000000000001",
+    "ruleCopiesCreated": 0,
+    "variants": [
+      {
+        "authority": "ATAP",
+        "ruleId": "30000000-0000-4000-8000-000000000001",
+        "ruleVariantId": "31000000-0000-4000-8000-000000000001",
+        "owningRuleSetId": "32000000-0000-4000-8000-000000000001",
+        "value": 1000
+      },
+      {
+        "authority": "ACE",
+        "ruleId": "30000000-0000-4000-8000-000000000001",
+        "ruleVariantId": "31000000-0000-4000-8000-000000000002",
+        "owningRuleSetId": "32000000-0000-4000-8000-000000000002",
+        "value": 1500
+      },
+      {
+        "authority": "ACE",
+        "ruleId": "30000000-0000-4000-8000-000000000001",
+        "ruleVariantId": "31000000-0000-4000-8000-000000000003",
+        "owningRuleSetId": "32000000-0000-4000-8000-000000000003",
+        "value": 1200
+      }
+    ],
+    "occurrences": [
+      {
+        "ruleSetId": "32000000-0000-4000-8000-000000000001",
+        "ruleVariantId": "31000000-0000-4000-8000-000000000001",
+        "membershipRole": "Add",
+        "buildSetOrdinal": 10
+      },
+      {
+        "ruleSetId": "32000000-0000-4000-8000-000000000002",
+        "ruleVariantId": "31000000-0000-4000-8000-000000000002",
+        "membershipRole": "Override",
+        "buildSetOrdinal": 20
+      },
+      {
+        "ruleSetId": "32000000-0000-4000-8000-000000000003",
+        "ruleVariantId": "31000000-0000-4000-8000-000000000003",
+        "membershipRole": "Override",
+        "buildSetOrdinal": 30
+      }
+    ],
+    "asOfExpectations": [
+      {
+        "activeOrdinals": [10],
+        "effectiveValue": 1000
+      },
+      {
+        "activeOrdinals": [10, 20],
+        "effectiveValue": 1500
+      },
+      {
+        "activeOrdinals": [10, 20, 30],
+        "effectiveValue": 1200
+      }
+    ],
+    "negativeCases": [
+      {
+        "name": "cross-owner-occurrence",
+        "expectedRejection": "composite-owner-foreign-key"
+      },
+      {
+        "name": "override-with-different-rule-id",
+        "expectedRejection": "same-rule-required"
+      },
+      {
+        "name": "copied-rule-overlay",
+        "expectedRejection": "rule-copy-prohibited"
+      },
+      {
+        "name": "override-without-lower-precedence-base",
+        "expectedRejection": "base-candidate-required"
+      },
+      {
+        "name": "duplicate-build-set-ordinal",
+        "expectedRejection": "unique-build-set-ordinal"
+      },
+      {
+        "name": "add-collides-with-visible-rule",
+        "expectedRejection": "add-collision"
+      }
+    ]
+  }
+}

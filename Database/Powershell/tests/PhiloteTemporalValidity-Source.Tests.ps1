@@ -13,6 +13,7 @@ BeforeAll {
     'V00050__Create_ATAPUtilities_Tag_Root.sql'
     'V00060__Create_Ace_GatherContent_Submission.sql'
     'V00070__Create_Ace_AISupervisor_Telemetry.sql'
+    'V00080__Create_ATAPUtilities_V4_Core_Identity_And_Overlay.sql'
   )
   $migrationPath = Join-Path $sqlDirectory $migrationName
   $migrationSql = Get-Content -LiteralPath $migrationPath -Raw

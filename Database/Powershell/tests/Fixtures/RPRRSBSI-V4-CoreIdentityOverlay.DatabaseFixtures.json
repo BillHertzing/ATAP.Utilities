@@ -1,0 +1,145 @@
+{
+  "schemaVersion": "1.0",
+  "target": {
+    "migration": "V00080__Create_ATAPUtilities_V4_Core_Identity_And_Overlay.sql",
+    "version": "80",
+    "status": "frozen-offline-candidate",
+    "sha256": "F7BDAA9688D081DCD61E57466AFAD8AEDB1C256F0223BE6C9C8B5C2FE2B01763"
+  },
+  "predecessors": [
+    { "migration": "V00010__Create_ATAPUtilities_Initial_Schema_And_Seed.sql", "sha256": "AC6E32F1A7BDB8F97E7F0B58C7FCD0A1C36BD70A945A43E49B4AC8AFD0758E59" },
+    { "migration": "V00030__Create_AceOutpostContentSummaryPrototype.sql", "sha256": "98C0018A4A92A1A8095CA329D93706A4B426016C1C42B69BC3F7CFB865B38179" },
+    { "migration": "V00040__Add_PhiloteValidityPeriod_SameIdentity_Key.sql", "sha256": "85EB6D5FC4DCD72A59EA11186FE561FCECDBC912D64D42D7DE2A69B33AC76D14" },
+    { "migration": "V00050__Create_ATAPUtilities_Tag_Root.sql", "sha256": "3BB2369A24A6A8FE77C8D11A9879D756ECE971CB112752C1A76FBB816F61017F" },
+    { "migration": "V00060__Create_Ace_GatherContent_Submission.sql", "sha256": "953705FEE9678B532FFF52D780182AA8A7EF3D000DB96873DB9EB58AAAEB46FB" },
+    { "migration": "V00070__Create_Ace_AISupervisor_Telemetry.sql", "sha256": "501B2C9486C81C706C7C07BB8912053FBE91A5559865C43B57527DDB7E5453C8" }
+  ],
+  "safety": {
+    "authorizationEnvironmentVariable": "ATAP_TASK15140C_V4_DISPOSABLE_AUTHORIZATION",
+    "authorizationMarker": "AUTHORIZE_TASK_15_140_C_V4_DISPOSABLE",
+    "instanceEnvironmentVariable": "ATAP_TASK15140C_V4_DISPOSABLE_SQL_INSTANCE",
+    "databaseNamePattern": "^ATAPUtilities_Task15140cV4_[0-9a-f]{32}$",
+    "requiredInstanceName": "ExpWhertzing"
+  },
+  "surface": {
+    "tables": [
+      "ValueType",
+      "InputNormalizationContract",
+      "RuleInputDefinition",
+      "RuleInputDefinitionState",
+      "RuleDefaultInputValue",
+      "RuleOutputDefinition",
+      "RuleOutputDefinitionState",
+      "RuleValueConstraint",
+      "RuleVariant",
+      "RuleVariantState",
+      "RuleVariantInputDefinition",
+      "RuleVariantOutputDefinition",
+      "RuleSetMembershipRole",
+      "RuleSetRuleOccurrence",
+      "BuildSetRuleSetOccurrence"
+    ],
+    "triggers": [
+      "TR_Rule_SemanticIdentity_Immutable",
+      "TR_ValueType_Immutable",
+      "TR_InputNormalizationContract_Immutable",
+      "TR_RuleInputDefinition_Immutable",
+      "TR_RuleOutputDefinition_Immutable",
+      "TR_RuleVariant_Immutable",
+      "TR_RuleValueConstraint_Frozen",
+      "TR_RuleVariantInputDefinition_Immutable",
+      "TR_RuleVariantOutputDefinition_Immutable",
+      "TR_RuleInputDefinitionState_History",
+      "TR_RuleOutputDefinitionState_History",
+      "TR_RuleDefaultInputValue_History",
+      "TR_RuleVariantState_History",
+      "TR_RuleSetRuleOccurrence_History",
+      "TR_BuildSetRuleSetOccurrence_History"
+    ],
+    "procedure": "ResolveBuildSetRulesAsOf",
+    "procedureParameters": ["BuildSetId", "AsOfUtc"],
+    "resultColumns": [
+      "RuleId",
+      "RuleVariantId",
+      "RuleVariantStateId",
+      "RuleSetMembershipRoleCode",
+      "ResolutionDisposition",
+      "PrecedenceRank",
+      "BuildSetId",
+      "BuildSetRuleSetOccurrenceId",
+      "BuildSetOrdinal",
+      "RuleSetId",
+      "RuleSetRuleOccurrenceId",
+      "RuleSetOrdinal"
+    ],
+    "roles": ["Add", "Override", "Suppress"],
+    "constraintIndexes": [
+      "UX_RuleValueConstraint_Input_Kind",
+      "UX_RuleValueConstraint_Output_Kind"
+    ],
+    "expectedErrors": [
+      58001, 58002, 58010, 58011, 58012, 58013, 58014, 58015, 58016, 58018,
+      58020, 58021, 58022, 58023, 58030, 58031, 58032, 58033, 58034, 58035,
+      58036, 58037, 58038, 58039, 58040, 58041, 58042, 58043
+    ]
+  },
+  "guidCases": {
+    "canonicalBoundary": [
+      "91000000-0000-0000-0000-000000000001",
+      "abcdef01-2345-4678-9abc-def012345678"
+    ],
+    "rejectedBoundary": [
+      "ABCDEF01-2345-4678-9ABC-DEF012345678",
+      "{abcdef01-2345-4678-9abc-def012345678}",
+      "(abcdef01-2345-4678-9abc-def012345678)",
+      "abcdef01234546789abcdef012345678",
+      " abcdef01-2345-4678-9abc-def012345678"
+    ],
+    "nativeComparisons": [
+      { "left": "abcdef01-2345-4678-9abc-def012345678", "right": "ABCDEF01-2345-4678-9ABC-DEF012345678", "equal": true },
+      { "left": "abcdef01-2345-4678-9abc-def012345678", "right": "{abcdef01-2345-4678-9abc-def012345678}", "equal": true },
+      { "left": "abcdef01-2345-4678-9abc-def012345678", "right": "abcdef01-2345-4678-9abc-def012345679", "equal": false }
+    ]
+  },
+  "identityScenarios": [
+    { "name": "rule-kind", "classification": "material", "newRule": true, "newVariant": true, "newDefinition": true },
+    { "name": "scalar-to-different-scalar", "classification": "material", "newRule": false, "newVariant": true, "newDefinition": true },
+    { "name": "scalar-object-boundary", "classification": "material", "newRule": false, "newVariant": true, "newDefinition": true },
+    { "name": "heap-object-type", "classification": "material", "newRule": false, "newVariant": true, "newDefinition": true },
+    { "name": "same-scalar-nullability", "classification": "material", "newRule": false, "newVariant": true, "newDefinition": true },
+    { "name": "same-scalar-precision-scale", "classification": "material", "newRule": false, "newVariant": true, "newDefinition": true },
+    { "name": "collection-element-type", "classification": "material", "newRule": false, "newVariant": true, "newDefinition": true },
+    { "name": "declared-contract-type-rename", "classification": "material", "newRule": false, "newVariant": true, "newDefinition": true },
+    { "name": "combined-type-default", "classification": "material", "newRule": false, "newVariant": true, "newDefinition": true },
+    { "name": "container-cardinality-shape", "classification": "material", "newRule": false, "newVariant": true, "newDefinition": true },
+    { "name": "string-length-domain-constraint", "classification": "material", "newRule": false, "newVariant": true, "newDefinition": true },
+    { "name": "code-fixture-contract-text", "classification": "material", "newRule": false, "newVariant": true, "newDefinition": true },
+    { "name": "default-only", "classification": "non-material-control", "newRule": false, "newVariant": false, "newDefinition": false, "history": "RuleDefaultInputValue" },
+    { "name": "display-only", "classification": "non-material-control", "newRule": false, "newVariant": false, "newDefinition": false, "history": "DefinitionState" }
+  ],
+  "overlay": {
+    "valuesByOrdinal": [
+      { "value": 1000, "ordinal": 10, "role": "Add" },
+      { "value": 1500, "ordinal": 20, "role": "Override" },
+      { "value": 1200, "ordinal": 30, "role": "Override" },
+      { "value": null, "ordinal": 40, "role": "Suppress" }
+    ],
+    "expectedDispositions": ["Selected", "Shadowed", "Suppressed"],
+    "negativeCases": [
+      "cross-owner-occurrence",
+      "different-rule-override",
+      "copied-rule-overlay",
+      "override-without-baseline",
+      "suppress-without-baseline",
+      "duplicate-build-set-ordinal",
+      "duplicate-rule-set-ordinal",
+      "add-collision",
+      "unregistered-replacement",
+      "input-definition-in-place-mutation",
+      "output-definition-in-place-mutation",
+      "variant-in-place-mutation",
+      "prior-history-overwrite"
+    ]
+  },
+  "executionPaths": ["fresh-through-v00080", "v00070-upgrade", "repeat-migrate-validate"]
+}

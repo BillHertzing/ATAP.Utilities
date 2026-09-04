@@ -36,6 +36,7 @@ Describe 'V00070 Ace AISupervisor telemetry static contract' {
       'V00050__Create_ATAPUtilities_Tag_Root.sql'
       'V00060__Create_Ace_GatherContent_Submission.sql'
       $migrationName
+      'V00080__Create_ATAPUtilities_V4_Core_Identity_And_Overlay.sql'
     )
     @($versions | Group-Object | Where-Object Count -gt 1).Count | Should -Be 0
   }
@@ -136,7 +137,7 @@ Describe 'V00070 Ace AISupervisor telemetry static contract' {
     }
   }
 
-  It 'binds the exact active database content to the unbuilt 0.1.6 allowlist' {
+  It 'binds the exact active database content to the current allowlist' {
     $flywayRoot = Join-Path $repoRoot 'Database\Flyway'
     $version = Get-Content -LiteralPath (Join-Path $flywayRoot 'version.json') -Raw | ConvertFrom-Json
     $allowlist = Get-Content -LiteralPath (Join-Path $flywayRoot 'package-content-allowlist.json') -Raw | ConvertFrom-Json
@@ -146,7 +147,7 @@ Describe 'V00070 Ace AISupervisor telemetry static contract' {
         Sort-Object Name | ForEach-Object { 'Data/' + $_.Name })
     )
 
-    $version.version | Should -Be '0.1.6'
+    $version.version | Should -Be '0.1.7'
     $allowlist.sourceVersion | Should -Be $version.version
     @($allowlist.files.path) | Should -Be $expectedPaths
     foreach ($entry in $allowlist.files) {

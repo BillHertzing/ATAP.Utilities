@@ -832,48 +832,229 @@ Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 
 ### 4.4 Install NBGV (Nerdbank.GitVersioning) machine-wide
 
-BuildMaster runs as a service account (`SvcBuildMaster` on `utat022`) and
-shells out to the `nbgv` CLI through `Get-BuildContext` during the
-Experimental stage. If `nbgv` is installed only as a per-user dotnet tool
-(for example, at `C:\Users\<dev>\.dotnet\tools\nbgv.exe`), the service
-account cannot see it — even when `pwsh` is launched without `-NoProfile` —
-and BuildMaster fails with:
+The approved shared NBGV baseline is **3.10.85** at
+`C:\ProgramData\dotnet\tools\nbgv.exe` on both `utat022` and `utat01`.
+The directory is local to each host and shared by its developer and CI identities.
+BuildMaster consumes NBGV through `Get-BuildContext`; a developer-only installation
+is not sufficient for that service account.
 
-```text
-The 'nbgv' CLI was not found on PATH
-```
-
-Install `nbgv` to a **machine-wide** dotnet tool location so every local
-account (developer logins and service accounts) can resolve it. The
-convention used by the ATAP profile is `C:\ProgramData\dotnet\tools`.
+Follow the directory ownership, parity journal, isolated NuGet configuration and
+real-identity verification gates in section 4.4.1 before installation. Once the
+approved shared directory and source configuration exist:
 
 ```powershell
-# Elevated PowerShell 7
 $machineToolPath = 'C:\ProgramData\dotnet\tools'
-New-Item -ItemType Directory -Path $machineToolPath -Force | Out-Null
-
-dotnet tool install --tool-path $machineToolPath nbgv
-
-# Verify
+Get-Command Get-RepositoryRoot -ErrorAction Stop | Out-Null
+$toolConfig = Join-Path (Get-RepositoryRoot) '_generated/Sprint0015/Task15.167/nuget.dotnet-trace.config'
+if (-not (Test-Path -LiteralPath $toolConfig)) { throw 'Approved tool-source configuration is missing.' }
+if (-not (Test-Path -LiteralPath $machineToolPath)) { throw 'Complete approved shared-directory provisioning first.' }
+$env:DOTNET_GENERATE_ASPNET_CERTIFICATE = 'false'
+dotnet tool install --tool-path $machineToolPath nbgv --version 3.10.85 --configfile $toolConfig
+if ($LASTEXITCODE -ne 0) { throw 'Shared NBGV installation failed.' }
 & (Join-Path $machineToolPath 'nbgv.exe') --version
+if ($LASTEXITCODE -ne 0) { throw 'Shared NBGV verification failed.' }
 ```
 
-`AllUsersAllHostsV7CoreProfile.ps1` (installed at
-`$PSHome\profile.ps1` in step 4.1) prepends `C:\ProgramData\dotnet\tools`
-to the process-scope `PATH` for every PowerShell 7 session — including the
-non-interactive session BuildMaster spawns under `SvcBuildMaster`. After
-opening a new `pwsh` window, both of these must succeed:
+For an existing installation, use `dotnet tool update --tool-path $machineToolPath
+nbgv --version 3.10.85 --configfile $toolConfig` instead of the install command;
+check the native exit code. Any later version needs its own approved pin.
+
+The all-users PowerShell 7 profile adds the shared path when it exists. Verify
+`Get-Command nbgv` in fresh developer and CI sessions, and compare `nbgv get-version
+-f json` on a representative versioned project before and after migration.
+
+Task 15.167's approved migration retains the old UTAT022 NBGV 3.9.50 package and
+ACL evidence for rollback, installs shared 3.10.85, proves developer/BuildMaster
+consumption, then uninstalls **only** NBGV from `C:\Program Files\dotnet-tools`.
+Preserve that directory and unrelated packages/PATH entries. UTAT01 retains its
+existing shared NBGV 3.10.85 while its directory ACL is corrected. Journal each
+mutation before executing it; a matching version string alone does not prove
+that CI resolved the intended executable.
+
+### 4.4.1 Provision dotnet-trace for developers and CI
+
+Use the administrator-managed `C:\ProgramData\dotnet\tools` location for
+`dotnet-trace`. The approved Sprint 0015 pin is **10.0.731102**; installation or
+upgrade requires named Task 15.167.c HITL approval for the host, exact version,
+directory permissions, and affected identities. The operator approved the two-host rollout, including NBGV migration, on 2026-09-03. Approval alone is not evidence of installation. NuGet lists a .NET 8 target; verify a
+compatible runtime and the selected package framework on each host before use.
+See the [Microsoft package listing](https://www.nuget.org/packages/dotnet-trace)
+and [.NET tool installation contract](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-tool-install).
+
+**Preflight and ownership.** Inventory both `utat022` and `utat01`, plus any newly
+registered parity peer. Record the current Windows identity, architecture, SDKs,
+runtimes, resolved executable, tool-store versions, directory owner/ACLs, and
+Machine/User/Process PATH. Read `.store` package/version directories during a
+strictly read-only audit: even `dotnet tool list` can initialize a previously
+unused SDK and create a development HTTPS certificate. Do not inspect or copy
+secret-bearing environment variables. Save evidence under the current repository's
+`_generated/Sprint0015/Task15.167/` directory.
+
+The pre-deployment 2026-09-03 inventory found no `dotnet-trace` on either host. UTAT022 lacks the
+shared directory; its existing NBGV is under `C:\Program Files\dotnet-tools`.
+UTAT01 already has the shared directory and NBGV, but its inherited Users ACL
+permits creation/writes and needs an approved permissions correction. Preserve
+NBGV, other tools, and unrelated PATH entries. Evidence: repository-root `_generated/Sprint0015/Task15.167/inventory.local.json` and `inventory.utat01.json`; these are inventory results, not CI execution proof.
+A missing directory or correctable
+ACL is not a technical reason to choose the per-user fallback.
+
+**Shared path and profile contract.** Administrators and SYSTEM manage the shared
+directory; approved developer/service consumers need read, execute, and traverse
+access to the executable and its `.store` payload. Ordinary consumers must not be
+able to replace binaries or create new shims there. Before changing an existing
+ACL, retain its security descriptor, review explicit and inherited entries, and
+approve the exact correction including its effect on existing tools. Secure a new
+directory before installing. Do not merely copy the executable out of `.store`.
+
+The canonical ATAP.IAC `Windows/ProfileTemplates/AllUsersAllHostsV7CoreProfile.ps1`
+prepends this directory to process PATH **only when it exists**. Open a fresh,
+profiled PowerShell 7 process after provisioning. A service process does not
+necessarily load PowerShell profiles or inherit a newly changed Machine PATH:
+CI should invoke the absolute executable path, or explicitly include the shared
+path in its approved job environment. Restart/recycle a service only within an
+approved maintenance window. A PATH entry alone does not prove executable access.
+Microsoft describes [custom tool locations and invocation](https://learn.microsoft.com/en-us/dotnet/core/tools/global-tools).
+
+**Journal before every host mutation.** In an elevated, profiled PowerShell 7
+session on the approved target, require the deployed parity cmdlet and append an
+entry before directory creation, ACL/PATH changes, installation, update, or
+rollback. Set the actual old state and peer for each operation; the following
+example declares a new UTAT022 installation only. Retain each returned entry ID.
+Do not run this example during a read-only inventory.
 
 ```powershell
-pwsh -NoProfile -Command "Get-Command nbgv -ErrorAction SilentlyContinue"   # machine PATH only
-pwsh -Command            "Get-Command nbgv -ErrorAction SilentlyContinue"   # machine PATH + profile
+Get-Command Add-ParityChangeEntry -ErrorAction Stop | Out-Null
+if ($env:COMPUTERNAME -ine 'UTAT022') { throw 'This declaration targets UTAT022 only.' }
+$change = Add-ParityChangeEntry -Category Packages -Item 'dotnet-trace/shared' `
+  -OldValue 'Absent' -NewValue '10.0.731102; C:\ProgramData\dotnet\tools' `
+  -PeerHostName 'utat01' -PeerActionKind InstallPackage `
+  -PeerAction 'After named approval, install the same pin in the shared path; verify each required identity; acknowledge this entry.' `
+  -Reason 'Task 15.167.c approved diagnostic-tool provisioning'
 ```
 
-Upgrade later with:
+**Pinned installation or update.** Use one reviewed NuGet configuration with only
+the approved source. Save this credential-free example as
+`_generated/Sprint0015/Task15.167/nuget.dotnet-trace.config` in the active repository.
+It prevents the repository's package-source hierarchy from silently changing tool
+provenance. If policy requires an approved proxy, replace the source only after
+recording that disposition; never embed credentials.
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <clear />
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+  </packageSources>
+</configuration>
+```
+
+Run exactly one operation after the journal and directory/ACL gates above. These
+commands intentionally retain an exact version. For a later upgrade, obtain
+approval for its new pin and capture the previous version before changing it.
 
 ```powershell
-dotnet tool update --tool-path 'C:\ProgramData\dotnet\tools' nbgv
+$machineToolPath = 'C:\ProgramData\dotnet\tools'
+$traceVersion = '10.0.731102'
+Get-Command Get-RepositoryRoot -ErrorAction Stop | Out-Null
+$evidenceRoot = Join-Path (Get-RepositoryRoot) '_generated/Sprint0015/Task15.167'
+$toolConfig = Join-Path $evidenceRoot 'nuget.dotnet-trace.config'
+if (-not (Test-Path -LiteralPath $toolConfig)) { throw 'Approved tool-source configuration is missing.' }
+if (-not (Test-Path -LiteralPath $machineToolPath)) { throw 'Complete approved directory provisioning first.' }
+# Suppress SDK development-certificate generation in this provisioning process.
+$env:DOTNET_GENERATE_ASPNET_CERTIFICATE = 'false'
+
+# New installation only:
+dotnet tool install --tool-path $machineToolPath dotnet-trace --version $traceVersion --configfile $toolConfig
+if ($LASTEXITCODE -ne 0) { throw 'dotnet-trace installation failed.' }
 ```
+
+For an existing installation, use this command instead of the install command:
+
+```powershell
+dotnet tool update --tool-path $machineToolPath dotnet-trace --version $traceVersion --configfile $toolConfig
+if ($LASTEXITCODE -ne 0) { throw 'dotnet-trace update failed.' }
+```
+
+**Verify under the real consuming identities.** On both hosts include `whertzing`
+and the actual `SvcBuildMaster` service principal. On UTAT01 also include
+`JenkinsAgentSrvAacct` (the Jenkins service was stopped at inventory time; retain
+an explicit pending disposition until it is verified or formally retired).
+Include `SvcParityAudit` as the inventory reader. Discover additional CI principals
+from current service/task configuration; do not assume a fixed roster covers
+future hosts. Run the probe in the existing approved job/session for each identity,
+not by relabeling an administrator's result. Do not create credential stores or
+new privileged scheduled tasks to obtain a result. All remoting must select
+`-ConfigurationName 'PowerShell.7'`.
+
+```powershell
+$expectedPath = 'C:\ProgramData\dotnet\tools\dotnet-trace.exe'
+$expectedVersion = '10.0.731102'
+[Security.Principal.WindowsIdentity]::GetCurrent().Name
+$resolved = Get-Command dotnet-trace -ErrorAction Stop
+if ($resolved.CommandType -ne 'Application' -or $resolved.Source -ine $expectedPath) {
+  throw 'dotnet-trace is absent from PATH or shadowed by another command.'
+}
+$versionOutput = (& $expectedPath --version | Out-String).Trim()
+if ($LASTEXITCODE -ne 0) { throw 'dotnet-trace cannot run under this identity.' }
+if ($versionOutput -notmatch ('^' + [regex]::Escape($expectedVersion) + '(?:\s|\+|$)')) {
+  throw "Unexpected dotnet-trace version: $versionOutput"
+}
+& $expectedPath --help
+if ($LASTEXITCODE -ne 0) { throw 'dotnet-trace help failed.' }
+Get-FileHash -LiteralPath $expectedPath -Algorithm SHA256
+```
+
+For a CI job using an explicit executable path, verify that path and record its
+PATH disposition separately; a working explicit path must not hide a broken
+profile/PATH acceptance check. Retain the identity, path, exact package version,
+`--version` output, exit codes, executable/payload hashes, and timestamp. Tool
+startup does not establish permission to attach to another account's process.
+Any later trace collection needs a chosen target and an explicit `--output` under
+`_generated/`; see the [dotnet-trace command reference](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/dotnet-trace).
+
+**Rollback or removal.** Stop new diagnostic jobs through the approved maintenance
+procedure and declare a new parity entry before each rollback mutation. To undo a
+first install, uninstall only this package; preserve the shared directory, `.store`
+entries for other tools, and shared PATH used by NBGV. For an upgrade, reinstall the
+previous exact approved version from its retained source after uninstalling the
+new version. Validate access/version again for every consumer. Restore only the
+specific ACL/PATH changes made by this operation, from pre-change evidence.
+
+```powershell
+dotnet tool uninstall --tool-path 'C:\ProgramData\dotnet\tools' dotnet-trace
+if ($LASTEXITCODE -ne 0) { throw 'dotnet-trace removal failed.' }
+# Upgrade rollback only: set this to the exact version recorded before the upgrade.
+# $previousVersion must be populated from the retained pre-change evidence.
+# dotnet tool install --tool-path $machineToolPath dotnet-trace --version $previousVersion --configfile $toolConfig
+```
+
+The [update](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-tool-update)
+and [uninstall](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-tool-uninstall)
+commands must use the original installation scope. Do not remove every .NET tool
+or delete the shared directory as a shortcut.
+
+**Fallback and parity closeout.** A `whertzing`-scoped fallback is permitted only
+with a documented technical failure of the shared installation and explicit
+approval. Under that user's own identity use
+`dotnet tool install --global dotnet-trace --version 10.0.731102 --configfile $toolConfig`;
+updates use `tool update --global` with the same pin and configuration, and removal
+uses `tool uninstall --global dotnet-trace`. CI must receive a separate approved
+installation/access disposition; pointing CI at a developer's home is not shared
+provisioning. Mark CI unavailable until real-identity execution succeeds.
+
+Task 15.100.i owns parity integration: retain existing per-user inventory and add
+explicit shared-tool records for each host/identity. The current IAC
+`PackageManagerProfiles[].NuGetToolPath` entries target only the developer's home;
+a clean current comparison cannot prove shared-tool parity. Absent, inaccessible,
+wrong-version, shadowed, and user-only states must remain actionable differences.
+Use a narrowly scoped logical identity/allowlist entry, never an ignore rule that
+suppresses missing tools or version skew. Each peer needs a rollout owner,
+approval/scheduled window or explicit pending disposition, pre/post evidence, and
+an acknowledgement through `Confirm-ParityChangeApplied -PeerHostName <source>
+-EntryId <recorded-id> -Status Verified` only after its action actually passes.
+Task 15.167.c remains open while required identity checks, peer dispositions, or
+fresh parity evidence are missing.
 
 ### 4.5 Register the Bitwarden login script at startup
 

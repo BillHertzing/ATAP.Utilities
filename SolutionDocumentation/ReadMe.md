@@ -36,6 +36,8 @@ There are a lot of prerequisite packages needed to handle all the features of th
 
 ### Suggested Additional tools and utilities
 
+- [Shared NBGV and dotnet-trace provisioning](NewComputerSetup.md#441-provision-dotnet-trace-for-developers-and-ci) documents the pinned installation, developer/CI verification, rollback, and parity rollout gates.
+
 ## Overview
 
 ToDo: Insert diagram of development process

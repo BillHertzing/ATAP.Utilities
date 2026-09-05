@@ -1,5 +1,16 @@
 # ATAPUtilities.Database release notes
 
+## 0.1.13
+
+Status: source and disposable-database verified; unbuilt, unpublished, and not
+applied to any permanent database.
+
+- Retains immutable V00010 through V00130 migration bytes.
+- Adds V00140 to replace the V00130 schema-wide runtime-role denial with exact
+  object denials on `Tag`, `TagAlias`, and `ContentSummary`.
+- Preserves query confinement while allowing separately granted startup access
+  to `AceOutpostContentSummaryPrototype` to remain effective.
+- Accepts an already-recovered database state and remains environment-neutral.
 ## 0.1.12
 
 Status: source and disposable-database verified; unbuilt, unpublished, and not

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageId": "ATAPUtilities.Database",
-  "sourceVersion": "0.1.12",
+  "sourceVersion": "0.1.13",
   "files": [
     {
       "path": "SQL/V00010__Create_ATAPUtilities_Initial_Schema_And_Seed.sql",
@@ -62,6 +62,11 @@
       "path": "SQL/V00130__Create_ContentSummary_Runtime_Query_Boundary.sql",
       "kind": "migration",
       "sha256": "CACB55C4C1D1ED7598F34BFEB2DF38DFCDF06C681DC358CF990E571A4C54940E"
+    },
+    {
+      "path": "SQL/V00140__Correct_ContentSummary_Runtime_Query_Denials.sql",
+      "kind": "migration",
+      "sha256": "D8707B00E8E303BC9735EF6107A2D6D6B990293D456ADE1C407349C73559E5CB"
     },
     {
       "path": "Data/BuildSet.csv",

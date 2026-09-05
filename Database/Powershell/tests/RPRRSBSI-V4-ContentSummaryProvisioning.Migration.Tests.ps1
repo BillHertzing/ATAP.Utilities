@@ -32,7 +32,8 @@ Describe 'V00120 ContentSummary provisioning migration' {
       'V00100__Create_ATAPUtilities_ContentSummary_And_Query.sql',
       'V00110__Create_ContentSummary_DAB_Principal_Facade.sql',
       'V00120__Add_ContentSummary_Provisioning_And_Correction.sql',
-      'V00130__Create_ContentSummary_Runtime_Query_Boundary.sql')
+      'V00130__Create_ContentSummary_Runtime_Query_Boundary.sql',
+      'V00140__Correct_ContentSummary_Runtime_Query_Denials.sql')
   }
   It 'freezes the adapter procedure names and ordered parameters' {
     $expected=[ordered]@{
@@ -168,13 +169,13 @@ Describe 'V00120 ContentSummary provisioning migration' {
     $migration|Should -Not -Match '(?im)^\s*CREATE\s+(?:LOGIN|USER)\b'
     $migration|Should -Not -Match '(?im)^\s*ALTER\s+ROLE.+ADD\s+MEMBER'
   }
-  It 'binds package 0.1.12 to every migration and seed byte' {
+  It 'binds package 0.1.13 to every migration and seed byte' {
     $version=Get-Content -Raw (Join-Path $flywayRoot 'version.json')|ConvertFrom-Json
     $allowlist=Get-Content -Raw (Join-Path $flywayRoot 'package-content-allowlist.json')|ConvertFrom-Json -Depth 10
     $expectedPaths=@(
       @(Get-ChildItem $sqlDirectory -File -Filter 'V*.sql'|Sort-Object Name|ForEach-Object{'SQL/'+$_.Name})
       @(Get-ChildItem (Join-Path $flywayRoot 'Data') -File -Filter '*.csv'|Sort-Object Name|ForEach-Object{'Data/'+$_.Name}))
-    $version.version|Should -Be '0.1.12'
+    $version.version|Should -Be '0.1.13'
     $allowlist.sourceVersion|Should -Be $version.version
     @($allowlist.files.path)|Should -Be $expectedPaths
     foreach($entry in $allowlist.files){

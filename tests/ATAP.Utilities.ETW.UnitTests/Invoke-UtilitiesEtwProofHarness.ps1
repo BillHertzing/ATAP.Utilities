@@ -49,7 +49,6 @@ function Get-UtilitiesEtwArtifactProperties {
       "-p:ATAPArtifactsExecutionId=$executionId"
       "-p:ArtifactsPath=$canonicalPath"
       '-p:GeneratePackageOnBuild=false'
-      '-p:ATAPEnableFody=true'
     )
   }
 }

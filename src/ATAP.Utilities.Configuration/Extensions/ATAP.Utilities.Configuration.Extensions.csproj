@@ -4,7 +4,7 @@
     <PackageVersion>0.1.1</PackageVersion>
     <Version>0.1.1</Version>
     <OutputType>Library</OutputType>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
     <Description>Extension methods and helpers for ASP.NET Core Generic Host configuration, environment variables, JSON, command-line, localization, and logging setup.</Description>
   </PropertyGroup>

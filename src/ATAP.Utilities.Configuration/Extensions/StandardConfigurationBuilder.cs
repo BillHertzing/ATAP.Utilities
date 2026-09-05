@@ -126,15 +126,26 @@ namespace ATAP.Utilities.Configuration
           configurationBuilder.AddEnvironmentVariables(prefix: pf);
         }
       }
-      // add the command line arguments and any mappings, if specified
+      // Add the command line arguments, honoring switch mappings when they are supplied.
+      //
+      // This was previously two separate blocks: one that added the command line, and a
+      // second that -- when switchMappings was non-null -- called AddCommandLine(args)
+      // again without passing the mappings. That had two defects. The mappings were
+      // silently discarded, so a caller's aliases never took effect; and the command line
+      // was registered as a configuration source twice, which is wasteful and makes the
+      // provider order harder to reason about. Callers passing switchMappings got the
+      // opposite of what they asked for, with no error. A null args with non-null
+      // switchMappings would also have thrown from the second call.
       if (args != null)
       {
-        configurationBuilder.AddCommandLine(args);
-      }
-      // add command line switchMappings, if specified
-      if (switchMappings != null)
-      {
-        configurationBuilder.AddCommandLine(args);
+        if (switchMappings != null)
+        {
+          configurationBuilder.AddCommandLine(args, switchMappings);
+        }
+        else
+        {
+          configurationBuilder.AddCommandLine(args);
+        }
       }
       //
       return configurationBuilder;

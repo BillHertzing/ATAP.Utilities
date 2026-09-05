@@ -1,19 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <PackageVersion>0.1.2</PackageVersion>
-    <Version>0.1.2</Version>
+    <!-- 0.1.3: drops the obsolete ATAP.Utilities.Configuration.Secrets aggregation.
+         0.1.2 is published and immutable, so this content must not ship under that
+         version. NOT YET PUBLISHED: shipping requires build, publish, promote, and an
+         atomic relock of Ace consumers behind the usual feed gate. -->
+    <PackageVersion>0.1.3</PackageVersion>
+    <Version>0.1.3</Version>
     <EnableDefaultItems>false</EnableDefaultItems>
     <OutputType>Library</OutputType>
     <IncludeBuildOutput>false</IncludeBuildOutput>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
     <Description>Aggregator package for ATAP.Utilities.Configuration libraries.</Description>
   </PropertyGroup>
   <!-- Aggregate only provider-neutral Configuration projects. Concrete provider adapters are composition-root opt-ins. -->
+  <!--
+    ATAP.Utilities.Configuration.Secrets is deliberately NOT aggregated here. Every public
+    type in that family carries [Obsolete("Use ATAP.Utilities.Secrets namespace instead.")],
+    so aggregating it handed obsolete types to every consumer of this neutral facade
+    transitively - AceCommander.Server among them - with no way to opt out. The supported
+    replacement, ATAP.Utilities.Secrets, is already aggregated below.
+
+    This is not a provider-neutrality breach: verified against AceCommander.Server's
+    packages.lock.json that no Bitwarden shim is reachable from this package. It is obsolete
+    baggage, and the boundary fixture in AceCommander.RrsbsBoundary.Tests
+    ProviderNeutralityBoundaryTests shows the intended shape as Extensions-only.
+
+    Consumers still needing the obsolete family must reference it explicitly, which is the
+    point: the dependency becomes visible and dated rather than silent.
+  -->
   <ItemGroup>
     <ProjectReference Include="Extensions\ATAP.Utilities.Configuration.Extensions.csproj" />
-    <ProjectReference Include="Secrets\ATAP.Utilities.Configuration.Secrets.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Secrets\ATAP.Utilities.Secrets.csproj" />
   </ItemGroup>
 </Project>

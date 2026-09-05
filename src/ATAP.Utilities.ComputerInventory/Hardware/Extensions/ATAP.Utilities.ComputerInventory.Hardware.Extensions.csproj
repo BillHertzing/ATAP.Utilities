@@ -4,6 +4,8 @@
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
+    <!-- Explicit per-project Fody opt-in (e6179a9ca); required for the [ETWLog] weave proved by Task 15.181.n.U13. -->
+    <ATAPEnableFody>true</ATAPEnableFody>
   </PropertyGroup>
 
   <ItemGroup>

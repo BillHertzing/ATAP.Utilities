@@ -24,7 +24,7 @@ Describe 'ContentSummary frozen phase-two contract' {
     }
   }
 
-  It 'keeps V00090 as the head and V01000 as a synthetic unknown' {
+  It 'keeps V00090 as the immutable predecessor, V00100 as the allocated head, and V01000 unknown' {
     $versions = Get-ChildItem -LiteralPath (Join-Path $repoRoot 'Database\Flyway\SQL') -File -Filter 'V*.sql' |
       ForEach-Object {
         if ($_.Name -match '^V(?<version>\d{5})__') {
@@ -32,10 +32,10 @@ Describe 'ContentSummary frozen phase-two contract' {
         }
       }
 
-    ($versions | Measure-Object -Maximum).Maximum | Should -Be 90
-    $fixture.migrationBoundary.currentHead | Should -Be 'V00090'
-    $fixture.migrationBoundary.nextAllocatedVersion | Should -BeNullOrEmpty
-    $fixture.migrationBoundary.expectedCandidateOnly | Should -Be 'V00100'
+    ($versions | Measure-Object -Maximum).Maximum | Should -Be 100
+    $fixture.migrationBoundary.contractPredecessor | Should -Be 'V00090'
+    $fixture.migrationBoundary.currentHead | Should -Be 'V00100'
+    $fixture.migrationBoundary.allocatedVersion | Should -Be 'V00100'
     $fixture.migrationBoundary.syntheticUnknownVersion | Should -Be 'V01000'
     Test-Path -LiteralPath (Join-Path $repoRoot 'Database\Flyway\SQL\V01000__Synthetic_Unknown.sql') | Should -BeFalse
     $adr | Should -Match 'synthetic unknown migration fixture is V01000'

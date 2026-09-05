@@ -24,9 +24,9 @@
     }
   ],
   "migrationBoundary": {
-    "currentHead": "V00090",
-    "nextAllocatedVersion": null,
-    "expectedCandidateOnly": "V00100",
+    "contractPredecessor": "V00090",
+    "currentHead": "V00100",
+    "allocatedVersion": "V00100",
     "syntheticUnknownVersion": "V01000"
   },
   "ruleContractCodes": [
@@ -38,6 +38,110 @@
     "CS-R06-query-ranking-v1"
   ],
   "instantiationContractCode": "CS-I01-contentsummary-initial-v1",
+  "implementationContract": {
+    "migration": "V00100__Create_ATAPUtilities_ContentSummary_And_Query.sql",
+    "packageVersion": "0.1.9",
+    "tables": [
+      "Repository",
+      "RepositoryRootRegistration",
+      "SourceArtifact",
+      "SourceArtifactVersion",
+      "ContentSummary",
+      "ContentSummaryVersion",
+      "ContentSummaryDependency",
+      "ContentSummaryRefreshAttempt",
+      "ContentSummaryIngestionRequest"
+    ],
+    "tableTypes": [
+      "ContentSummaryDependencyInput",
+      "ContentSummaryAuthorizedRepositoryInput",
+      "ContentSummaryTagMatchInput"
+    ],
+    "procedures": [
+      "CaptureContentSummaryObservationV1",
+      "QueryContentSummaryCandidatesAsOfV1"
+    ],
+    "ruleVariantIds": [
+      "a5600000-0000-0000-0000-000000000201",
+      "a5600000-0000-0000-0000-000000000202",
+      "a5600000-0000-0000-0000-000000000203",
+      "a5600000-0000-0000-0000-000000000204",
+      "a5600000-0000-0000-0000-000000000205",
+      "a5600000-0000-0000-0000-000000000206"
+    ],
+    "instantiationId": "a5600000-0000-0000-0000-000000000005"
+  },
+  "loaderContract": {
+    "dependencyType": "[ATAPUtilities].[ContentSummaryDependencyInput]",
+    "procedure": "[ATAPUtilities].[CaptureContentSummaryObservationV1]",
+    "parameters": [
+      "IdempotencyKey",
+      "CanonicalRequestSha256",
+      "RunId",
+      "RepositoryId",
+      "RootRegistrationId",
+      "RepoRelativePath",
+      "SourceArtifactId",
+      "SourceArtifactVersionId",
+      "ContentSummaryId",
+      "ContentSummaryVersionId",
+      "PriorContentSummaryVersionId",
+      "ObservedAtUtc",
+      "RecordedAtUtc",
+      "ByteSha256",
+      "NormalizedContentSha256",
+      "ByteCount",
+      "EncodingCode",
+      "HasBom",
+      "LineEndingCode",
+      "FinalNewline",
+      "HarvesterEntityId",
+      "SummaryProfileCode",
+      "ClassificationPolicyId",
+      "SourceIdentityRuleVariantId",
+      "NormalizationRuleVariantId",
+      "ClassificationRuleVariantId",
+      "SummaryRenderRuleVariantId",
+      "FreshnessRuleVariantId",
+      "QueryRankingRuleVariantId",
+      "InstantiationId",
+      "PromptRuleVariantId",
+      "GeneratorKindCode",
+      "GeneratorName",
+      "GeneratorVersion",
+      "ModelProvider",
+      "ModelId",
+      "ModelRevision",
+      "ModelEffort",
+      "LifecycleCode",
+      "SafeSummaryText",
+      "SafeLocator",
+      "WasRedacted",
+      "RedactionEvidenceId",
+      "SummaryContentSha256",
+      "ExclusionEvidenceId",
+      "LifecycleReasonCode",
+      "DerivationFingerprint",
+      "Dependencies"
+    ],
+    "resultColumns": [
+      "ReplayStatus",
+      "IdempotencyKey",
+      "SourceArtifactId",
+      "SourceArtifactVersionId",
+      "ContentSummaryId",
+      "ContentSummaryVersionId",
+      "SourceArtifactVersionSequence",
+      "ContentSummaryVersionSequence",
+      "LifecycleCode",
+      "ErrorCode"
+    ],
+    "replayStatuses": [
+      "Created",
+      "Replayed",
+      "DerivationReplay"
+    ]
+  },
   "publicContract": {
     "requestParameters": [
       "Tags",

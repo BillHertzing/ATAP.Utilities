@@ -29,10 +29,11 @@ function New-ContentSummarySqlAdapterSet {
 
     $provisionRepository = {
       param($RepositoryId,$RepositoryRootRegistrationId,$CanonicalRepositoryName,$OriginUri,$CanonicalRoot,$RootKindCode,$OrganizationId,$ClassificationPolicyId,$PrincipalId,$EvidenceEntityId,$RecordedAtUtc)
-      $values = [ordered]@{RepositoryId=$RepositoryId;RepositoryRootRegistrationId=$RepositoryRootRegistrationId;CanonicalRepositoryName=$CanonicalRepositoryName;OriginUri=$OriginUri;CanonicalRoot=$CanonicalRoot;RootKindCode=$RootKindCode;OrganizationId=$OrganizationId;ClassificationPolicyId=$ClassificationPolicyId;PrincipalId=$PrincipalId;EvidenceEntityId=$EvidenceEntityId;RecordedAtUtc=$RecordedAtUtc}
+      $canonicalOrigin = ConvertTo-ContentSummaryCanonicalOriginUri -OriginUri $OriginUri
+      $values = [ordered]@{RepositoryId=$RepositoryId;RepositoryRootRegistrationId=$RepositoryRootRegistrationId;CanonicalRepositoryName=$CanonicalRepositoryName;OriginUri=$canonicalOrigin;CanonicalRoot=$CanonicalRoot;RootKindCode=$RootKindCode;OrganizationId=$OrganizationId;ClassificationPolicyId=$ClassificationPolicyId;PrincipalId=$PrincipalId;EvidenceEntityId=$EvidenceEntityId;RecordedAtUtc=$RecordedAtUtc}
       $parameters = ConvertTo-ContentSummarySqlParameterDefinitions -Contract ProvisionRepository -Values $values
       $result = Invoke-ContentSummarySqlStoredProcedure -SqlConnection $connection -ProcedureName 'ATAPUtilities.ProvisionContentSummaryRepositoryV1' -Parameters $parameters -ResultPropertyOrder @('RepositoryId','RepositoryRootRegistrationId','CanonicalRepositoryName','OriginUri','CanonicalRoot','RootKindCode','StatusCode','ErrorCode') -AllowedStatusCodes @('Created','Existing') -CommandTimeoutSeconds $timeout
-      $expectedOrigin = ([string]$OriginUri).Trim().TrimEnd('/').ToLowerInvariant()
+      $expectedOrigin = $canonicalOrigin
       $expectedRoot = ([string]$CanonicalRoot).Trim().Replace('/','\').ToLowerInvariant()
       while ($expectedRoot.Length -gt 3 -and $expectedRoot.EndsWith('\')) { $expectedRoot = $expectedRoot.Substring(0,$expectedRoot.Length-1) }
       if ([guid]$result.RepositoryId -ne [guid]$RepositoryId -or [guid]$result.RepositoryRootRegistrationId -ne [guid]$RepositoryRootRegistrationId -or $result.CanonicalRepositoryName -cne $CanonicalRepositoryName -or $result.OriginUri -cne $expectedOrigin -or $result.CanonicalRoot -cne $expectedRoot -or $result.RootKindCode -cne $RootKindCode) { throw 'CS-SQL-002: repository acknowledgement does not match the request.' }

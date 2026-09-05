@@ -178,3 +178,25 @@ Describe 'ContentSummary adapter review corrections' -Tag 'Unit','Task15.60.c-f'
     }
   }
 }
+
+Describe 'ContentSummary origin acknowledgement normalization' -Tag 'Unit','Task15.60.c-f' {
+  BeforeAll {
+    $script:moduleRoot = Split-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -Parent
+    Import-Module (Join-Path $script:moduleRoot 'ATAP.Utilities.BuildTooling.ContentSummary.PowerShell.psd1') -Force
+    $script:module = Get-Module ATAP.Utilities.BuildTooling.ContentSummary.PowerShell
+  }
+
+  It 'normalizes scheme host and default port while preserving repository path case' {
+    $canonical = & $script:module { ConvertTo-ContentSummaryCanonicalOriginUri -OriginUri 'HTTPS://GitHub.COM:443/BillHertzing/ATAP.Utilities.git/' }
+    $lowerPathVariant = & $script:module { ConvertTo-ContentSummaryCanonicalOriginUri -OriginUri 'https://github.com/billhertzing/atap.utilities.git' }
+    $canonical | Should -BeExactly 'https://github.com/BillHertzing/ATAP.Utilities.git'
+    $lowerPathVariant | Should -BeExactly 'https://github.com/billhertzing/atap.utilities.git'
+    $canonical | Should -Not -BeExactly $lowerPathVariant
+  }
+
+  It 'rejects credentials query fragment and non-default ports consistently' {
+    foreach ($unsafeOrigin in @('https://user:secret@github.com/Owner/Repo.git','https://github.com/Owner/Repo.git?ref=main','https://github.com/Owner/Repo.git#main','https://github.com:444/Owner/Repo.git')) {
+      { & $script:module { param($value) ConvertTo-ContentSummaryCanonicalOriginUri -OriginUri $value } $unsafeOrigin } | Should -Throw 'CS-INVENTORY-001*'
+    }
+  }
+}

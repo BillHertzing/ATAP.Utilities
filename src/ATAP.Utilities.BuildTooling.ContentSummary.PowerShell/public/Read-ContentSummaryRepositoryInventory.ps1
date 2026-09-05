@@ -85,6 +85,7 @@ function Read-ContentSummaryRepositoryInventory {
         $origin.Scheme -ne 'https' -or -not [string]::IsNullOrEmpty($origin.UserInfo) -or $origin.Query -or $origin.Fragment) {
         throw 'CS-INVENTORY-001: originUri must be an absolute credential-free HTTPS URI.'
       }
+      $canonicalOrigin = ConvertTo-ContentSummaryCanonicalOriginUri -OriginUri ([string]$repository.originUri)
       & $assertProperties $repository.originEvidence @('kind','remoteName','observedUri','observedAtUtc') 'originEvidence'
       if ($repository.originEvidence.kind -cne 'git-remote' -or $repository.originEvidence.remoteName -cne 'origin' -or
         $repository.originEvidence.observedUri -cne $repository.originUri) {
@@ -102,7 +103,11 @@ function Read-ContentSummaryRepositoryInventory {
         throw 'CS-INVENTORY-001: canonicalRoot must be a unique existing canonical Git worktree root.'
       }
       $actualOriginUri = @(& git -C $fullRoot config --get remote.origin.url 2>$null)
-      if ($LASTEXITCODE -ne 0 -or $actualOriginUri.Count -ne 1 -or $actualOriginUri[0] -cne $repository.originUri) {
+      if ($LASTEXITCODE -ne 0 -or $actualOriginUri.Count -ne 1) {
+        throw 'CS-INVENTORY-001: origin evidence does not match the worktree origin remote.'
+      }
+      $actualCanonicalOrigin = ConvertTo-ContentSummaryCanonicalOriginUri -OriginUri ([string]$actualOriginUri[0])
+      if ($actualCanonicalOrigin -cne $canonicalOrigin) {
         throw 'CS-INVENTORY-001: origin evidence does not match the worktree origin remote.'
       }
       if ($repository.rootKindCode -notin @('stable','sprint','mirror','scanner-sandbox')) { throw 'CS-INVENTORY-001: invalid rootKindCode.' }

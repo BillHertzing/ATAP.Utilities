@@ -1,7 +1,12 @@
 BeforeAll {
   . (Join-Path $PSScriptRoot '../Invoke-ApplicationReleaseStage.ps1')
   function New-ReleaseContextFixture {
-    $root = Join-Path $PSScriptRoot ('../../../../_generated/Sprint0015/Task15.185/COMMANDER02-release-repair/stage-fixtures/' + [guid]::NewGuid().ToString('N'))
+    # Same Dropbox exclusion as New-ReleaseBundle.Tests.ps1: fixtures written under a
+    # Dropbox-synced path can be locked by the indexer between write and reopen.
+    $fixtureBase = if ($env:ATAP_ARTIFACTS_ROOT) { Join-Path $env:ATAP_ARTIFACTS_ROOT 'test-fixtures/ApplicationReleaseStage' }
+                   else { Join-Path ([IO.Path]::GetTempPath()) 'atap-test-fixtures/ApplicationReleaseStage' }
+    if ($fixtureBase -match '(?i)[\/]Dropbox[\/]') { throw "Fixture root must not be under Dropbox: $fixtureBase" }
+    $root = Join-Path $fixtureBase ([guid]::NewGuid().ToString('N'))
     [IO.Directory]::CreateDirectory($root) | Out-Null
     $bundle = Join-Path $root 'bundle.upack'; Set-Content $bundle 'fixture'
     $verifier = Join-Path $root 'verify.ps1'; Set-Content $verifier '# fixture'

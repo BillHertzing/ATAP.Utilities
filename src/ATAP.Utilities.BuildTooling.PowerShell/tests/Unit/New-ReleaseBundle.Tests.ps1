@@ -11,7 +11,23 @@ BeforeAll {
     $script:fixtureSourceRoot = Join-Path $fixturesDir 'source'
     $script:fixedTimestamp = [DateTimeOffset]::new(2000, 1, 1, 0, 0, 0, [TimeSpan]::Zero)
     $script:fixedAttributes = -2119958528
-    $script:fixtureOutputRoot = [IO.Path]::GetFullPath((Join-Path $moduleRoot '../../_generated/Sprint0015/Task15.185/COMMANDER02-release-repair/bundle-compatibility/fixtures'))
+    # Fixture output MUST NOT live under Dropbox. These tests create a .upack and
+    # immediately reopen it with FileShare.None; Dropbox's indexer intermittently holds
+    # the freshly written file and the reopen fails with "being used by another
+    # process". That flake rejected BuildMaster builds 1, 2 and 3 of
+    # ATAP.Utilities.BuildTooling.PowerShell 0.1.76 on 2026-09-04/05.
+    #
+    # This is the Task 15.174.b root cause reaching test fixtures. ATAPBUILD004 guards
+    # ArtifactsPath but not fixture roots, so the exclusion is enforced here.
+    $script:fixtureOutputRoot = if ($env:ATAP_ARTIFACTS_ROOT) {
+        [IO.Path]::GetFullPath((Join-Path $env:ATAP_ARTIFACTS_ROOT 'test-fixtures/New-ReleaseBundle'))
+    } else {
+        [IO.Path]::GetFullPath((Join-Path ([IO.Path]::GetTempPath()) 'atap-test-fixtures/New-ReleaseBundle'))
+    }
+    if ($script:fixtureOutputRoot -match '(?i)[\/]Dropbox[\/]') {
+        throw "Fixture output root must not be under Dropbox: $script:fixtureOutputRoot"
+    }
+    [IO.Directory]::CreateDirectory($script:fixtureOutputRoot) | Out-Null
 
     function Copy-TestManifest {
         param(

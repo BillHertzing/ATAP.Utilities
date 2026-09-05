@@ -1,5 +1,21 @@
 # ATAPUtilities.Database release notes
 
+## 0.1.11
+
+Status: source and disposable-database verified; unbuilt, unpublished, and not
+applied to any permanent database.
+
+- Retains immutable V00010 through V00110 migration bytes.
+- Adds V00120 with catalogued operational identities, a distinct immutable
+  prompt RuleVariant, idempotent serializable Repository/root provisioning,
+  and canonical Windows-root equivalence.
+- Adds controlled ContentSummaryVersion Tag assignment and database-principal
+  authorization, plus append-close root correction and retirement procedures.
+- Grants an execute-only provisioner role without creating users, logins,
+  memberships, or direct table access.
+- Excludes live database application, package publication, promotion, and
+  service deployment.
+
 ## 0.1.7
 
 Status: source and disposable-database verified; unbuilt, unpublished, and not

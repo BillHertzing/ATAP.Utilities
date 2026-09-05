@@ -38,8 +38,8 @@ Describe 'ContentSummary production harvest adapters' -Tag 'Unit','Task15.60.c-f
     }
   }
 
-  It 'exports the minimal production surface at immutable version 0.1.6' {
-    (Get-Module ATAP.Utilities.BuildTooling.ContentSummary.PowerShell).Version.ToString() | Should -Be '0.1.6'
+  It 'exports the minimal production surface at immutable version 0.1.7' {
+    (Get-Module ATAP.Utilities.BuildTooling.ContentSummary.PowerShell).Version.ToString() | Should -Be '0.1.7'
     foreach ($name in @('New-ContentSummarySqlAdapterSet','Read-ContentSummaryRepositoryInventory','Invoke-ContentSummaryRepositoryInventory','New-ContentSummaryDeterministicSafeSummaryGenerator')) {
       Get-Command $name -Module ATAP.Utilities.BuildTooling.ContentSummary.PowerShell | Should -Not -BeNullOrEmpty
     }
@@ -110,7 +110,10 @@ Describe 'ContentSummary production harvest adapters' -Tag 'Unit','Task15.60.c-f
   }
 
   It 'binds only the frozen controlled procedures and no direct DML' {
-    $adapterText = Get-Content -Raw -LiteralPath (Join-Path $script:moduleRoot 'public\New-ContentSummarySqlAdapterSet.ps1')
+    $adapterText = @(
+      [IO.File]::ReadAllText((Join-Path $script:moduleRoot 'public\New-ContentSummarySqlAdapterSet.ps1'))
+      [IO.File]::ReadAllText((Join-Path $script:moduleRoot 'private\New-ContentSummarySqlAdapterSetCore.ps1'))
+    ) -join [Environment]::NewLine
     foreach ($procedure in @('CaptureContentSummaryObservationV1','ProvisionContentSummaryRepositoryV1','AssignContentSummaryVersionTagV1','AuthorizeContentSummaryDatabasePrincipalRepositoryV1')) {
       $adapterText | Should -Match ([regex]::Escape($procedure))
     }

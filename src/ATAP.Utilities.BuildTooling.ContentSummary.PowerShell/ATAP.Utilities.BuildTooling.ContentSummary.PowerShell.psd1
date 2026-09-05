@@ -1,6 +1,6 @@
 @{
   RootModule = 'ATAP.Utilities.BuildTooling.ContentSummary.PowerShell.psm1'
-  ModuleVersion = '0.1.6'
+  ModuleVersion = '0.1.7'
   CompatiblePSEditions = @('Core')
   GUID = '35c51a21-6e84-4c6d-b745-5ca83d8a7680'
   Author = 'Bill Hertzing for ATAPUtilities.org'
@@ -25,7 +25,7 @@
   PrivateData = @{
     PSData = @{
       Tags = @('ATAP', 'AceOutpost', 'ContentSummary', 'REST', 'SqlClient')
-      ReleaseNotes = 'Add immutable inventory validation, controlled V00120 SqlClient adapters, and deterministic safe-text summary generation for production ContentSummary harvesting.'
+      ReleaseNotes = 'Guarantee that the flattened package contains every public and private ContentSummary function, with isolated package-only inventory and WhatIf verification.'
     }
   }
 }

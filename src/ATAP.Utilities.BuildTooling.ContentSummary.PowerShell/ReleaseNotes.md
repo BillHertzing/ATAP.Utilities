@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.1.7
+
+- Rebuild the immutable package from the complete production-adapter source set so the
+  flattened module contains every public and private function used at runtime.
+- Bind the module-private conversion, procedure invocation, dependency, and acknowledgement
+  commands into returned SQL adapter closures so they remain callable outside module scope.
+- Add an isolated package-only regression that imports the expanded package and exercises
+  repository inventory validation and its `WhatIf` path without source-tree dot-sourcing.
+
 ## 0.1.6
 
 - Validate caller-authored repository inventories against an approved SHA-256, durable

@@ -1,6 +1,6 @@
 # Release notes
 
-## 0.1.4
+## 0.1.6
 
 - Adds deterministic, secret-free DAB configuration generation for the
   ContentSummary scalar stored-procedure custom tool.

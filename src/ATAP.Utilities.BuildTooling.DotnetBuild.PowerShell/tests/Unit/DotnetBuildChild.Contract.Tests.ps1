@@ -12,6 +12,24 @@ BeforeAll {
   } else {
     $script:promotedManifest
   }
+  $script:versionJsonPath = Join-Path $script:moduleRoot 'version.json'
+  $script:releaseNotesPath = Join-Path $script:moduleRoot 'ReleaseNotes.md'
+
+  function Get-StableBaseVersionForContract {
+    param(
+      [Parameter(Mandatory)]
+      [AllowEmptyString()]
+      [string] $Version
+    )
+
+    $semanticVersionPattern = '^(?<stable>(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))(?:-(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$'
+    if ($Version -cnotmatch $semanticVersionPattern) {
+      throw "Version '$Version' is not a complete semantic version."
+    }
+
+    return $Matches['stable']
+  }
+
   $script:expectedCommands = @(
     'Build-ImageFromPlantUML'
     'Build-PSModuleManifest'
@@ -49,9 +67,41 @@ Describe 'DotnetBuild child module contract' -Tag 'Unit', 'Contract' {
     Compare-Object ($script:expectedCommands | Sort-Object) $actual | Should -BeNullOrEmpty
   }
 
+  It 'aligns the manifest and release notes with the adjacent stable version' {
+    $manifest = Import-PowerShellDataFile -LiteralPath $script:manifestPath
+    $versionDocument = Get-Content -LiteralPath $script:versionJsonPath -Raw | ConvertFrom-Json
+    $stableBaseVersion = Get-StableBaseVersionForContract -Version ([string] $versionDocument.version)
+    $releaseNotes = Get-Content -LiteralPath $script:releaseNotesPath -Raw
+    $releaseHeading = [regex]::Match($releaseNotes, '(?m)^## (?<version>\S+)$')
+
+    [string] $manifest.ModuleVersion | Should -BeExactly $stableBaseVersion
+    $releaseHeading.Success | Should -BeTrue
+    $releaseHeading.Groups['version'].Value | Should -BeExactly $stableBaseVersion
+  }
+
+  It 'derives stable base <Expected> from valid version <Version>' -ForEach @(
+    @{ Version = '0.1.6'; Expected = '0.1.6' }
+    @{ Version = '0.1.6-rc.2'; Expected = '0.1.6' }
+    @{ Version = '10.20.30-alpha.1+build.5'; Expected = '10.20.30' }
+  ) {
+    Get-StableBaseVersionForContract -Version $Version | Should -BeExactly $Expected
+  }
+
+  It 'rejects malformed version <Version>' -ForEach @(
+    @{ Version = '' }
+    @{ Version = '0.1' }
+    @{ Version = '01.1.6' }
+    @{ Version = '0.01.6' }
+    @{ Version = '0.1.06' }
+    @{ Version = '0.1.6-01' }
+    @{ Version = '0.1.6-' }
+    @{ Version = '0.1.6+' }
+  ) {
+    { Get-StableBaseVersionForContract -Version $Version } | Should -Throw '*not a complete semantic version*'
+  }
+
   It 'declares accepted immutable dependency floors' {
     $manifest = Import-PowerShellDataFile -LiteralPath $script:manifestPath
-[string]$manifest.ModuleVersion | Should -BeExactly '0.1.4'
     $dependencies = @{}
     foreach ($requiredModule in $manifest.RequiredModules) {
       $dependencies[$requiredModule.ModuleName] = [string] $requiredModule.ModuleVersion

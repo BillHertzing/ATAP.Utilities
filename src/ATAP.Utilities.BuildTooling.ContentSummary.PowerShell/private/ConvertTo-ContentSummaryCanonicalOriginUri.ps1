@@ -13,7 +13,10 @@ function ConvertTo-ContentSummaryCanonicalOriginUri {
   }
 
   process {
-    $value = $OriginUri.Trim()
+    if ($OriginUri -cne $OriginUri.Trim()) {
+      throw 'CS-INVENTORY-001: originUri cannot contain leading or trailing whitespace.'
+    }
+    $value = $OriginUri
     while ($value.Length -gt 8 -and $value.EndsWith('/')) {
       $value = $value.Substring(0, $value.Length - 1)
     }

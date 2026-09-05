@@ -194,8 +194,19 @@ Describe 'ContentSummary origin acknowledgement normalization' -Tag 'Unit','Task
     $canonical | Should -Not -BeExactly $lowerPathVariant
   }
 
-  It 'rejects credentials query fragment and non-default ports consistently' {
-    foreach ($unsafeOrigin in @('https://user:secret@github.com/Owner/Repo.git','https://github.com/Owner/Repo.git?ref=main','https://github.com/Owner/Repo.git#main','https://github.com:444/Owner/Repo.git')) {
+  It 'rejects whitespace path credentials query fragment and port close variants' {
+    foreach ($unsafeOrigin in @(
+        ' https://github.com/Owner/Repo.git',
+        'https://github.com/Owner/Repo.git ',
+        'https://github.com/Owner\Repo.git',
+        'https://github.com/Owner/./Repo.git',
+        'https://github.com/Owner/../Repo.git',
+        'https://github.com/Owner//Repo.git',
+        'https://user:secret@github.com/Owner/Repo.git',
+        'https://github.com/Owner/Repo.git?ref=main',
+        'https://github.com/Owner/Repo.git#main',
+        'https://github.com:444/Owner/Repo.git'
+      )) {
       { & $script:module { param($value) ConvertTo-ContentSummaryCanonicalOriginUri -OriginUri $value } $unsafeOrigin } | Should -Throw 'CS-INVENTORY-001*'
     }
   }

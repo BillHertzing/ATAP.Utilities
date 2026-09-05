@@ -23,7 +23,15 @@
   Path to the ATAP.Utilities.BuildTooling.PowerShell module manifest or folder.
 
 .PARAMETER SourcePath
-  Working copy / repository root. _generated/buildmaster lives beneath this.
+  Working copy / repository root. Only compact BuildMaster coordination state
+  is retained beneath _generated/buildmaster.
+
+.PARAMETER ArtifactsRoot
+  External root for packages, logs, promoted-module restores, test results,
+  signature evidence, and temporary files. Defaults to ATAP_ARTIFACTS_ROOT
+  when set. For a source under <drive>\Dropbox\<owner>, the default is
+  <drive>\Users\<owner>\ATAPArtifacts; other source layouts default to the
+  current UserProfile\ATAPArtifacts. Paths beneath Dropbox are rejected.
 
 .PARAMETER BuildMasterBuildId
   BuildMaster build id used as the per-build context folder name.
@@ -122,6 +130,9 @@ param(
   [Parameter(Mandatory)]
   [ValidateNotNullOrEmpty()]
   [string]$SourcePath,
+
+  [AllowEmptyString()]
+  [string]$ArtifactsRoot = '',
 
   [Parameter(Mandatory)]
   [ValidateNotNullOrEmpty()]
@@ -884,6 +895,83 @@ function Get-PowerShellModulePackageVersionForRun {
   }
 }
 
+function Resolve-PowerShellModuleArtifactDirectory {
+  <#
+  .SYNOPSIS
+    Resolves the external artifact directory for one BuildMaster module run.
+  .DESCRIPTION
+    Uses the explicit root first, then ATAP_ARTIFACTS_ROOT at process, user,
+    or machine scope, and finally the current user's ATAPArtifacts directory.
+    The resolved directory must be absolute, outside Dropbox, and outside the
+    repository source tree.
+  .OUTPUTS
+    System.String containing the absolute execution artifact directory.
+  #>
+  [CmdletBinding()]
+  [OutputType([string])]
+  param(
+    [AllowEmptyString()][string]$ArtifactsRoot = '',
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$SourcePath,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$BuildMasterBuildId
+  )
+
+  BEGIN {
+    $fn = 'Resolve-PowerShellModuleArtifactDirectory'
+    $mn = 'ATAP.Utilities.BuildTooling.BuildMaster'
+  }
+
+  PROCESS {
+    $resolvedRootInput = $ArtifactsRoot
+    $resolvedSource = [IO.Path]::GetFullPath($SourcePath).TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+    if ([string]::IsNullOrWhiteSpace($resolvedRootInput)) {
+      foreach ($scope in @('Process', 'User', 'Machine')) {
+        $candidate = [Environment]::GetEnvironmentVariable('ATAP_ARTIFACTS_ROOT', [EnvironmentVariableTarget]$scope)
+        if (-not [string]::IsNullOrWhiteSpace($candidate)) {
+          $resolvedRootInput = $candidate
+          break
+        }
+      }
+    }
+    if ([string]::IsNullOrWhiteSpace($resolvedRootInput)) {
+      $dropboxSourceMatch = [regex]::Match($resolvedSource, '^(?<drive>[A-Za-z]:)[\\/]Dropbox[\\/](?<owner>[^\\/]+)(?:[\\/]|$)')
+      if ($dropboxSourceMatch.Success) {
+        $resolvedRootInput = Join-Path -Path ($dropboxSourceMatch.Groups['drive'].Value + '\Users') -ChildPath (Join-Path $dropboxSourceMatch.Groups['owner'].Value 'ATAPArtifacts')
+      }
+      else {
+        $userProfile = [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)
+        if ([string]::IsNullOrWhiteSpace($userProfile)) {
+          throw 'Cannot resolve the default external artifact root because UserProfile is empty.'
+        }
+        $resolvedRootInput = Join-Path -Path $userProfile -ChildPath 'ATAPArtifacts'
+      }
+    }
+
+    if (-not [IO.Path]::IsPathRooted($resolvedRootInput)) {
+      throw "ArtifactsRoot '$resolvedRootInput' must be an absolute path."
+    }
+    $resolvedRoot = [IO.Path]::GetFullPath($resolvedRootInput).TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+    if ($resolvedRoot -match '(?i)[\\/]Dropbox(?:[\\/]|$)') {
+      throw "ArtifactsRoot '$resolvedRoot' must be outside Dropbox."
+    }
+    if (
+      $resolvedRoot.Equals($resolvedSource, [StringComparison]::OrdinalIgnoreCase) -or
+      $resolvedRoot.StartsWith($resolvedSource + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)
+    ) {
+      throw "ArtifactsRoot '$resolvedRoot' must be outside SourcePath '$resolvedSource'."
+    }
+    if ($BuildMasterBuildId -notmatch '^[0-9]+$') {
+      throw "BuildMasterBuildId '$BuildMasterBuildId' must contain decimal digits only."
+    }
+
+    $artifactDirectory = Join-Path -Path $resolvedRoot -ChildPath (Join-Path 'BuildMaster/PowerShellModules' $BuildMasterBuildId)
+    [IO.Directory]::CreateDirectory($artifactDirectory) | Out-Null
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "PowerShell module artifacts are external at '$artifactDirectory'."
+    return [IO.Path]::GetFullPath($artifactDirectory)
+  }
+
+  END {}
+}
+
 function Invoke-PowerShellModuleBuildMasterStage {
   <#
   .SYNOPSIS
@@ -901,6 +989,7 @@ function Invoke-PowerShellModuleBuildMasterStage {
   param(
     [Parameter(Mandatory)][string]$BuildToolingModulePath,
     [Parameter(Mandatory)][string]$SourcePath,
+    [AllowEmptyString()][string]$ArtifactsRoot = '',
     [Parameter(Mandatory)][string]$BuildMasterBuildId,
     [AllowEmptyString()][string]$BuildNumber = '',
     [AllowEmptyString()][string]$ExecutionId = '',
@@ -1007,6 +1096,16 @@ function Invoke-PowerShellModuleBuildMasterStage {
     Add-GitSafeDirectoryForCurrentProcess -RepositoryPath $SourcePath
 
     $contextDirectory = Initialize-BuildMasterRunContextDirectory -SourcePath $SourcePath -BuildMasterBuildId $BuildMasterBuildId
+    $artifactDirectory = Resolve-PowerShellModuleArtifactDirectory `
+      -ArtifactsRoot $ArtifactsRoot `
+      -SourcePath $SourcePath `
+      -BuildMasterBuildId $BuildMasterBuildId
+    $externalWorkingDirectory = Join-Path -Path $artifactDirectory -ChildPath 'working'
+    $externalTempDirectory = Join-Path -Path $artifactDirectory -ChildPath 'temp'
+    $externalLogDirectory = Join-Path -Path $artifactDirectory -ChildPath 'logs'
+    foreach ($externalDirectory in @($externalWorkingDirectory, $externalTempDirectory, $externalLogDirectory)) {
+      [IO.Directory]::CreateDirectory($externalDirectory) | Out-Null
+    }
     $contextParameters = @{
       Application = $ApplicationName
       ProjectPath = $ModulePath
@@ -1079,7 +1178,7 @@ function Invoke-PowerShellModuleBuildMasterStage {
       -PrereleaseLabel $capturedPrereleaseLabel `
       -AllowDecisions $allowDecisions `
       -StateFiles $stateFiles `
-      -AdditionalData @{ PipelineKind = 'PowerShellModule'; ModuleName = $ModuleName; PackageName = $PackageName } | Out-Null
+      -AdditionalData @{ PipelineKind = 'PowerShellModule'; ModuleName = $ModuleName; PackageName = $PackageName; ArtifactsPath = $artifactDirectory } | Out-Null
 
     # MAX_PATH budget: Authenticode signing fails over 260 characters with a misleading
     # "cannot find the path specified", regardless of LongPathsEnabled. module.build.ps1
@@ -1089,7 +1188,7 @@ function Invoke-PowerShellModuleBuildMasterStage {
     # 'packages' is module.build.ps1's fixed output folder name - do not rename it here,
     # or Find-LatestPowerShellModulePackage looks in a directory that is never created.
     # See SolutionDocumentation/Authenticode-Signing-MAX_PATH-Constraint.md
-    $moduleBuildOutputRoot = Join-Path -Path $contextDirectory -ChildPath 'psmodules'
+    $moduleBuildOutputRoot = Join-Path -Path $artifactDirectory -ChildPath 'psmodules'
     $moduleBuildPackageOutputPath = Join-Path -Path $moduleBuildOutputRoot -ChildPath 'packages'
     if ([string]::IsNullOrWhiteSpace($PackageOutputPath)) {
       $PackageOutputPath = $moduleBuildPackageOutputPath
@@ -1133,6 +1232,7 @@ function Invoke-PowerShellModuleBuildMasterStage {
           ModuleName     = $ModuleName
           PackageName    = $PackageName
           PackageVersion = $PackageVersion
+          ArtifactsPath  = $artifactDirectory
         }
         if (-not [string]::IsNullOrWhiteSpace($NupkgPath)) { $additionalData['NupkgPath'] = $NupkgPath }
         Write-BuildMasterRunContextJson `
@@ -1172,7 +1272,7 @@ function Invoke-PowerShellModuleBuildMasterStage {
         }
 
         Write-PSFMessage -FunctionName $f -ModuleName $m -Level Important -Message "PowerShell module stage '$Tier' starting promotion/test for '$PackageName' version '$PromotedPackageVersion' from '$sourceFeed' to '$destinationFeed'."
-        $promotionTracePath = Join-Path -Path $contextDirectory -ChildPath "$ModuleName.$($Tier.ToLowerInvariant()).log"
+        $promotionTracePath = Join-Path -Path $artifactDirectory -ChildPath "logs/$ModuleName.$($Tier.ToLowerInvariant()).log"
         Add-BuildMasterPublishTrace -Path $promotionTracePath -Message "Promoting '$PackageName' version '$PromotedPackageVersion' from '$sourceFeed' to '$destinationFeed'. Captured resolved version is '$capturedResolvedVersion'."
 
         $global:ProGetBaseUrl = $ProGetUrl
@@ -1191,7 +1291,7 @@ function Invoke-PowerShellModuleBuildMasterStage {
             -Reason "$Tier gate for $ApplicationName $PromotedPackageVersion on $Branch" `
             -ProGetBaseUrl $ProGetUrl `
             -ProGetApiKeySecretName $ProGetApiKeySecretName `
-            -EvidenceRoot (Join-Path -Path $contextDirectory -ChildPath 'promotion-signature-verification') `
+            -EvidenceRoot (Join-Path -Path $artifactDirectory -ChildPath 'promotion-signature-verification') `
             -CeilingTier $ceilingTier
         }
         catch {
@@ -1204,7 +1304,7 @@ function Invoke-PowerShellModuleBuildMasterStage {
         Assert-BuildMasterOperationSucceeded -Result $promotionResult -OperationName 'Promote-ProGetPackage'
         Add-BuildMasterPublishTrace -Path $promotionTracePath -Message $promotionResult.ResponseSummary
 
-        $resultsPath = Join-Path -Path $contextDirectory -ChildPath "$($Tier)TestResults"
+        $resultsPath = Join-Path -Path $artifactDirectory -ChildPath "test-results/$Tier"
         $pesterOutputVerbosity = 'None'
         if (-not [string]::IsNullOrWhiteSpace($env:ATAP_BUILDTOOLING_PESTER_OUTPUT_VERBOSITY)) {
           $requestedVerbosity = $env:ATAP_BUILDTOOLING_PESTER_OUTPUT_VERBOSITY.Trim()
@@ -1222,7 +1322,7 @@ function Invoke-PowerShellModuleBuildMasterStage {
             -Tier $Tier `
             -ResultsPath $resultsPath `
             -ModuleSourceRoot $ModulePath `
-            -WorkingDirectory $SourcePath `
+            -WorkingDirectory $externalWorkingDirectory `
             -ProGetBaseUrl $ProGetUrl `
             -ProGetApiKeySecretName $ProGetApiKeySecretName `
             -PesterOutputVerbosity $pesterOutputVerbosity
@@ -1263,8 +1363,14 @@ function Invoke-PowerShellModuleBuildMasterStage {
 
     $packageVersionForRun = $null
 
-    Push-Location -LiteralPath $SourcePath
+    $originalTemp = $env:TEMP
+    $originalTmp = $env:TMP
+    $env:TEMP = $externalTempDirectory
+    $env:TMP = $externalTempDirectory
+    $locationPushed = $false
     try {
+      Push-Location -LiteralPath $SourcePath
+      $locationPushed = $true
       foreach ($tierToRun in $tiersToRun) {
         if (-not $allowByTier[$tierToRun]) {
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Stopping PowerShell module auto-advance before '$tierToRun' because ceiling '$ceilingTier' does not allow it."
@@ -1288,7 +1394,7 @@ function Invoke-PowerShellModuleBuildMasterStage {
           'Experimental' {
             New-Item -ItemType Directory -Path (Split-Path -Parent $NupkgPathFile) -Force | Out-Null
             $moduleBuildTier = Convert-BuildMasterTierToModuleBuildTier -Tier $tierToRun
-            $buildLogPath = Join-Path -Path $contextDirectory -ChildPath 'PSModuleBuildLogs'
+            $buildLogPath = Join-Path -Path $artifactDirectory -ChildPath 'logs/PSModuleBuildLogs'
             try {
               $buildResults = @(
                 Invoke-ModuleBuildWithRetry `
@@ -1325,7 +1431,7 @@ function Invoke-PowerShellModuleBuildMasterStage {
             $packageVersionForRun = Get-PowerShellModulePackageVersionFromNupkgPath -NupkgPath $nupkg.FullName -PackageName $PackageName
             Update-PowerShellModulePackageContext -PackageVersion $packageVersionForRun -NupkgPath $nupkg.FullName
 
-            $publishTracePath = Join-Path -Path $contextDirectory -ChildPath "$ModuleName.publish.log"
+            $publishTracePath = Join-Path -Path $artifactDirectory -ChildPath "logs/$ModuleName.publish.log"
             $feedUri = Get-PowerShellGetFeedUri -BaseUrl $ProGetUrl -FeedName $ExperimentalFeed
             Add-BuildMasterPublishTrace -Path $publishTracePath -Message "Using PowerShellGet feed '$ExperimentalFeed' at '$feedUri'."
             Set-PSResourceRepositoryEnsured -Name $ExperimentalFeed -Uri $feedUri
@@ -1377,7 +1483,11 @@ function Invoke-PowerShellModuleBuildMasterStage {
       throw
     }
     finally {
-      Pop-Location
+      if ($locationPushed) {
+        Pop-Location
+      }
+      $env:TEMP = $originalTemp
+      $env:TMP = $originalTmp
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Process complete in $fn."
     }
   }
@@ -1390,6 +1500,7 @@ function Invoke-PowerShellModuleBuildMasterStage {
 Invoke-PowerShellModuleBuildMasterStage `
   -BuildToolingModulePath $BuildToolingModulePath `
   -SourcePath $SourcePath `
+  -ArtifactsRoot $ArtifactsRoot `
   -BuildMasterBuildId $BuildMasterBuildId `
   -BuildNumber $BuildNumber `
   -ExecutionId $ExecutionId `

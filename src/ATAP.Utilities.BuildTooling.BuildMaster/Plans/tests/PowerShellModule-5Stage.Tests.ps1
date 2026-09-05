@@ -18,6 +18,23 @@ BeforeAll {
     $script:GetPValPath    = Join-Path $script:RepoRoot 'src/ATAP.Utilities.PowerShell/public/Get-ParameterValueFromNeoConfigurationRoot.ps1'
     $script:PlanText       = Get-Content -LiteralPath $script:PlanPath -Raw
     $script:RunnerText     = Get-Content -LiteralPath $script:RunnerPath -Raw
+
+    $tokens = $null
+    $parseErrors = $null
+    $runnerAst = [System.Management.Automation.Language.Parser]::ParseFile(
+        $script:RunnerPath, [ref]$tokens, [ref]$parseErrors)
+    if ($parseErrors.Count -gt 0) {
+        throw "Runner parse failed: $($parseErrors.Message -join '; ')"
+    }
+    $resolverAst = $runnerAst.Find({
+            param($node)
+            $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+            $node.Name -eq 'Resolve-PowerShellModuleArtifactDirectory'
+        }, $true)
+    . ([scriptblock]::Create($resolverAst.Extent.Text))
+    if (-not (Get-Command -Name Write-PSFMessage -ErrorAction SilentlyContinue)) {
+        function Write-PSFMessage { param($FunctionName, $ModuleName, $Level, $Message) }
+    }
 }
 
 Describe 'V4-B02 plan shape: PowerShellModule-5Stage.otter is a thin -NoProfile runner plan' {
@@ -155,6 +172,110 @@ Describe 'V4-B02 runner no-profile contract: Invoke-PowerShellModuleBuildMasterS
         [System.Management.Automation.Language.Parser]::ParseFile(
             $script:RunnerPath, [ref]$tokens, [ref]$parseErrors) | Out-Null
         $parseErrors | Should -BeNullOrEmpty
+    }
+}
+
+Describe 'PowerShell module BuildMaster external artifact boundary' {
+
+    It 'resolves an explicit external root to a build-scoped directory outside Dropbox' {
+        $externalRoot = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)) 'ATAPArtifacts/Pester/PowerShellModuleBuildMaster'
+        $resolved = Resolve-PowerShellModuleArtifactDirectory `
+            -ArtifactsRoot $externalRoot `
+            -SourcePath $script:RepoRoot `
+            -BuildMasterBuildId '910001'
+
+        $resolved | Should -Be ([IO.Path]::GetFullPath((Join-Path $externalRoot 'BuildMaster/PowerShellModules/910001')))
+        $resolved | Should -Not -Match '(?i)[\\/]Dropbox(?:[\\/]|$)'
+        $resolved | Should -Exist
+    }
+
+    It 'uses ATAP_ARTIFACTS_ROOT when no explicit root is supplied' {
+        $original = [Environment]::GetEnvironmentVariable('ATAP_ARTIFACTS_ROOT', 'Process')
+        $environmentRoot = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)) 'ATAPArtifacts/Pester/PowerShellModuleBuildMaster/env'
+        try {
+            [Environment]::SetEnvironmentVariable('ATAP_ARTIFACTS_ROOT', $environmentRoot, 'Process')
+            $resolved = Resolve-PowerShellModuleArtifactDirectory `
+                -SourcePath $script:RepoRoot `
+                -BuildMasterBuildId '910002'
+            $resolved | Should -Be ([IO.Path]::GetFullPath((Join-Path $environmentRoot 'BuildMaster/PowerShellModules/910002')))
+        }
+        finally {
+            [Environment]::SetEnvironmentVariable('ATAP_ARTIFACTS_ROOT', $original, 'Process')
+        }
+    }
+
+    It 'defaults this Dropbox worktree owner to the matching external user artifact root' {
+        $configuredRoot = @('Process', 'User', 'Machine') |
+            ForEach-Object { [Environment]::GetEnvironmentVariable('ATAP_ARTIFACTS_ROOT', [EnvironmentVariableTarget]$_) } |
+            Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+            Select-Object -First 1
+        $expectedRoot = if ($configuredRoot) {
+            $configuredRoot
+        }
+        else {
+            'C:\Users\whertzing\ATAPArtifacts'
+        }
+
+        $resolved = Resolve-PowerShellModuleArtifactDirectory `
+            -SourcePath $script:RepoRoot `
+            -BuildMasterBuildId '910003'
+        $resolved | Should -Be ([IO.Path]::GetFullPath((Join-Path $expectedRoot 'BuildMaster/PowerShellModules/910003')))
+    }
+
+    It 'rejects roots inside Dropbox' {
+        {
+            Resolve-PowerShellModuleArtifactDirectory `
+                -ArtifactsRoot (Join-Path $script:RepoRoot '_generated/forbidden-artifacts') `
+                -SourcePath $script:RepoRoot `
+                -BuildMasterBuildId '910004'
+        } | Should -Throw '*outside Dropbox*'
+    }
+
+    It 'rejects a non-Dropbox artifact root contained by SourcePath' {
+        $externalSource = 'C:\Users\whertzing\ATAPArtifacts\Pester\PowerShellModuleBuildMaster\synthetic-source'
+        {
+            Resolve-PowerShellModuleArtifactDirectory `
+                -ArtifactsRoot (Join-Path $externalSource 'artifacts') `
+                -SourcePath $externalSource `
+                -BuildMasterBuildId '910005'
+        } | Should -Throw '*outside SourcePath*'
+    }
+
+    It 'rejects traversal and nonnumeric BuildMaster build identifiers' {
+        $externalRoot = 'C:\Users\whertzing\ATAPArtifacts\Pester\PowerShellModuleBuildMaster'
+        foreach ($invalidBuildId in @('.', '..', '21356/..', 'build-21356')) {
+            {
+                Resolve-PowerShellModuleArtifactDirectory `
+                    -ArtifactsRoot $externalRoot `
+                    -SourcePath $script:RepoRoot `
+                    -BuildMasterBuildId $invalidBuildId
+            } | Should -Throw '*decimal digits only*'
+        }
+    }
+
+    It 'routes every package log test restore evidence and temp producer to the external directory' {
+        $script:RunnerText | Should -Match '\$moduleBuildOutputRoot\s*=\s*Join-Path\s+-Path\s+\$artifactDirectory'
+        $script:RunnerText | Should -Match '\$buildLogPath\s*=\s*Join-Path\s+-Path\s+\$artifactDirectory'
+        $script:RunnerText | Should -Match '\$publishTracePath\s*=\s*Join-Path\s+-Path\s+\$artifactDirectory'
+        $script:RunnerText | Should -Match '\$promotionTracePath\s*=\s*Join-Path\s+-Path\s+\$artifactDirectory'
+        $script:RunnerText | Should -Match '-EvidenceRoot\s+\(Join-Path\s+-Path\s+\$artifactDirectory'
+        $script:RunnerText | Should -Match '\$resultsPath\s*=\s*Join-Path\s+-Path\s+\$artifactDirectory'
+        $script:RunnerText | Should -Match '-WorkingDirectory\s+\$externalWorkingDirectory'
+        $script:RunnerText | Should -Match '\$env:TEMP\s*=\s*\$externalTempDirectory'
+        $script:RunnerText | Should -Match '\$env:TMP\s*=\s*\$externalTempDirectory'
+
+        $script:RunnerText | Should -Not -Match 'Join-Path -Path \$contextDirectory -ChildPath ''psmodules'''
+        $script:RunnerText | Should -Not -Match 'Join-Path -Path \$contextDirectory -ChildPath ''PSModuleBuildLogs'''
+        $script:RunnerText | Should -Not -Match 'Join-Path -Path \$contextDirectory -ChildPath "\$\(\$Tier\)TestResults"'
+        $script:RunnerText | Should -Not -Match '-EvidenceRoot \(Join-Path -Path \$contextDirectory'
+        $script:RunnerText | Should -Not -Match '-WorkingDirectory \$SourcePath'
+    }
+
+    It 'retains only compact coordination state beneath the repository run context' {
+        $script:RunnerText | Should -Match 'Initialize-BuildMasterRunContextDirectory\s+-SourcePath\s+\$SourcePath'
+        $script:RunnerText | Should -Match 'Write-BuildMasterRunContextJson'
+        $script:RunnerText | Should -Match 'Write-BuildMasterRunStateFiles'
+        $script:RunnerText | Should -Match 'Set-PowerShellModuleStageCompleted'
     }
 }
 

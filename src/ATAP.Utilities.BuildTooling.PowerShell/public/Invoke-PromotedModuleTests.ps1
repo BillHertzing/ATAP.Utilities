@@ -77,9 +77,9 @@
     supplies the code under test; this folder supplies the test files.
 
 .PARAMETER WorkingDirectory
-    Directory paths are resolved against and the restore folder is
-    created under. Defaults to the current location (the repository
-    worktree root in pipeline use).
+    External directory the promoted package restore and other transient work
+    are created under. Source sibling discovery is derived from
+    ModuleSourceRoot, so this path does not need to be the repository root.
 
 .PARAMETER ProGetBaseUrl
     Optional ProGet base URL. When supplied, restore the promoted .nupkg
@@ -404,7 +404,7 @@ function Invoke-PromotedModuleTests {
             # necessarily installed machine-wide. Make sibling family modules
             # discoverable for RequiredModules resolution while still importing
             # the target package by its exact restored manifest path.
-            $sourceFamilyRoot = Join-Path $WorkingDirectory 'src'
+            $sourceFamilyRoot = Split-Path -Parent $ModuleSourceRoot
             $modulePathEntries = @($env:PSModulePath -split [IO.Path]::PathSeparator)
             if ((Test-Path -LiteralPath $sourceFamilyRoot -PathType Container) -and
                 $sourceFamilyRoot -notin $modulePathEntries) {

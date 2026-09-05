@@ -264,6 +264,23 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
             $env:PSModulePath | Should -Be $before
         }
 
+        It 'keeps restore work external while discovering siblings from ModuleSourceRoot' {
+            $before = $env:PSModulePath
+            Mock Import-Module {
+                @($env:PSModulePath -split [IO.Path]::PathSeparator) |
+                    Should -Contain 'C:\fake\src'
+            }
+
+            Invoke-PromotedModuleTests -Name 'Mod' -Version '1.0.0' `
+                -Feed 'powershellget-development' -Tier 'Development' -ResultsPath 'C:\external\results' `
+                -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\external\working' | Out-Null
+
+            Assert-MockCalled Save-Module -Times 1 -Exactly -Scope It -ParameterFilter {
+                $Path -eq 'C:\external\working\_generated\_promoted-modules\Mod.1.0.0.powershellget-development'
+            }
+            $env:PSModulePath | Should -Be $before
+        }
+
         It 'fails before import when a same-name module remains loaded' {
             Mock Get-Module {
                 [PSCustomObject]@{ Name = 'Mod'; Path = 'C:\old-tier\Mod.psd1' }

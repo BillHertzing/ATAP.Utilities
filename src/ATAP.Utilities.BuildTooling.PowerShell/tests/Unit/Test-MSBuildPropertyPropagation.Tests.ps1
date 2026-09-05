@@ -5,6 +5,31 @@
 # properties and invoke only the validation target; they do not restore or build.
 
 BeforeDiscovery {
+  # These are repository-contract tests: they evaluate MSBuild properties from
+  # Directory.Build.props and a probe .csproj. Those exist in a worktree, not inside an
+  # extracted module package.
+  #
+  # The previous form was `(Get-Item $PSScriptRoot).Parent.Parent.Parent.Parent.FullName`,
+  # four fixed hops that assume src/<module>/tests/Unit. BuildMaster's promoted-module
+  # gate runs these against the module extracted from the package, where the depth
+  # differs, so a .Parent returned $null and .FullName on it threw "You cannot call a
+  # method on a null-valued expression". That rejected build 4 of
+  # ATAP.Utilities.BuildTooling.PowerShell 0.1.76 with 13 failures of 251.
+  #
+  # Walk up looking for the repository marker instead of counting hops, and skip rather
+  # than crash when there is no repository - a repo-contract test has nothing to assert
+  # against an extracted package.
+  $script:discoveredRepoRoot = $null
+  $probe = Get-Item -LiteralPath $PSScriptRoot -ErrorAction SilentlyContinue
+  while ($probe) {
+    if (Test-Path -LiteralPath (Join-Path $probe.FullName 'Directory.Build.props')) {
+      $script:discoveredRepoRoot = $probe.FullName
+      break
+    }
+    $probe = $probe.Parent
+  }
+  $script:repositoryContractTestsAvailable = [bool]$script:discoveredRepoRoot
+
   $script:lifecycleCases = @(
     @{ InputStage = 'sPrInT'; ExpectedNormalized = 'sprint'; ExpectedCanonical = 'Experimental'; ExpectedFeed = 'nuget-experimental' }
     @{ InputStage = 'EXPERIMENTAL'; ExpectedNormalized = 'experimental'; ExpectedCanonical = 'Experimental'; ExpectedFeed = 'nuget-experimental' }
@@ -36,7 +61,18 @@ BeforeDiscovery {
 }
 
 BeforeAll {
-  $script:repoRoot = (Get-Item $PSScriptRoot).Parent.Parent.Parent.Parent.FullName
+  # Recomputed here rather than reused from BeforeDiscovery: Pester 5 runs discovery and
+  # execution in separate scopes, so a $script: variable set at discovery is not visible
+  # during the run phase.
+  $script:repoRoot = $null
+  $probe = Get-Item -LiteralPath $PSScriptRoot -ErrorAction SilentlyContinue
+  while ($probe) {
+    if (Test-Path -LiteralPath (Join-Path $probe.FullName 'Directory.Build.props')) {
+      $script:repoRoot = $probe.FullName
+      break
+    }
+    $probe = $probe.Parent
+  }
   $script:propsFile = Join-Path $script:repoRoot 'Directory.Build.props'
   $script:packagesPropsFile = Join-Path $script:repoRoot 'Directory.Packages.props'
   $script:probeProject = Join-Path $script:repoRoot 'src\ATAP.Utilities.RRSBS.Contracts\ATAP.Utilities.RRSBS.Contracts.csproj'
@@ -80,7 +116,7 @@ BeforeAll {
   }
 }
 
-Describe 'Task 15.180 lifecycle contract structure' -Tag 'Unit', '5Tier' {
+Describe 'Task 15.180 lifecycle contract structure' -Tag 'Unit', '5Tier' -Skip:(-not $script:repositoryContractTestsAvailable) {
   BeforeAll {
     [xml] $script:propsXml = Get-Content -LiteralPath $script:propsFile -Raw
     [xml] $script:packagesPropsXml = Get-Content -LiteralPath $script:packagesPropsFile -Raw
@@ -119,7 +155,7 @@ Describe 'Task 15.180 lifecycle contract structure' -Tag 'Unit', '5Tier' {
   }
 }
 
-Describe 'Task 15.180 lifecycle aliases and canonical feed routing' -Tag 'Integration', '5Tier' {
+Describe 'Task 15.180 lifecycle aliases and canonical feed routing' -Tag 'Integration', '5Tier' -Skip:(-not $script:repositoryContractTestsAvailable) {
   It "maps '<InputStage>' to <ExpectedCanonical> and <ExpectedFeed>" -TestCases $script:lifecycleCases {
     param($InputStage, $ExpectedNormalized, $ExpectedCanonical, $ExpectedFeed)
 
@@ -145,7 +181,7 @@ Describe 'Task 15.180 lifecycle aliases and canonical feed routing' -Tag 'Integr
   }
 }
 
-Describe 'Task 15.180 empty lifecycle branch safeguard' -Tag 'Integration', '5Tier' {
+Describe 'Task 15.180 empty lifecycle branch safeguard' -Tag 'Integration', '5Tier' -Skip:(-not $script:repositoryContractTestsAvailable) {
   It "accepts empty lifecycle on stable-capable ref '<BuildingRef>'" -TestCases $script:stableRefs {
     param($BuildingRef)
 
@@ -161,7 +197,7 @@ Describe 'Task 15.180 empty lifecycle branch safeguard' -Tag 'Integration', '5Ti
   }
 }
 
-Describe 'Task 15.180 exact VersionOverride fixture allowlist' -Tag 'Unit', 'CPM' {
+Describe 'Task 15.180 exact VersionOverride fixture allowlist' -Tag 'Unit', 'CPM' -Skip:(-not $script:repositoryContractTestsAvailable) {
   It 'contains exactly the four ratified conditional local enables' {
     $actual = @(Get-ChildItem -LiteralPath $script:repoRoot -Recurse -Filter *.csproj -File |
         Where-Object {
@@ -194,7 +230,7 @@ Describe 'Task 15.180 exact VersionOverride fixture allowlist' -Tag 'Unit', 'CPM
     $script:overrideAllowlist | Should -Not -Match 'OpenHardwareMonitorLib'
   }
 }
-Describe 'Task 15.181 production and verification solution-filter contract' -Tag 'Unit', 'SolutionFilter' {
+Describe 'Task 15.181 production and verification solution-filter contract' -Tag 'Unit', 'SolutionFilter' -Skip:(-not $script:repositoryContractTestsAvailable) {
   BeforeAll {
     $productionFilterPath = Join-Path $script:repoRoot 'ATAP.Utilities.Production.slnf'
     $verificationFilterPath = Join-Path $script:repoRoot 'ATAP.Utilities.ProductionVerification.slnf'

@@ -23,10 +23,24 @@ committed; the plan that *invokes* it is not. A commit that changes both leaves 
 holding the **old** argument list while the worktree already has the **new** parameter
 block.
 
+## Application-scoped raft items
+
+Most plans are global raft items in Raft 1. `AceCommander-ApplicationRelease` is
+**application-scoped to `AceCommander-ReleaseBundle` (Application_Id 1003)**: the plan
+is raft item 3012 and its pipeline is item 3013. An unscoped `Rafts_GetRaftItems`
+query on Raft 1 returns only the four global items and does **not** list them, so an
+audit that forgets `Application_Id` will conclude the AceCommander pipeline does not
+exist. That happened on 2026-09-04. Pass `-ApplicationName` to `Sync-BuildMasterPlans`
+for this plan, and scope the query when auditing it.
+
+Note also that Raft 2 (`ATAP-Utilities-BuildMaster-Raft`) is Git-backed against branch
+`100-Sprint-0007-work-items`, which no longer exists on the remote. That raft returns
+no items and nothing depends on it; see the scope-creep record.
+
 ## Which plans this applies to
 
 Every OtterScript plan in
-`src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/`. All four carry an
+`src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/`. All five carry an
 `!! EDITING THIS FILE IS NOT ENOUGH !!` header pointing back here.
 
 | Plan | Paired runner script(s) read from disk |
@@ -35,6 +49,7 @@ Every OtterScript plan in
 | `CSharpPackage-5Stage.otter` | `Invoke-CSharpPackageBuildMasterStage.ps1` |
 | `DatabaseChangePackage-5Stage.otter` | `Invoke-DatabasePackageBuildMasterStage.ps1` |
 | `ReleaseBundle-6Stage.otter` | `New-ReleaseBundleBuildMasterPackage.ps1`, `Promote-ReleaseBundleBuildMasterPackage.ps1`, `Publish-ReleaseBundleDistribution.ps1`, `Invoke-ReleaseBundleFlywayRehearsal.ps1` |
+| `AceCommander-ApplicationRelease.otter` | `Invoke-ApplicationReleaseStage.ps1` |
 
 `ReleaseBundle-6Stage` is the highest-risk of the four: it drives **four** runner
 scripts, so it has four independent chances for the raft's argument list to drift from a

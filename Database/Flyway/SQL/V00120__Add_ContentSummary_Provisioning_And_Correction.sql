@@ -385,7 +385,7 @@ END;';
   @RepositoryId uniqueidentifier,
   @RepositoryRootRegistrationId uniqueidentifier,
   @CanonicalRepositoryName nvarchar(256),
-  @OriginUri nvarchar(2048),
+  @OriginUri nvarchar(max),
   @CanonicalRoot nvarchar(1024),
   @RootKindCode varchar(16),
   @OrganizationId uniqueidentifier,
@@ -398,8 +398,11 @@ BEGIN
   SET NOCOUNT ON; SET XACT_ABORT ON; SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
   IF @RepositoryId IS NULL OR @RepositoryId=''00000000-0000-0000-0000-000000000000''
      OR @RepositoryRootRegistrationId IS NULL OR @RepositoryRootRegistrationId=''00000000-0000-0000-0000-000000000000''
-     OR NULLIF(LTRIM(RTRIM(@CanonicalRepositoryName)),N'''') IS NULL
-     OR NULLIF(LTRIM(RTRIM(@OriginUri)),N'''') IS NULL OR NULLIF(LTRIM(RTRIM(@CanonicalRoot)),N'''') IS NULL
+     OR @CanonicalRepositoryName IS NULL OR DATALENGTH(@CanonicalRepositoryName)=0
+     OR UNICODE(LEFT(@CanonicalRepositoryName,1)) IN (9,10,11,12,13,32,133,160,5760,8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8232,8233,8239,8287,12288)
+     OR UNICODE(RIGHT(@CanonicalRepositoryName,1)) IN (9,10,11,12,13,32,133,160,5760,8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8232,8233,8239,8287,12288)
+     OR @OriginUri IS NULL OR DATALENGTH(@OriginUri)=0 OR DATALENGTH(@OriginUri)>4096
+     OR NULLIF(LTRIM(RTRIM(@CanonicalRoot)),N'''') IS NULL
      OR @RootKindCode NOT IN (''stable'',''sprint'',''mirror'',''scanner-sandbox'')
      OR @OrganizationId IS NULL OR @OrganizationId=''00000000-0000-0000-0000-000000000000''
      OR @ClassificationPolicyId IS NULL OR @ClassificationPolicyId=''00000000-0000-0000-0000-000000000000''
@@ -407,8 +410,8 @@ BEGIN
      OR @EvidenceEntityId IS NULL OR @EvidenceEntityId=''00000000-0000-0000-0000-000000000000''
      OR @RecordedAtUtc IS NULL
     THROW 60440, ''CS-PROVISION-001: all controlled repository, root, origin, actor, evidence, and time inputs are required.'', 1;
-  DECLARE @Name nvarchar(256)=LTRIM(RTRIM(@CanonicalRepositoryName));
-  DECLARE @OriginInput nvarchar(2048)=LTRIM(RTRIM(@OriginUri));
+  DECLARE @Name nvarchar(256)=@CanonicalRepositoryName;
+  DECLARE @OriginInput nvarchar(max)=@OriginUri;
   WHILE LEN(@OriginInput)>8 AND RIGHT(@OriginInput,1)=N''/'' SET @OriginInput=LEFT(@OriginInput,LEN(@OriginInput)-1);
   DECLARE @ControlCode int=1;
   WHILE @ControlCode<=31
@@ -417,18 +420,29 @@ BEGIN
       THROW 60441, ''CS-PROVISION-002: origin URI contains a control character.'', 1;
     SET @ControlCode+=1;
   END;
-  DECLARE @OriginRemainder nvarchar(2040),@OriginAuthority nvarchar(512),@OriginPath nvarchar(1528),@OriginSlash int;
+  DECLARE @UnicodeWhitespace nvarchar(32)=
+    NCHAR(32)+NCHAR(133)+NCHAR(160)+NCHAR(5760)+NCHAR(8192)+NCHAR(8193)+NCHAR(8194)+NCHAR(8195)+
+    NCHAR(8196)+NCHAR(8197)+NCHAR(8198)+NCHAR(8199)+NCHAR(8200)+NCHAR(8201)+NCHAR(8202)+
+    NCHAR(8232)+NCHAR(8233)+NCHAR(8239)+NCHAR(8287)+NCHAR(12288);
+  DECLARE @WhitespaceIndex int=1;
+  WHILE @WhitespaceIndex<=LEN(@UnicodeWhitespace)
+  BEGIN
+    IF CHARINDEX(SUBSTRING(@UnicodeWhitespace,@WhitespaceIndex,1),@OriginInput COLLATE Latin1_General_100_BIN2)>0
+      THROW 60441, ''CS-PROVISION-002: origin URI contains Unicode whitespace.'', 1;
+    SET @WhitespaceIndex+=1;
+  END;
+  DECLARE @OriginRemainder nvarchar(max),@OriginAuthority nvarchar(max),@OriginPath nvarchar(max),@OriginSlash int;
   IF LOWER(LEFT(@OriginInput,8)) COLLATE Latin1_General_100_BIN2<>N''https://''
      OR CHARINDEX(N''?'',@OriginInput)>0 OR CHARINDEX(N''#'',@OriginInput)>0
      OR CHARINDEX(N''\'',@OriginInput)>0 OR CHARINDEX(N'' '',@OriginInput)>0
      OR CHARINDEX(NCHAR(127),@OriginInput COLLATE Latin1_General_100_BIN2)>0
     THROW 60441, ''CS-PROVISION-002: origin URI must be safe HTTPS without query, fragment, whitespace, or controls.'', 1;
-  SET @OriginRemainder=SUBSTRING(@OriginInput,9,2040);
+  SET @OriginRemainder=SUBSTRING(@OriginInput,9,2048);
   SET @OriginSlash=CHARINDEX(N''/'',@OriginRemainder);
   IF @OriginSlash<=1
     THROW 60441, ''CS-PROVISION-002: origin URI requires an authority and repository path.'', 1;
   SET @OriginAuthority=LEFT(@OriginRemainder,@OriginSlash-1);
-  SET @OriginPath=SUBSTRING(@OriginRemainder,@OriginSlash+1,1528);
+  SET @OriginPath=SUBSTRING(@OriginRemainder,@OriginSlash+1,2048);
   IF RIGHT(LOWER(@OriginAuthority),4)=N'':443''
     SET @OriginAuthority=LEFT(@OriginAuthority,LEN(@OriginAuthority)-4);
   IF NULLIF(@OriginAuthority,N'''') IS NULL OR NULLIF(@OriginPath,N'''') IS NULL
@@ -438,7 +452,9 @@ BEGIN
      OR CHARINDEX(N''..'',@OriginAuthority)>0 OR CHARINDEX(N''//'',@OriginPath)>0
      OR CHARINDEX(N''/./'',N''/''+@OriginPath+N''/'')>0 OR CHARINDEX(N''/../'',N''/''+@OriginPath+N''/'')>0
     THROW 60441, ''CS-PROVISION-002: origin URI authority or repository path is unsafe.'', 1;
-  DECLARE @Origin nvarchar(2048)=N''https://''+LOWER(@OriginAuthority)+N''/''+@OriginPath;
+  DECLARE @Origin nvarchar(max)=N''https://''+LOWER(@OriginAuthority)+N''/''+@OriginPath;
+  IF DATALENGTH(@Origin)>4096
+    THROW 60441, ''CS-PROVISION-002: canonical origin URI exceeds 2048 Unicode code units.'', 1;
   DECLARE @Root nvarchar(1024)=LOWER(REPLACE(LTRIM(RTRIM(@CanonicalRoot)),N''/'',N''\''));
   WHILE LEN(@Root)>3 AND RIGHT(@Root,1)=N''\'' SET @Root=LEFT(@Root,LEN(@Root)-1);
   IF @Origin NOT LIKE N''https://%'' OR @Root NOT LIKE N''[a-z]:\%'' OR CHARINDEX(N''\\'',@Root)>0
@@ -463,7 +479,9 @@ BEGIN
        JOIN [ATAPUtilities].[RepositoryRootRegistration] rr ON rr.RepositoryId=r.RepositoryId AND rr.RepositoryRootRegistrationId=@RepositoryRootRegistrationId
        JOIN [ATAPUtilities].[RepositoryRootCanonicalIdentity] rc ON rc.RepositoryRootRegistrationId=rr.RepositoryRootRegistrationId
        WHERE r.RepositoryId=@RepositoryId AND r.PhiloteId=@RepositoryId
-         AND r.OrganizationId=@OrganizationId AND r.CanonicalRepositoryName=@Name
+         AND r.OrganizationId=@OrganizationId
+         AND r.CanonicalRepositoryName COLLATE Latin1_General_100_BIN2=@Name COLLATE Latin1_General_100_BIN2
+         AND DATALENGTH(r.CanonicalRepositoryName)=DATALENGTH(@Name)
          AND r.ClassificationPolicyId=@ClassificationPolicyId AND r.PrincipalId=@PrincipalId AND r.RetiredAtUtc IS NULL
          AND r.CreatedAtUtc=@RecordedAtUtc AND r.SourceReference=N''CS-PROVISION-V1'' AND r.RecordedAtUtc=@RecordedAtUtc
          AND pv.PreviousValidToUtc IS NULL AND pv.ValidFromUtc=@RecordedAtUtc
@@ -511,7 +529,7 @@ BEGIN
      OR @TagAssignmentId IS NULL OR @TagAssignmentId=''00000000-0000-0000-0000-000000000000''
      OR @ContentSummaryVersionId IS NULL OR @ContentSummaryVersionId=''00000000-0000-0000-0000-000000000000''
      OR @PrincipalId IS NULL OR @PrincipalId=''00000000-0000-0000-0000-000000000000''
-     OR NULLIF(LTRIM(RTRIM(@SourceReference)),N'''') IS NULL OR @RecordedAtUtc IS NULL
+     OR @SourceReference IS NULL OR DATALENGTH(@SourceReference)=0 OR UNICODE(LEFT(@SourceReference,1)) IN (9,10,11,12,13,32,133,160,5760,8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8232,8233,8239,8287,12288) OR UNICODE(RIGHT(@SourceReference,1)) IN (9,10,11,12,13,32,133,160,5760,8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8232,8233,8239,8287,12288) OR @RecordedAtUtc IS NULL
     THROW 60450, ''CS-TAG-001: all Tag assignment inputs are required.'', 1;
   BEGIN TRY
     BEGIN TRANSACTION;
@@ -528,7 +546,10 @@ BEGIN
     BEGIN
       IF NOT EXISTS (SELECT 1 FROM [ATAPUtilities].[TagAssignment] WHERE TagAssignmentId=@TagAssignmentId AND TagId=@TagId
         AND EntityTypeCode=N''content-summary-version'' AND EntityId=@ContentSummaryVersionId AND ValidToUtc IS NULL
-        AND PrincipalId=@PrincipalId AND SourceReference=@SourceReference AND ValidFromUtc=@RecordedAtUtc AND RecordedAtUtc=@RecordedAtUtc)
+        AND PrincipalId=@PrincipalId
+        AND SourceReference COLLATE Latin1_General_100_BIN2=@SourceReference COLLATE Latin1_General_100_BIN2
+        AND DATALENGTH(SourceReference)=DATALENGTH(@SourceReference)
+        AND ValidFromUtc=@RecordedAtUtc AND RecordedAtUtc=@RecordedAtUtc)
         THROW 60453, ''CS-TAG-004: supplied TagAssignmentId conflicts with immutable assignment content.'', 1;
       COMMIT TRANSACTION;
       SELECT @TagId [TagId],@TagAssignmentId [TagAssignmentId],@ContentSummaryVersionId [ContentSummaryVersionId],
@@ -556,7 +577,7 @@ BEGIN
      OR NULLIF(@DatabasePrincipalName,N'''') IS NULL
      OR @InstanceCode NOT IN (''production'',''qa'',''integration'',''dev'',''exp'') OR @RepositoryId IS NULL
      OR @RepositoryId=''00000000-0000-0000-0000-000000000000''
-     OR NULLIF(LTRIM(RTRIM(@SourceReference)),N'''') IS NULL OR @RecordedAtUtc IS NULL
+     OR @SourceReference IS NULL OR DATALENGTH(@SourceReference)=0 OR UNICODE(LEFT(@SourceReference,1)) IN (9,10,11,12,13,32,133,160,5760,8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8232,8233,8239,8287,12288) OR UNICODE(RIGHT(@SourceReference,1)) IN (9,10,11,12,13,32,133,160,5760,8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8232,8233,8239,8287,12288) OR @RecordedAtUtc IS NULL
     THROW 60460, ''CS-AUTHORIZE-001: all authorization inputs are required.'', 1;
   DECLARE @Sid varbinary(85)=(SELECT sid FROM sys.database_principals WHERE name=@DatabasePrincipalName AND principal_id>4);
   IF @Sid IS NULL THROW 60461, ''CS-AUTHORIZE-002: database principal does not exist in this database.'', 1;
@@ -567,9 +588,13 @@ BEGIN
     IF EXISTS (SELECT 1 FROM [ATAPUtilities].[ContentSummaryDatabasePrincipalRepositoryAuthorization] WITH (UPDLOCK,HOLDLOCK) WHERE AuthorizationId=@AuthorizationId)
     BEGIN
       IF NOT EXISTS (SELECT 1 FROM [ATAPUtilities].[ContentSummaryDatabasePrincipalRepositoryAuthorization]
-        WHERE AuthorizationId=@AuthorizationId AND DatabasePrincipalName=@DatabasePrincipalName COLLATE Latin1_General_100_BIN2
+        WHERE AuthorizationId=@AuthorizationId
+          AND DatabasePrincipalName COLLATE Latin1_General_100_BIN2=@DatabasePrincipalName COLLATE Latin1_General_100_BIN2
+          AND DATALENGTH(DatabasePrincipalName)=DATALENGTH(@DatabasePrincipalName)
           AND DatabasePrincipalSid=@Sid AND InstanceCode=@InstanceCode AND RepositoryId=@RepositoryId
-          AND ValidFromUtc=@RecordedAtUtc AND ValidToUtc IS NULL AND SourceReference=@SourceReference AND RecordedAtUtc=@RecordedAtUtc)
+          AND ValidFromUtc=@RecordedAtUtc AND ValidToUtc IS NULL
+          AND SourceReference COLLATE Latin1_General_100_BIN2=@SourceReference COLLATE Latin1_General_100_BIN2
+          AND DATALENGTH(SourceReference)=DATALENGTH(@SourceReference) AND RecordedAtUtc=@RecordedAtUtc)
         THROW 60463, ''CS-AUTHORIZE-004: supplied AuthorizationId conflicts with immutable authorization content.'', 1;
       COMMIT TRANSACTION;
       SELECT @AuthorizationId [AuthorizationId],@DatabasePrincipalName [DatabasePrincipalName],@InstanceCode [InstanceCode],@RepositoryId [RepositoryId],
@@ -597,7 +622,7 @@ BEGIN
      OR @RetiredAtUtc IS NULL
      OR @PrincipalId IS NULL OR @PrincipalId=''00000000-0000-0000-0000-000000000000''
      OR @EvidenceEntityId IS NULL OR @EvidenceEntityId=''00000000-0000-0000-0000-000000000000''
-     OR NULLIF(LTRIM(RTRIM(@Reason)),N'''') IS NULL
+     OR @Reason IS NULL OR DATALENGTH(@Reason)=0 OR UNICODE(LEFT(@Reason,1)) IN (9,10,11,12,13,32,133,160,5760,8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8232,8233,8239,8287,12288) OR UNICODE(RIGHT(@Reason,1)) IN (9,10,11,12,13,32,133,160,5760,8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8232,8233,8239,8287,12288)
     THROW 60470, ''CS-RETIRE-001: all retirement inputs are required.'', 1;
   BEGIN TRY BEGIN TRANSACTION;
     IF NOT EXISTS (SELECT 1 FROM [ATAPUtilities].[ContentSummaryOperationalIdentity] WHERE OperationalIdentityId=@PrincipalId AND IdentityKindCode=''PrincipalRegistrar'')
@@ -612,7 +637,9 @@ BEGIN
        JOIN [ATAPUtilities].[ContentSummaryRepositoryRetirementEvidence] e ON e.RepositoryId=r.RepositoryId
        WHERE r.RepositoryId=@RepositoryId AND r.RetiredAtUtc=@RetiredAtUtc
          AND e.RetiredAtUtc=@RetiredAtUtc AND e.PrincipalId=@PrincipalId
-         AND e.EvidenceEntityId=@EvidenceEntityId AND e.Reason=@Reason AND e.RecordedAtUtc=@RetiredAtUtc)
+         AND e.EvidenceEntityId=@EvidenceEntityId
+         AND e.Reason COLLATE Latin1_General_100_BIN2=@Reason COLLATE Latin1_General_100_BIN2
+         AND DATALENGTH(e.Reason)=DATALENGTH(@Reason) AND e.RecordedAtUtc=@RetiredAtUtc)
          OR EXISTS (SELECT 1 FROM [ATAPUtilities].[RepositoryRootRegistration] WHERE RepositoryId=@RepositoryId AND RetiredAtUtc IS NULL)
         THROW 60474, ''CS-RETIRE-005: repository retirement replay conflicts with immutable close evidence.'', 1;
       COMMIT TRANSACTION;
@@ -653,7 +680,7 @@ BEGIN
      OR @RecordedAtUtc IS NULL
      OR @PrincipalId IS NULL OR @PrincipalId=''00000000-0000-0000-0000-000000000000''
      OR @EvidenceEntityId IS NULL OR @EvidenceEntityId=''00000000-0000-0000-0000-000000000000''
-     OR NULLIF(LTRIM(RTRIM(@Reason)),N'''') IS NULL
+     OR @Reason IS NULL OR DATALENGTH(@Reason)=0 OR UNICODE(LEFT(@Reason,1)) IN (9,10,11,12,13,32,133,160,5760,8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8232,8233,8239,8287,12288) OR UNICODE(RIGHT(@Reason,1)) IN (9,10,11,12,13,32,133,160,5760,8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8232,8233,8239,8287,12288)
     THROW 60480, ''CS-CORRECT-001: all distinct correction identities and evidence are required.'', 1;
   DECLARE @Root nvarchar(1024)=LOWER(REPLACE(LTRIM(RTRIM(@CanonicalRoot)),N''/'',N''\''));
   WHILE LEN(@Root)>3 AND RIGHT(@Root,1)=N''\'' SET @Root=LEFT(@Root,LEN(@Root)-1);
@@ -678,7 +705,8 @@ BEGIN
          AND c.PriorRepositoryRootRegistrationId=@PriorRepositoryRootRegistrationId
          AND c.SuccessorRepositoryRootRegistrationId=@SuccessorRepositoryRootRegistrationId
          AND c.PrincipalId=@PrincipalId AND c.EvidenceEntityId=@EvidenceEntityId
-         AND c.Reason=@Reason AND c.RecordedAtUtc=@RecordedAtUtc
+         AND c.Reason COLLATE Latin1_General_100_BIN2=@Reason COLLATE Latin1_General_100_BIN2
+         AND DATALENGTH(c.Reason)=DATALENGTH(@Reason) AND c.RecordedAtUtc=@RecordedAtUtc
          AND r.RetiredAtUtc IS NULL
          AND priorRoot.RepositoryId=@RepositoryId AND priorRoot.RetiredAtUtc=@RecordedAtUtc
          AND successorRoot.RepositoryId=@RepositoryId AND successorRoot.NormalizedRoot=@Root
@@ -724,8 +752,8 @@ BEGIN
      OR @RetiredAtUtc IS NULL
      OR @PrincipalId IS NULL OR @PrincipalId=''00000000-0000-0000-0000-000000000000''
      OR @EvidenceEntityId IS NULL OR @EvidenceEntityId=''00000000-0000-0000-0000-000000000000''
-     OR NULLIF(LTRIM(RTRIM(@Reason)),N'''') IS NULL
-     OR NULLIF(LTRIM(RTRIM(@SourceReference)),N'''') IS NULL
+     OR @Reason IS NULL OR DATALENGTH(@Reason)=0 OR UNICODE(LEFT(@Reason,1)) IN (9,10,11,12,13,32,133,160,5760,8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8232,8233,8239,8287,12288) OR UNICODE(RIGHT(@Reason,1)) IN (9,10,11,12,13,32,133,160,5760,8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8232,8233,8239,8287,12288)
+     OR @SourceReference IS NULL OR DATALENGTH(@SourceReference)=0 OR UNICODE(LEFT(@SourceReference,1)) IN (9,10,11,12,13,32,133,160,5760,8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8232,8233,8239,8287,12288) OR UNICODE(RIGHT(@SourceReference,1)) IN (9,10,11,12,13,32,133,160,5760,8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8232,8233,8239,8287,12288)
     THROW 60490, ''CS-AUTH-RETIRE-001: authorization, time, and source are required.'', 1;
   BEGIN TRY BEGIN TRANSACTION;
     IF NOT EXISTS (SELECT 1 FROM [ATAPUtilities].[ContentSummaryOperationalIdentity] WHERE OperationalIdentityId=@PrincipalId AND IdentityKindCode=''PrincipalRegistrar'')
@@ -740,8 +768,11 @@ BEGIN
        JOIN [ATAPUtilities].[ContentSummaryAuthorizationRetirementEvidence] e ON e.AuthorizationId=a.AuthorizationId
        WHERE a.AuthorizationId=@AuthorizationId AND a.ValidToUtc=@RetiredAtUtc
          AND e.RetiredAtUtc=@RetiredAtUtc AND e.PrincipalId=@PrincipalId
-         AND e.EvidenceEntityId=@EvidenceEntityId AND e.Reason=@Reason
-         AND e.SourceReference=@SourceReference AND e.RecordedAtUtc=@RetiredAtUtc)
+         AND e.EvidenceEntityId=@EvidenceEntityId
+         AND e.Reason COLLATE Latin1_General_100_BIN2=@Reason COLLATE Latin1_General_100_BIN2
+         AND DATALENGTH(e.Reason)=DATALENGTH(@Reason)
+         AND e.SourceReference COLLATE Latin1_General_100_BIN2=@SourceReference COLLATE Latin1_General_100_BIN2
+         AND DATALENGTH(e.SourceReference)=DATALENGTH(@SourceReference) AND e.RecordedAtUtc=@RetiredAtUtc)
         THROW 60494, ''CS-AUTH-RETIRE-005: authorization retirement replay conflicts with immutable close evidence.'', 1;
       COMMIT TRANSACTION;
       SELECT @AuthorizationId [AuthorizationId],CAST(''Existing'' AS varchar(16)) [StatusCode],CAST(NULL AS varchar(32)) [ErrorCode]; RETURN;

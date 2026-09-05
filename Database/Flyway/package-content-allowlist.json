@@ -56,7 +56,7 @@
     {
       "path": "SQL/V00120__Add_ContentSummary_Provisioning_And_Correction.sql",
       "kind": "migration",
-      "sha256": "6B3C4095081315A665423B7107B70B1815176562F53A6F9A2E2CC49B77BB21E2"
+      "sha256": "677D328378A017AD1F67E3BE0951F515530059164BCFA1310E58B2C902B193B1"
     },
     {
       "path": "Data/BuildSet.csv",

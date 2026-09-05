@@ -74,17 +74,27 @@ Describe 'V00120 ContentSummary provisioning migration' {
     $body|Should -Match "CHARINDEX\(N'\?',@OriginInput\)"
     $body|Should -Match "CHARINDEX\(N'#',@OriginInput\)"
     $body|Should -Match '@ControlCode<=31'
+    $body|Should -Match 'NCHAR\(160\)'
+    $body|Should -Match '@OriginRemainder nvarchar\(max\)'
+    $body|Should -Match 'SUBSTRING\(@OriginRemainder,@OriginSlash\+1,2048\)'
+    $body|Should -Match 'DATALENGTH\(@Origin\)>4096'
     $body|Should -Match "RIGHT\(LOWER\(@OriginAuthority\),4\)=N':443'"
     $body|Should -Match "N'https://'\+LOWER\(@OriginAuthority\)\+N'/'\+@OriginPath"
     $body|Should -Not -Match 'LOWER\(LTRIM\(RTRIM\(@OriginUri\)\)\)'
   }
-  It 'rejects whitespace-only evidence text at every controlled close boundary' {
+  It 'rejects Unicode leading or trailing evidence padding at every controlled boundary' {
     foreach($name in @('AssignContentSummaryVersionTagV1','AuthorizeContentSummaryDatabasePrincipalRepositoryV1',
       'RetireContentSummaryRepositoryV1','CorrectContentSummaryRepositoryRootV1',
       'RetireContentSummaryDatabasePrincipalRepositoryAuthorizationV1')){
       $body=@($dynamicBodies|Where-Object{$_ -match "CREATE PROCEDURE \[ATAPUtilities\]\.\[$name\]"})[0]
-      if($body -match '@Reason nvarchar'){$body|Should -Match "NULLIF\(LTRIM\(RTRIM\(@Reason\)\),N''\)"}
-      if($body -match '@SourceReference nvarchar'){$body|Should -Match "NULLIF\(LTRIM\(RTRIM\(@SourceReference\)\),N''\)"}
+      if($body -match '@Reason nvarchar'){
+        $body|Should -Match 'UNICODE\(LEFT\(@Reason,1\)\) IN \(9,10,11,12,13,32,133,160'
+        $body|Should -Match 'UNICODE\(RIGHT\(@Reason,1\)\) IN \(9,10,11,12,13,32,133,160'
+      }
+      if($body -match '@SourceReference nvarchar'){
+        $body|Should -Match 'UNICODE\(LEFT\(@SourceReference,1\)\) IN \(9,10,11,12,13,32,133,160'
+        $body|Should -Match 'UNICODE\(RIGHT\(@SourceReference,1\)\) IN \(9,10,11,12,13,32,133,160'
+      }
     }
   }
   It 'rejects Guid.Empty for every caller-supplied durable identifier' {
@@ -117,9 +127,19 @@ Describe 'V00120 ContentSummary provisioning migration' {
     $activePrior=$body.IndexOf('active prior root does not exist',[StringComparison]::Ordinal)
     $replay|Should -BeGreaterThan -1
     $activePrior|Should -BeGreaterThan $replay
-    foreach($token in @('c.RepositoryId=@RepositoryId','c.Reason=@Reason','priorRoot.RetiredAtUtc=@RecordedAtUtc',
+    foreach($token in @('c.RepositoryId=@RepositoryId','c.Reason COLLATE Latin1_General_100_BIN2=@Reason COLLATE Latin1_General_100_BIN2',
+      'DATALENGTH(c.Reason)=DATALENGTH(@Reason)','priorRoot.RetiredAtUtc=@RecordedAtUtc',
       'successorRoot.NormalizedRoot=@Root','canonicalRoot.CanonicalWindowsRoot=@Root',"CAST('Existing' AS varchar(16))")){
       $body|Should -Match ([regex]::Escape($token))
+    }
+  }
+  It 'uses byte-exact text comparison for every immutable replay acknowledgement' {
+    foreach($token in @(
+      'e.Reason COLLATE Latin1_General_100_BIN2=@Reason COLLATE Latin1_General_100_BIN2',
+      'DATALENGTH(e.Reason)=DATALENGTH(@Reason)',
+      'e.SourceReference COLLATE Latin1_General_100_BIN2=@SourceReference COLLATE Latin1_General_100_BIN2',
+      'DATALENGTH(e.SourceReference)=DATALENGTH(@SourceReference)')){
+      $migration|Should -Match ([regex]::Escape($token))
     }
   }
   It 'requires immutable evidence for direct repository and authorization closes' {

@@ -16,6 +16,7 @@ BeforeAll {
     'V00060__Create_Ace_GatherContent_Submission.sql'
     'V00070__Create_Ace_AISupervisor_Telemetry.sql'
     'V00080__Create_ATAPUtilities_V4_Core_Identity_And_Overlay.sql'
+    'V00090__Create_ATAPUtilities_Tag_Relations_Assignments_And_Rules.sql'
   )
   $expectedV00010Tables = @(
     'BuildSet'
@@ -214,7 +215,7 @@ Describe 'Task 15.140.c.T0 fail-closed fixture preflight' {
   }
 
   It 'rejects an unknown migration before fixture execution' {
-    $inventory = @($sourceInventory) + [pscustomobject]@{ Name = 'V00090__Unknown.sql'; Hash = 'unknown' }
+    $inventory = @($sourceInventory) + [pscustomobject]@{ Name = 'V01000__Unknown.sql'; Hash = 'unknown' }
     { Assert-T0BaselinePreflight $inventory } | Should -Throw '*Unknown or missing*'
   }
 

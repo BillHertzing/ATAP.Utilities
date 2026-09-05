@@ -32,6 +32,7 @@ Describe 'V00080 RPRRSBSI V4 core identity and overlay static contract' {
       'V00060__Create_Ace_GatherContent_Submission.sql'
       'V00070__Create_Ace_AISupervisor_Telemetry.sql'
       $migrationName
+      'V00090__Create_ATAPUtilities_Tag_Relations_Assignments_And_Rules.sql'
     )
     @($activeMigrations.Name | ForEach-Object {
         if ($_ -notmatch '^(V\d+)__') { throw "Invalid migration name: $_" }
@@ -164,7 +165,7 @@ Describe 'V00080 RPRRSBSI V4 core identity and overlay static contract' {
     $migration | Should -Match "'Shadowed'"
   }
 
-  It 'binds the exact active package content to version 0.1.7' {
+  It 'binds the exact active package content to version 0.1.8' {
     $version = Get-Content -LiteralPath (Join-Path $flywayRoot 'version.json') -Raw | ConvertFrom-Json
     $allowlist = Get-Content -LiteralPath (Join-Path $flywayRoot 'package-content-allowlist.json') -Raw | ConvertFrom-Json
     $expectedPaths = @(
@@ -172,7 +173,7 @@ Describe 'V00080 RPRRSBSI V4 core identity and overlay static contract' {
       @(Get-ChildItem -LiteralPath (Join-Path $flywayRoot 'Data') -File -Filter '*.csv' |
         Sort-Object Name | ForEach-Object { 'Data/' + $_.Name })
     )
-    $version.version | Should -Be '0.1.7'
+    $version.version | Should -Be '0.1.8'
     $allowlist.sourceVersion | Should -Be $version.version
     @($allowlist.files.path) | Should -Be $expectedPaths
     foreach ($entry in $allowlist.files) {

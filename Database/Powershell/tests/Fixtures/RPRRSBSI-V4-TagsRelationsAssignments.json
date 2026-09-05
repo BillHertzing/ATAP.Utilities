@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "migration": "V00090__Create_ATAPUtilities_Tag_Relations_Assignments_And_Rules.sql",
+  "packageVersion": "0.1.8",
+  "relationRoles": [
+    { "code": "REL_RELATED_TO", "direction": "Symmetric", "inverse": "REL_RELATED_TO", "family": "associative", "cycle": "Allowed" },
+    { "code": "REL_SEE_ALSO", "direction": "Symmetric", "inverse": "REL_SEE_ALSO", "family": "associative", "cycle": "Allowed" },
+    { "code": "REL_OPPOSITE_OF", "direction": "Symmetric", "inverse": "REL_OPPOSITE_OF", "family": "semantic-opposition", "cycle": "Allowed" },
+    { "code": "REL_BROADER_THAN", "direction": "Canonical", "inverse": "REL_NARROWER_THAN", "family": "hierarchy-breadth", "cycle": "Prohibited" },
+    { "code": "REL_NARROWER_THAN", "direction": "Inverse", "inverse": "REL_BROADER_THAN", "family": "hierarchy-breadth", "cycle": "Prohibited" },
+    { "code": "REL_REPLACES", "direction": "Canonical", "inverse": "REL_REPLACED_BY", "family": "replacement", "cycle": "Prohibited" },
+    { "code": "REL_REPLACED_BY", "direction": "Inverse", "inverse": "REL_REPLACES", "family": "replacement", "cycle": "Prohibited" },
+    { "code": "REL_PART_OF", "direction": "Canonical", "inverse": "REL_HAS_PART", "family": "hierarchy-composition", "cycle": "Prohibited" },
+    { "code": "REL_HAS_PART", "direction": "Inverse", "inverse": "REL_PART_OF", "family": "hierarchy-composition", "cycle": "Prohibited" }
+  ],
+  "assignmentEntityTypes": ["rule", "instantiation"],
+  "seedTags": [
+    { "tagId": "90020000-0000-0000-0000-000000000010", "code": "RRSBS_RULE_DEFINITION", "entityType": "rule", "entityId": "616fb394-0b4d-486a-98af-48f1fe461af2" },
+    { "tagId": "90020000-0000-0000-0000-000000000020", "code": "RRSBS_INSTANTIATION_DEFINITION", "entityType": "instantiation", "entityId": "03e28494-998f-4fc2-ba5d-ad6e5832c8b7" }
+  ],
+  "expectedTables": ["TagRelationType", "TagRelation", "TagAssignmentEntityType", "TagAssignment"],
+  "expectedProcedures": ["CreateTagRelation", "CreateTagAssignment", "QueryTagLogicalEdgesAsOf", "QueryTagAssignmentsAsOf"],
+  "negativeSqlErrors": {
+    "mirrorOrInverseDuplicate": 59018,
+    "prohibitedFamilyCycle": 59019,
+    "missingOrDisallowedAssignmentTarget": 59023,
+    "authorizationSemantic": 547
+  }
+}

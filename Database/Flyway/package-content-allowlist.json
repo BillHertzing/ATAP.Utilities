@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageId": "ATAPUtilities.Database",
-  "sourceVersion": "0.1.7",
+  "sourceVersion": "0.1.8",
   "files": [
     {
       "path": "SQL/V00010__Create_ATAPUtilities_Initial_Schema_And_Seed.sql",
@@ -37,6 +37,11 @@
       "path": "SQL/V00080__Create_ATAPUtilities_V4_Core_Identity_And_Overlay.sql",
       "kind": "migration",
       "sha256": "F7BDAA9688D081DCD61E57466AFAD8AEDB1C256F0223BE6C9C8B5C2FE2B01763"
+    },
+    {
+      "path": "SQL/V00090__Create_ATAPUtilities_Tag_Relations_Assignments_And_Rules.sql",
+      "kind": "migration",
+      "sha256": "34A0EC2A1CE485BECBC0497BD4A726BFEC45CD2DBA7D39E26A753A8A6C594DEB"
     },
     {
       "path": "Data/BuildSet.csv",

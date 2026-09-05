@@ -37,6 +37,7 @@ Describe 'V00070 Ace AISupervisor telemetry static contract' {
       'V00060__Create_Ace_GatherContent_Submission.sql'
       $migrationName
       'V00080__Create_ATAPUtilities_V4_Core_Identity_And_Overlay.sql'
+      'V00090__Create_ATAPUtilities_Tag_Relations_Assignments_And_Rules.sql'
     )
     @($versions | Group-Object | Where-Object Count -gt 1).Count | Should -Be 0
   }
@@ -147,7 +148,7 @@ Describe 'V00070 Ace AISupervisor telemetry static contract' {
         Sort-Object Name | ForEach-Object { 'Data/' + $_.Name })
     )
 
-    $version.version | Should -Be '0.1.7'
+    $version.version | Should -Be '0.1.8'
     $allowlist.sourceVersion | Should -Be $version.version
     @($allowlist.files.path) | Should -Be $expectedPaths
     foreach ($entry in $allowlist.files) {

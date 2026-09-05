@@ -14,6 +14,7 @@ BeforeAll {
     'V00060__Create_Ace_GatherContent_Submission.sql'
     'V00070__Create_Ace_AISupervisor_Telemetry.sql'
     'V00080__Create_ATAPUtilities_V4_Core_Identity_And_Overlay.sql'
+    'V00090__Create_ATAPUtilities_Tag_Relations_Assignments_And_Rules.sql'
   )
   $migrationPath = Join-Path $sqlDirectory $migrationName
   $migrationSql = Get-Content -LiteralPath $migrationPath -Raw
@@ -104,7 +105,7 @@ BeforeAll {
 }
 
 Describe 'Philote temporal-validity active source contract' {
-  It 'contains the exact ordered active migration inventory through V00060' {
+  It 'contains the exact ordered active migration inventory through V00090' {
     $migrations = @(Get-ChildItem -LiteralPath $sqlDirectory -Filter 'V*.sql' -File | Sort-Object Name)
 
     @($migrations.Name) | Should -Be $expectedMigrationNames

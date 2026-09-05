@@ -139,3 +139,42 @@ Describe 'ContentSummary private SQL conversion contracts' -Tag 'Unit','Task15.6
     $definitions.RecordedAtUtc.Value.Kind | Should -Be ([DateTimeKind]::Utc)
   }
 }
+
+Describe 'ContentSummary adapter review corrections' -Tag 'Unit','Task15.60.c-f' {
+  BeforeAll {
+    $script:moduleRoot = Split-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -Parent
+    Import-Module (Join-Path $script:moduleRoot 'ATAP.Utilities.BuildTooling.ContentSummary.PowerShell.psd1') -Force
+    $script:module = Get-Module ATAP.Utilities.BuildTooling.ContentSummary.PowerShell
+  }
+
+  It 'rejects malformed UTF-8 bytes before JSON validation' {
+    $path = Join-Path $TestDrive 'malformed-utf8.json'
+    $bytes = [byte[]](0x7b,0x22,0x78,0x22,0x3a,0x22,0xc3,0x28,0x22,0x7d)
+    [IO.File]::WriteAllBytes($path,$bytes)
+    $sha = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+    { Read-ContentSummaryRepositoryInventory -Path $path -ExpectedSha256 $sha } | Should -Throw '*not well-formed UTF-8 JSON*'
+  }
+
+  It 'rejects every wrong nonempty Capture identity on replay' {
+    $expected = [ordered]@{
+      IdempotencyKey = [guid]'30000000-0000-0000-0000-000000000001'
+      SourceArtifactId = [guid]'30000000-0000-0000-0000-000000000002'
+      SourceArtifactVersionId = [guid]'30000000-0000-0000-0000-000000000003'
+      ContentSummaryId = [guid]'30000000-0000-0000-0000-000000000004'
+      ContentSummaryVersionId = [guid]'30000000-0000-0000-0000-000000000005'
+    }
+    foreach ($propertyName in $expected.Keys) {
+      $result = [pscustomobject][ordered]@{
+        ReplayStatus='Replayed';IdempotencyKey=$expected.IdempotencyKey;SourceArtifactId=$expected.SourceArtifactId;
+        SourceArtifactVersionId=$expected.SourceArtifactVersionId;ContentSummaryId=$expected.ContentSummaryId;
+        ContentSummaryVersionId=$expected.ContentSummaryVersionId;SourceArtifactVersionSequence=1L;
+        ContentSummaryVersionSequence=1L;LifecycleCode='summarized';ErrorCode=$null
+      }
+      $result.$propertyName = [guid]'3fffffff-ffff-ffff-ffff-ffffffffffff'
+      { & $script:module {
+          param($actual,$identities)
+          Assert-ContentSummaryCaptureAcknowledgement -Result $actual -IdempotencyKey $identities.IdempotencyKey -SourceArtifactId $identities.SourceArtifactId -SourceArtifactVersionId $identities.SourceArtifactVersionId -ContentSummaryId $identities.ContentSummaryId -ContentSummaryVersionId $identities.ContentSummaryVersionId
+        } $result $expected } | Should -Throw '*capture acknowledgement identities do not match*'
+    }
+  }
+}

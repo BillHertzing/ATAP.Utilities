@@ -27,8 +27,12 @@ function Read-ContentSummaryRepositoryInventory {
     if (-not [string]::Equals($actualSha256, $ExpectedSha256, [StringComparison]::Ordinal)) {
       throw 'CS-INVENTORY-001: inventory bytes do not match the approved SHA-256.'
     }
-    try { $inventory = [Text.Encoding]::UTF8.GetString($bytes) | ConvertFrom-Json -Depth 20 -DateKind String -ErrorAction Stop }
-    catch { throw 'CS-INVENTORY-001: inventory is not valid UTF-8 JSON.' }
+    try {
+      $json = [Text.UTF8Encoding]::new($false, $true).GetString($bytes)
+      if ($json.Length -gt 0 -and $json[0] -eq [char]0xFEFF) { $json = $json.Substring(1) }
+      $inventory = $json | ConvertFrom-Json -Depth 20 -DateKind String -ErrorAction Stop
+    }
+    catch { throw 'CS-INVENTORY-001: inventory is not well-formed UTF-8 JSON.' }
 
     $assertProperties = {
       param($Value,[string[]]$Expected,[string]$Location)

@@ -32,7 +32,7 @@ Describe 'ContentSummary frozen phase-two contract' {
         }
       }
 
-    ($versions | Measure-Object -Maximum).Maximum | Should -Be 100
+    ($versions | Measure-Object -Maximum).Maximum | Should -Be 120
     $fixture.migrationBoundary.contractPredecessor | Should -Be 'V00090'
     $fixture.migrationBoundary.currentHead | Should -Be 'V00100'
     $fixture.migrationBoundary.allocatedVersion | Should -Be 'V00100'

@@ -30,6 +30,8 @@ BEGIN TRY
        OR OBJECT_ID(N'[ATAPUtilities].[RepositoryOriginEvidence]', N'U') IS NOT NULL
        OR OBJECT_ID(N'[ATAPUtilities].[RepositoryRootCanonicalIdentity]', N'U') IS NOT NULL
        OR OBJECT_ID(N'[ATAPUtilities].[ContentSummaryRepositoryRootCorrection]', N'U') IS NOT NULL
+       OR OBJECT_ID(N'[ATAPUtilities].[ContentSummaryRepositoryRetirementEvidence]', N'U') IS NOT NULL
+       OR OBJECT_ID(N'[ATAPUtilities].[ContentSummaryAuthorizationRetirementEvidence]', N'U') IS NOT NULL
        OR OBJECT_ID(N'[ATAPUtilities].[ProvisionContentSummaryRepositoryV1]', N'P') IS NOT NULL
        OR OBJECT_ID(N'[ATAPUtilities].[AssignContentSummaryVersionTagV1]', N'P') IS NOT NULL
        OR OBJECT_ID(N'[ATAPUtilities].[AuthorizeContentSummaryDatabasePrincipalRepositoryV1]', N'P') IS NOT NULL
@@ -129,6 +131,65 @@ BEGIN TRY
         CONSTRAINT [CK_ContentSummaryRepositoryRootCorrection_Reason] CHECK (DATALENGTH([Reason])>0)
     );
 
+    CREATE TABLE [ATAPUtilities].[ContentSummaryRepositoryRetirementEvidence]
+    (
+        [RepositoryId] uniqueidentifier NOT NULL,
+        [RetiredAtUtc] datetime2(7) NOT NULL,
+        [PrincipalId] uniqueidentifier NOT NULL,
+        [EvidenceEntityId] uniqueidentifier NOT NULL,
+        [Reason] nvarchar(1024) NOT NULL,
+        [RecordedAtUtc] datetime2(7) NOT NULL,
+        [PrincipalKindCode] AS (CONVERT(varchar(32),'PrincipalRegistrar') COLLATE Latin1_General_100_BIN2) PERSISTED,
+        [EvidenceKindCode] AS (CONVERT(varchar(32),'Evidence') COLLATE Latin1_General_100_BIN2) PERSISTED,
+        CONSTRAINT [PK_ContentSummaryRepositoryRetirementEvidence] PRIMARY KEY ([RepositoryId]),
+        CONSTRAINT [FK_ContentSummaryRepositoryRetirementEvidence_Repository] FOREIGN KEY ([RepositoryId])
+            REFERENCES [ATAPUtilities].[Repository] ([RepositoryId]) ON DELETE NO ACTION ON UPDATE NO ACTION,
+        CONSTRAINT [FK_ContentSummaryRepositoryRetirementEvidence_Principal] FOREIGN KEY ([PrincipalId], [PrincipalKindCode])
+            REFERENCES [ATAPUtilities].[ContentSummaryOperationalIdentity] ([OperationalIdentityId], [IdentityKindCode]),
+        CONSTRAINT [FK_ContentSummaryRepositoryRetirementEvidence_Evidence] FOREIGN KEY ([EvidenceEntityId], [EvidenceKindCode])
+            REFERENCES [ATAPUtilities].[ContentSummaryOperationalIdentity] ([OperationalIdentityId], [IdentityKindCode]),
+        CONSTRAINT [CK_ContentSummaryRepositoryRetirementEvidence_Reason] CHECK (DATALENGTH([Reason])>0),
+        CONSTRAINT [CK_ContentSummaryRepositoryRetirementEvidence_Time] CHECK ([RetiredAtUtc]=[RecordedAtUtc])
+    );
+
+    CREATE TABLE [ATAPUtilities].[ContentSummaryAuthorizationRetirementEvidence]
+    (
+        [AuthorizationId] uniqueidentifier NOT NULL,
+        [RetiredAtUtc] datetime2(7) NOT NULL,
+        [PrincipalId] uniqueidentifier NOT NULL,
+        [EvidenceEntityId] uniqueidentifier NOT NULL,
+        [Reason] nvarchar(1024) NOT NULL,
+        [SourceReference] nvarchar(512) NOT NULL,
+        [RecordedAtUtc] datetime2(7) NOT NULL,
+        [PrincipalKindCode] AS (CONVERT(varchar(32),'PrincipalRegistrar') COLLATE Latin1_General_100_BIN2) PERSISTED,
+        [EvidenceKindCode] AS (CONVERT(varchar(32),'Evidence') COLLATE Latin1_General_100_BIN2) PERSISTED,
+        CONSTRAINT [PK_ContentSummaryAuthorizationRetirementEvidence] PRIMARY KEY ([AuthorizationId]),
+        CONSTRAINT [FK_ContentSummaryAuthorizationRetirementEvidence_Authorization] FOREIGN KEY ([AuthorizationId])
+            REFERENCES [ATAPUtilities].[ContentSummaryDatabasePrincipalRepositoryAuthorization] ([AuthorizationId])
+            ON DELETE NO ACTION ON UPDATE NO ACTION,
+        CONSTRAINT [FK_ContentSummaryAuthorizationRetirementEvidence_Principal] FOREIGN KEY ([PrincipalId], [PrincipalKindCode])
+            REFERENCES [ATAPUtilities].[ContentSummaryOperationalIdentity] ([OperationalIdentityId], [IdentityKindCode]),
+        CONSTRAINT [FK_ContentSummaryAuthorizationRetirementEvidence_Evidence] FOREIGN KEY ([EvidenceEntityId], [EvidenceKindCode])
+            REFERENCES [ATAPUtilities].[ContentSummaryOperationalIdentity] ([OperationalIdentityId], [IdentityKindCode]),
+        CONSTRAINT [CK_ContentSummaryAuthorizationRetirementEvidence_Text] CHECK
+            (DATALENGTH([Reason])>0 AND DATALENGTH([SourceReference])>0),
+        CONSTRAINT [CK_ContentSummaryAuthorizationRetirementEvidence_Time] CHECK ([RetiredAtUtc]=[RecordedAtUtc])
+    );
+
+    IF EXISTS
+    (
+      SELECT 1 FROM [ATAPUtilities].[Repository] r
+      LEFT JOIN [ATAPUtilities].[RepositoryRootRegistration] rr
+        ON rr.RepositoryId=r.RepositoryId AND rr.RetiredAtUtc IS NULL
+      WHERE r.RetiredAtUtc IS NOT NULL
+    )
+       OR EXISTS
+    (
+      SELECT 1 FROM [ATAPUtilities].[ContentSummaryDatabasePrincipalRepositoryAuthorization]
+      WHERE ValidToUtc IS NOT NULL
+    )
+        THROW 60404, 'V00120 cannot admit pre-existing close events without immutable evidence.', 1;
+
     DECLARE @SeedAt datetime2(7)='2026-09-05T00:00:00';
     DECLARE @SeedSource nvarchar(512)=N'Sprint 0015 V00120 controlled ContentSummary identities';
 
@@ -223,6 +284,12 @@ BEGIN SET NOCOUNT ON; THROW 60422, ''Canonical root identities are immutable.'',
     EXEC sys.sp_executesql N'CREATE TRIGGER [ATAPUtilities].[TR_ContentSummaryRepositoryRootCorrection_Immutable]
 ON [ATAPUtilities].[ContentSummaryRepositoryRootCorrection] AFTER UPDATE, DELETE AS
 BEGIN SET NOCOUNT ON; THROW 60423, ''Repository root corrections are immutable.'', 1; END;';
+    EXEC sys.sp_executesql N'CREATE TRIGGER [ATAPUtilities].[TR_ContentSummaryRepositoryRetirementEvidence_Immutable]
+ON [ATAPUtilities].[ContentSummaryRepositoryRetirementEvidence] AFTER UPDATE, DELETE AS
+BEGIN SET NOCOUNT ON; THROW 60418, ''Repository retirement evidence is immutable.'', 1; END;';
+    EXEC sys.sp_executesql N'CREATE TRIGGER [ATAPUtilities].[TR_ContentSummaryAuthorizationRetirementEvidence_Immutable]
+ON [ATAPUtilities].[ContentSummaryAuthorizationRetirementEvidence] AFTER UPDATE, DELETE AS
+BEGIN SET NOCOUNT ON; THROW 60419, ''Authorization retirement evidence is immutable.'', 1; END;';
 
     EXEC sys.sp_executesql N'ALTER TRIGGER [ATAPUtilities].[TR_Repository_AppendOnly]
 ON [ATAPUtilities].[Repository] AFTER INSERT, UPDATE, DELETE AS
@@ -238,6 +305,13 @@ BEGIN
       OR i.SourceReference<>d.SourceReference OR i.RecordedAtUtc<>d.RecordedAtUtc
       OR d.RetiredAtUtc IS NOT NULL OR i.RetiredAtUtc IS NULL)
     THROW 60425, ''Repository is append/close-only.'', 1;
+  IF EXISTS
+  (SELECT 1 FROM inserted i JOIN deleted d ON d.RepositoryId=i.RepositoryId
+   WHERE d.RetiredAtUtc IS NULL AND i.RetiredAtUtc IS NOT NULL
+     AND NOT EXISTS
+       (SELECT 1 FROM [ATAPUtilities].[ContentSummaryRepositoryRetirementEvidence] e
+        WHERE e.RepositoryId=i.RepositoryId AND e.RetiredAtUtc=i.RetiredAtUtc))
+    THROW 60417, ''Repository close requires matching immutable retirement evidence.'', 1;
   IF EXISTS
   (SELECT 1 FROM inserted i
    WHERE NOT EXISTS (SELECT 1 FROM [ATAPUtilities].[ContentSummaryOperationalIdentity] o WHERE o.OperationalIdentityId=i.OrganizationId AND o.IdentityKindCode=''Organization'')
@@ -298,6 +372,13 @@ BEGIN
       OR i.SourceReference<>d.SourceReference OR i.RecordedAtUtc<>d.RecordedAtUtc
       OR d.ValidToUtc IS NOT NULL OR i.ValidToUtc IS NULL)
     THROW 60435, ''ContentSummary principal authorization is append/close-only.'', 1;
+  IF EXISTS
+  (SELECT 1 FROM inserted i JOIN deleted d ON d.AuthorizationId=i.AuthorizationId
+   WHERE d.ValidToUtc IS NULL AND i.ValidToUtc IS NOT NULL
+     AND NOT EXISTS
+       (SELECT 1 FROM [ATAPUtilities].[ContentSummaryAuthorizationRetirementEvidence] e
+        WHERE e.AuthorizationId=i.AuthorizationId AND e.RetiredAtUtc=i.ValidToUtc))
+    THROW 60416, ''Authorization close requires matching immutable retirement evidence.'', 1;
 END;';
 
     EXEC sys.sp_executesql N'CREATE PROCEDURE [ATAPUtilities].[ProvisionContentSummaryRepositoryV1]
@@ -315,14 +396,49 @@ END;';
 AS
 BEGIN
   SET NOCOUNT ON; SET XACT_ABORT ON; SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
-  IF @RepositoryId IS NULL OR @RepositoryRootRegistrationId IS NULL OR NULLIF(LTRIM(RTRIM(@CanonicalRepositoryName)),N'''') IS NULL
+  IF @RepositoryId IS NULL OR @RepositoryId=''00000000-0000-0000-0000-000000000000''
+     OR @RepositoryRootRegistrationId IS NULL OR @RepositoryRootRegistrationId=''00000000-0000-0000-0000-000000000000''
+     OR NULLIF(LTRIM(RTRIM(@CanonicalRepositoryName)),N'''') IS NULL
      OR NULLIF(LTRIM(RTRIM(@OriginUri)),N'''') IS NULL OR NULLIF(LTRIM(RTRIM(@CanonicalRoot)),N'''') IS NULL
-     OR @RootKindCode NOT IN (''stable'',''sprint'',''mirror'',''scanner-sandbox'') OR @OrganizationId IS NULL
-     OR @ClassificationPolicyId IS NULL OR @PrincipalId IS NULL OR @EvidenceEntityId IS NULL OR @RecordedAtUtc IS NULL
+     OR @RootKindCode NOT IN (''stable'',''sprint'',''mirror'',''scanner-sandbox'')
+     OR @OrganizationId IS NULL OR @OrganizationId=''00000000-0000-0000-0000-000000000000''
+     OR @ClassificationPolicyId IS NULL OR @ClassificationPolicyId=''00000000-0000-0000-0000-000000000000''
+     OR @PrincipalId IS NULL OR @PrincipalId=''00000000-0000-0000-0000-000000000000''
+     OR @EvidenceEntityId IS NULL OR @EvidenceEntityId=''00000000-0000-0000-0000-000000000000''
+     OR @RecordedAtUtc IS NULL
     THROW 60440, ''CS-PROVISION-001: all controlled repository, root, origin, actor, evidence, and time inputs are required.'', 1;
   DECLARE @Name nvarchar(256)=LTRIM(RTRIM(@CanonicalRepositoryName));
-  DECLARE @Origin nvarchar(2048)=LOWER(LTRIM(RTRIM(@OriginUri)));
-  WHILE LEN(@Origin)>8 AND RIGHT(@Origin,1)=N''/'' SET @Origin=LEFT(@Origin,LEN(@Origin)-1);
+  DECLARE @OriginInput nvarchar(2048)=LTRIM(RTRIM(@OriginUri));
+  WHILE LEN(@OriginInput)>8 AND RIGHT(@OriginInput,1)=N''/'' SET @OriginInput=LEFT(@OriginInput,LEN(@OriginInput)-1);
+  DECLARE @ControlCode int=1;
+  WHILE @ControlCode<=31
+  BEGIN
+    IF CHARINDEX(NCHAR(@ControlCode),@OriginInput COLLATE Latin1_General_100_BIN2)>0
+      THROW 60441, ''CS-PROVISION-002: origin URI contains a control character.'', 1;
+    SET @ControlCode+=1;
+  END;
+  DECLARE @OriginRemainder nvarchar(2040),@OriginAuthority nvarchar(512),@OriginPath nvarchar(1528),@OriginSlash int;
+  IF LOWER(LEFT(@OriginInput,8)) COLLATE Latin1_General_100_BIN2<>N''https://''
+     OR CHARINDEX(N''?'',@OriginInput)>0 OR CHARINDEX(N''#'',@OriginInput)>0
+     OR CHARINDEX(N''\'',@OriginInput)>0 OR CHARINDEX(N'' '',@OriginInput)>0
+     OR CHARINDEX(NCHAR(127),@OriginInput COLLATE Latin1_General_100_BIN2)>0
+    THROW 60441, ''CS-PROVISION-002: origin URI must be safe HTTPS without query, fragment, whitespace, or controls.'', 1;
+  SET @OriginRemainder=SUBSTRING(@OriginInput,9,2040);
+  SET @OriginSlash=CHARINDEX(N''/'',@OriginRemainder);
+  IF @OriginSlash<=1
+    THROW 60441, ''CS-PROVISION-002: origin URI requires an authority and repository path.'', 1;
+  SET @OriginAuthority=LEFT(@OriginRemainder,@OriginSlash-1);
+  SET @OriginPath=SUBSTRING(@OriginRemainder,@OriginSlash+1,1528);
+  IF RIGHT(LOWER(@OriginAuthority),4)=N'':443''
+    SET @OriginAuthority=LEFT(@OriginAuthority,LEN(@OriginAuthority)-4);
+  IF NULLIF(@OriginAuthority,N'''') IS NULL OR NULLIF(@OriginPath,N'''') IS NULL
+     OR CHARINDEX(N''@'',@OriginAuthority)>0 OR CHARINDEX(N'':'',@OriginAuthority)>0
+     OR @OriginAuthority COLLATE Latin1_General_100_BIN2 LIKE N''%[^A-Za-z0-9.-]%''
+     OR LEFT(@OriginAuthority,1)=N''.'' OR RIGHT(@OriginAuthority,1)=N''.''
+     OR CHARINDEX(N''..'',@OriginAuthority)>0 OR CHARINDEX(N''//'',@OriginPath)>0
+     OR CHARINDEX(N''/./'',N''/''+@OriginPath+N''/'')>0 OR CHARINDEX(N''/../'',N''/''+@OriginPath+N''/'')>0
+    THROW 60441, ''CS-PROVISION-002: origin URI authority or repository path is unsafe.'', 1;
+  DECLARE @Origin nvarchar(2048)=N''https://''+LOWER(@OriginAuthority)+N''/''+@OriginPath;
   DECLARE @Root nvarchar(1024)=LOWER(REPLACE(LTRIM(RTRIM(@CanonicalRoot)),N''/'',N''\''));
   WHILE LEN(@Root)>3 AND RIGHT(@Root,1)=N''\'' SET @Root=LEFT(@Root,LEN(@Root)-1);
   IF @Origin NOT LIKE N''https://%'' OR @Root NOT LIKE N''[a-z]:\%'' OR CHARINDEX(N''\\'',@Root)>0
@@ -341,13 +457,21 @@ BEGIN
     IF EXISTS (SELECT 1 FROM [ATAPUtilities].[Repository] WHERE RepositoryId=@RepositoryId)
     BEGIN
       IF NOT EXISTS
-      (SELECT 1 FROM [ATAPUtilities].[Repository] r JOIN [ATAPUtilities].[RepositoryOriginEvidence] o ON o.RepositoryId=r.RepositoryId
+      (SELECT 1 FROM [ATAPUtilities].[Repository] r
+       JOIN [ATAPUtilities].[PhiloteValidityPeriod] pv ON pv.PhiloteId=r.PhiloteId AND pv.ValidToUtc IS NULL
+       JOIN [ATAPUtilities].[RepositoryOriginEvidence] o ON o.RepositoryId=r.RepositoryId
        JOIN [ATAPUtilities].[RepositoryRootRegistration] rr ON rr.RepositoryId=r.RepositoryId AND rr.RepositoryRootRegistrationId=@RepositoryRootRegistrationId
        JOIN [ATAPUtilities].[RepositoryRootCanonicalIdentity] rc ON rc.RepositoryRootRegistrationId=rr.RepositoryRootRegistrationId
-       WHERE r.RepositoryId=@RepositoryId AND r.OrganizationId=@OrganizationId AND r.CanonicalRepositoryName=@Name
+       WHERE r.RepositoryId=@RepositoryId AND r.PhiloteId=@RepositoryId
+         AND r.OrganizationId=@OrganizationId AND r.CanonicalRepositoryName=@Name
          AND r.ClassificationPolicyId=@ClassificationPolicyId AND r.PrincipalId=@PrincipalId AND r.RetiredAtUtc IS NULL
-         AND o.CanonicalOriginUri=@Origin AND o.EvidenceEntityId=@EvidenceEntityId
-         AND rr.RootKindCode=@RootKindCode AND rr.RetiredAtUtc IS NULL AND rc.CanonicalWindowsRoot=@Root)
+         AND r.CreatedAtUtc=@RecordedAtUtc AND r.SourceReference=N''CS-PROVISION-V1'' AND r.RecordedAtUtc=@RecordedAtUtc
+         AND pv.PreviousValidToUtc IS NULL AND pv.ValidFromUtc=@RecordedAtUtc
+         AND o.CanonicalOriginUri=@Origin AND o.EvidenceEntityId=@EvidenceEntityId AND o.RecordedAtUtc=@RecordedAtUtc
+         AND rr.NormalizedRoot=@Root AND rr.RootKindCode=@RootKindCode AND rr.RegisteredAtUtc=@RecordedAtUtc
+         AND rr.RetiredAtUtc IS NULL AND rr.RegistrarEntityId=@PrincipalId
+         AND rr.EvidenceEntityId=@EvidenceEntityId AND rr.RecordedAtUtc=@RecordedAtUtc
+         AND rc.CanonicalWindowsRoot=@Root AND rc.RecordedAtUtc=@RecordedAtUtc)
         THROW 60443, ''CS-PROVISION-004: supplied RepositoryId conflicts with immutable repository content.'', 1;
       COMMIT TRANSACTION;
       SELECT @RepositoryId [RepositoryId],@RepositoryRootRegistrationId [RepositoryRootRegistrationId],@Name [CanonicalRepositoryName],
@@ -383,8 +507,11 @@ END;';
 AS
 BEGIN
   SET NOCOUNT ON; SET XACT_ABORT ON; SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
-  IF @TagId IS NULL OR @TagAssignmentId IS NULL OR @ContentSummaryVersionId IS NULL OR @PrincipalId IS NULL
-     OR NULLIF(@SourceReference,N'''') IS NULL OR @RecordedAtUtc IS NULL
+  IF @TagId IS NULL OR @TagId=''00000000-0000-0000-0000-000000000000''
+     OR @TagAssignmentId IS NULL OR @TagAssignmentId=''00000000-0000-0000-0000-000000000000''
+     OR @ContentSummaryVersionId IS NULL OR @ContentSummaryVersionId=''00000000-0000-0000-0000-000000000000''
+     OR @PrincipalId IS NULL OR @PrincipalId=''00000000-0000-0000-0000-000000000000''
+     OR NULLIF(LTRIM(RTRIM(@SourceReference)),N'''') IS NULL OR @RecordedAtUtc IS NULL
     THROW 60450, ''CS-TAG-001: all Tag assignment inputs are required.'', 1;
   BEGIN TRY
     BEGIN TRANSACTION;
@@ -425,9 +552,11 @@ END;';
 AS
 BEGIN
   SET NOCOUNT ON; SET XACT_ABORT ON; SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
-  IF @AuthorizationId IS NULL OR NULLIF(@DatabasePrincipalName,N'''') IS NULL
+  IF @AuthorizationId IS NULL OR @AuthorizationId=''00000000-0000-0000-0000-000000000000''
+     OR NULLIF(@DatabasePrincipalName,N'''') IS NULL
      OR @InstanceCode NOT IN (''production'',''qa'',''integration'',''dev'',''exp'') OR @RepositoryId IS NULL
-     OR NULLIF(@SourceReference,N'''') IS NULL OR @RecordedAtUtc IS NULL
+     OR @RepositoryId=''00000000-0000-0000-0000-000000000000''
+     OR NULLIF(LTRIM(RTRIM(@SourceReference)),N'''') IS NULL OR @RecordedAtUtc IS NULL
     THROW 60460, ''CS-AUTHORIZE-001: all authorization inputs are required.'', 1;
   DECLARE @Sid varbinary(85)=(SELECT sid FROM sys.database_principals WHERE name=@DatabasePrincipalName AND principal_id>4);
   IF @Sid IS NULL THROW 60461, ''CS-AUTHORIZE-002: database principal does not exist in this database.'', 1;
@@ -463,8 +592,12 @@ END;';
   @RepositoryId uniqueidentifier,@RetiredAtUtc datetime2(7),@PrincipalId uniqueidentifier,@EvidenceEntityId uniqueidentifier,@Reason nvarchar(1024)
 AS
 BEGIN
-  SET NOCOUNT ON; SET XACT_ABORT ON;
-  IF @RepositoryId IS NULL OR @RetiredAtUtc IS NULL OR @PrincipalId IS NULL OR @EvidenceEntityId IS NULL OR NULLIF(@Reason,N'''') IS NULL
+  SET NOCOUNT ON; SET XACT_ABORT ON; SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+  IF @RepositoryId IS NULL OR @RepositoryId=''00000000-0000-0000-0000-000000000000''
+     OR @RetiredAtUtc IS NULL
+     OR @PrincipalId IS NULL OR @PrincipalId=''00000000-0000-0000-0000-000000000000''
+     OR @EvidenceEntityId IS NULL OR @EvidenceEntityId=''00000000-0000-0000-0000-000000000000''
+     OR NULLIF(LTRIM(RTRIM(@Reason)),N'''') IS NULL
     THROW 60470, ''CS-RETIRE-001: all retirement inputs are required.'', 1;
   BEGIN TRY BEGIN TRANSACTION;
     IF NOT EXISTS (SELECT 1 FROM [ATAPUtilities].[ContentSummaryOperationalIdentity] WHERE OperationalIdentityId=@PrincipalId AND IdentityKindCode=''PrincipalRegistrar'')
@@ -472,14 +605,33 @@ BEGIN
       THROW 60471, ''CS-RETIRE-002: retirement actor or evidence identity is not controlled.'', 1;
     IF NOT EXISTS (SELECT 1 FROM [ATAPUtilities].[Repository] WITH (UPDLOCK,HOLDLOCK) WHERE RepositoryId=@RepositoryId)
       THROW 60472, ''CS-RETIRE-003: Repository does not exist.'', 1;
-    IF EXISTS (SELECT 1 FROM [ATAPUtilities].[Repository] WHERE RepositoryId=@RepositoryId AND RetiredAtUtc IS NULL)
+    IF EXISTS (SELECT 1 FROM [ATAPUtilities].[Repository] WHERE RepositoryId=@RepositoryId AND RetiredAtUtc IS NOT NULL)
     BEGIN
-      UPDATE [ATAPUtilities].[RepositoryRootRegistration] SET RetiredAtUtc=@RetiredAtUtc
-        WHERE RepositoryId=@RepositoryId AND RetiredAtUtc IS NULL AND RegisteredAtUtc<@RetiredAtUtc;
-      UPDATE [ATAPUtilities].[Repository] SET RetiredAtUtc=@RetiredAtUtc
-        WHERE RepositoryId=@RepositoryId AND RetiredAtUtc IS NULL AND CreatedAtUtc<@RetiredAtUtc;
-      IF @@ROWCOUNT<>1 THROW 60473, ''CS-RETIRE-004: retirement time must follow repository creation.'', 1;
+      IF NOT EXISTS
+      (SELECT 1 FROM [ATAPUtilities].[Repository] r
+       JOIN [ATAPUtilities].[ContentSummaryRepositoryRetirementEvidence] e ON e.RepositoryId=r.RepositoryId
+       WHERE r.RepositoryId=@RepositoryId AND r.RetiredAtUtc=@RetiredAtUtc
+         AND e.RetiredAtUtc=@RetiredAtUtc AND e.PrincipalId=@PrincipalId
+         AND e.EvidenceEntityId=@EvidenceEntityId AND e.Reason=@Reason AND e.RecordedAtUtc=@RetiredAtUtc)
+         OR EXISTS (SELECT 1 FROM [ATAPUtilities].[RepositoryRootRegistration] WHERE RepositoryId=@RepositoryId AND RetiredAtUtc IS NULL)
+        THROW 60474, ''CS-RETIRE-005: repository retirement replay conflicts with immutable close evidence.'', 1;
+      COMMIT TRANSACTION;
+      SELECT @RepositoryId [RepositoryId],CAST(''Existing'' AS varchar(16)) [StatusCode],CAST(NULL AS varchar(32)) [ErrorCode]; RETURN;
     END;
+    IF EXISTS (SELECT 1 FROM [ATAPUtilities].[Repository] WHERE RepositoryId=@RepositoryId AND CreatedAtUtc>=@RetiredAtUtc)
+       OR EXISTS (SELECT 1 FROM [ATAPUtilities].[RepositoryRootRegistration]
+                  WHERE RepositoryId=@RepositoryId AND RetiredAtUtc IS NULL AND RegisteredAtUtc>=@RetiredAtUtc)
+      THROW 60473, ''CS-RETIRE-004: retirement time must follow repository and every active root registration.'', 1;
+    INSERT INTO [ATAPUtilities].[ContentSummaryRepositoryRetirementEvidence]
+      ([RepositoryId],[RetiredAtUtc],[PrincipalId],[EvidenceEntityId],[Reason],[RecordedAtUtc])
+      VALUES (@RepositoryId,@RetiredAtUtc,@PrincipalId,@EvidenceEntityId,@Reason,@RetiredAtUtc);
+    UPDATE [ATAPUtilities].[RepositoryRootRegistration] SET RetiredAtUtc=@RetiredAtUtc
+      WHERE RepositoryId=@RepositoryId AND RetiredAtUtc IS NULL;
+    IF EXISTS (SELECT 1 FROM [ATAPUtilities].[RepositoryRootRegistration] WHERE RepositoryId=@RepositoryId AND RetiredAtUtc IS NULL)
+      THROW 60475, ''CS-RETIRE-006: repository retirement cannot leave an active root.'', 1;
+    UPDATE [ATAPUtilities].[Repository] SET RetiredAtUtc=@RetiredAtUtc
+      WHERE RepositoryId=@RepositoryId AND RetiredAtUtc IS NULL;
+    IF @@ROWCOUNT<>1 THROW 60476, ''CS-RETIRE-007: repository close was not applied exactly once.'', 1;
     COMMIT TRANSACTION;
     SELECT @RepositoryId [RepositoryId],CAST(''Retired'' AS varchar(16)) [StatusCode],CAST(NULL AS varchar(32)) [ErrorCode];
   END TRY BEGIN CATCH IF XACT_STATE()<>0 ROLLBACK TRANSACTION; THROW; END CATCH;
@@ -492,10 +644,16 @@ END;';
 AS
 BEGIN
   SET NOCOUNT ON; SET XACT_ABORT ON; SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
-  IF @CorrectionId IS NULL OR @RepositoryId IS NULL OR @PriorRepositoryRootRegistrationId IS NULL
-     OR @SuccessorRepositoryRootRegistrationId IS NULL OR @PriorRepositoryRootRegistrationId=@SuccessorRepositoryRootRegistrationId
+  IF @CorrectionId IS NULL OR @CorrectionId=''00000000-0000-0000-0000-000000000000''
+     OR @RepositoryId IS NULL OR @RepositoryId=''00000000-0000-0000-0000-000000000000''
+     OR @PriorRepositoryRootRegistrationId IS NULL OR @PriorRepositoryRootRegistrationId=''00000000-0000-0000-0000-000000000000''
+     OR @SuccessorRepositoryRootRegistrationId IS NULL OR @SuccessorRepositoryRootRegistrationId=''00000000-0000-0000-0000-000000000000''
+     OR @PriorRepositoryRootRegistrationId=@SuccessorRepositoryRootRegistrationId
      OR NULLIF(@CanonicalRoot,N'''') IS NULL OR @RootKindCode NOT IN (''stable'',''sprint'',''mirror'',''scanner-sandbox'')
-     OR @RecordedAtUtc IS NULL OR @PrincipalId IS NULL OR @EvidenceEntityId IS NULL OR NULLIF(@Reason,N'''') IS NULL
+     OR @RecordedAtUtc IS NULL
+     OR @PrincipalId IS NULL OR @PrincipalId=''00000000-0000-0000-0000-000000000000''
+     OR @EvidenceEntityId IS NULL OR @EvidenceEntityId=''00000000-0000-0000-0000-000000000000''
+     OR NULLIF(LTRIM(RTRIM(@Reason)),N'''') IS NULL
     THROW 60480, ''CS-CORRECT-001: all distinct correction identities and evidence are required.'', 1;
   DECLARE @Root nvarchar(1024)=LOWER(REPLACE(LTRIM(RTRIM(@CanonicalRoot)),N''/'',N''\''));
   WHILE LEN(@Root)>3 AND RIGHT(@Root,1)=N''\'' SET @Root=LEFT(@Root,LEN(@Root)-1);
@@ -505,13 +663,41 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM [ATAPUtilities].[ContentSummaryOperationalIdentity] WHERE OperationalIdentityId=@PrincipalId AND IdentityKindCode=''PrincipalRegistrar'')
        OR NOT EXISTS (SELECT 1 FROM [ATAPUtilities].[ContentSummaryOperationalIdentity] WHERE OperationalIdentityId=@EvidenceEntityId AND IdentityKindCode=''Evidence'')
       THROW 60482, ''CS-CORRECT-003: correction actor or evidence identity is not controlled.'', 1;
+    IF EXISTS (SELECT 1 FROM [ATAPUtilities].[ContentSummaryRepositoryRootCorrection] WITH (UPDLOCK,HOLDLOCK) WHERE CorrectionId=@CorrectionId)
+    BEGIN
+      IF NOT EXISTS
+      (SELECT 1 FROM [ATAPUtilities].[ContentSummaryRepositoryRootCorrection] c
+       JOIN [ATAPUtilities].[Repository] r ON r.RepositoryId=c.RepositoryId
+       JOIN [ATAPUtilities].[RepositoryRootRegistration] priorRoot
+         ON priorRoot.RepositoryRootRegistrationId=c.PriorRepositoryRootRegistrationId
+       JOIN [ATAPUtilities].[RepositoryRootRegistration] successorRoot
+         ON successorRoot.RepositoryRootRegistrationId=c.SuccessorRepositoryRootRegistrationId
+       JOIN [ATAPUtilities].[RepositoryRootCanonicalIdentity] canonicalRoot
+         ON canonicalRoot.RepositoryRootRegistrationId=successorRoot.RepositoryRootRegistrationId
+       WHERE c.CorrectionId=@CorrectionId AND c.RepositoryId=@RepositoryId
+         AND c.PriorRepositoryRootRegistrationId=@PriorRepositoryRootRegistrationId
+         AND c.SuccessorRepositoryRootRegistrationId=@SuccessorRepositoryRootRegistrationId
+         AND c.PrincipalId=@PrincipalId AND c.EvidenceEntityId=@EvidenceEntityId
+         AND c.Reason=@Reason AND c.RecordedAtUtc=@RecordedAtUtc
+         AND r.RetiredAtUtc IS NULL
+         AND priorRoot.RepositoryId=@RepositoryId AND priorRoot.RetiredAtUtc=@RecordedAtUtc
+         AND successorRoot.RepositoryId=@RepositoryId AND successorRoot.NormalizedRoot=@Root
+         AND successorRoot.RootKindCode=@RootKindCode AND successorRoot.RegisteredAtUtc=@RecordedAtUtc
+         AND successorRoot.RetiredAtUtc IS NULL AND successorRoot.RegistrarEntityId=@PrincipalId
+         AND successorRoot.EvidenceEntityId=@EvidenceEntityId AND successorRoot.RecordedAtUtc=@RecordedAtUtc
+         AND canonicalRoot.CanonicalWindowsRoot=@Root AND canonicalRoot.RecordedAtUtc=@RecordedAtUtc)
+        THROW 60484, ''CS-CORRECT-005: correction replay conflicts with immutable correction content.'', 1;
+      COMMIT TRANSACTION;
+      SELECT @CorrectionId [CorrectionId],@RepositoryId [RepositoryId],@PriorRepositoryRootRegistrationId [PriorRepositoryRootRegistrationId],
+        @SuccessorRepositoryRootRegistrationId [SuccessorRepositoryRootRegistrationId],@Root [CanonicalRoot],
+        CAST(''Existing'' AS varchar(16)) [StatusCode],CAST(NULL AS varchar(32)) [ErrorCode]; RETURN;
+    END;
     IF NOT EXISTS (SELECT 1 FROM [ATAPUtilities].[RepositoryRootRegistration] WITH (UPDLOCK,HOLDLOCK)
       WHERE RepositoryRootRegistrationId=@PriorRepositoryRootRegistrationId AND RepositoryId=@RepositoryId
         AND RetiredAtUtc IS NULL AND RegisteredAtUtc<@RecordedAtUtc)
       THROW 60483, ''CS-CORRECT-004: active prior root does not exist or correction time is invalid.'', 1;
     IF EXISTS (SELECT 1 FROM [ATAPUtilities].[RepositoryRootCanonicalIdentity] WITH (UPDLOCK,HOLDLOCK) WHERE CanonicalWindowsRoot=@Root)
        OR EXISTS (SELECT 1 FROM [ATAPUtilities].[RepositoryRootRegistration] WHERE RepositoryRootRegistrationId=@SuccessorRepositoryRootRegistrationId)
-       OR EXISTS (SELECT 1 FROM [ATAPUtilities].[ContentSummaryRepositoryRootCorrection] WHERE CorrectionId=@CorrectionId)
       THROW 60484, ''CS-CORRECT-005: successor root or correction identity collision detected.'', 1;
     UPDATE [ATAPUtilities].[RepositoryRootRegistration] SET RetiredAtUtc=@RecordedAtUtc
       WHERE RepositoryRootRegistrationId=@PriorRepositoryRootRegistrationId;
@@ -529,19 +715,46 @@ BEGIN
 END;';
 
     EXEC sys.sp_executesql N'CREATE PROCEDURE [ATAPUtilities].[RetireContentSummaryDatabasePrincipalRepositoryAuthorizationV1]
-  @AuthorizationId uniqueidentifier,@RetiredAtUtc datetime2(7),@SourceReference nvarchar(512)
+  @AuthorizationId uniqueidentifier,@RetiredAtUtc datetime2(7),@PrincipalId uniqueidentifier,
+  @EvidenceEntityId uniqueidentifier,@Reason nvarchar(1024),@SourceReference nvarchar(512)
 AS
 BEGIN
-  SET NOCOUNT ON; SET XACT_ABORT ON;
-  IF @AuthorizationId IS NULL OR @RetiredAtUtc IS NULL OR NULLIF(@SourceReference,N'''') IS NULL
+  SET NOCOUNT ON; SET XACT_ABORT ON; SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+  IF @AuthorizationId IS NULL OR @AuthorizationId=''00000000-0000-0000-0000-000000000000''
+     OR @RetiredAtUtc IS NULL
+     OR @PrincipalId IS NULL OR @PrincipalId=''00000000-0000-0000-0000-000000000000''
+     OR @EvidenceEntityId IS NULL OR @EvidenceEntityId=''00000000-0000-0000-0000-000000000000''
+     OR NULLIF(LTRIM(RTRIM(@Reason)),N'''') IS NULL
+     OR NULLIF(LTRIM(RTRIM(@SourceReference)),N'''') IS NULL
     THROW 60490, ''CS-AUTH-RETIRE-001: authorization, time, and source are required.'', 1;
   BEGIN TRY BEGIN TRANSACTION;
+    IF NOT EXISTS (SELECT 1 FROM [ATAPUtilities].[ContentSummaryOperationalIdentity] WHERE OperationalIdentityId=@PrincipalId AND IdentityKindCode=''PrincipalRegistrar'')
+       OR NOT EXISTS (SELECT 1 FROM [ATAPUtilities].[ContentSummaryOperationalIdentity] WHERE OperationalIdentityId=@EvidenceEntityId AND IdentityKindCode=''Evidence'')
+      THROW 60493, ''CS-AUTH-RETIRE-004: retirement actor or evidence identity is not controlled.'', 1;
     IF NOT EXISTS (SELECT 1 FROM [ATAPUtilities].[ContentSummaryDatabasePrincipalRepositoryAuthorization] WITH (UPDLOCK,HOLDLOCK) WHERE AuthorizationId=@AuthorizationId)
       THROW 60491, ''CS-AUTH-RETIRE-002: authorization does not exist.'', 1;
-    UPDATE [ATAPUtilities].[ContentSummaryDatabasePrincipalRepositoryAuthorization] SET ValidToUtc=@RetiredAtUtc
-      WHERE AuthorizationId=@AuthorizationId AND ValidToUtc IS NULL AND ValidFromUtc<@RetiredAtUtc;
-    IF @@ROWCOUNT=0 AND EXISTS (SELECT 1 FROM [ATAPUtilities].[ContentSummaryDatabasePrincipalRepositoryAuthorization] WHERE AuthorizationId=@AuthorizationId AND ValidToUtc IS NULL)
+    IF EXISTS (SELECT 1 FROM [ATAPUtilities].[ContentSummaryDatabasePrincipalRepositoryAuthorization] WHERE AuthorizationId=@AuthorizationId AND ValidToUtc IS NOT NULL)
+    BEGIN
+      IF NOT EXISTS
+      (SELECT 1 FROM [ATAPUtilities].[ContentSummaryDatabasePrincipalRepositoryAuthorization] a
+       JOIN [ATAPUtilities].[ContentSummaryAuthorizationRetirementEvidence] e ON e.AuthorizationId=a.AuthorizationId
+       WHERE a.AuthorizationId=@AuthorizationId AND a.ValidToUtc=@RetiredAtUtc
+         AND e.RetiredAtUtc=@RetiredAtUtc AND e.PrincipalId=@PrincipalId
+         AND e.EvidenceEntityId=@EvidenceEntityId AND e.Reason=@Reason
+         AND e.SourceReference=@SourceReference AND e.RecordedAtUtc=@RetiredAtUtc)
+        THROW 60494, ''CS-AUTH-RETIRE-005: authorization retirement replay conflicts with immutable close evidence.'', 1;
+      COMMIT TRANSACTION;
+      SELECT @AuthorizationId [AuthorizationId],CAST(''Existing'' AS varchar(16)) [StatusCode],CAST(NULL AS varchar(32)) [ErrorCode]; RETURN;
+    END;
+    IF EXISTS (SELECT 1 FROM [ATAPUtilities].[ContentSummaryDatabasePrincipalRepositoryAuthorization]
+               WHERE AuthorizationId=@AuthorizationId AND ValidFromUtc>=@RetiredAtUtc)
       THROW 60492, ''CS-AUTH-RETIRE-003: retirement time must follow authorization start.'', 1;
+    INSERT INTO [ATAPUtilities].[ContentSummaryAuthorizationRetirementEvidence]
+      ([AuthorizationId],[RetiredAtUtc],[PrincipalId],[EvidenceEntityId],[Reason],[SourceReference],[RecordedAtUtc])
+      VALUES (@AuthorizationId,@RetiredAtUtc,@PrincipalId,@EvidenceEntityId,@Reason,@SourceReference,@RetiredAtUtc);
+    UPDATE [ATAPUtilities].[ContentSummaryDatabasePrincipalRepositoryAuthorization] SET ValidToUtc=@RetiredAtUtc
+      WHERE AuthorizationId=@AuthorizationId AND ValidToUtc IS NULL;
+    IF @@ROWCOUNT<>1 THROW 60495, ''CS-AUTH-RETIRE-006: authorization close was not applied exactly once.'', 1;
     COMMIT TRANSACTION;
     SELECT @AuthorizationId [AuthorizationId],CAST(''Retired'' AS varchar(16)) [StatusCode],CAST(NULL AS varchar(32)) [ErrorCode];
   END TRY BEGIN CATCH IF XACT_STATE()<>0 ROLLBACK TRANSACTION; THROW; END CATCH;

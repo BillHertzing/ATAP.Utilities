@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.1.4
+
+- Adds deterministic, secret-free DAB configuration generation for the
+  ContentSummary scalar stored-procedure custom tool.
+- Rejects mismatched tier keys, catalog ports, identity metadata, duplicate
+  reservations, and pre-existing configurations that would widen access.
+- Disables REST, GraphQL, generic MCP DML, raw database entities, and secondary
+  MCP tools for the dedicated ContentSummary configuration.
+
 ## 0.1.3
 
 - Defers the DAB executable lookup until after `-WhatIf` has returned so dry-run

@@ -51,7 +51,7 @@ Describe 'DotnetBuild child module contract' -Tag 'Unit', 'Contract' {
 
   It 'declares accepted immutable dependency floors' {
     $manifest = Import-PowerShellDataFile -LiteralPath $script:manifestPath
-[string]$manifest.ModuleVersion | Should -BeExactly '0.1.3'
+[string]$manifest.ModuleVersion | Should -BeExactly '0.1.4'
     $dependencies = @{}
     foreach ($requiredModule in $manifest.RequiredModules) {
       $dependencies[$requiredModule.ModuleName] = [string] $requiredModule.ModuleVersion

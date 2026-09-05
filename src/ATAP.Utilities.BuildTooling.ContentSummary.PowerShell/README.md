@@ -1,9 +1,16 @@
 # ATAP.Utilities.BuildTooling.ContentSummary.PowerShell
 
-This module supplies `Get-ContentSummary`, the narrow compatibility client used by the
-`gather-content-summary` agent. It sends only `tags`, `depth`, `width`, and `instance` to
-AceOutpost. It uses ambient Windows Integrated Authentication with the current identity;
-SQL access and explicit credential or secret resolution are outside this module.
+This module supplies two public commands:
+
+- `Get-ContentSummary`, the narrow compatibility client used by the
+  `gather-content-summary` agent.
+- `Invoke-ContentSummaryHarvest`, the deterministic ingestion boundary that observes,
+  normalizes, classifies, redacts, summarizes, and submits one source artifact through
+  injected generator and repository operations.
+
+`Get-ContentSummary` sends only `tags`, `depth`, `width`, and `instance` to AceOutpost.
+It uses ambient Windows Integrated Authentication with the current identity. SQL access
+and explicit credential or secret resolution are outside the client.
 
 The endpoint is resolved through ATAP configuration keys
 `AceOutpost:Ingestion:Scheme`, `AceOutpost:Ingestion:Host`,
@@ -18,6 +25,20 @@ use 30 seconds for that timeout. Every actual invocation is recorded through
 `Write-GatherCallRecord`; the full returned `items` collection is not written to that record.
 Each logical invocation sends a fresh UUID in the `Idempotency-Key` HTTP header. The key is
 not added to the JSON body, persisted by this module, or reused for a separate invocation.
+
+The client returns exactly `agent`, `status`, `query`, `items`, `truncated`, and
+`error`. AceOutpost `Success` is normalized to `status=ok` only after the echoed query
+and every item pass structural and type validation. An authorized empty response remains
+`ok` with no items, no truncation, and no error. Malformed, mismatched, or
+secret-canary-bearing responses return no items and a stable safe error. Server error
+codes, correlation IDs, and observed HTTP status are retained when their envelope is valid.
+A legacy `NotImplemented` response remains distinguishable through marker and blocker data
+inside `error` and the mandatory gather-call record; no fallback content is fabricated.
+
+`Invoke-ContentSummaryHarvest` performs no source discovery, model invocation, or durable
+write implicitly. Callers inject each operation. Source text is classified and redacted
+locally before generator egress, and the repository operation receives only the canonical
+safe envelope.
 
 ```powershell
 Get-ContentSummary -Tags @('schema', 'migration') -Port 50010

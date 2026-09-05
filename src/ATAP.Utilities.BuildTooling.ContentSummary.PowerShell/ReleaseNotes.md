@@ -1,5 +1,16 @@
 # Release notes
 
+## 0.1.5
+
+- Validate the full AceOutpost response before exposing any ContentSummary item.
+- Normalize real and authorized-empty success to the stable six-field public envelope.
+- Preserve safe server error codes, correlation IDs, HTTP distinctions, and legacy
+  NotImplemented blocker evidence without fabricating fallback content.
+- Map cancellation and transport failures to stable safe errors and record true
+  no-response attempts distinctly.
+- Export `Invoke-ContentSummaryHarvest` with its deterministic hashing, normalization,
+  redaction, provenance, and repository-envelope boundary.
+
 ## 0.1.4
 
 - Use the current Windows identity for the ratified Negotiate authentication contract.

@@ -231,6 +231,8 @@ Describe 'Invoke-ContentSummaryHarvest deterministic boundary' -Tag 'Unit', 'Tas
       $script:lastLoaderArguments.Contains('SourceBytes') | Should -BeFalse
       $script:lastLoaderArguments.CanonicalRequestSha256.GetType().FullName | Should -BeExactly 'System.Byte[]'
       $script:lastLoaderArguments.CanonicalRequestSha256.Count | Should -Be 32
+      $script:lastLoaderArguments.SafeSummaryText | Should -BeExactly 'deterministic safe summary'
+      $script:lastLoaderArguments.SafeLocator | Should -Be $null
       $script:lastLoaderArguments.DerivationFingerprint.Count | Should -Be 32
       @($script:lastLoaderArguments.Dependencies).Count | Should -Be 2
       ($script:lastLoaderArguments.Dependencies[0].PSObject.Properties.Name -join ',') |
@@ -239,6 +241,18 @@ Describe 'Invoke-ContentSummaryHarvest deterministic boundary' -Tag 'Unit', 'Tas
       $script:lastLoaderArguments.Dependencies[1].DependencyOrdinal | Should -Be 1
     }
 
+    It 'preserves locator-only output as a nullable SQL payload pair' {
+      $script:arguments.SummaryGenerator = {
+        param($SafeContent, $Context, $CancellationToken)
+        [pscustomobject]@{ SafeSummaryText = ''; SafeLocator = 'https://example.test/summaries/one' }
+      }
+
+      $result = Invoke-ContentSummaryHarvest @script:arguments
+
+      $result.status | Should -BeExactly 'ok'
+      $script:lastLoaderArguments.SafeSummaryText | Should -Be $null
+      $script:lastLoaderArguments.SafeLocator | Should -BeExactly 'https://example.test/summaries/one'
+    }
     It 'produces the same canonical and derivation hashes for reordered equivalent inputs' {
       $first = Invoke-ContentSummaryHarvest @script:arguments
       $reordered = @{} + $script:arguments

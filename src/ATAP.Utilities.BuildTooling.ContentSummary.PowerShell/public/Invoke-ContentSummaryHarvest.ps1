@@ -358,10 +358,10 @@ function Invoke-ContentSummaryHarvest {
         if ($generated -is [string]) {
           $safeSummaryText = [string]$generated
         } else {
-          if ($null -ne $generated.PSObject.Properties['SafeSummaryText']) {
+          if ($null -ne $generated.PSObject.Properties['SafeSummaryText'] -and $null -ne $generated.SafeSummaryText) {
             $safeSummaryText = [string]$generated.SafeSummaryText
           }
-          if ($null -ne $generated.PSObject.Properties['SafeLocator']) {
+          if ($null -ne $generated.PSObject.Properties['SafeLocator'] -and $null -ne $generated.SafeLocator) {
             $safeLocator = [string]$generated.SafeLocator
           }
         }
@@ -370,6 +370,8 @@ function Invoke-ContentSummaryHarvest {
         if ($hasSafeSummary -eq $hasSafeLocator) {
           throw [System.InvalidOperationException]::new('CS-SUMMARY-001: generator must return exactly one complete safe output.')
         }
+        if (-not $hasSafeSummary) { $safeSummaryText = $null }
+        if (-not $hasSafeLocator) { $safeLocator = $null }
         if ($hasSafeLocator -and $safeLocator.Length -gt 2048) {
           throw [System.InvalidOperationException]::new('CS-REQ-001: safe locator exceeds the frozen loader limit.')
         }

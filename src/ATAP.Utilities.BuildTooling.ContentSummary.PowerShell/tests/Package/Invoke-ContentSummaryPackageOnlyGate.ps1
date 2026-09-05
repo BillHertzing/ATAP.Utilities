@@ -41,6 +41,7 @@ $setParameterValue = & $module {
 }
 $storedProcedureInvoker = {
   param($SqlConnection,$ProcedureName,$Parameters,$ResultPropertyOrder,$AllowedStatusCodes,$StatusPropertyName,$CommandTimeoutSeconds)
+  $finalParameterValues = [ordered]@{}
   foreach ($entry in $Parameters.GetEnumerator()) {
     $definition = $entry.Value
     $parameter = [Microsoft.Data.SqlClient.SqlParameter]::new()
@@ -49,6 +50,7 @@ $storedProcedureInvoker = {
     if ($null -ne $definition.Size) { $parameter.Size = [int]$definition.Size }
     if ($null -ne $definition.TypeName) { $parameter.TypeName = [string]$definition.TypeName }
     [void](& $setParameterValue -Parameter $parameter -Value $definition.Value)
+    $finalParameterValues[$entry.Key] = $parameter.Value
     if ($definition.SqlDbType -eq 'Binary') {
       if ($null -eq $definition.Value) {
         if ($parameter.Value -isnot [DBNull]) { throw "Null Binary parameter '$($entry.Key)' did not reach the DBNull boundary." }
@@ -72,6 +74,9 @@ $storedProcedureInvoker = {
       }
     }
     'ATAPUtilities.CaptureContentSummaryObservationV1' {
+      $hasSummaryText = $finalParameterValues.SafeSummaryText -isnot [DBNull]
+      $hasLocator = $finalParameterValues.SafeLocator -isnot [DBNull]
+      if ($hasSummaryText -eq $hasLocator) { throw 'Final safe summary payload must contain exactly one SQL value.' }
       foreach ($hashName in @('CanonicalRequestSha256','ByteSha256','NormalizedContentSha256','DerivationFingerprint')) {
         $hashValue = $Parameters[$hashName].Value
         if ($hashValue -isnot [byte[]] -or $hashValue.Length -ne 32) {
@@ -140,6 +145,9 @@ $captured = & $sqlAdapterSet.Capture `
   -SourceArtifactVersionId $sourceArtifactVersionId `
   -ContentSummaryId $contentSummaryId `
   -ContentSummaryVersionId $contentSummaryVersionId `
+  -LifecycleCode 'summarized' `
+  -SafeSummaryText 'package-only summary' `
+  -SafeLocator $null `
   -Dependencies @() `
   @hashArguments
 if ($captured.IdempotencyKey -ne $idempotencyKey -or $captured.ContentSummaryVersionId -ne $contentSummaryVersionId) {
@@ -152,12 +160,26 @@ $hashArguments.SummaryContentSha256 = $null
   -SourceArtifactVersionId $sourceArtifactVersionId `
   -ContentSummaryId $contentSummaryId `
   -ContentSummaryVersionId $contentSummaryVersionId `
+  -LifecycleCode 'summarized' `
+  -SafeSummaryText 'package-only summary' `
+  -SafeLocator $null `
   -Dependencies @() `
   @hashArguments | Out-Null
 if ($null -ne $hashArguments.SummaryContentSha256) {
   throw 'Package-only nullable binary fixture changed unexpectedly.'
 }
-
+$hashArguments.SummaryContentSha256 = [byte[]](3..34)
+& $sqlAdapterSet.Capture `
+  -IdempotencyKey $idempotencyKey `
+  -SourceArtifactId $sourceArtifactId `
+  -SourceArtifactVersionId $sourceArtifactVersionId `
+  -ContentSummaryId $contentSummaryId `
+  -ContentSummaryVersionId $contentSummaryVersionId `
+  -LifecycleCode 'summarized' `
+  -SafeSummaryText $null `
+  -SafeLocator 'https://example.test/summaries/package-only' `
+  -Dependencies @() `
+  @hashArguments | Out-Null
 $validated = Read-ContentSummaryRepositoryInventory -Path $InventoryPath -ExpectedSha256 $InventorySha
 $adapterSet = [pscustomobject][ordered]@{
   SchemaVersion = 1

@@ -1,6 +1,6 @@
 @{
   RootModule = 'ATAP.Utilities.BuildTooling.ContentSummary.PowerShell.psm1'
-  ModuleVersion = '0.1.9'
+  ModuleVersion = '0.1.10'
   CompatiblePSEditions = @('Core')
   GUID = '35c51a21-6e84-4c6d-b745-5ca83d8a7680'
   Author = 'Bill Hertzing for ATAPUtilities.org'
@@ -25,7 +25,7 @@
   PrivateData = @{
     PSData = @{
       Tags = @('ATAP', 'AceOutpost', 'ContentSummary', 'REST', 'SqlClient')
-      ReleaseNotes = 'Preserve binary values through final SqlParameter assignment by avoiding PowerShell conditional-output enumeration.'
+      ReleaseNotes = 'Preserve null for the unused safe summary payload so SQL lifecycle XOR validation receives DBNull.'
     }
   }
 }

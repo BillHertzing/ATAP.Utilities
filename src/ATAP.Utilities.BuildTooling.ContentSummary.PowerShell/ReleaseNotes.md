@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.1.10
+
+- Preserve `` for the unused safe summary payload instead of converting it to an
+  empty string when reading generator output.
+- Verify both summarized-text and locator-only paths reach the packaged SQL adapter as
+  exactly one value and one `DBNull` value.
+
 ## 0.1.9
 
 - Assign values to the final SqlParameter through separate null and non-null branches so

@@ -81,7 +81,7 @@ Describe 'DAB MCP helpers' -Tag 'Unit' {
     $entity.source.parameters[2].required | Should -BeFalse
     $entity.source.parameters[2].default | Should -BeExactly '2'
     $entity.source.parameters[3].required | Should -BeFalse
-    $entity.source.parameters[3].default | Should -BeExactly 'production'
+    $entity.source.parameters[3].default | Should -BeExactly 'exp'
     @($entity.permissions).Count | Should -Be 1
     $entity.permissions[0].role | Should -BeExactly 'contentsummary-mcp-reader'
     @($entity.permissions[0].actions.action) | Should -Be @('execute')
@@ -181,24 +181,29 @@ Describe 'DAB MCP helpers' -Tag 'Unit' {
     @($config.entities.PSObject.Properties.Name) | Should -Be @('QueryContentSummaryCandidatesForMcpV1')
   }
 
-  It 'accepts only the exact native key and port for <Tier>' -ForEach @(
-    @{ Tier = 'Exp'; NativeKey = 'dab-contentsummary-ataputilities-exp'; Port = 5104 }
-    @{ Tier = 'Dev'; NativeKey = 'dab-contentsummary-ataputilities-dev'; Port = 5114 }
-    @{ Tier = 'QA'; NativeKey = 'dab-contentsummary-ataputilities-qa'; Port = 5124 }
-    @{ Tier = 'Integration'; NativeKey = 'dab-contentsummary-ataputilities-integration'; Port = 5134 }
-    @{ Tier = 'Production'; NativeKey = 'dab-contentsummary-ataputilities-production'; Port = 5144 }
+  It 'accepts the exact native key and port and emits the correct Instance default for <Tier>' -ForEach @(
+    @{ Tier = 'Exp'; NativeKey = 'dab-contentsummary-ataputilities-exp'; Port = 5104; Instance = 'exp' }
+    @{ Tier = 'Dev'; NativeKey = 'dab-contentsummary-ataputilities-dev'; Port = 5114; Instance = 'dev' }
+    @{ Tier = 'QA'; NativeKey = 'dab-contentsummary-ataputilities-qa'; Port = 5124; Instance = 'qa' }
+    @{ Tier = 'Integration'; NativeKey = 'dab-contentsummary-ataputilities-integration'; Port = 5134; Instance = 'integration' }
+    @{ Tier = 'Production'; NativeKey = 'dab-contentsummary-ataputilities-production'; Port = 5144; Instance = 'production' }
   ) {
+    $configPath = Join-Path $TestDrive "$Tier.json"
     $result = Initialize-DabMcpConfiguration `
-      -ConfigPath (Join-Path $TestDrive "$Tier.json") `
+      -ConfigPath $configPath `
       -ExposureMode ContentSummaryExecuteOnly `
       -Tier $Tier `
       -NativeKey $NativeKey `
       -CatalogPort $Port `
       -ConnectionStringSecretName "dbConnectionString.ATAPUtilities.utat01.$Tier" `
-      -WhatIf
+      -Confirm:$false
 
     $result.NativeKey | Should -BeExactly $NativeKey
     $result.CatalogPort | Should -Be $Port
+    $config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json
+    $parameters = @($config.entities.QueryContentSummaryCandidatesForMcpV1.source.parameters)
+    @($parameters.name) | Should -Be @('Tags', 'Depth', 'Width', 'Instance')
+    $parameters[3].default | Should -BeExactly $Instance
   }
 
   It 'rejects mismatched tier keys and ports' {

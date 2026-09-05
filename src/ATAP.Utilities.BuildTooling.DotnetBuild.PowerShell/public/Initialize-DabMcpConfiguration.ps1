@@ -201,7 +201,7 @@ function Initialize-DabMcpConfiguration {
             name = 'Instance'
             description = 'Requested database tier; must match the routed server.'
             required = $false
-            default = 'production'
+            default = $tierDefinition.Suffix
           }
         )
         $entities = [ordered]@{}

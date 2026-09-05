@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.1.9
+
+- Assign values to the final SqlParameter through separate null and non-null branches so
+  PowerShell cannot enumerate a `System.Byte[]` through conditional-expression output.
+- Exercise the packaged assignment helper against real Microsoft.Data.SqlClient parameters
+  and assert exact byte-array or `DBNull` values before procedure execution.
+
 ## 0.1.8
 
 - Preserve every non-null capture SHA-256 value as an exact 32-byte `System.Byte[]`

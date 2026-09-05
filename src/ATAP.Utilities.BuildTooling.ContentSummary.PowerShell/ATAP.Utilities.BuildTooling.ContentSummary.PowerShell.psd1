@@ -1,6 +1,6 @@
 @{
   RootModule = 'ATAP.Utilities.BuildTooling.ContentSummary.PowerShell.psm1'
-  ModuleVersion = '0.1.8'
+  ModuleVersion = '0.1.9'
   CompatiblePSEditions = @('Core')
   GUID = '35c51a21-6e84-4c6d-b745-5ca83d8a7680'
   Author = 'Bill Hertzing for ATAPUtilities.org'
@@ -25,7 +25,7 @@
   PrivateData = @{
     PSData = @{
       Tags = @('ATAP', 'AceOutpost', 'ContentSummary', 'REST', 'SqlClient')
-      ReleaseNotes = 'Preserve capture SHA-256 parameters as exact 32-byte arrays through the packaged SqlClient adapter boundary.'
+      ReleaseNotes = 'Preserve binary values through final SqlParameter assignment by avoiding PowerShell conditional-output enumeration.'
     }
   }
 }

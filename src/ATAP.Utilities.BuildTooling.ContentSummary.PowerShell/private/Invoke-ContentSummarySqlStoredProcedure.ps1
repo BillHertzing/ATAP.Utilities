@@ -64,7 +64,7 @@ function Invoke-ContentSummarySqlStoredProcedure {
         if ($null -ne $definition.TypeName) {
           $parameter.TypeName = [string]$definition.TypeName
         }
-        $parameter.Value = if ($null -eq $definition.Value) { [DBNull]::Value } else { $definition.Value }
+        [void](Set-ContentSummarySqlParameterValue -Parameter $parameter -Value $definition.Value)
         [void]$command.Parameters.Add($parameter)
       }
 

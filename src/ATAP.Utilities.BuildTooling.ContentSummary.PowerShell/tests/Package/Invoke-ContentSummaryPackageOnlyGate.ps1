@@ -25,8 +25,38 @@ foreach ($functionName in $privateFunctionNames) {
   }
 }
 
+if ($null -eq ('Microsoft.Data.SqlClient.SqlParameter' -as [type])) {
+  $sqlClientRoot = Join-Path $HOME '.nuget\packages\microsoft.data.sqlclient'
+  $sqlClientAssembly = Get-ChildItem -LiteralPath $sqlClientRoot -Filter 'Microsoft.Data.SqlClient.dll' -File -Recurse |
+    Where-Object FullName -Like '*\runtimes\win\lib\net8.0\*' |
+    Sort-Object FullName -Descending |
+    Select-Object -First 1 -ExpandProperty FullName
+  if ([string]::IsNullOrWhiteSpace($sqlClientAssembly)) {
+    throw 'Microsoft.Data.SqlClient.dll was not found for the package-only parameter boundary test.'
+  }
+  Add-Type -Path $sqlClientAssembly
+}
+$setParameterValue = & $module {
+  Get-Command -Name 'Set-ContentSummarySqlParameterValue' -CommandType Function -ErrorAction Stop
+}
 $storedProcedureInvoker = {
   param($SqlConnection,$ProcedureName,$Parameters,$ResultPropertyOrder,$AllowedStatusCodes,$StatusPropertyName,$CommandTimeoutSeconds)
+  foreach ($entry in $Parameters.GetEnumerator()) {
+    $definition = $entry.Value
+    $parameter = [Microsoft.Data.SqlClient.SqlParameter]::new()
+    $parameter.ParameterName = "@$($entry.Key)"
+    $parameter.SqlDbType = [System.Data.SqlDbType]::$($definition.SqlDbType)
+    if ($null -ne $definition.Size) { $parameter.Size = [int]$definition.Size }
+    if ($null -ne $definition.TypeName) { $parameter.TypeName = [string]$definition.TypeName }
+    [void](& $setParameterValue -Parameter $parameter -Value $definition.Value)
+    if ($definition.SqlDbType -eq 'Binary') {
+      if ($null -eq $definition.Value) {
+        if ($parameter.Value -isnot [DBNull]) { throw "Null Binary parameter '$($entry.Key)' did not reach the DBNull boundary." }
+      } elseif ($parameter.Value -isnot [byte[]] -or $parameter.Value.Length -ne 32) {
+        throw "Final SqlParameter '$($entry.Key)' is not an exact 32-byte array."
+      }
+    }
+  }
   switch ($ProcedureName) {
     'ATAPUtilities.ProvisionContentSummaryRepositoryV1' {
       $canonicalRoot = ([string]$Parameters.CanonicalRoot.Value).Replace('/','\').ToLowerInvariant()

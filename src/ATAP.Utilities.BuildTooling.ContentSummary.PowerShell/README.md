@@ -1,6 +1,6 @@
 # ATAP.Utilities.BuildTooling.ContentSummary.PowerShell
 
-Version 0.1.8 packages the module as a self-contained flattened `.psm1`. All public and
+Version 0.1.9 packages the module as a self-contained flattened `.psm1`. All public and
 private function definitions used by inventory validation, capture acknowledgement, SQL
 adapters, and deterministic generation are embedded in that file; an installed package
 does not dot-source the repository's `public` or `private` directories. Returned SQL adapter closures bind their private module commands before leaving

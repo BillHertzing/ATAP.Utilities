@@ -37,12 +37,27 @@ function ConvertTo-ContentSummarySqlParameterDefinitions {
     $definitions = [ordered]@{}
     foreach ($name in $schema.Keys) {
       $parts = ([string]$schema[$name]).Split(':', 3)
-      $definitions[$name] = [pscustomobject]@{
+      $parameterValue = $Values[$name]
+      if ($parts[0] -eq 'DateTime2' -and $parameterValue -is [datetimeoffset]) {
+        $parameterValue = ([datetimeoffset]$parameterValue).UtcDateTime
+      } elseif ($parts[0] -eq 'Binary' -and $null -ne $parameterValue) {
+        try {
+          $parameterValue = [byte[]]$parameterValue
+        } catch {
+          throw "CS-REQ-001: $name must be binary data."
+        }
+        if ($parts.Count -gt 1 -and $parts[1] -and $parameterValue.Length -ne [int]$parts[1]) {
+          throw "CS-REQ-001: $name must contain exactly $($parts[1]) bytes."
+        }
+      }
+      $definition = [pscustomobject]@{
         SqlDbType = $parts[0]
         Size = if ($parts.Count -gt 1 -and $parts[1]) { [int]$parts[1] } else { $null }
         TypeName = if ($parts.Count -gt 2 -and $parts[2]) { [string]$parts[2] } else { $null }
-        Value = if ($parts[0] -eq 'DateTime2' -and $Values[$name] -is [datetimeoffset]) { ([datetimeoffset]$Values[$name]).UtcDateTime } else { $Values[$name] }
+        Value = $null
       }
+      $definition.Value = $parameterValue
+      $definitions[$name] = $definition
     }
     return $definitions
   }

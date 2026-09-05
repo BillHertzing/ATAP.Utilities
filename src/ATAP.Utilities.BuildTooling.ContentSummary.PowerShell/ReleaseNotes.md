@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.1.8
+
+- Preserve every non-null capture SHA-256 value as an exact 32-byte `System.Byte[]`
+  when materializing SqlClient parameters; nullable binary values remain null for the
+  existing `DBNull` conversion path.
+- Verify the typed binary boundary through unit tests and fresh package-only capture execution.
+
 ## 0.1.7
 
 - Rebuild the immutable package from the complete production-adapter source set so the

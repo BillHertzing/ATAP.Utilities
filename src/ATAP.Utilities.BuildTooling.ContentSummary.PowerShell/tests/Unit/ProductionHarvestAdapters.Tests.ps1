@@ -38,8 +38,8 @@ Describe 'ContentSummary production harvest adapters' -Tag 'Unit','Task15.60.c-f
     }
   }
 
-  It 'exports the minimal production surface at immutable version 0.1.7' {
-    (Get-Module ATAP.Utilities.BuildTooling.ContentSummary.PowerShell).Version.ToString() | Should -Be '0.1.7'
+  It 'exports the minimal production surface at immutable version 0.1.8' {
+    (Get-Module ATAP.Utilities.BuildTooling.ContentSummary.PowerShell).Version.ToString() | Should -Be '0.1.8'
     foreach ($name in @('New-ContentSummarySqlAdapterSet','Read-ContentSummaryRepositoryInventory','Invoke-ContentSummaryRepositoryInventory','New-ContentSummaryDeterministicSafeSummaryGenerator')) {
       Get-Command $name -Module ATAP.Utilities.BuildTooling.ContentSummary.PowerShell | Should -Not -BeNullOrEmpty
     }
@@ -141,7 +141,49 @@ Describe 'ContentSummary private SQL conversion contracts' -Tag 'Unit','Task15.6
     $definitions.RecordedAtUtc.Value.GetType().FullName | Should -BeExactly 'System.DateTime'
     $definitions.RecordedAtUtc.Value.Kind | Should -Be ([DateTimeKind]::Utc)
   }
-}
+
+  It 'preserves capture Binary parameters as exact byte arrays and leaves nullable binary null' {
+    $holder = [pscustomobject]@{ Parameters = $null }
+    $invoker = {
+      param($SqlConnection,$ProcedureName,$Parameters)
+      $holder.Parameters = $Parameters
+      [pscustomobject][ordered]@{
+        ReplayStatus='Created'; IdempotencyKey=$Parameters.IdempotencyKey.Value
+        SourceArtifactId=$Parameters.SourceArtifactId.Value; SourceArtifactVersionId=$Parameters.SourceArtifactVersionId.Value
+        ContentSummaryId=$Parameters.ContentSummaryId.Value; ContentSummaryVersionId=$Parameters.ContentSummaryVersionId.Value
+        SourceArtifactVersionSequence=1; ContentSummaryVersionSequence=1; LifecycleCode='active'; ErrorCode=$null
+      }
+    }.GetNewClosure()
+    $adapterSet = & $script:module {
+      param($StoredProcedureInvoker)
+      New-ContentSummarySqlAdapterSetCore -SqlConnection ([pscustomobject]@{}) -CommandTimeoutSeconds 30 -StoredProcedureInvoker $StoredProcedureInvoker
+    } $invoker
+    $ids = 1..5 | ForEach-Object { [guid]("74000000-0000-0000-0000-{0:D12}" -f $_) }
+    $hashArguments = @{
+      CanonicalRequestSha256 = [object[]](0..31)
+      ByteSha256 = [byte[]](1..32)
+      NormalizedContentSha256 = [object[]](2..33)
+      SummaryContentSha256 = [byte[]](3..34)
+      DerivationFingerprint = [object[]](4..35)
+    }
+    & $adapterSet.Capture -IdempotencyKey $ids[0] -SourceArtifactId $ids[1] -SourceArtifactVersionId $ids[2] `
+      -ContentSummaryId $ids[3] -ContentSummaryVersionId $ids[4] -Dependencies @() @hashArguments | Out-Null
+    foreach ($name in $hashArguments.Keys) {
+      $holder.Parameters[$name].Value.GetType().FullName | Should -BeExactly 'System.Byte[]'
+      $holder.Parameters[$name].Value.Length | Should -Be 32
+    }
+
+    $hashArguments.SummaryContentSha256 = $null
+    & $adapterSet.Capture -IdempotencyKey $ids[0] -SourceArtifactId $ids[1] -SourceArtifactVersionId $ids[2] `
+      -ContentSummaryId $ids[3] -ContentSummaryVersionId $ids[4] -Dependencies @() @hashArguments | Out-Null
+    $holder.Parameters.SummaryContentSha256.Value | Should -BeNullOrEmpty
+
+    $hashArguments.SummaryContentSha256 = [byte[]](3..34)
+    $hashArguments.CanonicalRequestSha256 = [byte[]](0..30)
+    { & $adapterSet.Capture -IdempotencyKey $ids[0] -SourceArtifactId $ids[1] -SourceArtifactVersionId $ids[2] `
+        -ContentSummaryId $ids[3] -ContentSummaryVersionId $ids[4] -Dependencies @() @hashArguments } |
+      Should -Throw '*CanonicalRequestSha256 must contain exactly 32 bytes*'
+  }}
 
 Describe 'ContentSummary adapter review corrections' -Tag 'Unit','Task15.60.c-f' {
   BeforeAll {

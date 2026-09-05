@@ -52,7 +52,7 @@ Describe 'ContentSummary isolated package surface' -Tag 'Package','Task15.60.c-f
     $packagedText | Should -Not -Match 'Get-ChildItem[^\r\n]+[\\/]private'
   }
 
-  It 'validates inventory and plans WhatIf from only the expanded package' {
+  It 'invokes typed SQL adapters and validates inventory from only the expanded package' {
     $originUri = (& git -C $script:repoRoot config --get remote.origin.url).Trim()
     if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($originUri)) {
       throw 'Cannot establish the real repository origin for the package-only test.'

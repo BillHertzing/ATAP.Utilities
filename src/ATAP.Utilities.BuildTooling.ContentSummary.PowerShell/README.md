@@ -1,10 +1,12 @@
 # ATAP.Utilities.BuildTooling.ContentSummary.PowerShell
 
-Version 0.1.7 packages the module as a self-contained flattened `.psm1`. All public and
+Version 0.1.8 packages the module as a self-contained flattened `.psm1`. All public and
 private function definitions used by inventory validation, capture acknowledgement, SQL
 adapters, and deterministic generation are embedded in that file; an installed package
 does not dot-source the repository's `public` or `private` directories. Returned SQL adapter closures bind their private module commands before leaving
-the module session, so callers can invoke those closures from an installed package.
+the module session, so callers can invoke those closures from an installed package. Capture
+SHA-256 fields cross the SqlClient boundary as exact 32-byte `System.Byte[]` values; an
+allowed null binary value remains null until parameter execution converts it to `DBNull`.
 
 This module supplies production retrieval and harvesting commands:
 

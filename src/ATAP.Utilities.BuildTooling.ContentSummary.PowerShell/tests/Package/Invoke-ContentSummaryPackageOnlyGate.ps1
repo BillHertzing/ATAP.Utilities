@@ -42,6 +42,16 @@ $storedProcedureInvoker = {
       }
     }
     'ATAPUtilities.CaptureContentSummaryObservationV1' {
+      foreach ($hashName in @('CanonicalRequestSha256','ByteSha256','NormalizedContentSha256','DerivationFingerprint')) {
+        $hashValue = $Parameters[$hashName].Value
+        if ($hashValue -isnot [byte[]] -or $hashValue.Length -ne 32) {
+          throw "Capture parameter '$hashName' is not an exact 32-byte array."
+        }
+      }
+      $summaryHash = $Parameters.SummaryContentSha256.Value
+      if ($null -ne $summaryHash -and ($summaryHash -isnot [byte[]] -or $summaryHash.Length -ne 32)) {
+        throw "Capture parameter 'SummaryContentSha256' is neither null nor an exact 32-byte array."
+      }
       [pscustomobject][ordered]@{
         ReplayStatus = 'Created'
         IdempotencyKey = $Parameters.IdempotencyKey.Value
@@ -87,15 +97,35 @@ $sourceArtifactId = [guid]'73000000-0000-0000-0000-000000000002'
 $sourceArtifactVersionId = [guid]'73000000-0000-0000-0000-000000000003'
 $contentSummaryId = [guid]'73000000-0000-0000-0000-000000000004'
 $contentSummaryVersionId = [guid]'73000000-0000-0000-0000-000000000005'
+$hashArguments = @{
+  CanonicalRequestSha256 = [object[]](0..31)
+  ByteSha256 = [byte[]](1..32)
+  NormalizedContentSha256 = [object[]](2..33)
+  SummaryContentSha256 = [byte[]](3..34)
+  DerivationFingerprint = [object[]](4..35)
+}
 $captured = & $sqlAdapterSet.Capture `
   -IdempotencyKey $idempotencyKey `
   -SourceArtifactId $sourceArtifactId `
   -SourceArtifactVersionId $sourceArtifactVersionId `
   -ContentSummaryId $contentSummaryId `
   -ContentSummaryVersionId $contentSummaryVersionId `
-  -Dependencies @()
+  -Dependencies @() `
+  @hashArguments
 if ($captured.IdempotencyKey -ne $idempotencyKey -or $captured.ContentSummaryVersionId -ne $contentSummaryVersionId) {
   throw 'Package-only capture adapter returned an unexpected acknowledgement.'
+}
+$hashArguments.SummaryContentSha256 = $null
+& $sqlAdapterSet.Capture `
+  -IdempotencyKey $idempotencyKey `
+  -SourceArtifactId $sourceArtifactId `
+  -SourceArtifactVersionId $sourceArtifactVersionId `
+  -ContentSummaryId $contentSummaryId `
+  -ContentSummaryVersionId $contentSummaryVersionId `
+  -Dependencies @() `
+  @hashArguments | Out-Null
+if ($null -ne $hashArguments.SummaryContentSha256) {
+  throw 'Package-only nullable binary fixture changed unexpectedly.'
 }
 
 $validated = Read-ContentSummaryRepositoryInventory -Path $InventoryPath -ExpectedSha256 $InventorySha

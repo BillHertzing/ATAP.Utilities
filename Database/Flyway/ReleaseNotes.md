@@ -1,5 +1,17 @@
 # ATAPUtilities.Database release notes
 
+## 0.1.12
+
+Status: source and disposable-database verified; unbuilt, unpublished, and not
+applied to any permanent database.
+
+- Retains immutable V00010 through V00120 migration bytes.
+- Adds V00130 with an exact code-or-alias resolver and the
+  `ATAPContentSummaryRuntimeQuery` least-privilege database role.
+- Grants only the three runtime query procedures plus `EXECUTE` and `REFERENCES`
+  on their three table types; direct `ATAPUtilities` schema reads remain denied.
+- Leaves database-user creation and role membership to environment deployment.
+
 ## 0.1.11
 
 Status: source and disposable-database verified; unbuilt, unpublished, and not

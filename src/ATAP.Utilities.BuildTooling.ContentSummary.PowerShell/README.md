@@ -1,12 +1,18 @@
 # ATAP.Utilities.BuildTooling.ContentSummary.PowerShell
 
-This module supplies two public commands:
+This module supplies production retrieval and harvesting commands:
 
 - `Get-ContentSummary`, the narrow compatibility client used by the
   `gather-content-summary` agent.
 - `Invoke-ContentSummaryHarvest`, the deterministic ingestion boundary that observes,
   normalizes, classifies, redacts, summarizes, and submits one source artifact through
   injected generator and repository operations.
+- `New-ContentSummarySqlAdapterSet`, which binds harvesting only to controlled
+  V00100/V00120 procedures through an already-open Microsoft.Data.SqlClient connection.
+- `Read-ContentSummaryRepositoryInventory` and `Invoke-ContentSummaryRepositoryInventory`,
+  which hash-verify caller-authored identities and provision them with `WhatIf` support.
+- `New-ContentSummaryDeterministicSafeSummaryGenerator`, which derives a bounded prefix
+  only from safe input and never invents identifiers or fallback content.
 
 `Get-ContentSummary` sends only `tags`, `depth`, `width`, and `instance` to AceOutpost.
 It uses ambient Windows Integrated Authentication with the current identity. SQL access
@@ -39,6 +45,14 @@ inside `error` and the mandatory gather-call record; no fallback content is fabr
 write implicitly. Callers inject each operation. Source text is classified and redacted
 locally before generator egress, and the repository operation receives only the canonical
 safe envelope.
+
+Production inventory JSON is byte-bound by a required lowercase SHA-256. It carries
+lowercase D-format durable UUIDs, an existing canonical Git worktree root, a
+credential-free HTTPS origin URI with matching observation evidence, and any
+database-principal authorizations. The module never creates UUIDs, tags, principals, or
+repository content. Tags are assigned after capture through
+`AssignContentSummaryVersionTag`, using an existing effective `TagId`, caller-supplied
+`TagAssignmentId`, and the captured `ContentSummaryVersionId`.
 
 ```powershell
 Get-ContentSummary -Tags @('schema', 'migration') -Port 50010

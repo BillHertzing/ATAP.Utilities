@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.1.6
+
+- Validate caller-authored repository inventories against an approved SHA-256, durable
+  UUIDs, real canonical Git roots, and credential-free origin evidence.
+- Add fail-closed Microsoft.Data.SqlClient adapters for V00120 repository provisioning,
+  version-tag assignment, principal authorization, and the unchanged V00100 capture loader.
+- Add a deterministic safe summary generator that derives a bounded Unicode-safe prefix
+  only from locally classified and redacted input.
+- Apply inventory provisioning with `WhatIf` support and secret-safe diagnostics.
+
 ## 0.1.5
 
 - Validate the full AceOutpost response before exposing any ContentSummary item.

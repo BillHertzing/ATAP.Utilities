@@ -101,10 +101,10 @@ Describe 'Get-ContentSummary [public]' -Tag 'Unit' {
     }
   }
 
-  It 'exports the client and harvester at module version 0.1.5' {
+  It 'exports the client and harvester at module version 0.1.6' {
     Get-Command -Name Get-ContentSummary -Module $script:moduleName | Should -Not -BeNullOrEmpty
     Get-Command -Name Invoke-ContentSummaryHarvest -Module $script:moduleName | Should -Not -BeNullOrEmpty
-    (Get-Module -Name $script:moduleName).Version.ToString() | Should -BeExactly '0.1.5'
+    (Get-Module -Name $script:moduleName).Version.ToString() | Should -BeExactly '0.1.6'
   }
 
   It 'preserves the established public parameter interface' {

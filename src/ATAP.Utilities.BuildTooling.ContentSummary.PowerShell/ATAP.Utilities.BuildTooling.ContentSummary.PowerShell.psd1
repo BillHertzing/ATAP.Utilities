@@ -1,6 +1,6 @@
 @{
   RootModule = 'ATAP.Utilities.BuildTooling.ContentSummary.PowerShell.psm1'
-  ModuleVersion = '0.1.5'
+  ModuleVersion = '0.1.6'
   CompatiblePSEditions = @('Core')
   GUID = '35c51a21-6e84-4c6d-b745-5ca83d8a7680'
   Author = 'Bill Hertzing for ATAPUtilities.org'
@@ -11,14 +11,21 @@
   RequiredModules = @(
     @{ ModuleName = 'PSFramework'; ModuleVersion = '1.14.457' }
   )
-  FunctionsToExport = @('Get-ContentSummary', 'Invoke-ContentSummaryHarvest')
+  FunctionsToExport = @(
+    'Get-ContentSummary',
+    'Invoke-ContentSummaryHarvest',
+    'New-ContentSummarySqlAdapterSet',
+    'Read-ContentSummaryRepositoryInventory',
+    'Invoke-ContentSummaryRepositoryInventory',
+    'New-ContentSummaryDeterministicSafeSummaryGenerator'
+  )
   CmdletsToExport = @()
   VariablesToExport = @()
   AliasesToExport = @()
   PrivateData = @{
     PSData = @{
-      Tags = @('ATAP', 'AceOutpost', 'ContentSummary', 'REST')
-      ReleaseNotes = 'Validate complete AceOutpost responses, preserve safe correlation and stub evidence, expose deterministic ContentSummary harvesting, and reject malformed or secret-canary-bearing results.'
+      Tags = @('ATAP', 'AceOutpost', 'ContentSummary', 'REST', 'SqlClient')
+      ReleaseNotes = 'Add immutable inventory validation, controlled V00120 SqlClient adapters, and deterministic safe-text summary generation for production ContentSummary harvesting.'
     }
   }
 }

@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "task": "15.60.ab-stream-a-contentsummary-contract",
+  "authority": [
+    {
+      "path": "Database/Flyway/SQL/V00030__Create_AceOutpostContentSummaryPrototype.sql",
+      "sha256": "98C0018A4A92A1A8095CA329D93706A4B426016C1C42B69BC3F7CFB865B38179"
+    },
+    {
+      "path": "Database/Flyway/SQL/V00060__Create_Ace_GatherContent_Submission.sql",
+      "sha256": "953705FEE9678B532FFF52D780182AA8A7EF3D000DB96873DB9EB58AAAEB46FB"
+    },
+    {
+      "path": "Database/Flyway/SQL/V00090__Create_ATAPUtilities_Tag_Relations_Assignments_And_Rules.sql",
+      "sha256": "34A0EC2A1CE485BECBC0497BD4A726BFEC45CD2DBA7D39E26A753A8A6C594DEB"
+    },
+    {
+      "path": "Database/Documentation/RPRRSBSI-V4-2-30-Tags-Expert-System.md",
+      "sha256": "DC3D40115FCB6A33DC01177E39C5E677177BE72AC1D3083FD21B0D91829AF10F"
+    },
+    {
+      "path": "Database/Documentation/RRSBS-RDB-260-Context-SourceArtifact-AgentText-ContentSummary-Logical-Model.md",
+      "sha256": "7E0DFB088195BC03D8F6219E43F3D85B1B257305FBBE058BE53ADEC2C0F6C86C"
+    }
+  ],
+  "migrationBoundary": {
+    "currentHead": "V00090",
+    "nextAllocatedVersion": null,
+    "expectedCandidateOnly": "V00100",
+    "syntheticUnknownVersion": "V01000"
+  },
+  "ruleContractCodes": [
+    "CS-R01-source-identity-v1",
+    "CS-R02-content-normalization-v1",
+    "CS-R03-classification-redaction-v1",
+    "CS-R04-summary-render-v1",
+    "CS-R05-freshness-v1",
+    "CS-R06-query-ranking-v1"
+  ],
+  "instantiationContractCode": "CS-I01-contentsummary-initial-v1",
+  "publicContract": {
+    "requestParameters": [
+      "Tags",
+      "Depth",
+      "Width",
+      "Instance",
+      "Scheme",
+      "HostName",
+      "Port",
+      "Path",
+      "AgentName",
+      "WorktreeRoot",
+      "TaskId",
+      "Prompt"
+    ],
+    "requestBodyFields": [
+      "tags",
+      "depth",
+      "width",
+      "instance"
+    ],
+    "responseFields": [
+      "agent",
+      "status",
+      "query",
+      "items",
+      "truncated",
+      "error"
+    ]
+  },
+  "queryContract": {
+    "authorizedRepositoryType": {
+      "name": "[ATAPUtilities].[ContentSummaryAuthorizedRepositoryInput]",
+      "columns": [
+        "RepositoryId"
+      ]
+    },
+    "tagMatchType": {
+      "name": "[ATAPUtilities].[ContentSummaryTagMatchInput]",
+      "columns": [
+        "RequestOrdinal",
+        "RequestedTagId",
+        "MatchedTagId",
+        "Depth",
+        "TraversalOrdinal",
+        "PathWeight"
+      ]
+    },
+    "procedure": {
+      "name": "[ATAPUtilities].[QueryContentSummaryCandidatesAsOfV1]",
+      "parameters": [
+        "AuthorizedRepositories",
+        "TagMatches",
+        "MatchMode",
+        "AsOfUtc",
+        "FreshnessMode",
+        "Limit"
+      ],
+      "metadataColumns": [
+        "AsOfUtc",
+        "MatchMode",
+        "FreshnessMode",
+        "AuthorizedMatchCount",
+        "ReturnedCount",
+        "Truncated",
+        "RankingContractCode",
+        "WatermarkUtc"
+      ],
+      "itemColumns": [
+        "ContentSummaryVersionId",
+        "ContentSummaryId",
+        "SourceArtifactId",
+        "SourceArtifactVersionId",
+        "RepositoryId",
+        "RepoRelativePath",
+        "SafeText",
+        "SafeLocator",
+        "MatchedRequestedTagIdsJson",
+        "MatchedResolvedTagIdsJson",
+        "FreshnessCode",
+        "RankingContractCode",
+        "Rank",
+        "SourceObservedAtUtc",
+        "GeneratedAtUtc",
+        "RecordedAtUtc",
+        "ProducerEntityId",
+        "NormalizedContentSha256",
+        "SummaryContentSha256",
+        "DerivationFingerprint"
+      ]
+    }
+  },
+  "errorCodes": [
+    "CS-REQ-001",
+    "CS-AUTH-001",
+    "CS-AUTH-002",
+    "CS-SRC-001",
+    "CS-SRC-002",
+    "CS-HASH-001",
+    "CS-IDEMP-001",
+    "CS-CLASS-001",
+    "CS-CLASS-002",
+    "CS-RULE-001",
+    "CS-HARVEST-001",
+    "CS-SUMMARY-001",
+    "CS-FRESH-001",
+    "CS-QUERY-001",
+    "CS-QUERY-002",
+    "CS-QUERY-003",
+    "CS-INTERNAL-001"
+  ],
+  "acceptanceIds": [
+    "CS-A01",
+    "CS-A02",
+    "CS-A03",
+    "CS-A04",
+    "CS-A05",
+    "CS-A06",
+    "CS-A07",
+    "CS-A08",
+    "CS-A09",
+    "CS-A10",
+    "CS-A11",
+    "CS-A12",
+    "CS-A13",
+    "CS-A14",
+    "CS-A15",
+    "CS-A16"
+  ]
+}

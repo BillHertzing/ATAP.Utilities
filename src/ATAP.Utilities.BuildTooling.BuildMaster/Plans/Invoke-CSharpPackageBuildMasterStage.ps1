@@ -1015,7 +1015,7 @@ function Invoke-CSharpPackageBuildMasterStage {
     $authenticodeContract = Get-CSharpPackageAuthenticodeContract -PackageName $PackageName
     if ($null -eq $authenticodeContract -and
       (-not [string]::IsNullOrWhiteSpace($AuthenticodeApprovalPath) -or -not [string]::IsNullOrWhiteSpace($SignToolPath))) {
-      throw "Authenticode signing parameters are forbidden for package '$PackageName'; it is outside the exact current 42-package signing contract."
+      throw "Authenticode signing parameters are forbidden for package '$PackageName'; it is outside the exact current 45-package signing contract."
     }
     if ($null -ne $authenticodeContract -and $MetaPackageName -cne $PackageName) {
       throw 'Authenticode release packages require MetaPackageName and PackageName to be the same exact allowlisted package id.'

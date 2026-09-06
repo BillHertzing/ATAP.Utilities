@@ -14,6 +14,9 @@ function Get-CSharpPackageAuthenticodeContractRows {
     'ATAP.Utilities.Configuration.Secrets.Shims.Interfaces|src/ATAP.Utilities.Configuration/Secrets/Shims/Interfaces/ATAP.Utilities.Configuration.Secrets.Shims.Interfaces.csproj|ATAP.Utilities.Configuration.Secrets.Shims.Interfaces|net8.0;net9.0;net10.0'
     'ATAP.Utilities.DatabaseManagement|src/ATAP.Utilities.DatabaseManagement/ATAP.Utilities.DatabaseManagement.csproj|ATAP.Utilities.DatabaseManagement|net8.0;net9.0;net10.0'
     'ATAP.Utilities.DateTime|src/ATAP.Utilities.DateTime/ATAP.Utilities.DateTime.csproj|ATAP.Utilities.DateTime|net8.0;net9.0;net10.0'
+    'ATAP.Utilities.DateTime.Interfaces|src/ATAP.Utilities.DateTime.Interfaces/ATAP.Utilities.DateTime.Interfaces.csproj|ATAP.Utilities.DateTime.Interfaces|net8.0;net9.0;net10.0'
+    'ATAP.Utilities.DateTime.Model|src/ATAP.Utilities.DateTime.Model/ATAP.Utilities.DateTime.Model.csproj|ATAP.Utilities.DateTime.Model|net8.0;net9.0;net10.0'
+    'ATAP.Utilities.DateTime.StringConstants|src/ATAP.Utilities.DateTime.StringConstants/ATAP.Utilities.DateTime.StringConstants.csproj|ATAP.Utilities.DateTime.StringConstants|net8.0;net9.0;net10.0'
     'ATAP.Utilities.ETW|src/ATAP.Utilities.ETW/ATAP.Utilities.ETW.csproj|ATAP.Utilities.ETW|net8.0;net9.0;net10.0'
     'ATAP.Utilities.FileIO|src/ATAP.Utilities.FIleIO/ATAP.Utilities.FileIO.csproj|ATAP.Utilities.FileIO|net8.0;net9.0;net10.0'
     'ATAP.Utilities.Loader|src/ATAP.Utilities.Loader/ATAP.Utilities.Loader.csproj|ATAP.Utilities.Loader|net8.0;net9.0;net10.0'
@@ -88,7 +91,7 @@ function Get-CSharpPackageAuthenticodeReleaseContract {
   param()
   $packages = @(Get-CSharpPackageAuthenticodeReleasePackageNames | ForEach-Object { Get-CSharpPackageAuthenticodeContract -PackageName $_ })
   $assets = @($packages | ForEach-Object { $package = $_; $_.Assets | ForEach-Object { [pscustomobject]@{ PackageName = $package.PackageName; ProjectPath = $package.ProjectPath; AssemblyName = $package.AssemblyName; BuildTargetFramework = $_.BuildTargetFramework; PackageTargetFramework = $_.PackageTargetFramework } } })
-  if ($packages.Count -ne 42 -or $assets.Count -ne 122) { throw "The current release contract must contain exactly 42 packages and 122 shipping DLL assets; found $($packages.Count) packages and $($assets.Count) assets." }
+  if ($packages.Count -ne 45 -or $assets.Count -ne 131) { throw "The current release contract must contain exactly 45 packages and 131 shipping DLL assets; found $($packages.Count) packages and $($assets.Count) assets." }
   return [pscustomobject]@{ Packages = $packages; Assets = $assets }
 }
 
@@ -155,12 +158,12 @@ function Get-CSharpPackageAuthenticodeApproval {
   $expectedAssetCount = 0
   $scopeName = ''
   switch ($taskId) {
-    'triple-stream-csharp-signing-contract-42' {
+    'triple-stream-csharp-signing-contract-45' {
       $expectedPackages = @(Get-CSharpPackageAuthenticodeReleasePackageNames | Sort-Object)
       $expectedAssetIds = @(Get-CSharpPackageAuthenticodeReleaseAssetIds)
-      $expectedPackageCount = 42
-      $expectedAssetCount = 122
-      $scopeName = 'current 42-package/122-asset filter release slice'
+      $expectedPackageCount = 45
+      $expectedAssetCount = 131
+      $scopeName = 'current 45-package/131-asset filter release slice'
     }
     '15.182.F03' {
       $expectedPackages = @(Get-CSharpPackageAuthenticodeHistoricalF03PackageNames | Sort-Object)

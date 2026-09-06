@@ -7,15 +7,15 @@ BeforeAll {
   . $script:HelperPath
 }
 
-Describe 'Triple-stream exact 42-package/122-asset signing contract' {
-  It 'binds exactly 42 packages and the 122 actually evaluated shipping DLL assets' {
+Describe 'Triple-stream exact 45-package/131-asset signing contract' {
+  It 'binds exactly 45 packages and the 131 actually evaluated shipping DLL assets' {
     $release = Get-CSharpPackageAuthenticodeReleaseContract
 
-    $release.Packages.Count | Should -Be 42
-    $release.Assets.Count | Should -Be 122
-    @($release.Packages.PackageName | Sort-Object -Unique).Count | Should -Be 42
-    @(Get-CSharpPackageAuthenticodeReleaseAssetIds).Count | Should -Be 122
-    @((Get-CSharpPackageAuthenticodeReleaseAssetIds) | Sort-Object -Unique).Count | Should -Be 122
+    $release.Packages.Count | Should -Be 45
+    $release.Assets.Count | Should -Be 131
+    @($release.Packages.PackageName | Sort-Object -Unique).Count | Should -Be 45
+    @(Get-CSharpPackageAuthenticodeReleaseAssetIds).Count | Should -Be 131
+    @((Get-CSharpPackageAuthenticodeReleaseAssetIds) | Sort-Object -Unique).Count | Should -Be 131
     (Get-Content -LiteralPath $script:HelperPath -Raw) | Should -Match '\$allPackageDlls\.Count\s+-ne\s+\$expectedRelativePaths\.Count'
     @($release.Assets | Group-Object PackageName | ForEach-Object Count | Sort-Object -Unique) | Should -Be @(1, 3)
     @($release.Assets | Group-Object PackageName | Where-Object Count -eq 1 | Select-Object -ExpandProperty Name | Sort-Object) |
@@ -32,6 +32,29 @@ Describe 'Triple-stream exact 42-package/122-asset signing contract' {
       $contract.AssemblyName | Should -BeExactly $contract.PackageName
     }
     Get-CSharpPackageAuthenticodeContract -PackageName 'Vendor.Library' | Should -BeNullOrEmpty
+  }
+
+  It 'keeps the DateTime package boundary independently packable with stable version authorities' {
+    $dateTimePackages = @(
+      'ATAP.Utilities.DateTime.Interfaces'
+      'ATAP.Utilities.DateTime.Model'
+      'ATAP.Utilities.DateTime.StringConstants'
+    )
+
+    foreach ($packageName in $dateTimePackages) {
+      $contract = Get-CSharpPackageAuthenticodeContract -PackageName $packageName
+      [xml]$project = Get-Content -LiteralPath (Join-Path $script:RepoRoot $contract.ProjectPath) -Raw
+      $version = Get-Content -LiteralPath (Join-Path (Split-Path -Parent (Join-Path $script:RepoRoot $contract.ProjectPath)) 'version.json') -Raw |
+        ConvertFrom-Json
+
+      [string]$project.Project.PropertyGroup.IsPackable | Should -BeExactly 'true'
+      [string]$version.version | Should -Match '^\d+\.\d+\.\d+$'
+    }
+
+    [xml]$modelProject = Get-Content -LiteralPath (Join-Path $script:RepoRoot 'src/ATAP.Utilities.DateTime.Model/ATAP.Utilities.DateTime.Model.csproj') -Raw
+    $timePeriodReference = @($modelProject.SelectNodes('//PackageReference') | Where-Object Include -eq 'TimePeriodLibrary.NET')
+    $timePeriodReference.Count | Should -Be 1
+    [string]$timePeriodReference[0].GetAttribute('PrivateAssets') | Should -BeNullOrEmpty
   }
 }
 
@@ -78,11 +101,11 @@ Describe 'Task 15.182.F03 machine-readable HITL boundary' {
     { Get-CSharpPackageAuthenticodeApproval -ApprovalPath $path } |
       Should -Throw '*does not bind the exact ATAP Foundation eight-package/24-asset release slice*'
   }
-  It 'accepts a fresh exact 42-package/122-asset approval without certificate or tool access' {
+  It 'accepts a fresh exact 45-package/131-asset approval without certificate or tool access' {
     $approval = Get-Content -LiteralPath $script:ApprovalPath -Raw | ConvertFrom-Json -Depth 20
-    $approval.taskId = 'triple-stream-csharp-signing-contract-42'
-    $approval.scope.expectedPackageCount = 42
-    $approval.scope.expectedAssetCount = 122
+    $approval.taskId = 'triple-stream-csharp-signing-contract-45'
+    $approval.scope.expectedPackageCount = 45
+    $approval.scope.expectedAssetCount = 131
     $approval.scope.packageIds = @(Get-CSharpPackageAuthenticodeReleasePackageNames)
     $approval.scope | Add-Member -NotePropertyName assetIds -NotePropertyValue @(Get-CSharpPackageAuthenticodeReleaseAssetIds)
     $path = Join-Path $TestDrive 'current-approval.json'
@@ -94,9 +117,9 @@ Describe 'Task 15.182.F03 machine-readable HITL boundary' {
 
   It 'rejects a fresh approval whose exact evaluated asset set drifts' {
     $approval = Get-Content -LiteralPath $script:ApprovalPath -Raw | ConvertFrom-Json -Depth 20
-    $approval.taskId = 'triple-stream-csharp-signing-contract-42'
-    $approval.scope.expectedPackageCount = 42
-    $approval.scope.expectedAssetCount = 122
+    $approval.taskId = 'triple-stream-csharp-signing-contract-45'
+    $approval.scope.expectedPackageCount = 45
+    $approval.scope.expectedAssetCount = 131
     $approval.scope.packageIds = @(Get-CSharpPackageAuthenticodeReleasePackageNames)
     $assetIds = @(Get-CSharpPackageAuthenticodeReleaseAssetIds)
     $assetIds[0] = $assetIds[0] + '|drift'
@@ -105,7 +128,7 @@ Describe 'Task 15.182.F03 machine-readable HITL boundary' {
     $approval | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $path -Encoding utf8NoBOM
 
     { Get-CSharpPackageAuthenticodeApproval -ApprovalPath $path } |
-      Should -Throw '*does not bind the exact ATAP Foundation current 42-package/122-asset filter release slice*'
+      Should -Throw '*does not bind the exact ATAP Foundation current 45-package/131-asset filter release slice*'
   }
 
   It 'keeps the historical F03 approval compatible only with its eight named packages' {

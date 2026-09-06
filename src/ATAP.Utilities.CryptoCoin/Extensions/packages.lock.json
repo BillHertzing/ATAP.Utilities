@@ -2,6 +2,15 @@
   "version": 2,
   "dependencies": {
     "net10.0": {
+      "MethodBoundaryAspect.Fody": {
+        "type": "Direct",
+        "requested": "[2.0.150, )",
+        "resolved": "2.0.150",
+        "contentHash": "cR7BJGl2420ORLRPO+itrzgveYaiwkmbfgQtVUziUdvmuOBkanz0927t0Kesj08XLrLG1NHXn1I+2+b2XyyEyQ==",
+        "dependencies": {
+          "Fody": "6.7.0"
+        }
+      },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
         "requested": "[8.0.0, )",
@@ -265,7 +274,10 @@
         }
       },
       "atap.utilities.concurrentobservablecollections": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[0.1.3, )"
+        }
       },
       "atap.utilities.cryptocoin.enumerations": {
         "type": "Project",
@@ -328,6 +340,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "Polly": "[8.5.0, )",
           "ServiceStack.HttpClient": "[8.10.0, )",
           "System.Drawing.Common": "[8.0.2, )",
@@ -362,6 +375,12 @@
         "dependencies": {
           "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
         }
+      },
+      "Fody": {
+        "type": "CentralTransitive",
+        "requested": "[6.9.3, )",
+        "resolved": "6.9.3",
+        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
       },
       "MedallionShell": {
         "type": "CentralTransitive",
@@ -478,6 +497,15 @@
       }
     },
     "net8.0": {
+      "MethodBoundaryAspect.Fody": {
+        "type": "Direct",
+        "requested": "[2.0.150, )",
+        "resolved": "2.0.150",
+        "contentHash": "cR7BJGl2420ORLRPO+itrzgveYaiwkmbfgQtVUziUdvmuOBkanz0927t0Kesj08XLrLG1NHXn1I+2+b2XyyEyQ==",
+        "dependencies": {
+          "Fody": "6.7.0"
+        }
+      },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
         "requested": "[8.0.0, )",
@@ -765,6 +793,7 @@
       "atap.utilities.concurrentobservablecollections": {
         "type": "Project",
         "dependencies": {
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "System.Collections.Immutable": "[9.0.0, )"
         }
       },
@@ -829,6 +858,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "Polly": "[8.5.0, )",
           "ServiceStack.HttpClient": "[8.10.0, )",
           "System.Drawing.Common": "[8.0.2, )",
@@ -863,6 +893,12 @@
         "dependencies": {
           "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
         }
+      },
+      "Fody": {
+        "type": "CentralTransitive",
+        "requested": "[6.9.3, )",
+        "resolved": "6.9.3",
+        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
       },
       "MedallionShell": {
         "type": "CentralTransitive",
@@ -987,6 +1023,15 @@
       }
     },
     "net9.0": {
+      "MethodBoundaryAspect.Fody": {
+        "type": "Direct",
+        "requested": "[2.0.150, )",
+        "resolved": "2.0.150",
+        "contentHash": "cR7BJGl2420ORLRPO+itrzgveYaiwkmbfgQtVUziUdvmuOBkanz0927t0Kesj08XLrLG1NHXn1I+2+b2XyyEyQ==",
+        "dependencies": {
+          "Fody": "6.7.0"
+        }
+      },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
         "requested": "[8.0.0, )",
@@ -1269,7 +1314,10 @@
         }
       },
       "atap.utilities.concurrentobservablecollections": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[0.1.3, )"
+        }
       },
       "atap.utilities.cryptocoin.enumerations": {
         "type": "Project",
@@ -1332,6 +1380,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "Polly": "[8.5.0, )",
           "ServiceStack.HttpClient": "[8.10.0, )",
           "System.Drawing.Common": "[8.0.2, )",
@@ -1366,6 +1415,12 @@
         "dependencies": {
           "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
         }
+      },
+      "Fody": {
+        "type": "CentralTransitive",
+        "requested": "[6.9.3, )",
+        "resolved": "6.9.3",
+        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
       },
       "MedallionShell": {
         "type": "CentralTransitive",

@@ -404,7 +404,10 @@
         }
       },
       "atap.utilities.concurrentobservablecollections": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[0.1.3, )"
+        }
       },
       "atap.utilities.configuration.extensions": {
         "type": "Project",
@@ -426,6 +429,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "Polly": "[8.5.0, )",
           "ServiceStack.HttpClient": "[8.10.0, )",
           "System.Drawing.Common": "[8.0.2, )",
@@ -1108,6 +1112,7 @@
       "atap.utilities.concurrentobservablecollections": {
         "type": "Project",
         "dependencies": {
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "System.Collections.Immutable": "[9.0.0, )"
         }
       },
@@ -1131,6 +1136,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "Polly": "[8.5.0, )",
           "ServiceStack.HttpClient": "[8.10.0, )",
           "System.Drawing.Common": "[8.0.2, )",
@@ -1814,7 +1820,10 @@
         }
       },
       "atap.utilities.concurrentobservablecollections": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[0.1.3, )"
+        }
       },
       "atap.utilities.configuration.extensions": {
         "type": "Project",
@@ -1836,6 +1845,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "Polly": "[8.5.0, )",
           "ServiceStack.HttpClient": "[8.10.0, )",
           "System.Drawing.Common": "[8.0.2, )",

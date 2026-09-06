@@ -861,7 +861,10 @@
         }
       },
       "atap.utilities.concurrentobservablecollections": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[0.1.3, )"
+        }
       },
       "atap.utilities.configuration.extensions": {
         "type": "Project",
@@ -2042,6 +2045,7 @@
       "atap.utilities.concurrentobservablecollections": {
         "type": "Project",
         "dependencies": {
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "System.Collections.Immutable": "[9.0.0, )"
         }
       },
@@ -3225,7 +3229,10 @@
         }
       },
       "atap.utilities.concurrentobservablecollections": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[0.1.3, )"
+        }
       },
       "atap.utilities.configuration.extensions": {
         "type": "Project",

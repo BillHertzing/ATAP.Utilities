@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using ServiceStack.Text;
 using ServiceStack;
 using ATAP.Utilities.ConcurrentObservableCollections;
+using ATAP.Utilities.ETW;
 
 namespace ATAP.Utilities.Http
 {
@@ -229,6 +230,7 @@ namespace ATAP.Utilities.Http
       this.aPIKey = aPIKey;
       return this;
     }
+    [ETWLog]
     public static GatewayBuilder CreateNew()
     {
       return new GatewayBuilder();

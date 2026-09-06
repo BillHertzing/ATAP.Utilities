@@ -2,11 +2,16 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
+    <ATAPEnableFody>true</ATAPEnableFody>
     <IsPackable>true</IsPackable>
   </PropertyGroup>
 
 <ItemGroup>
     <PackageReference Include="System.Collections.Immutable" />
+</ItemGroup>
+
+<ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
 </ItemGroup>
 
 </Project>

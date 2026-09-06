@@ -531,7 +531,10 @@
         }
       },
       "atap.utilities.concurrentobservablecollections": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[0.1.3, )"
+        }
       },
       "atap.utilities.configuration.extensions": {
         "type": "Project",
@@ -560,6 +563,7 @@
           "ATAP.Utilities.CryptoCoin.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.CryptoCoin.Models": "[0.1.0-Alpha, )",
           "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.Http": "[0.1.0-Alpha, )",
           "Newtonsoft.Json": "[13.0.4, )",
           "Polly": "[8.5.0, )",
@@ -619,6 +623,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "Polly": "[8.5.0, )",
           "ServiceStack.HttpClient": "[8.10.0, )",
           "System.Drawing.Common": "[8.0.2, )",
@@ -1478,6 +1483,7 @@
       "atap.utilities.concurrentobservablecollections": {
         "type": "Project",
         "dependencies": {
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "System.Collections.Immutable": "[9.0.0, )"
         }
       },
@@ -1508,6 +1514,7 @@
           "ATAP.Utilities.CryptoCoin.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.CryptoCoin.Models": "[0.1.0-Alpha, )",
           "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.Http": "[0.1.0-Alpha, )",
           "Newtonsoft.Json": "[13.0.4, )",
           "Polly": "[8.5.0, )",
@@ -1567,6 +1574,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "Polly": "[8.5.0, )",
           "ServiceStack.HttpClient": "[8.10.0, )",
           "System.Drawing.Common": "[8.0.2, )",
@@ -2427,7 +2435,10 @@
         }
       },
       "atap.utilities.concurrentobservablecollections": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "ATAP.Utilities.ETW": "[0.1.3, )"
+        }
       },
       "atap.utilities.configuration.extensions": {
         "type": "Project",
@@ -2456,6 +2467,7 @@
           "ATAP.Utilities.CryptoCoin.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.CryptoCoin.Models": "[0.1.0-Alpha, )",
           "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.Http": "[0.1.0-Alpha, )",
           "Newtonsoft.Json": "[13.0.4, )",
           "Polly": "[8.5.0, )",
@@ -2515,6 +2527,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "Polly": "[8.5.0, )",
           "ServiceStack.HttpClient": "[8.10.0, )",
           "System.Drawing.Common": "[8.0.2, )",

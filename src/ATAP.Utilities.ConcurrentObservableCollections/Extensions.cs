@@ -13,6 +13,7 @@ using System.Xml.Serialization;
 using System.Text.RegularExpressions;
 using System.Collections.Concurrent;
 using System.Text;
+using ATAP.Utilities.ETW;
 
 
 
@@ -54,6 +55,7 @@ namespace ATAP.Utilities.ConcurrentObservableCollections
     /// <param name="x"></param>
     /// <param name="pow"></param>
     /// <returns></returns>
+    [ETWLog]
     public static long Pow(this int x, int pow)
     {
       long temp = x;

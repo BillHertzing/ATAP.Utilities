@@ -25,13 +25,12 @@ function Get-BuildContext {
       - The source commit via `git rev-parse HEAD`.
       - The full NuGet/SemVer package version via
         `nbgv get-version --variable NuGetPackageVersion`, run inside the
-        directory passed as `-ProjectPath`. In this repository every
-        shipping C# or PowerShell project owns a project-adjacent
-        `version.json` that resets the NBGV height origin to that
-        project (see `SolutionDocumentation/CSharp-Packages-Versioning.md`
-        §4.5). The repository root does not necessarily carry a
-        `version.json`, so nbgv MUST be invoked from the per-project
-        directory to obtain the correct package version.
+        directory passed as `-ProjectPath`. A shipping project may own an
+        adjacent `version.json` or intentionally inherit the nearest ancestor
+        authority within the same repository (see
+        `SolutionDocumentation/CSharp-Packages-Versioning.md` §4.5). NBGV is
+        still invoked from the project directory so path filters and height
+        are evaluated for the project being built.
       - The major.minor.patch core and the prerelease label, parsed from
         the NBGV output.
       - The current tier from the BuildMaster stage context (`-Stage`,
@@ -61,12 +60,12 @@ function Get-BuildContext {
 
 .PARAMETER ProjectPath
     The directory of the shipping project, or the path to that project's
-    `.csproj`. `nbgv get-version` is invoked from the directory that contains
-    the project-adjacent `version.json` so the NBGV height origin matches the
-    package being built. The path may be absolute or relative to the current
-    working directory; it is resolved to an absolute path on entry. An error
-    is thrown if the directory does not exist or does not contain a
-    `version.json` file.
+    `.csproj`. `nbgv get-version` is invoked from that project directory. The
+    nearest `version.json` at or above the project, bounded by the repository
+    root, is recorded as `VersionAuthorityPath`. The path may be absolute or
+    relative to the current working directory; it is resolved to an absolute
+    path on entry. An error is thrown if the directory does not exist or no
+    repository-bounded authority exists.
 
 .PARAMETER Stage
     Optional BuildMaster stage name. When supplied, it is mapped to
@@ -91,6 +90,8 @@ function Get-BuildContext {
       - `Application`
       - `ProjectPath` — the absolute, resolved project directory used for
         the nbgv invocation.
+      - `VersionAuthorityPath` — the nearest repository-bounded
+        `version.json` governing the project.
       - `Branch`
       - `BranchType` — one of `stable`, `feature`, `sprint`, `release`.
       - `FeatureSlug` — `$null` for non-feature branches.
@@ -210,10 +211,8 @@ function Get-BuildContext {
     $currentTier = Get-CurrentTierFromStage -Stage $stageName
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "CurrentTier='$currentTier' from $stageSource ('$stageName')"
 
-    # Resolve ProjectPath to an absolute directory and validate that it
-    # carries a project-adjacent version.json. nbgv silently walks up the
-    # directory tree, so a missing version.json here would otherwise cause
-    # this cmdlet to return a parent (e.g. solution-level) version.
+    # Resolve ProjectPath to an absolute directory. Its repository-bounded
+    # version authority is resolved after the repository root is known.
     $resolvedProjectPath = $null
     try {
       $resolvedProjectPathRaw = (Resolve-Path -LiteralPath $ProjectPath -ErrorAction Stop).ProviderPath
@@ -232,13 +231,7 @@ function Get-BuildContext {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
       throw $msg
     }
-    $projectVersionJson = Join-Path -Path $resolvedProjectPath -ChildPath 'version.json'
-    if (-not (Test-Path -LiteralPath $projectVersionJson -PathType Leaf)) {
-      $msg = "ProjectPath '$resolvedProjectPath' does not contain a project-adjacent 'version.json'. See SolutionDocumentation/CSharp-Packages-Versioning.md section 4.5."
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
-      throw $msg
-    }
-    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "ProjectPath resolved to '$resolvedProjectPath' (version.json verified)"
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "ProjectPath resolved to '$resolvedProjectPath'"
   }
 
   process {
@@ -254,6 +247,30 @@ function Get-BuildContext {
     }
     $repoRoot = ([string]$repoRootRaw).Trim()
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Repository root resolved to '$repoRoot'" -Tag 'GitCall'
+
+    $repoRootFull = [System.IO.Path]::GetFullPath($repoRoot).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+    $projectFull = [System.IO.Path]::GetFullPath($resolvedProjectPath).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+    $repoBoundary = $repoRootFull + [System.IO.Path]::DirectorySeparatorChar
+    if ($projectFull -ine $repoRootFull -and -not $projectFull.StartsWith($repoBoundary, [System.StringComparison]::OrdinalIgnoreCase)) {
+      throw "ProjectPath '$projectFull' is outside repository root '$repoRootFull'."
+    }
+    $versionAuthorityPath = $null
+    $authorityDirectory = [System.IO.DirectoryInfo]::new($projectFull)
+    while ($null -ne $authorityDirectory) {
+      $candidateVersionJson = Join-Path -Path $authorityDirectory.FullName -ChildPath 'version.json'
+      if (Test-Path -LiteralPath $candidateVersionJson -PathType Leaf) {
+        $versionAuthorityPath = [System.IO.Path]::GetFullPath($candidateVersionJson)
+        break
+      }
+      if ($authorityDirectory.FullName.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) -ieq $repoRootFull) { break }
+      $authorityDirectory = $authorityDirectory.Parent
+    }
+    if ([string]::IsNullOrWhiteSpace($versionAuthorityPath)) {
+      $msg = "ProjectPath '$resolvedProjectPath' does not resolve to a version.json at or below repository root '$repoRootFull'. See SolutionDocumentation/CSharp-Packages-Versioning.md section 4.5."
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
+      throw $msg
+    }
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Version authority resolved to '$versionAuthorityPath'"
 
     # ---------------------------------------------------------------------
     # 2. Resolve branch name (either passed-in or derived from HEAD).
@@ -389,6 +406,7 @@ function Get-BuildContext {
     $context = [PSCustomObject]@{
       Application            = $Application
       ProjectPath            = $resolvedProjectPath
+      VersionAuthorityPath   = $versionAuthorityPath
       Branch                 = $resolvedBranch
       BranchType             = $branchType
       FeatureSlug            = $featureSlug

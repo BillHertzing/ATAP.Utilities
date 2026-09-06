@@ -29,9 +29,7 @@ BeforeAll {
   $script:fakeRepoRoot = (Join-Path ([System.IO.Path]::GetTempPath()) ('GetBuildContextTest_' + [Guid]::NewGuid().ToString('N')))
   New-Item -ItemType Directory -Path $script:fakeRepoRoot -Force | Out-Null
 
-  # Get-BuildContext now requires a -ProjectPath that contains a project-adjacent
-  # version.json. Stand up a fake project under the fake repo root so the BEGIN-
-  # block validation succeeds without mocking Resolve-Path / Test-Path.
+  # Stand up a fake project with its own version authority.
   $script:fakeProjectPath = Join-Path $script:fakeRepoRoot 'src/FakeProject'
   New-Item -ItemType Directory -Path $script:fakeProjectPath -Force | Out-Null
   Set-Content -LiteralPath (Join-Path $script:fakeProjectPath 'version.json') `
@@ -96,14 +94,28 @@ Describe 'Get-BuildContext' -Tag 'Unit' {
         Should -Throw -ExpectedMessage "*could not be resolved*"
     }
 
-    It 'Throws when -ProjectPath lacks a project-adjacent version.json' {
+    It 'Throws when no version authority exists up to the repository root' {
       $noVersion = Join-Path $script:fakeRepoRoot 'src/NoVersionJson'
       New-Item -ItemType Directory -Path $noVersion -Force | Out-Null
       try {
         { Get-BuildContext -Application 'ATAP.Utilities' -ProjectPath $noVersion -Branch 'main' } |
-          Should -Throw -ExpectedMessage "*does not contain a project-adjacent 'version.json'*"
+          Should -Throw -ExpectedMessage '*does not resolve to a version.json*repository root*'
       } finally {
         Remove-Item -LiteralPath $noVersion -Recurse -Force -ErrorAction SilentlyContinue
+      }
+    }
+
+    It 'Uses the nearest ancestor version authority while invoking NBGV from the child project' {
+      $familyRoot = Join-Path $script:fakeRepoRoot 'src/SharedFamily'
+      $childProject = Join-Path $familyRoot 'ChildProject'
+      New-Item -ItemType Directory -Path $childProject -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $familyRoot 'version.json') -Value '{"version":"1.0.1"}' -NoNewline
+      try {
+        $context = Get-BuildContext -Application 'ATAP.Utilities' -ProjectPath $childProject -Branch 'main'
+        $context.ProjectPath | Should -BeExactly $childProject
+        $context.VersionAuthorityPath | Should -BeExactly (Join-Path $familyRoot 'version.json')
+      } finally {
+        Remove-Item -LiteralPath $familyRoot -Recurse -Force -ErrorAction SilentlyContinue
       }
     }
   }

@@ -37,9 +37,10 @@ relist response is not evidence that V3 registration changed.
   nearest version. Add that exact direct reference with a bounded maximum of 16
   additions, persist the deterministic consumer and lock file, and use locked
   restore unchanged at later tiers. Fail closed for every other ambiguity.
-- Select `net8.0-windows7.0` only for package IDs ending in `.Windows`; use
-  `net8.0` otherwise. Verify the primary package's `.nupkg.metadata.source`
-  identifies the requested tier before compiling.
+- Select an exact framework declared by the signed package contract, preferring
+  `net10.0-windows` for package IDs ending in `.Windows` and `net10.0` otherwise.
+  Do not introduce an explicit Windows platform baseline. Verify the primary
+  package's `.nupkg.metadata.source` identifies the requested tier before compiling.
 
 ## Required handoff evidence
 

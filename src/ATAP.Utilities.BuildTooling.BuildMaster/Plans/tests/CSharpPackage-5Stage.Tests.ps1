@@ -221,6 +221,13 @@ Describe 'V4-C02 runner shape: Invoke-CSharpPackageBuildMasterStage.ps1 contract
         $script:RunnerText | Should -Match 'Invoke-PromotedPackageTests'
     }
 
+    It 'runner selects a declared net10 smoke-consumer framework without a Windows baseline' {
+        $script:RunnerText | Should -Match "'net10\.0-windows'"
+        $script:RunnerText | Should -Match "'net10\.0'"
+        $script:RunnerText | Should -Match '\$testParameters\[''ConsumerTargetFramework''\]\s*=\s*\$preferredConsumerFramework'
+        $script:RunnerText | Should -Not -Match 'ConsumerTargetFramework.*windows7\.0'
+    }
+
     It 'runner enables locked restore only for Integration, QA, and Production promoted-package tests' {
         $script:RunnerText | Should -Match 'if\s*\(\s*\$Tier\s+-in\s+@\(''Integration'', ''QA'', ''Production''\)\s*\)'
         $script:RunnerText | Should -Match '\$testParameters\[''LockedRestore''\]\s*=\s*\$true'

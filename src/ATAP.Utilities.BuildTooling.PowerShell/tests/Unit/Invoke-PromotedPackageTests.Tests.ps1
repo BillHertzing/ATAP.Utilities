@@ -25,7 +25,7 @@ BeforeAll {
         param([string]$Name = 'pkg', [string]$Version = '1.0.0')
         $escapedName = [Security.SecurityElement]::Escape($Name)
         $escapedVersion = [Security.SecurityElement]::Escape($Version)
-        $targetFramework = if ($Name.EndsWith('.Windows', [StringComparison]::OrdinalIgnoreCase)) { 'net8.0-windows7.0' } else { 'net8.0' }
+        $targetFramework = if ($Name.EndsWith('.Windows', [StringComparison]::OrdinalIgnoreCase)) { 'net8.0-windows' } else { 'net8.0' }
         return (@(
                 '<Project Sdk="Microsoft.NET.Sdk">'
                 '  <PropertyGroup>'
@@ -99,13 +99,21 @@ Describe 'Invoke-PromotedPackageTests isolated consumer gate' -Tag 'Unit' {
         }
     }
 
-    It 'targets net8.0-windows7.0 for Windows package IDs case-insensitively' {
+    It 'targets net8.0-windows without an explicit baseline for Windows package IDs case-insensitively' {
         Mock Test-Path -ParameterFilter { $LiteralPath -like '*.csproj' } { $false }
         Invoke-PromotedPackageTests -Name 'ATAP.Utilities.Example.wInDoWs' -Version '1.0.0' -Feed 'nuget-development' -ResultsPath 'consumer' -ProGetUrl 'https://utat022:50000' | Out-Null
         Assert-MockCalled Set-Content -Times 1 -Exactly -Scope It -ParameterFilter {
             $LiteralPath -like '*.csproj' -and
-            [string]$Value -match '<TargetFramework>net8\.0-windows7\.0</TargetFramework>' -and
+            [string]$Value -match '<TargetFramework>net8\.0-windows</TargetFramework>' -and
             [string]$Value -notmatch '<TargetFramework>net8\.0</TargetFramework>'
+        }
+    }
+
+    It 'uses an explicitly supplied package-contract target framework' {
+        Mock Test-Path -ParameterFilter { $LiteralPath -like '*.csproj' } { $false }
+        Invoke-PromotedPackageTests -Name 'ATAP.Utilities.RRSBS.Domain' -Version '0.1.2' -Feed 'nuget-development' -ConsumerTargetFramework 'net10.0' -ResultsPath 'consumer' -ProGetUrl 'https://utat022:50000' | Out-Null
+        Assert-MockCalled Set-Content -Times 1 -Exactly -Scope It -ParameterFilter {
+            $LiteralPath -like '*.csproj' -and [string]$Value -match '<TargetFramework>net10\.0</TargetFramework>'
         }
     }
 
@@ -115,7 +123,7 @@ Describe 'Invoke-PromotedPackageTests isolated consumer gate' -Tag 'Unit' {
         Assert-MockCalled Set-Content -Times 1 -Exactly -Scope It -ParameterFilter {
             $LiteralPath -like '*.csproj' -and
             [string]$Value -match '<TargetFramework>net8\.0</TargetFramework>' -and
-            [string]$Value -notmatch 'net8\.0-windows7\.0'
+            [string]$Value -notmatch 'net8\.0-windows'
         }
     }
     It 'restores the consumer from the requested tier plus stable dependency fallback and configured public sources' {

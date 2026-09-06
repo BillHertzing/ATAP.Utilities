@@ -1247,6 +1247,14 @@ function Invoke-CSharpPackageBuildMasterStage {
           WorkingDirectory = $SourcePath
           ArtifactsContext = $testArtifactsContext
         }
+        if ($null -ne $authenticodeContract) {
+          $preferredConsumerFramework = if ($PackageName.EndsWith('.Windows', [System.StringComparison]::OrdinalIgnoreCase)) { 'net10.0-windows' } else { 'net10.0' }
+          $contractFrameworkMatches = @($authenticodeContract.Assets | Where-Object { [string]$_.BuildTargetFramework -ceq $preferredConsumerFramework })
+          if ($contractFrameworkMatches.Count -ne 1) {
+            throw "Signing contract for '$PackageName' does not declare the required smoke-consumer framework '$preferredConsumerFramework'."
+          }
+          $testParameters['ConsumerTargetFramework'] = $preferredConsumerFramework
+        }
         if (-not [string]::IsNullOrWhiteSpace($testFilter)) {
           $testParameters['TestFilter'] = $testFilter
         }

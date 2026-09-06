@@ -7,9 +7,11 @@
 .DESCRIPTION
     The package is built exactly once at Experimental. Every promoted tier
     validates the immutable package by generating a deterministic SDK consumer
-    beneath the original execution artifacts root. The consumer targets net8.0,
-    or net8.0-windows7.0 when the package ID ends in `.Windows`, and has
-    exactly one XML-escaped PackageReference for Name and Version.
+    beneath the original execution artifacts root. BuildMaster supplies an
+    explicit target framework from the signed package contract. Compatibility
+    defaults are net8.0, or net8.0-windows when the package ID ends in
+    `.Windows`; no explicit Windows platform baseline is introduced. The
+    consumer has exactly one XML-escaped PackageReference for Name and Version.
 
     Restore suppresses repository Directory.Build and central-package imports,
     selects the requested lifecycle tier, stable as a dependency-only fallback,
@@ -44,6 +46,12 @@
 .PARAMETER ProjectPath
     Compatibility-only original SUT target echoed as RequestedProjectPath.
     It is never passed to dotnet.
+
+.PARAMETER ConsumerTargetFramework
+    Optional exact target framework for the isolated consumer. BuildMaster
+    supplies a framework declared by the signed package contract, preferring
+    net10.0 or net10.0-windows. When omitted, compatibility defaults are
+    net8.0 or net8.0-windows for a package ID ending in `.Windows`.
 
 .PARAMETER ProGetUrl
     ProGet base URL used to construct and verify the requested tier source.
@@ -113,6 +121,10 @@ function Invoke-PromotedPackageTests {
         [string]$ProjectPath = 'ATAP.Utilities.sln',
 
         [Parameter()]
+        [ValidatePattern('^net\d+\.\d+(?:-[A-Za-z0-9.]+)?$')]
+        [string]$ConsumerTargetFramework = '',
+
+        [Parameter()]
         [string]$ProGetUrl,
 
         [Parameter()]
@@ -179,10 +191,11 @@ function Invoke-PromotedPackageTests {
         $consumerProjectPath = Join-Path $consumerRoot 'PromotedPackageConsumer.csproj'
         $consumerLockPath = Join-Path $consumerRoot 'packages.lock.json'
         $tierPackagesPath = Join-Path $artifactsPath 'nuget-packages' $Feed
-        $consumerTargetFramework = if ($Name.EndsWith('.Windows', [StringComparison]::OrdinalIgnoreCase)) {
-            'net8.0-windows7.0'
-        }
-        else {
+        $consumerTargetFramework = if (-not [string]::IsNullOrWhiteSpace($ConsumerTargetFramework)) {
+            $ConsumerTargetFramework
+        } elseif ($Name.EndsWith('.Windows', [StringComparison]::OrdinalIgnoreCase)) {
+            'net8.0-windows'
+        } else {
             'net8.0'
         }
         $directPackageReferences = [ordered]@{ $Name = $Version }
@@ -223,6 +236,7 @@ function Invoke-PromotedPackageTests {
                 Feed               = $Feed
                 ProjectPath        = $consumerProjectPath
                 RequestedProjectPath = $ProjectPath
+                ConsumerTargetFramework = $consumerTargetFramework
                 TestFilter         = if ([string]::IsNullOrWhiteSpace($TestFilter)) { $null } else { $TestFilter }
                 ResultsPath        = $resolvedResultsPath
                 TrxPath            = $null

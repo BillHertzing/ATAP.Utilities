@@ -332,6 +332,13 @@ Describe 'V4-C02 runner shape: Invoke-CSharpPackageBuildMasterStage.ps1 contract
         $script:RunnerText | Should -Match '\$prefix\s*=\s*"\$MetaPackageName\."'
     }
 
+    It 'binds runner signing to the current contract and approval metadata without three-asset assumptions' {
+        $script:RunnerText | Should -Match 'exact current 42-package signing contract'
+        $script:RunnerText | Should -Not -Match 'F03 eight-package allowlist'
+        $script:RunnerText | Should -Match 'taskId\s*=\s*\[string\]\$signingResult\.Approval\.taskId'
+        $script:RunnerText | Should -Match 'exact contract-bound staged ATAP Foundation DLL assets'
+        $script:RunnerText | Should -Not -Match 'Authenticode-signed exactly three staged'
+    }
     It 'runner is invocable from PowerShell (parser succeeds with no errors)' {
         $tokens = $null
         $parseErrors = $null

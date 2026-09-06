@@ -7,30 +7,26 @@ BeforeAll {
   . $script:HelperPath
 }
 
-Describe 'Task 15.182.F03 exact release contract' {
-  It 'binds exactly the approved eight packages and 24 first-party DLL assets' {
+Describe 'Triple-stream exact 42-package/122-asset signing contract' {
+  It 'binds exactly 42 packages and the 122 actually evaluated shipping DLL assets' {
     $release = Get-CSharpPackageAuthenticodeReleaseContract
 
-    $release.Packages.Count | Should -Be 8
-    $release.Assets.Count | Should -Be 24
-    @($release.Packages.PackageName | Sort-Object) | Should -Be @(
-      'ATAP.Utilities.ETW'
-      'ATAP.Utilities.Plugin.Interfaces'
-      'ATAP.Utilities.Secrets.BitwardenSecretsManager'
-      'ATAP.Utilities.Secrets.BitwardenSecretsManager.Windows'
-      'ATAP.Utilities.Secrets.Enumerations'
-      'ATAP.Utilities.Secrets.Interfaces'
-      'ATAP.Utilities.Secrets.Model'
-      'ATAP.Utilities.Secrets.StringConstants'
-    )
-    @($release.Assets | Group-Object PackageName | ForEach-Object Count | Sort-Object -Unique) | Should -Be @(3)
-    @($release.Assets | Where-Object PackageName -ne 'ATAP.Utilities.Secrets.BitwardenSecretsManager.Windows' | Select-Object -ExpandProperty PackageTargetFramework -Unique | Sort-Object) |
-      Should -Be @('net10.0', 'net8.0', 'net9.0')
+    $release.Packages.Count | Should -Be 42
+    $release.Assets.Count | Should -Be 122
+    @($release.Packages.PackageName | Sort-Object -Unique).Count | Should -Be 42
+    @(Get-CSharpPackageAuthenticodeReleaseAssetIds).Count | Should -Be 122
+    @((Get-CSharpPackageAuthenticodeReleaseAssetIds) | Sort-Object -Unique).Count | Should -Be 122
+    (Get-Content -LiteralPath $script:HelperPath -Raw) | Should -Match '\$allPackageDlls\.Count\s+-ne\s+\$expectedRelativePaths\.Count'
+    @($release.Assets | Group-Object PackageName | ForEach-Object Count | Sort-Object -Unique) | Should -Be @(1, 3)
+    @($release.Assets | Group-Object PackageName | Where-Object Count -eq 1 | Select-Object -ExpandProperty Name | Sort-Object) |
+      Should -Be @('ATAP.Utilities.RRSBS.Contracts', 'ATAP.Utilities.RRSBS.Domain')
+    @($release.Assets | Where-Object PackageName -like 'ATAP.Utilities.RRSBS.*' | Select-Object -ExpandProperty BuildTargetFramework -Unique) |
+      Should -Be @('net10.0')
     @($release.Assets | Where-Object PackageName -eq 'ATAP.Utilities.Secrets.BitwardenSecretsManager.Windows' | Select-Object -ExpandProperty PackageTargetFramework | Sort-Object) |
       Should -Be @('net10.0-windows7.0', 'net8.0-windows7.0', 'net9.0-windows7.0')
   }
 
-  It 'maps every allowlisted package to an existing exact project and rejects every other package' {
+  It 'maps every contract package to an existing exact project and rejects every other package' {
     foreach ($contract in (Get-CSharpPackageAuthenticodeReleaseContract).Packages) {
       Join-Path $script:RepoRoot $contract.ProjectPath | Should -Exist
       $contract.AssemblyName | Should -BeExactly $contract.PackageName
@@ -81,6 +77,42 @@ Describe 'Task 15.182.F03 machine-readable HITL boundary' {
 
     { Get-CSharpPackageAuthenticodeApproval -ApprovalPath $path } |
       Should -Throw '*does not bind the exact ATAP Foundation eight-package/24-asset release slice*'
+  }
+  It 'accepts a fresh exact 42-package/122-asset approval without certificate or tool access' {
+    $approval = Get-Content -LiteralPath $script:ApprovalPath -Raw | ConvertFrom-Json -Depth 20
+    $approval.taskId = 'triple-stream-csharp-signing-contract-42'
+    $approval.scope.expectedPackageCount = 42
+    $approval.scope.expectedAssetCount = 122
+    $approval.scope.packageIds = @(Get-CSharpPackageAuthenticodeReleasePackageNames)
+    $approval.scope | Add-Member -NotePropertyName assetIds -NotePropertyValue @(Get-CSharpPackageAuthenticodeReleaseAssetIds)
+    $path = Join-Path $TestDrive 'current-approval.json'
+    $approval | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $path -Encoding utf8NoBOM
+
+    { Get-CSharpPackageAuthenticodeApproval -ApprovalPath $path -PackageName 'ATAP.Utilities.Collection.Extensions' } |
+      Should -Not -Throw
+  }
+
+  It 'rejects a fresh approval whose exact evaluated asset set drifts' {
+    $approval = Get-Content -LiteralPath $script:ApprovalPath -Raw | ConvertFrom-Json -Depth 20
+    $approval.taskId = 'triple-stream-csharp-signing-contract-42'
+    $approval.scope.expectedPackageCount = 42
+    $approval.scope.expectedAssetCount = 122
+    $approval.scope.packageIds = @(Get-CSharpPackageAuthenticodeReleasePackageNames)
+    $assetIds = @(Get-CSharpPackageAuthenticodeReleaseAssetIds)
+    $assetIds[0] = $assetIds[0] + '|drift'
+    $approval.scope | Add-Member -NotePropertyName assetIds -NotePropertyValue $assetIds
+    $path = Join-Path $TestDrive 'drifted-current-approval.json'
+    $approval | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $path -Encoding utf8NoBOM
+
+    { Get-CSharpPackageAuthenticodeApproval -ApprovalPath $path } |
+      Should -Throw '*does not bind the exact ATAP Foundation current 42-package/122-asset filter release slice*'
+  }
+
+  It 'keeps the historical F03 approval compatible only with its eight named packages' {
+    { Get-CSharpPackageAuthenticodeApproval -ApprovalPath $script:ApprovalPath -PackageName 'ATAP.Utilities.ETW' } |
+      Should -Not -Throw
+    { Get-CSharpPackageAuthenticodeApproval -ApprovalPath $script:ApprovalPath -PackageName 'ATAP.Utilities.Collection.Extensions' } |
+      Should -Throw '*outside approval task*15.182.F03*'
   }
 }
 

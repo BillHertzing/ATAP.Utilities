@@ -1015,10 +1015,10 @@ function Invoke-CSharpPackageBuildMasterStage {
     $authenticodeContract = Get-CSharpPackageAuthenticodeContract -PackageName $PackageName
     if ($null -eq $authenticodeContract -and
       (-not [string]::IsNullOrWhiteSpace($AuthenticodeApprovalPath) -or -not [string]::IsNullOrWhiteSpace($SignToolPath))) {
-      throw "Authenticode signing parameters are forbidden for package '$PackageName'; it is outside the exact F03 eight-package allowlist."
+      throw "Authenticode signing parameters are forbidden for package '$PackageName'; it is outside the exact current 42-package signing contract."
     }
     if ($null -ne $authenticodeContract -and $MetaPackageName -cne $PackageName) {
-      throw 'F03 Authenticode release packages require MetaPackageName and PackageName to be the same exact allowlisted package id.'
+      throw 'Authenticode release packages require MetaPackageName and PackageName to be the same exact allowlisted package id.'
     }
 
     $resolvedProjectPath = if ([System.IO.Path]::IsPathRooted($ProjectPath)) {
@@ -1476,7 +1476,7 @@ function Invoke-CSharpPackageBuildMasterStage {
             $authenticodePackEvidence = @()
             if ($null -ne $authenticodeContract) {
               if ([string]::IsNullOrWhiteSpace($AuthenticodeApprovalPath) -or [string]::IsNullOrWhiteSpace($SignToolPath)) {
-                throw "F03 package '$PackageName' requires a named machine-readable AuthenticodeApprovalPath and approved SignToolPath before any certificate or signing access."
+                throw "Authenticode package '$PackageName' requires a named machine-readable AuthenticodeApprovalPath and approved SignToolPath before any certificate or signing access."
               }
               $signingEvidencePath = Join-Path $contextDirectory 'authenticode'
               $signingResult = Invoke-CSharpPackageAuthenticodeStageSigning `
@@ -1488,7 +1488,7 @@ function Invoke-CSharpPackageBuildMasterStage {
                 -SignToolPath $SignToolPath `
                 -EvidencePath $signingEvidencePath `
                 -Confirm:$false
-              Add-BuildMasterPublishTrace -Path $publishTracePath -Message "Authenticode-signed exactly three staged ATAP Foundation DLL assets for '$PackageName' after the single locked build and before both pack runs."
+              Add-BuildMasterPublishTrace -Path $publishTracePath -Message "Authenticode-signed the exact contract-bound staged ATAP Foundation DLL assets for '$PackageName' after the single locked build and before both pack runs."
             }
 
             $deterministicPackTool = Resolve-DeterministicNuGetMSBuild
@@ -1597,7 +1597,7 @@ function Invoke-CSharpPackageBuildMasterStage {
                 -ScratchRoot $contextDirectory
               [ordered]@{
                 schemaVersion = '1.0.0'
-                taskId = '15.182.F03'
+                taskId = [string]$signingResult.Approval.taskId
                 packageName = $PackageName
                 sourceCommit = $sourceCommit
                 approvalSha256 = (Get-FileHash -LiteralPath $AuthenticodeApprovalPath -Algorithm SHA256).Hash.ToLowerInvariant()

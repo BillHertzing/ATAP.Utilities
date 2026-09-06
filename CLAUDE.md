@@ -12,9 +12,9 @@ Entity Framework Core abstractions, Flyway migration helpers
 
 | Source File    | Last Modified            |
 | -------------- | ------------------------ |
-| main-instructions.md | 2026-08-22 10:48:31 |
+| main-instructions.md | 2026-09-06 11:32:48 |
 | ai-local.md | 2026-08-13 12:27:38 |
-| CLAUDE.md (combined) | 2026-08-22 11:07:31 |
+| CLAUDE.md (combined) | 2026-09-06 11:33:07 |
 
 ---
 
@@ -202,6 +202,7 @@ merge.
 - **UI framework:** Blazor WASM with Syncfusion components and Material Design theming
 - **Database migrations:** Flyway — never hand-edit applied migration files
 - **Build/test:** Use and invoke `dotnet` CLI commands. In the future, a /build folder with a CI pipeline will be added
+- **C# compilation artifacts:** Every C# compilation that uses `--artifacts-path` MUST use a path beginning with `D:\ATAPArtifacts\` on host `utat022` and `C:\ATAPArtifacts\` on hosts `utat01` and `ncat040`. These are the authoritative artifact roots going forward; do not introduce or reuse other artifact-root locations for new compilations. Older locations are historical and are scheduled for removal before the end of the current sprint.
 - **Git:** Never commit directly to `main` or to a stable branch worktree for ordinary sprint work.
   Make changes in the most recent sprint branch worktree for the repo unless the user explicitly
   asks for stable-branch maintenance. Create an issue, a feature branch, and a worktree using the

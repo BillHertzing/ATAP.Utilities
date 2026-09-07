@@ -54,6 +54,21 @@
 #                         database afterward. The runner resolves the
 #                         secret value from Bitwarden by name; values never
 #                         appear in Arguments.
+#   Deployment-principal audit variables (required; names/metadata only):
+#     $DatabaseDeploymentSqlInstance
+#                         Current tier's explicit Server\Instance target.
+#                         Define this as a deployment-environment variable.
+#     $DatabaseDeploymentExpectedHostName
+#     $DatabaseDeploymentServiceAccount
+#     $DatabaseDeploymentExpectedAccountSid
+#                         Frozen local BuildMaster identity for the target host.
+#     $DatabaseDeploymentAllowedInstanceNames
+#                         Semicolon-delimited exact five-tier instance allowlist.
+#     $DatabaseDeploymentApprovedDatabaseNames
+#                         Semicolon-delimited package-target database allowlist;
+#                         initially ATAPUtilities only. The runner performs a
+#                         read-only fail-closed audit before any publish,
+#                         promotion, or apply. It never grants permissions.
 #
 # Five stages map to five canonical database feeds:
 #   Experimental -> database-experimental (build .nupkg + publish)
@@ -102,7 +117,7 @@ set $BuildMasterExecutionId = $ExecutionId;
 Exec
 (
     FileName: pwsh,
-    Arguments: >>-NoProfile -File "$InvokeDatabasePackageStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -DatabaseApplication "$DatabaseApplication" -DatabaseStream "$DatabaseStream" -ExcludedMigrationFileNames "$ExcludedMigrationFileNames" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetBaseUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName" -ExperimentalDatabaseDBConnectionStringSecretName "$ExperimentalDatabaseDBConnectionStringSecretName" -DevelopmentDatabaseDBConnectionStringSecretName "$DevelopmentDatabaseDBConnectionStringSecretName" -IntegrationDatabaseDBConnectionStringSecretName "$IntegrationDatabaseDBConnectionStringSecretName" -QADatabaseDBConnectionStringSecretName "$QADatabaseDBConnectionStringSecretName" -ProductionDatabaseDBConnectionStringSecretName "$ProductionDatabaseDBConnectionStringSecretName">>,
+    Arguments: >>-NoProfile -File "$InvokeDatabasePackageStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -DatabaseApplication "$DatabaseApplication" -DatabaseStream "$DatabaseStream" -ExcludedMigrationFileNames "$ExcludedMigrationFileNames" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetBaseUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName" -ExperimentalDatabaseDBConnectionStringSecretName "$ExperimentalDatabaseDBConnectionStringSecretName" -DevelopmentDatabaseDBConnectionStringSecretName "$DevelopmentDatabaseDBConnectionStringSecretName" -IntegrationDatabaseDBConnectionStringSecretName "$IntegrationDatabaseDBConnectionStringSecretName" -QADatabaseDBConnectionStringSecretName "$QADatabaseDBConnectionStringSecretName" -ProductionDatabaseDBConnectionStringSecretName "$ProductionDatabaseDBConnectionStringSecretName" -DatabaseDeploymentSqlInstance "$DatabaseDeploymentSqlInstance" -DatabaseDeploymentExpectedHostName "$DatabaseDeploymentExpectedHostName" -DatabaseDeploymentServiceAccount "$DatabaseDeploymentServiceAccount" -DatabaseDeploymentExpectedAccountSid "$DatabaseDeploymentExpectedAccountSid" -DatabaseDeploymentAllowedInstanceNames "$DatabaseDeploymentAllowedInstanceNames" -DatabaseDeploymentApprovedDatabaseNames "$DatabaseDeploymentApprovedDatabaseNames">>,
     WorkingDirectory: $SourcePath,
     SuccessExitCode: 0
 );

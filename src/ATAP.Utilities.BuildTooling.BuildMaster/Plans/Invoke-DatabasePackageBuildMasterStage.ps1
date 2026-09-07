@@ -83,6 +83,19 @@
   accepted as a parameter and never echoed; Invoke-FlywayRehearsal /
   Invoke-Flyway resolve it from Bitwarden by name.
 
+.PARAMETER DatabaseDeploymentSqlInstance
+.PARAMETER DatabaseDeploymentExpectedHostName
+.PARAMETER DatabaseDeploymentServiceAccount
+.PARAMETER DatabaseDeploymentExpectedAccountSid
+.PARAMETER DatabaseDeploymentAllowedInstanceNames
+.PARAMETER DatabaseDeploymentApprovedDatabaseNames
+  Fail-closed deployment-principal audit policy. The SQL instance is the
+  current tier's explicit Server\Instance target. The account and SID identify
+  the local BuildMaster service identity. Allowed instances and approved
+  package-target databases are semicolon-delimited exact names. The runner
+  audits the current target before any package publish, promotion, or apply;
+  it does not grant permissions.
+
 .PARAMETER SkipRehearsal
   Bypasses the rehearsal-before-promotion gate even when a tier connection
   secret name is supplied. Intended for disaster recovery and audited manual
@@ -192,6 +205,24 @@ param(
 
   [AllowEmptyString()]
   [string]$ProductionDatabaseDBConnectionStringSecretName = '',
+
+  [AllowEmptyString()]
+  [string]$DatabaseDeploymentSqlInstance = '',
+
+  [AllowEmptyString()]
+  [string]$DatabaseDeploymentExpectedHostName = '',
+
+  [AllowEmptyString()]
+  [string]$DatabaseDeploymentServiceAccount = '',
+
+  [AllowEmptyString()]
+  [string]$DatabaseDeploymentExpectedAccountSid = '',
+
+  [AllowEmptyString()]
+  [string]$DatabaseDeploymentAllowedInstanceNames = '',
+
+  [AllowEmptyString()]
+  [string]$DatabaseDeploymentApprovedDatabaseNames = '',
 
   [switch]$SkipRehearsal,
 
@@ -542,6 +573,64 @@ function Get-DatabasePackageApplyMarkerPath {
 
   END {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Finished $fn"
+  }
+}
+
+function Assert-DatabasePackageDeploymentPrincipal {
+  <#
+  .SYNOPSIS
+    Fails closed unless the BuildMaster identity has the approved database role.
+  .DESCRIPTION
+    Audits one explicit tier instance and the current package-target database.
+    The audit is read-only and deliberately does not repair permissions during
+    a deployment. Remediation is an independently authorized operator action.
+  #>
+  [CmdletBinding()]
+  [OutputType([PSCustomObject])]
+  param(
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$SqlInstance,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ExpectedHostName,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ServiceAccount,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ExpectedAccountSid,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string[]]$AllowedInstanceName,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string[]]$ApprovedDatabaseName,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$DatabaseApplication
+  )
+
+  BEGIN {
+    $fn = 'Assert-DatabasePackageDeploymentPrincipal'
+    $mn = 'ATAP.Utilities.BuildTooling.BuildMaster'
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
+      -Message "Auditing BuildMaster database deployment principal for '$SqlInstance/$DatabaseApplication'."
+  }
+
+  PROCESS {
+    if ($DatabaseApplication -notin $ApprovedDatabaseName) {
+      throw "Database package target '$DatabaseApplication' is not explicitly admitted by DatabaseDeploymentApprovedDatabaseNames."
+    }
+
+    $auditRows = @(Get-SqlServiceLoginGrantTarget `
+        -SqlInstance $SqlInstance `
+        -ExpectedHostName $ExpectedHostName `
+        -ServiceAccount $ServiceAccount `
+        -ExpectedAccountSid $ExpectedAccountSid `
+        -AllowedInstanceName $AllowedInstanceName `
+        -ApprovedDatabaseName $ApprovedDatabaseName)
+    $targetRows = @($auditRows | Where-Object { $_.DatabaseName -ceq $DatabaseApplication })
+    if ($targetRows.Count -ne 1) {
+      throw "BuildMaster deployment-principal audit returned $($targetRows.Count) rows for approved target '$DatabaseApplication' on '$SqlInstance'; expected exactly one."
+    }
+
+    $target = $targetRows[0]
+    if (-not [bool]$target.Include -or -not [bool]$target.IsCompliant) {
+      $detail = @($target.ExclusionReason, $target.DriftReason) |
+        Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) }
+      throw "BuildMaster deployment-principal audit FAILED for '$DatabaseApplication' on '$SqlInstance': $($detail -join '; '). Package publication, promotion, and apply are blocked."
+    }
+
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+      -Message "BuildMaster deployment-principal audit PASSED for '$DatabaseApplication' on '$SqlInstance'."
+    return $target
   }
 }
 
@@ -950,6 +1039,7 @@ function Invoke-DatabasePackageBuildMasterStage {
       'Expand-DatabaseChangePackage'   = 'Expand-DatabaseChangePackage.ps1'
       'Get-DatabasePackageManifest'    = 'Get-DatabasePackageManifest.ps1'
       'Resolve-DatabaseSqlConnection'  = 'Resolve-DatabaseSqlConnection.ps1'
+      'Get-SqlServiceLoginGrantTarget' = 'Get-SqlServiceLoginGrantTarget.ps1'
       'Get-FlywaySchemaVersion'        = 'Get-FlywaySchemaVersion.ps1'
       'New-DatabasePreMigrationSnapshot' = 'New-DatabasePreMigrationSnapshot.ps1'
       'Invoke-FlywayRehearsal'         = 'Invoke-FlywayRehearsal.ps1'
@@ -1051,6 +1141,43 @@ function Invoke-DatabasePackageBuildMasterStage {
       throw "Database stage 'Experimental' cannot build, publish, rehearse, apply, or complete package '$databasePackageId' while -SkipRehearsal is supplied."
     }
 
+    $principalPolicyValues = [ordered]@{
+      DatabaseDeploymentSqlInstance        = $DatabaseDeploymentSqlInstance
+      DatabaseDeploymentExpectedHostName   = $DatabaseDeploymentExpectedHostName
+      DatabaseDeploymentServiceAccount     = $DatabaseDeploymentServiceAccount
+      DatabaseDeploymentExpectedAccountSid = $DatabaseDeploymentExpectedAccountSid
+      DatabaseDeploymentAllowedInstanceNames = $DatabaseDeploymentAllowedInstanceNames
+      DatabaseDeploymentApprovedDatabaseNames = $DatabaseDeploymentApprovedDatabaseNames
+    }
+    $missingPrincipalPolicyValues = @($principalPolicyValues.GetEnumerator() |
+        Where-Object { [string]::IsNullOrWhiteSpace([string]$_.Value) } |
+        ForEach-Object { $_.Key })
+    if ($missingPrincipalPolicyValues.Count -gt 0) {
+      throw "Database stage '$Stage' cannot publish, promote, or apply because the BuildMaster deployment-principal audit policy is incomplete: $($missingPrincipalPolicyValues -join ', ')."
+    }
+
+    $allowedInstanceNames = @($DatabaseDeploymentAllowedInstanceNames -split ';' |
+        ForEach-Object { $_.Trim() } |
+        Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    $approvedDatabaseNames = @($DatabaseDeploymentApprovedDatabaseNames -split ';' |
+        ForEach-Object { $_.Trim() } |
+        Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    if ($allowedInstanceNames.Count -ne @($allowedInstanceNames | Select-Object -Unique).Count) {
+      throw 'DatabaseDeploymentAllowedInstanceNames contains duplicate instance names.'
+    }
+    if ($approvedDatabaseNames.Count -ne @($approvedDatabaseNames | Select-Object -Unique).Count) {
+      throw 'DatabaseDeploymentApprovedDatabaseNames contains duplicate database names.'
+    }
+
+    $principalAudit = Assert-DatabasePackageDeploymentPrincipal `
+      -SqlInstance $DatabaseDeploymentSqlInstance `
+      -ExpectedHostName $DatabaseDeploymentExpectedHostName `
+      -ServiceAccount $DatabaseDeploymentServiceAccount `
+      -ExpectedAccountSid $DatabaseDeploymentExpectedAccountSid `
+      -AllowedInstanceName $allowedInstanceNames `
+      -ApprovedDatabaseName $approvedDatabaseNames `
+      -DatabaseApplication $DatabaseApplication
+
     $stateFiles = [ordered]@{
       CeilingTier       = Join-Path -Path $contextDirectory -ChildPath "$databasePackageId.ceiling-tier.tmp"
       CurrentTier       = Join-Path -Path $contextDirectory -ChildPath "$databasePackageId.current-tier.tmp"
@@ -1096,6 +1223,8 @@ function Invoke-DatabasePackageBuildMasterStage {
         DatabaseStream      = $DatabaseStream
         DatabasePackageId   = $databasePackageId
         ExcludedMigrations  = $excludedMigrations
+        DeploymentPrincipalAuditPassed = [bool]$principalAudit.IsCompliant
+        DeploymentPrincipalSqlInstance = $DatabaseDeploymentSqlInstance
       } | Out-Null
 
     if (Test-DatabasePackageStageCompleted -ContextDirectory $contextDirectory -DatabasePackageId $databasePackageId -Tier $Stage) {

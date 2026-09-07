@@ -75,6 +75,19 @@ Describe 'V4-E08 plan shape: DatabaseChangePackage-5Stage.otter is a thin runner
         $script:PlanText | Should -Match '-ProductionDatabaseDBConnectionStringSecretName\s+"\$ProductionDatabaseDBConnectionStringSecretName"'
     }
 
+    It 'plan passes the explicit deployment-principal audit policy without credentials' {
+        foreach ($name in @(
+            'DatabaseDeploymentSqlInstance',
+            'DatabaseDeploymentExpectedHostName',
+            'DatabaseDeploymentServiceAccount',
+            'DatabaseDeploymentExpectedAccountSid',
+            'DatabaseDeploymentAllowedInstanceNames',
+            'DatabaseDeploymentApprovedDatabaseNames'
+        )) {
+            $script:PlanText | Should -Match ('-{0}\s+"\${0}"' -f $name)
+        }
+    }
+
     It 'plan references the runner script via $BuildMasterPlanScriptDir + Invoke-DatabasePackageBuildMasterStage.ps1' {
         $script:PlanText | Should -Match 'set\s+\$BuildMasterPlanScriptDir\s*=\s*\$PathCombine'
         $script:PlanText | Should -Match 'Invoke-DatabasePackageBuildMasterStage\.ps1'
@@ -242,6 +255,16 @@ Describe 'Task 9.10 runner contract: per-tier apply + rehearsal-before-promotion
         $publishIdx | Should -BeGreaterThan 0
         $rehearsalIdx | Should -BeGreaterThan $publishIdx
         $applyIdx   | Should -BeGreaterThan $rehearsalIdx
+    }
+
+    It 'runner fails closed through a read-only principal audit before any package action' {
+        $script:RunnerText | Should -Match 'function\s+Assert-DatabasePackageDeploymentPrincipal'
+        $script:RunnerText | Should -Match 'Get-SqlServiceLoginGrantTarget'
+        $script:RunnerText | Should -Not -Match 'Set-SqlDatabasePackageDeploymentPrincipal'
+        $auditIdx = $script:RunnerText.IndexOf('$principalAudit = Assert-DatabasePackageDeploymentPrincipal')
+        $stageActionIdx = $script:RunnerText.IndexOf("if (`$Stage -eq 'Experimental')", $auditIdx)
+        $auditIdx | Should -BeGreaterThan 0
+        $stageActionIdx | Should -BeGreaterThan $auditIdx
     }
 
     It 'reuses the captured immutable Experimental package after publish succeeds but apply fails' {
@@ -475,6 +498,71 @@ Describe 'Task 9.10 behavior: per-tier apply + rehearsal helpers' {
         }
         It 'returns empty string when the tier has no name configured' {
             (Resolve-DatabaseTierConnectionSecretName -Tier 'QA') | Should -BeExactly ''
+        }
+    }
+
+    Context 'Assert-DatabasePackageDeploymentPrincipal' {
+        BeforeEach {
+            function global:Get-SqlServiceLoginGrantTarget {
+                param([Parameter(ValueFromRemainingArguments)]$a)
+                $null = $a
+                [PSCustomObject]@{
+                    DatabaseName = 'ATAPUtilities'
+                    Include = $true
+                    IsCompliant = $true
+                    ExclusionReason = $null
+                    DriftReason = $null
+                }
+            }
+        }
+
+        AfterEach {
+            Remove-Item Function:\Get-SqlServiceLoginGrantTarget -ErrorAction SilentlyContinue
+        }
+
+        It 'returns the one compliant explicitly admitted package target' {
+            $result = Assert-DatabasePackageDeploymentPrincipal `
+                -SqlInstance 'UTAT022\Integration' -ExpectedHostName 'UTAT022' `
+                -ServiceAccount 'UTAT022\SvcBuildMaster' `
+                -ExpectedAccountSid 'S-1-5-21-1-2-3-1001' `
+                -AllowedInstanceName @('Integration') `
+                -ApprovedDatabaseName @('ATAPUtilities') `
+                -DatabaseApplication 'ATAPUtilities'
+            $result.IsCompliant | Should -BeTrue
+        }
+
+        It 'rejects a package target absent from the explicit admission list before querying SQL' {
+            { Assert-DatabasePackageDeploymentPrincipal `
+                -SqlInstance 'UTAT022\Integration' -ExpectedHostName 'UTAT022' `
+                -ServiceAccount 'UTAT022\SvcBuildMaster' `
+                -ExpectedAccountSid 'S-1-5-21-1-2-3-1001' `
+                -AllowedInstanceName @('Integration') `
+                -ApprovedDatabaseName @('SomeOtherDatabase') `
+                -DatabaseApplication 'ATAPUtilities' } |
+                Should -Throw '*not explicitly admitted*'
+        }
+
+        It 'blocks deployment when the database role audit reports drift' {
+            Remove-Item Function:\Get-SqlServiceLoginGrantTarget -ErrorAction SilentlyContinue
+            function global:Get-SqlServiceLoginGrantTarget {
+                param([Parameter(ValueFromRemainingArguments)]$a)
+                $null = $a
+                [PSCustomObject]@{
+                    DatabaseName = 'ATAPUtilities'
+                    Include = $true
+                    IsCompliant = $false
+                    ExclusionReason = $null
+                    DriftReason = 'MissingDbOwnerMembership'
+                }
+            }
+            { Assert-DatabasePackageDeploymentPrincipal `
+                -SqlInstance 'UTAT022\Integration' -ExpectedHostName 'UTAT022' `
+                -ServiceAccount 'UTAT022\SvcBuildMaster' `
+                -ExpectedAccountSid 'S-1-5-21-1-2-3-1001' `
+                -AllowedInstanceName @('Integration') `
+                -ApprovedDatabaseName @('ATAPUtilities') `
+                -DatabaseApplication 'ATAPUtilities' } |
+                Should -Throw '*audit FAILED*MissingDbOwnerMembership*'
         }
     }
 

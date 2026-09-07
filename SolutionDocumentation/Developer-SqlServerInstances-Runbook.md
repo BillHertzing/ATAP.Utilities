@@ -21,6 +21,25 @@ Module of record: `src/ATAP.Utilities.BuildTooling.PowerShell`
 
 ---
 
+## BuildMaster database-package principal
+
+Each current workstation uses only its host-local `<HOST>\SvcBuildMaster`
+identity. It receives persistent database-scoped `db_owner` only on explicitly
+admitted package targets in `EXP<USERNAME>`, `DEV<USERNAME>`, `INTEGRATION`,
+`QA`, and `PRODUCTION`. The initial target is `ATAPUtilities`.
+
+Run `Set-SqlDatabasePackageDeploymentPrincipal -AuditOnly` before every package
+deployment and during parity audits. Reconcile after an explicitly authorized
+database create or restore. Unlisted user databases remain `NotApproved`;
+generic `Experimental`, remote instances, system/offline/restoring/read-only
+databases, SID drift, and unknown targets fail closed. This policy grants no
+server role, database create/restore, `model`, or trigger authority. Rollback
+removes role membership by default and removes the mapped user only when the
+apply result proves that user did not exist before. See
+[NewComputerSetup.md § 9.2.1](NewComputerSetup.md#921-grant-svcbuildmaster-database-package-deployment-rights).
+
+---
+
 ## Parity journal requirement
 
 Before a step in this runbook creates, removes, upgrades, or configures SQL

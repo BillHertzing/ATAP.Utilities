@@ -113,6 +113,9 @@ function Test-NewComputerSetupDocumentation {
         ReturnGate = 'bounded return'
         SvcBuildMasterTierGrant = '### 9.2.1 Grant SvcBuildMaster database-package deployment rights'
         SvcBuildMasterTierParity = 'Record this machine-state grant with `Add-ParityChangeEntry`'
+        SvcBuildMasterExplicitAdmission = 'only on databases explicitly admitted as'
+        SvcBuildMasterAudit = 'Set-SqlDatabasePackageDeploymentPrincipal @parameters -AuditOnly'
+        SvcBuildMasterNoInheritance = 'it never inherits this grant merely by existing'
       }
       foreach ($concept in $requiredConcepts.GetEnumerator()) {
         if ($canonical -notmatch [regex]::Escape($concept.Value)) {

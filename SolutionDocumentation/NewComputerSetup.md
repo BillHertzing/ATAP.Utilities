@@ -1710,22 +1710,27 @@ Initialize-SqlServiceLogin `
 ### 9.2.1 Grant SvcBuildMaster database-package deployment rights
 
 The preceding BuildMaster product-database grant is not sufficient for database
-package deployment. The BuildMaster service identity also performs tier rehearsal,
-pre-migration backup, and Flyway DDL/DML apply operations. Grant the local
-`SvcBuildMaster` identity `db_owner` on the `ATAPUtilities` database in every
-authorized tier instance.
+package deployment. The BuildMaster service identity performs Flyway DDL/DML in
+each package target and pre-migration backup in permanent tiers. Grant the local
+`SvcBuildMaster` identity `db_owner` only on databases explicitly admitted as
+package targets. The initial allow-list contains `ATAPUtilities` and no other user
+database. Rehearsal database create/restore/drop is a separate server-level
+lifecycle and is not authorized by this grant.
 
 The logical Experimental tier targets `Exp<DeveloperName>`. Never create or grant
 against a generic permanent `Experimental` instance.
 
 Run this idempotent procedure in an elevated, profile-loaded PowerShell session
-after the five databases exist:
+after the five target databases exist and the host's named Task 15.185.i packet
+has frozen its SID, inventory, `-WhatIf` output, recovery, and peer acknowledgement:
 
 ```powershell
-Import-Module ATAP.Utilities.PowerShell
+Import-Module ATAP.Utilities.DatabaseManagement.Powershell
 
 $developerName = $env:USERNAME
-$serviceAccount = "$env:COMPUTERNAME\SvcBuildMaster"
+$hostName = $env:COMPUTERNAME.ToUpperInvariant()
+$serviceAccount = "$hostName\SvcBuildMaster"
+$expectedSid = (Get-LocalUser -Name 'SvcBuildMaster' -ErrorAction Stop).SID.Value
 $databaseTierInstances = @(
   "Exp$developerName"
   "Dev$developerName"
@@ -1735,57 +1740,42 @@ $databaseTierInstances = @(
 )
 
 foreach ($instanceName in $databaseTierInstances) {
-  Initialize-SqlServiceLogin `
-    -SqlInstance "localhost\$instanceName" `
-    -DatabaseName 'ATAPUtilities' `
-    -ServiceAccount $serviceAccount `
-    -Encrypt Optional `
-    -TrustServerCertificate
+  $parameters = @{
+    SqlInstance = "localhost\$instanceName"
+    ExpectedHostName = $hostName
+    ServiceAccount = $serviceAccount
+    ExpectedAccountSid = $expectedSid
+    AllowedInstanceName = $databaseTierInstances
+    ApprovedDatabaseName = @('ATAPUtilities')
+    Encrypt = 'Optional'
+    TrustServerCertificate = $true
+  }
+  Set-SqlDatabasePackageDeploymentPrincipal @parameters -Ensure Present -WhatIf
+  # After the named packet is explicitly authorized:
+  Set-SqlDatabasePackageDeploymentPrincipal @parameters -Ensure Present -Confirm:$false
 }
 ```
 
-Verify the server login, database user, and `db_owner` membership independently:
+Run `-AuditOnly` after apply and persist only the secret-safe result. Every included
+row must be compliant, and every other user database must report `NotApproved`:
 
 ```powershell
-$principalLiteral = $serviceAccount.Replace("'", "''")
-$verificationQuery = @"
-DECLARE @principal sysname = N'$principalLiteral';
-SELECT
-  CAST(SERVERPROPERTY('MachineName') AS nvarchar(128)) AS MachineName,
-  CAST(SERVERPROPERTY('InstanceName') AS nvarchar(128)) AS InstanceName,
-  DB_NAME() AS DatabaseName,
-  @principal AS AccountName,
-  IIF(SUSER_ID(@principal) IS NULL, 0, 1) AS ServerLoginExists,
-  IIF(USER_ID(@principal) IS NULL, 0, 1) AS DatabaseUserExists,
-  ISNULL(IS_ROLEMEMBER(N'db_owner', @principal), 0) AS IsDbOwner;
-"@
-
 $grantAudit = foreach ($instanceName in $databaseTierInstances) {
-  Invoke-Sqlcmd `
-    -ServerInstance "localhost\$instanceName" `
-    -Database 'ATAPUtilities' `
-    -Query $verificationQuery `
-    -TrustServerCertificate
+  $parameters.SqlInstance = "localhost\$instanceName"
+  Set-SqlDatabasePackageDeploymentPrincipal @parameters -AuditOnly
 }
-
-$grantAudit |
-  Select-Object MachineName, InstanceName, DatabaseName, AccountName,
-    ServerLoginExists, DatabaseUserExists, IsDbOwner
-
-if ($grantAudit.Where({
-      $_.ServerLoginExists -ne 1 -or
-      $_.DatabaseUserExists -ne 1 -or
-      $_.IsDbOwner -ne 1
-    }).Count -gt 0) {
-  throw 'SvcBuildMaster ATAPUtilities database permission verification failed.'
+if (@($grantAudit | Where-Object Include | Where-Object { -not $_.IsCompliant }).Count -gt 0) {
+  throw 'SvcBuildMaster package-target permission verification failed.'
 }
 ```
 
 Record this machine-state grant with `Add-ParityChangeEntry`. The peer action must
 repeat the same idempotent procedure using the peer-local
 `<PeerHost>\SvcBuildMaster` identity, then acknowledge the entry only after the
-independent query passes on all five authorized tier databases. Do not copy or
-restore an application or Inedo database to establish parity.
+independent audit passes on all five explicitly admitted tier databases. Adding a
+future database requires a reviewed allow-list change followed by reconciliation;
+it never inherits this grant merely by existing. Do not copy or restore an
+application or Inedo database to establish parity.
 
 ### 9.3 Reconfigure the Windows services to use the dedicated accounts
 

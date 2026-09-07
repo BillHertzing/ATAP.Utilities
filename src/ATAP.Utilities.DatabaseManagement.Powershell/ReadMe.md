@@ -70,6 +70,7 @@ Use the module-level getting started guide for the lifecycle workflow:
 | `Build-DatabaseWithFlyway`                | Flyway Helpers      | Rebuild a target database using active worktree helper files; keeps data and log files in independently supplied settings-backed paths and maps canonical QA/Integration tier names at the legacy Flyway boundary. |
 | `Get-DatabaseCredentialsKey`              | Connection Helpers  | Resolve the Bitwarden credentials key for a given database / tier / host.                                                  |
 | `Get-InstalledDatabaseInformation`        | Instance Management | Return metadata about installed SQL Server instances.                                                                      |
+| `Get-SqlServiceLoginGrantTarget`          | Instance Management | Audit topology, Windows/login/user SIDs, and `db_owner` drift for explicitly admitted package targets; unrelated databases are excluded. |
 | `Initialize-SqlServiceLogin`              | Instance Management | Initialise SQL Server service logins using dbatools `Invoke-DbaQuery` without loading the SqlServer module.                 |
 | `Install-SqlServerInstance`               | Instance Management | Install and configure a SQL Server instance using the target host/instance data, log, and backup paths from `$global:settings`. |
 | `Invoke-Flyway`                           | Flyway Helpers      | Invoke Flyway with Java 17+ selection and User-scope `UserPii` passphrase fallback for agent shells.                       |
@@ -81,6 +82,7 @@ Use the module-level getting started guide for the lifecycle workflow:
 | `New-DeveloperScratchDb`                  | Developer Databases | Idempotently create a per-developer scratch database.                                                                      |
 | `New-FeatureSharedDb`                     | Developer Databases | Idempotently create a per-feature shared database.                                                                         |
 | `Remove-DeveloperScratchDb`               | Developer Databases | Drop disposable developer scratch databases.                                                                               |
+| `Set-SqlDatabasePackageDeploymentPrincipal` | Instance Management | Audit or idempotently grant/revoke `db_owner` only on frozen host-local, explicitly admitted package targets; supports `-WhatIf` and preserves pre-existing users during rollback by default. |
 | `Remove-FeatureSharedDb`                  | Developer Databases | Drop disposable per-feature shared databases.                                                                              |
 | `Resolve-DatabaseSqlConnection`           | Connection Helpers  | Resolve a SqlConnection from three connection-method parameter sets.                                                       |
 | `Resolve-DbInstanceName`                  | Instance Management | Resolve canonical Stream J database names.                                                                                 |

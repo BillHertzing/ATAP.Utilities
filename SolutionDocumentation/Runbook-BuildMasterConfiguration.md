@@ -20,6 +20,25 @@
 > [BuildMaster-Install-Runbook.md § 4.3](BuildMaster-Install-Runbook.md) for
 > the verification snippet.
 
+Database-package stages must preflight the host-local BuildMaster SID and
+explicit database allow-list through
+`Set-SqlDatabasePackageDeploymentPrincipal -AuditOnly`. Only admitted package
+targets receive database-scoped `db_owner`; all other user databases remain
+excluded. The five-instance procedure, rollback boundary, and create/restore
+reconciliation are canonical in
+[NewComputerSetup.md § 9.2.1](NewComputerSetup.md#921-grant-svcbuildmaster-database-package-deployment-rights).
+
+For `DatabaseChangePackage-5Stage`, define these non-secret variables before
+syncing and running the plan: `DatabaseDeploymentSqlInstance` (scoped per
+deployment environment), `DatabaseDeploymentExpectedHostName`,
+`DatabaseDeploymentServiceAccount`, `DatabaseDeploymentExpectedAccountSid`,
+`DatabaseDeploymentAllowedInstanceNames` (semicolon-delimited), and
+`DatabaseDeploymentApprovedDatabaseNames` (initially `ATAPUtilities`). The
+runner calls `Get-SqlServiceLoginGrantTarget` before any package action and
+fails fast when a value is missing, the package target is unapproved, or the
+login/user/SID/`db_owner` mapping drifts. Permission repair remains a separate
+authorized operator action using `Set-SqlDatabasePackageDeploymentPrincipal`.
+
 # Runbook: BuildMaster Configuration for Stream L
 
 **Purpose:** Working runbook for Stream L in

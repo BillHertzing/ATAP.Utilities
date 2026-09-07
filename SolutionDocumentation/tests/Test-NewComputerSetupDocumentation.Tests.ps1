@@ -57,4 +57,22 @@ Use BuildMaster.Admin.API.Key for the service account through BW_SESSION on port
     $result.Findings.Rule | Should -Contain 'SvcBuildMasterTierGrant'
     $result.Findings.Rule | Should -Contain 'SvcBuildMasterTierParity'
   }
+
+  It 'requires explicit target admission, audit, and no future-database inheritance' {
+    foreach ($name in @('NewComputerSetup.md', 'BuildMaster-Install-Runbook.md', 'Runbook-BuildMasterConfiguration.md')) {
+      Copy-Item -LiteralPath (Join-Path $script:documentationRoot $name) -Destination (Join-Path $TestDrive $name)
+    }
+    $target = Join-Path $TestDrive 'NewComputerSetup.md'
+    $content = Get-Content -LiteralPath $target -Raw
+    $content = $content.Replace('only on databases explicitly admitted as', 'on every user database as')
+    $content = $content.Replace('Set-SqlDatabasePackageDeploymentPrincipal @parameters -AuditOnly', 'Invoke-Sqlcmd')
+    $content = $content.Replace('it never inherits this grant merely by existing', 'it inherits this grant')
+    Set-Content -LiteralPath $target -Value $content -Encoding utf8
+
+    $result = Test-NewComputerSetupDocumentation -DocumentationRoot $TestDrive
+    $result.Passed | Should -BeFalse
+    $result.Findings.Rule | Should -Contain 'SvcBuildMasterExplicitAdmission'
+    $result.Findings.Rule | Should -Contain 'SvcBuildMasterAudit'
+    $result.Findings.Rule | Should -Contain 'SvcBuildMasterNoInheritance'
+  }
 }

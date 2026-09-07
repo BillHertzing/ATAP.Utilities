@@ -22,6 +22,10 @@ Describe 'Triple-stream exact 45-package/119-asset signing contract' {
       Should -Be @('ATAP.Utilities.RRSBS.Contracts', 'ATAP.Utilities.RRSBS.Domain')
     @($release.Packages | Where-Object { $_.Assets.Count -eq 0 } | Select-Object -ExpandProperty PackageName | Sort-Object) |
       Should -Be @('ATAP.Utilities.Configuration', 'ATAP.Utilities.Secrets', 'ATAP.Utilities.Serializer', 'ATAP.Utilities.Serializer.Shim')
+    @($release.Packages | Where-Object { $_.Assets.Count -eq 0 } | ForEach-Object { $_.SupportedTargetFrameworks.Count } | Sort-Object -Unique) |
+      Should -Be @(3)
+    @($release.Packages | Where-Object { $_.Assets.Count -eq 0 } | ForEach-Object { $_.SupportedTargetFrameworks } | Sort-Object -Unique) |
+      Should -Be @('net10.0', 'net8.0', 'net9.0')
     @($release.Assets | Where-Object PackageName -like 'ATAP.Utilities.RRSBS.*' | Select-Object -ExpandProperty BuildTargetFramework -Unique) |
       Should -Be @('net10.0')
     @($release.Assets | Where-Object PackageName -eq 'ATAP.Utilities.Secrets.BitwardenSecretsManager.Windows' | Select-Object -ExpandProperty PackageTargetFramework | Sort-Object) |
@@ -291,5 +295,6 @@ Describe 'Task 15.182.F03 runner orchestration order' {
     $runner | Should -Match 'Test-CSharpPackageAuthenticodeTamperNegative'
     $runner | Should -Match 'if\s*\(@\(\$signingResult\.Assets\)\.Count\s+-gt\s+0\)'
     $runner | Should -Match "metadata-only package contains no shipping DLL asset to tamper"
+    $runner | Should -Match 'authenticodeContract\.SupportedTargetFrameworks'
   }
 }

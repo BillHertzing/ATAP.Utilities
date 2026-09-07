@@ -7,7 +7,7 @@ function Get-CSharpPackageAuthenticodeContractRows {
 
   return @(
     'ATAP.Utilities.Collection.Extensions|src/ATAP.Utilities.Collection.Extensions/ATAP.Utilities.Collection.Extensions.csproj|ATAP.Utilities.Collection.Extensions|net8.0;net9.0;net10.0'
-    'ATAP.Utilities.Configuration|src/ATAP.Utilities.Configuration/ATAP.Utilities.Configuration.csproj|ATAP.Utilities.Configuration|'
+    'ATAP.Utilities.Configuration|src/ATAP.Utilities.Configuration/ATAP.Utilities.Configuration.csproj|ATAP.Utilities.Configuration|net8.0;net9.0;net10.0|false'
     'ATAP.Utilities.Configuration.Extensions|src/ATAP.Utilities.Configuration/Extensions/ATAP.Utilities.Configuration.Extensions.csproj|ATAP.Utilities.Configuration.Extensions|net8.0;net9.0;net10.0'
     'ATAP.Utilities.Configuration.Secrets|src/ATAP.Utilities.Configuration/Secrets/ATAP.Utilities.Configuration.Secrets.csproj|ATAP.Utilities.Configuration.Secrets|net8.0;net9.0;net10.0'
     'ATAP.Utilities.Configuration.Secrets.Shims|src/ATAP.Utilities.Configuration/Secrets/Shims/ATAP.Utilities.Configuration.Secrets.Shims.csproj|ATAP.Utilities.Configuration.Secrets.Shims|net8.0;net9.0;net10.0'
@@ -32,17 +32,17 @@ function Get-CSharpPackageAuthenticodeContractRows {
     'ATAP.Utilities.Plugin.Interfaces|src/ATAP.Utilities.Plugin/Interfaces/ATAP.Utilities.Plugin.Interfaces.csproj|ATAP.Utilities.Plugin.Interfaces|net8.0;net9.0;net10.0'
     'ATAP.Utilities.RRSBS.Contracts|src/ATAP.Utilities.RRSBS.Contracts/ATAP.Utilities.RRSBS.Contracts.csproj|ATAP.Utilities.RRSBS.Contracts|net10.0'
     'ATAP.Utilities.RRSBS.Domain|src/ATAP.Utilities.RRSBS.Domain/ATAP.Utilities.RRSBS.Domain.csproj|ATAP.Utilities.RRSBS.Domain|net10.0'
-    'ATAP.Utilities.Secrets|src/ATAP.Utilities.Secrets/ATAP.Utilities.Secrets.csproj|ATAP.Utilities.Secrets|'
+    'ATAP.Utilities.Secrets|src/ATAP.Utilities.Secrets/ATAP.Utilities.Secrets.csproj|ATAP.Utilities.Secrets|net8.0;net9.0;net10.0|false'
     'ATAP.Utilities.Secrets.BitwardenSecretsManager|src/ATAP.Utilities.Secrets/BitwardenSecretsManager/ATAP.Utilities.Secrets.BitwardenSecretsManager.csproj|ATAP.Utilities.Secrets.BitwardenSecretsManager|net8.0;net9.0;net10.0'
     'ATAP.Utilities.Secrets.BitwardenSecretsManager.Windows|src/ATAP.Utilities.Secrets/BitwardenSecretsManager/Windows/ATAP.Utilities.Secrets.BitwardenSecretsManager.Windows.csproj|ATAP.Utilities.Secrets.BitwardenSecretsManager.Windows|net8.0-windows;net9.0-windows;net10.0-windows'
     'ATAP.Utilities.Secrets.Enumerations|src/ATAP.Utilities.Secrets/Enumerations/ATAP.Utilities.Secrets.Enumerations.csproj|ATAP.Utilities.Secrets.Enumerations|net8.0;net9.0;net10.0'
     'ATAP.Utilities.Secrets.Interfaces|src/ATAP.Utilities.Secrets/Interfaces/ATAP.Utilities.Secrets.Interfaces.csproj|ATAP.Utilities.Secrets.Interfaces|net8.0;net9.0;net10.0'
     'ATAP.Utilities.Secrets.Model|src/ATAP.Utilities.Secrets/Model/ATAP.Utilities.Secrets.Model.csproj|ATAP.Utilities.Secrets.Model|net8.0;net9.0;net10.0'
     'ATAP.Utilities.Secrets.StringConstants|src/ATAP.Utilities.Secrets/StringConstants/ATAP.Utilities.Secrets.StringConstants.csproj|ATAP.Utilities.Secrets.StringConstants|net8.0;net9.0;net10.0'
-    'ATAP.Utilities.Serializer|src/ATAP.Utilities.Serializer/ATAP.Utilities.Serializer.csproj|ATAP.Utilities.Serializer|'
+    'ATAP.Utilities.Serializer|src/ATAP.Utilities.Serializer/ATAP.Utilities.Serializer.csproj|ATAP.Utilities.Serializer|net8.0;net9.0;net10.0|false'
     'ATAP.Utilities.Serializer.Interfaces|src/ATAP.Utilities.Serializer/Interfaces/ATAP.Utilities.Serializer.Interfaces.csproj|ATAP.Utilities.Serializer.Interfaces|net8.0;net9.0;net10.0'
     'ATAP.Utilities.Serializer.Model|src/ATAP.Utilities.Serializer/Model/ATAP.Utilities.Serializer.Model.csproj|ATAP.Utilities.Serializer.Model|net8.0;net9.0;net10.0'
-    'ATAP.Utilities.Serializer.Shim|src/ATAP.Utilities.Serializer/Shim/ATAP.Utilities.Serializer.Shim.csproj|ATAP.Utilities.Serializer.Shim|'
+    'ATAP.Utilities.Serializer.Shim|src/ATAP.Utilities.Serializer/Shim/ATAP.Utilities.Serializer.Shim.csproj|ATAP.Utilities.Serializer.Shim|net8.0;net9.0;net10.0|false'
     'ATAP.Utilities.Serializer.Shim.Newtonsoft|src/ATAP.Utilities.Serializer/Shim/Newtonsoft/ATAP.Utilities.Serializer.Shim.Newtonsoft.csproj|ATAP.Utilities.Serializer.Shim.Newtonsoft|net8.0;net9.0;net10.0'
     'ATAP.Utilities.Serializer.Shim.SystemTextJson|src/ATAP.Utilities.Serializer/Shim/SystemTextJson/ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj|ATAP.Utilities.Serializer.Shim.SystemTextJson|net8.0;net9.0;net10.0'
     'ATAP.Utilities.Serializer.StringConstants|src/ATAP.Utilities.Serializer/StringConstants/ATAP.Utilities.Serializer.StringConstants.csproj|ATAP.Utilities.Serializer.StringConstants|net8.0;net9.0;net10.0'
@@ -61,15 +61,23 @@ function Get-CSharpPackageAuthenticodeContract {
 
   $row = @(Get-CSharpPackageAuthenticodeContractRows | Where-Object { ($_ -split '\|', 2)[0] -ceq $PackageName })
   if ($row.Count -ne 1) { return $null }
-  $parts = $row[0] -split '\|', 4
-  $targetFrameworks = if ([string]::IsNullOrWhiteSpace($parts[3])) { @() } else { @($parts[3] -split ';') }
-  $assets = foreach ($targetFramework in $targetFrameworks) {
+  $parts = $row[0] -split '\|', 5
+  $targetFrameworks = @($parts[3] -split ';')
+  $includesBuildOutput = $parts.Count -lt 5 -or [string]$parts[4] -cne 'false'
+  $assets = if ($includesBuildOutput) { foreach ($targetFramework in $targetFrameworks) {
     [pscustomobject]@{
       BuildTargetFramework = $targetFramework
       PackageTargetFramework = if ($targetFramework.EndsWith('-windows', [StringComparison]::Ordinal)) { "${targetFramework}7.0" } else { $targetFramework }
     }
+  } }
+  return [pscustomobject]@{
+    PackageName = $parts[0]
+    ProjectPath = $parts[1]
+    AssemblyName = $parts[2]
+    SupportedTargetFrameworks = $targetFrameworks
+    IncludesBuildOutput = $includesBuildOutput
+    Assets = @($assets)
   }
-  return [pscustomobject]@{ PackageName = $parts[0]; ProjectPath = $parts[1]; AssemblyName = $parts[2]; Assets = @($assets) }
 }
 
 function Get-CSharpPackageAuthenticodeReleasePackageNames {

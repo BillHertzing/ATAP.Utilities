@@ -94,7 +94,7 @@
     'PracticeKeyboardSkills', 'Register-ProfiledRemotingEndpoint',
     'Register-StartupScheduledTask',
     'Resolve-ParameterValueToList', 'Search-Registry',
-    'Search-WindowsIndexs', 'Set-EnvVarsFromBitWarden',
+    'Search-WindowsIndexs', 'Set-AceOutpostProxyEnvironment', 'Set-EnvVarsFromBitWarden',
     'Set-GroupEnvironmentVariables', 'Set-InedoServicesDependency',
     'Set-PerceivedTypeInRegistryForPreviewPane',
     'Set-RepositoryPackageSources', 'Set-ScreenReaderOff',

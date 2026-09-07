@@ -1599,10 +1599,18 @@ function Invoke-CSharpPackageBuildMasterStage {
                 -SigningResult $signingResult `
                 -SignToolPath $SignToolPath `
                 -ScratchRoot $contextDirectory
-              $tamperEvidence = Test-CSharpPackageAuthenticodeTamperNegative `
-                -SourcePath $signingResult.Assets[0].Path `
-                -SignToolPath $SignToolPath `
-                -ScratchRoot $contextDirectory
+              $tamperEvidence = if (@($signingResult.Assets).Count -gt 0) {
+                Test-CSharpPackageAuthenticodeTamperNegative `
+                  -SourcePath $signingResult.Assets[0].Path `
+                  -SignToolPath $SignToolPath `
+                  -ScratchRoot $contextDirectory
+              }
+              else {
+                [pscustomobject]@{
+                  Applicable = $false
+                  Reason = 'The metadata-only package contains no shipping DLL asset to tamper.'
+                }
+              }
               [ordered]@{
                 schemaVersion = '1.0.0'
                 taskId = [string]$signingResult.Approval.taskId

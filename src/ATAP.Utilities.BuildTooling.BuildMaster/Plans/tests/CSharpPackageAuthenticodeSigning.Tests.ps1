@@ -7,19 +7,21 @@ BeforeAll {
   . $script:HelperPath
 }
 
-Describe 'Triple-stream exact 45-package/131-asset signing contract' {
-  It 'binds exactly 45 packages and the 131 actually evaluated shipping DLL assets' {
+Describe 'Triple-stream exact 45-package/119-asset signing contract' {
+  It 'binds exactly 45 packages and the 119 actually evaluated shipping DLL assets' {
     $release = Get-CSharpPackageAuthenticodeReleaseContract
 
     $release.Packages.Count | Should -Be 45
-    $release.Assets.Count | Should -Be 131
+    $release.Assets.Count | Should -Be 119
     @($release.Packages.PackageName | Sort-Object -Unique).Count | Should -Be 45
-    @(Get-CSharpPackageAuthenticodeReleaseAssetIds).Count | Should -Be 131
-    @((Get-CSharpPackageAuthenticodeReleaseAssetIds) | Sort-Object -Unique).Count | Should -Be 131
+    @(Get-CSharpPackageAuthenticodeReleaseAssetIds).Count | Should -Be 119
+    @((Get-CSharpPackageAuthenticodeReleaseAssetIds) | Sort-Object -Unique).Count | Should -Be 119
     (Get-Content -LiteralPath $script:HelperPath -Raw) | Should -Match '\$allPackageDlls\.Count\s+-ne\s+\$expectedRelativePaths\.Count'
     @($release.Assets | Group-Object PackageName | ForEach-Object Count | Sort-Object -Unique) | Should -Be @(1, 3)
     @($release.Assets | Group-Object PackageName | Where-Object Count -eq 1 | Select-Object -ExpandProperty Name | Sort-Object) |
       Should -Be @('ATAP.Utilities.RRSBS.Contracts', 'ATAP.Utilities.RRSBS.Domain')
+    @($release.Packages | Where-Object { $_.Assets.Count -eq 0 } | Select-Object -ExpandProperty PackageName | Sort-Object) |
+      Should -Be @('ATAP.Utilities.Configuration', 'ATAP.Utilities.Secrets', 'ATAP.Utilities.Serializer', 'ATAP.Utilities.Serializer.Shim')
     @($release.Assets | Where-Object PackageName -like 'ATAP.Utilities.RRSBS.*' | Select-Object -ExpandProperty BuildTargetFramework -Unique) |
       Should -Be @('net10.0')
     @($release.Assets | Where-Object PackageName -eq 'ATAP.Utilities.Secrets.BitwardenSecretsManager.Windows' | Select-Object -ExpandProperty PackageTargetFramework | Sort-Object) |
@@ -28,8 +30,13 @@ Describe 'Triple-stream exact 45-package/131-asset signing contract' {
 
   It 'maps every contract package to an existing exact project and rejects every other package' {
     foreach ($contract in (Get-CSharpPackageAuthenticodeReleaseContract).Packages) {
-      Join-Path $script:RepoRoot $contract.ProjectPath | Should -Exist
+      $projectPath = Join-Path $script:RepoRoot $contract.ProjectPath
+      $projectPath | Should -Exist
       $contract.AssemblyName | Should -BeExactly $contract.PackageName
+      [xml]$project = Get-Content -LiteralPath $projectPath -Raw
+      $includeBuildOutputNode = $project.SelectSingleNode('//IncludeBuildOutput')
+      $excludesBuildOutput = $null -ne $includeBuildOutputNode -and [string]$includeBuildOutputNode.InnerText -ceq 'false'
+      ($contract.Assets.Count -eq 0) | Should -Be $excludesBuildOutput -Because "the signing asset contract must match IncludeBuildOutput for $($contract.PackageName)"
     }
     Get-CSharpPackageAuthenticodeContract -PackageName 'Vendor.Library' | Should -BeNullOrEmpty
   }
@@ -92,6 +99,27 @@ Describe 'Task 15.182.F03 machine-readable HITL boundary' {
     Should -Invoke Invoke-CSharpPackageAuthenticodeProcess -Times 0 -Exactly
   }
 
+  It 'records metadata-only packages without accessing the certificate or signing tool' {
+    $approvalPath = Join-Path $TestDrive 'metadata-only-approval.json'
+    '{}' | Set-Content -LiteralPath $approvalPath -Encoding utf8NoBOM
+    Mock Get-CSharpPackageAuthenticodeApproval { [pscustomobject]@{ taskId = 'triple-stream-csharp-signing-contract-45' } }
+    Mock Assert-CSharpPackageAuthenticodeExecutionBoundary {}
+    Mock Get-CSharpPackageAuthenticodeCertificate { throw 'certificate access is forbidden for a metadata-only package' }
+    Mock Invoke-CSharpPackageAuthenticodeProcess { throw 'signing-tool access is forbidden for a metadata-only package' }
+    $contract = Get-CSharpPackageAuthenticodeContract -PackageName 'ATAP.Utilities.Secrets'
+    $projectPath = Join-Path $script:RepoRoot $contract.ProjectPath
+
+    $result = Invoke-CSharpPackageAuthenticodeStageSigning -Contract $contract -ProjectPath $projectPath `
+      -Configuration Release -ArtifactsPath (Join-Path $TestDrive 'artifacts') -ApprovalPath $approvalPath `
+      -SignToolPath (Join-Path $TestDrive 'signtool.exe') -EvidencePath $TestDrive -Confirm:$false
+
+    $result.Assets.Count | Should -Be 0
+    $result.Contract.PackageName | Should -BeExactly 'ATAP.Utilities.Secrets'
+    $result.EvidencePath | Should -Exist
+    Should -Invoke Get-CSharpPackageAuthenticodeCertificate -Times 0 -Exactly
+    Should -Invoke Invoke-CSharpPackageAuthenticodeProcess -Times 0 -Exactly
+  }
+
   It 'rejects an approval whose package allowlist drifts' {
     $approval = Get-Content -LiteralPath $script:ApprovalPath -Raw | ConvertFrom-Json -Depth 20
     $approval.scope.packageIds[0] = 'Vendor.Library'
@@ -101,11 +129,11 @@ Describe 'Task 15.182.F03 machine-readable HITL boundary' {
     { Get-CSharpPackageAuthenticodeApproval -ApprovalPath $path } |
       Should -Throw '*does not bind the exact ATAP Foundation eight-package/24-asset release slice*'
   }
-  It 'accepts a fresh exact 45-package/131-asset approval without certificate or tool access' {
+  It 'accepts a fresh exact 45-package/119-asset approval without certificate or tool access' {
     $approval = Get-Content -LiteralPath $script:ApprovalPath -Raw | ConvertFrom-Json -Depth 20
     $approval.taskId = 'triple-stream-csharp-signing-contract-45'
     $approval.scope.expectedPackageCount = 45
-    $approval.scope.expectedAssetCount = 131
+    $approval.scope.expectedAssetCount = 119
     $approval.scope.packageIds = @(Get-CSharpPackageAuthenticodeReleasePackageNames)
     $approval.scope | Add-Member -NotePropertyName assetIds -NotePropertyValue @(Get-CSharpPackageAuthenticodeReleaseAssetIds)
     $path = Join-Path $TestDrive 'current-approval.json'
@@ -119,7 +147,7 @@ Describe 'Task 15.182.F03 machine-readable HITL boundary' {
     $approval = Get-Content -LiteralPath $script:ApprovalPath -Raw | ConvertFrom-Json -Depth 20
     $approval.taskId = 'triple-stream-csharp-signing-contract-45'
     $approval.scope.expectedPackageCount = 45
-    $approval.scope.expectedAssetCount = 131
+    $approval.scope.expectedAssetCount = 119
     $approval.scope.packageIds = @(Get-CSharpPackageAuthenticodeReleasePackageNames)
     $assetIds = @(Get-CSharpPackageAuthenticodeReleaseAssetIds)
     $assetIds[0] = $assetIds[0] + '|drift'
@@ -128,7 +156,7 @@ Describe 'Task 15.182.F03 machine-readable HITL boundary' {
     $approval | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $path -Encoding utf8NoBOM
 
     { Get-CSharpPackageAuthenticodeApproval -ApprovalPath $path } |
-      Should -Throw '*does not bind the exact ATAP Foundation current 45-package/131-asset filter release slice*'
+      Should -Throw '*does not bind the exact ATAP Foundation current 45-package/119-asset filter release slice*'
   }
 
   It 'keeps the historical F03 approval compatible only with its eight named packages' {
@@ -261,5 +289,7 @@ Describe 'Task 15.182.F03 runner orchestration order' {
     $runner | Should -Match "'/p:NoBuild=true'"
     $runner | Should -Match 'Assert-CSharpPackageAuthenticodeNupkg'
     $runner | Should -Match 'Test-CSharpPackageAuthenticodeTamperNegative'
+    $runner | Should -Match 'if\s*\(@\(\$signingResult\.Assets\)\.Count\s+-gt\s+0\)'
+    $runner | Should -Match "metadata-only package contains no shipping DLL asset to tamper"
   }
 }

@@ -94,6 +94,63 @@ function Get-CSharpPackageAuthenticodeHistoricalF03PackageNames {
   return @('ATAP.Utilities.ETW', 'ATAP.Utilities.Plugin.Interfaces', 'ATAP.Utilities.Secrets.BitwardenSecretsManager', 'ATAP.Utilities.Secrets.BitwardenSecretsManager.Windows', 'ATAP.Utilities.Secrets.Enumerations', 'ATAP.Utilities.Secrets.Interfaces', 'ATAP.Utilities.Secrets.Model', 'ATAP.Utilities.Secrets.StringConstants')
 }
 
+function Get-CSharpPackageAuthenticodeTask15189PackageIdentities {
+  [CmdletBinding()]
+  [OutputType([string[]])]
+  param()
+  return @(
+    'ATAP.Utilities.Collection.Extensions|0.1.1'
+    'ATAP.Utilities.DateTime|0.1.1'
+    'ATAP.Utilities.DateTime.Interfaces|0.1.1'
+    'ATAP.Utilities.DateTime.Model|0.1.1'
+    'ATAP.Utilities.DateTime.StringConstants|0.1.1'
+    'ATAP.Utilities.Loader|0.1.1'
+    'ATAP.Utilities.Loader.Interfaces|0.1.1'
+    'ATAP.Utilities.Loader.Model|0.1.1'
+    'ATAP.Utilities.Loader.StringConstants|0.1.1'
+    'ATAP.Utilities.Logging|0.1.1'
+    'ATAP.Utilities.Philote|0.1.1'
+    'ATAP.Utilities.Philote.DefaultConfiguration|0.1.1'
+    'ATAP.Utilities.Philote.Interfaces|0.1.1'
+    'ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson|0.1.1'
+    'ATAP.Utilities.Philote.Models|0.1.1'
+    'ATAP.Utilities.Secrets.BitwardenSecretsManager|0.1.6'
+    'ATAP.Utilities.Secrets.BitwardenSecretsManager.Windows|0.1.6'
+    'ATAP.Utilities.Serializer.Interfaces|0.1.1'
+    'ATAP.Utilities.Serializer.Shim|0.1.1'
+    'ATAP.Utilities.Serializer.Shim.Newtonsoft|0.1.1'
+    'ATAP.Utilities.Serializer.Shim.SystemTextJson|0.1.1'
+    'ATAP.Utilities.StronglyTypedId.Interfaces|0.1.1'
+    'ATAP.Utilities.StronglyTypedId.Models|0.1.1'
+    'ATAP.Utilities.Testing.Fixture.Serialization|0.1.1'
+    'ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson|0.1.1'
+  )
+}
+
+function Get-CSharpPackageAuthenticodeTask15189PackageNames {
+  [CmdletBinding()]
+  [OutputType([string[]])]
+  param()
+  return @(Get-CSharpPackageAuthenticodeTask15189PackageIdentities | ForEach-Object { ($_ -split '\|', 2)[0] })
+}
+
+function Get-CSharpPackageAuthenticodeTask15189AssetIds {
+  [CmdletBinding()]
+  [OutputType([string[]])]
+  param()
+  $assets = @(Get-CSharpPackageAuthenticodeTask15189PackageNames | ForEach-Object {
+    $contract = Get-CSharpPackageAuthenticodeContract -PackageName $_
+    if ($null -eq $contract) { throw "Task 15.189.d package '$_' has no Authenticode contract." }
+    foreach ($asset in $contract.Assets) {
+      "$($contract.PackageName)|$($contract.ProjectPath)|$($contract.AssemblyName)|$($asset.BuildTargetFramework)|$($asset.PackageTargetFramework)"
+    }
+  } | Sort-Object)
+  if ($assets.Count -ne 72 -or @($assets | Sort-Object -Unique).Count -ne 72) {
+    throw "Task 15.189.d must contain exactly 72 unique shipping DLL assets; found $($assets.Count)."
+  }
+  return $assets
+}
+
 function Get-CSharpPackageAuthenticodeReleaseContract {
   [CmdletBinding()]
   [OutputType([pscustomobject])]
@@ -155,7 +212,8 @@ function Get-CSharpPackageAuthenticodeApproval {
   [OutputType([pscustomobject])]
   param(
     [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ApprovalPath,
-    [AllowEmptyString()][string]$PackageName = ''
+    [AllowEmptyString()][string]$PackageName = '',
+    [AllowEmptyString()][string]$ExpectedSourceCommit = ''
   )
 
   if (-not (Test-Path -LiteralPath $ApprovalPath -PathType Leaf)) { throw "Authenticode private-key use is denied: approval record '$ApprovalPath' is missing." }
@@ -166,6 +224,7 @@ function Get-CSharpPackageAuthenticodeApproval {
   $expectedPackageCount = 0
   $expectedAssetCount = 0
   $scopeName = ''
+  $requiresTask15189Boundary = $false
   switch ($taskId) {
     'triple-stream-csharp-signing-contract-45' {
       $expectedPackages = @(Get-CSharpPackageAuthenticodeReleasePackageNames | Sort-Object)
@@ -180,14 +239,48 @@ function Get-CSharpPackageAuthenticodeApproval {
       $expectedAssetCount = 24
       $scopeName = 'eight-package/24-asset release slice'
     }
+    '15.189.d' {
+      $expectedPackages = @(Get-CSharpPackageAuthenticodeTask15189PackageNames)
+      $expectedAssetIds = @(Get-CSharpPackageAuthenticodeTask15189AssetIds)
+      $expectedPackageCount = 25
+      $expectedAssetCount = 72
+      $scopeName = 'Task 15.189.d 25-package/72-asset corrective release slice'
+      $requiresTask15189Boundary = $true
+    }
     default { throw "Authenticode private-key use is denied: approval task '$taskId' is not supported." }
   }
-  $approvedPackages = @($approval.scope.packageIds | ForEach-Object { [string]$_ } | Sort-Object)
-  $approvedAssetIds = if ($null -ne $approval.scope.PSObject.Properties['assetIds']) { @($approval.scope.assetIds | ForEach-Object { [string]$_ } | Sort-Object) } else { @() }
+  $approvedPackagesRaw = @($approval.scope.packageIds | ForEach-Object { [string]$_ })
+  $approvedAssetIdsRaw = if ($null -ne $approval.scope.PSObject.Properties['assetIds']) { @($approval.scope.assetIds | ForEach-Object { [string]$_ }) } else { @() }
+  $approvedPackages = if ($requiresTask15189Boundary) { $approvedPackagesRaw } else { @($approvedPackagesRaw | Sort-Object) }
+  $approvedAssetIds = if ($requiresTask15189Boundary) { $approvedAssetIdsRaw } else { @($approvedAssetIdsRaw | Sort-Object) }
   $requiredText = @([string]$approval.decision, [string]$approval.approvedBy, [string]$approval.approvedAt, [string]$approval.publisher, [string]$approval.certificate.subject, [string]$approval.certificate.issuer, [string]$approval.certificate.notBefore, [string]$approval.certificate.notAfter, [string]$approval.certificate.sha1Thumbprint, [string]$approval.certificate.sha256Fingerprint, [string]$approval.certificate.rootSha1Thumbprint, [string]$approval.certificate.provider, [string]$approval.certificate.custodianPrincipal, [string]$approval.tool.productVersion, [string]$approval.tool.signToolSha256, [string]$approval.timestampAuthority.uri, [string]$approval.execution.computerName, [string]$approval.execution.identity)
   if ($requiredText | Where-Object { [string]::IsNullOrWhiteSpace($_) }) { throw 'Authenticode private-key use is denied: the approval record is missing required signer, custodian, tool, timestamp, executor, or approver data.' }
   $assetScopeMatches = $taskId -ceq '15.182.F03' -or (($approvedAssetIds -join "`n") -ceq ($expectedAssetIds -join "`n"))
   if ([string]$approval.decision -cne 'Approved' -or [string]$approval.publisher -cne 'ATAP Foundation' -or -not [bool]$approval.privateKeyUseApproved -or [int]$approval.scope.expectedPackageCount -ne $expectedPackageCount -or [int]$approval.scope.expectedAssetCount -ne $expectedAssetCount -or ($approvedPackages -join "`n") -cne ($expectedPackages -join "`n") -or -not $assetScopeMatches -or [string]$approval.certificate.ekuOid -cne '1.3.6.1.5.5.7.3.3' -or [string]$approval.timestampAuthority.protocol -cne 'RFC3161' -or [bool]$approval.certificate.privateKeyExportAllowed) { throw "Authenticode private-key use is denied: the approval does not bind the exact ATAP Foundation $scopeName." }
+  if ($requiresTask15189Boundary) {
+    $expectedIdentities = @(Get-CSharpPackageAuthenticodeTask15189PackageIdentities)
+    $approvedIdentities = if ($null -ne $approval.scope.PSObject.Properties['packageIdentities']) { @($approval.scope.packageIdentities | ForEach-Object { [string]$_ }) } else { @() }
+    $expectedRoute = @('nuget-experimental', 'nuget-development', 'nuget-integration', 'nuget-qa', 'nuget-stable')
+    $approvedRoute = if ($null -ne $approval.PSObject.Properties['authorizedRoute']) { @($approval.authorizedRoute | ForEach-Object { [string]$_ }) } else { @() }
+    $approvalSourceCommit = if ($null -ne $approval.PSObject.Properties['sourceCommit']) { [string]$approval.sourceCommit } else { '' }
+    $feedMutationApprovalValue = if ($null -ne $approval.PSObject.Properties['feedMutationApproved']) { $approval.feedMutationApproved } else { $null }
+    $feedMutationApproved = $feedMutationApprovalValue -is [bool] -and $feedMutationApprovalValue -eq $true
+    if ([string]::IsNullOrWhiteSpace($ExpectedSourceCommit)) {
+      $repositoryPath = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
+      $ExpectedSourceCommit = (& git -C $repositoryPath rev-parse HEAD 2>$null | Select-Object -First 1).ToString().Trim()
+    }
+    $taskBoundaryMatches =
+      @($approvedPackagesRaw | Sort-Object -Unique).Count -eq 25 -and
+      @($approvedAssetIdsRaw | Sort-Object -Unique).Count -eq 72 -and
+      ($approvedIdentities -join "`n") -ceq ($expectedIdentities -join "`n") -and
+      @($approvedIdentities | Sort-Object -Unique).Count -eq 25 -and
+      ($approvedRoute -join "`n") -ceq ($expectedRoute -join "`n") -and
+      $feedMutationApproved -and
+      $approvalSourceCommit -cmatch '^[0-9a-f]{40}$' -and
+      $ExpectedSourceCommit -cmatch '^[0-9a-f]{40}$' -and
+      $approvalSourceCommit -ceq $ExpectedSourceCommit
+    if (-not $taskBoundaryMatches) { throw 'Authenticode private-key use is denied: the approval does not bind the exact source, identities, assets, and feed route for Task 15.189.d.' }
+  }
   if (-not [string]::IsNullOrWhiteSpace($PackageName) -and $approvedPackages -cnotcontains $PackageName) { throw "Authenticode private-key use is denied: package '$PackageName' is outside approval task '$taskId'." }
   foreach ($hash in @([string]$approval.certificate.sha1Thumbprint, [string]$approval.certificate.rootSha1Thumbprint)) { if ($hash -notmatch '^[0-9A-Fa-f]{40}$') { throw 'Authenticode approval contains an invalid SHA-1 certificate fingerprint.' } }
   foreach ($hash in @([string]$approval.certificate.sha256Fingerprint, [string]$approval.tool.signToolSha256)) { if ($hash -notmatch '^[0-9A-Fa-f]{64}$') { throw 'Authenticode approval contains an invalid SHA-256 fingerprint.' } }

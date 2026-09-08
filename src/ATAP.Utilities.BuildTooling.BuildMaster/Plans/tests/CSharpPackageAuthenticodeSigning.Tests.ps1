@@ -5,6 +5,25 @@ BeforeAll {
   $script:RunnerPath = Join-Path $script:PlansPath 'Invoke-CSharpPackageBuildMasterStage.ps1'
   $script:ApprovalPath = Join-Path $script:RepoRoot '_generated/Sprint0015/Task15.182/F03/hitl-signing-approval.json'
   . $script:HelperPath
+
+  function New-Task15189ApprovalFile {
+    param(
+      [Parameter(Mandatory)][string]$Path,
+      [string]$SourceCommit = ('a' * 40)
+    )
+    $approval = Get-Content -LiteralPath $script:ApprovalPath -Raw | ConvertFrom-Json -Depth 20
+    $approval.taskId = '15.189.d'
+    $approval.scope.expectedPackageCount = 25
+    $approval.scope.expectedAssetCount = 72
+    $approval.scope.packageIds = @(Get-CSharpPackageAuthenticodeTask15189PackageNames)
+    $approval.scope | Add-Member -NotePropertyName packageIdentities -NotePropertyValue @(Get-CSharpPackageAuthenticodeTask15189PackageIdentities) -Force
+    $approval.scope | Add-Member -NotePropertyName assetIds -NotePropertyValue @(Get-CSharpPackageAuthenticodeTask15189AssetIds) -Force
+    $approval | Add-Member -NotePropertyName sourceCommit -NotePropertyValue $SourceCommit -Force
+    $approval | Add-Member -NotePropertyName feedMutationApproved -NotePropertyValue $true -Force
+    $approval | Add-Member -NotePropertyName authorizedRoute -NotePropertyValue @('nuget-experimental', 'nuget-development', 'nuget-integration', 'nuget-qa', 'nuget-stable') -Force
+    $approval | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $Path -Encoding utf8NoBOM
+    return $approval
+  }
 }
 
 Describe 'Triple-stream exact 45-package/119-asset signing contract' {
@@ -168,6 +187,74 @@ Describe 'Task 15.182.F03 machine-readable HITL boundary' {
       Should -Not -Throw
     { Get-CSharpPackageAuthenticodeApproval -ApprovalPath $script:ApprovalPath -PackageName 'ATAP.Utilities.Collection.Extensions' } |
       Should -Throw '*outside approval task*15.182.F03*'
+  }
+}
+
+Describe 'Task 15.189.d exact 25-package signing boundary' {
+  It 'derives exactly 25 packages and 72 unique shipping assets' {
+    @(Get-CSharpPackageAuthenticodeTask15189PackageNames).Count | Should -Be 25
+    @(Get-CSharpPackageAuthenticodeTask15189PackageIdentities).Count | Should -Be 25
+    @(Get-CSharpPackageAuthenticodeTask15189AssetIds).Count | Should -Be 72
+    @((Get-CSharpPackageAuthenticodeTask15189AssetIds) | Sort-Object -Unique).Count | Should -Be 72
+    $metadataOnly = @(Get-CSharpPackageAuthenticodeTask15189PackageNames | Where-Object { (Get-CSharpPackageAuthenticodeContract -PackageName $_).Assets.Count -eq 0 })
+    $metadataOnly | Should -Be @('ATAP.Utilities.Serializer.Shim')
+  }
+
+  It 'accepts only the exact source-bound identities, assets, and feed route' {
+    $path = Join-Path $TestDrive 'task-15.189.d.json'
+    New-Task15189ApprovalFile -Path $path | Out-Null
+
+    { Get-CSharpPackageAuthenticodeApproval -ApprovalPath $path -PackageName 'ATAP.Utilities.Secrets.BitwardenSecretsManager.Windows' -ExpectedSourceCommit ('a' * 40) } |
+      Should -Not -Throw
+  }
+
+  It 'derives the repository HEAD when the existing runner omits ExpectedSourceCommit' {
+    $headCommit = (& git -C $script:RepoRoot rev-parse HEAD).Trim()
+    $path = Join-Path $TestDrive 'task-15.189.d-runner-compatible.json'
+    New-Task15189ApprovalFile -Path $path -SourceCommit $headCommit | Out-Null
+
+    { Get-CSharpPackageAuthenticodeApproval -ApprovalPath $path -PackageName 'ATAP.Utilities.Collection.Extensions' } |
+      Should -Not -Throw
+  }
+
+  It 'rejects reordered or duplicate package and asset scopes' -ForEach @(
+    @{ Name = 'package order'; Mutate = { param($a) $a.scope.packageIds = @($a.scope.packageIds | Sort-Object -Descending) } }
+    @{ Name = 'duplicate package'; Mutate = { param($a) $a.scope.packageIds[0] = $a.scope.packageIds[1] } }
+    @{ Name = 'asset order'; Mutate = { param($a) $a.scope.assetIds = @($a.scope.assetIds | Sort-Object -Descending) } }
+    @{ Name = 'duplicate asset'; Mutate = { param($a) $a.scope.assetIds[0] = $a.scope.assetIds[1] } }
+  ) {
+    $path = Join-Path $TestDrive ("task-15.189.d-$Name.json" -replace ' ', '-')
+    $approval = New-Task15189ApprovalFile -Path $path
+    & $Mutate $approval
+    $approval | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $path -Encoding utf8NoBOM
+
+    { Get-CSharpPackageAuthenticodeApproval -ApprovalPath $path -ExpectedSourceCommit ('a' * 40) } |
+      Should -Throw '*does not bind the exact*Task 15.189.d*'
+  }
+
+  It 'rejects wrong identity version, feed route, source commit, or broader scope' -ForEach @(
+    @{ Name = 'identity'; Mutate = { param($a) $a.scope.packageIdentities[0] = 'ATAP.Utilities.Collection.Extensions|1.0.2' } }
+    @{ Name = 'route'; Mutate = { param($a) $a.authorizedRoute[4] = 'nuget-other' } }
+    @{ Name = 'source'; Mutate = { param($a) $a.sourceCommit = ('b' * 40) } }
+    @{ Name = 'broader'; Mutate = { param($a) $a.scope.packageIdentities += 'ATAP.Utilities.ETW|0.1.5' } }
+    @{ Name = 'feed permission'; Mutate = { param($a) $a.feedMutationApproved = $false } }
+    @{ Name = 'string feed permission'; Mutate = { param($a) $a.feedMutationApproved = 'false' } }
+  ) {
+    $path = Join-Path $TestDrive "task-15.189.d-$Name.json"
+    $approval = New-Task15189ApprovalFile -Path $path
+    & $Mutate $approval
+    $approval | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $path -Encoding utf8NoBOM
+
+    { Get-CSharpPackageAuthenticodeApproval -ApprovalPath $path -ExpectedSourceCommit ('a' * 40) } |
+      Should -Throw '*does not bind the exact source, identities, assets, and feed route*'
+  }
+
+  It 'rejects a missing or malformed source binding' -ForEach @('', '0b8eaa37') {
+    $path = Join-Path $TestDrive "task-15.189.d-source-$($_.Length).json"
+    New-Task15189ApprovalFile -Path $path -SourceCommit $_ | Out-Null
+
+    { Get-CSharpPackageAuthenticodeApproval -ApprovalPath $path -ExpectedSourceCommit ('a' * 40) } |
+      Should -Throw '*does not bind the exact source, identities, assets, and feed route*'
   }
 }
 

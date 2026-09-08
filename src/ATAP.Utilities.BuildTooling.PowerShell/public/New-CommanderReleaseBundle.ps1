@@ -48,6 +48,9 @@ function New-CommanderReleaseBundle {
     Full 40-character commit SHA the payload was built from.
   .PARAMETER SourceTag
     Immutable tag naming the release point, for example 'AceCommander/v0.1.2'.
+  .PARAMETER ConversationId
+    Canonical lowercase GUID identifying the conversation that authorized and
+    produced the bundle evidence.
   .PARAMETER DatabasePackageReference
     Hashtable with id, pinnedVersion, compatibleVersionRange and lifecycleCeiling.
     This is a compatibility assertion recorded in the manifest; the installer never
@@ -66,6 +69,7 @@ function New-CommanderReleaseBundle {
       Version             = '0.1.2'
       SourceCommit        = '1091b76503669add4d41a458841e588a9bcdb78d'
       SourceTag           = 'AceCommander/v0.1.2'
+      ConversationId      = '01a07e2b-6577-7f90-96bc-c191ae41fdf5'
       Branch              = '45-Sprint-0015-work-items'
       ExpectedTestsPassed = 347
       DatabasePackageReference = @{ id = 'ATAPUtilities.Database'; pinnedVersion = '0.1.6'; compatibleVersionRange = '[0.1.6,0.1.7)'; lifecycleCeiling = 'database-stable' }
@@ -85,6 +89,7 @@ function New-CommanderReleaseBundle {
     [Parameter(Mandatory)][ValidatePattern('\A(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?\z')][string]$Version,
     [Parameter(Mandatory)][ValidatePattern('\A[0-9a-fA-F]{40}\z')][string]$SourceCommit,
     [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$SourceTag,
+    [Parameter(Mandatory)][ValidatePattern('\A(?-i:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\z')][string]$ConversationId,
     [Parameter(Mandatory)][ValidateNotNull()][hashtable]$DatabasePackageReference,
     [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ReleaseNotes,
     [Parameter(Mandatory)][ValidateRange(1, [int]::MaxValue)][int]$ExpectedTestsPassed,
@@ -159,6 +164,7 @@ function New-CommanderReleaseBundle {
     Copy-Item -LiteralPath (Join-Path $RepoRoot $InstallerRelativePath) -Destination (Join-Path $stage ('installer/' + (Split-Path $InstallerRelativePath -Leaf)))
 
     $verification = [ordered]@{
+      conversationId           = $ConversationId
       sourceCommit             = $SourceCommit
       sourceTag                = $SourceTag
       installerCommit          = $installerCommit
@@ -241,6 +247,7 @@ function New-CommanderReleaseBundle {
     if ($a.BundleSha256 -ne $b.BundleSha256) { throw 'Archive reproducibility failed.' }
 
     $releaseContext = [ordered]@{
+      conversationId  = $ConversationId
       productId       = $ProductId
       version         = $Version
       ceilingTier     = $CeilingTier

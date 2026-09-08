@@ -72,6 +72,12 @@ Describe 'Set-SqlDatabasePackageDeploymentPrincipal' -Tag 'Unit' {
     Should -Invoke Invoke-DbaQuery -Exactly 0
   }
 
+  It 'forces the nested before-state inventory to run under outer WhatIf' {
+    Set-SqlDatabasePackageDeploymentPrincipal @script:baseParameters -Ensure Present -WhatIf | Out-Null
+    Should -Invoke Get-SqlServiceLoginGrantTarget -Exactly 1 -ParameterFilter { $WhatIf -eq $false }
+    Should -Invoke Invoke-DbaQuery -Exactly 0
+  }
+
   It 'produces a deterministic secret-safe hash for identical planned SQL' {
     $first = Set-SqlDatabasePackageDeploymentPrincipal @script:baseParameters -Ensure Present -WhatIf
     $second = Set-SqlDatabasePackageDeploymentPrincipal @script:baseParameters -Ensure Present -WhatIf

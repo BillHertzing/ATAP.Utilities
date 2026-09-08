@@ -108,7 +108,9 @@ function Set-SqlDatabasePackageDeploymentPrincipal {
       Encrypt = $Encrypt
       TrustServerCertificate = $TrustServerCertificate
     }
-    $inventory = @(Get-SqlServiceLoginGrantTarget @auditParameters)
+    # The outer -WhatIf governs mutation only. Suppress preference propagation
+    # so packet generation still captures the required read-only before-state.
+    $inventory = @(Get-SqlServiceLoginGrantTarget @auditParameters -WhatIf:$false)
     $targets = @($inventory | Where-Object Include)
     if ($targets.Count -ne $ApprovedDatabaseName.Count) {
       throw "Eligible database count $($targets.Count) does not equal approved target count $($ApprovedDatabaseName.Count)."

@@ -82,7 +82,7 @@ function New-CommanderReleaseBundle {
     [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$BuildToolingRoot,
     [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$PublishRoot,
     [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$OutputRoot,
-    [Parameter(Mandatory)][ValidatePattern('\A\d+\.\d+\.\d+\z')][string]$Version,
+    [Parameter(Mandatory)][ValidatePattern('\A(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?\z')][string]$Version,
     [Parameter(Mandatory)][ValidatePattern('\A[0-9a-fA-F]{40}\z')][string]$SourceCommit,
     [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$SourceTag,
     [Parameter(Mandatory)][ValidateNotNull()][hashtable]$DatabasePackageReference,

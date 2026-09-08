@@ -56,8 +56,24 @@ Describe 'New-CommanderReleaseBundle' {
       $script:command.Parameters.Keys | Should -Contain 'WhatIf'
     }
 
-    It 'rejects a version that is not three dotted integers' {
-      # Guards against the one-shot predecessor's habit of embedding a literal.
+    It 'accepts canonical three-part release SemVer with optional build metadata' {
+      $validation = $script:command.Parameters['Version'].Attributes |
+        Where-Object { $_ -is [System.Management.Automation.ValidatePatternAttribute] }
+      foreach ($valid in @('0.1.2', '0.1.2+7e134a7136', '10.20.30+build.1-sha.abcdef')) {
+        $valid | Should -Match $validation.RegexPattern
+      }
+    }
+
+    It 'rejects noncanonical, prerelease, and close-variant versions' {
+      $validation = $script:command.Parameters['Version'].Attributes |
+        Where-Object { $_ -is [System.Management.Automation.ValidatePatternAttribute] }
+      foreach ($invalid in @('v0.1.2', '01.1.2', '0.01.2', '0.1.02', '0.1', '0.1.2.3',
+          '0.1.2-rc.1', '0.1.2+', '0.1.2+abc..def', '0.1.2+abc_', '0.1.2_7e134a7136')) {
+        $invalid | Should -Not -Match $validation.RegexPattern
+      }
+    }
+
+    It 'rejects a version prefix before entering bundle assembly' {
       { New-CommanderReleaseBundle -Version 'v0.1.2' -RepoRoot $TestDrive -BuildToolingRoot $TestDrive `
           -PublishRoot $TestDrive -OutputRoot $TestDrive -SourceCommit ('a' * 40) -SourceTag 't' `
           -DatabasePackageReference @{} -ReleaseNotes 'n' -ExpectedTestsPassed 1 -WhatIf } |

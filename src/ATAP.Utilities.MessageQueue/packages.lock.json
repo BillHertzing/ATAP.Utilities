@@ -82,7 +82,7 @@
       "atap.utilities.messagequeue.shim.rabbitmq": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
+          "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.MessageQueue.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.MessageQueue.Model": "[0.1.0-Alpha, )",
@@ -95,7 +95,7 @@
       "atap.utilities.messagequeue.shim.tpl": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
+          "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.MessageQueue.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.MessageQueue.Model": "[0.1.0-Alpha, )",
@@ -247,7 +247,7 @@
       "atap.utilities.messagequeue.shim.rabbitmq": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
+          "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.MessageQueue.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.MessageQueue.Model": "[0.1.0-Alpha, )",
@@ -260,7 +260,7 @@
       "atap.utilities.messagequeue.shim.tpl": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
+          "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.MessageQueue.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.MessageQueue.Model": "[0.1.0-Alpha, )",
@@ -415,7 +415,7 @@
       "atap.utilities.messagequeue.shim.rabbitmq": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
+          "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.MessageQueue.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.MessageQueue.Model": "[0.1.0-Alpha, )",
@@ -428,7 +428,7 @@
       "atap.utilities.messagequeue.shim.tpl": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
+          "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.MessageQueue.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.MessageQueue.Model": "[0.1.0-Alpha, )",

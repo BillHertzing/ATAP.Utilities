@@ -452,9 +452,9 @@
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Hardware.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.Philote.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[0.1.1, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -463,11 +463,11 @@
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Hardware.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.Philote": "[1.0.0, )",
-          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.Philote.Models": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.Philote": "[0.1.1, )",
+          "ATAP.Utilities.Philote.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.Philote.Models": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[0.1.1, )",
           "MedallionShell": "[1.6.2, )",
           "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
@@ -533,7 +533,7 @@
       "atap.utilities.computerinventory.software.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.Philote.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.computerinventory.software.models": {
@@ -541,8 +541,8 @@
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Software.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ComputerInventory.Software.Interfaces": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.Philote": "[1.0.0, )",
-          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Philote": "[0.1.1, )",
+          "ATAP.Utilities.Philote.Interfaces": "[0.1.1, )",
           "MedallionShell": "[1.6.2, )",
           "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
@@ -581,7 +581,7 @@
         "dependencies": {
           "ATAP.Utilities.CryptoCoin.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.CryptoCoin.Models": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.Http": "[0.1.0-Alpha, )",
           "Newtonsoft.Json": "[13.0.4, )",
@@ -593,7 +593,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.CryptoCoin.Enumerations": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.cryptocoin.models": {
@@ -602,20 +602,21 @@
           "ATAP.Utilities.ComputerInventory.Extensions": "[0.1.0-Alpha, )",
           "ATAP.Utilities.CryptoCoin.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.CryptoCoin.Interfaces": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.datetime.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.StringConstants": "[0.1.1, )"
         }
       },
       "atap.utilities.datetime.model": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.DateTime.StringConstants": "[0.1.1, )",
+          "TimePeriodLibrary.NET": "[2.1.5, )"
         }
       },
       "atap.utilities.datetime.stringconstants": {
@@ -663,18 +664,18 @@
       "atap.utilities.philote.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.philote.models": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.DateTime.Model": "[1.0.0, )",
-          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.DateTime.Model": "[0.1.1, )",
+          "ATAP.Utilities.Philote.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[0.1.1, )"
         }
       },
       "atap.utilities.serializer.interfaces": {
@@ -690,7 +691,7 @@
       "atap.utilities.stronglytypedid.models": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.testing": {
@@ -956,6 +957,12 @@
         "dependencies": {
           "System.Security.Cryptography.Pkcs": "10.0.10"
         }
+      },
+      "TimePeriodLibrary.NET": {
+        "type": "CentralTransitive",
+        "requested": "[2.1.5, )",
+        "resolved": "2.1.5",
+        "contentHash": "2QFqfYDl7/4wQd6Bsi1Z4fZlOurnJ2OQln5YK+TlIS6c5R0AM2Tn1EEfpWob/sOe0c0luUR01r0kZE4vruX8mw=="
       },
       "UnitsNet": {
         "type": "CentralTransitive",
@@ -1450,9 +1457,9 @@
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Hardware.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.Philote.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[0.1.1, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -1461,11 +1468,11 @@
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Hardware.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.Philote": "[1.0.0, )",
-          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.Philote.Models": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.Philote": "[0.1.1, )",
+          "ATAP.Utilities.Philote.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.Philote.Models": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[0.1.1, )",
           "MedallionShell": "[1.6.2, )",
           "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
@@ -1531,7 +1538,7 @@
       "atap.utilities.computerinventory.software.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.Philote.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.computerinventory.software.models": {
@@ -1539,8 +1546,8 @@
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Software.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ComputerInventory.Software.Interfaces": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.Philote": "[1.0.0, )",
-          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Philote": "[0.1.1, )",
+          "ATAP.Utilities.Philote.Interfaces": "[0.1.1, )",
           "MedallionShell": "[1.6.2, )",
           "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
@@ -1580,7 +1587,7 @@
         "dependencies": {
           "ATAP.Utilities.CryptoCoin.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.CryptoCoin.Models": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.Http": "[0.1.0-Alpha, )",
           "Newtonsoft.Json": "[13.0.4, )",
@@ -1592,7 +1599,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.CryptoCoin.Enumerations": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.cryptocoin.models": {
@@ -1601,20 +1608,21 @@
           "ATAP.Utilities.ComputerInventory.Extensions": "[0.1.0-Alpha, )",
           "ATAP.Utilities.CryptoCoin.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.CryptoCoin.Interfaces": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.datetime.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.StringConstants": "[0.1.1, )"
         }
       },
       "atap.utilities.datetime.model": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.DateTime.StringConstants": "[0.1.1, )",
+          "TimePeriodLibrary.NET": "[2.1.5, )"
         }
       },
       "atap.utilities.datetime.stringconstants": {
@@ -1662,18 +1670,18 @@
       "atap.utilities.philote.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.philote.models": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.DateTime.Model": "[1.0.0, )",
-          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.DateTime.Model": "[0.1.1, )",
+          "ATAP.Utilities.Philote.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[0.1.1, )"
         }
       },
       "atap.utilities.serializer.interfaces": {
@@ -1689,7 +1697,7 @@
       "atap.utilities.stronglytypedid.models": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.testing": {
@@ -1974,6 +1982,12 @@
           "System.IO.Pipelines": "10.0.2",
           "System.Text.Encodings.Web": "10.0.2"
         }
+      },
+      "TimePeriodLibrary.NET": {
+        "type": "CentralTransitive",
+        "requested": "[2.1.5, )",
+        "resolved": "2.1.5",
+        "contentHash": "2QFqfYDl7/4wQd6Bsi1Z4fZlOurnJ2OQln5YK+TlIS6c5R0AM2Tn1EEfpWob/sOe0c0luUR01r0kZE4vruX8mw=="
       },
       "UnitsNet": {
         "type": "CentralTransitive",
@@ -2452,9 +2466,9 @@
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Hardware.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.Philote.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[0.1.1, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -2463,11 +2477,11 @@
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Hardware.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ComputerInventory.Hardware.Interfaces": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.Philote": "[1.0.0, )",
-          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.Philote.Models": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.Philote": "[0.1.1, )",
+          "ATAP.Utilities.Philote.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.Philote.Models": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[0.1.1, )",
           "MedallionShell": "[1.6.2, )",
           "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
@@ -2533,7 +2547,7 @@
       "atap.utilities.computerinventory.software.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.Philote.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.computerinventory.software.models": {
@@ -2541,8 +2555,8 @@
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Software.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ComputerInventory.Software.Interfaces": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.Philote": "[1.0.0, )",
-          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Philote": "[0.1.1, )",
+          "ATAP.Utilities.Philote.Interfaces": "[0.1.1, )",
           "MedallionShell": "[1.6.2, )",
           "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
@@ -2581,7 +2595,7 @@
         "dependencies": {
           "ATAP.Utilities.CryptoCoin.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.CryptoCoin.Models": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.Http": "[0.1.0-Alpha, )",
           "Newtonsoft.Json": "[13.0.4, )",
@@ -2593,7 +2607,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.CryptoCoin.Enumerations": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.cryptocoin.models": {
@@ -2602,20 +2616,21 @@
           "ATAP.Utilities.ComputerInventory.Extensions": "[0.1.0-Alpha, )",
           "ATAP.Utilities.CryptoCoin.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.CryptoCoin.Interfaces": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.datetime.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.StringConstants": "[0.1.1, )"
         }
       },
       "atap.utilities.datetime.model": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.DateTime.StringConstants": "[0.1.1, )",
+          "TimePeriodLibrary.NET": "[2.1.5, )"
         }
       },
       "atap.utilities.datetime.stringconstants": {
@@ -2663,18 +2678,18 @@
       "atap.utilities.philote.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.philote.models": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.DateTime.Model": "[1.0.0, )",
-          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.DateTime.Model": "[0.1.1, )",
+          "ATAP.Utilities.Philote.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[0.1.1, )"
         }
       },
       "atap.utilities.serializer.interfaces": {
@@ -2690,7 +2705,7 @@
       "atap.utilities.stronglytypedid.models": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.testing": {
@@ -2957,6 +2972,12 @@
         "dependencies": {
           "System.Security.Cryptography.Pkcs": "10.0.10"
         }
+      },
+      "TimePeriodLibrary.NET": {
+        "type": "CentralTransitive",
+        "requested": "[2.1.5, )",
+        "resolved": "2.1.5",
+        "contentHash": "2QFqfYDl7/4wQd6Bsi1Z4fZlOurnJ2OQln5YK+TlIS6c5R0AM2Tn1EEfpWob/sOe0c0luUR01r0kZE4vruX8mw=="
       },
       "UnitsNet": {
         "type": "CentralTransitive",

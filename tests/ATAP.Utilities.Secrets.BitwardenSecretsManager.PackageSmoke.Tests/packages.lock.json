@@ -178,7 +178,7 @@
       "atap.utilities.secrets.bitwardensecretsmanager.windows": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Secrets.BitwardenSecretsManager": "[1.0.0, )",
+          "ATAP.Utilities.Secrets.BitwardenSecretsManager": "[0.1.6, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.2, )",
           "System.IO.FileSystem.AccessControl": "[5.0.0, )",
           "System.Security.Cryptography.ProtectedData": "[9.0.4, )"

@@ -31,7 +31,7 @@
       "atap.utilities.datetime.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.StringConstants": "[0.1.1, )"
         }
       },
       "atap.utilities.datetime.stringconstants": {
@@ -71,7 +71,7 @@
       "atap.utilities.datetime.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.StringConstants": "[0.1.1, )"
         }
       },
       "atap.utilities.datetime.stringconstants": {
@@ -111,7 +111,7 @@
       "atap.utilities.datetime.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.StringConstants": "[0.1.1, )"
         }
       },
       "atap.utilities.datetime.stringconstants": {

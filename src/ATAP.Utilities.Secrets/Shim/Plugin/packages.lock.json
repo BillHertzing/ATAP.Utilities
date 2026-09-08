@@ -83,7 +83,7 @@
       "atap.utilities.fileio": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
+          "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
           "System.IO.Abstractions": "[21.1.3, )",
           "System.IO.Abstractions.TestingHelpers": "[21.1.3, )"
         }
@@ -279,7 +279,7 @@
       "atap.utilities.fileio": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
+          "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
           "System.IO.Abstractions": "[21.1.3, )",
           "System.IO.Abstractions.TestingHelpers": "[21.1.3, )"
         }
@@ -475,7 +475,7 @@
       "atap.utilities.fileio": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
+          "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
           "System.IO.Abstractions": "[21.1.3, )",
           "System.IO.Abstractions.TestingHelpers": "[21.1.3, )"
         }

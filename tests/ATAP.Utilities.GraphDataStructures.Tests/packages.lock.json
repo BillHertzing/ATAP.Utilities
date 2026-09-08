@@ -377,9 +377,9 @@
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Hardware.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.Philote.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[0.1.1, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -405,7 +405,7 @@
       "atap.utilities.datetime.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.StringConstants": "[0.1.1, )"
         }
       },
       "atap.utilities.datetime.stringconstants": {
@@ -439,8 +439,8 @@
       "atap.utilities.philote.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.serializer.interfaces": {
@@ -456,7 +456,7 @@
       "atap.utilities.stronglytypedid.models": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.testing": {
@@ -1030,9 +1030,9 @@
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Hardware.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.Philote.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[0.1.1, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -1059,7 +1059,7 @@
       "atap.utilities.datetime.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.StringConstants": "[0.1.1, )"
         }
       },
       "atap.utilities.datetime.stringconstants": {
@@ -1093,8 +1093,8 @@
       "atap.utilities.philote.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.serializer.interfaces": {
@@ -1110,7 +1110,7 @@
       "atap.utilities.stronglytypedid.models": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.testing": {
@@ -1689,9 +1689,9 @@
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Hardware.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ConcurrentObservableCollections": "[1.0.0, )",
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )",
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.Philote.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[0.1.1, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -1717,7 +1717,7 @@
       "atap.utilities.datetime.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.StringConstants": "[0.1.1, )"
         }
       },
       "atap.utilities.datetime.stringconstants": {
@@ -1751,8 +1751,8 @@
       "atap.utilities.philote.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.serializer.interfaces": {
@@ -1768,7 +1768,7 @@
       "atap.utilities.stronglytypedid.models": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.testing": {

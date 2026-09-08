@@ -429,7 +429,7 @@
       "atap.utilities.datetime.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.StringConstants": "[0.1.1, )"
         }
       },
       "atap.utilities.datetime.stringconstants": {
@@ -444,27 +444,27 @@
       "atap.utilities.philote.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.serializer": {
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ETW": "[0.1.3, )",
-          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[0.1.1, )",
           "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.Serializer.Shim": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Shim": "[0.1.1, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )"
         }
       },
       "atap.utilities.serializer.datafortests": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Philote": "[1.0.0, )",
-          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )",
-          "ATAP.Utilities.Testing.Fixture.Serialization": "[1.0.0-NA, )",
+          "ATAP.Utilities.Philote": "[0.1.1, )",
+          "ATAP.Utilities.Philote.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[0.1.1, )",
+          "ATAP.Utilities.Testing.Fixture.Serialization": "[0.1.1, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -479,7 +479,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ETW": "[0.1.3, )",
-          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[0.1.1, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.Binder": "[9.0.0, )",
@@ -490,16 +490,16 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ETW": "[0.1.3, )",
-          "ATAP.Utilities.Serializer.Shim.Newtonsoft": "[1.0.0, )",
-          "ATAP.Utilities.Serializer.Shim.SystemTextJson": "[1.0.0, )"
+          "ATAP.Utilities.Serializer.Shim.Newtonsoft": "[0.1.1, )",
+          "ATAP.Utilities.Serializer.Shim.SystemTextJson": "[0.1.1, )"
         }
       },
       "atap.utilities.serializer.shim.newtonsoft": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
+          "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
-          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[0.1.1, )",
           "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )",
           "Newtonsoft.Json": "[13.0.4, )"
@@ -508,9 +508,9 @@
       "atap.utilities.serializer.shim.servicestack": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
+          "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
-          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[0.1.1, )",
           "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
           "ServiceStack.Text": "[8.10.0, )"
         }
@@ -518,9 +518,9 @@
       "atap.utilities.serializer.shim.systemtextjson": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
+          "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
-          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[0.1.1, )",
           "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
         }
@@ -537,7 +537,7 @@
       "atap.utilities.stronglytypedid.models": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.testing": {
@@ -572,7 +572,7 @@
         "dependencies": {
           "ATAP.Utilities.Configuration.Extensions": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
-          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[0.1.1, )",
           "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )",
           "ATAP.Utilities.Testing": "[0.1.0-Alpha, )",
@@ -588,7 +588,7 @@
         "dependencies": {
           "ATAP.Utilities.Configuration.Extensions": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
-          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[0.1.1, )",
           "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
           "ATAP.Utilities.Serializer.Shim.ServiceStack": "[1.0.0, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )",
@@ -1255,7 +1255,7 @@
       "atap.utilities.datetime.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.StringConstants": "[0.1.1, )"
         }
       },
       "atap.utilities.datetime.stringconstants": {
@@ -1270,27 +1270,27 @@
       "atap.utilities.philote.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.serializer": {
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ETW": "[0.1.3, )",
-          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[0.1.1, )",
           "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.Serializer.Shim": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Shim": "[0.1.1, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )"
         }
       },
       "atap.utilities.serializer.datafortests": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Philote": "[1.0.0, )",
-          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )",
-          "ATAP.Utilities.Testing.Fixture.Serialization": "[1.0.0-NA, )",
+          "ATAP.Utilities.Philote": "[0.1.1, )",
+          "ATAP.Utilities.Philote.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[0.1.1, )",
+          "ATAP.Utilities.Testing.Fixture.Serialization": "[0.1.1, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -1305,7 +1305,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ETW": "[0.1.3, )",
-          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[0.1.1, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.Binder": "[9.0.0, )",
@@ -1316,16 +1316,16 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ETW": "[0.1.3, )",
-          "ATAP.Utilities.Serializer.Shim.Newtonsoft": "[1.0.0, )",
-          "ATAP.Utilities.Serializer.Shim.SystemTextJson": "[1.0.0, )"
+          "ATAP.Utilities.Serializer.Shim.Newtonsoft": "[0.1.1, )",
+          "ATAP.Utilities.Serializer.Shim.SystemTextJson": "[0.1.1, )"
         }
       },
       "atap.utilities.serializer.shim.newtonsoft": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
+          "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
-          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[0.1.1, )",
           "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )",
           "Newtonsoft.Json": "[13.0.4, )"
@@ -1334,9 +1334,9 @@
       "atap.utilities.serializer.shim.servicestack": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
+          "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
-          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[0.1.1, )",
           "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
           "ServiceStack.Text": "[8.10.0, )"
         }
@@ -1344,9 +1344,9 @@
       "atap.utilities.serializer.shim.systemtextjson": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
+          "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
-          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[0.1.1, )",
           "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
         }
@@ -1363,7 +1363,7 @@
       "atap.utilities.stronglytypedid.models": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.testing": {
@@ -1398,7 +1398,7 @@
         "dependencies": {
           "ATAP.Utilities.Configuration.Extensions": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
-          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[0.1.1, )",
           "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )",
           "ATAP.Utilities.Testing": "[0.1.0-Alpha, )",
@@ -1414,7 +1414,7 @@
         "dependencies": {
           "ATAP.Utilities.Configuration.Extensions": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
-          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[0.1.1, )",
           "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
           "ATAP.Utilities.Serializer.Shim.ServiceStack": "[1.0.0, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )",
@@ -2080,7 +2080,7 @@
       "atap.utilities.datetime.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.StringConstants": "[0.1.1, )"
         }
       },
       "atap.utilities.datetime.stringconstants": {
@@ -2095,27 +2095,27 @@
       "atap.utilities.philote.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.serializer": {
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ETW": "[0.1.3, )",
-          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[0.1.1, )",
           "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.Serializer.Shim": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Shim": "[0.1.1, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )"
         }
       },
       "atap.utilities.serializer.datafortests": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Philote": "[1.0.0, )",
-          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )",
-          "ATAP.Utilities.Testing.Fixture.Serialization": "[1.0.0-NA, )",
+          "ATAP.Utilities.Philote": "[0.1.1, )",
+          "ATAP.Utilities.Philote.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[0.1.1, )",
+          "ATAP.Utilities.Testing.Fixture.Serialization": "[0.1.1, )",
           "UnitsNet": "[5.60.0, )"
         }
       },
@@ -2130,7 +2130,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ETW": "[0.1.3, )",
-          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[0.1.1, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.Binder": "[9.0.0, )",
@@ -2141,16 +2141,16 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ETW": "[0.1.3, )",
-          "ATAP.Utilities.Serializer.Shim.Newtonsoft": "[1.0.0, )",
-          "ATAP.Utilities.Serializer.Shim.SystemTextJson": "[1.0.0, )"
+          "ATAP.Utilities.Serializer.Shim.Newtonsoft": "[0.1.1, )",
+          "ATAP.Utilities.Serializer.Shim.SystemTextJson": "[0.1.1, )"
         }
       },
       "atap.utilities.serializer.shim.newtonsoft": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
+          "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
-          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[0.1.1, )",
           "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )",
           "Newtonsoft.Json": "[13.0.4, )"
@@ -2159,9 +2159,9 @@
       "atap.utilities.serializer.shim.servicestack": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
+          "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
-          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[0.1.1, )",
           "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
           "ServiceStack.Text": "[8.10.0, )"
         }
@@ -2169,9 +2169,9 @@
       "atap.utilities.serializer.shim.systemtextjson": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
+          "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
-          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[0.1.1, )",
           "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
         }
@@ -2188,7 +2188,7 @@
       "atap.utilities.stronglytypedid.models": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.testing": {
@@ -2223,7 +2223,7 @@
         "dependencies": {
           "ATAP.Utilities.Configuration.Extensions": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
-          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[0.1.1, )",
           "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )",
           "ATAP.Utilities.Testing": "[0.1.0-Alpha, )",
@@ -2239,7 +2239,7 @@
         "dependencies": {
           "ATAP.Utilities.Configuration.Extensions": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
-          "ATAP.Utilities.Serializer.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Serializer.Interfaces": "[0.1.1, )",
           "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
           "ATAP.Utilities.Serializer.Shim.ServiceStack": "[1.0.0, )",
           "ATAP.Utilities.Serializer.StringConstants": "[0.1.0-Alpha, )",

@@ -37,7 +37,7 @@
       "atap.utilities.computerinventory.software.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.Philote.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.computerinventory.software.models": {
@@ -45,8 +45,8 @@
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Software.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ComputerInventory.Software.Interfaces": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.Philote": "[1.0.0, )",
-          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Philote": "[0.1.1, )",
+          "ATAP.Utilities.Philote.Interfaces": "[0.1.1, )",
           "MedallionShell": "[1.6.2, )",
           "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
@@ -56,7 +56,7 @@
       "atap.utilities.datetime.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.StringConstants": "[0.1.1, )"
         }
       },
       "atap.utilities.datetime.stringconstants": {
@@ -71,8 +71,8 @@
       "atap.utilities.philote.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.stronglytypedid.interfaces": {
@@ -142,7 +142,7 @@
       "atap.utilities.computerinventory.software.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.Philote.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.computerinventory.software.models": {
@@ -150,8 +150,8 @@
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Software.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ComputerInventory.Software.Interfaces": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.Philote": "[1.0.0, )",
-          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Philote": "[0.1.1, )",
+          "ATAP.Utilities.Philote.Interfaces": "[0.1.1, )",
           "MedallionShell": "[1.6.2, )",
           "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
@@ -161,7 +161,7 @@
       "atap.utilities.datetime.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.StringConstants": "[0.1.1, )"
         }
       },
       "atap.utilities.datetime.stringconstants": {
@@ -176,8 +176,8 @@
       "atap.utilities.philote.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.stronglytypedid.interfaces": {
@@ -247,7 +247,7 @@
       "atap.utilities.computerinventory.software.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.Philote.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.computerinventory.software.models": {
@@ -255,8 +255,8 @@
         "dependencies": {
           "ATAP.Utilities.ComputerInventory.Software.Enumerations": "[0.1.0-Alpha, )",
           "ATAP.Utilities.ComputerInventory.Software.Interfaces": "[0.1.0-Alpha, )",
-          "ATAP.Utilities.Philote": "[1.0.0, )",
-          "ATAP.Utilities.Philote.Interfaces": "[1.0.0, )",
+          "ATAP.Utilities.Philote": "[0.1.1, )",
+          "ATAP.Utilities.Philote.Interfaces": "[0.1.1, )",
           "MedallionShell": "[1.6.2, )",
           "ServiceStack.Text": "[8.10.0, )",
           "ServiceStack.Text.EnumMemberSerializer": "[3.0.0.50044, )",
@@ -266,7 +266,7 @@
       "atap.utilities.datetime.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.StringConstants": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.StringConstants": "[0.1.1, )"
         }
       },
       "atap.utilities.datetime.stringconstants": {
@@ -281,8 +281,8 @@
       "atap.utilities.philote.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.DateTime.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.DateTime.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )"
         }
       },
       "atap.utilities.stronglytypedid.interfaces": {

@@ -55,9 +55,15 @@
 #                         secret value from Bitwarden by name; values never
 #                         appear in Arguments.
 #   Deployment-principal audit variables (required; names/metadata only):
-#     $DatabaseDeploymentSqlInstance
-#                         Current tier's explicit Server\Instance target.
-#                         Define this as a deployment-environment variable.
+#     $ExperimentalDatabaseDeploymentSqlInstance
+#     $DevelopmentDatabaseDeploymentSqlInstance
+#     $IntegrationDatabaseDeploymentSqlInstance
+#     $QADatabaseDeploymentSqlInstance
+#     $ProductionDatabaseDeploymentSqlInstance
+#                         Explicit Server\Instance targets selected by the
+#                         runner from the current pipeline stage. Define these
+#                         as Application Variables; pipeline stages are not
+#                         BuildMaster deployment environments.
 #     $DatabaseDeploymentExpectedHostName
 #     $DatabaseDeploymentServiceAccount
 #     $DatabaseDeploymentExpectedAccountSid
@@ -117,7 +123,7 @@ set $BuildMasterExecutionId = $ExecutionId;
 Exec
 (
     FileName: pwsh,
-    Arguments: >>-NoProfile -File "$InvokeDatabasePackageStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -DatabaseApplication "$DatabaseApplication" -DatabaseStream "$DatabaseStream" -ExcludedMigrationFileNames "$ExcludedMigrationFileNames" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetBaseUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName" -ExperimentalDatabaseDBConnectionStringSecretName "$ExperimentalDatabaseDBConnectionStringSecretName" -DevelopmentDatabaseDBConnectionStringSecretName "$DevelopmentDatabaseDBConnectionStringSecretName" -IntegrationDatabaseDBConnectionStringSecretName "$IntegrationDatabaseDBConnectionStringSecretName" -QADatabaseDBConnectionStringSecretName "$QADatabaseDBConnectionStringSecretName" -ProductionDatabaseDBConnectionStringSecretName "$ProductionDatabaseDBConnectionStringSecretName" -DatabaseDeploymentSqlInstance "$DatabaseDeploymentSqlInstance" -DatabaseDeploymentExpectedHostName "$DatabaseDeploymentExpectedHostName" -DatabaseDeploymentServiceAccount "$DatabaseDeploymentServiceAccount" -DatabaseDeploymentExpectedAccountSid "$DatabaseDeploymentExpectedAccountSid" -DatabaseDeploymentAllowedInstanceNames "$DatabaseDeploymentAllowedInstanceNames" -DatabaseDeploymentApprovedDatabaseNames "$DatabaseDeploymentApprovedDatabaseNames">>,
+    Arguments: >>-NoProfile -File "$InvokeDatabasePackageStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -DatabaseApplication "$DatabaseApplication" -DatabaseStream "$DatabaseStream" -ExcludedMigrationFileNames "$ExcludedMigrationFileNames" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetBaseUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName" -ExperimentalDatabaseDBConnectionStringSecretName "$ExperimentalDatabaseDBConnectionStringSecretName" -DevelopmentDatabaseDBConnectionStringSecretName "$DevelopmentDatabaseDBConnectionStringSecretName" -IntegrationDatabaseDBConnectionStringSecretName "$IntegrationDatabaseDBConnectionStringSecretName" -QADatabaseDBConnectionStringSecretName "$QADatabaseDBConnectionStringSecretName" -ProductionDatabaseDBConnectionStringSecretName "$ProductionDatabaseDBConnectionStringSecretName" -ExperimentalDatabaseDeploymentSqlInstance "$ExperimentalDatabaseDeploymentSqlInstance" -DevelopmentDatabaseDeploymentSqlInstance "$DevelopmentDatabaseDeploymentSqlInstance" -IntegrationDatabaseDeploymentSqlInstance "$IntegrationDatabaseDeploymentSqlInstance" -QADatabaseDeploymentSqlInstance "$QADatabaseDeploymentSqlInstance" -ProductionDatabaseDeploymentSqlInstance "$ProductionDatabaseDeploymentSqlInstance" -DatabaseDeploymentExpectedHostName "$DatabaseDeploymentExpectedHostName" -DatabaseDeploymentServiceAccount "$DatabaseDeploymentServiceAccount" -DatabaseDeploymentExpectedAccountSid "$DatabaseDeploymentExpectedAccountSid" -DatabaseDeploymentAllowedInstanceNames "$DatabaseDeploymentAllowedInstanceNames" -DatabaseDeploymentApprovedDatabaseNames "$DatabaseDeploymentApprovedDatabaseNames">>,
     WorkingDirectory: $SourcePath,
     SuccessExitCode: 0
 );

@@ -77,7 +77,11 @@ Describe 'V4-E08 plan shape: DatabaseChangePackage-5Stage.otter is a thin runner
 
     It 'plan passes the explicit deployment-principal audit policy without credentials' {
         foreach ($name in @(
-            'DatabaseDeploymentSqlInstance',
+            'ExperimentalDatabaseDeploymentSqlInstance',
+            'DevelopmentDatabaseDeploymentSqlInstance',
+            'IntegrationDatabaseDeploymentSqlInstance',
+            'QADatabaseDeploymentSqlInstance',
+            'ProductionDatabaseDeploymentSqlInstance',
             'DatabaseDeploymentExpectedHostName',
             'DatabaseDeploymentServiceAccount',
             'DatabaseDeploymentExpectedAccountSid',
@@ -86,6 +90,7 @@ Describe 'V4-E08 plan shape: DatabaseChangePackage-5Stage.otter is a thin runner
         )) {
             $script:PlanText | Should -Match ('-{0}\s+"\${0}"' -f $name)
         }
+        $script:PlanText | Should -Not -Match '-DatabaseDeploymentSqlInstance\s'
     }
 
     It 'plan references the runner script via $BuildMasterPlanScriptDir + Invoke-DatabasePackageBuildMasterStage.ps1' {
@@ -498,6 +503,28 @@ Describe 'Task 9.10 behavior: per-tier apply + rehearsal helpers' {
         }
         It 'returns empty string when the tier has no name configured' {
             (Resolve-DatabaseTierConnectionSecretName -Tier 'QA') | Should -BeExactly ''
+        }
+    }
+
+    Context 'Resolve-DatabaseTierDeploymentSqlInstance' {
+        It '<Tier> selects <Expected>' -ForEach @(
+            @{ Tier = 'Experimental'; Expected = 'UTAT022\Expwhertzing' }
+            @{ Tier = 'Development';  Expected = 'UTAT022\Devwhertzing' }
+            @{ Tier = 'Integration';  Expected = 'UTAT022\Integration' }
+            @{ Tier = 'QA';           Expected = 'UTAT022\QA' }
+            @{ Tier = 'Production';   Expected = 'UTAT022\Production' }
+        ) {
+            (Resolve-DatabaseTierDeploymentSqlInstance -Tier $Tier `
+                -ExperimentalSqlInstance 'UTAT022\Expwhertzing' `
+                -DevelopmentSqlInstance 'UTAT022\Devwhertzing' `
+                -IntegrationSqlInstance 'UTAT022\Integration' `
+                -QASqlInstance 'UTAT022\QA' `
+                -ProductionSqlInstance 'UTAT022\Production') | Should -BeExactly $Expected
+        }
+
+        It 'returns empty when the selected stage variable is not configured' {
+            (Resolve-DatabaseTierDeploymentSqlInstance -Tier 'QA' `
+                -IntegrationSqlInstance 'UTAT022\Integration') | Should -BeExactly ''
         }
     }
 

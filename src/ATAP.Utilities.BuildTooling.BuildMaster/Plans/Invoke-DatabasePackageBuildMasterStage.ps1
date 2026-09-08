@@ -83,14 +83,19 @@
   accepted as a parameter and never echoed; Invoke-FlywayRehearsal /
   Invoke-Flyway resolve it from Bitwarden by name.
 
-.PARAMETER DatabaseDeploymentSqlInstance
+.PARAMETER ExperimentalDatabaseDeploymentSqlInstance
+.PARAMETER DevelopmentDatabaseDeploymentSqlInstance
+.PARAMETER IntegrationDatabaseDeploymentSqlInstance
+.PARAMETER QADatabaseDeploymentSqlInstance
+.PARAMETER ProductionDatabaseDeploymentSqlInstance
 .PARAMETER DatabaseDeploymentExpectedHostName
 .PARAMETER DatabaseDeploymentServiceAccount
 .PARAMETER DatabaseDeploymentExpectedAccountSid
 .PARAMETER DatabaseDeploymentAllowedInstanceNames
 .PARAMETER DatabaseDeploymentApprovedDatabaseNames
-  Fail-closed deployment-principal audit policy. The SQL instance is the
-  current tier's explicit Server\Instance target. The account and SID identify
+  Fail-closed deployment-principal audit policy. The five SQL-instance values
+  are explicit Server\Instance targets selected by the current pipeline stage.
+  The account and SID identify
   the local BuildMaster service identity. Allowed instances and approved
   package-target databases are semicolon-delimited exact names. The runner
   audits the current target before any package publish, promotion, or apply;
@@ -207,7 +212,19 @@ param(
   [string]$ProductionDatabaseDBConnectionStringSecretName = '',
 
   [AllowEmptyString()]
-  [string]$DatabaseDeploymentSqlInstance = '',
+  [string]$ExperimentalDatabaseDeploymentSqlInstance = '',
+
+  [AllowEmptyString()]
+  [string]$DevelopmentDatabaseDeploymentSqlInstance = '',
+
+  [AllowEmptyString()]
+  [string]$IntegrationDatabaseDeploymentSqlInstance = '',
+
+  [AllowEmptyString()]
+  [string]$QADatabaseDeploymentSqlInstance = '',
+
+  [AllowEmptyString()]
+  [string]$ProductionDatabaseDeploymentSqlInstance = '',
 
   [AllowEmptyString()]
   [string]$DatabaseDeploymentExpectedHostName = '',
@@ -573,6 +590,29 @@ function Get-DatabasePackageApplyMarkerPath {
 
   END {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Finished $fn"
+  }
+}
+
+function Resolve-DatabaseTierDeploymentSqlInstance {
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory)]
+    [ValidateSet('Experimental', 'Development', 'Integration', 'QA', 'Production')]
+    [string]$Tier,
+
+    [AllowEmptyString()][string]$ExperimentalSqlInstance = '',
+    [AllowEmptyString()][string]$DevelopmentSqlInstance = '',
+    [AllowEmptyString()][string]$IntegrationSqlInstance = '',
+    [AllowEmptyString()][string]$QASqlInstance = '',
+    [AllowEmptyString()][string]$ProductionSqlInstance = ''
+  )
+
+  switch ($Tier) {
+    'Experimental' { return $ExperimentalSqlInstance }
+    'Development'  { return $DevelopmentSqlInstance }
+    'Integration'  { return $IntegrationSqlInstance }
+    'QA'           { return $QASqlInstance }
+    'Production'   { return $ProductionSqlInstance }
   }
 }
 
@@ -1141,8 +1181,15 @@ function Invoke-DatabasePackageBuildMasterStage {
       throw "Database stage 'Experimental' cannot build, publish, rehearse, apply, or complete package '$databasePackageId' while -SkipRehearsal is supplied."
     }
 
+    $databaseDeploymentSqlInstance = Resolve-DatabaseTierDeploymentSqlInstance -Tier $Stage `
+      -ExperimentalSqlInstance $ExperimentalDatabaseDeploymentSqlInstance `
+      -DevelopmentSqlInstance $DevelopmentDatabaseDeploymentSqlInstance `
+      -IntegrationSqlInstance $IntegrationDatabaseDeploymentSqlInstance `
+      -QASqlInstance $QADatabaseDeploymentSqlInstance `
+      -ProductionSqlInstance $ProductionDatabaseDeploymentSqlInstance
+
     $principalPolicyValues = [ordered]@{
-      DatabaseDeploymentSqlInstance        = $DatabaseDeploymentSqlInstance
+      DatabaseDeploymentSqlInstance        = $databaseDeploymentSqlInstance
       DatabaseDeploymentExpectedHostName   = $DatabaseDeploymentExpectedHostName
       DatabaseDeploymentServiceAccount     = $DatabaseDeploymentServiceAccount
       DatabaseDeploymentExpectedAccountSid = $DatabaseDeploymentExpectedAccountSid
@@ -1170,7 +1217,7 @@ function Invoke-DatabasePackageBuildMasterStage {
     }
 
     $principalAudit = Assert-DatabasePackageDeploymentPrincipal `
-      -SqlInstance $DatabaseDeploymentSqlInstance `
+      -SqlInstance $databaseDeploymentSqlInstance `
       -ExpectedHostName $DatabaseDeploymentExpectedHostName `
       -ServiceAccount $DatabaseDeploymentServiceAccount `
       -ExpectedAccountSid $DatabaseDeploymentExpectedAccountSid `
@@ -1224,7 +1271,7 @@ function Invoke-DatabasePackageBuildMasterStage {
         DatabasePackageId   = $databasePackageId
         ExcludedMigrations  = $excludedMigrations
         DeploymentPrincipalAuditPassed = [bool]$principalAudit.IsCompliant
-        DeploymentPrincipalSqlInstance = $DatabaseDeploymentSqlInstance
+        DeploymentPrincipalSqlInstance = $databaseDeploymentSqlInstance
       } | Out-Null
 
     if (Test-DatabasePackageStageCompleted -ContextDirectory $contextDirectory -DatabasePackageId $databasePackageId -Tier $Stage) {

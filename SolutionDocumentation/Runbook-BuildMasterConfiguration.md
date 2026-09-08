@@ -29,8 +29,12 @@ reconciliation are canonical in
 [NewComputerSetup.md § 9.2.1](NewComputerSetup.md#921-grant-svcbuildmaster-database-package-deployment-rights).
 
 For `DatabaseChangePackage-5Stage`, define these non-secret variables before
-syncing and running the plan: `DatabaseDeploymentSqlInstance` (scoped per
-deployment environment), `DatabaseDeploymentExpectedHostName`,
+syncing and running the plan: `ExperimentalDatabaseDeploymentSqlInstance`,
+`DevelopmentDatabaseDeploymentSqlInstance`,
+`IntegrationDatabaseDeploymentSqlInstance`,
+`QADatabaseDeploymentSqlInstance`, and
+`ProductionDatabaseDeploymentSqlInstance` (all application-scoped),
+`DatabaseDeploymentExpectedHostName`,
 `DatabaseDeploymentServiceAccount`, `DatabaseDeploymentExpectedAccountSid`,
 `DatabaseDeploymentAllowedInstanceNames` (semicolon-delimited), and
 `DatabaseDeploymentApprovedDatabaseNames` (initially `ATAPUtilities`). The
@@ -38,6 +42,8 @@ runner calls `Get-SqlServiceLoginGrantTarget` before any package action and
 fails fast when a value is missing, the package target is unapproved, or the
 login/user/SID/`db_owner` mapping drifts. Permission repair remains a separate
 authorized operator action using `Set-SqlDatabasePackageDeploymentPrincipal`.
+BuildMaster pipeline stages are not deployment environments in this
+application, so environment-scoped instance variables do not resolve here.
 
 # Runbook: BuildMaster Configuration for Stream L
 

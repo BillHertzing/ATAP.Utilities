@@ -158,8 +158,12 @@ BEGIN TRANSACTION;
 BEGIN TRY
   IF @ensurePresent = 1
   BEGIN
+    DECLARE @principalSql nvarchar(max);
     IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE [name] = @account AND [type] IN ('U','G'))
-      EXEC (N'CREATE LOGIN ' + QUOTENAME(@account) + N' FROM WINDOWS;');
+    BEGIN
+      SET @principalSql = N'CREATE LOGIN ' + QUOTENAME(@account) + N' FROM WINDOWS;';
+      EXEC sys.sp_executesql @principalSql;
+    END;
     IF (SELECT [sid] FROM sys.server_principals WHERE [name] = @account AND [type] IN ('U','G')) <> SUSER_SID(@account)
       THROW 60188, N'Existing SQL login SID mismatch.', 1;
     USE [$databaseIdentifier];
@@ -167,14 +171,18 @@ BEGIN TRY
     IF @mappedUser IS NULL
     BEGIN
       SET @mappedUser = PARSENAME(REPLACE(@account, N'\', N'.'), 1);
-      EXEC (N'CREATE USER ' + QUOTENAME(@mappedUser) + N' FOR LOGIN ' + QUOTENAME(@account) + N';');
+      SET @principalSql = N'CREATE USER ' + QUOTENAME(@mappedUser) + N' FOR LOGIN ' + QUOTENAME(@account) + N';';
+      EXEC sys.sp_executesql @principalSql;
     END;
     IF NOT EXISTS (
       SELECT 1 FROM sys.database_role_members drm
       JOIN sys.database_principals rp ON rp.[principal_id] = drm.[role_principal_id]
       JOIN sys.database_principals mp ON mp.[principal_id] = drm.[member_principal_id]
       WHERE rp.[name] = N'db_owner' AND mp.[name] = @mappedUser)
-      EXEC (N'ALTER ROLE [db_owner] ADD MEMBER ' + QUOTENAME(@mappedUser) + N';');
+    BEGIN
+      SET @principalSql = N'ALTER ROLE [db_owner] ADD MEMBER ' + QUOTENAME(@mappedUser) + N';';
+      EXEC sys.sp_executesql @principalSql;
+    END;
   END
   ELSE
   BEGIN
@@ -182,10 +190,17 @@ BEGIN TRY
     DECLARE @revokeUser sysname = (SELECT TOP (1) [name] FROM sys.database_principals WHERE [sid] = SUSER_SID(@account) AND [type] IN ('U','G') ORDER BY [principal_id]);
     IF @revokeUser IS NOT NULL
     BEGIN
+      DECLARE @revokeSql nvarchar(max);
       IF IS_ROLEMEMBER(N'db_owner', @revokeUser) = 1
-        EXEC (N'ALTER ROLE [db_owner] DROP MEMBER ' + QUOTENAME(@revokeUser) + N';');
+      BEGIN
+        SET @revokeSql = N'ALTER ROLE [db_owner] DROP MEMBER ' + QUOTENAME(@revokeUser) + N';';
+        EXEC sys.sp_executesql @revokeSql;
+      END;
       IF @removeDatabaseUser = 1
-        EXEC (N'DROP USER ' + QUOTENAME(@revokeUser) + N';');
+      BEGIN
+        SET @revokeSql = N'DROP USER ' + QUOTENAME(@revokeUser) + N';';
+        EXEC sys.sp_executesql @revokeSql;
+      END;
     END;
   END;
   COMMIT TRANSACTION;

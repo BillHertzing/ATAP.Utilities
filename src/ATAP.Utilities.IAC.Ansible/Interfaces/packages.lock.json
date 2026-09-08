@@ -167,7 +167,7 @@
       "atap.utilities.iac.ansible.enumerations": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.FileIO": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.FileIO": "[0.1.2, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.CommandLine": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.EnvironmentVariables": "[9.0.0, )",
@@ -393,7 +393,7 @@
       "atap.utilities.iac.ansible.enumerations": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.FileIO": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.FileIO": "[0.1.2, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.CommandLine": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.EnvironmentVariables": "[9.0.0, )",
@@ -618,7 +618,7 @@
       "atap.utilities.iac.ansible.enumerations": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.FileIO": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.FileIO": "[0.1.2, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.CommandLine": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.EnvironmentVariables": "[9.0.0, )",

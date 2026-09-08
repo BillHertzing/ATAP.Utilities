@@ -151,6 +151,57 @@ function Get-CSharpPackageAuthenticodeTask15189AssetIds {
   return $assets
 }
 
+function Get-CSharpPackageAuthenticodeTask15189RecoveryPackageIdentities {
+  [CmdletBinding()]
+  [OutputType([string[]])]
+  param()
+  return @(
+    'ATAP.Utilities.FileIO|0.1.2'
+    'ATAP.Utilities.Loader.StringConstants|0.1.2'
+    'ATAP.Utilities.Loader.Interfaces|0.1.2'
+    'ATAP.Utilities.Loader.Model|0.1.2'
+    'ATAP.Utilities.Serializer.Model|0.1.2'
+    'ATAP.Utilities.Serializer.Shim.Newtonsoft|0.1.2'
+    'ATAP.Utilities.Serializer.Shim.SystemTextJson|0.1.1'
+    'ATAP.Utilities.StronglyTypedId.Models|0.1.1'
+    'ATAP.Utilities.Testing.Fixture.Serialization|0.1.1'
+    'ATAP.Utilities.DateTime.Model|0.1.1'
+    'ATAP.Utilities.Loader|0.1.2'
+    'ATAP.Utilities.Philote.Interfaces|0.1.1'
+    'ATAP.Utilities.Serializer.Shim|0.1.1'
+    'ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson|0.1.1'
+    'ATAP.Utilities.DateTime|0.1.1'
+    'ATAP.Utilities.Philote.Models|0.1.1'
+    'ATAP.Utilities.Philote.DefaultConfiguration|0.1.1'
+    'ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson|0.1.1'
+    'ATAP.Utilities.Philote|0.1.1'
+  )
+}
+
+function Get-CSharpPackageAuthenticodeTask15189RecoveryPackageNames {
+  [CmdletBinding()]
+  [OutputType([string[]])]
+  param()
+  return @(Get-CSharpPackageAuthenticodeTask15189RecoveryPackageIdentities | ForEach-Object { ($_ -split '\|', 2)[0] })
+}
+
+function Get-CSharpPackageAuthenticodeTask15189RecoveryAssetIds {
+  [CmdletBinding()]
+  [OutputType([string[]])]
+  param()
+  $assets = @(Get-CSharpPackageAuthenticodeTask15189RecoveryPackageNames | ForEach-Object {
+    $contract = Get-CSharpPackageAuthenticodeContract -PackageName $_
+    if ($null -eq $contract) { throw "Task 15.189.d-recovery package '$_' has no Authenticode contract." }
+    foreach ($asset in $contract.Assets) {
+      "$($contract.PackageName)|$($contract.ProjectPath)|$($contract.AssemblyName)|$($asset.BuildTargetFramework)|$($asset.PackageTargetFramework)"
+    }
+  } | Sort-Object)
+  if ($assets.Count -ne 54 -or @($assets | Sort-Object -Unique).Count -ne 54) {
+    throw "Task 15.189.d-recovery must contain exactly 54 unique shipping DLL assets; found $($assets.Count)."
+  }
+  return $assets
+}
+
 function Get-CSharpPackageAuthenticodeReleaseContract {
   [CmdletBinding()]
   [OutputType([pscustomobject])]
@@ -225,6 +276,7 @@ function Get-CSharpPackageAuthenticodeApproval {
   $expectedAssetCount = 0
   $scopeName = ''
   $requiresTask15189Boundary = $false
+  $requiresTask15189RecoveryMetadata = $false
   switch ($taskId) {
     'triple-stream-csharp-signing-contract-45' {
       $expectedPackages = @(Get-CSharpPackageAuthenticodeReleasePackageNames | Sort-Object)
@@ -247,6 +299,15 @@ function Get-CSharpPackageAuthenticodeApproval {
       $scopeName = 'Task 15.189.d 25-package/72-asset corrective release slice'
       $requiresTask15189Boundary = $true
     }
+    '15.189.d-recovery' {
+      $expectedPackages = @(Get-CSharpPackageAuthenticodeTask15189RecoveryPackageNames)
+      $expectedAssetIds = @(Get-CSharpPackageAuthenticodeTask15189RecoveryAssetIds)
+      $expectedPackageCount = 19
+      $expectedAssetCount = 54
+      $scopeName = 'Task 15.189.d-recovery 19-package/54-asset corrective release slice'
+      $requiresTask15189Boundary = $true
+      $requiresTask15189RecoveryMetadata = $true
+    }
     default { throw "Authenticode private-key use is denied: approval task '$taskId' is not supported." }
   }
   $approvedPackagesRaw = @($approval.scope.packageIds | ForEach-Object { [string]$_ })
@@ -258,28 +319,81 @@ function Get-CSharpPackageAuthenticodeApproval {
   $assetScopeMatches = $taskId -ceq '15.182.F03' -or (($approvedAssetIds -join "`n") -ceq ($expectedAssetIds -join "`n"))
   if ([string]$approval.decision -cne 'Approved' -or [string]$approval.publisher -cne 'ATAP Foundation' -or -not [bool]$approval.privateKeyUseApproved -or [int]$approval.scope.expectedPackageCount -ne $expectedPackageCount -or [int]$approval.scope.expectedAssetCount -ne $expectedAssetCount -or ($approvedPackages -join "`n") -cne ($expectedPackages -join "`n") -or -not $assetScopeMatches -or [string]$approval.certificate.ekuOid -cne '1.3.6.1.5.5.7.3.3' -or [string]$approval.timestampAuthority.protocol -cne 'RFC3161' -or [bool]$approval.certificate.privateKeyExportAllowed) { throw "Authenticode private-key use is denied: the approval does not bind the exact ATAP Foundation $scopeName." }
   if ($requiresTask15189Boundary) {
-    $expectedIdentities = @(Get-CSharpPackageAuthenticodeTask15189PackageIdentities)
+    $expectedIdentities = if ($requiresTask15189RecoveryMetadata) {
+      @(Get-CSharpPackageAuthenticodeTask15189RecoveryPackageIdentities)
+    }
+    else {
+      @(Get-CSharpPackageAuthenticodeTask15189PackageIdentities)
+    }
     $approvedIdentities = if ($null -ne $approval.scope.PSObject.Properties['packageIdentities']) { @($approval.scope.packageIdentities | ForEach-Object { [string]$_ }) } else { @() }
     $expectedRoute = @('nuget-experimental', 'nuget-development', 'nuget-integration', 'nuget-qa', 'nuget-stable')
     $approvedRoute = if ($null -ne $approval.PSObject.Properties['authorizedRoute']) { @($approval.authorizedRoute | ForEach-Object { [string]$_ }) } else { @() }
     $approvalSourceCommit = if ($null -ne $approval.PSObject.Properties['sourceCommit']) { [string]$approval.sourceCommit } else { '' }
     $feedMutationApprovalValue = if ($null -ne $approval.PSObject.Properties['feedMutationApproved']) { $approval.feedMutationApproved } else { $null }
     $feedMutationApproved = $feedMutationApprovalValue -is [bool] -and $feedMutationApprovalValue -eq $true
+    $privateKeyApprovalValue = if ($null -ne $approval.PSObject.Properties['privateKeyUseApproved']) { $approval.privateKeyUseApproved } else { $null }
+    $privateKeyUseApproved = $privateKeyApprovalValue -is [bool] -and $privateKeyApprovalValue -eq $true
     if ([string]::IsNullOrWhiteSpace($ExpectedSourceCommit)) {
       $repositoryPath = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
       $ExpectedSourceCommit = (& git -C $repositoryPath rev-parse HEAD 2>$null | Select-Object -First 1).ToString().Trim()
     }
     $taskBoundaryMatches =
-      @($approvedPackagesRaw | Sort-Object -Unique).Count -eq 25 -and
-      @($approvedAssetIdsRaw | Sort-Object -Unique).Count -eq 72 -and
+      $approvedPackagesRaw.Count -eq $expectedPackageCount -and
+      @($approvedPackagesRaw | Sort-Object -Unique).Count -eq $expectedPackageCount -and
+      $approvedAssetIdsRaw.Count -eq $expectedAssetCount -and
+      @($approvedAssetIdsRaw | Sort-Object -Unique).Count -eq $expectedAssetCount -and
       ($approvedIdentities -join "`n") -ceq ($expectedIdentities -join "`n") -and
-      @($approvedIdentities | Sort-Object -Unique).Count -eq 25 -and
+      $approvedIdentities.Count -eq $expectedPackageCount -and
+      @($approvedIdentities | Sort-Object -Unique).Count -eq $expectedPackageCount -and
       ($approvedRoute -join "`n") -ceq ($expectedRoute -join "`n") -and
+      $approvedRoute.Count -eq 5 -and
+      @($approvedRoute | Sort-Object -Unique).Count -eq 5 -and
       $feedMutationApproved -and
       $approvalSourceCommit -cmatch '^[0-9a-f]{40}$' -and
       $ExpectedSourceCommit -cmatch '^[0-9a-f]{40}$' -and
       $approvalSourceCommit -ceq $ExpectedSourceCommit
-    if (-not $taskBoundaryMatches) { throw 'Authenticode private-key use is denied: the approval does not bind the exact source, identities, assets, and feed route for Task 15.189.d.' }
+    if ($requiresTask15189RecoveryMetadata) {
+      $taskBoundaryMatches = $taskBoundaryMatches -and
+        $privateKeyUseApproved -and
+        [string]$approval.certificate.store -ceq 'Cert:\LocalMachine\My' -and
+        [string]$approval.certificate.subject -ceq 'OU=Software Release Engineering, C=US, O=ATAP Foundation, CN=ATAP Foundation PowerShell Code Signing' -and
+        [string]$approval.certificate.issuer -ceq 'C=US, O=ATAP Foundation, CN=ATAP Foundation Root CA 2026' -and
+        [DateTimeOffset]$approval.certificate.notBefore -eq [DateTimeOffset]'2026-08-03T10:34:56-06:00' -and
+        [DateTimeOffset]$approval.certificate.notAfter -eq [DateTimeOffset]'2028-11-05T09:34:56-07:00' -and
+        [string]$approval.certificate.sha1Thumbprint -ceq '3B5E16C0498E1F5A92F95B9AA17FD6A40E9C406E' -and
+        [string]$approval.certificate.sha256Fingerprint -ceq 'CDEB3095ADFB200E65E36378E699316552D7CDA328AB8FE3E4DEAD113227DB81' -and
+        [string]$approval.certificate.rootSha1Thumbprint -ceq '14BF4006BBFEFE19C3C8F37EC999DE1595AFB1B1' -and
+        [string]$approval.certificate.rootSha256Fingerprint -ceq '6481A1D816CE8FAB35D8ACD262C821CAF1D22019F19D9766D7E735F54875E4A4' -and
+        [string]$approval.certificate.provider -ceq 'Windows LocalMachine non-exportable RSA-3072 machine-key provider' -and
+        [string]$approval.certificate.custodianPrincipal -ceq 'UTAT022\SvcBuildmaster' -and
+        [string]$approval.certificate.ekuOid -ceq '1.3.6.1.5.5.7.3.3' -and
+        $approval.certificate.privateKeyExportAllowed -is [bool] -and
+        $approval.certificate.privateKeyExportAllowed -eq $false -and
+        [string]$approval.execution.computerName -ceq 'UTAT022' -and
+        [string]$approval.execution.identity -ceq 'UTAT022\SvcBuildmaster' -and
+        [string]$approval.execution.serviceName -ceq 'INEDOBMSVC' -and
+        $approval.execution.elevationRequired -is [bool] -and
+        $approval.execution.elevationRequired -eq $false -and
+        $approval.execution.aclMutationAllowed -is [bool] -and
+        $approval.execution.aclMutationAllowed -eq $false -and
+        $approval.execution.failClosedIfKeyUseDenied -is [bool] -and
+        $approval.execution.failClosedIfKeyUseDenied -eq $true -and
+        [string]$approval.tool.package -ceq 'Microsoft.Windows.SDK.BuildTools' -and
+        [string]$approval.tool.packageVersion -ceq '10.0.28000.2526' -and
+        [string]$approval.tool.productVersion -ceq '10.0.28000.2526' -and
+        [string]$approval.tool.architecture -ceq 'x64' -and
+        [string]$approval.tool.signToolSha256 -ceq '80972965E7FC311D293222B1A0E2C1BFB60F363239173964DBE2A71638314B9F' -and
+        [string]$approval.tool.fileDigest -ceq 'SHA256' -and
+        [string]$approval.tool.timestampDigest -ceq 'SHA256' -and
+        [string]$approval.timestampAuthority.protocol -ceq 'RFC3161' -and
+        [string]$approval.timestampAuthority.uri -ceq 'http://timestamp.digicert.com'
+    }
+    if (-not $taskBoundaryMatches) {
+      if ($requiresTask15189RecoveryMetadata) {
+        throw 'Authenticode private-key use is denied: the approval does not bind the exact source, identities, assets, feed route, and signer metadata for Task 15.189.d-recovery.'
+      }
+      throw 'Authenticode private-key use is denied: the approval does not bind the exact source, identities, assets, and feed route for Task 15.189.d.'
+    }
   }
   if (-not [string]::IsNullOrWhiteSpace($PackageName) -and $approvedPackages -cnotcontains $PackageName) { throw "Authenticode private-key use is denied: package '$PackageName' is outside approval task '$taskId'." }
   foreach ($hash in @([string]$approval.certificate.sha1Thumbprint, [string]$approval.certificate.rootSha1Thumbprint)) { if ($hash -notmatch '^[0-9A-Fa-f]{40}$') { throw 'Authenticode approval contains an invalid SHA-1 certificate fingerprint.' } }

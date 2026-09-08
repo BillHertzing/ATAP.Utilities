@@ -65,7 +65,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ETW": "[0.1.3, )",
-          "ATAP.Utilities.Serializer.Shim.Newtonsoft": "[0.1.1, )",
+          "ATAP.Utilities.Serializer.Shim.Newtonsoft": "[0.1.2, )",
           "ATAP.Utilities.Serializer.Shim.SystemTextJson": "[0.1.1, )"
         }
       },
@@ -75,7 +75,7 @@
           "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.Serializer.Interfaces": "[0.1.1, )",
-          "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.Serializer.Model": "[0.1.2, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )",
           "Newtonsoft.Json": "[13.0.4, )"
         }
@@ -86,7 +86,7 @@
           "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.Serializer.Interfaces": "[0.1.1, )",
-          "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.Serializer.Model": "[0.1.2, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
         }
       },
@@ -216,7 +216,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ETW": "[0.1.3, )",
-          "ATAP.Utilities.Serializer.Shim.Newtonsoft": "[0.1.1, )",
+          "ATAP.Utilities.Serializer.Shim.Newtonsoft": "[0.1.2, )",
           "ATAP.Utilities.Serializer.Shim.SystemTextJson": "[0.1.1, )"
         }
       },
@@ -226,7 +226,7 @@
           "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.Serializer.Interfaces": "[0.1.1, )",
-          "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.Serializer.Model": "[0.1.2, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )",
           "Newtonsoft.Json": "[13.0.4, )"
         }
@@ -237,7 +237,7 @@
           "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.Serializer.Interfaces": "[0.1.1, )",
-          "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.Serializer.Model": "[0.1.2, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
         }
       },
@@ -367,7 +367,7 @@
         "type": "Project",
         "dependencies": {
           "ATAP.Utilities.ETW": "[0.1.3, )",
-          "ATAP.Utilities.Serializer.Shim.Newtonsoft": "[0.1.1, )",
+          "ATAP.Utilities.Serializer.Shim.Newtonsoft": "[0.1.2, )",
           "ATAP.Utilities.Serializer.Shim.SystemTextJson": "[0.1.1, )"
         }
       },
@@ -377,7 +377,7 @@
           "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.Serializer.Interfaces": "[0.1.1, )",
-          "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.Serializer.Model": "[0.1.2, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )",
           "Newtonsoft.Json": "[13.0.4, )"
         }
@@ -388,7 +388,7 @@
           "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
           "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.Serializer.Interfaces": "[0.1.1, )",
-          "ATAP.Utilities.Serializer.Model": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.Serializer.Model": "[0.1.2, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.0, )"
         }
       },

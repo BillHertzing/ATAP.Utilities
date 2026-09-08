@@ -1030,7 +1030,7 @@
       "atap.utilities.loader.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.FileIO": "[0.1.0-Alpha, )"
+          "ATAP.Utilities.FileIO": "[0.1.2, )"
         }
       },
       "atap.utilities.loader.stringconstants": {
@@ -2356,7 +2356,7 @@
       "atap.utilities.loader.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.FileIO": "[0.1.0-Alpha, )"
+          "ATAP.Utilities.FileIO": "[0.1.2, )"
         }
       },
       "atap.utilities.loader.stringconstants": {
@@ -3684,7 +3684,7 @@
       "atap.utilities.loader.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.FileIO": "[0.1.0-Alpha, )"
+          "ATAP.Utilities.FileIO": "[0.1.2, )"
         }
       },
       "atap.utilities.loader.stringconstants": {

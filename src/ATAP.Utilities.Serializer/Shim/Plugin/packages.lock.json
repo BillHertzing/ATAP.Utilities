@@ -76,13 +76,13 @@
       "atap.utilities.loader.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.FileIO": "[0.1.0-Alpha, )"
+          "ATAP.Utilities.FileIO": "[0.1.2, )"
         }
       },
       "atap.utilities.loader.model": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.FileIO": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.FileIO": "[0.1.2, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.Binder": "[9.0.0, )",
           "Microsoft.Extensions.DependencyInjection": "[10.0.2, )"
@@ -256,13 +256,13 @@
       "atap.utilities.loader.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.FileIO": "[0.1.0-Alpha, )"
+          "ATAP.Utilities.FileIO": "[0.1.2, )"
         }
       },
       "atap.utilities.loader.model": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.FileIO": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.FileIO": "[0.1.2, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.Binder": "[9.0.0, )",
           "Microsoft.Extensions.DependencyInjection": "[10.0.2, )"
@@ -436,13 +436,13 @@
       "atap.utilities.loader.interfaces": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.FileIO": "[0.1.0-Alpha, )"
+          "ATAP.Utilities.FileIO": "[0.1.2, )"
         }
       },
       "atap.utilities.loader.model": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.FileIO": "[0.1.0-Alpha, )",
+          "ATAP.Utilities.FileIO": "[0.1.2, )",
           "Microsoft.Extensions.Configuration": "[9.0.0, )",
           "Microsoft.Extensions.Configuration.Binder": "[9.0.0, )",
           "Microsoft.Extensions.DependencyInjection": "[10.0.2, )"

@@ -24,6 +24,22 @@ BeforeAll {
     $approval | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $Path -Encoding utf8NoBOM
     return $approval
   }
+
+  function New-Task15189RecoveryApprovalFile {
+    param(
+      [Parameter(Mandatory)][string]$Path,
+      [string]$SourceCommit = ('c' * 40)
+    )
+    $approval = New-Task15189ApprovalFile -Path $Path -SourceCommit $SourceCommit
+    $approval.taskId = '15.189.d-recovery'
+    $approval.scope.expectedPackageCount = 19
+    $approval.scope.expectedAssetCount = 54
+    $approval.scope.packageIds = @(Get-CSharpPackageAuthenticodeTask15189RecoveryPackageNames)
+    $approval.scope.packageIdentities = @(Get-CSharpPackageAuthenticodeTask15189RecoveryPackageIdentities)
+    $approval.scope.assetIds = @(Get-CSharpPackageAuthenticodeTask15189RecoveryAssetIds)
+    $approval | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $Path -Encoding utf8NoBOM
+    return $approval
+  }
 }
 
 Describe 'Triple-stream exact 45-package/119-asset signing contract' {
@@ -255,6 +271,121 @@ Describe 'Task 15.189.d exact 25-package signing boundary' {
 
     { Get-CSharpPackageAuthenticodeApproval -ApprovalPath $path -ExpectedSourceCommit ('a' * 40) } |
       Should -Throw '*does not bind the exact source, identities, assets, and feed route*'
+  }
+}
+
+Describe 'Task 15.189.d-recovery exact 19-package signing boundary' {
+  It 'derives exactly 19 ordered identities and 54 unique shipping assets' {
+    @(Get-CSharpPackageAuthenticodeTask15189RecoveryPackageNames).Count | Should -Be 19
+    @(Get-CSharpPackageAuthenticodeTask15189RecoveryPackageIdentities).Count | Should -Be 19
+    @(Get-CSharpPackageAuthenticodeTask15189RecoveryAssetIds).Count | Should -Be 54
+    @((Get-CSharpPackageAuthenticodeTask15189RecoveryAssetIds) | Sort-Object -Unique).Count | Should -Be 54
+    $metadataOnly = @(Get-CSharpPackageAuthenticodeTask15189RecoveryPackageNames | Where-Object {
+      (Get-CSharpPackageAuthenticodeContract -PackageName $_).Assets.Count -eq 0
+    })
+    $metadataOnly | Should -Be @('ATAP.Utilities.Serializer.Shim')
+  }
+
+  It 'accepts only the exact source-bound recovery identities, assets, route, and signer metadata' {
+    $path = Join-Path $TestDrive 'task-15.189.d-recovery.json'
+    New-Task15189RecoveryApprovalFile -Path $path | Out-Null
+
+    { Get-CSharpPackageAuthenticodeApproval -ApprovalPath $path -PackageName 'ATAP.Utilities.Serializer.Shim' -ExpectedSourceCommit ('c' * 40) } |
+      Should -Not -Throw
+  }
+
+  It 'derives and requires the repository HEAD when the runner omits ExpectedSourceCommit' {
+    $headCommit = (& git -C $script:RepoRoot rev-parse HEAD).Trim()
+    $path = Join-Path $TestDrive 'task-15.189.d-recovery-runner-compatible.json'
+    New-Task15189RecoveryApprovalFile -Path $path -SourceCommit $headCommit | Out-Null
+
+    { Get-CSharpPackageAuthenticodeApproval -ApprovalPath $path -PackageName 'ATAP.Utilities.FileIO' } |
+      Should -Not -Throw
+  }
+
+  It 'rejects every package, identity, asset, or route reordering, duplicate, and extra' -ForEach @(
+    @{ Name = 'package reorder'; Mutate = { param($a) $a.scope.packageIds = @($a.scope.packageIds | Sort-Object -Descending) } }
+    @{ Name = 'package duplicate'; Mutate = { param($a) $a.scope.packageIds[0] = $a.scope.packageIds[1] } }
+    @{ Name = 'package missing'; Mutate = { param($a) $a.scope.packageIds = @($a.scope.packageIds | Select-Object -Skip 1) } }
+    @{ Name = 'package extra'; Mutate = { param($a) $a.scope.packageIds += 'ATAP.Utilities.Logging' } }
+    @{ Name = 'identity reorder'; Mutate = { param($a) $a.scope.packageIdentities = @($a.scope.packageIdentities | Sort-Object -Descending) } }
+    @{ Name = 'identity duplicate'; Mutate = { param($a) $a.scope.packageIdentities[0] = $a.scope.packageIdentities[1] } }
+    @{ Name = 'identity missing'; Mutate = { param($a) $a.scope.packageIdentities = @($a.scope.packageIdentities | Select-Object -Skip 1) } }
+    @{ Name = 'identity extra'; Mutate = { param($a) $a.scope.packageIdentities += 'ATAP.Utilities.Logging|0.1.1' } }
+    @{ Name = 'asset reorder'; Mutate = { param($a) $a.scope.assetIds = @($a.scope.assetIds | Sort-Object -Descending) } }
+    @{ Name = 'asset duplicate'; Mutate = { param($a) $a.scope.assetIds[0] = $a.scope.assetIds[1] } }
+    @{ Name = 'asset missing'; Mutate = { param($a) $a.scope.assetIds = @($a.scope.assetIds | Select-Object -Skip 1) } }
+    @{ Name = 'asset extra'; Mutate = { param($a) $a.scope.assetIds += 'Vendor.Library|Vendor.csproj|Vendor.Library|net8.0|net8.0' } }
+    @{ Name = 'route reorder'; Mutate = { param($a) $a.authorizedRoute = @($a.authorizedRoute | Sort-Object -Descending) } }
+    @{ Name = 'route duplicate'; Mutate = { param($a) $a.authorizedRoute[0] = $a.authorizedRoute[1] } }
+    @{ Name = 'route missing'; Mutate = { param($a) $a.authorizedRoute = @($a.authorizedRoute | Select-Object -Skip 1) } }
+    @{ Name = 'route extra'; Mutate = { param($a) $a.authorizedRoute += 'nuget-other' } }
+  ) {
+    $path = Join-Path $TestDrive ("task-15.189.d-recovery-$Name.json" -replace ' ', '-')
+    $approval = New-Task15189RecoveryApprovalFile -Path $path
+    & $Mutate $approval
+    $approval | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $path -Encoding utf8NoBOM
+
+    { Get-CSharpPackageAuthenticodeApproval -ApprovalPath $path -ExpectedSourceCommit ('c' * 40) } |
+      Should -Throw '*Task 15.189.d-recovery*'
+  }
+
+  It 'rejects wrong, missing, malformed, or differently cased source commits' -ForEach @(
+    @{ Name = 'wrong'; SourceCommit = ('d' * 40) }
+    @{ Name = 'missing'; SourceCommit = '' }
+    @{ Name = 'short'; SourceCommit = '9ebac8ec' }
+    @{ Name = 'uppercase'; SourceCommit = ('A' * 40) }
+  ) {
+    $path = Join-Path $TestDrive "task-15.189.d-recovery-source-$Name.json"
+    New-Task15189RecoveryApprovalFile -Path $path -SourceCommit $SourceCommit | Out-Null
+
+    { Get-CSharpPackageAuthenticodeApproval -ApprovalPath $path -ExpectedSourceCommit ('c' * 40) } |
+      Should -Throw '*Task 15.189.d-recovery*'
+  }
+
+  It 'requires both authorization flags to be actual JSON Boolean true values' -ForEach @(
+    @{ Name = 'private false'; Property = 'privateKeyUseApproved'; Value = $false }
+    @{ Name = 'private string false'; Property = 'privateKeyUseApproved'; Value = 'false' }
+    @{ Name = 'private string true'; Property = 'privateKeyUseApproved'; Value = 'true' }
+    @{ Name = 'feed false'; Property = 'feedMutationApproved'; Value = $false }
+    @{ Name = 'feed string false'; Property = 'feedMutationApproved'; Value = 'false' }
+    @{ Name = 'feed string true'; Property = 'feedMutationApproved'; Value = 'true' }
+  ) {
+    $path = Join-Path $TestDrive ("task-15.189.d-recovery-$Name.json" -replace ' ', '-')
+    $approval = New-Task15189RecoveryApprovalFile -Path $path
+    $approval.$Property = $Value
+    $approval | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $path -Encoding utf8NoBOM
+
+    { Get-CSharpPackageAuthenticodeApproval -ApprovalPath $path -ExpectedSourceCommit ('c' * 40) } |
+      Should -Throw
+  }
+
+  It 'rejects drift in certificate, execution, tool, or timestamp metadata' -ForEach @(
+    @{ Name = 'certificate subject'; Mutate = { param($a) $a.certificate.subject = 'CN=Other' } }
+    @{ Name = 'certificate root'; Mutate = { param($a) $a.certificate.rootSha256Fingerprint = ('0' * 64) } }
+    @{ Name = 'certificate export string'; Mutate = { param($a) $a.certificate.privateKeyExportAllowed = 'false' } }
+    @{ Name = 'execution identity'; Mutate = { param($a) $a.execution.identity = 'UTAT022\Other' } }
+    @{ Name = 'execution acl string'; Mutate = { param($a) $a.execution.aclMutationAllowed = 'false' } }
+    @{ Name = 'tool hash'; Mutate = { param($a) $a.tool.signToolSha256 = ('0' * 64) } }
+    @{ Name = 'tool digest'; Mutate = { param($a) $a.tool.fileDigest = 'SHA384' } }
+    @{ Name = 'timestamp protocol'; Mutate = { param($a) $a.timestampAuthority.protocol = 'Authenticode' } }
+    @{ Name = 'timestamp uri'; Mutate = { param($a) $a.timestampAuthority.uri = 'http://example.invalid' } }
+  ) {
+    $path = Join-Path $TestDrive ("task-15.189.d-recovery-metadata-$Name.json" -replace ' ', '-')
+    $approval = New-Task15189RecoveryApprovalFile -Path $path
+    & $Mutate $approval
+    $approval | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $path -Encoding utf8NoBOM
+
+    { Get-CSharpPackageAuthenticodeApproval -ApprovalPath $path -ExpectedSourceCommit ('c' * 40) } |
+      Should -Throw '*Task 15.189.d-recovery*'
+  }
+
+  It 'does not broaden the recovery approval to a package outside its 19 identities' {
+    $path = Join-Path $TestDrive 'task-15.189.d-recovery-outside.json'
+    New-Task15189RecoveryApprovalFile -Path $path | Out-Null
+
+    { Get-CSharpPackageAuthenticodeApproval -ApprovalPath $path -PackageName 'ATAP.Utilities.Logging' -ExpectedSourceCommit ('c' * 40) } |
+      Should -Throw '*outside approval task*15.189.d-recovery*'
   }
 }
 

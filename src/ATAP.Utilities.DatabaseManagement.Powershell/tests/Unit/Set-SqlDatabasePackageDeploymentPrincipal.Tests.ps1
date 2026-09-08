@@ -67,8 +67,15 @@ Describe 'Set-SqlDatabasePackageDeploymentPrincipal' -Tag 'Unit' {
   It 'plans without running mutation SQL under WhatIf' {
     $result = Set-SqlDatabasePackageDeploymentPrincipal @script:baseParameters -Ensure Present -WhatIf
     $result.Status | Should -Be 'WhatIf'
+    $result.GeneratedSqlSha256 | Should -Match '^[0-9A-F]{64}$'
     Should -Invoke Get-SqlServiceLoginGrantTarget -Exactly 1
     Should -Invoke Invoke-DbaQuery -Exactly 0
+  }
+
+  It 'produces a deterministic secret-safe hash for identical planned SQL' {
+    $first = Set-SqlDatabasePackageDeploymentPrincipal @script:baseParameters -Ensure Present -WhatIf
+    $second = Set-SqlDatabasePackageDeploymentPrincipal @script:baseParameters -Ensure Present -WhatIf
+    $first.GeneratedSqlSha256 | Should -BeExactly $second.GeneratedSqlSha256
   }
 
   It 'revokes membership and an explicitly selected newly-created user but retains the server login' {

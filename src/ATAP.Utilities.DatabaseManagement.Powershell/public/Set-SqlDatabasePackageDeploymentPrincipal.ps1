@@ -136,10 +136,9 @@ function Set-SqlDatabasePackageDeploymentPrincipal {
       }
       $status = 'WhatIf'
 
-      if ($PSCmdlet.ShouldProcess("$SqlInstance/$databaseName/$ServiceAccount", $action)) {
-        $ensurePresentBit = if ($Ensure -eq 'Present') { 1 } else { 0 }
-        $removeDatabaseUserBit = if ($RemoveDatabaseUser) { 1 } else { 0 }
-        $query = @"
+      $ensurePresentBit = if ($Ensure -eq 'Present') { 1 } else { 0 }
+      $removeDatabaseUserBit = if ($RemoveDatabaseUser) { 1 } else { 0 }
+      $query = @"
 SET XACT_ABORT ON;
 DECLARE @expectedMachine sysname = N'$machineLiteral';
 DECLARE @account sysname = N'$accountLiteral';
@@ -194,6 +193,9 @@ BEGIN CATCH
   THROW;
 END CATCH;
 "@
+      $generatedSqlSha256 = [Convert]::ToHexString(
+        [Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($query)))
+      if ($PSCmdlet.ShouldProcess("$SqlInstance/$databaseName/$ServiceAccount", $action)) {
         Invoke-DbaQuery -SqlInstance $SqlInstance -Database 'master' -Query $query `
           -AppendConnectionString $connectionSuffix -EnableException -ErrorAction Stop | Out-Null
         $status = 'Success'
@@ -206,6 +208,7 @@ END CATCH;
         ExpectedAccountSid = $ExpectedAccountSid
         Ensure = $Ensure
         Status = $status
+        GeneratedSqlSha256 = $generatedSqlSha256
         BeforeDriftReason = $target.DriftReason
         DatabaseUserExistedBefore = -not [string]::IsNullOrWhiteSpace([string]$target.DatabaseUserName)
         DbOwnerExistedBefore = [bool]$target.IsDbOwner

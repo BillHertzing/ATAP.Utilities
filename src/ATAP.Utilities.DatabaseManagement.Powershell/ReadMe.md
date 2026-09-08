@@ -82,7 +82,7 @@ Use the module-level getting started guide for the lifecycle workflow:
 | `New-DeveloperScratchDb`                  | Developer Databases | Idempotently create a per-developer scratch database.                                                                      |
 | `New-FeatureSharedDb`                     | Developer Databases | Idempotently create a per-feature shared database.                                                                         |
 | `Remove-DeveloperScratchDb`               | Developer Databases | Drop disposable developer scratch databases.                                                                               |
-| `Set-SqlDatabasePackageDeploymentPrincipal` | Instance Management | Audit or idempotently grant/revoke `db_owner` only on frozen host-local, explicitly admitted package targets; supports `-WhatIf` and preserves pre-existing users during rollback by default. |
+| `Set-SqlDatabasePackageDeploymentPrincipal` | Instance Management | Audit or idempotently grant/revoke `db_owner` only on frozen host-local, explicitly admitted package targets; `-WhatIf` emits the generated SQL SHA-256, and rollback preserves pre-existing users by default. |
 | `Remove-FeatureSharedDb`                  | Developer Databases | Drop disposable per-feature shared databases.                                                                              |
 | `Resolve-DatabaseSqlConnection`           | Connection Helpers  | Resolve a SqlConnection from three connection-method parameter sets.                                                       |
 | `Resolve-DbInstanceName`                  | Instance Management | Resolve canonical Stream J database names.                                                                                 |

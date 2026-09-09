@@ -50,6 +50,7 @@ Describe 'Set-GlobalConfigRootKeys population' -Tag 'Unit' {
     $global:configRootKeys['SystemParityMonitorConfigRootKey'] | Should -BeExactly 'SystemParityMonitor'
     $global:configRootKeys['SystemParityMonitorSchemaVersionConfigRootKey'] | Should -BeExactly 'SchemaVersion'
     $global:configRootKeys['SystemParityMonitorPackageManagerProfilesConfigRootKey'] | Should -BeExactly 'PackageManagerProfiles'
+    $global:configRootKeys['SystemParityMonitorSharedDotNetToolPolicyConfigRootKey'] | Should -BeExactly 'SharedDotNetToolPolicy'
     $global:configRootKeys['SystemParityMonitorExpectedSurfaceMinimumCountsConfigRootKey'] | Should -BeExactly 'ExpectedSurfaceMinimumCounts'
     $global:configRootKeys.ContainsKey('BuildMasterBaseUrlConfigRootKey') | Should -BeTrue                # Set-BuildMasterConfigRootKeys
     $global:configRootKeys.ContainsKey('BuildMasterApplicationByModuleConfigRootKey') | Should -BeTrue    # Set-BuildMasterConfigRootKeys (module->application map)
@@ -72,6 +73,7 @@ Describe 'Set-GlobalConfigRootKeys population' -Tag 'Unit' {
       $global:configRootKeys['SystemParityMonitorConfigRootKey']
       $global:configRootKeys['SystemParityMonitorSchemaVersionConfigRootKey']
       $global:configRootKeys['SystemParityMonitorPackageManagerProfilesConfigRootKey']
+      $global:configRootKeys['SystemParityMonitorSharedDotNetToolPolicyConfigRootKey']
       $global:configRootKeys['SystemParityMonitorExpectedSurfaceMinimumCountsConfigRootKey']
     )
 
@@ -82,6 +84,7 @@ Describe 'Set-GlobalConfigRootKeys population' -Tag 'Unit' {
       $global:configRootKeys['SystemParityMonitorConfigRootKey']
       $global:configRootKeys['SystemParityMonitorSchemaVersionConfigRootKey']
       $global:configRootKeys['SystemParityMonitorPackageManagerProfilesConfigRootKey']
+      $global:configRootKeys['SystemParityMonitorSharedDotNetToolPolicyConfigRootKey']
       $global:configRootKeys['SystemParityMonitorExpectedSurfaceMinimumCountsConfigRootKey']
     ) | Should -Be $firstContract
   }

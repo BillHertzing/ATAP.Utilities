@@ -5,8 +5,8 @@
 Adds SystemParityMonitor key constants to $global:configRootKeys.
 
 .DESCRIPTION
-Registers the canonical section, schema-version, package-manager profile, and
-expected-surface-minimum key
+Registers the canonical section, schema-version, package-manager profile,
+shared .NET tool policy, and expected-surface-minimum key
 names used by host-local SystemParityMonitor configuration. This function defines
 only configuration key constants; host-specific identities and paths remain in
 ATAP.IAC HostSettings.
@@ -59,6 +59,7 @@ function Set-SystemParityMonitorConfigRootKeys {
         $global:configRootKeys.Add('SystemParityMonitorConfigRootKey', 'SystemParityMonitor')
         $global:configRootKeys.Add('SystemParityMonitorSchemaVersionConfigRootKey', 'SchemaVersion')
         $global:configRootKeys.Add('SystemParityMonitorPackageManagerProfilesConfigRootKey', 'PackageManagerProfiles')
+        $global:configRootKeys.Add('SystemParityMonitorSharedDotNetToolPolicyConfigRootKey', 'SharedDotNetToolPolicy')
         $global:configRootKeys.Add('SystemParityMonitorExpectedSurfaceMinimumCountsConfigRootKey', 'ExpectedSurfaceMinimumCounts')
         if (Get-Module -Name PSFramework) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Added SystemParityMonitor key constants.' }
       }

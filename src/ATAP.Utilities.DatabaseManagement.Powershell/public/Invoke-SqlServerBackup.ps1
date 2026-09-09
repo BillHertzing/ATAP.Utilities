@@ -3,11 +3,20 @@
     Performs a SQL Server backup of a specified database to the standard backup location.
 
 .DESCRIPTION
-    Backs up a SQL Server database on localhost\Production to
-    C:\Dropbox\Backups\utat022\<DatabaseName>\.
+    Backs up a SQL Server database to the host's publication subtree,
+    <DatabaseBackupPublicationRoot>\<lowercase-hostname>\<DatabaseName>\.
     Supports Full and Differential backup types.
     Uses dbaTools for reliable SQL Server backup operations with built-in verification.
-    Intended to be called from Cobian Backup jobs on utat022.
+    Intended to be called from a scheduler (Windows Task Scheduler today) on any ATAP host.
+
+    No filesystem root is hardcoded. Every root is resolved through Get-PVal from
+    $global:Settings keyed by $global:ConfigRootKeys:
+        LocalDBsRootPathConfigRootKey                 -> instance-local staging root (C:/LocalDBs)
+        DatabaseBackupPublicationRootConfigRootKey    -> off-host publication root (C:/Dropbox/Backups)
+        FastTempBasePathConfigRootKey                 -> fast staging scratch
+    The host namespace is derived from ComputerName (lowercased), so UTAT022 publishes
+    under .../utat022 and UTAT01 under .../utat01 with no per-host edits.
+    If a required root cannot be resolved the function throws rather than guessing a path.
 
     Backup file naming convention:
         <DatabaseName>_FULL_yyyyMMdd_HHmmss.bak   (weekly full)
@@ -25,10 +34,27 @@
     The SQL Server instance to connect to. Default: 'localhost\Production'.
     Override when calling from a remote host or in testing.
 
+.PARAMETER ComputerName
+    Host namespace for the publication subtree. Default: the lowercased name of the
+    machine this runs on ($env:COMPUTERNAME), resolved through Get-PVal.
+
+.PARAMETER DatabaseBackupPublicationRoot
+    Off-host publication root. Resolved through Get-PVal from
+    $global:Settings[$global:ConfigRootKeys['DatabaseBackupPublicationRootConfigRootKey']],
+    canonically 'C:/Dropbox/Backups'. Throws if it cannot be resolved; never guessed.
+    SQL Server never writes directly into this tree.
+
+.PARAMETER LocalDBsRoot
+    Instance-local staging root. Resolved through Get-PVal from
+    $global:Settings[$global:ConfigRootKeys['LocalDBsRootPathConfigRootKey']],
+    canonically 'C:/LocalDBs'. Per-instance staging is
+    <LocalDBsRoot>/<INSTANCE>/Backup/<Database>/. Throws if it cannot be resolved.
+
 .PARAMETER BackupRoot
     Root folder under which per-database subdirectories are created.
-    Default: 'C:\Dropbox\Backups\utat022'.
-    All subdirectories in this tree are backed up automatically via Dropbox sync.
+    Default: <DatabaseBackupPublicationRoot>/<lowercase ComputerName>, so on UTAT022 this
+    resolves to 'C:/Dropbox/Backups/utat022' and on UTAT01 to 'C:/Dropbox/Backups/utat01'
+    with no per-host edit. All subdirectories in this tree sync offsite via Dropbox.
 
 .PARAMETER TemporaryDirectory
     Staging directory to which the .bak file is written during the backup operation.
@@ -154,12 +180,31 @@ function Invoke-SqlServerBackup {
     [ValidateSet('Full', 'Differential')]
     [string] $BackupType = 'Full',
 
+    # Host namespace for published backups. Defaults to the lowercase name of the
+    # machine this runs on, so UTAT022 and UTAT01 each publish under their own subtree
+    # without either host hardcoding the other's name.
     [Parameter()]
-    [ValidateNotNullOrEmpty()]
-    [string] $BackupRoot = 'C:\Dropbox\Backups\utat022',
+    [string] $ComputerName,
+
+    # Off-host publication root. Resolved from
+    # $global:Settings[$global:ConfigRootKeys['DatabaseBackupPublicationRootConfigRootKey']]
+    # (canonically 'C:/Dropbox/Backups'). Never hardcoded.
+    [Parameter()]
+    [string] $DatabaseBackupPublicationRoot,
+
+    # Instance-local root beneath which SQL Server writes backups. Resolved from
+    # $global:Settings[$global:ConfigRootKeys['LocalDBsRootPathConfigRootKey']]
+    # (canonically 'C:/LocalDBs'). Never hardcoded.
+    [Parameter()]
+    [string] $LocalDBsRoot,
+
+    # Final per-database publication directory. Derived as
+    # <DatabaseBackupPublicationRoot>/<lowercase ComputerName>/ when not supplied.
+    [Parameter()]
+    [string] $BackupRoot,
 
     [Parameter()]
-    [string] $TemporaryDirectory = $(Join-Path $global:Settings[$global:ConfigRootKeys['FastTempBasePathConfigRootKey']] 'CobianReflectorBackup'),
+    [string] $TemporaryDirectory,
 
     [Parameter()]
     [switch] $CompressBackup,
@@ -168,13 +213,13 @@ function Invoke-SqlServerBackup {
     [switch] $SevenZipCompress
 
     # SCAFFOLD: multi-machine (Explainer 0022, section 4B)
-    # Add -ComputerName [string] parameter (default: 'localhost') to support remote invocation
-    # via Invoke-Command. When ComputerName != localhost, wrap PROCESS block body in
-    # Invoke-Command -ComputerName $ComputerName -ScriptBlock { ... }.
-    # Also add -Environment [ValidateSet('Experimental','Development','Testing','Production')]
-    # and derive $SqlInstance from $global:settings[$global:configRootKeys['Database{Env}InstanceConfigRootKey']]
-    # instead of accepting it as a raw string. BackupRoot default should then resolve to
-    # "C:\Dropbox\Backups\$ComputerName" dynamically.
+    # The path half of this scaffold is implemented (Task 15.192): ComputerName,
+    # DatabaseBackupPublicationRoot and LocalDBsRoot are resolved through Get-PVal from
+    # $global:Settings/$global:ConfigRootKeys, so BackupRoot derives per host.
+    # Still outstanding: add -ComputerName remote invocation via Invoke-Command (wrap the
+    # PROCESS block body when ComputerName is not the local machine), and add
+    # -Environment [ValidateSet('Production','QA','Integration','Development','Experimental')]
+    # deriving $SqlInstance from the 5-tier settings rather than a raw string.
 )
 
 begin {
@@ -193,16 +238,57 @@ begin {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'BackupType not specified — defaulting to Full.'
     }
 
-    # Check and populate BackupRoot parameter
-    if ([string]::IsNullOrWhiteSpace($BackupRoot)) {
-        $BackupRoot = 'C:\Dropbox\Backups\utat022'
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'BackupRoot not specified — defaulting to C:\Dropbox\Backups\utat022.'
+    # ------------------------------------------------------------------------
+    # Path resolution (Task 15.192).
+    # Every root below comes from $global:Settings keyed by $global:ConfigRootKeys and
+    # is populated through Get-PVal. No filesystem root is hardcoded here, so the same
+    # function runs unchanged on UTAT022, UTAT01, and any future host.
+    # ------------------------------------------------------------------------
+    $effectiveSettings = if ($PSBoundParameters.ContainsKey('Settings') -and $Settings) { $Settings } else { $global:Settings }
+
+    # Host namespace for the publication subtree. Lowercased per the policy, which
+    # requires backups from UTAT022 to land under .../utat022 and UTAT01 under .../utat01.
+    $ComputerName = Get-PVal -ParameterName 'ComputerName' -originalPSBoundParameters $PSBoundParameters -DefaultValue $env:COMPUTERNAME -AllowMissing
+    if ([string]::IsNullOrWhiteSpace($ComputerName)) { $ComputerName = $env:COMPUTERNAME }
+    $ComputerName = $ComputerName.ToLowerInvariant()
+
+    # Instance-local staging root, e.g. C:/LocalDBs. Per-instance staging is
+    # <LocalDBsRoot>/<INSTANCE>/Backup/<Database>/ and SQL writes only beneath it.
+    $localDBsRootKey = $global:ConfigRootKeys['LocalDBsRootPathConfigRootKey']
+    $localDBsRootDefault = if ($localDBsRootKey -and $effectiveSettings -and $effectiveSettings.ContainsKey($localDBsRootKey)) { $effectiveSettings[$localDBsRootKey] } else { $null }
+    $LocalDBsRoot = Get-PVal -ParameterName 'LocalDBsRoot' -originalPSBoundParameters $PSBoundParameters -DefaultValue $localDBsRootDefault -AllowMissing
+    if ([string]::IsNullOrWhiteSpace($LocalDBsRoot)) {
+        $msg = "LocalDBsRoot could not be resolved. Set the '$($global:ConfigRootKeys['LocalDBsRootPathConfigRootKey'])' host setting (ATAP.IAC Windows/HostSettings.ps1) or pass -LocalDBsRoot explicitly. Refusing to guess a filesystem root for database backups."
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
+        throw $msg
     }
 
+    # Off-host publication root, e.g. C:/Dropbox/Backups. SQL never writes here directly;
+    # only the verified post-success publisher moves completed artifacts into it.
+    $publicationRootKey = $global:ConfigRootKeys['DatabaseBackupPublicationRootConfigRootKey']
+    $publicationRootDefault = if ($publicationRootKey -and $effectiveSettings -and $effectiveSettings.ContainsKey($publicationRootKey)) { $effectiveSettings[$publicationRootKey] } else { $null }
+    $DatabaseBackupPublicationRoot = Get-PVal -ParameterName 'DatabaseBackupPublicationRoot' -originalPSBoundParameters $PSBoundParameters -DefaultValue $publicationRootDefault -AllowMissing
+    if ([string]::IsNullOrWhiteSpace($DatabaseBackupPublicationRoot)) {
+        $msg = "DatabaseBackupPublicationRoot could not be resolved. Set the '$($global:ConfigRootKeys['DatabaseBackupPublicationRootConfigRootKey'])' host setting (ATAP.IAC Windows/HostSettings.ps1) or pass -DatabaseBackupPublicationRoot explicitly. Refusing to guess a filesystem root for database backups."
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
+        throw $msg
+    }
+
+    # BackupRoot is the per-host publication subtree unless the caller overrides it.
+    $BackupRoot = Get-PVal -ParameterName 'BackupRoot' -originalPSBoundParameters $PSBoundParameters -DefaultValue (Join-Path $DatabaseBackupPublicationRoot $ComputerName) -AllowMissing
+    if ([string]::IsNullOrWhiteSpace($BackupRoot)) {
+        $BackupRoot = Join-Path $DatabaseBackupPublicationRoot $ComputerName
+    }
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Resolved LocalDBsRoot=[$LocalDBsRoot] DatabaseBackupPublicationRoot=[$DatabaseBackupPublicationRoot] ComputerName=[$ComputerName] BackupRoot=[$BackupRoot]."
+
     # Check and populate TemporaryDirectory parameter
+    $fastTempKey = $global:ConfigRootKeys['FastTempBasePathConfigRootKey']
+    $fastTempDefault = if ($fastTempKey -and $effectiveSettings -and $effectiveSettings.ContainsKey($fastTempKey)) { Join-Path $effectiveSettings[$fastTempKey] 'CobianReflectorBackup' } else { $null }
+    $TemporaryDirectory = Get-PVal -ParameterName 'TemporaryDirectory' -originalPSBoundParameters $PSBoundParameters -DefaultValue $fastTempDefault -AllowMissing
     if ([string]::IsNullOrWhiteSpace($TemporaryDirectory)) {
-        $TemporaryDirectory = Join-Path $global:Settings[$global:ConfigRootKeys['FastTempBasePathConfigRootKey']] 'CobianReflectorBackup'
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "TemporaryDirectory not specified — defaulting to $TemporaryDirectory."
+        $msg = "TemporaryDirectory could not be resolved. Set the '$fastTempKey' host setting or pass -TemporaryDirectory explicitly."
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
+        throw $msg
     }
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Backup starting: [$BackupType] of [$DatabaseName] on [$SqlInstance] → [$BackupRoot] (via temp: [$TemporaryDirectory])."

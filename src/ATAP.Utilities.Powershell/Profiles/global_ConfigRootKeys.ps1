@@ -246,6 +246,15 @@ $global:configRootKeys = @{
   'DisasterRecoveryPathConfigRootKey'                                                            = 'DisasterRecoveryPath'
   'DisasterRecoveryBackupPathConfigRootKey'                                                      = 'DisasterRecoveryBackupPath'
 
+  # Database backup staging and publication roots (Task 15.192).
+  # LocalDBsRootPath is the instance-local root; per-instance staging is
+  # <LocalDBsRootPath>/<INSTANCE>/Backup/<Database>/ and SQL writes only there.
+  # DatabaseBackupPublicationRoot is the off-host publication root; the verified
+  # post-success publisher moves completed artifacts to
+  # <DatabaseBackupPublicationRoot>/<lowercase-hostname>/<Database>/.
+  'LocalDBsRootPathConfigRootKey'                                                                = 'LocalDBsRootPath'
+  'DatabaseBackupPublicationRootConfigRootKey'                                                   = 'DatabaseBackupPublicationRoot'
+
   # Container (Machine, VM, Docker) Roles
   'DeveloperComputerRoleConfigRootKey'                                                           = 'DeveloperComputer'
   'DocumentationComputerRoleConfigRootKey'                                                       = 'DocumentationComputer'

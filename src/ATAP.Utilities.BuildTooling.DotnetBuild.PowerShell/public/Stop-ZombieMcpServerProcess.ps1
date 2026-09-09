@@ -5,10 +5,12 @@ function Stop-ZombieMcpServerProcess {
 
   .DESCRIPTION
   Reads the canonical SharedVSCode MCP catalog, resolves each selected stdio
-  server's declared local ports and executable, and stops stale matching
+  server's declared local ports and process identity, and stops stale matching
   processes before an AI harness launches a replacement. Port owners are exact.
   Binary matching is exact by executable path; generic shared runtimes such as
-  node and pwsh additionally require a server-specific path argument fingerprint.
+  node additionally require an exact server-specific argument fingerprint.
+  PowerShell command wrappers never have their script text parsed for a child
+  identity; wrapped children use the catalog's explicit cleanupProcess metadata.
 
   .PARAMETER CatalogPath
   Path to the canonical mcp-servers.json file.
@@ -132,7 +134,14 @@ function Stop-ZombieMcpServerProcess {
         }
       }
 
-      $resolvedCommand = [string]$server.command
+      $cleanupProcess = if ($server.PSObject.Properties['cleanupProcess']) { $server.cleanupProcess } else { $null }
+      $serverArguments = if ($server.PSObject.Properties['args']) { @($server.args) } else { @() }
+      $resolvedCommand = if ($null -ne $cleanupProcess) {
+        [string]$cleanupProcess.executable
+      }
+      else {
+        [string]$server.command
+      }
       $resolvedCommand = $resolvedCommand.Replace('${HOME}', [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile))
       $ossRoot = [Environment]::GetEnvironmentVariable('OSS_FORKS_ROOT', 'Process')
       if ([string]::IsNullOrWhiteSpace($ossRoot)) {
@@ -145,11 +154,22 @@ function Stop-ZombieMcpServerProcess {
       $commandPath = if ($commandInfo) { [string]$commandInfo.Source } elseif ([IO.Path]::IsPathRooted($resolvedCommand)) { [IO.Path]::GetFullPath($resolvedCommand) } else { $null }
       $commandLeaf = [IO.Path]::GetFileName($resolvedCommand)
       $requiresFingerprint = $commandLeaf -in $genericRuntimeNames
-      $serverArguments = if ($server.PSObject.Properties['args']) { @($server.args) } else { @() }
-      $fingerprints = @($serverArguments | ForEach-Object {
+      $launcherLeaf = [IO.Path]::GetFileName([string]$server.command)
+      $isPowerShellCommandWrapper = $launcherLeaf -in @('pwsh', 'pwsh.exe', 'powershell', 'powershell.exe') -and
+        @($serverArguments | Where-Object { $_ -in @('-Command', '-EncodedCommand') }).Count -gt 0
+      $fingerprintSource = if ($null -ne $cleanupProcess) {
+        @($cleanupProcess.argumentFingerprints)
+      }
+      elseif ($isPowerShellCommandWrapper) {
+        @()
+      }
+      else {
+        $serverArguments
+      }
+      $fingerprints = @($fingerprintSource | ForEach-Object {
           $arg = ([string]$_).Replace('${HOME}', [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile))
           if (-not [string]::IsNullOrWhiteSpace($ossRoot)) { $arg = $arg.Replace('${OSS_FORKS_ROOT}', $ossRoot) }
-          if ($arg -match '(?i)\.(js|mjs|cjs|py|jar|exe)(?:\s|$)' -or [IO.Path]::IsPathRooted($arg)) { $arg }
+          if ($null -ne $cleanupProcess -or $arg -match '(?i)\.(js|mjs|cjs|py|jar|exe)$' -or [IO.Path]::IsPathRooted($arg)) { $arg }
         })
 
       if (-not [string]::IsNullOrWhiteSpace($commandPath)) {
@@ -159,9 +179,21 @@ function Stop-ZombieMcpServerProcess {
           $sameExecutable = -not [string]::IsNullOrWhiteSpace([string]$process.ExecutablePath) -and
             [string]::Equals([IO.Path]::GetFullPath([string]$process.ExecutablePath), [IO.Path]::GetFullPath($commandPath), [StringComparison]::OrdinalIgnoreCase)
           if (-not $sameExecutable) { continue }
+          $commandLineTokens = if ([string]::IsNullOrWhiteSpace([string]$process.CommandLine)) {
+            @()
+          }
+          else {
+            @([regex]::Matches([string]$process.CommandLine, '"([^"]*)"|''([^'']*)''|(\S+)') | ForEach-Object {
+                if ($_.Groups[1].Success) { $_.Groups[1].Value }
+                elseif ($_.Groups[2].Success) { $_.Groups[2].Value }
+                else { $_.Groups[3].Value }
+              })
+          }
           $hasFingerprint = -not $requiresFingerprint -or @($fingerprints | Where-Object {
-              -not [string]::IsNullOrWhiteSpace([string]$process.CommandLine) -and
-              ([string]$process.CommandLine).IndexOf([string]$_, [StringComparison]::OrdinalIgnoreCase) -ge 0
+              $normalizedFingerprint = ([string]$_).Replace('\', '/')
+              @($commandLineTokens | Where-Object {
+                  [string]::Equals(([string]$_).Replace('\', '/'), $normalizedFingerprint, [StringComparison]::OrdinalIgnoreCase)
+                }).Count -gt 0
             }).Count -gt 0
           if ($hasFingerprint) {
             $candidateReasons[$processId] = @($candidateReasons[$processId]) + 'binary'

@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.1.7
+
+- Adds exact child-process cleanup metadata support for portless MCP servers
+  launched through PowerShell wrappers, without parsing wrapper command text.
+- Preserves port-owner cleanup and direct-command matching while requiring exact
+  argument-token fingerprints for shared runtime executables.
+
 ## 0.1.6
 
 - Adds deterministic, secret-free DAB configuration generation for the

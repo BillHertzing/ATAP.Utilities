@@ -24,6 +24,15 @@ Describe 'Stop-ZombieMcpServerProcess' -Tag 'Unit' {
           env = @(@{ name = 'ASPNETCORE_URLS'; value = 'http://127.0.0.1:5102' })
         },
         @{
+          serverId = 'ai.mcp.plantuml.v1'; nativeKey = 'plantuml'; ownership = 'canonical';
+          transport = 'stdio'; command = 'pwsh'; args = @('-Command', "& 'node' 'C:/mcp/plantuml/server.js'"); env = @()
+          cleanupProcess = @{ executable = 'node'; argumentFingerprints = @('C:/mcp/plantuml/server.js') }
+        },
+        @{
+          serverId = 'ai.mcp.wrapper-no-metadata.v1'; nativeKey = 'wrapper-no-metadata'; ownership = 'canonical';
+          transport = 'stdio'; command = 'pwsh'; args = @('-Command', "& 'node' 'C:/mcp/untrusted/server.js'"); env = @()
+        },
+        @{
           serverId = 'ai.mcp.specific.v1'; nativeKey = 'specific'; ownership = 'canonical';
           transport = 'stdio'; command = 'C:/mcp/specific.exe'; args = @(); env = @()
         },
@@ -80,6 +89,107 @@ Describe 'Stop-ZombieMcpServerProcess' -Tag 'Unit' {
     }
   }
 
+
+  It 'matches only the explicitly declared child of a portless PowerShell wrapper' {
+    InModuleScope $script:ModuleName -Parameters @{ CatalogPath = $script:CatalogPath } {
+      $nodePath = (Get-Command node -ErrorAction Stop).Source
+      $pwshPath = (Get-Command pwsh -ErrorAction Stop).Source
+      Mock Get-CimInstance {
+        @(
+          [pscustomobject]@{ ProcessId = 4250; ExecutablePath = $nodePath.ToUpperInvariant(); CommandLine = 'node.exe C:\MCP\PLANTUML\SERVER.JS'; CreationDate = $null },
+          [pscustomobject]@{ ProcessId = 4251; ExecutablePath = $nodePath; CommandLine = 'node.exe C:/mcp/plantuml/server.js.backup'; CreationDate = $null },
+          [pscustomobject]@{ ProcessId = 4252; ExecutablePath = $pwshPath; CommandLine = "pwsh -Command & 'node' 'C:/mcp/plantuml/server.js'"; CreationDate = $null },
+          [pscustomobject]@{ ProcessId = 4253; ExecutablePath = $nodePath; CommandLine = 'node.exe C:/mcp/unrelated/server.js'; CreationDate = $null }
+        )
+      }
+      Mock Get-NetTCPConnection { @() }
+      Mock Stop-Process {}
+
+      $result = Stop-ZombieMcpServerProcess -CatalogPath $CatalogPath -NativeKey plantuml -Confirm:$false -PassThru
+
+      $result.ResolvedCommand | Should -Be $nodePath
+      $result.CandidateProcessIds | Should -Be @(4250)
+      Should -Invoke Stop-Process -Times 1 -Exactly -ParameterFilter { $Id -eq 4250 }
+      Should -Invoke Stop-Process -Times 0 -Exactly -ParameterFilter { $Id -in @(4251, 4252, 4253) }
+    }
+  }
+
+  It 'does not parse arbitrary PowerShell wrapper command text when cleanup metadata is missing' {
+    InModuleScope $script:ModuleName -Parameters @{ CatalogPath = $script:CatalogPath } {
+      $pwshPath = (Get-Command pwsh -ErrorAction Stop).Source
+      Mock Get-CimInstance {
+        @([pscustomobject]@{
+            ProcessId = 4260; ExecutablePath = $pwshPath
+            CommandLine = "pwsh -Command & 'node' 'C:/mcp/untrusted/server.js'"
+            CreationDate = $null
+          })
+      }
+      Mock Get-NetTCPConnection { @() }
+      Mock Stop-Process {}
+
+      $result = Stop-ZombieMcpServerProcess -CatalogPath $CatalogPath -NativeKey wrapper-no-metadata -Confirm:$false -PassThru
+
+      $result.CandidateProcessIds | Should -BeNullOrEmpty
+      Should -Invoke Stop-Process -Times 0
+    }
+  }
+
+  It 'de-duplicates port and binary matches while excluding the current process' {
+    InModuleScope $script:ModuleName -Parameters @{ CatalogPath = $script:CatalogPath } {
+      $nodePath = (Get-Command node -ErrorAction Stop).Source
+      Mock Get-CimInstance {
+        @(
+          [pscustomobject]@{ ProcessId = 4270; ExecutablePath = $nodePath; CommandLine = 'node C:/mcp/drawio/index.js'; CreationDate = $null },
+          [pscustomobject]@{ ProcessId = $PID; ExecutablePath = $nodePath; CommandLine = 'node C:/mcp/drawio/index.js'; CreationDate = $null }
+        )
+      }
+      Mock Get-NetTCPConnection {
+        @(
+          [pscustomobject]@{ LocalPort = 3333; OwningProcess = 4270 },
+          [pscustomobject]@{ LocalPort = 3333; OwningProcess = $PID }
+        )
+      }
+      Mock Stop-Process {}
+
+      $result = Stop-ZombieMcpServerProcess -CatalogPath $CatalogPath -NativeKey drawio -Confirm:$false -PassThru
+
+      $result.CandidateProcessIds | Should -Be @(4270)
+      Should -Invoke Stop-Process -Times 1 -Exactly -ParameterFilter { $Id -eq 4270 }
+      Should -Invoke Stop-Process -Times 0 -Exactly -ParameterFilter { $Id -eq $PID }
+    }
+  }
+
+  It 'filters candidates younger than MinimumAge' {
+    InModuleScope $script:ModuleName -Parameters @{ CatalogPath = $script:CatalogPath } {
+      $nodePath = (Get-Command node -ErrorAction Stop).Source
+      Mock Get-CimInstance {
+        @(
+          [pscustomobject]@{ ProcessId = 4280; ExecutablePath = $nodePath; CommandLine = 'node C:/mcp/drawio/index.js'; CreationDate = [datetime]::UtcNow.AddHours(-2) },
+          [pscustomobject]@{ ProcessId = 4281; ExecutablePath = $nodePath; CommandLine = 'node C:/mcp/drawio/index.js'; CreationDate = [datetime]::UtcNow.AddMinutes(-1) }
+        )
+      }
+      Mock Get-NetTCPConnection { @() }
+      Mock Stop-Process {}
+
+      $result = Stop-ZombieMcpServerProcess -CatalogPath $CatalogPath -NativeKey drawio -MinimumAge ([timespan]::FromHours(1)) -Confirm:$false -PassThru
+
+      $result.CandidateProcessIds | Should -Be @(4280)
+      Should -Invoke Stop-Process -Times 1 -Exactly -ParameterFilter { $Id -eq 4280 }
+      Should -Invoke Stop-Process -Times 0 -Exactly -ParameterFilter { $Id -eq 4281 }
+    }
+  }
+
+  It 'propagates a process-stop failure' {
+    InModuleScope $script:ModuleName -Parameters @{ CatalogPath = $script:CatalogPath } {
+      Mock Get-CimInstance { @([pscustomobject]@{ ProcessId = 4290; ExecutablePath = 'C:/other.exe'; CommandLine = 'other'; CreationDate = $null }) }
+      Mock Get-NetTCPConnection { @([pscustomobject]@{ LocalPort = 3333; OwningProcess = 4290 }) }
+      Mock Stop-Process { throw 'simulated stop failure' }
+
+      { Stop-ZombieMcpServerProcess -CatalogPath $CatalogPath -NativeKey drawio -Confirm:$false } |
+        Should -Throw '*simulated stop failure*'
+      Should -Invoke Stop-Process -Times 1 -Exactly -ParameterFilter { $Id -eq 4290 -and $Force }
+    }
+  }
   It 'matches a dedicated executable by exact resolved path' {
     InModuleScope $script:ModuleName -Parameters @{ CatalogPath = $script:CatalogPath } {
       Mock Get-CimInstance { @([pscustomobject]@{ ProcessId = 4300; ExecutablePath = 'C:/mcp/specific.exe'; CommandLine = 'specific.exe'; CreationDate = $null }) }

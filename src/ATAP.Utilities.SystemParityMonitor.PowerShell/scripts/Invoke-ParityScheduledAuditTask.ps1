@@ -31,6 +31,30 @@ function Read-ParityScheduledConfiguration {
   return @($configuration.Profiles)
 }
 
+function Read-ParitySharedDotNetToolPolicyConfiguration {
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory = $true)]
+    [string] $Path
+  )
+
+  if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+    throw [IO.FileNotFoundException]::new("Shared .NET tool policy configuration was not found at '$Path'.", $Path)
+  }
+  try {
+    $policy = Get-Content -LiteralPath $Path -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+  } catch {
+    throw [InvalidOperationException]::new(
+      "Shared .NET tool policy configuration at '$Path' is unreadable or malformed. ErrorType=$($_.Exception.GetType().FullName)",
+      $_.Exception
+    )
+  }
+  if ([int]$policy.SchemaVersion -ne 1) {
+    throw "Shared .NET tool policy configuration at '$Path' has unsupported SchemaVersion '$($policy.SchemaVersion)'; expected 1."
+  }
+  return $policy
+}
+
 function Invoke-ParityScheduledAuditTask {
   [CmdletBinding()]
   param(
@@ -41,6 +65,8 @@ function Invoke-ParityScheduledAuditTask {
     [string] $ResultDirectory,
 
     [string] $PackageManagerProfilesPath,
+
+    [string] $SharedDotNetToolPolicyPath,
 
     [string] $EventLogName = 'Application',
 
@@ -72,6 +98,9 @@ function Invoke-ParityScheduledAuditTask {
       $configuration = Read-ParityScheduledConfiguration -Path $PackageManagerProfilesPath
       $auditParameters['PackageManagerProfiles'] = @($configuration.Profiles)
       $auditParameters['ExpectedSurfaceMinimumCounts'] = $configuration.ExpectedSurfaceMinimumCounts
+    }
+    if (-not [string]::IsNullOrWhiteSpace($SharedDotNetToolPolicyPath)) {
+      $auditParameters['SharedDotNetToolPolicy'] = Read-ParitySharedDotNetToolPolicyConfiguration -Path $SharedDotNetToolPolicyPath
     }
     $snapshot = Invoke-ParityAudit @auditParameters
     $failureState = Set-ParityScheduledTaskOutcome -StatePath $StatePath -TaskName 'ParityAudit' -Succeeded $true

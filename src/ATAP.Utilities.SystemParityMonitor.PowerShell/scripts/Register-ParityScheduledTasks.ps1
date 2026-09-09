@@ -146,6 +146,64 @@ function Assert-ParityExpectedSurfaceMinimumCounts {
   }
 }
 
+function Assert-ParitySharedDotNetToolPolicy {
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory = $true)]
+    [object] $Policy
+  )
+
+  if ([int]$Policy.SchemaVersion -ne 1) {
+    throw "SharedDotNetToolPolicy has unsupported SchemaVersion '$($Policy.SchemaVersion)'; expected 1."
+  }
+  if ([string]::IsNullOrWhiteSpace([string]$Policy.SharedPath) -or
+    -not [IO.Path]::IsPathFullyQualified([string]$Policy.SharedPath)) {
+    throw 'SharedDotNetToolPolicy SharedPath must be fully qualified.'
+  }
+  if (@($Policy.Tools | Where-Object { $null -ne $_ }).Count -eq 0) {
+    throw 'SharedDotNetToolPolicy must contain at least one tool.'
+  }
+  if (@($Policy.Consumers | Where-Object { $null -ne $_ }).Count -eq 0) {
+    throw 'SharedDotNetToolPolicy must contain at least one consumer.'
+  }
+  if (@($Policy.RequiredChanges | Where-Object { $null -ne $_ }).Count -eq 0) {
+    throw 'SharedDotNetToolPolicy must contain at least one RequiredChanges record.'
+  }
+}
+
+function Write-ParitySharedDotNetToolPolicyConfiguration {
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory = $true)]
+    [string] $Path,
+
+    [Parameter(Mandatory = $true)]
+    [object] $Policy
+  )
+
+  if (-not [IO.Path]::IsPathFullyQualified($Path)) {
+    throw "Shared .NET tool policy configuration path '$Path' must be fully qualified."
+  }
+  Assert-ParitySharedDotNetToolPolicy -Policy $Policy
+  $directory = Split-Path -Parent $Path
+  New-Item -ItemType Directory -Path $directory -Force | Out-Null
+  $temporaryPath = "$Path.$([guid]::NewGuid().ToString('N')).tmp"
+  $backupPath = "$Path.$([guid]::NewGuid().ToString('N')).bak"
+  try {
+    $Policy | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $temporaryPath -Encoding utf8 -ErrorAction Stop
+    $readBack = Get-Content -LiteralPath $temporaryPath -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+    Assert-ParitySharedDotNetToolPolicy -Policy $readBack
+    if (Test-Path -LiteralPath $Path -PathType Leaf) {
+      [IO.File]::Replace($temporaryPath, $Path, $backupPath)
+    } else {
+      [IO.File]::Move($temporaryPath, $Path)
+    }
+  } finally {
+    if (Test-Path -LiteralPath $temporaryPath -PathType Leaf) { Remove-Item -LiteralPath $temporaryPath -Force }
+    if (Test-Path -LiteralPath $backupPath -PathType Leaf) { Remove-Item -LiteralPath $backupPath -Force }
+  }
+}
+
 function Read-ParityPackageManagerProfilesRegistrationConfiguration {
   [CmdletBinding()]
   param(
@@ -278,6 +336,10 @@ function Register-ParityScheduledTasks {
 
     [string] $PackageManagerProfilesPath,
 
+    [object] $SharedDotNetToolPolicy,
+
+    [string] $SharedDotNetToolPolicyPath,
+
     [string] $TaskPath = '\ATAP\',
 
     # Dedicated local service account that owns the scheduled tasks but no vault token.
@@ -303,6 +365,7 @@ function Register-ParityScheduledTasks {
     $pwshPath = (Get-Command -Name 'pwsh' -CommandType Application -ErrorAction Stop).Source
     $packageManagerProfilesWereBound = $PSBoundParameters.ContainsKey('PackageManagerProfiles')
     $minimumCountsWereBound = $PSBoundParameters.ContainsKey('ExpectedSurfaceMinimumCounts')
+    $sharedDotNetToolPolicyWasBound = $PSBoundParameters.ContainsKey('SharedDotNetToolPolicy')
     $defaultMinimumCounts = @{
       OS = 1
       PowerShell = 1
@@ -311,6 +374,18 @@ function Register-ParityScheduledTasks {
       PackageManager = 1
       Shares = 1
       ParityState = 1
+    }
+
+    if (-not $sharedDotNetToolPolicyWasBound -and $null -ne $global:settings -and $null -ne $global:configRootKeys) {
+      $sectionKey = $global:configRootKeys['SystemParityMonitorConfigRootKey']
+      $sharedPolicyKey = $global:configRootKeys['SystemParityMonitorSharedDotNetToolPolicyConfigRootKey']
+      if (-not [string]::IsNullOrWhiteSpace([string]$sectionKey) -and
+        -not [string]::IsNullOrWhiteSpace([string]$sharedPolicyKey) -and
+        $global:settings.ContainsKey($sectionKey) -and
+        $global:settings[$sectionKey].ContainsKey($sharedPolicyKey)) {
+        $SharedDotNetToolPolicy = $global:settings[$sectionKey][$sharedPolicyKey]
+        $sharedDotNetToolPolicyWasBound = $true
+      }
     }
 
     if (-not $packageManagerProfilesWereBound -and -not $minimumCountsWereBound -and
@@ -351,6 +426,17 @@ function Register-ParityScheduledTasks {
       Assert-ParityExpectedSurfaceMinimumCounts -MinimumCounts $ExpectedSurfaceMinimumCounts
     } elseif (-not [string]::IsNullOrWhiteSpace($PackageManagerProfilesPath)) {
       throw 'PackageManagerProfilesPath cannot be supplied unless profiles or expected minimum counts are also supplied for validated materialization.'
+    }
+    if ($sharedDotNetToolPolicyWasBound) {
+      Assert-ParitySharedDotNetToolPolicy -Policy $SharedDotNetToolPolicy
+      if ([string]::IsNullOrWhiteSpace($SharedDotNetToolPolicyPath)) {
+        $SharedDotNetToolPolicyPath = Join-Path $StatePath 'Configuration\SharedDotNetTools.v1.json'
+      }
+      if (-not [IO.Path]::IsPathFullyQualified($SharedDotNetToolPolicyPath)) {
+        throw "SharedDotNetToolPolicyPath '$SharedDotNetToolPolicyPath' must be fully qualified."
+      }
+    } elseif (-not [string]::IsNullOrWhiteSpace($SharedDotNetToolPolicyPath)) {
+      throw 'SharedDotNetToolPolicyPath cannot be supplied unless SharedDotNetToolPolicy is also supplied.'
     }
     if ([string]::IsNullOrWhiteSpace($UserId)) {
       $UserId = if ($Credential) {
@@ -393,6 +479,13 @@ function Register-ParityScheduledTasks {
       $auditArguments += " -PackageManagerProfilesPath `"$PackageManagerProfilesPath`""
     }
 
+    if ($sharedDotNetToolPolicyWasBound) {
+      if ($PSCmdlet.ShouldProcess($SharedDotNetToolPolicyPath, 'Write shared .NET tool policy configuration')) {
+        Write-ParitySharedDotNetToolPolicyConfiguration -Path $SharedDotNetToolPolicyPath -Policy $SharedDotNetToolPolicy
+      }
+      $auditArguments += (' -SharedDotNetToolPolicyPath "{0}"' -f $SharedDotNetToolPolicyPath)
+    }
+
     $definitions = @(
       @{
         TaskName = 'ATAP-ParityAudit'
@@ -406,6 +499,10 @@ function Register-ParityScheduledTasks {
       $compareArguments = "-LeftStatePath `"$StatePath`" -RightStatePath `"$RightStatePath`" -LeftHostName `"$HostName`" -RightHostName `"$RightHostName`" -ExpectedCadenceDays $ExpectedCadenceDays -StaleMultiplier $StaleMultiplier"
       if ($configurationWasBound) {
         $compareArguments += " -PackageManagerProfilesPath `"$PackageManagerProfilesPath`""
+      }
+
+      if ($sharedDotNetToolPolicyWasBound) {
+        $compareArguments += (' -SharedDotNetToolPolicyPath "{0}"' -f $SharedDotNetToolPolicyPath)
       }
 
       $definitions += @{

@@ -16,6 +16,7 @@
     'Get-PeerPendingChanges',
     'Confirm-ParityChangeApplied',
     'Invoke-ParityAudit',
+    'Invoke-SharedDotNetToolConsumerProbe',
     'Compare-ParityAudits'
   )
   CmdletsToExport = @()

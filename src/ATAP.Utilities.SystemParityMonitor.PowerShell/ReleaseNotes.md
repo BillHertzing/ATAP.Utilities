@@ -1,5 +1,13 @@
 # Release Notes — ATAP.Utilities.SystemParityMonitor.PowerShell
 
+## 0.1.22
+
+- Audit the approved shared `dotnet-trace` installation and exact version from
+  `C:\ProgramData\dotnet\tools` without invoking SDK first-run behavior.
+- Require identity-explicit Developer, BuildMaster, and ParityAudit evidence,
+  exact rollout journal records, peer acknowledgements, and actionable scheduled
+  alerts for missing, stale, inaccessible, user-scoped-only, or version-skewed state.
+
 ## 0.1.21
 
 - Grant non-inheriting read-and-execute access on validated package-profile

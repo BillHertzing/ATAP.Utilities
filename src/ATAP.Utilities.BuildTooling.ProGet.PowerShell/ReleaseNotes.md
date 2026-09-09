@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.1.21
+
+- Carry the fixed shared .NET tool policy path into every approved parity audit
+  and comparison dispatcher, and fail closed when the materialized policy is
+  missing before a live scheduled-task action is repointed.
+
 ## 0.1.19
 
 - **Breaking for callers that relied on the old default.** The broker task's default folder is

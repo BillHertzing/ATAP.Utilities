@@ -72,6 +72,7 @@ function Register-ATAPParityScheduledTasks {
     $moduleRoot = Join-Path 'C:\Program Files\PowerShell\Modules\ATAP.Utilities.SystemParityMonitor.PowerShell' $ModuleVersion
     $statePath = 'C:\ProgramData\ATAP\ParityState'
     $profilesPath = Join-Path $statePath 'Configuration\PackageManagerProfiles.v1.json'
+    $sharedToolsPath = Join-Path $statePath 'Configuration\SharedDotNetTools.v1.json'
     $pwshPath = 'C:\Program Files\PowerShell\7\pwsh.exe'
     $taskFolderPath = '\ATAP'
 
@@ -97,6 +98,7 @@ function Register-ATAPParityScheduledTasks {
             '-StatePath', $statePath
             '-HostName', 'utat01'
             '-PackageManagerProfilesPath', $profilesPath
+            '-SharedDotNetToolPolicyPath', $sharedToolsPath
           )
           LogonType = 'Password'
           RunLevel  = 'Limited'
@@ -110,6 +112,7 @@ function Register-ATAPParityScheduledTasks {
             '-StatePath', $statePath
             '-HostName', 'utat022'
             '-PackageManagerProfilesPath', $profilesPath
+            '-SharedDotNetToolPolicyPath', $sharedToolsPath
           )
           LogonType = 'Password'
           RunLevel  = 'HighestAvailable'
@@ -125,6 +128,7 @@ function Register-ATAPParityScheduledTasks {
             '-ExpectedCadenceDays', '1'
             '-StaleMultiplier', '1.5'
             '-PackageManagerProfilesPath', $profilesPath
+            '-SharedDotNetToolPolicyPath', $sharedToolsPath
           )
           LogonType = 'Password'
           RunLevel  = 'HighestAvailable'
@@ -323,6 +327,9 @@ function Register-ATAPParityScheduledTasks {
     }
     if (-not (Test-Path -LiteralPath $profilesPath -PathType Leaf)) {
       throw "Approved parity profile configuration '$profilesPath' is missing."
+    }
+    if (-not (Test-Path -LiteralPath $sharedToolsPath -PathType Leaf)) {
+      throw "Approved shared .NET tool policy configuration '$sharedToolsPath' is missing."
     }
     if (-not (Test-Path -LiteralPath $pwshPath -PathType Leaf)) {
       throw "Approved PowerShell executable '$pwshPath' is missing."

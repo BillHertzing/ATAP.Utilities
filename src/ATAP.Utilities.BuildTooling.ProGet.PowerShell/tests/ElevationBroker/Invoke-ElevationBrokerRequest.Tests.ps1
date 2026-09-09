@@ -172,6 +172,14 @@ Describe 'Elevation broker artifacts' {
       @($names | Sort-Object -Unique) | Should -Be @('ATAP-ParityAudit', 'ATAP-ParityCompare')
     }
 
+    It 'carries the fixed shared-tool policy path to every approved task action' {
+      $text = Get-Content -LiteralPath $script:InstallerPath -Raw
+      ([regex]::Matches($text, "'-SharedDotNetToolPolicyPath', " + [regex]::Escape('$sharedToolsPath'))).Count |
+        Should -Be 3
+      $text | Should -Match ([regex]::Escape('Configuration\SharedDotNetTools.v1.json'))
+      $text | Should -Match 'Approved shared \.NET tool policy configuration'
+    }
+
     It 'binds each host to its approved logon type and run level' {
       $text = Get-Content -LiteralPath $script:InstallerPath -Raw
       # Both hosts are Password logon since 2026-08-11: S4U registration is refused outright on

@@ -1,7 +1,9 @@
 Describe 'Task 15.167 shared .NET tool parity contract' -Tag 'Unit' {
   BeforeAll {
-    $modulePath = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'ATAP.Utilities.SystemParityMonitor.PowerShell.psd1'
-    Import-Module -Name $modulePath -Force
+    if (-not (Get-Module -Name 'ATAP.Utilities.SystemParityMonitor.PowerShell')) {
+      $modulePath = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'ATAP.Utilities.SystemParityMonitor.PowerShell.psd1'
+      Import-Module -Name $modulePath -Force
+    }
   }
 
   It 'collects the exact shared version and verifies the current logical identity' {

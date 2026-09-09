@@ -381,8 +381,8 @@ function Register-ParityScheduledTasks {
       $sharedPolicyKey = $global:configRootKeys['SystemParityMonitorSharedDotNetToolPolicyConfigRootKey']
       if (-not [string]::IsNullOrWhiteSpace([string]$sectionKey) -and
         -not [string]::IsNullOrWhiteSpace([string]$sharedPolicyKey) -and
-        $global:settings.ContainsKey($sectionKey) -and
-        $global:settings[$sectionKey].ContainsKey($sharedPolicyKey)) {
+        $global:settings.Contains($sectionKey) -and
+        $global:settings[$sectionKey].Contains($sharedPolicyKey)) {
         $SharedDotNetToolPolicy = $global:settings[$sectionKey][$sharedPolicyKey]
         $sharedDotNetToolPolicyWasBound = $true
       }
@@ -396,7 +396,7 @@ function Register-ParityScheduledTasks {
       if (-not [string]::IsNullOrWhiteSpace([string]$sectionKey) -and
         -not [string]::IsNullOrWhiteSpace([string]$profilesKey) -and
         -not [string]::IsNullOrWhiteSpace([string]$minimumsKey) -and
-        $global:settings.ContainsKey($sectionKey)) {
+        $global:settings.Contains($sectionKey)) {
         $section = $global:settings[$sectionKey]
         $PackageManagerProfiles = @($section[$profilesKey])
         $ExpectedSurfaceMinimumCounts = @{}

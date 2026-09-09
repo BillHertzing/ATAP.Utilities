@@ -1,5 +1,10 @@
 # Release Notes — ATAP.Utilities.SystemParityMonitor.PowerShell
 
+## 0.1.23
+
+- Keep Task 15.167 tests bound to the module instance selected by the promoted-package
+  test harness, preventing a source-tree import from creating an ambiguous duplicate.
+
 ## 0.1.22
 
 - Audit the approved shared `dotnet-trace` installation and exact version from

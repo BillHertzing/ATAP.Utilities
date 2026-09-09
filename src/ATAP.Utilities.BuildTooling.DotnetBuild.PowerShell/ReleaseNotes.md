@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.1.8
+
+- Restricts local package staging to a repository-owned `_generated` tree;
+  promoted-module tests running beneath external BuildMaster artifact roots now
+  fall back to their execution-specific process temp directory.
+
 ## 0.1.7
 
 - Adds exact child-process cleanup metadata support for portless MCP servers

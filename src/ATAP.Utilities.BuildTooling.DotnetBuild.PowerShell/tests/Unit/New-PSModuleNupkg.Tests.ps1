@@ -126,6 +126,22 @@ Describe 'New-PSModuleNupkg' -Tag 'Unit' {
         }
     }
 
+    Context 'Staging boundary' {
+        It 'does not adopt an unrelated ancestor _generated directory' {
+            $foreignRoot = Join-Path $script:tempRoot 'external-artifacts'
+            $foreignGenerated = Join-Path $foreignRoot '_generated'
+            $foreignModule = Join-Path $foreignRoot 'working/FakeModule'
+            New-Item -ItemType Directory -Path $foreignGenerated, $foreignModule -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $foreignModule 'FakeModule.psd1') -Value "@{ ModuleVersion = '1.0.0' }" -Encoding UTF8
+
+            New-PSModuleNupkg -ModulePath $foreignModule -OutputPath $script:outputPath | Out-Null
+
+            $resolvedForeignGenerated = [IO.Path]::GetFullPath($foreignGenerated).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
+            $resolvedStagingUri = [IO.Path]::GetFullPath($script:stagingUri)
+            $resolvedStagingUri.StartsWith($resolvedForeignGenerated, [StringComparison]::OrdinalIgnoreCase) | Should -BeFalse
+        }
+    }
+
     Context 'Finally cleanup runs on inner failure' {
         It 'Unregisters the temporary repo even when Publish-PSResource throws' {
             Mock Publish-PSResource { throw 'Simulated pack failure' }

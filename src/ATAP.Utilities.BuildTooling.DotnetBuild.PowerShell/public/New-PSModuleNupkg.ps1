@@ -126,15 +126,21 @@ function New-PSModuleNupkg {
         }
 
         # 5. Establish a temporary local-folder PSResourceRepository for staging.
-        #    Prefer the _generated/psmodules/<ModuleName>/pack-staging/ layout
-        #    when a _generated folder exists in an ancestor; otherwise use a
-        #    sibling temp folder under the system temp directory.
+        #    Prefer the repository-owned _generated/psmodules/<ModuleName>/pack-staging/
+        #    layout when the module is below a Git worktree root. Do not adopt an
+        #    unrelated ancestor _generated directory (for example an external
+        #    BuildMaster artifact root with different service-account ACLs).
+        #    Otherwise use the process temp directory.
         $stagingRoot = $null
         $cur = (Get-Item -LiteralPath $resolvedModulePath).Parent
         while ($null -ne $cur) {
             $candidate = Join-Path $cur.FullName "_generated/psmodules/$moduleName/pack-staging"
             $parentGen = Join-Path $cur.FullName '_generated'
-            if (Test-Path -LiteralPath $parentGen -PathType Container) {
+            $gitMarker = Join-Path $cur.FullName '.git'
+            if (
+                (Test-Path -LiteralPath $gitMarker) -and
+                (Test-Path -LiteralPath $parentGen -PathType Container)
+            ) {
                 $stagingRoot = $candidate
                 break
             }

@@ -14,6 +14,39 @@ function Compare-BuildMasterPlanRaft {
     disk, and cross-checks the plan's Exec 'Arguments:' argument NAMES against the
     paired runner script's parameter names.
 
+    ARGUMENT-ASYMMETRY CLASSIFICATION (Task 15.171.e). A runner parameter the plan does
+    not pass is only a defect when that parameter is MANDATORY; then the stage blocks
+    forever on an invisible console prompt under BuildMaster's non-interactive LocalAgent,
+    which is the 2026-08-03 signature. An OPTIONAL parameter the plan does not pass is
+    normal, permanent, and present on every healthy plan - CSharpPackage-5Stage is
+    byte-identical to disk with zero mandatory parameters missing and still leaves seven
+    optional runner parameters unpassed (unit 15.171.b, raft item 2009). The original
+    ArgumentNameDrift reason conflated the two, so every healthy plan reported Drift; a
+    gate wired to a permanently red field is ignored within about two runs, which leaves
+    the pipeline less protected than before the gate existed. Optional-only asymmetry is
+    therefore reported in InformationalReasons and does NOT set Status = Drift, while the
+    two genuinely broken shapes get their own reason codes and still do:
+
+      MandatoryArgumentMissing - a MANDATORY runner parameter is absent from the deployed
+        raft's Arguments: line. The silent-forever-hang signature. Highest severity, and
+        deliberately its own code rather than a shade of a generic one.
+      UndeclaredArgument       - the plan passes an argument the runner does not declare.
+        The runner errors on the next run: broken, but loudly.
+
+    Detection is not weakened to obtain the green light. Mandatory-ness is read from the
+    runner's own param block on disk, and a parameter marked mandatory in ANY parameter
+    set counts as mandatory - the conservative reading, because the cmdlet cannot know
+    which set a given invocation resolves to and a missed mandatory parameter is the one
+    failure this cmdlet exists to catch.
+
+    Mandatory-ness now travels IN THE OUTPUT (MandatoryParameterAnalysis,
+    SilentHangSignaturePresent, and the per-runner Mandatory/Optional split) rather than
+    being recomputed by every consumer, which is the durable fix recorded as known
+    limitation 1 of SolutionDocumentation/BuildMaster-Plan-Raft-Drift-Gate.md. That
+    document's severity model reads RunnerParametersNotInPlan, ArgumentsNotInRunner,
+    DriftReasons, and ContentMatches; all four keep their previous meaning, so the model
+    still computes - it simply no longer has to parse runner scripts itself.
+
     The cmdlet is strictly read-only. It never calls a BuildMaster write endpoint, has no
     ShouldProcess surface because it never writes, and emits METADATA ONLY - hashes,
     lengths, timestamps, argument names, and a status. It never emits plan bodies, script
@@ -61,6 +94,21 @@ function Compare-BuildMasterPlanRaft {
   .OUTPUTS
     PSCustomObject, one per plan, carrying metadata only. Status is one of Match, Drift,
     MissingFromRaft, MissingOnDisk, or Unreachable.
+
+    DriftReasons holds only conditions that make Status = Drift: ContentDrift,
+    WhitespaceOnlyContentDrift, MandatoryArgumentMissing, UndeclaredArgument,
+    RunnerScriptMissing, or the terminal status itself. InformationalReasons holds
+    benign observations that must NOT turn a plan red - today that is
+    OptionalParametersNotPassed.
+
+    SilentHangSignaturePresent is $true when a mandatory runner parameter is missing from
+    the raft, $false when the check ran and found none, and $null when the check could not
+    run at all (MissingFromRaft, MissingOnDisk, Unreachable, or an unresolvable runner).
+    $null is deliberately not $false: a check that did not happen must never read as a
+    check that passed.
+
+    MandatoryParameterAnalysis carries, per runner script, MandatoryRunnerParameterCount,
+    MandatoryRunnerParametersMissingFromRaft, and SilentHangSignaturePresent.
   .EXAMPLE
     Compare-BuildMasterPlanRaft -Path .\Plans -Recurse
 
@@ -331,7 +379,37 @@ function Compare-BuildMasterPlanRaft {
       return $result.ToArray()
     }
 
-    function Get-RunnerParameterName {
+    function Test-ParameterAstMandatory {
+      # A [Parameter(Mandatory)] with the value omitted means $true, so ExpressionOmitted
+      # must be honoured or the bare form - which is the form the runners actually use -
+      # would read as optional and hide the exact condition this cmdlet exists to catch.
+      param([Parameter(Mandatory)]$ParameterAst)
+
+      foreach ($attribute in @($ParameterAst.Attributes)) {
+        if ($attribute -isnot [System.Management.Automation.Language.AttributeAst]) { continue }
+
+        $attributeName = $attribute.TypeName.Name
+        if ($attributeName -notin @('Parameter', 'ParameterAttribute', 'System.Management.Automation.ParameterAttribute')) { continue }
+
+        foreach ($named in @($attribute.NamedArguments)) {
+          if ($named.ArgumentName -ine 'Mandatory') { continue }
+          if ($named.ExpressionOmitted) { return $true }
+
+          $argumentText = $named.Argument.Extent.Text
+          if ($argumentText -imatch '^\s*\$true\s*$' -or $argumentText -imatch '^\s*1\s*$') { return $true }
+        }
+      }
+
+      # Mandatory in ANY parameter set counts as mandatory: the cmdlet cannot know which
+      # set a BuildMaster invocation resolves to, and over-reporting a missing parameter
+      # costs a triage, while under-reporting one costs a pipeline hung forever.
+      return $false
+    }
+
+    function Get-RunnerParameterDetail {
+      # Returns name AND mandatory-ness. Names alone were what forced every consumer to
+      # re-parse the runner script to tell a benign unpassed optional parameter from the
+      # forever-hang signature (drift-gate known limitation 1).
       param([Parameter(Mandatory)][string]$ScriptPath)
 
       $tokens = $null
@@ -341,7 +419,12 @@ function Compare-BuildMasterPlanRaft {
 
       # The SCRIPT-level param block is what the plan's Arguments bind to; parameters of
       # functions defined inside the runner are irrelevant to raft drift.
-      return @($ast.ParamBlock.Parameters | ForEach-Object { $_.Name.VariablePath.UserPath })
+      return @($ast.ParamBlock.Parameters | ForEach-Object {
+          [PSCustomObject]@{
+            Name        = $_.Name.VariablePath.UserPath
+            IsMandatory = (Test-ParameterAstMandatory -ParameterAst $_)
+          }
+        })
     }
 
     function New-PlanComparisonRecord {
@@ -356,8 +439,11 @@ function Compare-BuildMasterPlanRaft {
         [int]$ResolvedApplicationId,
         [string]$Status,
         [string[]]$DriftReasons,
+        [string[]]$InformationalReasons,
         [string]$Reason,
         $ArgumentComparison,
+        $MandatoryParameterAnalysis,
+        $SilentHangSignaturePresent,
         [string]$ArgumentSource
       )
 
@@ -382,8 +468,13 @@ function Compare-BuildMasterPlanRaft {
         NormalizedContentMatches = $null
         ArgumentSource           = $ArgumentSource
         ArgumentComparison       = $ArgumentComparison
+        # The mandatory/optional split lives here so no consumer has to re-derive it.
+        # $null - not $false - when the check could not run: see .OUTPUTS.
+        MandatoryParameterAnalysis  = $MandatoryParameterAnalysis
+        SilentHangSignaturePresent  = $SilentHangSignaturePresent
         Status                   = $Status
         DriftReasons             = $DriftReasons
+        InformationalReasons     = $InformationalReasons
         Reason                   = $Reason
         BuildMasterBaseUrl       = $BuildMasterBaseUrl
         ComparedOnUtc            = [datetime]::UtcNow
@@ -441,13 +532,15 @@ function Compare-BuildMasterPlanRaft {
         New-PlanComparisonRecord -PlanName (Split-Path -Leaf $missing) -PlanPath $missing -ItemName $itemName `
           -RaftItem $raftItem -RaftBytes $raftBytes -DiskBytes $null -DiskFile $null `
           -ResolvedApplicationId $resolvedApplicationId -Status $status -DriftReasons @($status) `
-          -Reason $reason -ArgumentComparison @() -ArgumentSource 'None'
+          -InformationalReasons @() -Reason $reason -ArgumentComparison @() `
+          -MandatoryParameterAnalysis @() -SilentHangSignaturePresent $null -ArgumentSource 'None'
       } catch {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "BuildMaster raft query failed for '$itemName'. Exception: $($_.Exception.Message)"
         New-PlanComparisonRecord -PlanName (Split-Path -Leaf $missing) -PlanPath $missing -ItemName $itemName `
           -RaftItem $null -RaftBytes $null -DiskBytes $null -DiskFile $null `
           -ResolvedApplicationId $resolvedApplicationId -Status 'Unreachable' -DriftReasons @('Unreachable') `
-          -Reason "BuildMaster raft query failed: $($_.Exception.Message)" -ArgumentComparison @() -ArgumentSource 'None'
+          -InformationalReasons @() -Reason "BuildMaster raft query failed: $($_.Exception.Message)" -ArgumentComparison @() `
+          -MandatoryParameterAnalysis @() -SilentHangSignaturePresent $null -ArgumentSource 'None'
       }
     }
 
@@ -469,11 +562,13 @@ function Compare-BuildMasterPlanRaft {
           New-PlanComparisonRecord -PlanName $file.BaseName -PlanPath $file.FullName -ItemName $itemName `
             -RaftItem $raftItem -RaftBytes $raftBytes -DiskBytes $diskBytes -DiskFile $file `
             -ResolvedApplicationId $resolvedApplicationId -Status 'MissingFromRaft' -DriftReasons @('MissingFromRaft') `
-            -Reason $reason -ArgumentComparison @() -ArgumentSource 'None'
+            -InformationalReasons @() -Reason $reason -ArgumentComparison @() `
+            -MandatoryParameterAnalysis @() -SilentHangSignaturePresent $null -ArgumentSource 'None'
           continue
         }
 
         $driftReasons = [System.Collections.Generic.List[string]]::new()
+        $informationalReasons = [System.Collections.Generic.List[string]]::new()
 
         $raftSha = Get-Sha256Hex -Byte $raftBytes
         $diskSha = Get-Sha256Hex -Byte $diskBytes
@@ -491,49 +586,88 @@ function Compare-BuildMasterPlanRaft {
         # the runner is read from disk at run time.
         $runnerRoot = if ([string]::IsNullOrWhiteSpace($RunnerScriptDirectory)) { $file.DirectoryName } else { $RunnerScriptDirectory }
         $argumentComparison = [System.Collections.ArrayList]::new()
+        $mandatoryAnalysis = [System.Collections.ArrayList]::new()
+        $argumentCheckRan = $false
 
         foreach ($planArgument in @(Get-PlanRunnerArgument -Byte $raftBytes)) {
           $runnerPath = $null
           $runnerFound = $false
-          $runnerParameters = @()
+          $runnerDetails = @()
 
           if (-not [string]::IsNullOrWhiteSpace($planArgument.RunnerScript)) {
             $runnerPath = Join-Path $runnerRoot $planArgument.RunnerScript
             if (Test-Path -LiteralPath $runnerPath -PathType Leaf) {
               $runnerFound = $true
-              $runnerParameters = @(Get-RunnerParameterName -ScriptPath $runnerPath)
+              $runnerDetails = @(Get-RunnerParameterDetail -ScriptPath $runnerPath)
             }
           }
+
+          $runnerParameters = @($runnerDetails | ForEach-Object { $_.Name })
+          $mandatoryParameters = @($runnerDetails | Where-Object { $_.IsMandatory } | ForEach-Object { $_.Name })
 
           $argumentNames = @($planArgument.ArgumentNames)
           $onlyInPlan = @($argumentNames | Where-Object { $runnerParameters -notcontains $_ })
           $onlyInRunner = @($runnerParameters | Where-Object { $argumentNames -notcontains $_ })
 
+          # The whole point of unit 15.171.e: split the one-way asymmetry by mandatory-ness.
+          # Mandatory-and-missing is the forever-hang; optional-and-missing is every healthy
+          # plan in the set and must not be allowed to turn the gate red.
+          $mandatoryMissing = @($onlyInRunner | Where-Object { $mandatoryParameters -contains $_ })
+          $optionalMissing = @($onlyInRunner | Where-Object { $mandatoryParameters -notcontains $_ })
+
           if (-not $runnerFound) {
+            # The check did not happen. Still Drift, because an unverifiable argument list
+            # is not a verified one - see the drift gate's Sev-I row.
             [void]$driftReasons.Add('RunnerScriptMissing')
-          } elseif ($onlyInPlan.Count -gt 0 -or $onlyInRunner.Count -gt 0) {
-            [void]$driftReasons.Add('ArgumentNameDrift')
+          } else {
+            $argumentCheckRan = $true
+            if ($mandatoryMissing.Count -gt 0) { [void]$driftReasons.Add('MandatoryArgumentMissing') }
+            if ($onlyInPlan.Count -gt 0) { [void]$driftReasons.Add('UndeclaredArgument') }
+            if ($optionalMissing.Count -gt 0) { [void]$informationalReasons.Add('OptionalParametersNotPassed') }
+
+            [void]$mandatoryAnalysis.Add([PSCustomObject]@{
+                RunnerScript                             = $planArgument.RunnerScript
+                MandatoryRunnerParameterCount            = $mandatoryParameters.Count
+                MandatoryRunnerParametersMissingFromRaft = $mandatoryMissing
+                SilentHangSignaturePresent               = ($mandatoryMissing.Count -gt 0)
+              })
           }
 
           [void]$argumentComparison.Add([PSCustomObject]@{
-              RunnerScript             = $planArgument.RunnerScript
-              RunnerScriptPath         = $runnerPath
-              RunnerScriptFound        = $runnerFound
-              PlanArgumentNames        = $argumentNames
-              RunnerParameterNames     = $runnerParameters
-              ArgumentsNotInRunner     = $onlyInPlan
-              RunnerParametersNotInPlan = $onlyInRunner
-              ArgumentNamesMatch       = ($runnerFound -and $onlyInPlan.Count -eq 0 -and $onlyInRunner.Count -eq 0)
+              RunnerScript                        = $planArgument.RunnerScript
+              RunnerScriptPath                    = $runnerPath
+              RunnerScriptFound                   = $runnerFound
+              PlanArgumentNames                   = $argumentNames
+              RunnerParameterNames                = $runnerParameters
+              MandatoryRunnerParameterNames       = $mandatoryParameters
+              ArgumentsNotInRunner                = $onlyInPlan
+              # Retained unchanged for existing consumers; the two fields below are the
+              # split of it that carries the severity.
+              RunnerParametersNotInPlan           = $onlyInRunner
+              MandatoryRunnerParametersNotInPlan  = $mandatoryMissing
+              OptionalRunnerParametersNotInPlan   = $optionalMissing
+              # Raw exactness of the two name sets. Kept as a FACT, not a verdict: it is
+              # legitimately $false on a healthy plan that skips an optional parameter.
+              ArgumentNamesMatch                  = ($runnerFound -and $onlyInPlan.Count -eq 0 -and $onlyInRunner.Count -eq 0)
+              # The verdict field: every argument the runner must receive is passed, and
+              # nothing is passed that it cannot bind.
+              ArgumentBindingSatisfied            = ($runnerFound -and $onlyInPlan.Count -eq 0 -and $mandatoryMissing.Count -eq 0)
             })
         }
 
         $uniqueReasons = @($driftReasons | Select-Object -Unique)
         $status = if ($uniqueReasons.Count -eq 0) { 'Match' } else { 'Drift' }
 
+        # $null when no argument check completed: a check that could not run must never be
+        # reported as a check that found nothing.
+        $silentHang = if ($argumentCheckRan) { @($mandatoryAnalysis | Where-Object { $_.SilentHangSignaturePresent }).Count -gt 0 } else { $null }
+
         $record = New-PlanComparisonRecord -PlanName $file.BaseName -PlanPath $file.FullName -ItemName $itemName `
           -RaftItem $raftItem -RaftBytes $raftBytes -DiskBytes $diskBytes -DiskFile $file `
           -ResolvedApplicationId $resolvedApplicationId -Status $status -DriftReasons $uniqueReasons `
-          -Reason $null -ArgumentComparison $argumentComparison.ToArray() -ArgumentSource 'Raft'
+          -InformationalReasons @($informationalReasons | Select-Object -Unique) -Reason $null `
+          -ArgumentComparison $argumentComparison.ToArray() -MandatoryParameterAnalysis $mandatoryAnalysis.ToArray() `
+          -SilentHangSignaturePresent $silentHang -ArgumentSource 'Raft'
 
         $record.ContentMatches = $bytesMatch
         $record.NormalizedContentMatches = $normalizedMatch
@@ -544,7 +678,8 @@ function Compare-BuildMasterPlanRaft {
         New-PlanComparisonRecord -PlanName $file.BaseName -PlanPath $file.FullName -ItemName $itemName `
           -RaftItem $null -RaftBytes $null -DiskBytes $diskBytes -DiskFile $file `
           -ResolvedApplicationId $resolvedApplicationId -Status 'Unreachable' -DriftReasons @('Unreachable') `
-          -Reason "BuildMaster raft comparison failed: $($_.Exception.Message)" -ArgumentComparison @() -ArgumentSource 'None'
+          -InformationalReasons @() -Reason "BuildMaster raft comparison failed: $($_.Exception.Message)" -ArgumentComparison @() `
+          -MandatoryParameterAnalysis @() -SilentHangSignaturePresent $null -ArgumentSource 'None'
       }
     }
   }

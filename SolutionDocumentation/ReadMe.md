@@ -92,6 +92,18 @@ ToDo: Insert diagram of CI/CD process
   `Test-NewComputerSetupDocumentation.ps1` provides the read-only, idempotent contract
   check for the canonical guide and its active linked BuildMaster runbooks.
 
+### BuildMaster plans and rafts
+
+- [BuildMaster Plan Raft Drift Gate](./BuildMaster-Plan-Raft-Drift-Gate.md) is the
+  operational authority for the recurring automated drift gate over all five
+  BuildMaster plans: what it checks, owner, cadence, severity model, fail-closed
+  failure behavior, availability handling, evidence retention, and known
+  limitations. It enforces the rule stated in
+  [`BuildMaster-Plan-Raft-Sync-Requirement.md`](./BuildMaster-Plan-Raft-Sync-Requirement.md).
+  The comparison it is built on is the read-only
+  `src/ATAP.Utilities.BuildTooling.BuildMaster.PowerShell/public/Compare-BuildMasterPlanRaft.ps1`,
+  which emits metadata only and never writes to BuildMaster.
+
 ### ManimVideoGenerator
 
 - The subsystem generating Manim animations from text/voice descriptions (a

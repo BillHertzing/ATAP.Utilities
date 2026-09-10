@@ -65,6 +65,13 @@ function Set-CoreConfigRootKeys {
           'FastTempBasePathConfigRootKey'                                                                = 'FAST_TEMP_BASE_PATH'
           'BigTempBasePathConfigRootKey'                                                                 = 'BIG_TEMP_BASE_PATH'
           'SecureTempBasePathConfigRootKey'                                                              = 'SECURE_TEMP_BASE_PATH'
+          # Host-wide artifact storage and the conversation/gather corpus roots derived from it.
+          'ArtifactsPathConfigRootKey'                                                                   = 'ArtifactsPath'
+          'CorpusAIConversationPathConfigRootKey'                                                        = 'CorpusAIConversationPath'
+          'CorpusGatherRecordsPathConfigRootKey'                                                         = 'CorpusGatherRecordsPath'
+          'CorpusGatherRecordsStagingPathConfigRootKey'                                                  = 'CorpusGatherRecordsStagingPath'
+          'ConversationCorpusReconciliationIntervalConfigRootKey'                                       = 'ConversationCorpusReconciliationInterval'
+          'ConversationCorpusScrubIntervalConfigRootKey'                                                = 'ConversationCorpusScrubInterval'
           'ChocolateyPackagesConfigRootKey'                                                              = 'ChocolateyPackages'
           # Ditto Clipboard Manager Settings
           'DittoDBPathConfigRootKey'                                                                     = 'DittoDBPath'

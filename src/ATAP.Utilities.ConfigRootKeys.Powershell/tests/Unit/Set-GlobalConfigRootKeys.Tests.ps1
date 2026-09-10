@@ -5,6 +5,16 @@ BeforeAll {
   $script:moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
   $script:publicDir = Join-Path $script:moduleRoot 'public'
 
+  # Initialized unconditionally. AfterAll reads this variable, and under Set-StrictMode a
+  # variable that was never assigned throws on read rather than returning $false - so when
+  # Write-PSFMessage is ALREADY available (the normal case here, because ATAP tests must run
+  # with profiles loaded and the profile imports PSFramework) the stub branch below never
+  # ran, the variable never existed, and the whole test container aborted in teardown. Every
+  # assertion had already passed at that point, which is what made it easy to miss: the
+  # summary read "Passed: 44, Failed: 0" and only the separate "Container failed: 1" line
+  # disclosed it.
+  $script:createdWritePSFMessageStub = $false
+
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
     $script:createdWritePSFMessageStub = $true
@@ -41,6 +51,12 @@ Describe 'Set-GlobalConfigRootKeys population' -Tag 'Unit' {
     $global:configRootKeys.ContainsKey('ServicePlacementMapConfigRootKey') | Should -BeTrue               # Set-CoreConfigRootKeys (role -> host placement map)
     $global:configRootKeys.ContainsKey('AceOutpostServicePortConfigRootKey') | Should -BeTrue              # Set-CoreConfigRootKeys
     $global:configRootKeys['AceOutpostServicePortConfigRootKey'] | Should -BeExactly 'AceOutpostServicePort'
+    $global:configRootKeys['ArtifactsPathConfigRootKey'] | Should -BeExactly 'ArtifactsPath'
+    $global:configRootKeys['CorpusAIConversationPathConfigRootKey'] | Should -BeExactly 'CorpusAIConversationPath'
+    $global:configRootKeys['CorpusGatherRecordsPathConfigRootKey'] | Should -BeExactly 'CorpusGatherRecordsPath'
+    $global:configRootKeys['CorpusGatherRecordsStagingPathConfigRootKey'] | Should -BeExactly 'CorpusGatherRecordsStagingPath'
+    $global:configRootKeys['ConversationCorpusReconciliationIntervalConfigRootKey'] | Should -BeExactly 'ConversationCorpusReconciliationInterval'
+    $global:configRootKeys['ConversationCorpusScrubIntervalConfigRootKey'] | Should -BeExactly 'ConversationCorpusScrubInterval'
     $global:configRootKeys.ContainsKey('DatabaseHostConfigRootKey') | Should -BeTrue                      # Add-DatabasesConfigRootKeys
     $global:configRootKeys.ContainsKey('DatabaseATAPUtilitiesNameConfigRootKey') | Should -BeTrue         # Set-DatabasesATAPUtilitiesConfigRootKeys
     $global:configRootKeys.ContainsKey('DatabaseAceCommanderNameConfigRootKey') | Should -BeTrue          # Set-DatabasesAceCommanderConfigRootKeys

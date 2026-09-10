@@ -15,6 +15,12 @@ $PerHostSettingsKeys = @(
   , $global:configRootKeys['ansible_remote_tmpConfigRootKey']
   , $global:configRootKeys['ansible_become_userConfigRootKey']
   , $global:configRootKeys['ManimExePathConfigRootKey']
+  , $global:configRootKeys['ArtifactsPathConfigRootKey']
+  , $global:configRootKeys['CorpusAIConversationPathConfigRootKey']
+  , $global:configRootKeys['CorpusGatherRecordsPathConfigRootKey']
+  , $global:configRootKeys['CorpusGatherRecordsStagingPathConfigRootKey']
+  , $global:configRootKeys['ConversationCorpusReconciliationIntervalConfigRootKey']
+  , $global:configRootKeys['ConversationCorpusScrubIntervalConfigRootKey']
 )
 
 $scriptblock_perhost = {
@@ -27,9 +33,18 @@ $scriptblock_perhost = {
   }
 }
 
+$utat01ArtifactsPath = 'C:\ATAPArtifacts'
+$utat022ArtifactsPath = 'D:\ATAPArtifacts'
+
 $defaultPerMachineSettings = @{
   # Machine Settings
   'utat01'    = @{
+    $global:configRootKeys['ArtifactsPathConfigRootKey']                             = $utat01ArtifactsPath
+    $global:configRootKeys['CorpusAIConversationPathConfigRootKey']                  = Join-Path $utat01ArtifactsPath 'CorpusAIConversation'
+    $global:configRootKeys['CorpusGatherRecordsPathConfigRootKey']                   = Join-Path $utat01ArtifactsPath 'CorpusGatherRecords'
+    $global:configRootKeys['CorpusGatherRecordsStagingPathConfigRootKey']            = Join-Path $utat01ArtifactsPath 'CorpusGatherRecordsStaging'
+    $global:configRootKeys['ConversationCorpusReconciliationIntervalConfigRootKey'] = [TimeSpan]::FromMinutes(15)
+    $global:configRootKeys['ConversationCorpusScrubIntervalConfigRootKey']          = [TimeSpan]::FromDays(1)
     $global:configRootKeys['DropBoxBasePathConfigRootKey']         = 'C:/Dropbox/'
     $global:configRootKeys['GoogleDriveBasePathConfigRootKey']     = 'Dummy' # Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq 'Google Drive' } | Select-Object -ExpandProperty 'Name') 'My Drive'
     $global:configRootKeys['OneDriveBasePathConfigRootKey']        = 'Dummy' # 'C:/OneDrive/'
@@ -47,6 +62,12 @@ $defaultPerMachineSettings = @{
   }
 
   'utat022'   = @{
+    $global:configRootKeys['ArtifactsPathConfigRootKey']                             = $utat022ArtifactsPath
+    $global:configRootKeys['CorpusAIConversationPathConfigRootKey']                  = Join-Path $utat022ArtifactsPath 'CorpusAIConversation'
+    $global:configRootKeys['CorpusGatherRecordsPathConfigRootKey']                   = Join-Path $utat022ArtifactsPath 'CorpusGatherRecords'
+    $global:configRootKeys['CorpusGatherRecordsStagingPathConfigRootKey']            = Join-Path $utat022ArtifactsPath 'CorpusGatherRecordsStaging'
+    $global:configRootKeys['ConversationCorpusReconciliationIntervalConfigRootKey'] = [TimeSpan]::FromMinutes(15)
+    $global:configRootKeys['ConversationCorpusScrubIntervalConfigRootKey']          = [TimeSpan]::FromDays(1)
     $global:configRootKeys['DropBoxBasePathConfigRootKey']         = 'C:/Dropbox/'
     $global:configRootKeys['GoogleDriveBasePathConfigRootKey']     = 'Dummy' # Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq 'Google Drive' } | Select-Object -ExpandProperty 'Name') 'My Drive'
     $global:configRootKeys['OneDriveBasePathConfigRootKey']        = 'Dummy' # 'C:/OneDrive/'
@@ -153,6 +174,50 @@ $defaultPerMachineSettings = @{
     # ansible settings on this host
     $global:configRootKeys['ansible_remote_tmpConfigRootKey']      = 'D:/Temp/Ansible'
     $global:configRootKeys['ansible_become_userConfigRootKey']     = 'whertzing'
+  }
+}
+
+# Validate the two source/config contracts before publishing settings for the current host.
+# This is deliberately source-only: it does not create directories or mutate User/Machine
+# environment variables. Other hosts retain their existing non-corpus settings.
+$corpusConfigurationContract = @{
+  $global:configRootKeys['CorpusAIConversationPathConfigRootKey']       = 'CorpusAIConversation'
+  $global:configRootKeys['CorpusGatherRecordsPathConfigRootKey']        = 'CorpusGatherRecords'
+  $global:configRootKeys['CorpusGatherRecordsStagingPathConfigRootKey'] = 'CorpusGatherRecordsStaging'
+}
+$supportedCorpusHosts = @('utat01', 'utat022')
+foreach ($supportedCorpusHost in $supportedCorpusHosts) {
+  $hostSettings = $defaultPerMachineSettings[$supportedCorpusHost]
+  $artifactKey = $global:configRootKeys['ArtifactsPathConfigRootKey']
+  if (-not $hostSettings.ContainsKey($artifactKey) -or
+    -not [IO.Path]::IsPathFullyQualified([string]$hostSettings[$artifactKey])) {
+    throw "Corpus configuration for host '$supportedCorpusHost' requires an absolute $artifactKey."
+  }
+
+  $artifactRoot = [IO.Path]::GetFullPath([string]$hostSettings[$artifactKey]).TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+  $dropboxKey = $global:configRootKeys['DropBoxBasePathConfigRootKey']
+  $dropboxRoot = [IO.Path]::GetFullPath([string]$hostSettings[$dropboxKey]).TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+  if ($artifactRoot.Equals($dropboxRoot, [StringComparison]::OrdinalIgnoreCase) -or
+    $artifactRoot.StartsWith($dropboxRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+    throw "Corpus configuration for host '$supportedCorpusHost' cannot place $artifactKey under Dropbox."
+  }
+
+  foreach ($corpusPathKey in $corpusConfigurationContract.Keys) {
+    $expectedCorpusPath = Join-Path $artifactRoot $corpusConfigurationContract[$corpusPathKey]
+    if (-not $hostSettings.ContainsKey($corpusPathKey) -or
+      -not ([string]$hostSettings[$corpusPathKey]).Equals($expectedCorpusPath, [StringComparison]::OrdinalIgnoreCase)) {
+      throw "Corpus configuration for host '$supportedCorpusHost' requires $corpusPathKey to be derived from $artifactKey."
+    }
+  }
+
+  foreach ($intervalKey in @(
+      $global:configRootKeys['ConversationCorpusReconciliationIntervalConfigRootKey'],
+      $global:configRootKeys['ConversationCorpusScrubIntervalConfigRootKey'])) {
+    if (-not $hostSettings.ContainsKey($intervalKey) -or
+      $hostSettings[$intervalKey] -isnot [TimeSpan] -or
+      $hostSettings[$intervalKey] -le [TimeSpan]::Zero) {
+      throw "Corpus configuration for host '$supportedCorpusHost' requires a positive TimeSpan value for $intervalKey."
+    }
   }
 }
 

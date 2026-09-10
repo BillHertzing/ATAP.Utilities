@@ -50,6 +50,17 @@ if ($global:configRootKeys.ContainsKey('OSSForksRootConfigRootKey')) {
   $global:EnvVars[$global:configRootKeys['OSSForksRootConfigRootKey']] = $global:Settings[$global:configRootKeys['OSSForksRootConfigRootKey']]
 }
 
+# Project the canonical host-wide artifact setting only when it is explicitly present.
+# Set-EnvironmentVariablesProcess remains the sole mutating step; loading this profile
+# fragment alone does not modify the process, User, or Machine environment.
+if ($global:configRootKeys.ContainsKey('ArtifactsPathConfigRootKey')) {
+  $artifactsPathKey = $global:configRootKeys['ArtifactsPathConfigRootKey']
+  if ($global:Settings.ContainsKey($artifactsPathKey) -and
+    -not [string]::IsNullOrWhiteSpace([string]$global:Settings[$artifactsPathKey])) {
+    $global:EnvVars['ARTIFACTS_PATH'] = $global:Settings[$artifactsPathKey]
+  }
+}
+
 # Secret values and API keys are deliberately not projected into the process
 # environment. Callers resolve them by canonical setting name through Get-PVal
 # and Get-SecretATAP. This includes Dropbox access tokens, Jenkins API tokens,

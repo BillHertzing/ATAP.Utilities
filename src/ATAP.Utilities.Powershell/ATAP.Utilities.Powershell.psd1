@@ -99,6 +99,7 @@
     'Set-PerceivedTypeInRegistryForPreviewPane',
     'Set-RepositoryPackageSources', 'Set-ScreenReaderOff',
     'Set-ServiceLogonAccount',
+    'Start-AceOutpostMeteredHarness',
     'Test-ProfiledRemotingEndpoint', 'Test-StartupScheduledTaskPresence', 'Test-WinRM',
     'Unregister-ProfiledRemotingEndpoint', 'Unregister-StartupScheduledTask', 'Watch-ETWEvents'
 

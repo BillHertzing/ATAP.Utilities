@@ -158,13 +158,30 @@ Describe 'Start-AceOutpostMeteredHarness' -Tag 'Unit' {
     }
 
     It 'resolves the suite stub for Get-SecretATAP, never the real secret store' {
-      # Safety interlock. If a future edit lets the real, module-exported Get-SecretATAP win
-      # the command lookup, this suite would resolve a live vault credential and write it into
-      # a child process. Fail loudly here rather than silently there.
-      $resolved = Get-Command Get-SecretATAP -ErrorAction Stop
-      $resolved.CommandType | Should -Be 'Function'
-      [string]$resolved.ModuleName | Should -BeNullOrEmpty
-      (Get-SecretATAP -SecretName 'any') | Should -Be 'test-user:test-secret'
+      # Safety interlock. If a future edit lets the real, module-exported Get-SecretATAP win,
+      # this suite would resolve a live vault credential and write it into a child process.
+      # Fail loudly here rather than silently there.
+      #
+      # The assertion is deliberately about INVOCATION, not about which commands are visible.
+      # An earlier version also asserted the resolved command had no ModuleName, and that was
+      # wrong: it tested the ambient module set rather than the safety property. It passed
+      # locally and failed in the promoted-module run, where BuildTooling is loaded and its
+      # exported Get-SecretATAP becomes visible to Get-Command - while the script-scoped stub
+      # still won at invocation, as every composition test asserting the fake credential
+      # proved by passing. What must hold is that the value the function actually receives is
+      # the sentinel; who else is merely visible is not this test's business.
+      (Get-SecretATAP -SecretName 'any') | Should -Be 'test-user:test-secret' -Because 'the stub must win invocation; a real value here means the live vault was reached'
+    }
+
+    It 'never lets a real credential reach the child, even if the stub is bypassed' {
+      # The end-to-end form of the interlock: whatever resolved, the credential that landed in
+      # the child block must be the sentinel. This is the assertion that would actually catch
+      # a leak, because it inspects the composed result rather than the lookup.
+      $launch = Invoke-ProbeLaunch -Client Codex
+      $launch.Captured | Should -Not -BeNullOrEmpty
+      $proxy = [string]$launch.Captured.Env.HTTP_PROXY
+      $proxy | Should -Match 'test-user' -Because 'the child must carry the fake credential'
+      $proxy | Should -Not -Match 'proxyCredential' -Because 'a SecretName must never appear as a value'
     }
   }
 

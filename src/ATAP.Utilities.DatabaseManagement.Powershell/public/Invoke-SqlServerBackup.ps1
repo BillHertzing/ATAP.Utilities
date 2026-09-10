@@ -315,8 +315,25 @@ begin {
         }
     }
 
+    # The split above is authoritative, so the resolver must be handed a COPY of the bound
+    # parameters with the raw -SqlInstance removed. Resolve-DatabaseSqlConnection declares
+    # [Alias('SqlInstance')] on its -InstanceName parameter and, when -InstanceName arrives
+    # empty, re-reads the caller's original bound value through that alias. That silently
+    # undoes the split and composes DataSource as "<host>\<original>", e.g.
+    #   -SqlInstance 'localhost,50020'   -> 'localhost,50020\localhost,50020'
+    #   -SqlInstance 'localhost\PRODUCTION' -> 'localhost\localhost\PRODUCTION'
+    # The first still opens because SqlClient honours the ,port and ignores the bogus
+    # instance; the second does not resolve at all. Verified 2026-09-10 (Task 15.192.f).
+    $resolverBoundParameters = @{}
+    foreach ($key in $PSBoundParameters.Keys) { $resolverBoundParameters[$key] = $PSBoundParameters[$key] }
+    foreach ($stale in @('SqlInstance', 'InstanceName', 'DatabaseHost')) {
+        if ($resolverBoundParameters.ContainsKey($stale)) { [void]$resolverBoundParameters.Remove($stale) }
+    }
+    if (-not [string]::IsNullOrWhiteSpace($SqlInstance)) { $resolverBoundParameters['InstanceName'] = $SqlInstance }
+    if (-not [string]::IsNullOrWhiteSpace($DatabaseHost)) { $resolverBoundParameters['DatabaseHost'] = $DatabaseHost }
+
     $resolution = Resolve-DatabaseSqlConnection `
-        -OriginalPSBoundParameters $PSBoundParameters `
+        -OriginalPSBoundParameters $resolverBoundParameters `
         -SqlConnection $SqlConnection `
         -DBConnectionStringSecretName $DBConnectionStringSecretName `
         -DatabaseHost $DatabaseHost `

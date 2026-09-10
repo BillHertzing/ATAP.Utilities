@@ -174,6 +174,7 @@ function Test-DatabaseBackupHealth {
   process {
     $now = Get-Date
     $checkedInstances = 0
+    $reportedStagingDirs = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
 
     foreach ($instance in $SqlInstances) {
       $server = ".\$instance"
@@ -287,14 +288,34 @@ GROUP BY d.name, d.recovery_model_desc;
       }
 
       # --- Staging: artifacts stranded where SQL wrote them mean the publisher stalled. ---
-      $stagingDir = Join-Path (Join-Path $LocalDBsRoot $instance) 'Backup'
-      if (Test-Path -LiteralPath $stagingDir) {
+      # BOTH staging roots are checked deliberately. The Task 13.60.b policy root is
+      # <LocalDBsRoot>\<INSTANCE>\Backup, but the Gate B decision of 2026-09-10 has SQL
+      # writing to <FastTempBasePath>\CobianReflectorBackup instead (SC-0421 tracks
+      # restoring the policy root). Checking only one would report healthy staging forever
+      # against an empty directory — which is precisely the silent-success failure this
+      # function exists to catch, and would have missed the 32-byte empty archive stranded
+      # in the temp root since 2026-04-02. Checking both is correct before and after SC-0421.
+      $fastTempKey = $global:ConfigRootKeys['FastTempBasePathConfigRootKey']
+      $fastTempRoot = if ($fastTempKey -and $effectiveSettings -and $effectiveSettings.ContainsKey($fastTempKey)) { $effectiveSettings[$fastTempKey] } else { $null }
+
+      $stagingDirs = @(Join-Path (Join-Path $LocalDBsRoot $instance) 'Backup')
+      if (-not [string]::IsNullOrWhiteSpace($fastTempRoot)) {
+        $stagingDirs += (Join-Path $fastTempRoot 'CobianReflectorBackup')
+      }
+
+      foreach ($stagingDir in ($stagingDirs | Select-Object -Unique)) {
+        if (-not (Test-Path -LiteralPath $stagingDir)) { continue }
+        # The temp staging root is shared across instances, not instance-scoped, so without
+        # this guard the same stranded artifact is reported once per instance. Duplicate
+        # alerts for one fact are how alert channels get muted, which recreates the silence
+        # this function exists to break.
+        if (-not $reportedStagingDirs.Add($stagingDir)) { continue }
         $stranded = @(Get-ChildItem -LiteralPath $stagingDir -Recurse -File -Force -ErrorAction SilentlyContinue |
             Where-Object { $_.LastWriteTime -lt $now.AddHours(-$MaxStagingAgeHours) })
         if ($stranded.Count -gt 0) {
           $oldest = ($stranded | Sort-Object LastWriteTime | Select-Object -First 1)
           Add-Finding -Severity 'Warning' -Check 'StaleStaging' -Instance $instance -Database '' `
-            -Detail "$($stranded.Count) artifact(s) left in [$stagingDir] beyond $MaxStagingAgeHours hours; oldest [$($oldest.Name)] at $($oldest.LastWriteTime.ToString('yyyy-MM-dd HH:mm')). The publisher is not draining staging."
+            -Detail "$($stranded.Count) artifact(s) left in [$stagingDir] beyond $MaxStagingAgeHours hours; oldest [$($oldest.Name)] at $($oldest.LastWriteTime.ToString('yyyy-MM-dd HH:mm')), $($oldest.Length) bytes. The publisher is not draining staging."
         }
       }
     }

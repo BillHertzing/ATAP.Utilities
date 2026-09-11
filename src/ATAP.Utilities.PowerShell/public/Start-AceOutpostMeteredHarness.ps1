@@ -40,6 +40,18 @@ function Start-AceOutpostMeteredHarness {
     Working directory for the child process. Defaults to the caller's current directory.
   .PARAMETER HarnessPath
     Full path to the harness executable. When omitted the client's CLI is resolved from PATH.
+  .PARAMETER InvocationId
+    Identifier of this metered call, written into the child's block as
+    ACEOUTPOST_METERED_INVOCATION. When supplied it is assigned unconditionally, so any value the
+    calling process inherited is overwritten rather than preserved. When omitted, neither marker
+    name is touched and the child inherits whatever the calling process carries, exactly as it
+    did before this parameter existed. The value is an opaque identifier, never a secret; the
+    adapter Invoke-AceOutpostMeteredPrompt supplies a fresh GUID per call.
+  .PARAMETER ParentInvocationId
+    Identifier of the enclosing metered call, written into the child's block as
+    ACEOUTPOST_METERED_PARENT_INVOCATION. Honoured only when InvocationId is also supplied. When
+    InvocationId is supplied and this is omitted, empty, or whitespace, the parent marker is
+    REMOVED from the child's block so a stale inherited parent id cannot flow through.
   .PARAMETER ArgumentList
     Arguments passed to the child verbatim. Collected from the remaining arguments and never
     parsed, re-quoted, or interpreted by this function.
@@ -47,9 +59,11 @@ function Start-AceOutpostMeteredHarness {
     PSCustomObject with redacted launch metadata. The proxy endpoint it reports carries no
     userinfo.
   .EXAMPLE
-    Start-AceOutpostMeteredHarness -Client Codex -LaunchMode Wait exec -p 'Summarize this repo'
+    Start-AceOutpostMeteredHarness -Client Codex -LaunchMode Wait exec -- 'Summarize this repo'
 
-    Runs a metered Codex prompt to completion and returns its exit code and drained output.
+    Runs a metered Codex prompt to completion and returns its exit code and drained output. The
+    end-of-options marker precedes the prompt because in the Codex CLI '-p' is --profile, not a
+    prompt flag; this function passes the vector through without interpreting any of it.
   .EXAMPLE
     Start-AceOutpostMeteredHarness -Client Codex -LaunchMode Detach
 
@@ -71,6 +85,14 @@ function Start-AceOutpostMeteredHarness {
        the parent. The packet forbids ever setting it; allowing an ambient certificate-
        verification bypass to flow into the metered child would defeat the same guarantee by a
        different route. Removal is never a substitute for trust material.
+    3. The invocation markers (Task 15.190.e contract section 5.3) are OVERWRITTEN, not set when
+       absent. The child's block starts as a copy of this process's block, so a marker this
+       process inherited from its own metered launch would otherwise flow unchanged into the
+       child: a harness started from a nested call would be stamped with its grandparent's id,
+       silently mis-attributing the exchange. That stale inheritance was observed in the
+       adapter's nested test before this extension existed. Both markers are therefore assigned
+       or removed at composition whenever -InvocationId is bound, and left exactly as inherited
+       when it is not, so callers that do not opt in see no change in behaviour.
 
     Section 6.3 stands: for ClaudeCode the trust-variable mechanism is not known to work
     (open question Q3), so a metered ClaudeCode launch may still fail at TLS in the harness.
@@ -104,6 +126,11 @@ function Start-AceOutpostMeteredHarness {
     [string]$WorkingDirectory = $PWD.ProviderPath,
 
     [string]$HarnessPath,
+
+    [ValidateNotNullOrEmpty()]
+    [string]$InvocationId,
+
+    [string]$ParentInvocationId,
 
     [Parameter(ValueFromRemainingArguments)]
     [string[]]$ArgumentList = @()
@@ -214,6 +241,23 @@ function Start-AceOutpostMeteredHarness {
       if ($startInfo.Environment.ContainsKey('NODE_TLS_REJECT_UNAUTHORIZED')) {
         $null = $startInfo.Environment.Remove('NODE_TLS_REJECT_UNAUTHORIZED')
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Removed inherited NODE_TLS_REJECT_UNAUTHORIZED from the child environment block.'
+      }
+
+      # Invocation markers (Task 15.190.e contract section 5.3). Assigned UNCONDITIONALLY when
+      # -InvocationId is bound, so a marker inherited from this process's own metered launch is
+      # overwritten rather than passed through to the child as a stale grandparent id. The
+      # parent marker is set or removed by the same rule. When -InvocationId is not bound both
+      # names are left exactly as inherited. Same shape as the NODE_TLS_REJECT_UNAUTHORIZED
+      # handling above: the child's block is shaped at composition, the parent's never.
+      if ($PSBoundParameters.ContainsKey('InvocationId')) {
+        $startInfo.Environment['ACEOUTPOST_METERED_INVOCATION'] = $InvocationId
+        if (-not [string]::IsNullOrWhiteSpace($ParentInvocationId)) {
+          $startInfo.Environment['ACEOUTPOST_METERED_PARENT_INVOCATION'] = $ParentInvocationId
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Set ACEOUTPOST_METERED_INVOCATION and ACEOUTPOST_METERED_PARENT_INVOCATION in the child environment block.'
+        } else {
+          $null = $startInfo.Environment.Remove('ACEOUTPOST_METERED_PARENT_INVOCATION')
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Set ACEOUTPOST_METERED_INVOCATION and removed any inherited ACEOUTPOST_METERED_PARENT_INVOCATION from the child environment block.'
+        }
       }
 
       # Names only. The composed values include the credential-bearing proxy URL and are

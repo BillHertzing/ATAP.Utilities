@@ -326,13 +326,14 @@ Describe 'Invoke-AceOutpostMeteredPrompt' -Tag 'Unit' {
       $first.Result.CallerProcessId | Should -Be $PID
     }
 
-    It 'reports no parent marker and no marker delivery when the current process carries none and the core lacks the extension' {
+    It 'reports no parent marker and delivers a new marker when the current process carries none' {
       $launch = Invoke-ProbePrompt
       $launch.Result.ParentInvocationId | Should -BeNullOrEmpty
       $launch.Result.NestingEvidence | Should -Not -Contain 'EnvironmentMarker'
-      $launch.Result.ChildMarkerDelivered | Should -BeFalse -Because 'the core does not yet accept InvocationId; the extension is specified in the contract and blocked on a core change'
-      $launch.Captured.Env.ACEOUTPOST_METERED_INVOCATION | Should -BeNullOrEmpty
-      (Get-Command Start-AceOutpostMeteredHarness).Parameters.ContainsKey('InvocationId') | Should -BeFalse
+      $launch.Result.ChildMarkerDelivered | Should -BeTrue
+      $launch.Captured.Env.ACEOUTPOST_METERED_INVOCATION | Should -BeExactly $launch.Result.InvocationId
+      $launch.Captured.Env.ACEOUTPOST_METERED_PARENT_INVOCATION | Should -BeNullOrEmpty
+      (Get-Command Start-AceOutpostMeteredHarness).Parameters.ContainsKey('InvocationId') | Should -BeTrue
     }
 
     It 'records the process ancestry and flags a harness ancestor consistently with it' {
@@ -402,18 +403,14 @@ $result | Select-Object InvocationId, ParentInvocationId, IsNested, NestingEvide
       @($nested.ProcessAncestry) | Should -Contain ('{0}:pwsh' -f $PID) -Because 'the nested call must see this test process in its ancestry'
       $nested.ExitCode | Should -Be 0
 
-      # THE STALE-INHERITANCE FINDING. The core composes the grandchild's block as a copy of the
-      # nested process's block, so the marker flows through UNCHANGED: the grandchild is stamped
-      # with the PARENT's id, not the nested call's. Left as-is, a harness launched from a nested
-      # call is silently attributed to its grandparent - the exact failure board row 15.190.e
-      # names. This is why the core extension specified in the contract must OVERWRITE the
-      # marker with the current InvocationId, not merely set it when absent. Asserted here as
-      # the real behaviour today so the assertion flips the day the core extension lands.
+      # Contract section 5.3 requires the child marker to identify this invocation while the
+      # parent marker preserves the inherited caller identity.
       $grandchild = ConvertFrom-ProbeRecord -Path $grandchildOut
       $grandchild | Should -Not -BeNullOrEmpty
-      $grandchild.Env.ACEOUTPOST_METERED_INVOCATION | Should -Be $parentId -Because 'today the core copies the block, so the grandchild inherits the stale parent marker (contract section 5.3)'
-      $grandchild.Env.ACEOUTPOST_METERED_INVOCATION | Should -Not -Be $nested.InvocationId
-      $nested.ChildMarkerDelivered | Should -BeFalse
+      $grandchild.Env.ACEOUTPOST_METERED_INVOCATION | Should -BeExactly $nested.InvocationId
+      $grandchild.Env.ACEOUTPOST_METERED_INVOCATION | Should -Not -Be $parentId
+      $grandchild.Env.ACEOUTPOST_METERED_PARENT_INVOCATION | Should -BeExactly $parentId
+      $nested.ChildMarkerDelivered | Should -BeTrue
     }
 
     It 'leaves the test process carrying no invocation marker after every call' {

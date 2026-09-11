@@ -27,11 +27,15 @@ BeforeAll {
     Import-Module PSFramework -ErrorAction SilentlyContinue
   }
 
-  # Names this function may compose, plus the negative-control name it must never set.
+  # Names this function may compose, plus the negative-control name it must never set, plus the
+  # two invocation-marker names added by Task 15.190.e.CORE01 (contract section 5.3).
   $script:composedNames = @(
     'HTTP_PROXY', 'HTTPS_PROXY', 'NO_PROXY',
-    'NODE_EXTRA_CA_CERTS', 'SSL_CERT_FILE', 'NODE_TLS_REJECT_UNAUTHORIZED'
+    'NODE_EXTRA_CA_CERTS', 'SSL_CERT_FILE', 'NODE_TLS_REJECT_UNAUTHORIZED',
+    'ACEOUTPOST_METERED_INVOCATION', 'ACEOUTPOST_METERED_PARENT_INVOCATION'
   )
+  $script:invocationMarkerName = 'ACEOUTPOST_METERED_INVOCATION'
+  $script:parentMarkerName = 'ACEOUTPOST_METERED_PARENT_INVOCATION'
 
   $script:pwshPath = (Get-Command pwsh -CommandType Application | Select-Object -First 1).Source
 
@@ -48,7 +52,7 @@ BeforeAll {
   $script:stubPath = Join-Path $TestDrive 'probe-child.ps1'
   Set-Content -LiteralPath $script:stubPath -Encoding utf8 -Value @'
 param([string]$OutPath)
-$names = @('HTTP_PROXY','HTTPS_PROXY','NO_PROXY','NODE_EXTRA_CA_CERTS','SSL_CERT_FILE','NODE_TLS_REJECT_UNAUTHORIZED','http_proxy','https_proxy','no_proxy')
+$names = @('HTTP_PROXY','HTTPS_PROXY','NO_PROXY','NODE_EXTRA_CA_CERTS','SSL_CERT_FILE','NODE_TLS_REJECT_UNAUTHORIZED','http_proxy','https_proxy','no_proxy','ACEOUTPOST_METERED_INVOCATION','ACEOUTPOST_METERED_PARENT_INVOCATION')
 $captured = [ordered]@{}
 foreach ($n in $names) { $captured[$n] = [Environment]::GetEnvironmentVariable($n, 'Process') }
 [pscustomobject]@{
@@ -101,10 +105,17 @@ foreach ($n in $names) { $captured[$n] = [Environment]::GetEnvironmentVariable($
       [string]$Client = 'Codex',
       [string[]]$ExtraArguments = @(),
       [string]$LaunchMode = 'Wait',
-      [int]$Port = $script:proxyPort
+      [int]$Port = $script:proxyPort,
+      [string]$InvocationId,
+      [string]$ParentInvocationId
     )
     $outPath = Join-Path $TestDrive ("probe-{0}.json" -f ([guid]::NewGuid().ToString('N')))
     $arguments = @('-NonInteractive', '-File', $script:stubPath, $outPath) + $ExtraArguments
+    # The marker parameters are forwarded only when the caller bound them, so a test that omits
+    # them exercises the opt-out path of the core rather than passing an empty string.
+    $markerParameters = @{}
+    if ($PSBoundParameters.ContainsKey('InvocationId')) { $markerParameters['InvocationId'] = $InvocationId }
+    if ($PSBoundParameters.ContainsKey('ParentInvocationId')) { $markerParameters['ParentInvocationId'] = $ParentInvocationId }
     $result = Start-AceOutpostMeteredHarness `
       -Client $Client `
       -LaunchMode $LaunchMode `
@@ -112,12 +123,90 @@ foreach ($n in $names) { $captured[$n] = [Environment]::GetEnvironmentVariable($
       -StateDirectory $script:stateDirectory `
       -HarnessPath $script:pwshPath `
       -ArgumentList $arguments `
-      -Confirm:$false
+      -Confirm:$false `
+      @markerParameters
     [pscustomobject]@{
       Result   = $result
       OutPath  = $outPath
       Captured = if (Test-Path -LiteralPath $outPath) { Get-Content -LiteralPath $outPath -Raw | ConvertFrom-Json } else { $null }
     }
+  }
+
+  # Sets one or more Process-scope variables on THIS test process for the duration of a script
+  # block and restores the exact prior values (including absence) afterwards. Process scope only,
+  # never User or Machine: this is how the tests simulate "the caller itself was launched
+  # metered" so the core's overwrite semantics can be asserted against a real inherited value.
+  function Invoke-WithProcessEnvironment {
+    param(
+      [hashtable]$Variables,
+      [scriptblock]$ScriptBlock
+    )
+    $saved = @{}
+    foreach ($name in $Variables.Keys) {
+      $saved[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
+    }
+    try {
+      foreach ($name in $Variables.Keys) {
+        [Environment]::SetEnvironmentVariable($name, $Variables[$name], 'Process')
+      }
+      & $ScriptBlock
+    } finally {
+      foreach ($name in $saved.Keys) {
+        [Environment]::SetEnvironmentVariable($name, $saved[$name], 'Process')
+      }
+    }
+  }
+
+  # End-to-end probe for the adapter. Invoke-AceOutpostMeteredPrompt places the harness
+  # sub-command ('exec') first in the child vector, which pwsh would read as a script name, so
+  # the adapter path needs a real executable that tolerates it. This mirrors the sibling
+  # adapter suite's compiled probe, reduced to what these tests read: the two marker names, one
+  # composed proxy name (proof the launch went through the core), and its pid. The record path
+  # is args[1] - the first caller-supplied argument after the harness sub-command.
+  $adapterFile = Join-Path $PSScriptRoot '..\..\public\Invoke-AceOutpostMeteredPrompt.ps1'
+  $script:adapterFilePath = (Resolve-Path $adapterFile).Path
+  $cscPath = 'C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe'
+  $script:adapterProbeExe = $null
+  if (Test-Path -LiteralPath $cscPath -PathType Leaf) {
+    $probeSource = Join-Path $TestDrive 'marker-probe.cs'
+    $script:adapterProbeExe = Join-Path $TestDrive 'marker-probe.exe'
+    Set-Content -LiteralPath $probeSource -Encoding utf8 -Value @'
+using System;
+using System.IO;
+using System.Text;
+class MarkerProbe {
+  static int Main(string[] args) {
+    var record = new StringBuilder();
+    foreach (var n in new[] { "ACEOUTPOST_METERED_INVOCATION", "ACEOUTPOST_METERED_PARENT_INVOCATION", "HTTPS_PROXY" }) {
+      var v = Environment.GetEnvironmentVariable(n);
+      record.AppendLine("ENV:" + n + "=" + (v == null ? "<null>" : Convert.ToBase64String(Encoding.UTF8.GetBytes(v))));
+    }
+    record.AppendLine("PID:" + System.Diagnostics.Process.GetCurrentProcess().Id);
+    if (args.Length > 1) { File.WriteAllText(args[1], record.ToString(), new UTF8Encoding(false)); }
+    return 0;
+  }
+}
+'@
+    $cscOutput = & $cscPath /nologo /target:exe "/out:$($script:adapterProbeExe)" $probeSource 2>&1
+    if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $script:adapterProbeExe)) {
+      throw "Marker probe compilation failed (exit $LASTEXITCODE): $cscOutput"
+    }
+  }
+
+  function ConvertFrom-MarkerProbeRecord {
+    param([string]$Path)
+    if (-not (Test-Path -LiteralPath $Path)) { return $null }
+    $environment = [ordered]@{}
+    $processId = $null
+    foreach ($line in (Get-Content -LiteralPath $Path)) {
+      if ($line.StartsWith('ENV:')) {
+        $pair = $line.Substring(4).Split('=', 2)
+        $environment[$pair[0]] = if ($pair[1] -eq '<null>') { $null } else { [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($pair[1])) }
+      } elseif ($line.StartsWith('PID:')) {
+        $processId = [int]$line.Substring(4)
+      }
+    }
+    [pscustomobject]@{ Env = $environment; Pid = $processId }
   }
 }
 
@@ -155,6 +244,28 @@ Describe 'Start-AceOutpostMeteredHarness' -Tag 'Unit' {
       $attribute = (Get-Command Start-AceOutpostMeteredHarness).Parameters['ArgumentList'].Attributes |
         Where-Object { $_ -is [System.Management.Automation.ParameterAttribute] }
       @($attribute).ValueFromRemainingArguments | Should -Contain $true
+    }
+
+    It 'declares the InvocationId and ParentInvocationId extension the adapter detects at run time' {
+      # Contract section 5.3. The adapter's forward-compatibility check is exactly this key
+      # lookup, so this is the seam that flips ChildMarkerDelivered.
+      $parameters = (Get-Command Start-AceOutpostMeteredHarness).Parameters
+      $parameters.ContainsKey('InvocationId') | Should -BeTrue
+      $parameters.ContainsKey('ParentInvocationId') | Should -BeTrue
+      $parameters['InvocationId'].Attributes |
+        Where-Object { $_ -is [System.Management.Automation.ValidateNotNullOrEmptyAttribute] } |
+        Should -Not -BeNullOrEmpty -Because 'an empty invocation id would stamp the child with nothing while claiming delivery'
+    }
+
+    It 'refuses an empty InvocationId before doing anything' {
+      $outPath = Join-Path $TestDrive 'empty-invocation-must-not-exist.json'
+      $arguments = @('-NonInteractive', '-File', $script:stubPath, $outPath)
+      {
+        Start-AceOutpostMeteredHarness -Client Codex -ProxyPort $script:proxyPort `
+          -StateDirectory $script:stateDirectory -HarnessPath $script:pwshPath `
+          -ArgumentList $arguments -InvocationId '' -Confirm:$false
+      } | Should -Throw -ExceptionType ([System.Management.Automation.ParameterBindingException])
+      Test-Path -LiteralPath $outPath | Should -BeFalse
     }
 
     It 'resolves the suite stub for Get-SecretATAP, never the real secret store' {
@@ -312,6 +423,156 @@ Describe 'Start-AceOutpostMeteredHarness' -Tag 'Unit' {
             $value | Should -Not -Match 'test-secret'
           }
         }
+      }
+    }
+  }
+
+  Context 'Invocation markers (Task 15.190.e contract section 5.3)' {
+
+    # The load-bearing property is OVERWRITE. The core copies the calling process's block into
+    # the child's, so a marker this process inherited from its own metered launch would flow into
+    # the child unchanged and stamp it with the grandparent's id. Each test below sets the
+    # inherited value on THIS process (Process scope, restored in finally) and asserts what the
+    # probe child actually received.
+
+    It 'overwrites an inherited invocation marker rather than setting it only when absent' {
+      Invoke-WithProcessEnvironment -Variables @{ $script:invocationMarkerName = 'stale-grandparent-id' } -ScriptBlock {
+        $launch = Invoke-ProbeLaunch -Client Codex -InvocationId 'child-id'
+        $launch.Captured | Should -Not -BeNullOrEmpty
+        $launch.Captured.Env.ACEOUTPOST_METERED_INVOCATION | Should -BeExactly 'child-id' -Because 'a set-if-absent core would preserve the stale inherited id (contract section 5.3)'
+        $launch.Captured.Env.ACEOUTPOST_METERED_INVOCATION | Should -Not -Be 'stale-grandparent-id'
+      }
+    }
+
+    It 'sets the invocation marker in the child when none is inherited' {
+      Invoke-WithProcessEnvironment -Variables @{ $script:invocationMarkerName = $null; $script:parentMarkerName = $null } -ScriptBlock {
+        $launch = Invoke-ProbeLaunch -Client Codex -InvocationId 'child-id'
+        $launch.Captured.Env.ACEOUTPOST_METERED_INVOCATION | Should -BeExactly 'child-id'
+        $launch.Captured.Env.ACEOUTPOST_METERED_PARENT_INVOCATION | Should -BeNullOrEmpty
+      }
+    }
+
+    It 'propagates the parent marker alongside the invocation marker' {
+      $launch = Invoke-ProbeLaunch -Client Codex -InvocationId 'c' -ParentInvocationId 'p'
+      $launch.Captured.Env.ACEOUTPOST_METERED_INVOCATION | Should -BeExactly 'c'
+      $launch.Captured.Env.ACEOUTPOST_METERED_PARENT_INVOCATION | Should -BeExactly 'p'
+    }
+
+    It 'overwrites an inherited parent marker when a parent id is supplied' {
+      Invoke-WithProcessEnvironment -Variables @{ $script:invocationMarkerName = 'stale-id'; $script:parentMarkerName = 'stale-parent-id' } -ScriptBlock {
+        $launch = Invoke-ProbeLaunch -Client Codex -InvocationId 'c' -ParentInvocationId 'p'
+        $launch.Captured.Env.ACEOUTPOST_METERED_INVOCATION | Should -BeExactly 'c'
+        $launch.Captured.Env.ACEOUTPOST_METERED_PARENT_INVOCATION | Should -BeExactly 'p'
+      }
+    }
+
+    It 'removes an inherited parent marker when no parent id is supplied' {
+      Invoke-WithProcessEnvironment -Variables @{ $script:parentMarkerName = 'stale-parent-id' } -ScriptBlock {
+        $launch = Invoke-ProbeLaunch -Client Codex -InvocationId 'c'
+        $launch.Captured.Env.ACEOUTPOST_METERED_INVOCATION | Should -BeExactly 'c'
+        $launch.Captured.Env.ACEOUTPOST_METERED_PARENT_INVOCATION |
+          Should -BeNullOrEmpty -Because 'a stale parent id must not be inherited into a call that has no parent'
+      }
+    }
+
+    It 'treats a whitespace or empty ParentInvocationId as absent and removes the inherited marker' -ForEach @(
+      @{ Parent = '' }
+      @{ Parent = '   ' }
+    ) {
+      Invoke-WithProcessEnvironment -Variables @{ $script:parentMarkerName = 'stale-parent-id' } -ScriptBlock {
+        $launch = Invoke-ProbeLaunch -Client Codex -InvocationId 'c' -ParentInvocationId $Parent
+        $launch.Captured.Env.ACEOUTPOST_METERED_INVOCATION | Should -BeExactly 'c'
+        $launch.Captured.Env.ACEOUTPOST_METERED_PARENT_INVOCATION | Should -BeNullOrEmpty
+      }
+    }
+
+    It 'leaves both markers exactly as inherited when InvocationId is not supplied' {
+      # Opt-in only. A caller that never bound -InvocationId gets the pre-extension behaviour:
+      # the child inherits whatever the caller carries, and nothing is stripped.
+      Invoke-WithProcessEnvironment -Variables @{ $script:invocationMarkerName = 'inherited-id'; $script:parentMarkerName = 'inherited-parent-id' } -ScriptBlock {
+        $launch = Invoke-ProbeLaunch -Client Codex
+        $launch.Captured.Env.ACEOUTPOST_METERED_INVOCATION | Should -BeExactly 'inherited-id'
+        $launch.Captured.Env.ACEOUTPOST_METERED_PARENT_INVOCATION | Should -BeExactly 'inherited-parent-id'
+      }
+    }
+
+    It 'ignores ParentInvocationId when InvocationId is not supplied' {
+      Invoke-WithProcessEnvironment -Variables @{ $script:invocationMarkerName = $null; $script:parentMarkerName = $null } -ScriptBlock {
+        $launch = Invoke-ProbeLaunch -Client Codex -ParentInvocationId 'orphan-parent'
+        $launch.Captured.Env.ACEOUTPOST_METERED_INVOCATION | Should -BeNullOrEmpty
+        $launch.Captured.Env.ACEOUTPOST_METERED_PARENT_INVOCATION | Should -BeNullOrEmpty -Because 'the parent marker is honoured only alongside an invocation id'
+      }
+    }
+
+    It 'does not report the marker names among the composed proxy variable names' {
+      # ComposedVariableNames is the proxy composition report; the markers are identifiers,
+      # not proxy configuration, and the existing assertion on that list must keep holding.
+      $launch = Invoke-ProbeLaunch -Client Codex -InvocationId 'c' -ParentInvocationId 'p'
+      $launch.Result.ComposedVariableNames | Should -Be @('HTTP_PROXY', 'HTTPS_PROXY', 'NO_PROXY', 'SSL_CERT_FILE')
+    }
+
+    It 'leaves the calling process block carrying exactly the marker values it had before (G2)' {
+      Invoke-WithProcessEnvironment -Variables @{ $script:invocationMarkerName = 'parent-own-id'; $script:parentMarkerName = 'parent-own-parent-id' } -ScriptBlock {
+        $null = Invoke-ProbeLaunch -Client Codex -InvocationId 'c' -ParentInvocationId 'p'
+        $null = Invoke-ProbeLaunch -Client Codex -InvocationId 'c'
+        [Environment]::GetEnvironmentVariable($script:invocationMarkerName, 'Process') | Should -BeExactly 'parent-own-id'
+        [Environment]::GetEnvironmentVariable($script:parentMarkerName, 'Process') | Should -BeExactly 'parent-own-parent-id'
+      }
+      Invoke-WithProcessEnvironment -Variables @{ $script:invocationMarkerName = $null; $script:parentMarkerName = $null } -ScriptBlock {
+        $null = Invoke-ProbeLaunch -Client Codex -InvocationId 'c' -ParentInvocationId 'p'
+        [Environment]::GetEnvironmentVariable($script:invocationMarkerName, 'Process') | Should -BeNullOrEmpty
+        [Environment]::GetEnvironmentVariable($script:parentMarkerName, 'Process') | Should -BeNullOrEmpty
+      }
+    }
+  }
+
+  Context 'End to end through the adapter (Invoke-AceOutpostMeteredPrompt)' {
+
+    BeforeAll {
+      if ($null -eq $script:adapterProbeExe) {
+        Set-ItResult -Skipped -Because 'csc.exe was not found; the adapter path needs a compiled probe that tolerates the harness sub-command'
+      }
+      . $script:adapterFilePath
+    }
+
+    It 'delivers the adapter''s own invocation id to the child and reports ChildMarkerDelivered' {
+      # The requirement contract section 5.3 left blocked. The adapter detects the extension by
+      # parameter lookup and passes its fresh id; the probe must see THAT id, not an inherited one.
+      Invoke-WithProcessEnvironment -Variables @{ $script:invocationMarkerName = $null; $script:parentMarkerName = $null } -ScriptBlock {
+        $outPath = Join-Path $TestDrive ("adapter-probe-{0}.txt" -f ([guid]::NewGuid().ToString('N')))
+        $result = Invoke-AceOutpostMeteredPrompt -Client Codex -Prompt 'a plain prompt' `
+          -ProxyPort $script:proxyPort -StateDirectory $script:stateDirectory `
+          -HarnessPath $script:adapterProbeExe -Confirm:$false -ArgumentList @($outPath)
+        $captured = ConvertFrom-MarkerProbeRecord -Path $outPath
+
+        $result.ChildMarkerDelivered | Should -BeTrue
+        $result.ExitCode | Should -Be 0
+        $result.InvocationId | Should -Match '^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$'
+        $captured | Should -Not -BeNullOrEmpty
+        $captured.Env.ACEOUTPOST_METERED_INVOCATION | Should -BeExactly $result.InvocationId
+        $captured.Env.ACEOUTPOST_METERED_PARENT_INVOCATION | Should -BeNullOrEmpty -Because 'this call has no metered parent'
+        $captured.Env.HTTPS_PROXY | Should -Be "http://test-user:test-secret@127.0.0.1:$($script:proxyPort)" -Because 'the launch must have gone through the core'
+        $captured.Pid | Should -Be $result.HarnessProcessId
+      }
+    }
+
+    It 'stamps a nested call''s child with the nested id and its parent, never the stale inherited id' {
+      # The stale-inheritance finding, end to end: this process carries a parent's marker (as it
+      # would inside a metered launch), the adapter reads it as ParentInvocationId, and the child
+      # must receive the adapter's NEW id as its invocation and the inherited one as its parent.
+      Invoke-WithProcessEnvironment -Variables @{ $script:invocationMarkerName = 'outer-invocation-id'; $script:parentMarkerName = $null } -ScriptBlock {
+        $outPath = Join-Path $TestDrive ("adapter-nested-{0}.txt" -f ([guid]::NewGuid().ToString('N')))
+        $result = Invoke-AceOutpostMeteredPrompt -Client Codex -Prompt 'nested prompt' `
+          -ProxyPort $script:proxyPort -StateDirectory $script:stateDirectory `
+          -HarnessPath $script:adapterProbeExe -Confirm:$false -ArgumentList @($outPath)
+        $captured = ConvertFrom-MarkerProbeRecord -Path $outPath
+
+        $result.ParentInvocationId | Should -BeExactly 'outer-invocation-id'
+        $result.NestingEvidence | Should -Contain 'EnvironmentMarker'
+        $result.ChildMarkerDelivered | Should -BeTrue
+        $captured.Env.ACEOUTPOST_METERED_INVOCATION | Should -BeExactly $result.InvocationId
+        $captured.Env.ACEOUTPOST_METERED_INVOCATION | Should -Not -Be 'outer-invocation-id' -Because 'the grandchild must not be stamped with the grandparent id (contract section 5.3)'
+        $captured.Env.ACEOUTPOST_METERED_PARENT_INVOCATION | Should -BeExactly 'outer-invocation-id'
       }
     }
   }

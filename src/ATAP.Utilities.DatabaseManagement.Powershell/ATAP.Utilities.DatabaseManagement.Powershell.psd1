@@ -78,7 +78,7 @@
     'Get-InstantiationVersionRuleGraph',
     'Initialize-SqlServiceLogin', 'Install-SqlServerInstance',
     'Invoke-DatabasePackageRehearsal', 'Invoke-Flyway', 'Invoke-FlywayRehearsal',
-    'Invoke-SqlServerBackup', 'New-CobianAppJobs', 'New-CobianSqlJobs',
+    'Invoke-SqlServerBackup', 'Publish-SqlServerBackupArtifact', 'New-CobianAppJobs', 'New-CobianSqlJobs',
     'New-ConnectionStringBuilderFromDbaTools', 'New-DatabaseChangePackage',
     'New-DatabasePreMigrationSnapshot', 'New-DeveloperScratchDb',
     'New-FeatureSharedDb', 'Remove-DeveloperScratchDb',
@@ -150,4 +150,3 @@
     # DefaultCommandPrefix = ''
 
 }
-

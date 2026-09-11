@@ -73,6 +73,7 @@ and backup automation in the ATAP 5-tier ecosystem.
 | Cmdlet                   | File                                                                   | Synopsis                                                                                                                                                                                                                  |
 | ------------------------ | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Invoke-SqlServerBackup` | [public/Invoke-SqlServerBackup.ps1](public/Invoke-SqlServerBackup.ps1) | Backs up a SQL Server database (`localhost\Production`) to `C:\Dropbox\Backups\utat022\<DatabaseName>\`. Supports Full and Differential backup types; uses dbatools. Intended to be called from Cobian Backup pre-events. |
+| `Publish-SqlServerBackupArtifact` | [public/Publish-SqlServerBackupArtifact.ps1](public/Publish-SqlServerBackupArtifact.ps1) | Publishes a verified local SQL Server backup copy without overwriting an existing destination, preserving staging and requiring verified metadata including encryption state; source-only until the next release. |
 | `New-CobianSqlJobs`      | [public/New-CobianSqlJobs.ps1](public/New-CobianSqlJobs.ps1)           | Creates four Cobian Reflector Dummy tasks (with pre-events) that invoke `Invoke-SqlServerBackup.ps1` for nightly ProGet and BuildMaster SQL backups. Writes directly to Cobian's `MainList.lst`.                          |
 | `New-CobianAppJobs`      | [New-CobianAppJobs](public/New-CobianAppJobs.ps1)                      | Autoloaded function. Creates five Cobian Reflector file-copy tasks for backing up ProGet and BuildMaster application-data directories and the Cobian configuration itself.                                                |
 
@@ -137,6 +138,8 @@ Scripts superseded by newer cmdlets; retained for reference.
 | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | [tests/PesterConfiguration.psd1](tests/PesterConfiguration.psd1) | Pester 5 configuration for this module's test suite                                       |
 | [tests/Unit](tests/Unit)                                         | Unit tests for naming, lifecycle cmdlets, and Flyway rehearsal behavior                   |
+| [tests/Unit/SqlServerBackupPublication.Tests.ps1](tests/Unit/SqlServerBackupPublication.Tests.ps1) | 42 publisher tests covering safe local copy/hash publication and verified metadata; handoff evidence is under [`Task-15.192.f.publisher`](../../_generated/Sprint0015/Recovery20260911/Task-15.192.f.publisher). |
+| [tests/Unit/ATAP.Utilities.DatabaseManagement.Powershell.ExportConsistency.Tests.ps1](tests/Unit/ATAP.Utilities.DatabaseManagement.Powershell.ExportConsistency.Tests.ps1) | 4 export-consistency tests for the module manifest and publisher export surface. |
 | [tests/Integration](tests/Integration)                           | Opt-in `EXPWHERTZING`/Flyway rehearsal test; set `ATAP_RUN_DB_INTEGRATION_TESTS=1` to run |
 
 ---

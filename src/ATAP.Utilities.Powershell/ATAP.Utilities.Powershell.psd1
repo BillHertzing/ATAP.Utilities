@@ -86,7 +86,7 @@
     'Get-ScheduledTasks', 'Get-SIDfromAccountName',
     'Get-TopologicalSort', 'Get-UniqueFileBaseNames',
     'Get-ViewOfProfiles', 'Import-EnvFile',
-    'Initialize-BitwardenSession', 'Invoke-DocumentationInventory',
+    'Initialize-BitwardenSession', 'Invoke-AceOutpostMeteredPrompt', 'Invoke-DocumentationInventory',
     'Invoke-ProvisionInedoServiceAccounts',
     'Invoke-SetInedoServiceLogonAccounts',
     'Invoke-StartupTaskRegistrationTest', 'Invoke-Webserver',

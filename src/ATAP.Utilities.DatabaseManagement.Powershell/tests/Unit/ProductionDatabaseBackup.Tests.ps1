@@ -52,6 +52,12 @@ Describe 'Production backup artifact protection' {
 }
 
 Describe 'Production-only scheduling contract' {
+  BeforeEach {
+    Mock Get-ScheduledTask { $null }
+    Mock Get-Module { [pscustomobject]@{ Version = [version]'0.1.20' } }
+
+    Mock Register-ScheduledTask { [pscustomobject]@{} }
+  }
   It 'returns exactly two fixed Production tasks under WhatIf without resolving credentials' {
     Mock Get-SecretATAP { throw 'must not run under WhatIf' }
     $result = @(Install-ProductionDatabaseBackupScheduledTasks -WhatIf)
@@ -69,6 +75,17 @@ Describe 'Production-only scheduling contract' {
     $source | Should -Match 'dbEncryption\.ATAPUtilities\.Production'
     $source | Should -Not -Match '(?i)BuildSets|BuildMaster|ProGet|QA|Integration|Development|Experimental'
   }
+
+  It 'derives the local Windows identity and uses a scalar secret only as its Task Scheduler password' {
+    Mock Get-SecretATAP { 'unit-test-task-password' }
+
+    $result = @(Install-ProductionDatabaseBackupScheduledTasks -ModuleVersion '0.1.20' -Confirm:$false)
+
+    $result | Should -HaveCount 2
+    Should -Invoke Register-ScheduledTask -Times 2 -ParameterFilter {
+      $User -eq "$env:COMPUTERNAME\SvcSQLServer" -and $Password -eq 'unit-test-task-password'
+    }
+  }
 }
 
 Describe 'Production-only invocation and health contracts' {
@@ -78,6 +95,8 @@ Describe 'Production-only invocation and health contracts' {
     $source | Should -Match 'Checksum\s*=\s*\$true'
     $source | Should -Match 'Restore-SqlServerBackupArtifact'
     $source | Should -Match 'Publish-SqlServerBackupArtifact'
+    $source | Should -Match 'Join-Path \(Join-Path \$LocalDBsRoot \$Environment\.ToUpperInvariant\(\)\) ''Backup'''
+    $source | Should -Not -Match 'FastTempBasePathConfigRootKey'
   }
 
   It 'defaults health to only Production ATAPUtilities with 24-hour coverage and SIMPLE recovery' {
@@ -90,10 +109,10 @@ Describe 'Production-only invocation and health contracts' {
     $source | Should -Not -Match 'BuildSets'
   }
 
-  It 'exports every production backup command and prepares package version 0.1.19' {
+  It 'exports every production backup command and prepares package version 0.1.20' {
     $manifest = Import-PowerShellDataFile (Join-Path $moduleRoot 'ATAP.Utilities.DatabaseManagement.Powershell.psd1')
     $version = Get-Content -LiteralPath (Join-Path $moduleRoot 'version.json') -Raw | ConvertFrom-Json
-    $version.version | Should -Be '0.1.19'
+    $version.version | Should -Be '0.1.20'
     foreach ($name in @('Invoke-SqlServerBackup','Protect-SqlServerBackupArtifact','Restore-SqlServerBackupArtifact','Publish-SqlServerBackupArtifact','Install-ProductionDatabaseBackupScheduledTasks','Test-DatabaseBackupHealth')) {
       $manifest.FunctionsToExport | Should -Contain $name
     }

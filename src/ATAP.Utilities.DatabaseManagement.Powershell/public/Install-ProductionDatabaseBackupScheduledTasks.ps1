@@ -7,7 +7,10 @@ function Install-ProductionDatabaseBackupScheduledTasks {
   Creates exactly one Sunday full-backup task and one Monday-through-Saturday
   differential-backup task. The generated actions are fixed to ATAPUtilities,
   Production at localhost,50020, and dbEncryption.ATAPUtilities.Production.
-  There is no parameter surface for another database or instance.
+  There is no parameter surface for another database or instance. SQL uses
+  Windows integrated security under the local SvcSQLServer account. The
+  host-suffixed SvcSQLServer SecretName stores only that account's password;
+  the username is derived from the local computer name.
 
   .PARAMETER ModuleVersion
   Exact installed module version the scheduled actions import.
@@ -22,8 +25,8 @@ function Install-ProductionDatabaseBackupScheduledTasks {
   [OutputType([PSCustomObject[]])]
   param(
     [Parameter()]
-    [ValidatePattern('^0\.1\.19$')]
-    [string] $ModuleVersion = '0.1.19',
+    [ValidatePattern('^0\.1\.20$')]
+    [string] $ModuleVersion = '0.1.20',
 
     [Parameter()]
     [datetime] $StartTime = [datetime]::Today.AddHours(2).AddMinutes(20)
@@ -33,6 +36,7 @@ function Install-ProductionDatabaseBackupScheduledTasks {
     $fn = $MyInvocation.MyCommand.Name
     $mn = 'ATAP.Utilities.DatabaseManagement.Powershell'
     $taskPath = '\ATAP\DatabaseBackup\'
+    $taskUserName = '{0}\SvcSQLServer' -f $env:COMPUTERNAME
     $credentialSecretName = 'SvcSQLServer.{0}' -f $env:COMPUTERNAME.ToLowerInvariant()
     $encryptionSecretName = 'dbEncryption.ATAPUtilities.Production'
     $definitions = @(
@@ -61,16 +65,20 @@ function Install-ProductionDatabaseBackupScheduledTasks {
     }
 
     $credentialRecord = Get-SecretATAP -SecretName $credentialSecretName -SecretStoreType 'BitwardenSecretsManager' -ErrorAction Stop
-    if ($credentialRecord -is [pscredential]) {
-      $taskUserName = $credentialRecord.UserName
+    if ($credentialRecord -is [securestring]) {
+      $taskPassword = [System.Net.NetworkCredential]::new('', $credentialRecord).Password
+    }
+    elseif ($credentialRecord -is [pscredential]) {
       $taskPassword = $credentialRecord.GetNetworkCredential().Password
     }
+    elseif ($credentialRecord -is [string]) {
+      $taskPassword = $credentialRecord
+    }
     else {
-      $taskUserName = [string]$credentialRecord.username
       $taskPassword = [string]$credentialRecord.password
     }
-    if ([string]::IsNullOrWhiteSpace($taskUserName) -or [string]::IsNullOrWhiteSpace($taskPassword)) {
-      throw "Credential SecretName '$credentialSecretName' must resolve to username and password fields."
+    if ([string]::IsNullOrWhiteSpace($taskPassword)) {
+      throw "Credential SecretName '$credentialSecretName' must resolve to the password for '$taskUserName'."
     }
 
     $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Hours 4)

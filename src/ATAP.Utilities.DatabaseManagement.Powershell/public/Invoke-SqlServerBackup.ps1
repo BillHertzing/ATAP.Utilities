@@ -13,7 +13,6 @@
     $global:Settings keyed by $global:ConfigRootKeys:
         LocalDBsRootPathConfigRootKey                 -> instance-local staging root (C:/LocalDBs)
         DatabaseBackupPublicationRootConfigRootKey    -> off-host publication root (C:/Dropbox/Backups)
-        FastTempBasePathConfigRootKey                 -> fast staging scratch
     The host namespace is derived from ComputerName (lowercased), so UTAT022 publishes
     under .../utat022 and UTAT01 under .../utat01 with no per-host edits.
     If a required root cannot be resolved the function throws rather than guessing a path.
@@ -57,13 +56,10 @@
     with no per-host edit. All subdirectories in this tree sync offsite via Dropbox.
 
 .PARAMETER TemporaryDirectory
-    Staging directory to which the .bak file is written during the backup operation.
-    Once the backup and verification are complete, the file is moved from this directory
-    to the per-database subdirectory under BackupRoot.
-    Writing first to a fast local temp drive (e.g. a RAM disk or NVMe scratch volume)
-    reduces I/O contention on the Dropbox-synced backup destination.
-    Default: <FastTempBasePath>\CobianReflectorBackup  (resolved from
-    $global:Settings[$global:ConfigRootKeys['FastTempBasePathConfigRootKey']]).
+    Instance-local backup root to which SQL Server writes the .bak file. The database
+    name is appended by the function. Defaults to
+    <LocalDBsRoot>\PRODUCTION\Backup, producing the canonical production staging path
+    C:\LocalDBs\PRODUCTION\Backup\ATAPUtilities for the protected database.
 
 .PARAMETER CompressBackup
     When specified, enables SQL Server native backup compression.
@@ -295,12 +291,12 @@ begin {
     }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Resolved LocalDBsRoot=[$LocalDBsRoot] DatabaseBackupPublicationRoot=[$DatabaseBackupPublicationRoot] ComputerName=[$ComputerName] BackupRoot=[$BackupRoot]."
 
-    # Check and populate TemporaryDirectory parameter
-    $fastTempKey = $global:ConfigRootKeys['FastTempBasePathConfigRootKey']
-    $fastTempDefault = if ($fastTempKey -and $effectiveSettings -and $effectiveSettings.ContainsKey($fastTempKey)) { Join-Path $effectiveSettings[$fastTempKey] 'CobianReflectorBackup' } else { $null }
-    $TemporaryDirectory = Get-PVal -ParameterName 'TemporaryDirectory' -originalPSBoundParameters $PSBoundParameters -DefaultValue $fastTempDefault -AllowMissing
+    # SQL Server writes only beneath the instance-local policy root. The per-database
+    # directory is appended later, producing .../PRODUCTION/Backup/ATAPUtilities.
+    $instanceBackupRoot = Join-Path (Join-Path $LocalDBsRoot $Environment.ToUpperInvariant()) 'Backup'
+    $TemporaryDirectory = Get-PVal -ParameterName 'TemporaryDirectory' -originalPSBoundParameters $PSBoundParameters -DefaultValue $instanceBackupRoot -AllowMissing
     if ([string]::IsNullOrWhiteSpace($TemporaryDirectory)) {
-        $msg = "TemporaryDirectory could not be resolved. Set the '$fastTempKey' host setting or pass -TemporaryDirectory explicitly."
+        $msg = 'TemporaryDirectory could not be resolved from the instance-local backup root.'
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
         throw $msg
     }

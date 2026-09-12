@@ -25,8 +25,8 @@ function Install-ProductionDatabaseBackupScheduledTasks {
   [OutputType([PSCustomObject[]])]
   param(
     [Parameter()]
-    [ValidatePattern('^0\.1\.20$')]
-    [string] $ModuleVersion = '0.1.20',
+    [ValidatePattern('^0\.1\.21$')]
+    [string] $ModuleVersion = '0.1.21',
 
     [Parameter()]
     [datetime] $StartTime = [datetime]::Today.AddHours(2).AddMinutes(20)
@@ -85,7 +85,7 @@ function Install-ProductionDatabaseBackupScheduledTasks {
     foreach ($definition in $definitions) {
       $commandText = @"
 Import-Module '$mn' -RequiredVersion '$ModuleVersion' -ErrorAction Stop
-Invoke-SqlServerBackup -DatabaseName 'ATAPUtilities' -Environment 'Production' -SqlInstance 'localhost,50020' -BackupType '$($definition.Type)' -UseTrustedConnection -ProtectAndPublish -EncryptionSecretName '$encryptionSecretName' -Confirm:`$false
+Invoke-SqlServerBackup -DatabaseName 'ATAPUtilities' -Environment 'Production' -SqlInstance 'localhost,50020' -BackupType '$($definition.Type)' -UseTrustedConnection -ProtectAndPublish -EncryptionSecretName '$encryptionSecretName' -TrustServerCertificate -Confirm:`$false
 "@
       $encodedCommand = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($commandText))
       $action = New-ScheduledTaskAction -Execute 'pwsh.exe' -Argument "-EncodedCommand $encodedCommand"

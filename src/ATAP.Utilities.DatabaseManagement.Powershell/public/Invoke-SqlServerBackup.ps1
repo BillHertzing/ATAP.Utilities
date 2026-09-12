@@ -61,6 +61,11 @@
     <LocalDBsRoot>\PRODUCTION\Backup, producing the canonical production staging path
     C:\LocalDBs\PRODUCTION\Backup\ATAPUtilities for the protected database.
 
+.PARAMETER TrustServerCertificate
+    Keeps SQL transport encryption enabled while accepting the certificate presented by
+    the fixed local Production endpoint. This override is permitted only with the
+    Production-only ProtectAndPublish workflow.
+
 .PARAMETER CompressBackup
     When specified, enables SQL Server native backup compression.
     Omit (default) for SQL Server Express Edition, which does not support compression.
@@ -217,7 +222,10 @@ function Invoke-SqlServerBackup {
 
     [Parameter()]
     [ValidateSet('dbEncryption.ATAPUtilities.Production')]
-    [string] $EncryptionSecretName = 'dbEncryption.ATAPUtilities.Production'
+    [string] $EncryptionSecretName = 'dbEncryption.ATAPUtilities.Production',
+
+    [Parameter()]
+    [switch] $TrustServerCertificate
 
     # SCAFFOLD: multi-machine (Explainer 0022, section 4B)
     # The path half of this scaffold is implemented (Task 15.192): ComputerName,
@@ -238,6 +246,10 @@ begin {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
         throw $msg
     }
+    if ($TrustServerCertificate.IsPresent -and -not $ProtectAndPublish.IsPresent) {
+        throw 'TrustServerCertificate is restricted to the Production-only ProtectAndPublish workflow.'
+    }
+
     if ($ProtectAndPublish.IsPresent -and ($CompressBackup.IsPresent -or $SevenZipCompress.IsPresent)) {
         throw 'ProtectAndPublish performs its own compression and cannot be combined with CompressBackup or SevenZipCompress.'
     }
@@ -358,6 +370,7 @@ begin {
 
     $resolvedSqlConnection = $resolution.Connection
     $resolvedConnectionOwnedByFunction = -not [bool]$resolution.IsCallerOwned
+    $backupDbaConnection = $null
 
     $resolvedConnectionStringBuilder = [Microsoft.Data.SqlClient.SqlConnectionStringBuilder]::new($resolvedSqlConnection.ConnectionString)
     $SqlInstance = $resolvedConnectionStringBuilder.DataSource
@@ -400,12 +413,6 @@ begin {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "7-Zip found: $sevenZipExe"
     }
 
-    # SCAFFOLD: dbatools-config (Explainer 0022, section 4B / inconsistency C-04)
-    # ATAP.Utilities database scripts set these before every dbaTools call; this script does not.
-    # Add:
-    #   Set-DbatoolsConfig -FullName 'sql.connection.trustcert' -Value $true
-    #   Set-DbatoolsConfig -FullName 'sql.connection.encrypt'   -Value $false
-    # or make them parameters so callers can control TLS policy per environment.
 
     # Build per-database backup subdirectory (final destination)
     $backupDir = Join-Path $BackupRoot $DatabaseName
@@ -436,8 +443,21 @@ process {
     try {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Initiating $BackupType backup → $tempFilePath (staging), then → $backupFilePath"
 
+        $backupSqlInstance = $SqlInstance
+        if ($TrustServerCertificate.IsPresent) {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Using the approved encrypted-loopback SQL certificate trust override for localhost,50020.'
+            $backupDbaConnection = Connect-DbaInstance `
+                -SqlInstance $SqlInstance `
+                -Database $DatabaseName `
+                -EncryptConnection `
+                -TrustServerCertificate `
+                -AllowTrustServerCertificate `
+                -DisableException:$false
+            $backupSqlInstance = $backupDbaConnection
+        }
+
         $backupParams = @{
-            SqlInstance     = $SqlInstance
+            SqlInstance     = $backupSqlInstance
             Database        = $DatabaseName
             Path            = $tempDir
             FilePath        = $backupFileName
@@ -551,6 +571,9 @@ process {
         }
         throw
     } finally {
+        if ($null -ne $backupDbaConnection) {
+            $backupDbaConnection.ConnectionContext.Disconnect()
+        }
         if ($resolvedConnectionOwnedByFunction -and $null -ne $resolvedSqlConnection) {
             $resolvedSqlConnection.Dispose()
         }

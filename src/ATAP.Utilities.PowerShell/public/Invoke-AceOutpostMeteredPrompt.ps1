@@ -19,9 +19,12 @@ function Invoke-AceOutpostMeteredPrompt {
     Fail-closed behaviour is inherited from the core and is not softened. A dead listener, a
     missing interception root, or an unresolvable credential is a terminating error here, exactly
     as it is in the core, so a skill can never believe it ran metered when it did not. The function
-    never sets NODE_TLS_REJECT_UNAUTHORIZED, never writes an environment variable at any scope,
+    never disables TLS verification, never writes an environment variable at any scope,
     never builds a proxy URL, and never carries a credential value; only a SecretName moves, and it
-    is passed to the core untouched.
+    is passed to the core untouched. For Claude Code only, the adapter also supplies an
+    invocation-scoped --settings document that points Node at the same public interception-root
+    PEM already preflighted by the core and explicitly keeps TLS verification enabled. This is
+    child configuration, not an ambient or durable environment mutation.
 
     NESTED INVOCATIONS. A skill running inside a metered harness can launch another metered
     harness. Every call generates its own InvocationId and records two independent lines of
@@ -39,12 +42,10 @@ function Invoke-AceOutpostMeteredPrompt {
       Codex      - the harness's own provider traffic is metered. Its tool shells are not: Codex's
                    shell_environment_policy inherit = "core" strips every proxy and CA variable
                    from the shells it spawns (Task 15.190.f section 2.5). Harness traffic only.
-      ClaudeCode - accepted because the core accepts it, but a metered launch DOES NOT WORK TODAY.
-                   claude.exe does not trust the interception root via any trust variable (packet
-                   open question Q3), so the child fails at its first TLS handshake. If Q3 were
-                   resolved, a second blocker applies: claude.exe passes its whole block to every
-                   tool shell, so restore and package traffic from inside the session would be
-                   routed at the listener (Task 15.190.f section 4). Neither is papered over here.
+      ClaudeCode - the harness's own provider traffic is metered. The adapter supplies the proven
+                   invocation-scoped Node CA settings automatically. Claude tool shells inherit
+                   the harness block, so commands launched as tools may also route through the
+                   listener (Task 15.190.f section 4); child-tool isolation is not claimed.
   .PARAMETER Client
     The AceOutpost client identity: ClaudeCode or Codex. Passed to the core as-is.
   .PARAMETER Prompt
@@ -53,7 +54,8 @@ function Invoke-AceOutpostMeteredPrompt {
   .PARAMETER ArgumentList
     Additional harness arguments (for example a model or output-format flag). Collected from the
     remaining arguments and placed, in order, between the harness's non-interactive flag and the
-    end-of-options marker. Never interpreted here.
+    end-of-options marker. Claude Code callers must not supply --settings or --settings=; that
+    option is reserved for the adapter's fail-closed CA trust document.
   .PARAMETER OmitEndOfOptionsMarker
     Suppresses the '--' placed before the prompt. Both harness CLIs are expected to honour '--' as
     end-of-options; this switch exists only so a caller can work around a harness that does not,
@@ -65,7 +67,9 @@ function Invoke-AceOutpostMeteredPrompt {
   .PARAMETER CredentialSecretName
     SecretName passed through to the core when bound, untouched. This function never resolves it.
   .PARAMETER StateDirectory
-    Passed through to the core when bound. Otherwise the core's own default applies.
+    AceOutpost state directory containing the public interception-root PEM. Defaults to the same
+    ProgramData path as the core and is always passed through so Claude's settings use the exact
+    PEM path that the core preflights.
   .PARAMETER WorkingDirectory
     Passed through to the core when bound. Otherwise the core's own default applies.
   .PARAMETER HarnessPath
@@ -96,17 +100,11 @@ function Invoke-AceOutpostMeteredPrompt {
     that in the Codex CLI '-p' is --profile, so the form 'codex exec -p <prompt>' that appears in
     earlier packet text would be misparsed; this function never emits it.
 
-    Specified, blocked on a core change: for the environment-marker half of nested identification
-    to reach the child, Start-AceOutpostMeteredHarness needs to accept an InvocationId and a
-    ParentInvocationId and write them into the composed block as ACEOUTPOST_METERED_INVOCATION and
-    ACEOUTPOST_METERED_PARENT_INVOCATION - OVERWRITING any inherited value, not merely setting it
-    when absent. The core copies the current block into the child's, so today an inherited marker
-    flows through unchanged and a harness launched from a nested call is stamped with its
-    grandparent's id (proven in this function's test suite). This function detects the extension
-    at run time and passes the ids when the core offers the parameters; until then
-    ChildMarkerDelivered is false. Even once it lands, Codex's inherit = "core" strips the marker
-    from its tool shells, which is why the process-ancestry mechanism is the one that carries
-    nested identification today.
+    The core now accepts InvocationId and ParentInvocationId and overwrites stale inherited
+    markers in the child block. This function still detects those parameters at run time so an
+    older installed core fails observably through ChildMarkerDelivered rather than receiving an
+    unsupported parameter. Codex's inherit = "core" strips the marker from its tool shells, which
+    is why process ancestry remains the second nested-identification signal.
   .LINK
     Start-AceOutpostMeteredHarness
   #>
@@ -133,7 +131,7 @@ function Invoke-AceOutpostMeteredPrompt {
     [string]$CredentialSecretName,
 
     [ValidateNotNullOrEmpty()]
-    [string]$StateDirectory,
+    [string]$StateDirectory = 'C:\ProgramData\ATAP\AceOutpostService\state',
 
     [ValidateScript({ Test-Path -LiteralPath $_ -PathType Container })]
     [string]$WorkingDirectory,
@@ -164,7 +162,7 @@ function Invoke-AceOutpostMeteredPrompt {
         ClientId      = 'claude-code'
         Executable    = 'claude'
         HarnessFlag   = @('-p')
-        MeteringClaim = 'Blocked: a metered ClaudeCode launch does not work today. claude.exe rejects the interception root via every trust variable (packet Q3), so the child fails at TLS; and claude.exe passes its block to every tool shell, so tool traffic would be routed at the listener (15.190.f section 4).'
+        MeteringClaim = 'Harness traffic is metered: Claude Code receives the proven invocation-scoped Node CA settings automatically. Claude tool shells inherit the harness block, so child-tool isolation is not claimed and their traffic may also route through the listener (15.190.f section 4).'
       }
       Codex      = @{
         ClientId      = 'codex'
@@ -218,22 +216,48 @@ function Invoke-AceOutpostMeteredPrompt {
     if ($null -ne $ancestorHarnessProcessId) { $nestingEvidence += 'ProcessAncestry' }
     $isNested = $nestingEvidence.Count -gt 0
 
-    # Compose the child vector as DISCRETE items. Order: harness flag(s), caller arguments, the
-    # end-of-options marker, the prompt. Nothing is joined, quoted, or inspected.
+    # Compose the child vector as DISCRETE items. Claude's --settings value is generated from the
+    # same public PEM path the core preflights. A caller-supplied settings option is rejected so
+    # option ordering cannot silently replace or weaken the required trust contract.
+    $automaticClientArguments = [System.Collections.Generic.List[string]]::new()
+    if ($Client -eq 'ClaudeCode') {
+      $conflictingSettingsArgument = $ArgumentList | Where-Object {
+        $_ -ieq '--settings' -or $_ -like '--settings=*'
+      } | Select-Object -First 1
+      if ($null -ne $conflictingSettingsArgument) {
+        throw 'ClaudeCode ArgumentList must not contain --settings or --settings=; the metered adapter reserves that option for its invocation-scoped CA trust document.'
+      }
+
+      $rootPem = Join-Path -Path $StateDirectory -ChildPath 'AceOutpost-Interception-Root.pem'
+      $claudeTrustSettings = [ordered]@{
+        env = [ordered]@{
+          NODE_EXTRA_CA_CERTS          = $rootPem
+          NODE_USE_SYSTEM_CA           = '1'
+          NODE_TLS_REJECT_UNAUTHORIZED = '1'
+        }
+      } | ConvertTo-Json -Depth 3 -Compress
+      $automaticClientArguments.Add('--settings')
+      $automaticClientArguments.Add($claudeTrustSettings)
+    }
+
+    # Order: harness flag(s), caller arguments, automatic client arguments, end-of-options marker,
+    # prompt. Nothing is joined or re-quoted; only the reserved Claude settings option is inspected.
     $childArguments = [System.Collections.Generic.List[string]]::new()
     foreach ($flag in $clientSetting.HarnessFlag) { $childArguments.Add($flag) }
     foreach ($argument in $ArgumentList) { $childArguments.Add($argument) }
+    foreach ($argument in $automaticClientArguments) { $childArguments.Add($argument) }
     if (-not $OmitEndOfOptionsMarker) { $childArguments.Add('--') }
     $childArguments.Add($Prompt)
 
     # Pass-through to the core: only what the caller bound, so the core's own defaults govern.
     $coreParameters = @{
-      Client       = $Client
-      LaunchMode   = 'Wait'
-      ArgumentList = $childArguments.ToArray()
-      Confirm      = $false
+      Client         = $Client
+      LaunchMode     = 'Wait'
+      ArgumentList   = $childArguments.ToArray()
+      StateDirectory = $StateDirectory
+      Confirm        = $false
     }
-    foreach ($name in @('ProxyPort', 'NoProxy', 'CredentialSecretName', 'StateDirectory', 'WorkingDirectory', 'HarnessPath')) {
+    foreach ($name in @('ProxyPort', 'NoProxy', 'CredentialSecretName', 'WorkingDirectory', 'HarnessPath')) {
       if ($PSBoundParameters.ContainsKey($name)) { $coreParameters[$name] = $PSBoundParameters[$name] }
     }
 
@@ -250,7 +274,7 @@ function Invoke-AceOutpostMeteredPrompt {
     }
 
     if ($Client -eq 'ClaudeCode') {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Invocation $invocationId targets ClaudeCode: a metered ClaudeCode launch is blocked on packet Q3 and is expected to fail at TLS in the harness. Nothing here works around that."
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Invocation $invocationId targets ClaudeCode with the adapter-owned invocation-scoped CA settings."
     }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Invocation $invocationId ($Client) parent=$(if ($null -ne $parentInvocationId) { $parentInvocationId } else { '<none>' }) ancestorHarness=$(if ($null -ne $ancestorHarnessProcessId) { "$ancestorHarnessName/$ancestorHarnessProcessId" } else { '<none>' }) caller=$PID argumentCount=$($childArguments.Count)."
 

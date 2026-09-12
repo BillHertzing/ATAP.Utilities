@@ -224,9 +224,11 @@ is its terminal adapter. A child marker overwrites the inherited marker and reco
 its parent marker. The launch and prompt contracts are covered by
 [Start-AceOutpostMeteredHarness.Tests.ps1](tests/Unit/Start-AceOutpostMeteredHarness.Tests.ps1)
 and [Invoke-AceOutpostMeteredPrompt.Tests.ps1](tests/Unit/Invoke-AceOutpostMeteredPrompt.Tests.ps1).
-`version.json` records module version `0.2.4`, installed AllUsers on UTAT022; exact
-deployment evidence is in
-[`deployment.md`](../../_generated/Sprint0015/Recovery20260911/Task-15.190.e.deploy024/deployment.md).
+For Claude Code, the prompt adapter automatically supplies invocation-scoped Node CA
+settings derived from the same public PEM path the core preflights, rejects conflicting
+caller `--settings` options, and keeps TLS verification enabled. `version.json` records
+module version `0.2.5`; release and deployment evidence is written beneath
+`_generated/Sprint0015/Task15.190/`.
 
 ## Profiled remoting endpoint functions
 

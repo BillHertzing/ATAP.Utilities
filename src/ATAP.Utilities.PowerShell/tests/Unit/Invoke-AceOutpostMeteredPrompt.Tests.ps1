@@ -207,7 +207,7 @@ Describe 'Invoke-AceOutpostMeteredPrompt' -Tag 'Unit' {
       $source | Should -Not -Match '\$env:'
       $source | Should -Not -Match 'EnvironmentVariableTarget'
       $source | Should -Not -Match '@127\.0\.0\.1'
-      $source | Should -Not -Match "NODE_TLS_REJECT_UNAUTHORIZED\s*(=|'\s*\])"
+      $source | Should -Not -Match 'NODE_TLS_REJECT_UNAUTHORIZED\s*=\s*[''"]?0' -Because 'the adapter may explicitly enforce TLS verification with value 1 but must never disable it'
     }
   }
 
@@ -226,6 +226,34 @@ Describe 'Invoke-AceOutpostMeteredPrompt' -Tag 'Unit' {
       $claude.Captured.Args[0] | Should -BeExactly '-p'
       $codex = Invoke-ProbePrompt -Client Codex -Prompt 'x'
       $codex.Captured.Args[0] | Should -BeExactly 'exec'
+    }
+
+    It 'automatically supplies Claude Code invocation-scoped CA settings from the preflighted state directory' {
+      $claude = Invoke-ProbePrompt -Client ClaudeCode -Prompt 'x'
+      $claude.Captured.Args | Should -HaveCount 6
+      $claude.Captured.Args[0] | Should -BeExactly '-p'
+      $claude.Captured.Args[1] | Should -BeExactly $claude.OutPath
+      $claude.Captured.Args[2] | Should -BeExactly '--settings'
+      $settings = $claude.Captured.Args[3] | ConvertFrom-Json
+      $settings.env.NODE_EXTRA_CA_CERTS | Should -BeExactly $script:rootPem
+      $settings.env.NODE_USE_SYSTEM_CA | Should -BeExactly '1'
+      $settings.env.NODE_TLS_REJECT_UNAUTHORIZED | Should -BeExactly '1'
+      $claude.Captured.Args[4] | Should -BeExactly '--'
+      $claude.Captured.Args[5] | Should -BeExactly 'x'
+    }
+
+    It 'fails closed before child creation when a Claude caller supplies a conflicting settings option' -TestCases @(
+      @{ ConflictingArgument = '--settings' }
+      @{ ConflictingArgument = '--settings={"env":{}}' }
+    ) {
+      param($ConflictingArgument)
+      $outPath = Join-Path $TestDrive ("conflict-{0}.txt" -f ([guid]::NewGuid().ToString('N')))
+      {
+        Invoke-AceOutpostMeteredPrompt -Client ClaudeCode -Prompt 'p' -ProxyPort $script:proxyPort `
+          -StateDirectory $script:stateDirectory -HarnessPath $script:probeExe -Confirm:$false `
+          -ArgumentList @($outPath, $ConflictingArgument)
+      } | Should -Throw '*reserves that option*'
+      Test-Path -LiteralPath $outPath | Should -BeFalse
     }
 
     It 'delivers a prompt containing spaces, both quote kinds, a newline, a dollar sign, a backtick, and a literal -- byte-for-byte' {
@@ -428,21 +456,21 @@ $result | Select-Object InvocationId, ParentInvocationId, IsNested, NestingEvide
       $launch.Result.MeteringClaim | Should -Match 'inherit = "core"'
     }
 
-    It 'accepts ClaudeCode, launches through the core, and reports the launch as blocked on Q3' {
+    It 'accepts ClaudeCode, launches through the core, and reports truthful harness metering with the child-tool boundary' {
       $launch = Invoke-ProbePrompt -Client ClaudeCode
       $launch.Result.Client | Should -Be 'ClaudeCode'
       $launch.Result.ClientId | Should -Be 'claude-code'
       $launch.Result.ExitCode | Should -Be 0
-      $launch.Result.MeteringClaim | Should -Match '^Blocked'
-      $launch.Result.MeteringClaim | Should -Match 'Q3'
+      $launch.Result.MeteringClaim | Should -Match '^Harness traffic is metered'
+      $launch.Result.MeteringClaim | Should -Match 'invocation-scoped Node CA settings'
       $launch.Result.MeteringClaim | Should -Match '15\.190\.f section 4'
       $launch.Result.TrustVariable | Should -Be 'NODE_EXTRA_CA_CERTS'
     }
 
-    It 'documents the ClaudeCode blocker in its help rather than papering over it' {
+    It 'documents automatic Claude trust and both clients honest coverage boundaries in help' {
       $help = Get-Help Invoke-AceOutpostMeteredPrompt -Full | Out-String
-      $help | Should -Match 'DOES NOT WORK TODAY'
-      $help | Should -Match 'Q3'
+      $help | Should -Match 'invocation-scoped --settings'
+      $help | Should -Match 'child-tool isolation is not claimed'
       $help | Should -Match 'Harness traffic only'
     }
   }

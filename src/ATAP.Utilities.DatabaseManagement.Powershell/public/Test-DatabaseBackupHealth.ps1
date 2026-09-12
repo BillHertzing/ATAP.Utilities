@@ -36,7 +36,7 @@
     wrong directory reports healthy forever and is worse than no check at all.
 
 .PARAMETER SqlInstances
-    Instance names to check (for example 'PRODUCTION','QA'). Each is contacted as .\<name>.
+    Production endpoint to check. The accepted and default value is localhost,50020.
 
 .PARAMETER ProtectedDatabases
     Databases that MUST have current backups. A protected database with no recent backupset
@@ -52,7 +52,7 @@
     one missed weekly full before alerting.
 
 .PARAMETER MaxDiffAgeHours
-    A protected database with no differential newer than this is reported. Default 48.
+    Maximum age of the newest valid full-or-compatible-differential coverage. Default 24.
 
 .PARAMETER MaxLogAgeMinutes
     Only applied when the database is in FULL recovery. Default 30, twice the policy's
@@ -64,8 +64,8 @@
     backup is under 4 KB.
 
 .PARAMETER ExpectedRecoveryModel
-    When supplied, a protected database whose recovery model differs is reported. Use FULL
-    once Task 15.192.b converts; leave unset to skip the check.
+    Expected Production recovery model. Defaults to SIMPLE under the operator's
+    full/differential decision.
 
 .PARAMETER MaxStagingAgeHours
     Artifacts left in instance-local staging longer than this are reported: the publisher ran
@@ -85,10 +85,12 @@ function Test-DatabaseBackupHealth {
   [OutputType([PSCustomObject])]
   param(
     [Parameter()]
-    [string[]] $SqlInstances = @('PRODUCTION', 'QA', 'INTEGRATION', 'DEVWHERTZING', 'EXPWHERTZING'),
+    [ValidateSet('localhost,50020')]
+    [string[]] $SqlInstances = @('localhost,50020'),
 
     [Parameter()]
-    [string[]] $ProtectedDatabases = @('ATAPUtilities', 'BuildMaster', 'ProGet', 'BuildSets'),
+    [ValidateSet('ATAPUtilities')]
+    [string[]] $ProtectedDatabases = @('ATAPUtilities'),
 
     [Parameter()]
     [string] $ExcludeDatabasePattern = 'ATAPUtilities[_]Task%',
@@ -106,7 +108,7 @@ function Test-DatabaseBackupHealth {
     [int] $MaxFullAgeDays = 8,
 
     [Parameter()]
-    [int] $MaxDiffAgeHours = 48,
+    [int] $MaxDiffAgeHours = 24,
 
     [Parameter()]
     [int] $MaxLogAgeMinutes = 30,
@@ -116,7 +118,7 @@ function Test-DatabaseBackupHealth {
 
     [Parameter()]
     [ValidateSet('FULL', 'SIMPLE', 'BULK_LOGGED')]
-    [string] $ExpectedRecoveryModel,
+    [string] $ExpectedRecoveryModel = 'SIMPLE',
 
     [Parameter()]
     [int] $MaxStagingAgeHours = 6,
@@ -177,7 +179,7 @@ function Test-DatabaseBackupHealth {
     $reportedStagingDirs = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
 
     foreach ($instance in $SqlInstances) {
-      $server = ".\$instance"
+      $server = $instance
 
       # msdb.dbo.backupset is the authority on whether SQL Server actually performed a backup.
       # The filesystem is not: a file can exist without a backup having happened, and a backup
@@ -186,15 +188,26 @@ function Test-DatabaseBackupHealth {
 SET NOCOUNT ON;
 SELECT d.name AS DatabaseName,
        d.recovery_model_desc AS RecoveryModel,
-       CONVERT(varchar(30), MAX(CASE WHEN b.type = 'D' THEN b.backup_finish_date END), 126) AS LastFull,
-       CONVERT(varchar(30), MAX(CASE WHEN b.type = 'I' THEN b.backup_finish_date END), 126) AS LastDiff,
-       CONVERT(varchar(30), MAX(CASE WHEN b.type = 'L' THEN b.backup_finish_date END), 126) AS LastLog
+       CONVERT(varchar(30), f.backup_finish_date, 126) AS LastFull,
+       CONVERT(varchar(30), i.backup_finish_date, 126) AS LastDiff,
+       CONVERT(varchar(30), l.backup_finish_date, 126) AS LastLog,
+       CONVERT(varchar(40), f.checkpoint_lsn) AS FullCheckpointLsn,
+       CONVERT(varchar(40), i.database_backup_lsn) AS DifferentialBaseLsn
 FROM sys.databases d
-LEFT JOIN msdb.dbo.backupset b
-       ON b.database_name COLLATE DATABASE_DEFAULT = d.name COLLATE DATABASE_DEFAULT
+OUTER APPLY (SELECT TOP (1) backup_finish_date, checkpoint_lsn
+             FROM msdb.dbo.backupset
+             WHERE database_name COLLATE DATABASE_DEFAULT = d.name COLLATE DATABASE_DEFAULT AND type = 'D'
+             ORDER BY backup_finish_date DESC) f
+OUTER APPLY (SELECT TOP (1) backup_finish_date, database_backup_lsn
+             FROM msdb.dbo.backupset
+             WHERE database_name COLLATE DATABASE_DEFAULT = d.name COLLATE DATABASE_DEFAULT AND type = 'I'
+             ORDER BY backup_finish_date DESC) i
+OUTER APPLY (SELECT TOP (1) backup_finish_date
+             FROM msdb.dbo.backupset
+             WHERE database_name COLLATE DATABASE_DEFAULT = d.name COLLATE DATABASE_DEFAULT AND type = 'L'
+             ORDER BY backup_finish_date DESC) l
 WHERE d.database_id > 4
-  AND d.name NOT LIKE '$ExcludeDatabasePattern'
-GROUP BY d.name, d.recovery_model_desc;
+  AND d.name NOT LIKE '$ExcludeDatabasePattern';
 "@
 
       $raw = & sqlcmd -S $server -E -h -1 -W -s '|' -Q $query 2>&1
@@ -210,7 +223,7 @@ GROUP BY d.name, d.recovery_model_desc;
 
       foreach ($row in $rows) {
         $parts = "$row".Split('|')
-        if ($parts.Count -lt 5) { continue }
+        if ($parts.Count -lt 7) { continue }
         $db = $parts[0].Trim()
         $recovery = $parts[1].Trim()
         $seenDatabases += $db
@@ -218,6 +231,8 @@ GROUP BY d.name, d.recovery_model_desc;
         $lastFull = if ($parts[2].Trim() -in @('NULL', '')) { $null } else { [datetime]::Parse($parts[2].Trim()) }
         $lastDiff = if ($parts[3].Trim() -in @('NULL', '')) { $null } else { [datetime]::Parse($parts[3].Trim()) }
         $lastLog = if ($parts[4].Trim() -in @('NULL', '')) { $null } else { [datetime]::Parse($parts[4].Trim()) }
+        $fullCheckpointLsn = $parts[5].Trim()
+        $differentialBaseLsn = $parts[6].Trim()
 
         $isProtected = $ProtectedDatabases -contains $db
         if (-not $isProtected) { continue }
@@ -231,10 +246,16 @@ GROUP BY d.name, d.recovery_model_desc;
             -Detail "Last full backup recorded $($lastFull.ToString('yyyy-MM-dd HH:mm')), older than the $MaxFullAgeDays-day threshold."
         }
 
-        if ($null -ne $lastFull -and ($null -eq $lastDiff -or $lastDiff -lt $now.AddHours(-$MaxDiffAgeHours))) {
-          $detail = if ($null -eq $lastDiff) { 'No differential backup has ever been recorded.' } else { "Last differential recorded $($lastDiff.ToString('yyyy-MM-dd HH:mm'))." }
-          Add-Finding -Severity 'Warning' -Check 'StaleDifferentialBackup' -Instance $instance -Database $db `
-            -Detail "$detail Threshold is $MaxDiffAgeHours hours."
+        $compatibleDifferential = $null -ne $lastDiff -and $fullCheckpointLsn -notin @('', 'NULL') -and $differentialBaseLsn -eq $fullCheckpointLsn
+        if ($null -ne $lastDiff -and -not $compatibleDifferential) {
+          Add-Finding -Severity 'Critical' -Check 'IncompatibleDifferentialBase' -Instance $instance -Database $db `
+            -Detail 'The newest differential does not reference the newest full backup checkpoint LSN and cannot satisfy the restore chain.'
+        }
+        $latestCoverage = $lastFull
+        if ($compatibleDifferential -and ($null -eq $latestCoverage -or $lastDiff -gt $latestCoverage)) { $latestCoverage = $lastDiff }
+        if ($null -ne $lastFull -and ($null -eq $latestCoverage -or $latestCoverage -lt $now.AddHours(-$MaxDiffAgeHours))) {
+          Add-Finding -Severity 'Critical' -Check 'StaleDailyCoverage' -Instance $instance -Database $db `
+            -Detail "Neither a fresh full nor a compatible differential was recorded within the $MaxDiffAgeHours-hour Production RPO."
         }
 
         if ($recovery -eq 'FULL') {
@@ -269,21 +290,26 @@ GROUP BY d.name, d.recovery_model_desc;
             Add-Finding -Severity 'Critical' -Check 'ImplausibleArtifactSize' -Instance $instance -Database $db `
               -Detail "[$($artifact.Name)] is $($artifact.Length) bytes, below the $MinPlausibleArtifactBytes-byte plausibility floor. An empty archive is $([char]0x2248)22 bytes and looks identical to a success to any timestamp-based check."
           }
+          if ($artifact.Name -notlike '*.bak.gz.atapenc') {
+            Add-Finding -Severity 'Critical' -Check 'UnencryptedPublishedArtifact' -Instance $instance -Database $db `
+              -Detail "Published artifact [$($artifact.Name)] is not an authenticated encrypted Production backup container."
+          }
         }
 
         # An artifact newer than anything SQL recorded means something other than SQL Server
         # wrote it. This is the unexplained 2026-04-02..05-03 shape and must not be treated as
         # healthy just because a recent file exists.
         $newestPublished = $published | Sort-Object LastWriteTime | Select-Object -Last 1
-        if ($newestPublished -and $null -ne $lastFull -and $newestPublished.LastWriteTime -gt $lastFull.AddHours(1)) {
+        if ($newestPublished -and $null -ne $latestCoverage -and $newestPublished.LastWriteTime -gt $latestCoverage.AddHours(1)) {
           Add-Finding -Severity 'Warning' -Check 'UnattributedArtifact' -Instance $instance -Database $db `
-            -Detail "Published artifact [$($newestPublished.Name)] dated $($newestPublished.LastWriteTime.ToString('yyyy-MM-dd HH:mm')) is newer than the most recent backupset row ($($lastFull.ToString('yyyy-MM-dd HH:mm'))). Something other than this instance produced it; do not count it as coverage until explained."
+            -Detail "Published artifact [$($newestPublished.Name)] dated $($newestPublished.LastWriteTime.ToString('yyyy-MM-dd HH:mm')) is newer than the most recent valid backupset coverage ($($latestCoverage.ToString('yyyy-MM-dd HH:mm'))). Something other than this instance produced it; do not count it as coverage until explained."
         }
       }
 
       foreach ($expected in $ProtectedDatabases) {
         if ($seenDatabases -notcontains $expected) {
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "[$instance] does not host [$expected]; not a finding."
+          Add-Finding -Severity 'Critical' -Check 'ProtectedDatabaseMissing' -Instance $instance -Database $expected `
+            -Detail 'The Production ATAPUtilities database was not returned by sys.databases; backup coverage cannot be established.'
         }
       }
 

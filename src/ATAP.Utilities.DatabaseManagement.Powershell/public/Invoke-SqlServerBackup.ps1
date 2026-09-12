@@ -180,6 +180,10 @@ function Invoke-SqlServerBackup {
     [ValidateSet('Full', 'Differential')]
     [string] $BackupType = 'Full',
 
+    [Parameter()]
+    [ValidateSet('Production')]
+    [string] $Environment = 'Production',
+
     # Host namespace for published backups. Defaults to the lowercase name of the
     # machine this runs on, so UTAT022 and UTAT01 each publish under their own subtree
     # without either host hardcoding the other's name.
@@ -210,7 +214,14 @@ function Invoke-SqlServerBackup {
     [switch] $CompressBackup,
 
     [Parameter()]
-    [switch] $SevenZipCompress
+    [switch] $SevenZipCompress,
+
+    [Parameter()]
+    [switch] $ProtectAndPublish,
+
+    [Parameter()]
+    [ValidateSet('dbEncryption.ATAPUtilities.Production')]
+    [string] $EncryptionSecretName = 'dbEncryption.ATAPUtilities.Production'
 
     # SCAFFOLD: multi-machine (Explainer 0022, section 4B)
     # The path half of this scaffold is implemented (Task 15.192): ComputerName,
@@ -230,6 +241,9 @@ begin {
         $msg = 'CompressBackup and SevenZipCompress are mutually exclusive.'
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
         throw $msg
+    }
+    if ($ProtectAndPublish.IsPresent -and ($CompressBackup.IsPresent -or $SevenZipCompress.IsPresent)) {
+        throw 'ProtectAndPublish performs its own compression and cannot be combined with CompressBackup or SevenZipCompress.'
     }
 
     # Check and populate BackupType parameter
@@ -359,6 +373,17 @@ begin {
         }
     }
 
+    if ($ProtectAndPublish.IsPresent) {
+        if ($DatabaseName -ne 'ATAPUtilities' -or $Environment -ne 'Production' -or $SqlInstance -ne 'localhost,50020') {
+            throw 'ProtectAndPublish is restricted to database ATAPUtilities on the Production endpoint localhost,50020.'
+        }
+        foreach ($helperName in @('Protect-SqlServerBackupArtifact', 'Restore-SqlServerBackupArtifact', 'Publish-SqlServerBackupArtifact')) {
+            if (-not (Get-Command -Name $helperName -CommandType Function -ErrorAction SilentlyContinue)) {
+                . (Join-Path $PSScriptRoot "$helperName.ps1")
+            }
+        }
+    }
+
     if ([string]::IsNullOrWhiteSpace($DatabaseName)) {
         $msg = 'DatabaseName is required, either as a parameter or as Initial Catalog in the resolved connection string.'
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
@@ -405,7 +430,7 @@ begin {
     $backupFileName = "${DatabaseName}_${typeCode}_${timestamp}.bak"
     $tempFilePath = Join-Path $tempDir $backupFileName
     # Final file in the backup directory: .bak.7z when using 7-Zip, .bak otherwise
-    $finalFileName = if ($SevenZipCompress.IsPresent) { "$backupFileName.7z" } else { $backupFileName }
+    $finalFileName = if ($ProtectAndPublish.IsPresent) { "$backupFileName.gz.atapenc" } elseif ($SevenZipCompress.IsPresent) { "$backupFileName.7z" } else { $backupFileName }
     $backupFilePath = Join-Path $backupDir $finalFileName
 
     $startTime = Get-Date
@@ -423,6 +448,7 @@ process {
             Type            = $BackupType
             CompressBackup  = $CompressBackup.IsPresent
             Verify          = $true
+            Checksum        = $true
             EnableException = $true
         }
 
@@ -443,7 +469,36 @@ process {
 
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Backup written to temp in $($duration.TotalSeconds.ToString('F1'))s — $tempFilePath"
 
-            if ($SevenZipCompress.IsPresent) {
+            if ($ProtectAndPublish.IsPresent) {
+                $protectedPath = "$tempFilePath.gz.atapenc"
+                $restoreVerificationPath = "$tempFilePath.roundtrip"
+                $protected = Protect-SqlServerBackupArtifact -InputPath $tempFilePath -OutputPath $protectedPath -EncryptionSecretName $EncryptionSecretName -Confirm:$false
+                try {
+                    $restored = Restore-SqlServerBackupArtifact -InputPath $protectedPath -OutputPath $restoreVerificationPath -EncryptionSecretName $EncryptionSecretName -Confirm:$false
+                    $originalHash = (Get-FileHash -LiteralPath $tempFilePath -Algorithm SHA256).Hash.ToUpperInvariant()
+                    if (-not $restored.AuthenticationVerified -or $restored.OutputSha256 -ne $originalHash) {
+                        throw 'Protected backup round-trip verification failed.'
+                    }
+                }
+                finally {
+                    if (Test-Path -LiteralPath $restoreVerificationPath -PathType Leaf) {
+                        [System.IO.File]::Delete($restoreVerificationPath)
+                    }
+                }
+                $publicationInput = [pscustomobject]@{
+                    StagedArtifactPath = $protected.OutputPath
+                    DatabaseName = 'ATAPUtilities'
+                    ExpectedLengthBytes = [long]$protected.OutputLengthBytes
+                    ExpectedSha256 = $protected.OutputSha256
+                    HeaderVerified = $true
+                    ChecksumVerified = $true
+                    CompressionVerified = [bool]$protected.CompressionVerified
+                    EncryptionVerified = [bool]$protected.EncryptionVerified
+                }
+                $publication = Publish-SqlServerBackupArtifact -InputObject $publicationInput -Settings $Settings -ComputerName $ComputerName -DatabaseBackupPublicationRoot $DatabaseBackupPublicationRoot -StagingRoot $TemporaryDirectory -Confirm:$false
+                $backupFilePath = $publication.DestinationPath
+                [System.IO.File]::Delete($tempFilePath)
+            } elseif ($SevenZipCompress.IsPresent) {
                 # Compress to .bak.7z in the temp directory, then discard the raw .bak
                 $tempZipPath = "$tempFilePath.7z"
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Compressing with 7-Zip: $tempFilePath → $tempZipPath"

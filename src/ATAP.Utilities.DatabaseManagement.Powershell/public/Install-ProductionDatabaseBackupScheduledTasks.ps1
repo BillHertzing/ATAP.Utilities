@@ -25,8 +25,8 @@ function Install-ProductionDatabaseBackupScheduledTasks {
   [OutputType([PSCustomObject[]])]
   param(
     [Parameter()]
-    [ValidatePattern('^0\.1\.21$')]
-    [string] $ModuleVersion = '0.1.21',
+    [ValidatePattern('^0\.1\.22$')]
+    [string] $ModuleVersion = '0.1.22',
 
     [Parameter()]
     [datetime] $StartTime = [datetime]::Today.AddHours(2).AddMinutes(20)

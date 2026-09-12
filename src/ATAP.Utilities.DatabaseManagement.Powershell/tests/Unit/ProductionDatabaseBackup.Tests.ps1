@@ -54,7 +54,7 @@ Describe 'Production backup artifact protection' {
 Describe 'Production-only scheduling contract' {
   BeforeEach {
     Mock Get-ScheduledTask { $null }
-    Mock Get-Module { [pscustomobject]@{ Version = [version]'0.1.21' } }
+    Mock Get-Module { [pscustomobject]@{ Version = [version]'0.1.22' } }
 
     Mock Register-ScheduledTask { [pscustomobject]@{} }
   }
@@ -79,7 +79,7 @@ Describe 'Production-only scheduling contract' {
   It 'derives the local Windows identity and uses a scalar secret only as its Task Scheduler password' {
     Mock Get-SecretATAP { 'unit-test-task-password' }
 
-    $result = @(Install-ProductionDatabaseBackupScheduledTasks -ModuleVersion '0.1.21' -Confirm:$false)
+    $result = @(Install-ProductionDatabaseBackupScheduledTasks -ModuleVersion '0.1.22' -Confirm:$false)
 
     $result | Should -HaveCount 2
     Should -Invoke Register-ScheduledTask -Times 2 -ParameterFilter {
@@ -97,6 +97,7 @@ Describe 'Production-only invocation and health contracts' {
     $source | Should -Match 'Publish-SqlServerBackupArtifact'
     $source | Should -Match 'Connect-DbaInstance[\s\S]*-EncryptConnection[\s\S]*-TrustServerCertificate[\s\S]*-AllowTrustServerCertificate'
     $source | Should -Match 'TrustServerCertificate is restricted to the Production-only ProtectAndPublish workflow'
+    $source | Should -Match 'Publish-SqlServerBackupArtifact[^\r\n]*-AllowNonRedirectingReparsePoints'
     (Get-Content -LiteralPath $schedulerPath -Raw) | Should -Match 'Invoke-SqlServerBackup[^\r\n]*-TrustServerCertificate'
     $source | Should -Match 'Join-Path \(Join-Path \$LocalDBsRoot \$Environment\.ToUpperInvariant\(\)\) ''Backup'''
     $source | Should -Not -Match 'FastTempBasePathConfigRootKey'
@@ -112,10 +113,10 @@ Describe 'Production-only invocation and health contracts' {
     $source | Should -Not -Match 'BuildSets'
   }
 
-  It 'exports every production backup command and prepares package version 0.1.21' {
+  It 'exports every production backup command and prepares package version 0.1.22' {
     $manifest = Import-PowerShellDataFile (Join-Path $moduleRoot 'ATAP.Utilities.DatabaseManagement.Powershell.psd1')
     $version = Get-Content -LiteralPath (Join-Path $moduleRoot 'version.json') -Raw | ConvertFrom-Json
-    $version.version | Should -Be '0.1.21'
+    $version.version | Should -Be '0.1.22'
     foreach ($name in @('Invoke-SqlServerBackup','Protect-SqlServerBackupArtifact','Restore-SqlServerBackupArtifact','Publish-SqlServerBackupArtifact','Install-ProductionDatabaseBackupScheduledTasks','Test-DatabaseBackupHealth')) {
       $manifest.FunctionsToExport | Should -Contain $name
     }

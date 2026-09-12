@@ -511,7 +511,7 @@ process {
                     CompressionVerified = [bool]$protected.CompressionVerified
                     EncryptionVerified = [bool]$protected.EncryptionVerified
                 }
-                $publication = Publish-SqlServerBackupArtifact -InputObject $publicationInput -Settings $Settings -ComputerName $ComputerName -DatabaseBackupPublicationRoot $DatabaseBackupPublicationRoot -StagingRoot $TemporaryDirectory -Confirm:$false
+                $publication = Publish-SqlServerBackupArtifact -InputObject $publicationInput -Settings $Settings -ComputerName $ComputerName -DatabaseBackupPublicationRoot $DatabaseBackupPublicationRoot -StagingRoot $TemporaryDirectory -AllowNonRedirectingReparsePoints -Confirm:$false
                 $backupFilePath = $publication.DestinationPath
                 [System.IO.File]::Delete($tempFilePath)
             } elseif ($SevenZipCompress.IsPresent) {

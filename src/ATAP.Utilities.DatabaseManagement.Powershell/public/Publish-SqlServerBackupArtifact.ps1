@@ -41,6 +41,10 @@ function Publish-SqlServerBackupArtifact {
   Exact allowed staging root. Defaults to the configured FastTempBasePath plus
   CobianReflectorBackup.
 
+  .PARAMETER AllowNonRedirectingReparsePoints
+  Allows cloud-storage metadata reparse points only when they expose neither LinkType nor
+  Target. Redirecting junctions and symbolic links remain forbidden.
+
   .PARAMETER StabilityCheckMilliseconds
   Delay between two source metadata observations before exclusive-open verification.
 
@@ -85,6 +89,9 @@ function Publish-SqlServerBackupArtifact {
 
     [Parameter()]
     [string] $StagingRoot,
+
+    [Parameter()]
+    [switch] $AllowNonRedirectingReparsePoints,
 
     [Parameter()]
     [ValidateRange(1, 5000)]
@@ -207,7 +214,11 @@ function Publish-SqlServerBackupArtifact {
       foreach ($pathToCheck in $pathsToCheck) {
         $item = Get-Item -LiteralPath $pathToCheck -Force -ErrorAction Stop
         if (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
-          throw "$Label traverses reparse point '$($item.FullName)'."
+          $isRedirecting = -not [string]::IsNullOrWhiteSpace([string]$item.LinkType) -or $null -ne $item.Target
+          if (-not $AllowNonRedirectingReparsePoints.IsPresent -or $isRedirecting) {
+            throw "$Label traverses reparse point '$($item.FullName)'."
+          }
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Allowed non-redirecting cloud metadata reparse point '$($item.FullName)'."
         }
       }
     }

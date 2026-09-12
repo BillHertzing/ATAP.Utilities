@@ -468,6 +468,7 @@ Context 'path boundary validation' {
         -ComputerName 'UTAT022' `
         -DatabaseBackupPublicationRoot $script:PublicationRoot `
         -StagingRoot $script:StagingRoot `
+        -AllowNonRedirectingReparsePoints `
         -StabilityCheckMilliseconds 1 `
         -Confirm:$false } | Should -Throw '*reparse point*'
 

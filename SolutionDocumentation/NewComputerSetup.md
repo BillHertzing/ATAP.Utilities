@@ -2539,13 +2539,17 @@ Register-ElevationBrokerTask -Verbose
   when `Everyone`, `Authenticated Users`, or `Users` can write there, since that would let
   any local account reach an administrator context;
 - exports any existing task registration before replacing it;
-- registers the `\ATAP\ATAP-ElevatedInstallBroker` scheduled task to run as
+- registers the `\ATAP-Broker\ATAP-ElevatedInstallBroker` scheduled task to run as
   `SvcAnsibleAdmin` with highest privileges, reading the password through `Get-SecretATAP`.
 
-Then grant the developer account the right to start the task on demand:
+Then grant the requester the right to start the task on demand. Corpus capture on UTAT022
+uses the non-administrator service identity explicitly:
 
 ```powershell
-Grant-ElevationBrokerStartRights -Verbose
+Grant-ElevationBrokerStartRights `
+  -Principal 'UTAT022\SvcAceOutpost' `
+  -TaskPath '\ATAP-Broker\' `
+  -Confirm:$false
 ```
 
 This step is **required**, not optional. The task has no repeating timer: it is started on
@@ -2559,7 +2563,7 @@ would succeed through the `Administrators` ACE and prove nothing:
 ```powershell
 $s = New-Object -ComObject Schedule.Service
 $s.Connect()
-$t = $s.GetFolder('\ATAP').GetTask('ATAP-ElevatedInstallBroker')
+$t = $s.GetFolder('\ATAP-Broker').GetTask('ATAP-ElevatedInstallBroker')
 $t.Run($null)
 Start-Sleep -Seconds 5
 "result=$($t.LastTaskResult) lastrun=$($t.LastRunTime)"
@@ -2567,6 +2571,46 @@ Start-Sleep -Seconds 5
 
 Expect `result=0` and a current timestamp. Access denied means the grant did not target the
 account that actually runs the build tooling.
+
+### Step 9a.1: Activate hash-pinned corpus sealing
+
+Do this only after ProGet module 0.1.22 and SprintLifecycle module 0.1.37 are installed at
+AllUsers scope and verified under `C:\Program Files\PowerShell\Modules`. Use an approved
+non-interactive administrative channel. Never depend on UAC, `Start-Process -Verb RunAs`,
+certificate-store UI, or any console prompt; an operator may not be present. PowerShell
+remoting must explicitly select `-ConfigurationName 'PowerShell.7'`.
+
+Import the exact installed ProGet 0.1.22 manifest, then replace the admin-owned broker
+payload/config and restore the service start grant in this order:
+
+```powershell
+$proGetManifest = 'C:\Program Files\PowerShell\Modules\ATAP.Utilities.BuildTooling.ProGet.PowerShell\0.1.22\ATAP.Utilities.BuildTooling.ProGet.PowerShell.psd1'
+$sprintLifecycleManifest = 'C:\Program Files\PowerShell\Modules\ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell\0.1.37\ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell.psd1'
+
+foreach ($manifest in $proGetManifest, $sprintLifecycleManifest) {
+  if (-not (Test-Path -LiteralPath $manifest -PathType Leaf)) {
+    throw "Required trusted module manifest is missing: $manifest"
+  }
+}
+
+Import-Module -FullyQualifiedName $proGetManifest -Force -ErrorAction Stop
+Register-ElevationBrokerTask `
+  -RequesterPrincipal 'UTAT022\SvcAceOutpost' `
+  -TaskPath '\ATAP-Broker\' `
+  -ForcePayload `
+  -Confirm:$false
+Grant-ElevationBrokerStartRights `
+  -Principal 'UTAT022\SvcAceOutpost' `
+  -TaskPath '\ATAP-Broker\' `
+  -Confirm:$false
+```
+
+Registration overwrites the trust anchor only because `-ForcePayload` is explicit, and it
+also replaces the task DACL. Therefore the `SvcAceOutpost` start-rights grant must always
+follow registration. The grant is task read/execute only; it does not make the service an
+administrator or give it direct corpus ACL authority. Validate one request from the normal,
+non-elevated service context and require both a `succeeded` result and its broker transcript
+before enabling unattended capture.
 
 Notes and gotchas:
 

@@ -1,5 +1,22 @@
 # Release Notes for ATAP.Utilities.PowerShell
 
+## [0.2.7] — 2026-09-13
+
+### Added
+
+- Add an opt-in, process-private Chromium proxy bridge for packaged Claude and
+  Codex desktop applications that do not honor `HTTP_PROXY` or `HTTPS_PROXY`.
+- Supply a credential-free loopback `--proxy-server`, disable QUIC, and keep the
+  bridge alive for exactly the launched desktop process lifetime.
+
+### Security
+
+- Accept bridge clients only when Windows reports their owning PID as the
+  launched desktop process or one of its descendants.
+- Inject `Proxy-Authorization` only on the bridge's private upstream connection
+  to AceOutpost; reject caller-owned proxy switches and incoming authorization
+  headers, and fail closed if PID binding cannot be established.
+
 ## [0.2.6] — 2026-09-12
 
 ### Added

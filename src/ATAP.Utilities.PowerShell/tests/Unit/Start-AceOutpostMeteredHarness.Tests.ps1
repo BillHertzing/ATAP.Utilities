@@ -107,6 +107,7 @@ foreach ($n in $names) { $captured[$n] = [Environment]::GetEnvironmentVariable($
       [string[]]$ExtraArguments = @(),
       [string]$LaunchMode = 'Wait',
       [int]$Port = $script:proxyPort,
+      [switch]$ChromiumProxyBridge,
       [string]$InvocationId,
       [string]$ParentInvocationId
     )
@@ -123,6 +124,7 @@ foreach ($n in $names) { $captured[$n] = [Environment]::GetEnvironmentVariable($
       -ProxyPort $Port `
       -StateDirectory $script:stateDirectory `
       -HarnessPath $script:pwshPath `
+      -ChromiumProxyBridge:$ChromiumProxyBridge `
       -ArgumentList $arguments `
       -Confirm:$false `
       @markerParameters
@@ -181,6 +183,9 @@ class MarkerProbe {
     foreach (var n in new[] { "ACEOUTPOST_METERED_INVOCATION", "ACEOUTPOST_METERED_PARENT_INVOCATION", "HTTPS_PROXY" }) {
       var v = Environment.GetEnvironmentVariable(n);
       record.AppendLine("ENV:" + n + "=" + (v == null ? "<null>" : Convert.ToBase64String(Encoding.UTF8.GetBytes(v))));
+    }
+    foreach (var arg in args) {
+      record.AppendLine("ARG:" + Convert.ToBase64String(Encoding.UTF8.GetBytes(arg)));
     }
     record.AppendLine("PID:" + System.Diagnostics.Process.GetCurrentProcess().Id);
     if (args.Length > 1) { File.WriteAllText(args[1], record.ToString(), new UTF8Encoding(false)); }
@@ -294,6 +299,55 @@ Describe 'Start-AceOutpostMeteredHarness' -Tag 'Unit' {
       $proxy = [string]$launch.Captured.Env.HTTP_PROXY
       $proxy | Should -Match 'test-user' -Because 'the child must carry the fake credential'
       $proxy | Should -Not -Match 'proxyCredential' -Because 'a SecretName must never appear as a value'
+    }
+  }
+
+  Context 'Chromium desktop proxy bridge' {
+
+    It 'adds a credential-free private proxy endpoint and fail-closed Chromium switches' {
+      $outPath = Join-Path $TestDrive 'desktop-bridge-args.txt'
+      $result = Start-AceOutpostMeteredHarness -Client ClaudeCode -LaunchMode Wait `
+        -ProxyPort $script:proxyPort -StateDirectory $script:stateDirectory `
+        -HarnessPath $script:adapterProbeExe -ChromiumProxyBridge `
+        -ArgumentList @('desktop-probe', $outPath) -Confirm:$false
+      $capturedArguments = Get-Content -LiteralPath $outPath |
+        Where-Object { $_.StartsWith('ARG:') } |
+        ForEach-Object { [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_.Substring(4))) }
+
+      $result.ExitCode | Should -Be 0
+      $result.ChromiumProxyBridgeEnabled | Should -BeTrue
+      $result.ChromiumProxyEndpoint | Should -Match '^http://127\.0\.0\.1:\d+$'
+      $result.ChromiumProxyEndpoint | Should -Not -Match '@'
+      $capturedArguments | Should -Contain "--proxy-server=$($result.ChromiumProxyEndpoint)"
+      $capturedArguments | Should -Contain '--proxy-bypass-list=<-loopback>'
+      $capturedArguments | Should -Contain '--disable-quic'
+      ($capturedArguments -join ' ') | Should -Not -Match 'test-secret'
+    }
+
+    It 'requires Wait mode so the bridge cannot disappear while the desktop app is running' {
+      {
+        Invoke-ProbeLaunch -Client Codex -LaunchMode Detach -ChromiumProxyBridge
+      } | Should -Throw '*requires LaunchMode Wait*'
+    }
+
+    It 'rejects caller-supplied Chromium routing switches' -ForEach @(
+      '--proxy-server=http://elsewhere:1234',
+      '--proxy-bypass-list=*',
+      '--no-proxy-server',
+      '--disable-quic'
+    ) {
+      {
+        Invoke-ProbeLaunch -Client Codex -ChromiumProxyBridge -ExtraArguments @($_)
+      } | Should -Throw '*reserved Chromium proxy argument*'
+    }
+
+    It 'does not start the bridge under WhatIf' {
+      $result = Start-AceOutpostMeteredHarness -Client Codex -LaunchMode Wait `
+        -ProxyPort $script:proxyPort -StateDirectory $script:stateDirectory `
+        -HarnessPath $script:pwshPath -ChromiumProxyBridge `
+        -ArgumentList @('-NonInteractive', '-Command', 'exit 0') -WhatIf
+      $result.Started | Should -BeFalse
+      $result.ChromiumProxyEndpoint | Should -BeNullOrEmpty
     }
   }
 

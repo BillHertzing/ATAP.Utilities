@@ -40,6 +40,12 @@ function Start-AceOutpostMeteredHarness {
     Working directory for the child process. Defaults to the caller's current directory.
   .PARAMETER HarnessPath
     Full path to the harness executable. When omitted the client's CLI is resolved from PATH.
+  .PARAMETER ChromiumProxyBridge
+    Starts a process-private loopback proxy bridge and supplies Chromium command-line proxy
+    switches to the child. Use this for packaged desktop applications that ignore HTTP_PROXY
+    and HTTPS_PROXY. The bridge accepts only the launched process and its descendants, injects
+    the AceOutpost proxy credential upstream, disables QUIC, and requires LaunchMode Wait so the
+    bridge lifetime exactly matches the desktop process lifetime.
   .PARAMETER InvocationId
     Identifier of this metered call, written into the child's block as
     ACEOUTPOST_METERED_INVOCATION. When supplied it is assigned unconditionally, so any value the
@@ -68,6 +74,12 @@ function Start-AceOutpostMeteredHarness {
     Start-AceOutpostMeteredHarness -Client Codex -LaunchMode Detach
 
     Starts a metered interactive Codex session and returns without waiting.
+  .EXAMPLE
+    Start-AceOutpostMeteredHarness -Client ClaudeCode -LaunchMode Wait `
+      -HarnessPath 'C:\Program Files\Claude\Claude.exe' -ChromiumProxyBridge
+
+    Starts packaged Claude Desktop through a process-private authenticated proxy bridge and
+    waits for the desktop process to exit.
   .NOTES
     Ratified design: Task15.190.a-SharedLaunchCoreDecisionPacket.md, sections 2, 2.1, 3, and 6.
 
@@ -94,9 +106,9 @@ function Start-AceOutpostMeteredHarness {
        or removed at composition whenever -InvocationId is bound, and left exactly as inherited
        when it is not, so callers that do not opt in see no change in behaviour.
 
-    Section 6.3 stands: for ClaudeCode the trust-variable mechanism is not known to work
-    (open question Q3), so a metered ClaudeCode launch may still fail at TLS in the harness.
-    This function composes and delivers a correct block and does nothing to paper over that.
+    Packaged Chromium clients do not consistently honor proxy environment variables. The
+    ChromiumProxyBridge path therefore supplies explicit Chromium routing switches while
+    preserving certificate verification and the same child-only environment contract.
   .LINK
     AceOutpost.Windows/Documentation/AceOutpostService-ProxyEnablement.md
   #>
@@ -127,6 +139,8 @@ function Start-AceOutpostMeteredHarness {
 
     [string]$HarnessPath,
 
+    [switch]$ChromiumProxyBridge,
+
     [ValidateNotNullOrEmpty()]
     [string]$InvocationId,
 
@@ -151,11 +165,39 @@ function Start-AceOutpostMeteredHarness {
       $CredentialSecretName = "proxyCredential.Ace.AceOutpost.$($clientSetting.ClientId)"
     }
     $preflightTimeoutMilliseconds = 2000
+
+    if ($ChromiumProxyBridge -and $LaunchMode -ne 'Wait') {
+      throw 'ChromiumProxyBridge requires LaunchMode Wait so the private bridge remains available for the desktop process lifetime.'
+    }
+    if ($ChromiumProxyBridge) {
+      if (-not ('ATAP.Utilities.PowerShell.AceOutpostDesktopProxyBridge' -as [type])) {
+        $bridgeTypePath = Join-Path $PSScriptRoot '..\lib\AceOutpostDesktopProxyBridge.types.ps1'
+        if (-not (Test-Path -LiteralPath $bridgeTypePath -PathType Leaf)) {
+          throw "The required desktop proxy bridge implementation was not found at '$bridgeTypePath'."
+        }
+        . $bridgeTypePath
+      }
+      if (-not ('ATAP.Utilities.PowerShell.AceOutpostDesktopProxyBridge' -as [type])) {
+        throw 'The required desktop proxy bridge type could not be loaded.'
+      }
+
+      $reservedChromiumProxyArguments = @(
+        '^--proxy-server(?:=|$)',
+        '^--proxy-bypass-list(?:=|$)',
+        '^--no-proxy-server(?:=|$)',
+        '^--disable-quic(?:=|$)'
+      )
+      foreach ($argument in $ArgumentList) {
+        if ($reservedChromiumProxyArguments.Where({ $argument -match $_ }, 'First').Count -gt 0) {
+          throw "ArgumentList contains the reserved Chromium proxy argument '$argument'. The bridge owns all proxy-routing switches."
+        }
+      }
+    }
   }
 
   process {
     $credential = $username = $secret = $proxyUrl = $null
-    $process = $null
+    $process = $bridge = $null
 
     try {
       # Precondition 1 of 3 - CA trust material must be present (packet section 6.3).
@@ -275,9 +317,21 @@ function Start-AceOutpostMeteredHarness {
       $exitCode = $null
       $processId = $null
       $started = $false
+      $bridgeEndpoint = $null
+      $bridgeAcceptedConnectionCount = $null
+      $bridgeRejectedConnectionCount = $null
 
       if ($PSCmdlet.ShouldProcess("$Client harness '$resolvedHarnessPath' ($LaunchMode)", 'Start with a private AceOutpost proxy environment block')) {
-        if ($LaunchMode -eq 'Wait') {
+        if ($ChromiumProxyBridge) {
+          $bridge = [ATAP.Utilities.PowerShell.AceOutpostDesktopProxyBridge]::new($ProxyPort, [string]$credential)
+          $bridge.Start()
+          $bridgeEndpoint = "http://127.0.0.1:$($bridge.LocalPort)"
+          $null = $startInfo.ArgumentList.Add("--proxy-server=$bridgeEndpoint")
+          $null = $startInfo.ArgumentList.Add('--proxy-bypass-list=<-loopback>')
+          $null = $startInfo.ArgumentList.Add('--disable-quic')
+        }
+
+        if ($LaunchMode -eq 'Wait' -and -not $ChromiumProxyBridge) {
           $startInfo.RedirectStandardOutput = $true
           $startInfo.RedirectStandardError = $true
         }
@@ -288,7 +342,18 @@ function Start-AceOutpostMeteredHarness {
         $started = $true
         $processId = $process.Id
 
-        if ($LaunchMode -eq 'Wait') {
+        if ($ChromiumProxyBridge) {
+          try {
+            $bridge.SetAllowedRootProcess($processId)
+          } catch {
+            try { $process.Kill($true) } catch { }
+            throw "The desktop proxy bridge could not bind authorization to the launched process. The desktop process was terminated: $($_.Exception.Message)"
+          }
+          $process.WaitForExit()
+          $exitCode = $process.ExitCode
+          $bridgeAcceptedConnectionCount = $bridge.AcceptedConnectionCount
+          $bridgeRejectedConnectionCount = $bridge.RejectedConnectionCount
+        } elseif ($LaunchMode -eq 'Wait') {
           # R-34. Both redirected streams begin draining here, BEFORE the wait below. Waiting
           # on the process while either redirected buffer can still fill is a deadlock, and a
           # harness returning a large -p response is exactly the case that fills them.
@@ -311,6 +376,10 @@ function Start-AceOutpostMeteredHarness {
         HarnessPath             = $resolvedHarnessPath
         WorkingDirectory        = $WorkingDirectory
         ProxyEndpoint           = "http://127.0.0.1:$ProxyPort"
+        ChromiumProxyBridgeEnabled = [bool]$ChromiumProxyBridge
+        ChromiumProxyEndpoint   = $bridgeEndpoint
+        BridgeAcceptedConnectionCount = $bridgeAcceptedConnectionCount
+        BridgeRejectedConnectionCount = $bridgeRejectedConnectionCount
         TrustVariable           = $clientSetting.TrustVariable
         CredentialSecretName    = $CredentialSecretName
         ComposedVariableNames   = @($composed.Keys)
@@ -327,6 +396,7 @@ function Start-AceOutpostMeteredHarness {
       $credential = $username = $secret = $proxyUrl = $null
       $composed = $null
       $startInfo = $null
+      if ($null -ne $bridge) { $bridge.Dispose() }
       if ($null -ne $process -and $LaunchMode -eq 'Wait') { $process.Dispose() }
     }
   }

@@ -32,6 +32,7 @@ BeforeAll {
   $script:composedNames = @(
     'HTTP_PROXY', 'HTTPS_PROXY', 'NO_PROXY',
     'NODE_EXTRA_CA_CERTS', 'SSL_CERT_FILE', 'NODE_TLS_REJECT_UNAUTHORIZED',
+    'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC',
     'ACEOUTPOST_METERED_INVOCATION', 'ACEOUTPOST_METERED_PARENT_INVOCATION'
   )
   $script:invocationMarkerName = 'ACEOUTPOST_METERED_INVOCATION'
@@ -52,7 +53,7 @@ BeforeAll {
   $script:stubPath = Join-Path $TestDrive 'probe-child.ps1'
   Set-Content -LiteralPath $script:stubPath -Encoding utf8 -Value @'
 param([string]$OutPath)
-$names = @('HTTP_PROXY','HTTPS_PROXY','NO_PROXY','NODE_EXTRA_CA_CERTS','SSL_CERT_FILE','NODE_TLS_REJECT_UNAUTHORIZED','http_proxy','https_proxy','no_proxy','ACEOUTPOST_METERED_INVOCATION','ACEOUTPOST_METERED_PARENT_INVOCATION')
+$names = @('HTTP_PROXY','HTTPS_PROXY','NO_PROXY','NODE_EXTRA_CA_CERTS','SSL_CERT_FILE','NODE_TLS_REJECT_UNAUTHORIZED','CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC','http_proxy','https_proxy','no_proxy','ACEOUTPOST_METERED_INVOCATION','ACEOUTPOST_METERED_PARENT_INVOCATION')
 $captured = [ordered]@{}
 foreach ($n in $names) { $captured[$n] = [Environment]::GetEnvironmentVariable($n, 'Process') }
 [pscustomobject]@{
@@ -313,11 +314,13 @@ Describe 'Start-AceOutpostMeteredHarness' -Tag 'Unit' {
     It 'composes the Node trust variable in the ClaudeCode child' {
       $launch = Invoke-ProbeLaunch -Client ClaudeCode
       $launch.Captured.Env.NODE_EXTRA_CA_CERTS | Should -Be $script:rootPem
+      $launch.Captured.Env.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC | Should -BeExactly '1'
       # Not asserted as null: an unrelated third party (Avast) publishes its own
       # NODE_EXTRA_CA_CERTS ambiently on this host per 15.190.b section 1.2, so the honest
       # assertion for the OTHER client is that OUR pem is not what the child received.
       $codex = Invoke-ProbeLaunch -Client Codex
       $codex.Captured.Env.NODE_EXTRA_CA_CERTS | Should -Not -Be $script:rootPem
+      $codex.Captured.Env.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC | Should -BeNullOrEmpty
     }
 
     It 'reports the composed variable names without ever reporting their values' {

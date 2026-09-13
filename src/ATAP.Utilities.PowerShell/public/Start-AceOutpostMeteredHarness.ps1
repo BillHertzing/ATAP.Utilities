@@ -235,6 +235,12 @@ function Start-AceOutpostMeteredHarness {
         NO_PROXY    = $NoProxy
       }
       $composed[$clientSetting.TrustVariable] = $rootPem
+      if ($Client -eq 'ClaudeCode') {
+        # Claude Code's documented aggregate switch disables updater, telemetry, feedback,
+        # and error-reporting traffic. It does not suppress the essential /api/hello startup
+        # probe, which is separately authorized by the listener's exact closed route.
+        $composed['CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'] = '1'
+      }
       foreach ($name in $composed.Keys) {
         $startInfo.Environment[$name] = $composed[$name]
       }

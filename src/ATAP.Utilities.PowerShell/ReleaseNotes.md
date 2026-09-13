@@ -1,5 +1,20 @@
 # Release Notes for ATAP.Utilities.PowerShell
 
+## [0.2.6] — 2026-09-12
+
+### Added
+
+- Set `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1` only in Claude Code child
+  processes started by `Start-AceOutpostMeteredHarness`. This suppresses the
+  documented updater, telemetry, feedback, and error-reporting traffic while
+  leaving the essential startup probe available to the listener's separately
+  constrained route.
+
+### Security
+
+- Keep the new variable process-local to the launched child; no User-, Machine-,
+  or parent-process environment is modified.
+
 ## [0.1.26] — 2026-07-31
 
 ### Fixed

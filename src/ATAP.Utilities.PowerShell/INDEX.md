@@ -227,7 +227,10 @@ and [Invoke-AceOutpostMeteredPrompt.Tests.ps1](tests/Unit/Invoke-AceOutpostMeter
 For Claude Code, the prompt adapter automatically supplies invocation-scoped Node CA
 settings derived from the same public PEM path the core preflights, rejects conflicting
 caller `--settings` options, and keeps TLS verification enabled. `version.json` records
-module version `0.2.5`; release and deployment evidence is written beneath
+module version `0.2.6`. Claude Code children also receive the documented
+`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1` aggregate switch only in their child
+process environment; it is never written to the parent, User, or Machine environment.
+Release and deployment evidence is written beneath
 `_generated/Sprint0015/Task15.190/`.
 
 ## Profiled remoting endpoint functions

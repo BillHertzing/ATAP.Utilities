@@ -1,5 +1,21 @@
 # Release notes
 
+## 0.1.37
+
+- Task 15.191.c routes validated non-quarantine corpus sealing from a
+  non-administrative caller through the pinned `seal-gather-call-record-segment`
+  elevation-broker installer. The request contains exactly the seven allowlisted scalar
+  values and a SHA-256 computed under exclusive open. Only a broker `succeeded` result is
+  accepted; timeout, failure, unavailability, and skipped execution fail closed while
+  retaining request, transcript, and error metadata.
+- The elevated broker invokes the same public command, which detects its administrative
+  token and executes the existing protected ACL, atomic move, verification, and exact-SDDL
+  rollback path without a bypass or recursion switch. Builtin Administrators ownership,
+  capture denial, and SYSTEM/Administrators/expiry recovery remain unchanged. Explicit
+  quarantine remains a direct non-brokered move under the staging root.
+- `ExpectedSha256` is an optional public input and is rechecked against exclusive-open
+  source bytes both during validation and immediately before ACL application and movement.
+
 ## 0.1.36
 
 - Task 15.191.b makes sprint checkpoints complete and self-verifying. Conversation

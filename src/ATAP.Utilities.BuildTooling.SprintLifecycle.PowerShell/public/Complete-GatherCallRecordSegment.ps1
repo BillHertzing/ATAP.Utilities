@@ -41,6 +41,10 @@ function Complete-GatherCallRecordSegment {
     Distinct expiry account retaining deletion authority after sealing. When omitted,
     resolves only through the exact Get-PVal key CorpusExpiryIdentity.
 
+  .PARAMETER ExpectedSha256
+    Optional caller-pinned SHA-256 for the source bytes. When supplied it must be one
+    64-hexadecimal-character string and must match both exclusive-open hash checks.
+
   .OUTPUTS
     PSCustomObject describing validation, movement, counts, hashes, destination,
     and any failure.
@@ -97,7 +101,12 @@ function Complete-GatherCallRecordSegment {
     [Parameter(Mandatory = $false)]
     [AllowNull()]
     [AllowEmptyString()]
-    [object]$ExpiryIdentity
+    [object]$ExpiryIdentity,
+
+    [Parameter(Mandatory = $false)]
+    [AllowNull()]
+    [AllowEmptyString()]
+    [object]$ExpectedSha256
   )
 
   begin {
@@ -153,6 +162,14 @@ function Complete-GatherCallRecordSegment {
         RollbackAttempted = $false
         RollbackSucceeded = $false
         RollbackError = $null
+      }
+      Broker = [pscustomobject][ordered]@{
+        Attempted = $false
+        InstallerId = 'seal-gather-call-record-segment'
+        RequestId = $null
+        Status = $null
+        Error = $null
+        TranscriptPath = $null
       }
       Failure = $null
     }
@@ -410,6 +427,17 @@ function Complete-GatherCallRecordSegment {
             }
 
             $result.Hashes.BeforeMove = & $getSha256 $stream
+            if ($PSBoundParameters.ContainsKey('ExpectedSha256')) {
+              $expectedValues = @($ExpectedSha256)
+              if ($expectedValues.Count -ne 1 -or $expectedValues[0] -isnot [string] -or
+                  [string]$expectedValues[0] -notmatch '^[0-9A-Fa-f]{64}$') {
+                throw 'ExpectedSha256 must be exactly one 64-hexadecimal-character string.'
+              }
+              if (-not [string]::Equals([string]$expectedValues[0], $result.Hashes.BeforeMove,
+                  [System.StringComparison]::OrdinalIgnoreCase)) {
+                throw 'ExpectedSha256 does not match the exclusive-open source SHA-256.'
+              }
+            }
             $stream.Position = 0
             $strictUtf8 = [System.Text.UTF8Encoding]::new($false, $true)
             $reader = [System.IO.StreamReader]::new($stream, $strictUtf8, $false, 4096, $true)
@@ -557,6 +585,78 @@ function Complete-GatherCallRecordSegment {
         return [pscustomobject]$result
       }
 
+      if (-not $QuarantineInvalidRemnant) {
+        if (-not $IsWindows) {
+          & $setFailure 'unsupported-platform' 'Corpus ACL sealing and its elevation broker require Windows.'
+          return [pscustomobject]$result
+        }
+        try {
+          $currentIdentity = [System.Security.Principal.WindowsIdentity]::GetCurrent()
+          $currentPrincipal = New-Object -TypeName System.Security.Principal.WindowsPrincipal `
+            -ArgumentList @($currentIdentity)
+          $isAdministrator = $currentPrincipal.IsInRole(
+            [System.Security.Principal.WindowsBuiltInRole]::Administrator)
+        } catch {
+          & $setFailure 'administrator-check-failed' "Unable to determine the current Windows token elevation: $($_.Exception.Message)"
+          return [pscustomobject]$result
+        }
+
+        if (-not $isAdministrator) {
+          $result.Broker.Attempted = $true
+          if (-not (Get-Command -Name 'Request-ElevatedInstall' -ErrorAction SilentlyContinue)) {
+            $result.Broker.Status = 'unavailable'
+            & $setFailure 'broker-unavailable' 'Request-ElevatedInstall is unavailable; corpus sealing cannot continue under a non-administrative token.'
+            return [pscustomobject]$result
+          }
+
+          $brokerParameters = @{
+            StagingFilePath = [string]$sourcePath
+            CorpusGatherRecordsStagingPath = [string]$stagingRoot
+            CorpusGatherRecordsPath = [string]$corpusRoot
+            SprintNumber = [string]$sprint
+            CaptureIdentity = [string]$resolvedCaptureIdentity
+            ExpiryIdentity = [string]$resolvedExpiryIdentity
+            ExpectedSha256 = [string]$result.Hashes.BeforeMove
+          }
+          try {
+            $brokerResult = Request-ElevatedInstall `
+              -InstallerId 'seal-gather-call-record-segment' `
+              -Parameters $brokerParameters `
+              -Confirm:$false
+          } catch {
+            $result.Broker.Status = 'request-failed'
+            $result.Broker.Error = $_.Exception.Message
+            & $setFailure 'broker-request-failed' "Corpus sealing broker request failed: $($_.Exception.Message)"
+            return [pscustomobject]$result
+          }
+
+          foreach ($mapping in @(
+              @{ Source = 'requestId'; Target = 'RequestId' },
+              @{ Source = 'status'; Target = 'Status' },
+              @{ Source = 'error'; Target = 'Error' },
+              @{ Source = 'transcriptPath'; Target = 'TranscriptPath' }
+            )) {
+            if ($null -ne $brokerResult -and $brokerResult.PSObject.Properties[$mapping.Source]) {
+              $result.Broker.($mapping.Target) = $brokerResult.($mapping.Source)
+            }
+          }
+          if ($null -eq $brokerResult -or
+              -not $brokerResult.PSObject.Properties['status'] -or
+              [string]$brokerResult.status -ne 'succeeded') {
+            $brokerStatus = if ([string]::IsNullOrWhiteSpace([string]$result.Broker.Status)) {
+              'missing'
+            } else { [string]$result.Broker.Status }
+            & $setFailure 'broker-sealing-failed' "Corpus sealing broker returned status '$brokerStatus'."
+            return [pscustomobject]$result
+          }
+
+          $result.Ok = $true
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+            -Message "Sealing completed through the elevation broker for '$destinationPath'." -Tag 'GatherCallRecord'
+          return [pscustomobject]$result
+        }
+      }
+
       $aclApplied = $false
       try {
         if (-not (Test-Path -LiteralPath $destinationDirectory -PathType Container)) {
@@ -585,6 +685,11 @@ function Complete-GatherCallRecordSegment {
           if ($preMoveByteCount -ne $result.Counts.ByteCount -or
               $preMoveHash -ne $result.Hashes.BeforeMove) {
             throw 'Source changed between validation and movement.'
+          }
+          if ($PSBoundParameters.ContainsKey('ExpectedSha256') -and
+              -not [string]::Equals([string]$ExpectedSha256, $preMoveHash,
+                [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw 'ExpectedSha256 no longer matches immediately before ACL application and movement.'
           }
 
           $aclResult = Set-CorpusFileSystemAcl -Path $sourcePath -BoundaryKind ImmutableArtifact `

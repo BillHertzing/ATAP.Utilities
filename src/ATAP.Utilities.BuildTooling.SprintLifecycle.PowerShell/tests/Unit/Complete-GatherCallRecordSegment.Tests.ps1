@@ -27,6 +27,11 @@ BeforeAll {
     $script:CreatedGetPValTestDouble = $true
   }
 
+  if (-not (Get-Command Request-ElevatedInstall -ErrorAction SilentlyContinue)) {
+    function global:Request-ElevatedInstall { throw 'Request-ElevatedInstall test double was not configured.' }
+    $script:CreatedRequestElevatedInstallTestDouble = $true
+  }
+
   $script:moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
   $script:helperPath = Join-Path $script:moduleRoot 'private\Set-CorpusFileSystemAcl.ps1'
   $script:functionPath = Join-Path $script:moduleRoot 'public\Complete-GatherCallRecordSegment.ps1'
@@ -34,6 +39,13 @@ BeforeAll {
   . $script:functionPath
   $script:captureSid = 'S-1-5-19'
   $script:expirySid = 'S-1-5-20'
+  $script:isAdministrator = if ($IsWindows) {
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = New-Object -TypeName System.Security.Principal.WindowsPrincipal `
+      -ArgumentList @($identity)
+    $principal.IsInRole(
+      [Security.Principal.WindowsBuiltInRole]::Administrator)
+  } else { $false }
 
   function New-SealingFixture {
     param([string]$Name)
@@ -89,7 +101,8 @@ BeforeAll {
       [string]$Staging,
       [object]$Corpus,
       [switch]$Quarantine,
-      [switch]$WhatIf
+      [switch]$WhatIf,
+      [object]$ExpectedSha256
     )
     $arguments = @{
       StagingFilePath = $Source
@@ -101,11 +114,17 @@ BeforeAll {
       ExpiryIdentity = $script:expirySid
     }
     if ($WhatIf) { $arguments.WhatIf = $true }
+    if ($PSBoundParameters.ContainsKey('ExpectedSha256')) {
+      $arguments.ExpectedSha256 = $ExpectedSha256
+    }
     Complete-GatherCallRecordSegment @arguments
   }
 }
 
 AfterAll {
+  if ($script:CreatedRequestElevatedInstallTestDouble) {
+    Remove-Item -LiteralPath 'Function:\Request-ElevatedInstall' -ErrorAction SilentlyContinue
+  }
   if ($script:CreatedGetPValTestDouble) {
     Remove-Item -LiteralPath 'Function:\Get-PVal' -ErrorAction SilentlyContinue
   }
@@ -121,6 +140,7 @@ Describe 'Complete-GatherCallRecordSegment [public]' -Tag 'Unit' {
       $command.CmdletBinding | Should -BeTrue
       $command.Parameters.Keys | Should -Contain 'WhatIf'
       $command.Parameters.Keys | Should -Contain 'Confirm'
+      $command.Parameters.Keys | Should -Contain 'ExpectedSha256'
 
       $tokens = $null
       $errors = $null
@@ -141,7 +161,7 @@ Describe 'Complete-GatherCallRecordSegment [public]' -Tag 'Unit' {
   }
 
   Context 'Successful sealing' {
-    It 'moves to the exact sprint partition and returns exact counts and equal hashes' {
+    It 'moves to the exact sprint partition and returns exact counts and equal hashes' -Skip:(-not $script:isAdministrator) {
       $fixture = New-SealingFixture 'success'
       $source = Join-Path $fixture.Staging 'segment-a.jsonl'
       $records = @((New-GatherRecord), (New-GatherRecord))
@@ -170,7 +190,7 @@ Describe 'Complete-GatherCallRecordSegment [public]' -Tag 'Unit' {
       Test-Path -LiteralPath $expectedDestination -PathType Leaf | Should -BeTrue
     }
 
-    It 'resolves omitted roots only through both exact Get-PVal keys' {
+    It 'resolves omitted roots only through both exact Get-PVal keys' -Skip:(-not $script:isAdministrator) {
       $fixture = New-SealingFixture 'get-pval'
       $source = Join-Path $fixture.Staging 'segment-setting.jsonl'
       Write-TestSegment -Path $source
@@ -198,7 +218,7 @@ Describe 'Complete-GatherCallRecordSegment [public]' -Tag 'Unit' {
   }
 
   Context 'Immutable artifact ACL transition' {
-    It 'preserves the hardened descriptor across the same-volume move and removes capture modify/delete' -Skip:(-not $IsWindows) {
+    It 'preserves the hardened descriptor across the same-volume move and removes capture modify/delete' -Skip:(-not $script:isAdministrator) {
       $fixture = New-SealingFixture 'acl-preserve'
       $source = Join-Path $fixture.Staging 'acl-preserve.jsonl'
       Write-TestSegment -Path $source
@@ -228,7 +248,7 @@ Describe 'Complete-GatherCallRecordSegment [public]' -Tag 'Unit' {
       @($expiryRules | Where-Object { ($_.FileSystemRights -band [Security.AccessControl.FileSystemRights]::FullControl) -eq [Security.AccessControl.FileSystemRights]::FullControl }).Count | Should -BeGreaterThan 0
     }
 
-    It 'restores the exact source descriptor if movement fails after hardening' {
+    It 'restores the exact source descriptor if movement fails after hardening' -Skip:(-not $script:isAdministrator) {
       $fixture = New-SealingFixture 'acl-move-rollback'
       $source = Join-Path $fixture.Staging 'acl-move-rollback.jsonl'
       Write-TestSegment -Path $source
@@ -257,7 +277,7 @@ Describe 'Complete-GatherCallRecordSegment [public]' -Tag 'Unit' {
       Should -Invoke Set-CorpusFileSystemAcl -Exactly 1 -ParameterFilter { $RestoreSddl -eq $beforeSddl }
     }
 
-    It 'resolves omitted identities only through their exact Get-PVal keys' {
+    It 'resolves omitted identities only through their exact Get-PVal keys' -Skip:(-not $script:isAdministrator) {
       $fixture = New-SealingFixture 'acl-settings'
       $source = Join-Path $fixture.Staging 'acl-settings.jsonl'
       Write-TestSegment -Path $source
@@ -296,6 +316,173 @@ Describe 'Complete-GatherCallRecordSegment [public]' -Tag 'Unit' {
       $result.Ok | Should -BeFalse
       $result.Failure.Code | Should -Be 'acl-validation-failed'
       Should -Invoke Get-PVal -Exactly 0
+    }
+  }
+
+  Context 'Non-administrative broker boundary' {
+    BeforeEach {
+      $script:nonAdminPrincipal = [pscustomobject]@{}
+      $script:nonAdminPrincipal | Add-Member -MemberType ScriptMethod -Name IsInRole -Value { param($Role) $false }
+      Mock New-Object { $script:nonAdminPrincipal } -ParameterFilter {
+        $TypeName -eq 'System.Security.Principal.WindowsPrincipal'
+      }
+    }
+
+    It 'routes an owner-equals-capture source with exactly seven scalar pinned parameters' -Skip:(-not $IsWindows) {
+      $fixture = New-SealingFixture 'broker-owner-capture'
+      $source = Join-Path $fixture.Staging 'broker-owner-capture.jsonl'
+      Write-TestSegment -Path $source
+      $currentIdentity = [Security.Principal.WindowsIdentity]::GetCurrent()
+      $currentUserSid = $currentIdentity.User
+      $sourceAcl = Get-Acl -LiteralPath $source
+      $ownerSid = $sourceAcl.GetOwner([Security.Principal.SecurityIdentifier]).Value
+      if ($ownerSid -ne $currentUserSid.Value) {
+        if (-not $script:isAdministrator) {
+          throw 'A non-administrative creator did not own its disposable source fixture.'
+        }
+        $sourceAcl.SetOwner($currentUserSid)
+        Set-Acl -LiteralPath $source -AclObject $sourceAcl
+        $ownerSid = (Get-Acl -LiteralPath $source).GetOwner([Security.Principal.SecurityIdentifier]).Value
+      }
+      $ownerSid | Should -Be $currentUserSid.Value
+      $expirySid = if ($ownerSid -eq $script:expirySid) { $script:captureSid } else { $script:expirySid }
+      Mock Request-ElevatedInstall {
+        [pscustomobject]@{
+          requestId = 'request-0015'; installerId = $InstallerId; status = 'succeeded'
+          exitCode = 0; error = $null; transcriptPath = 'C:\broker\request-0015.log'
+        }
+      }
+
+      $result = Complete-GatherCallRecordSegment -StagingFilePath $source `
+        -CorpusGatherRecordsStagingPath $fixture.Staging `
+        -CorpusGatherRecordsPath $fixture.Corpus -SprintNumber '0015' `
+        -CaptureIdentity $currentIdentity.Name -ExpiryIdentity $expirySid -Confirm:$false
+
+      $result.Ok | Should -BeTrue
+      $result.Broker.Attempted | Should -BeTrue
+      $result.Broker.Status | Should -Be 'succeeded'
+      $result.Broker.RequestId | Should -Be 'request-0015'
+      $result.Broker.TranscriptPath | Should -Be 'C:\broker\request-0015.log'
+      $result.Movement.Performed | Should -BeFalse
+      $result.Acl.Applied | Should -BeFalse
+      $result.Hashes.AfterMove | Should -BeNullOrEmpty
+      Test-Path -LiteralPath $source -PathType Leaf | Should -BeTrue
+      Should -Invoke Request-ElevatedInstall -Exactly 1 -ParameterFilter {
+        $InstallerId -eq 'seal-gather-call-record-segment' -and
+        @($Parameters.Keys).Count -eq 7 -and
+        @($Parameters.Keys | Sort-Object) -join ',' -eq
+          'CaptureIdentity,CorpusGatherRecordsPath,CorpusGatherRecordsStagingPath,ExpectedSha256,ExpiryIdentity,SprintNumber,StagingFilePath' -and
+        @($Parameters.Values | Where-Object { $_ -isnot [string] }).Count -eq 0 -and
+        $Parameters.ExpectedSha256 -match '^[0-9a-f]{64}$'
+      }
+    }
+
+    It 'fails closed and retains broker evidence for non-success status <Status>' `
+        -ForEach @(
+          @{ Status = 'failed' }
+          @{ Status = 'timeout' }
+          @{ Status = 'broker-unreachable' }
+          @{ Status = 'skipped' }
+        ) -Skip:(-not $IsWindows) {
+      $fixture = New-SealingFixture 'broker-failed'
+      $source = Join-Path $fixture.Staging 'broker-failed.jsonl'
+      Write-TestSegment -Path $source
+      Mock Request-ElevatedInstall {
+        [pscustomobject]@{
+          requestId = 'request-failed'; status = $Status; exitCode = 1
+          error = 'broker command rejected'; transcriptPath = 'C:\broker\request-failed.log'
+        }
+      }
+
+      $result = Invoke-Sealer -Source $source -Staging $fixture.Staging -Corpus $fixture.Corpus
+
+      $result.Ok | Should -BeFalse
+      $result.Failure.Code | Should -Be 'broker-sealing-failed'
+      $result.Broker.Status | Should -Be $Status
+      $result.Broker.Error | Should -Be 'broker command rejected'
+      $result.Broker.TranscriptPath | Should -Be 'C:\broker\request-failed.log'
+      Test-Path -LiteralPath $source -PathType Leaf | Should -BeTrue
+    }
+
+    It 'never routes explicit quarantine through the broker' {
+      $fixture = New-SealingFixture 'broker-no-quarantine'
+      $source = Join-Path $fixture.Staging '_partial-broker.tmp'
+      [System.IO.File]::WriteAllBytes($source, [byte[]](0xff, 0x01))
+      Mock Request-ElevatedInstall { throw 'quarantine must remain direct' }
+
+      $result = Invoke-Sealer -Source $source -Staging $fixture.Staging `
+        -Corpus $fixture.Corpus -Quarantine
+
+      $result.Ok | Should -BeTrue
+      $result.Broker.Attempted | Should -BeFalse
+      $result.Movement.Performed | Should -BeTrue
+      Should -Invoke Request-ElevatedInstall -Exactly 0
+    }
+
+    It 'rejects an exact-hash mismatch before broker or filesystem mutation' {
+      $fixture = New-SealingFixture 'broker-hash-mismatch'
+      $source = Join-Path $fixture.Staging 'broker-hash-mismatch.jsonl'
+      Write-TestSegment -Path $source
+      $beforeHash = (Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash
+      Mock Request-ElevatedInstall { throw 'hash mismatch must not reach broker' }
+
+      $result = Invoke-Sealer -Source $source -Staging $fixture.Staging `
+        -Corpus $fixture.Corpus -ExpectedSha256 ('0' * 64)
+
+      $result.Ok | Should -BeFalse
+      $result.Failure.Code | Should -Be 'validation-failed'
+      $result.Failure.Message | Should -Match 'ExpectedSha256 does not match'
+      (Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash | Should -Be $beforeHash
+      Should -Invoke Request-ElevatedInstall -Exactly 0
+    }
+
+    It 'rejects malformed ExpectedSha256 value <Name> before broker or mutation' -ForEach @(
+      @{ Name = 'null'; Value = $null }
+      @{ Name = 'blank'; Value = ' ' }
+      @{ Name = 'short'; Value = 'ABCD' }
+      @{ Name = 'non-hex'; Value = ('G' * 64) }
+      @{ Name = 'ambiguous'; Value = @(('0' * 64), ('1' * 64)) }
+    ) {
+      $fixture = New-SealingFixture "broker-hash-shape-$Name"
+      $source = Join-Path $fixture.Staging "broker-hash-shape-$Name.jsonl"
+      Write-TestSegment -Path $source
+      $beforeHash = (Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash
+      Mock Request-ElevatedInstall { throw 'invalid hash shape must not reach broker' }
+
+      $result = Invoke-Sealer -Source $source -Staging $fixture.Staging `
+        -Corpus $fixture.Corpus -ExpectedSha256 $Value
+
+      $result.Ok | Should -BeFalse
+      $result.Failure.Code | Should -Be 'validation-failed'
+      $result.Failure.Message | Should -Match 'exactly one 64-hexadecimal-character string'
+      (Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash | Should -Be $beforeHash
+      Should -Invoke Request-ElevatedInstall -Exactly 0
+    }
+
+    It 'uses the elevated direct path without recursively requesting the broker' -Skip:(-not $IsWindows) {
+      $fixture = New-SealingFixture 'broker-no-recursion'
+      $source = Join-Path $fixture.Staging 'broker-no-recursion.jsonl'
+      Write-TestSegment -Path $source
+      $script:adminPrincipal = [pscustomobject]@{}
+      $script:adminPrincipal | Add-Member -MemberType ScriptMethod -Name IsInRole -Value { param($Role) $true }
+      Mock New-Object { $script:adminPrincipal } -ParameterFilter {
+        $TypeName -eq 'System.Security.Principal.WindowsPrincipal'
+      }
+      Mock Request-ElevatedInstall { throw 'elevated path must not recurse' }
+      Mock Set-CorpusFileSystemAcl {
+        if ($PlanOnly) {
+          return [pscustomobject]@{ BeforeOwner = 'before'; BeforeSddl = 'before-sddl'; DesiredSddl = 'desired' }
+        }
+        throw 'elevated direct path reached'
+      }
+
+      $result = Invoke-Sealer -Source $source -Staging $fixture.Staging -Corpus $fixture.Corpus
+
+      $result.Ok | Should -BeFalse
+      $result.Failure.Code | Should -Be 'movement-failed'
+      $result.Failure.Message | Should -Match 'elevated direct path reached'
+      $result.Broker.Attempted | Should -BeFalse
+      Should -Invoke Request-ElevatedInstall -Exactly 0
     }
   }
 
@@ -557,7 +744,7 @@ Describe 'Complete-GatherCallRecordSegment [public]' -Tag 'Unit' {
       Test-Path -LiteralPath $source | Should -BeTrue
     }
 
-    It 'fails closed on duplicate destination and repeated invocation' {
+    It 'fails closed on duplicate destination and repeated invocation' -Skip:(-not $script:isAdministrator) {
       $fixture = New-SealingFixture 'duplicate'
       $source = Join-Path $fixture.Staging 'repeat.jsonl'
       Write-TestSegment -Path $source

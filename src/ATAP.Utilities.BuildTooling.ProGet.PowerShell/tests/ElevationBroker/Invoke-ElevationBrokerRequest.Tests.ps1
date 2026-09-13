@@ -35,6 +35,23 @@ BeforeAll {
 
   $script:Config = Get-Content -LiteralPath $script:ConfigTemplate -Raw | ConvertFrom-Json
   $script:Allowed = ($script:Config.installers | Where-Object id -eq 'install-atap-module-allusers').allowedParameters
+  $script:SealingEntry = $script:Config.installers | Where-Object id -eq 'seal-gather-call-record-segment'
+  $script:SealingAllowed = $script:SealingEntry.allowedParameters
+
+  function script:New-SealingRequestParameters {
+    param([hashtable] $Override = @{})
+    $values = [ordered]@{
+      StagingFilePath = 'D:\ATAPArtifacts\CorpusGatherRecordsStaging\Sprint0015\segment-0001.jsonl'
+      CorpusGatherRecordsStagingPath = 'D:\ATAPArtifacts\CorpusGatherRecordsStaging'
+      CorpusGatherRecordsPath = 'D:\ATAPArtifacts\CorpusGatherRecords'
+      SprintNumber = '0015'
+      CaptureIdentity = 'UTAT022\SvcAceOutpost'
+      ExpiryIdentity = 'UTAT022\whertzing'
+      ExpectedSha256 = ('A' * 64)
+    }
+    foreach ($key in $Override.Keys) { $values[$key] = $Override[$key] }
+    return [pscustomobject]$values
+  }
 }
 
 Describe 'Elevation broker artifacts' {
@@ -90,6 +107,29 @@ Describe 'Elevation broker artifacts' {
     @($entry.allowedParameters).Count | Should -Be 1
     $entry.allowedParameters[0].name | Should -Be 'ModuleVersion'
     $entry.allowedParameters[0].pattern | Should -Be '^\d+\.\d+\.\d+(\.\d+)?$'
+  }
+
+  It 'ships the exact corpus-sealing module command contract' {
+    $entry = $script:SealingEntry
+
+    $entry.commandType | Should -Be 'module'
+    $entry.moduleName | Should -Be 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell'
+    $entry.commandName | Should -Be 'Complete-GatherCallRecordSegment'
+    $entry.minimumModuleVersion | Should -Be '0.1.37'
+    @($entry.trustedModuleRoots) | Should -Be @('C:\Program Files\PowerShell\Modules')
+    @($entry.allowedParameters.name) | Should -Be @(
+      'StagingFilePath',
+      'CorpusGatherRecordsStagingPath',
+      'CorpusGatherRecordsPath',
+      'SprintNumber',
+      'CaptureIdentity',
+      'ExpiryIdentity',
+      'ExpectedSha256'
+    )
+    @($entry.allowedParameters | Where-Object { -not $_.required }).Count | Should -Be 0
+    foreach ($forbidden in 'CommandName', 'ModulePath', 'TrustedModuleRoot', 'RunElevated', 'BypassBroker') {
+      @($entry.allowedParameters.name) | Should -Not -Contain $forbidden
+    }
   }
 
   It 'preserves every task field that is not the action, and drains output before waiting' {
@@ -431,8 +471,9 @@ Describe 'Get-BrokerConfig' {
     $p = Join-Path $TestDrive 'good.json'
     Copy-Item -LiteralPath $script:ConfigTemplate -Destination $p
     $config = Get-BrokerConfig -Path $p
-    @($config.installers).Count | Should -Be 2
+    @($config.installers).Count | Should -Be 3
     @($config.installers.id) | Should -Contain 'install-atap-module-allusers'
+    @($config.installers.id) | Should -Contain 'seal-gather-call-record-segment'
   }
 
   Context 'module-kind entries (Task 13.76.c)' {
@@ -707,6 +748,127 @@ Describe 'Test-BrokerRequestParameters' {
             ModuleName = 'A' }) } |
         Should -Throw -ExpectedMessage "*Required parameter 'RequiredVersion' was not supplied*"
     }
+  }
+}
+
+Describe 'Corpus-sealing request parameter boundary' {
+  It 'accepts the complete pinned request on C or D' -ForEach @(
+    @{ Drive = 'C' }
+    @{ Drive = 'D' }
+  ) {
+    $request = script:New-SealingRequestParameters -Override @{
+      StagingFilePath = "$Drive`:\ATAPArtifacts\CorpusGatherRecordsStaging\Sprint0015\segment-0001.jsonl"
+      CorpusGatherRecordsStagingPath = "$Drive`:\ATAPArtifacts\CorpusGatherRecordsStaging"
+      CorpusGatherRecordsPath = "$Drive`:\ATAPArtifacts\CorpusGatherRecords"
+    }
+    $validated = Test-BrokerRequestParameters -AllowedParameters $script:SealingAllowed -RequestParameters $request
+    $validated.Count | Should -Be 7
+  }
+
+  It 'refuses StagingFilePath <Why>' -ForEach @(
+    @{ Why = 'on an unapproved drive'; Value = 'E:\ATAPArtifacts\CorpusGatherRecordsStaging\Sprint0015\x.jsonl' }
+    @{ Why = 'under the final corpus root'; Value = 'D:\ATAPArtifacts\CorpusGatherRecords\Sprint0015\x.jsonl' }
+    @{ Why = 'under a lookalike root'; Value = 'D:\ATAPArtifacts\CorpusGatherRecordsStaging-Evil\x.jsonl' }
+    @{ Why = 'with parent traversal'; Value = 'D:\ATAPArtifacts\CorpusGatherRecordsStaging\..\escape.jsonl' }
+    @{ Why = 'as a UNC path'; Value = '\\server\share\x.jsonl' }
+    @{ Why = 'with a non-JSONL leaf'; Value = 'D:\ATAPArtifacts\CorpusGatherRecordsStaging\x.json' }
+  ) {
+    $request = script:New-SealingRequestParameters -Override @{ StagingFilePath = $Value }
+    { Test-BrokerRequestParameters -AllowedParameters $script:SealingAllowed -RequestParameters $request } |
+      Should -Throw -ExpectedMessage "*'StagingFilePath'*required pattern*"
+  }
+
+  It 'refuses <Name> outside its exact canonical root set' -ForEach @(
+    @{ Name = 'CorpusGatherRecordsStagingPath'; Value = 'D:\ATAPArtifacts\CorpusGatherRecordsStaging\child' }
+    @{ Name = 'CorpusGatherRecordsStagingPath'; Value = 'D:\ATAPArtifacts\CorpusGatherRecordsStaging-Evil' }
+    @{ Name = 'CorpusGatherRecordsPath'; Value = 'C:\ATAPArtifacts\CorpusGatherRecords\child' }
+    @{ Name = 'CorpusGatherRecordsPath'; Value = 'E:\ATAPArtifacts\CorpusGatherRecords' }
+  ) {
+    $request = script:New-SealingRequestParameters -Override @{ $Name = $Value }
+    { Test-BrokerRequestParameters -AllowedParameters $script:SealingAllowed -RequestParameters $request } |
+      Should -Throw -ExpectedMessage "*'$Name'*required pattern*"
+  }
+
+  It 'refuses malformed <Name>' -ForEach @(
+    @{ Name = 'SprintNumber'; Value = '15' }
+    @{ Name = 'SprintNumber'; Value = '0015;whoami' }
+    @{ Name = 'CaptureIdentity'; Value = 'SvcAceOutpost' }
+    @{ Name = 'CaptureIdentity'; Value = 'UTAT022\SvcAceOutpost\extra' }
+    @{ Name = 'ExpiryIdentity'; Value = 'UTAT022\name;whoami' }
+    @{ Name = 'ExpectedSha256'; Value = ('A' * 63) }
+    @{ Name = 'ExpectedSha256'; Value = (('A' * 63) + 'G') }
+  ) {
+    $request = script:New-SealingRequestParameters -Override @{ $Name = $Value }
+    { Test-BrokerRequestParameters -AllowedParameters $script:SealingAllowed -RequestParameters $request } |
+      Should -Throw -ExpectedMessage "*'$Name'*required pattern*"
+  }
+
+  It 'refuses an absent required field' {
+    $request = script:New-SealingRequestParameters
+    $request.PSObject.Properties.Remove('ExpectedSha256')
+    { Test-BrokerRequestParameters -AllowedParameters $script:SealingAllowed -RequestParameters $request } |
+      Should -Throw -ExpectedMessage "*Required parameter 'ExpectedSha256'*"
+  }
+
+  It 'refuses non-scalar parameter values before string conversion' {
+    $request = script:New-SealingRequestParameters -Override @{ CaptureIdentity = @('UTAT022\SvcAceOutpost') }
+    { Test-BrokerRequestParameters -AllowedParameters $script:SealingAllowed -RequestParameters $request } |
+      Should -Throw -ExpectedMessage "*'CaptureIdentity' must be a scalar string*"
+  }
+}
+
+Describe 'Get-BrokerModuleCommandExitCode' {
+  It 'preserves a successful ExitStatus result' {
+    Get-BrokerModuleCommandExitCode -InstallerId 'legacy' -CommandResult ([pscustomobject]@{
+        ExitStatus = 0
+        Ok = $false
+      }) | Should -Be 0
+  }
+
+  It 'preserves a failed ExitStatus result and its legacy detail' {
+    { Get-BrokerModuleCommandExitCode -InstallerId 'legacy' -CommandResult ([pscustomobject]@{
+          ExitStatus = 7
+          ErrorText = 'legacy failure'
+        }) } | Should -Throw -ExpectedMessage "*ExitStatus 7*legacy failure*"
+  }
+
+  It 'accepts Ok=true when ExitStatus is absent' {
+    Get-BrokerModuleCommandExitCode -InstallerId 'seal' -CommandResult ([pscustomobject]@{ Ok = $true }) |
+      Should -Be 0
+  }
+
+  It 'fails closed on Ok=false with bounded single-line failure detail' {
+    $message = ('X' * 600) + "`r`nsecret-next-line"
+    $caught = $null
+    try {
+      Get-BrokerModuleCommandExitCode -InstallerId 'seal' -CommandResult ([pscustomobject]@{
+          Ok = $false
+          Failure = [pscustomobject]@{ Code = ('C' * 200); Message = $message }
+        })
+    }
+    catch { $caught = $_.Exception.Message }
+
+    $caught | Should -Match "reported Ok=false"
+    $caught | Should -Not -Match "secret-next-line"
+    $caught | Should -Not -Match "`r|`n|`t"
+    $caught.Length | Should -BeLessOrEqual 750
+  }
+
+  It 'fails closed on Ok=false without a Failure record' {
+    { Get-BrokerModuleCommandExitCode -InstallerId 'seal' -CommandResult ([pscustomobject]@{ Ok = $false }) } |
+      Should -Throw -ExpectedMessage "*reported Ok=false*"
+  }
+
+  It 'rejects a string Ok value instead of applying PowerShell truthiness' -ForEach @(
+    @{ Value = 'false' }
+    @{ Value = 'true' }
+  ) {
+    { Get-BrokerModuleCommandExitCode -InstallerId 'seal' -CommandResult ([pscustomobject]@{ Ok = $Value }) } |
+      Should -Throw -ExpectedMessage '*malformed Ok value*expected a Boolean*'
+  }
+
+  It 'retains legacy success for a command with no structured result' {
+    Get-BrokerModuleCommandExitCode -InstallerId 'legacy' -CommandResult 'completed' | Should -Be 0
   }
 }
 

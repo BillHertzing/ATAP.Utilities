@@ -345,6 +345,9 @@ function Test-BrokerRequestParameters {
             throw "Parameter '$($property.Name)' is not on this installer's allowlist."
         }
         $spec = $allowedByName[$property.Name]
+        if ($property.Value -isnot [string]) {
+            throw "Parameter '$($property.Name)' must be a scalar string."
+        }
         $value = [string]$property.Value
 
         if ($spec.PSObject.Properties['pattern'] -and $spec.pattern) {
@@ -363,6 +366,71 @@ function Test-BrokerRequestParameters {
     }
 
     return $validated
+}
+
+function Get-BrokerModuleCommandExitCode {
+    <#
+      Interprets the two supported result contracts for trusted module commands.
+
+      ExitStatus is the legacy contract and takes precedence when present. Newer commands
+      may instead return Ok plus a bounded Failure record. A command that explicitly reports
+      Ok=false must never be converted into the broker's succeeded status merely because it
+      did not throw.
+    #>
+    [CmdletBinding()]
+    [OutputType([int])]
+    param(
+        [Parameter(Mandatory = $false)] $CommandResult,
+        [Parameter(Mandatory = $true)] [string] $InstallerId
+    )
+
+    $resultRecord = @($CommandResult) |
+        Where-Object {
+            $null -ne $_ -and
+            ($_.PSObject.Properties['ExitStatus'] -or $_.PSObject.Properties['Ok'])
+        } |
+        Select-Object -Last 1
+
+    if ($resultRecord -and
+        $resultRecord.PSObject.Properties['ExitStatus'] -and
+        $null -ne $resultRecord.ExitStatus) {
+        $exitCode = [int]$resultRecord.ExitStatus
+        if ($exitCode -ne 0) {
+            $detail = if ($resultRecord.PSObject.Properties['ErrorText'] -and $resultRecord.ErrorText) {
+                " $($resultRecord.ErrorText)"
+            }
+            else { '' }
+            throw "Installer '$InstallerId' reported ExitStatus $exitCode.$detail"
+        }
+        return $exitCode
+    }
+
+    if ($resultRecord -and $resultRecord.PSObject.Properties['Ok']) {
+        if ($resultRecord.Ok -isnot [bool]) {
+            throw "Installer '$InstallerId' returned a malformed Ok value; expected a Boolean."
+        }
+    }
+
+    if ($resultRecord -and
+        $resultRecord.PSObject.Properties['Ok'] -and
+        -not $resultRecord.Ok) {
+        $failure = if ($resultRecord.PSObject.Properties['Failure']) { $resultRecord.Failure } else { $null }
+        $details = [System.Collections.Generic.List[string]]::new()
+        foreach ($field in @(
+                @{ Name = 'Code'; Limit = 128 },
+                @{ Name = 'Message'; Limit = 512 }
+            )) {
+            if (-not $failure -or -not $failure.PSObject.Properties[$field.Name]) { continue }
+            $value = ([string]$failure.($field.Name) -replace '[\r\n\t]+', ' ').Trim()
+            if (-not $value) { continue }
+            if ($value.Length -gt $field.Limit) { $value = $value.Substring(0, $field.Limit) }
+            $details.Add("Failure.$($field.Name)='$value'")
+        }
+        $detailText = if ($details.Count -gt 0) { ' ' + ($details -join '; ') + '.' } else { '' }
+        throw "Installer '$InstallerId' reported Ok=false.$detailText"
+    }
+
+    return 0
 }
 
 function Invoke-BrokerRequestFile {
@@ -466,20 +534,9 @@ function Invoke-BrokerRequestFile {
                 # The module cmdlet reports success in its result object rather than by setting
                 # $LASTEXITCODE, which only native executables and scripts set. Reading
                 # $LASTEXITCODE here would report a stale value from an unrelated earlier call.
-                $exitCode = if ($null -ne $commandResult -and
-                    $commandResult.PSObject.Properties['ExitStatus'] -and
-                    $null -ne $commandResult.ExitStatus) {
-                    [int]$commandResult.ExitStatus
-                }
-                else { 0 }
-
-                if ($exitCode -ne 0) {
-                    $detail = if ($commandResult -and $commandResult.PSObject.Properties['ErrorText'] -and $commandResult.ErrorText) {
-                        " $($commandResult.ErrorText)"
-                    }
-                    else { '' }
-                    throw "Installer '$installerId' reported ExitStatus $exitCode.$detail"
-                }
+                $exitCode = Get-BrokerModuleCommandExitCode `
+                    -CommandResult $commandResult `
+                    -InstallerId $installerId
             }
             else {
                 & $installer.path @parameters

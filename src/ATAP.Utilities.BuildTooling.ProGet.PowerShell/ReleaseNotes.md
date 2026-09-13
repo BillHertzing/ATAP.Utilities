@@ -1,5 +1,19 @@
 # Release notes
 
+## 0.1.22
+
+- Add the tightly allowlisted `seal-gather-call-record-segment` elevation-broker action.
+  It loads `Complete-GatherCallRecordSegment` only from
+  `ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell` 0.1.37 or later beneath the
+  administrator-writable `C:\Program Files\PowerShell\Modules` root.
+- Restrict sealing requests to seven required scalar strings: canonical C: or D: corpus
+  paths, a four-digit sprint, bounded SAM identities, and an exact SHA-256 pin. The
+  SprintLifecycle command remains responsible for semantic canonicalization, reparse,
+  ancestry, identity, JSONL, destination, volume, and hash checks.
+- Fail a broker request when a module command returns Boolean `Ok = false`, with bounded
+  `Failure.Code` and `Failure.Message` detail. Preserve the existing `ExitStatus` result
+  contract and reject non-Boolean `Ok` values.
+
 ## 0.1.21
 
 - Carry the fixed shared .NET tool policy path into every approved parity audit

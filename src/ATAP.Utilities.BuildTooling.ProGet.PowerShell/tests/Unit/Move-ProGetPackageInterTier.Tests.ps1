@@ -224,8 +224,12 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit', 'PromotedModuleHostSensitive
   Context 'No-profile BuildMaster promotion host' {
 
     It 'uses explicit inputs when the global settings variable is absent' {
-      $savedSettings = Get-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
-      $savedBaseUrl = Get-Variable -Name ProGetBaseUrl -Scope Global -ErrorAction SilentlyContinue
+      $savedSettingsVariable = Get-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
+      $savedBaseUrlVariable = Get-Variable -Name ProGetBaseUrl -Scope Global -ErrorAction SilentlyContinue
+      $settingsExisted = $null -ne $savedSettingsVariable
+      $baseUrlExisted = $null -ne $savedBaseUrlVariable
+      $savedSettingsValue = if ($settingsExisted) { $savedSettingsVariable.Value } else { $null }
+      $savedBaseUrlValue = if ($baseUrlExisted) { $savedBaseUrlVariable.Value } else { $null }
       try {
         Remove-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
         Remove-Variable -Name ProGetBaseUrl -Scope Global -ErrorAction SilentlyContinue
@@ -238,14 +242,26 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit', 'PromotedModuleHostSensitive
         $result.DestinationFeed | Should -Be 'powershellget-integration'
         $script:getPValCallCount | Should -Be 0
       } finally {
-        if ($null -ne $savedSettings) { Set-Variable -Name settings -Scope Global -Value $savedSettings.Value }
-        if ($null -ne $savedBaseUrl) { Set-Variable -Name ProGetBaseUrl -Scope Global -Value $savedBaseUrl.Value }
+        if ($settingsExisted) {
+          Set-Variable -Name settings -Scope Global -Value $savedSettingsValue
+        } else {
+          Remove-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
+        }
+        if ($baseUrlExisted) {
+          Set-Variable -Name ProGetBaseUrl -Scope Global -Value $savedBaseUrlValue
+        } else {
+          Remove-Variable -Name ProGetBaseUrl -Scope Global -ErrorAction SilentlyContinue
+        }
       }
     }
 
     It 'uses explicit inputs when global settings exists but lacks promotion keys' {
-      $savedSettings = Get-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
-      $savedBaseUrl = Get-Variable -Name ProGetBaseUrl -Scope Global -ErrorAction SilentlyContinue
+      $savedSettingsVariable = Get-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
+      $savedBaseUrlVariable = Get-Variable -Name ProGetBaseUrl -Scope Global -ErrorAction SilentlyContinue
+      $settingsExisted = $null -ne $savedSettingsVariable
+      $baseUrlExisted = $null -ne $savedBaseUrlVariable
+      $savedSettingsValue = if ($settingsExisted) { $savedSettingsVariable.Value } else { $null }
+      $savedBaseUrlValue = if ($baseUrlExisted) { $savedBaseUrlVariable.Value } else { $null }
       try {
         Set-Variable -Name settings -Scope Global -Value @{ Unrelated = 'value' }
         Remove-Variable -Name ProGetBaseUrl -Scope Global -ErrorAction SilentlyContinue
@@ -258,12 +274,16 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit', 'PromotedModuleHostSensitive
         $result.DestinationFeed | Should -Be 'powershellget-integration'
         $script:getPValCallCount | Should -Be 0
       } finally {
-        if ($null -ne $savedSettings) {
-          Set-Variable -Name settings -Scope Global -Value $savedSettings.Value
+        if ($settingsExisted) {
+          Set-Variable -Name settings -Scope Global -Value $savedSettingsValue
         } else {
           Remove-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
         }
-        if ($null -ne $savedBaseUrl) { Set-Variable -Name ProGetBaseUrl -Scope Global -Value $savedBaseUrl.Value }
+        if ($baseUrlExisted) {
+          Set-Variable -Name ProGetBaseUrl -Scope Global -Value $savedBaseUrlValue
+        } else {
+          Remove-Variable -Name ProGetBaseUrl -Scope Global -ErrorAction SilentlyContinue
+        }
       }
     }
   }

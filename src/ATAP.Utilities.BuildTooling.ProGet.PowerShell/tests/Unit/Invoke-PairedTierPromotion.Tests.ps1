@@ -29,6 +29,12 @@ BeforeAll {
     function Get-AgentTextFromDatabase {
         param($ConnectionString, $SourceId)
     }
+    function Resolve-HostSuffixedSecretName {
+        param($BaseName, $ServiceName, $SettingName)
+        # Hermetic SC-0288 placement result. The production resolver is covered in the
+        # Common module; this unit needs only the deterministic name forwarded by the SUT.
+        return "$BaseName.utat022"
+    }
 
     . (Join-Path $aiRenderingPublicDir 'Test-PairedAgentTextSuite.ps1')
     . (Join-Path $publicDir 'Invoke-PairedTierPromotion.ps1')
@@ -189,7 +195,7 @@ Describe 'Invoke-PairedTierPromotion' -Tag 'Unit', 'PromotedModuleHostSensitive'
             $r = Invoke-PairedTierPromotion -ModuleVersion '1' -DatabasePackageVersion '1' -Tier 'Development'
             $r.Succeeded | Should -BeTrue
             Assert-MockCalled Invoke-PromotedModuleTests -Times 1 -Exactly -Scope It -ParameterFilter {
-                [string]::IsNullOrEmpty($ProGetBaseUrl) -and $ProGetApiKeySecretName -eq 'ProGet.BuildMaster.API.Key'
+                [string]::IsNullOrEmpty($ProGetBaseUrl) -and $ProGetApiKeySecretName -eq 'ProGet.BuildMaster.API.Key.utat022'
             }
         }
     }

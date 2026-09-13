@@ -43,7 +43,19 @@ BeforeAll {
   $script:stateDirectory = Join-Path $TestDrive 'AceOutpostState'
   New-Item -ItemType Directory -Path $script:stateDirectory -Force | Out-Null
   $script:rootPem = Join-Path $script:stateDirectory 'AceOutpost-Interception-Root.pem'
-  Set-Content -LiteralPath $script:rootPem -Value 'public-root-placeholder'
+  $script:testRootKey = [System.Security.Cryptography.RSA]::Create(2048)
+  $script:testRootRequest = [System.Security.Cryptography.X509Certificates.CertificateRequest]::new(
+    'CN=AceOutpost test interception root',
+    $script:testRootKey,
+    [System.Security.Cryptography.HashAlgorithmName]::SHA256,
+    [System.Security.Cryptography.RSASignaturePadding]::Pkcs1)
+  $script:testRootRequest.CertificateExtensions.Add(
+    [System.Security.Cryptography.X509Certificates.X509BasicConstraintsExtension]::new($true, $false, 0, $true))
+  $script:testRootCertificate = $script:testRootRequest.CreateSelfSigned(
+    [DateTimeOffset]::UtcNow.AddMinutes(-5), [DateTimeOffset]::UtcNow.AddDays(1))
+  Set-Content -LiteralPath $script:rootPem -Value $script:testRootCertificate.ExportCertificatePem()
+  $script:testRootSpkiFingerprint = [Convert]::ToBase64String(
+    [System.Security.Cryptography.SHA256]::HashData($script:testRootKey.ExportSubjectPublicKeyInfo()))
 
   $script:emptyStateDirectory = Join-Path $TestDrive 'EmptyState'
   New-Item -ItemType Directory -Path $script:emptyStateDirectory -Force | Out-Null
@@ -218,6 +230,8 @@ class MarkerProbe {
 
 AfterAll {
   if ($null -ne $script:listener) { $script:listener.Stop() }
+  if ($null -ne $script:testRootCertificate) { $script:testRootCertificate.Dispose() }
+  if ($null -ne $script:testRootKey) { $script:testRootKey.Dispose() }
   Remove-Item -LiteralPath Function:\Get-SecretATAP -ErrorAction SilentlyContinue
 }
 
@@ -321,6 +335,8 @@ Describe 'Start-AceOutpostMeteredHarness' -Tag 'Unit' {
       $capturedArguments | Should -Contain "--proxy-server=$($result.ChromiumProxyEndpoint)"
       $capturedArguments | Should -Contain '--proxy-bypass-list=<-loopback>'
       $capturedArguments | Should -Contain '--disable-quic'
+      $capturedArguments | Should -Contain "--ignore-certificate-errors-spki-list=$script:testRootSpkiFingerprint"
+      $capturedArguments | Should -Not -Contain '--ignore-certificate-errors'
       ($capturedArguments -join ' ') | Should -Not -Match 'test-secret'
     }
 
@@ -330,11 +346,25 @@ Describe 'Start-AceOutpostMeteredHarness' -Tag 'Unit' {
       } | Should -Throw '*requires LaunchMode Wait*'
     }
 
+    It 'fails closed before launch when the interception root cannot supply an SPKI fingerprint' {
+      $savedPem = Get-Content -LiteralPath $script:rootPem -Raw
+      try {
+        Set-Content -LiteralPath $script:rootPem -Value 'malformed-public-root'
+        {
+          Invoke-ProbeLaunch -Client Codex -ChromiumProxyBridge
+        } | Should -Throw '*could not supply Chromium trust*'
+      } finally {
+        Set-Content -LiteralPath $script:rootPem -Value $savedPem
+      }
+    }
+
     It 'rejects caller-supplied Chromium routing switches' -ForEach @(
       '--proxy-server=http://elsewhere:1234',
       '--proxy-bypass-list=*',
       '--no-proxy-server',
-      '--disable-quic'
+      '--disable-quic',
+      '--ignore-certificate-errors',
+      '--ignore-certificate-errors-spki-list=caller-owned'
     ) {
       {
         Invoke-ProbeLaunch -Client Codex -ChromiumProxyBridge -ExtraArguments @($_)

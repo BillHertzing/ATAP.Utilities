@@ -1,5 +1,15 @@
 # Release Notes for ATAP.Utilities.PowerShell
 
+## [0.2.8] — 2026-09-13
+
+### Fixed
+
+- Supply Chromium with the interception root's computed SHA-256 SPKI fingerprint
+  so packaged desktop clients can validate AceOutpost-intercepted TLS without a
+  machine-wide root installation or a blanket certificate-error bypass.
+- Reject caller-owned certificate-error switches alongside caller-owned proxy
+  switches; a missing, malformed, or non-RSA interception root fails closed.
+
 ## [0.2.7] — 2026-09-13
 
 ### Added

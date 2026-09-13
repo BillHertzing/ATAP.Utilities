@@ -185,7 +185,9 @@ function Start-AceOutpostMeteredHarness {
         '^--proxy-server(?:=|$)',
         '^--proxy-bypass-list(?:=|$)',
         '^--no-proxy-server(?:=|$)',
-        '^--disable-quic(?:=|$)'
+        '^--disable-quic(?:=|$)',
+        '^--ignore-certificate-errors(?:=|$)',
+        '^--ignore-certificate-errors-spki-list(?:=|$)'
       )
       foreach ($argument in $ArgumentList) {
         if ($reservedChromiumProxyArguments.Where({ $argument -match $_ }, 'First').Count -gt 0) {
@@ -203,6 +205,24 @@ function Start-AceOutpostMeteredHarness {
       # Precondition 1 of 3 - CA trust material must be present (packet section 6.3).
       if (-not (Test-Path -LiteralPath $rootPem -PathType Leaf)) {
         throw "AceOutpost interception root was not found at '$rootPem'. Start AceOutpostService and confirm its proxy bootstrap completed before starting a metered harness."
+      }
+      if ($ChromiumProxyBridge) {
+        try {
+          $rootCertificatePem = Get-Content -LiteralPath $rootPem -Raw -ErrorAction Stop
+          $rootCertificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::CreateFromPem($rootCertificatePem)
+          $rootPublicKey = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPublicKey($rootCertificate)
+          if ($null -eq $rootPublicKey) {
+            throw 'The interception root does not contain an RSA public key.'
+          }
+          $rootSpkiFingerprint = [Convert]::ToBase64String(
+            [System.Security.Cryptography.SHA256]::HashData($rootPublicKey.ExportSubjectPublicKeyInfo()))
+        } catch {
+          throw "AceOutpost interception root at '$rootPem' could not supply Chromium trust: $($_.Exception.Message)"
+        } finally {
+          if ($null -ne $rootPublicKey) { $rootPublicKey.Dispose() }
+          if ($null -ne $rootCertificate) { $rootCertificate.Dispose() }
+          $rootCertificatePem = $null
+        }
       }
 
       # Precondition 2 of 3 - the loopback listener must already be up (packet section 6.1).
@@ -329,6 +349,10 @@ function Start-AceOutpostMeteredHarness {
           $null = $startInfo.ArgumentList.Add("--proxy-server=$bridgeEndpoint")
           $null = $startInfo.ArgumentList.Add('--proxy-bypass-list=<-loopback>')
           $null = $startInfo.ArgumentList.Add('--disable-quic')
+          # Chromium does not consume Node/OpenSSL trust environment variables. Scope trust
+          # to this process and this exact interception-root public key instead of installing
+          # the CA in a Windows Trusted Root store or disabling certificate verification.
+          $null = $startInfo.ArgumentList.Add("--ignore-certificate-errors-spki-list=$rootSpkiFingerprint")
         }
 
         if ($LaunchMode -eq 'Wait' -and -not $ChromiumProxyBridge) {
@@ -394,6 +418,7 @@ function Start-AceOutpostMeteredHarness {
       # Scrub the credential and every derivative from this process. The composed values live
       # on in the child's block only, which is the entire point of the design.
       $credential = $username = $secret = $proxyUrl = $null
+      $rootSpkiFingerprint = $null
       $composed = $null
       $startInfo = $null
       if ($null -ne $bridge) { $bridge.Dispose() }

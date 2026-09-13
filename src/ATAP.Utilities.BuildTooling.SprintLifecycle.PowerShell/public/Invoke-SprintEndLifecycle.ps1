@@ -62,7 +62,18 @@ function Invoke-SprintEndLifecycle {
   Copies dotted sprint task artifacts into SprintHistory.
 
   .PARAMETER VerifyCheckpoints
-  Verifies every selected worktree has a reachable canonical Planning checkpoint.
+  Verifies every selected worktree has a reachable canonical Planning checkpoint
+  plus externally durable, hash-verified corpus evidence.
+
+  .PARAMETER ExternalDurabilityEvidence
+  Snapshot evidence forwarded to Test-SprintCheckpointCoverage. The lifecycle
+  never calls the live corpus or manifest itself.
+
+  .PARAMETER RequiredExternalReplicaKind
+  External replica kinds required before any teardown-producing phase proceeds.
+
+  .PARAMETER ExternalDurabilityOverride
+  Named operator exception forwarded to checkpoint coverage.
 
   .PARAMETER WriteHandoff
   Generates HANDOFF.SprintNNNN.md.
@@ -140,6 +151,16 @@ function Invoke-SprintEndLifecycle {
 
     [Parameter()]
     [switch]$VerifyCheckpoints,
+
+    [Parameter()]
+    [object[]]$ExternalDurabilityEvidence = @(),
+
+    [Parameter()]
+    [ValidateNotNullOrEmpty()]
+    [string[]]$RequiredExternalReplicaKind = @('Primary', 'DropboxMirror'),
+
+    [Parameter()]
+    [object]$ExternalDurabilityOverride,
 
     [Parameter()]
     [switch]$WriteHandoff,
@@ -244,10 +265,17 @@ function Invoke-SprintEndLifecycle {
     if (-not $phases.WorktreeState.Ok) { [void]$failures.Add('WorktreeState') }
 
     if ($VerifyCheckpoints -and $phases.Context.Ok) {
-      $phases.CheckpointCoverage = Test-SprintCheckpointCoverage `
-        -PlanningRoot $planningRootFull `
-        -SprintNumber ([int]$phases.Context.ClosedSprintNumber) `
-        -WorktreePaths $worktreeFullPaths
+      $coverageParameters = @{
+        PlanningRoot               = $planningRootFull
+        SprintNumber               = [int]$phases.Context.ClosedSprintNumber
+        WorktreePaths              = $worktreeFullPaths
+        ExternalDurabilityEvidence = $ExternalDurabilityEvidence
+        RequiredExternalReplicaKind = $RequiredExternalReplicaKind
+      }
+      if ($PSBoundParameters.ContainsKey('ExternalDurabilityOverride')) {
+        $coverageParameters.ExternalDurabilityOverride = $ExternalDurabilityOverride
+      }
+      $phases.CheckpointCoverage = Test-SprintCheckpointCoverage @coverageParameters
       if (-not $phases.CheckpointCoverage.Ok) {
         [void]$failures.Add('CheckpointCoverage')
       }
@@ -262,6 +290,9 @@ function Invoke-SprintEndLifecycle {
     )
     if ($ApplyBoundary -and -not $checkpointConfirmed) {
       [void]$failures.Add('CheckpointCoverageRequiredForBoundary')
+    }
+    if (($WriteHandoff -or $CleanupInfrastructure) -and -not $checkpointConfirmed) {
+      [void]$failures.Add('ExternalDurabilityRequiredForTeardown')
     }
 
     $phases.RetrospectiveNotebook = [PSCustomObject]@{ Ok = $true; Message = 'Notebook check skipped.' }

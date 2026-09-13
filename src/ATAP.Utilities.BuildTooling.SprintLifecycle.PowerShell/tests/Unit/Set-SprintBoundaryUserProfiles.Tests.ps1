@@ -1,6 +1,9 @@
 #Requires -Version 7.0
 
 BeforeAll {
+  $script:originalConfigRootKeys = $global:configRootKeys
+  $script:originalSettings = $global:settings
+
   $script:addedGetLocalUserShim = $false
   if (-not (Get-Command -Name Get-LocalUser -ErrorAction SilentlyContinue)) {
     function global:Get-LocalUser {
@@ -20,6 +23,9 @@ BeforeAll {
 }
 
 AfterAll {
+  $global:configRootKeys = $script:originalConfigRootKeys
+  $global:settings = $script:originalSettings
+
   if ($script:addedGetLocalUserShim) {
     Remove-Item -LiteralPath 'Function:\global:Get-LocalUser' -ErrorAction SilentlyContinue
   }

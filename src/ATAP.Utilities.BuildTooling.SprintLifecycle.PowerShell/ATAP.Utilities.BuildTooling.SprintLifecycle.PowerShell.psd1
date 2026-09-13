@@ -78,10 +78,10 @@ RequiredModules = @(
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
 FunctionsToExport = @(
-  'Clear-SprintGeneratedArtifacts', 'Convert-TasksMdToSprintBoard', 'Get-SprintEndApprovalPlan',
+  'Clear-SprintGeneratedArtifacts', 'Complete-GatherCallRecordSegment', 'Convert-TasksMdToSprintBoard', 'Get-SprintEndApprovalPlan',
   'Get-SprintEndContext',
-  'Get-SprintHistoryReconstruction', 'Initialize-DownstreamSprintFromSharedVSCode',
-  'Initialize-SprintAIAdapters', 'Invoke-SprintAIAdapterLifecycle', 'Invoke-SprintEndGitHubClose',
+  'Get-SprintHistoryReconstruction', 'Initialize-CorpusStorageBoundary', 'Initialize-DownstreamSprintFromSharedVSCode',
+  'Initialize-SprintAIAdapters', 'Invoke-GatherCallRecordReconciliation', 'Invoke-SprintAIAdapterLifecycle', 'Invoke-SprintEndGitHubClose',
   'Invoke-SprintEndInfrastructureCleanup', 'Invoke-SprintEndLifecycle', 'Invoke-SprintEndOverviewClose',
   'Invoke-SprintEndRehearsal',
   'New-OverviewSprintWorkspace', 'New-SprintEndDefectRoute', 'New-SprintEndHandoff', 'New-SprintStage1',

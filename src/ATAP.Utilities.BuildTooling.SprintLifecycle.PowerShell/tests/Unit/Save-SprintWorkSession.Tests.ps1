@@ -53,11 +53,11 @@ BeforeAll {
   $slug = ($script:atapWt.Substring(0, 1).ToLower() + $script:atapWt.Substring(1)) `
     -replace ':', '-' -replace '\\', '-' -replace '_', '-' -replace '\.', '-' -replace '^-', ''
   $script:claudeProjectsRoot = Join-Path $script:gitRoot '.claude-projects'
-  $sessionDir = Join-Path $script:claudeProjectsRoot $slug
-  New-Item -ItemType Directory -Path $sessionDir -Force | Out-Null
-  $jsonlPath = Join-Path $sessionDir 'fake-session.jsonl'
-  Set-Content -LiteralPath $jsonlPath -Value '{"role":"user","content":"test"}' -Encoding UTF8
-  $memoryDir = Join-Path $sessionDir 'memory'
+  $script:sessionDir = Join-Path $script:claudeProjectsRoot $slug
+  New-Item -ItemType Directory -Path $script:sessionDir -Force | Out-Null
+  $script:jsonlPath = Join-Path $script:sessionDir 'fake-session.jsonl'
+  Set-Content -LiteralPath $script:jsonlPath -Value '{"role":"user","content":"test"}' -Encoding UTF8
+  $memoryDir = Join-Path $script:sessionDir 'memory'
   New-Item -ItemType Directory -Path $memoryDir -Force | Out-Null
   Set-Content -LiteralPath (Join-Path $memoryDir 'memory-note.md') -Value '# memory' -Encoding UTF8
 
@@ -83,8 +83,16 @@ BeforeAll {
         New-Item -ItemType Directory -Path (Split-Path -Path $archivePath -Parent) -Force | Out-Null
         Set-Content -LiteralPath $archivePath -Value "mock archive for $sourcePath" -Encoding UTF8
         if (-not $global:MockSevenZipContents.ContainsKey($archivePath)) {
-          $global:MockSevenZipContents[$archivePath] = @([IO.Path]::GetFileName($sourcePath))
+          $sourceRoot = Split-Path -Path $sourcePath -Parent
+          $global:MockSevenZipContents[$archivePath] = @(
+            Get-ChildItem -LiteralPath $sourceRoot -File -Recurse -Force |
+              ForEach-Object { [IO.Path]::GetRelativePath($sourceRoot, $_.FullName) }
+          )
         }
+      }
+      't' {
+        # The add action creates a readable stand-in. Integrity failures are
+        # exercised through the archive-list completeness assertions below.
       }
       'l' {
         $archivePath = $rest[0]
@@ -101,6 +109,9 @@ BeforeAll {
           if (-not [string]::IsNullOrWhiteSpace($name)) {
             '2026-07-25 10:08:16 ....A            9           13  ' + $name
           }
+        }
+        if ($null -ne $global:MockSevenZipForcedEntries) {
+          Remove-Variable -Name MockSevenZipForcedEntries -Scope Global -ErrorAction SilentlyContinue
         }
       }
       default { throw "Unexpected 7z action: $action" }
@@ -179,15 +190,15 @@ Describe 'Save-SprintWorkSession' {
       Set-Location $script:atapWt
       try {
         $savedSettings = $global:settings
-        $getPValWasAvailable = $false
+        $getPValFunction = Get-Command -Name 'Get-PVal' -CommandType Function -ErrorAction SilentlyContinue
+        $getPValTargetFunction = Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue
         try {
           $global:settings = $null
 
-          if (Test-Path -LiteralPath 'Function:\Get-PVal') {
+          if ($null -ne $getPValFunction) {
             Remove-Item -LiteralPath 'Function:\Get-PVal' -ErrorAction SilentlyContinue
-            $getPValWasAvailable = $true
           }
-          if (Test-Path -LiteralPath 'Function:\Get-ParameterValueFromNeoConfigurationRoot') {
+          if ($null -ne $getPValTargetFunction) {
             Remove-Item -LiteralPath 'Function:\Get-ParameterValueFromNeoConfigurationRoot' -ErrorAction SilentlyContinue
           }
 
@@ -205,10 +216,11 @@ Describe 'Save-SprintWorkSession' {
           $errorMessages | Should -BeNullOrEmpty -Because 'parameter defaults are usable; Get-PVal absence must not cause errors'
         } finally {
           $global:settings = $savedSettings
-          # Re-load Get-PVal if it was available before this test
-          if ($getPValWasAvailable) {
-            $getPValPath = Join-Path $PSScriptRoot '..\..\..\..\ATAP.Utilities.PowerShell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
-            if (Test-Path $getPValPath) { . $getPValPath }
+          if ($null -ne $getPValFunction) {
+            Set-Item -LiteralPath 'Function:\global:Get-PVal' -Value $getPValFunction.ScriptBlock -Force
+          }
+          if ($null -ne $getPValTargetFunction) {
+            Set-Item -LiteralPath 'Function:\global:Get-ParameterValueFromNeoConfigurationRoot' -Value $getPValTargetFunction.ScriptBlock -Force
           }
         }
       } finally {
@@ -588,7 +600,8 @@ Describe 'Save-SprintWorkSession' {
         $entry.MemorySnapshotCreated | Should -BeTrue -Because 'the store exists at the stable key and must be found'
         $entry.MemoryFileCount | Should -Be 1
         $entry.MemorySourcePath | Should -BeExactly $fixture.StableMemoryDir
-        Test-Path -LiteralPath (Join-Path $entry.MemorySnapshotPath 'stable-memory.md') | Should -BeTrue
+        Test-Path -LiteralPath $entry.MemorySnapshotPath -PathType Leaf | Should -BeTrue
+        $entry.MemoryArchiveSha256 | Should -Match '^[0-9A-F]{64}$'
         # The roster must record which key the memory actually came from.
         $entry.MemorySourceKey | Should -Match 'ATAP-Utilities$' -Because 'the stable key, not the -wt- sprint key, supplied the memory'
       } finally {
@@ -603,8 +616,8 @@ Describe 'Save-SprintWorkSession' {
 
         $entry.MemorySnapshotCreated | Should -BeTrue
         $entry.MemorySourcePath | Should -BeExactly $fixture.SprintMemoryDir -Because 'a live sprint store must never be shadowed by a staler stable one'
-        Test-Path -LiteralPath (Join-Path $entry.MemorySnapshotPath 'sprint-memory.md') | Should -BeTrue
-        Test-Path -LiteralPath (Join-Path $entry.MemorySnapshotPath 'stable-memory.md') | Should -BeFalse
+        Test-Path -LiteralPath $entry.MemorySnapshotPath -PathType Leaf | Should -BeTrue
+        $entry.MemoryFileCount | Should -Be 1
         $entry.MemorySourceKey | Should -Match '-wt-100-'
       } finally {
         Remove-Item -Recurse -Force $fixture.ClaudeRoot, $fixture.PlanRoot -ErrorAction SilentlyContinue
@@ -800,7 +813,7 @@ Describe 'Save-SprintWorkSession' {
           $entry = Get-Content -LiteralPath $rosterPath | Select-Object -Last 1 | ConvertFrom-Json
           $entry.MemorySourcePath | Should -BeExactly $actualMemoryDir
           $entry.MemorySnapshotCreated | Should -BeTrue
-          Test-Path -LiteralPath (Join-Path $entry.MemorySnapshotPath 'case-memory.md') | Should -BeTrue
+          Test-Path -LiteralPath $entry.MemorySnapshotPath -PathType Leaf | Should -BeTrue
         } finally {
           $global:settings = $savedSettings
         }
@@ -970,7 +983,7 @@ Describe 'Save-SprintWorkSession' {
       $err = script:Invoke-CheckpointWithArchiveEntries -ArchiveEntries @()
 
       $err | Should -Not -BeNullOrEmpty
-      $err.Exception.Message | Should -Match 'contains no files'
+      $err.Exception.Message | Should -Match 'expected entry'
     }
 
     It 'fails loudly when the archive exists but omits the rollout JSONL' {
@@ -979,11 +992,11 @@ Describe 'Save-SprintWorkSession' {
       $err = script:Invoke-CheckpointWithArchiveEntries -ArchiveEntries @('some-other-file.txt')
 
       $err | Should -Not -BeNullOrEmpty
-      $err.Exception.Message | Should -Match "rollout file 'fake-session\.jsonl' is absent"
+      $err.Exception.Message | Should -Match "expected entry 'fake-session\.jsonl'"
     }
 
     It 'succeeds and records the archive when the rollout JSONL is present' {
-      $err = script:Invoke-CheckpointWithArchiveEntries -ArchiveEntries @('fake-session.jsonl')
+      $err = script:Invoke-CheckpointWithArchiveEntries -ArchiveEntries @('fake-session.jsonl', '.checkpoint-manifest.json')
       $err | Should -BeNullOrEmpty
 
       $rosterPath = Join-Path $script:planningWt "SprintWorkSessionRoster\SprintWorkSessionRoster-$($script:sprintNumber).jsonl"
@@ -995,7 +1008,7 @@ Describe 'Save-SprintWorkSession' {
       # Guards the assertion against 7-Zip's real bare-listing shape: the original
       # proposed patch counted entries with '^\s*\d+\s+\S+', which never matches a line
       # beginning with an ISO date, so every checkpoint would have thrown.
-      $err = script:Invoke-CheckpointWithArchiveEntries -ArchiveEntries @('fake-session.jsonl')
+      $err = script:Invoke-CheckpointWithArchiveEntries -ArchiveEntries @('fake-session.jsonl', '.checkpoint-manifest.json')
       $err | Should -BeNullOrEmpty
     }
 
@@ -1070,9 +1083,10 @@ Describe 'Save-SprintWorkSession' {
           $entry.MemoryFileCount | Should -BeGreaterThan 0
           $entry.ConversationDbPath | Should -Match ([regex]::Escape("$convId.db"))
 
-          # Memory snapshot must contain the brain artifacts but NOT .system_generated.
-          Test-Path -LiteralPath (Join-Path $entry.MemorySnapshotPath 'note.md') | Should -BeTrue
-          Test-Path -LiteralPath (Join-Path $entry.MemorySnapshotPath '.system_generated') | Should -BeFalse
+          # The two brain artifacts are archived; .system_generated is excluded.
+          $entry.MemoryFileCount | Should -Be 2
+          Test-Path -LiteralPath $entry.MemorySnapshotPath -PathType Leaf | Should -BeTrue
+          $entry.MemoryArchiveSha256 | Should -Match '^[0-9A-F]{64}$'
         } finally {
           $global:settings = $savedSettings
         }
@@ -1438,6 +1452,140 @@ Describe 'Save-SprintWorkSession' {
         Set-Location $savedLocation
         Remove-Item -Recurse -Force $secondRepoRoot, $secondSessionDir -ErrorAction SilentlyContinue
       }
+    }
+  }
+
+  Context 'Task 15.191.b — complete self-verifying checkpoint bundles' {
+
+    BeforeEach {
+      $script:sidecarRoot = Join-Path $script:sessionDir 'fake-session'
+      Remove-Item -LiteralPath $script:sidecarRoot -Recurse -Force -ErrorAction SilentlyContinue
+      Remove-Item -LiteralPath (Join-Path $script:sessionDir 'fake-session-copy') -Recurse -Force -ErrorAction SilentlyContinue
+      Remove-Item -LiteralPath (Join-Path $script:planningWt 'SprintWorkSessionConversations') -Recurse -Force -ErrorAction SilentlyContinue
+      Remove-Item -LiteralPath (Join-Path $script:planningWt 'SprintWorkSessionMemorys') -Recurse -Force -ErrorAction SilentlyContinue
+      Remove-Item -LiteralPath (Join-Path $script:planningWt 'SprintWorkSessionRoster') -Recurse -Force -ErrorAction SilentlyContinue
+      Set-Content -LiteralPath $script:jsonlPath -Value '{"role":"user","content":"test"}' -Encoding UTF8
+      $global:MockSevenZipContents = @{}
+    }
+
+    BeforeAll {
+      function Invoke-SidecarCheckpoint {
+        $savedLocation = Get-Location
+        $savedSettings = $global:settings
+        Set-Location $script:atapWt
+        try {
+          $global:settings = $null
+          $parameters = @{
+            Agent              = 'ClaudeCode'
+            SessionId          = 'fake-session'
+            SprintN            = $script:sprintNumber
+            PlanningRoot       = $script:planningWt
+            ClaudeProjectsRoot = $script:claudeProjectsRoot
+            GitHubRoot         = $script:gitRoot
+            Confirm            = $false
+          }
+          Save-SprintWorkSession @parameters
+        } finally {
+          $global:settings = $savedSettings
+          Set-Location $savedLocation
+        }
+      }
+    }
+
+    It 'archives the main transcript, every exact sibling subagent transcript, and each referenced tool result' {
+      $subagentsRoot = Join-Path $script:sidecarRoot 'subagents'
+      $toolResultsRoot = Join-Path $script:sidecarRoot 'tool-results'
+      New-Item -ItemType Directory -Path $subagentsRoot, $toolResultsRoot -Force | Out-Null
+      $mainRecord = [pscustomobject]@{ role = 'assistant'; content = 'C:\fixture\tool-results\overflow-main.txt' }
+      $mainRecord | ConvertTo-Json -Compress | Set-Content -LiteralPath $script:jsonlPath -Encoding UTF8
+      $subagentPath = Join-Path $subagentsRoot 'agent-a1.jsonl'
+      $subagentRecord = [pscustomobject]@{ role = 'assistant'; content = 'C:\fixture\tool-results\overflow-agent.txt' }
+      $subagentRecord | ConvertTo-Json -Compress | Set-Content -LiteralPath $subagentPath -Encoding UTF8
+      Set-Content -LiteralPath (Join-Path $toolResultsRoot 'overflow-main.txt') -Value 'main overflow' -Encoding UTF8
+      Set-Content -LiteralPath (Join-Path $toolResultsRoot 'overflow-agent.txt') -Value 'agent overflow' -Encoding UTF8
+
+      $expectedBytes = @(
+        $script:jsonlPath
+        $subagentPath
+        (Join-Path $toolResultsRoot 'overflow-main.txt')
+        (Join-Path $toolResultsRoot 'overflow-agent.txt')
+      ) | Get-Item | Measure-Object -Property Length -Sum | Select-Object -ExpandProperty Sum
+      $entry = Invoke-SidecarCheckpoint
+
+      $entry.ConversationArchiveCreated | Should -BeTrue
+      $entry.ConversationFileCount | Should -Be 4
+      $entry.ConversationArchiveEntryCount | Should -Be 5
+      $entry.ConversationByteCount | Should -Be $expectedBytes
+      $entry.ConversationArchiveSha256 | Should -Match '^[0-9A-F]{64}$'
+      $entry.MemoryArchiveSha256 | Should -Match '^[0-9A-F]{64}$'
+    }
+
+    It 'captures a concurrently open sibling subagent transcript through a shared-read handle' {
+      $subagentsRoot = Join-Path $script:sidecarRoot 'subagents'
+      New-Item -ItemType Directory -Path $subagentsRoot -Force | Out-Null
+      $subagentPath = Join-Path $subagentsRoot 'agent-concurrent.jsonl'
+      Set-Content -LiteralPath $subagentPath -Value '{"role":"assistant","content":"active"}' -Encoding UTF8
+      $stream = [IO.File]::Open($subagentPath, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::ReadWrite)
+      try {
+        $entry = Invoke-SidecarCheckpoint
+      } finally {
+        $stream.Dispose()
+      }
+
+      $entry.ConversationArchiveCreated | Should -BeTrue
+      $entry.ConversationFileCount | Should -Be 2
+      $expectedBytes = (Get-Item -LiteralPath $script:jsonlPath).Length + (Get-Item -LiteralPath $subagentPath).Length
+      $entry.ConversationByteCount | Should -Be $expectedBytes
+    }
+
+    It 'rejects a truncated sibling transcript and publishes no final archive' {
+      $subagentsRoot = Join-Path $script:sidecarRoot 'subagents'
+      New-Item -ItemType Directory -Path $subagentsRoot -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $subagentsRoot 'agent-truncated.jsonl') -Value '{"role":' -Encoding UTF8
+
+      { Invoke-SidecarCheckpoint } | Should -Throw -ExpectedMessage '*Incomplete or invalid JSONL*'
+      @(Get-ChildItem -LiteralPath (Join-Path $script:planningWt 'SprintWorkSessionConversations') -Filter '*.7z' -File -ErrorAction SilentlyContinue).Count | Should -Be 0
+    }
+
+    It 'rejects a renamed referenced tool result as a dangling reference' {
+      $toolResultsRoot = Join-Path $script:sidecarRoot 'tool-results'
+      New-Item -ItemType Directory -Path $toolResultsRoot -Force | Out-Null
+      [pscustomobject]@{ role = 'assistant'; content = 'C:\fixture\tool-results\original.txt' } |
+        ConvertTo-Json -Compress |
+        Set-Content -LiteralPath $script:jsonlPath -Encoding UTF8
+      Set-Content -LiteralPath (Join-Path $toolResultsRoot 'renamed.txt') -Value 'renamed' -Encoding UTF8
+
+      { Invoke-SidecarCheckpoint } | Should -Throw -ExpectedMessage '*Dangling overflow tool-result reference*original.txt*'
+    }
+
+    It 'ignores absent and close-variant sidecar directories instead of guessing' {
+      $closeVariantRoot = Join-Path $script:sessionDir 'fake-session-copy\subagents'
+      $singularRoot = Join-Path $script:sidecarRoot 'subagent'
+      New-Item -ItemType Directory -Path $closeVariantRoot, $singularRoot -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $closeVariantRoot 'agent-wrong.jsonl') -Value '{"role":' -Encoding UTF8
+      Set-Content -LiteralPath (Join-Path $singularRoot 'agent-wrong.jsonl') -Value '{"role":' -Encoding UTF8
+
+      $entry = Invoke-SidecarCheckpoint
+
+      $entry.ConversationArchiveCreated | Should -BeTrue
+      $entry.ConversationFileCount | Should -Be 1
+    }
+
+    It 'makes a failed dangling-reference retry idempotent once the exact sidecar arrives' {
+      $toolResultsRoot = Join-Path $script:sidecarRoot 'tool-results'
+      New-Item -ItemType Directory -Path $toolResultsRoot -Force | Out-Null
+      [pscustomobject]@{ role = 'assistant'; content = 'C:\fixture\tool-results\retry.txt' } |
+        ConvertTo-Json -Compress |
+        Set-Content -LiteralPath $script:jsonlPath -Encoding UTF8
+
+      { Invoke-SidecarCheckpoint } | Should -Throw
+      Set-Content -LiteralPath (Join-Path $toolResultsRoot 'retry.txt') -Value 'arrived' -Encoding UTF8
+      $entry = Invoke-SidecarCheckpoint
+
+      $entry.ConversationArchiveCreated | Should -BeTrue
+      $entry.ConversationFileCount | Should -Be 2
+      @(Get-ChildItem -LiteralPath (Join-Path $script:planningWt 'SprintWorkSessionConversations') -Filter '*.pending' -File -ErrorAction SilentlyContinue).Count | Should -Be 0
+      @(Get-ChildItem -LiteralPath (Join-Path $script:planningWt 'SprintWorkSessionConversations') -Filter '*.7z' -File -ErrorAction SilentlyContinue).Count | Should -Be 1
     }
   }
 }

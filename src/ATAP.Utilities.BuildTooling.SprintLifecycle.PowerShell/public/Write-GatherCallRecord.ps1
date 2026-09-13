@@ -260,8 +260,12 @@ function Write-GatherCallRecord {
   .PARAMETER StoreTarget
     Which store layout to write. `Durable` (default) writes under the `_Planning` sprint
     worktree so records merge to stable at sprint end; `Generated` writes the contract
-    § 6.2 layout under the calling worktree's `_generated` tree. See WHERE RECORDS GO —
-    this is the switch that reverses the decision when the records move back.
+    § 6.2 layout under the calling worktree's `_generated` tree; `Corpus` writes only to
+    mutable corpus staging. The default remains `Durable`.
+
+  .PARAMETER CorpusGatherRecordsStagingPath
+    Explicit absolute mutable staging directory for `StoreTarget Corpus`. When omitted,
+    the exact `CorpusGatherRecordsStagingPath` setting is resolved through `Get-PVal`.
 
   .PARAMETER TaskFolder
     Task folder segment beneath the stream folder in the DURABLE layout only. Defaults to
@@ -603,8 +607,13 @@ function Write-GatherCallRecord {
     [string]$Stream = 'StreamM',
 
     [Parameter(Mandatory = $false)]
-    [ValidateSet('Durable', 'Generated')]
+    [ValidateSet('Durable', 'Generated', 'Corpus')]
     [string]$StoreTarget = 'Durable',
+
+    [Parameter(Mandatory = $false)]
+    [AllowNull()]
+    [AllowEmptyString()]
+    [object]$CorpusGatherRecordsStagingPath,
 
     [Parameter(Mandatory = $false)]
     [ValidateNotNullOrEmpty()]
@@ -918,14 +927,22 @@ function Write-GatherCallRecord {
     $storeDirectory = & $nullIfBlank $StoreRoot
 
     if ($null -eq $storeDirectory) {
-      $storeResolution = Resolve-GatherCallStoreDirectory `
-        -StoreTarget $StoreTarget `
-        -WorktreeRoot $resolvedWorktree `
-        -SprintNumber $SprintNumber `
-        -Stream $Stream `
-        -TaskFolder $TaskFolder `
-        -PlanningRoot $PlanningRoot `
-        -GitRoot $GitRoot
+      $storeResolutionArguments = @{
+        StoreTarget  = $StoreTarget
+        WorktreeRoot = $resolvedWorktree
+        SprintNumber = $SprintNumber
+        Stream        = $Stream
+        TaskFolder    = $TaskFolder
+        PlanningRoot  = $PlanningRoot
+        GitRoot       = $GitRoot
+      }
+      # Preserve caller intent: an explicitly bound blank/null override is invalid and
+      # must not become indistinguishable from a genuinely omitted override that should
+      # resolve through Get-PVal.
+      if ($PSBoundParameters.ContainsKey('CorpusGatherRecordsStagingPath')) {
+        $storeResolutionArguments.CorpusGatherRecordsStagingPath = $CorpusGatherRecordsStagingPath
+      }
+      $storeResolution = Resolve-GatherCallStoreDirectory @storeResolutionArguments
 
       if ($storeResolution.Ok) {
         $storeDirectory = $storeResolution.Directory

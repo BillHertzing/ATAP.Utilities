@@ -1,5 +1,26 @@
 # Release notes
 
+## 0.1.36
+
+- Task 15.191.b makes sprint checkpoints complete and self-verifying. Conversation
+  bundles include the main transcript, exact sibling subagent transcripts, referenced
+  overflow tool results, and a manifest; memory is archived instead of copied as a
+  directory. The roster records file counts, byte counts, and SHA-256 identities, and
+  incomplete JSONL, dangling references, or incomplete archives fail before publication.
+- Task 15.191.c adds a fail-closed corpus boundary for gather-call records. New exports
+  `Complete-GatherCallRecordSegment`, `Initialize-CorpusStorageBoundary`, and
+  `Invoke-GatherCallRecordReconciliation` validate mutable staging records, seal them by
+  same-volume atomic move, reconcile aged staging remnants without overwriting, and
+  provision or verify the distinct conversation, sealed-record, and staging roots with
+  the approved capture/expiry ACL model. Reparse traversal, ambiguous settings, unsafe
+  identities, cross-volume sealing, and ACL drift are rejected.
+- Task 15.191.e extends checkpoint coverage with explicit external-durability evidence
+  for conversation and memory archives, including current manifest timestamps, matching
+  hashes, and complete primary/mirror replica sets. SprintEnd intentionally hard-stops
+  while that external evidence producer is unavailable or evidence is stale or partial;
+  this is the operational fail-closed contract, not an optional warning or an implicit
+  durability claim.
+
 ## 0.1.34
 
 - Task 15.183: export `Write-GatherCallRecord`. It records each

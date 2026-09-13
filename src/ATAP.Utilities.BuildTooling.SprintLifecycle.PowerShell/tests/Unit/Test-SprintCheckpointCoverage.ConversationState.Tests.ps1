@@ -51,24 +51,69 @@ BeforeAll {
       WorktreeName               = 'ATAP.Utilities-wt-137-Sprint-0015-work-items'
       ConversationArchivePath    = $archivePath
       ConversationArchiveCreated = $true
+      ConversationFileCount      = 2
+      ConversationArchiveEntryCount = 3
+      ConversationArchiveSha256  = 'CONVERSATION-HASH'
       MemorySnapshotPath         = $memPath
       MemorySnapshotCreated      = $true
       MemoryFileCount            = 3
+      MemoryArchiveEntryCount    = 4
+      MemoryArchiveSha256        = 'MEMORY-HASH'
     }
     foreach ($k in $ConversationFields.Keys) { $entry[$k] = $ConversationFields[$k] }
 
     $rosterPath = Join-Path $rosterDir 'SprintWorkSessionRoster-0015.jsonl'
     Set-Content -LiteralPath $rosterPath -Value ($entry | ConvertTo-Json -Compress) -Encoding UTF8
 
-    return [pscustomobject]@{ PlanRoot = $planRoot; WorktreePath = $worktreePath }
+    return [pscustomobject]@{ PlanRoot = $planRoot; WorktreePath = $worktreePath; Entry = [pscustomobject]$entry }
   }
 
   function script:Invoke-Coverage {
-    param([Parameter(Mandatory)]$Fixture)
-    Test-SprintCheckpointCoverage `
-      -PlanningRoot $Fixture.PlanRoot `
-      -SprintNumber $script:sprintNumber `
-      -WorktreePaths @($Fixture.WorktreePath)
+    param(
+      [Parameter(Mandatory)]$Fixture,
+      [switch]$NoEvidence,
+      [object[]]$Evidence,
+      [object]$Override
+    )
+    if (-not $NoEvidence -and -not $PSBoundParameters.ContainsKey('Evidence')) {
+      $replicas = @(
+        [pscustomobject]@{
+          Kind = 'Primary'; Path = 'C:\CorpusFixture\conversation.7z'; Status = 'Present'
+          VerifiedSha256 = 'CONVERSATION-HASH'; VerifiedAtUtc = $Fixture.Entry.RecordedAt
+        },
+        [pscustomobject]@{
+          Kind = 'DropboxMirror'; Path = 'C:\CorpusMirrorFixture\conversation.7z'; Status = 'CopiedLocally'
+          VerifiedSha256 = 'CONVERSATION-HASH'; VerifiedAtUtc = $Fixture.Entry.RecordedAt
+        }
+      )
+      $memoryReplicas = @(
+        [pscustomobject]@{
+          Kind = 'Primary'; Path = 'C:\CorpusFixture\memory.7z'; Status = 'Present'
+          VerifiedSha256 = 'MEMORY-HASH'; VerifiedAtUtc = $Fixture.Entry.RecordedAt
+        },
+        [pscustomobject]@{
+          Kind = 'DropboxMirror'; Path = 'C:\CorpusMirrorFixture\memory.7z'; Status = 'CopiedLocally'
+          VerifiedSha256 = 'MEMORY-HASH'; VerifiedAtUtc = $Fixture.Entry.RecordedAt
+        }
+      )
+      $Evidence = @([pscustomobject]@{
+          WorktreeName = $Fixture.Entry.WorktreeName
+          CheckpointRecordedAt = $Fixture.Entry.RecordedAt
+          ManifestRecordedAtUtc = $Fixture.Entry.RecordedAt
+          Artifacts = @(
+            [pscustomobject]@{ Kind = 'Conversation'; ArchiveSha256 = 'CONVERSATION-HASH'; Replicas = $replicas },
+            [pscustomobject]@{ Kind = 'Memory'; ArchiveSha256 = 'MEMORY-HASH'; Replicas = $memoryReplicas }
+          )
+        })
+    }
+    $parameters = @{
+      PlanningRoot = $Fixture.PlanRoot
+      SprintNumber = $script:sprintNumber
+      WorktreePaths = @($Fixture.WorktreePath)
+      ExternalDurabilityEvidence = @($Evidence)
+    }
+    if ($null -ne $Override) { $parameters.ExternalDurabilityOverride = $Override }
+    Test-SprintCheckpointCoverage @parameters
   }
 }
 
@@ -154,6 +199,87 @@ Describe 'Test-SprintCheckpointCoverage — SC-0327 conversation state' {
       $r = script:Invoke-Coverage -Fixture $fixture
       $r.PerWorktree[0].ConversationState | Should -Be 'Unrecorded'
       $r.PerWorktree[0].Ok | Should -BeTrue
+    } finally {
+      Remove-Item -Recurse -Force $fixture.PlanRoot -ErrorAction SilentlyContinue
+    }
+  }
+
+  It 'fails closed when external corpus evidence is unavailable' {
+    $fixture = script:New-CoverageFixture -ConversationFields @{
+      ConversationSelectionRule = 'EnvironmentSessionId'
+    }
+    try {
+      $r = script:Invoke-Coverage -Fixture $fixture -NoEvidence
+      $r.Ok | Should -BeFalse
+      $r.PerWorktree[0].ExternalDurabilityState | Should -Be 'Failed'
+      ($r.Failures -join ' ') | Should -Match 'evidence is unavailable'
+    } finally {
+      Remove-Item -Recurse -Force $fixture.PlanRoot -ErrorAction SilentlyContinue
+    }
+  }
+
+  It 'rejects a stale manifest row even when replica hashes match' {
+    $fixture = script:New-CoverageFixture -ConversationFields @{
+      ConversationSelectionRule = 'EnvironmentSessionId'
+    }
+    try {
+      $evidence = @([pscustomobject]@{
+          WorktreeName = $fixture.Entry.WorktreeName
+          CheckpointRecordedAt = $fixture.Entry.RecordedAt
+          ManifestRecordedAtUtc = '2000-01-01T00:00:00Z'
+          Artifacts = @()
+        })
+      $r = script:Invoke-Coverage -Fixture $fixture -Evidence $evidence
+      $r.Ok | Should -BeFalse
+      ($r.PerWorktree[0].ExternalDurabilityFailures -join ' ') | Should -Match 'manifest evidence is stale'
+    } finally {
+      Remove-Item -Recurse -Force $fixture.PlanRoot -ErrorAction SilentlyContinue
+    }
+  }
+
+  It 'rejects a partial replica set' {
+    $fixture = script:New-CoverageFixture -ConversationFields @{
+      ConversationSelectionRule = 'EnvironmentSessionId'
+      MemorySnapshotCreated = $false
+      MemorySkipReason = 'Agent has no on-disk memory store.'
+    }
+    try {
+      $evidence = @([pscustomobject]@{
+          WorktreeName = $fixture.Entry.WorktreeName
+          CheckpointRecordedAt = $fixture.Entry.RecordedAt
+          ManifestRecordedAtUtc = $fixture.Entry.RecordedAt
+          Artifacts = @([pscustomobject]@{
+              Kind = 'Conversation'
+              ArchiveSha256 = 'CONVERSATION-HASH'
+              Replicas = @([pscustomobject]@{
+                  Kind = 'Primary'; Path = 'C:\CorpusFixture\conversation.7z'; Status = 'Present'
+                  VerifiedSha256 = 'CONVERSATION-HASH'; VerifiedAtUtc = '2026-09-09T20:00:00Z'
+                })
+            })
+        })
+      $r = script:Invoke-Coverage -Fixture $fixture -Evidence $evidence
+      $r.Ok | Should -BeFalse
+      ($r.PerWorktree[0].ExternalDurabilityFailures -join ' ') | Should -Match 'DropboxMirror replica'
+    } finally {
+      Remove-Item -Recurse -Force $fixture.PlanRoot -ErrorAction SilentlyContinue
+    }
+  }
+
+  It 'records a named operator override without erasing failed evidence checks' {
+    $fixture = script:New-CoverageFixture -ConversationFields @{
+      ConversationSelectionRule = 'EnvironmentSessionId'
+    }
+    try {
+      $override = [pscustomobject]@{
+        OperatorName = 'bill.hertzing'
+        Reason = 'Accepted temporary corpus outage for this exact close.'
+        RecordedAtUtc = '2026-09-09T21:00:00Z'
+      }
+      $r = script:Invoke-Coverage -Fixture $fixture -NoEvidence -Override $override
+      $r.Ok | Should -BeTrue
+      $r.PerWorktree[0].ExternalDurabilityState | Should -Be 'OperatorOverride'
+      $r.PerWorktree[0].ExternalDurabilityFailures | Should -Not -BeNullOrEmpty
+      $r.PerWorktree[0].OperatorOverride.OperatorName | Should -Be 'bill.hertzing'
     } finally {
       Remove-Item -Recurse -Force $fixture.PlanRoot -ErrorAction SilentlyContinue
     }

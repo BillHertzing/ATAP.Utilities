@@ -1,8 +1,8 @@
 function Resolve-GatherCallStoreDirectory {
   <#
   .SYNOPSIS
-    Resolves the `gather-calls` directory a gather-call record is written to, for either
-    the durable `_Planning` target or the legacy `_generated` target.
+    Resolves the directory a gather-call record is written to for the durable `_Planning`,
+    legacy `_generated`, or mutable corpus-staging target.
 
   .DESCRIPTION
     Task 15.183.B02. The write-target decision lives here, in one testable place, rather
@@ -62,7 +62,12 @@ function Resolve-GatherCallStoreDirectory {
   .PARAMETER StoreTarget
     `Durable` writes under the `_Planning` sprint worktree so the records merge to stable
     at sprint end. `Generated` writes the legacy contract section 6.2 layout under the
-    calling worktree's `_generated` tree.
+    calling worktree's `_generated` tree. `Corpus` writes only to the configured mutable
+    `CorpusGatherRecordsStagingPath`; it never falls back to either legacy target.
+
+  .PARAMETER CorpusGatherRecordsStagingPath
+    Explicit absolute mutable staging directory for `StoreTarget Corpus`. When omitted,
+    the exact setting key is resolved through `Get-PVal` and validated fail-closed.
 
   .PARAMETER WorktreeRoot
     The CALLING worktree root, normalized. Used to derive the Git root and, for
@@ -113,7 +118,7 @@ function Resolve-GatherCallStoreDirectory {
   [OutputType([PSCustomObject])]
   param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('Durable', 'Generated')]
+    [ValidateSet('Durable', 'Generated', 'Corpus')]
     [string]$StoreTarget,
 
     [Parameter(Mandatory = $true)]
@@ -141,7 +146,12 @@ function Resolve-GatherCallStoreDirectory {
     [Parameter(Mandatory = $false)]
     [AllowNull()]
     [AllowEmptyString()]
-    [string]$GitRoot
+    [string]$GitRoot,
+
+    [Parameter(Mandatory = $false)]
+    [AllowNull()]
+    [AllowEmptyString()]
+    [object]$CorpusGatherRecordsStagingPath
   )
 
   $fn = 'Resolve-GatherCallStoreDirectory'
@@ -155,6 +165,48 @@ function Resolve-GatherCallStoreDirectory {
     SprintNumber = $null
     PlanningRoot = $null
     StoreTarget  = $StoreTarget
+  }
+
+  if ($StoreTarget -eq 'Corpus') {
+    $resolvedValue = $null
+    if (-not $PSBoundParameters.ContainsKey('CorpusGatherRecordsStagingPath')) {
+      if (-not (Get-Command -Name 'Get-PVal' -ErrorAction SilentlyContinue)) {
+        $result.Error = "Get-PVal is unavailable, so CorpusGatherRecordsStagingPath cannot be resolved. Supply -CorpusGatherRecordsStagingPath or -StoreRoot."
+        return [PSCustomObject]$result
+      }
+      try {
+        $resolvedValue = Get-PVal -ParameterName 'CorpusGatherRecordsStagingPath' `
+            -originalPSBoundParameters @{} `
+            -dottedPath 'CorpusGatherRecordsStagingPath'
+      } catch {
+        $result.Error = "CorpusGatherRecordsStagingPath could not be resolved through Get-PVal: $($_.Exception.Message)"
+        return [PSCustomObject]$result
+      }
+    } else {
+      $resolvedValue = $CorpusGatherRecordsStagingPath
+    }
+    $resolvedValues = @($resolvedValue)
+
+    if ($resolvedValues.Count -ne 1) {
+      $result.Error = "CorpusGatherRecordsStagingPath must resolve to exactly one absolute path; received $($resolvedValues.Count) values."
+      return [PSCustomObject]$result
+    }
+
+    $corpusStagingPath = if ($null -eq $resolvedValues[0]) { $null } else { [string]$resolvedValues[0] }
+    if ([string]::IsNullOrWhiteSpace($corpusStagingPath)) {
+      $result.Error = 'CorpusGatherRecordsStagingPath resolved to a blank value. Supply one absolute mutable staging path.'
+      return [PSCustomObject]$result
+    }
+    if (-not [System.IO.Path]::IsPathFullyQualified($corpusStagingPath)) {
+      $result.Error = "CorpusGatherRecordsStagingPath '$corpusStagingPath' is relative. Supply one absolute mutable staging path."
+      return [PSCustomObject]$result
+    }
+
+    $result.Directory = [System.IO.Path]::GetFullPath($corpusStagingPath)
+    $result.Ok = $true
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
+      -Message "Corpus staging store resolved to '$($result.Directory)'" -Tag 'GatherCallRecord'
+    return [PSCustomObject]$result
   }
 
   # --- sprint number -------------------------------------------------------------

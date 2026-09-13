@@ -1,7 +1,7 @@
 function Save-SprintWorkSession {
     <#
 .SYNOPSIS
-    Archives the current Claude Code conversation JSONL and copies memory files
+    Archives the current agent conversation, its required sidecars, and memory files
     for the current sprint work session.
 
 .DESCRIPTION
@@ -9,10 +9,11 @@ function Save-SprintWorkSession {
     _Planning sprint worktree so it can be referenced later.  Two artifacts
     are produced:
 
-      1. A 7-zip archive of the most-recent conversation transcript for the
+      1. A self-verifying 7-zip archive of the selected conversation transcript,
+         sibling subagent transcripts, and referenced overflow tool results for the
          calling agent  →  SprintWorkSessionConversations\
-      2. A copy of the agent's current memory files/artifacts
-         →  SprintWorkSessionMemorys\<name>\
+      2. A self-verifying 7-zip archive of the agent's current memory directory
+         →  SprintWorkSessionMemorys\<name>.7z
 
     Four agent families are supported via -Agent:
 
@@ -205,12 +206,185 @@ function Save-SprintWorkSession {
                     } finally {
                         $sourceStream.Dispose()
                     }
-                    return
+                    $sourceAfter = Get-Item -LiteralPath $SourcePath -ErrorAction Stop
+                    $destinationAfter = Get-Item -LiteralPath $DestinationPath -ErrorAction Stop
+                    if ($sourceAfter.Length -ne $destinationAfter.Length) {
+                        throw [IO.IOException]::new("Source changed while it was being snapshotted: '$SourcePath'.")
+                    }
+                    $destinationAfter.LastWriteTimeUtc = $sourceAfter.LastWriteTimeUtc
+                    return $destinationAfter
                 } catch [IO.IOException] {
                     if ($attempt -eq $RetryCount) {
                         throw "Could not snapshot active conversation '$SourcePath' after $RetryCount shared-read attempts. Close or release the agent transcript and retry checkpoint. Last error: $($_.Exception.Message)"
                     }
                     Start-Sleep -Milliseconds $RetryDelayMilliseconds
+                }
+            }
+        }
+
+        function Test-CheckpointJsonLines {
+            [CmdletBinding()]
+            param(
+                [Parameter(Mandatory)]
+                [string] $Path
+            )
+
+            $lineNumber = 0
+            foreach ($line in [IO.File]::ReadLines($Path)) {
+                $lineNumber++
+                if ([string]::IsNullOrWhiteSpace($line)) { continue }
+                try {
+                    $null = $line | ConvertFrom-Json -ErrorAction Stop
+                } catch {
+                    throw "Incomplete or invalid JSONL at '$Path' line $($lineNumber): $($_.Exception.Message)"
+                }
+            }
+        }
+
+        function New-VerifiedCheckpointArchive {
+            [CmdletBinding()]
+            param(
+                [Parameter(Mandatory)]
+                [ValidateSet('Conversation', 'Memory')]
+                [string] $Kind,
+
+                [Parameter(Mandatory)]
+                [object[]] $SourceItems,
+
+                [Parameter(Mandatory)]
+                [string] $ArchivePath,
+
+                [Parameter(Mandatory)]
+                [string] $StagingPath,
+
+                [string] $ToolResultsRoot = '',
+
+                [string] $ToolResultsArchivePrefix = ''
+            )
+
+            $pendingArchive = "$ArchivePath.pending"
+            $quarantineArchive = "$ArchivePath.quarantine"
+            $stagedItems = [System.Collections.Generic.List[object]]::new()
+            $seenArchivePaths = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+
+            try {
+                New-Item -ItemType Directory -Path $StagingPath -Force | Out-Null
+
+                foreach ($sourceItem in $SourceItems) {
+                    $archiveRelativePath = ([string]$sourceItem.ArchivePath).Replace('/', [IO.Path]::DirectorySeparatorChar)
+                    if ([IO.Path]::IsPathRooted($archiveRelativePath) -or $archiveRelativePath -match '(^|[\\/])\.\.([\\/]|$)') {
+                        throw "Unsafe checkpoint archive path '$archiveRelativePath'."
+                    }
+                    if (-not $seenArchivePaths.Add($archiveRelativePath)) { continue }
+                    if (-not (Test-Path -LiteralPath $sourceItem.SourcePath -PathType Leaf)) {
+                        throw "Required checkpoint source is absent: '$($sourceItem.SourcePath)'."
+                    }
+
+                    $stagedPath = Join-Path $StagingPath $archiveRelativePath
+                    New-Item -ItemType Directory -Path (Split-Path -Path $stagedPath -Parent) -Force | Out-Null
+                    $stagedFile = Copy-ConversationSnapshot -SourcePath $sourceItem.SourcePath -DestinationPath $stagedPath
+                    if ($sourceItem.ValidateJsonl) {
+                        Test-CheckpointJsonLines -Path $stagedFile.FullName
+                    }
+                    $stagedItems.Add([PSCustomObject]@{
+                            SourcePath  = $sourceItem.SourcePath
+                            ArchivePath = $archiveRelativePath
+                            StagedPath  = $stagedFile.FullName
+                        })
+                }
+
+                if ($ToolResultsRoot) {
+                    $referencePattern = '(?i)(?:^|[\\/])tool-results[\\/]+(?<Name>[A-Za-z0-9][A-Za-z0-9._-]*\.txt)'
+                    $referencedNames = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+                    foreach ($stagedJsonl in @($stagedItems | Where-Object { $_.ArchivePath -like '*.jsonl' })) {
+                        $content = Get-Content -LiteralPath $stagedJsonl.StagedPath -Raw
+                        foreach ($match in [regex]::Matches($content, $referencePattern)) {
+                            $null = $referencedNames.Add($match.Groups['Name'].Value)
+                        }
+                    }
+
+                    foreach ($referencedName in $referencedNames) {
+                        $sourcePath = Join-Path $ToolResultsRoot $referencedName
+                        if (-not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
+                            throw "Dangling overflow tool-result reference '$referencedName'; expected exact file '$sourcePath'."
+                        }
+                        $archiveRelativePath = Join-Path $ToolResultsArchivePrefix $referencedName
+                        if (-not $seenArchivePaths.Add($archiveRelativePath)) { continue }
+                        $stagedPath = Join-Path $StagingPath $archiveRelativePath
+                        New-Item -ItemType Directory -Path (Split-Path -Path $stagedPath -Parent) -Force | Out-Null
+                        $stagedFile = Copy-ConversationSnapshot -SourcePath $sourcePath -DestinationPath $stagedPath
+                        $stagedItems.Add([PSCustomObject]@{
+                                SourcePath  = $sourcePath
+                                ArchivePath = $archiveRelativePath
+                                StagedPath  = $stagedFile.FullName
+                            })
+                    }
+                }
+
+                $manifestFiles = @($stagedItems | Sort-Object ArchivePath | ForEach-Object {
+                        $file = Get-Item -LiteralPath $_.StagedPath
+                        [PSCustomObject][ordered]@{
+                            Path   = $_.ArchivePath.Replace([IO.Path]::DirectorySeparatorChar, '/')
+                            Bytes  = $file.Length
+                            Sha256 = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash
+                        }
+                    })
+                $payloadBytes = [long](($manifestFiles | Measure-Object -Property Bytes -Sum).Sum)
+                $manifest = [ordered]@{
+                    SchemaVersion = '1.0.0'
+                    Kind          = $Kind
+                    PayloadFiles  = $manifestFiles.Count
+                    PayloadBytes  = $payloadBytes
+                    Files         = $manifestFiles
+                }
+                $manifestPath = Join-Path $StagingPath '.checkpoint-manifest.json'
+                $manifest | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $manifestPath -Encoding UTF8
+
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Creating pending $Kind archive '$pendingArchive' from '$StagingPath'."
+                $sevenZipOutput = @(& 7z a -t7z $pendingArchive (Join-Path $StagingPath '*') -r 2>&1)
+                if ($LASTEXITCODE -ne 0) {
+                    throw "7z failed to create pending $Kind archive (exit $LASTEXITCODE): $($sevenZipOutput -join ' ')"
+                }
+                $testOutput = @(& 7z t $pendingArchive 2>&1)
+                if ($LASTEXITCODE -ne 0) {
+                    throw "7z integrity test failed for pending $Kind archive (exit $LASTEXITCODE): $($testOutput -join ' ')"
+                }
+                $listing = @(& 7z l -ba $pendingArchive 2>&1)
+                $expectedEntries = @($manifestFiles.Path) + '.checkpoint-manifest.json'
+                foreach ($expectedEntry in $expectedEntries) {
+                    $windowsEntry = $expectedEntry.Replace('/', [IO.Path]::DirectorySeparatorChar)
+                    if (-not ($listing | Where-Object { $_ -match "(?:^|\s)$([regex]::Escape($windowsEntry))$" })) {
+                        throw "7z archive is incomplete; expected entry '$expectedEntry' is absent from '$pendingArchive'."
+                    }
+                }
+
+                if (Test-Path -LiteralPath $ArchivePath) {
+                    $existingHash = (Get-FileHash -LiteralPath $ArchivePath -Algorithm SHA256).Hash
+                    $pendingHash = (Get-FileHash -LiteralPath $pendingArchive -Algorithm SHA256).Hash
+                    if ($existingHash -ne $pendingHash) {
+                        throw "Idempotent publish refused to overwrite a different archive at '$ArchivePath'."
+                    }
+                } else {
+                    Move-Item -LiteralPath $pendingArchive -Destination $ArchivePath
+                }
+
+                $archiveFile = Get-Item -LiteralPath $ArchivePath
+                return [PSCustomObject]@{
+                    ArchivePath       = $archiveFile.FullName
+                    ArchiveEntryCount = $expectedEntries.Count
+                    PayloadFileCount  = $manifestFiles.Count
+                    PayloadByteCount  = $payloadBytes
+                    ArchiveByteCount  = $archiveFile.Length
+                    ArchiveSha256     = (Get-FileHash -LiteralPath $archiveFile.FullName -Algorithm SHA256).Hash
+                }
+            } catch {
+                if (Test-Path -LiteralPath $pendingArchive -PathType Leaf) {
+                    Move-Item -LiteralPath $pendingArchive -Destination $quarantineArchive -Force
+                }
+                throw
+            } finally {
+                if (Test-Path -LiteralPath $StagingPath) {
+                    Remove-Item -LiteralPath $StagingPath -Recurse -Force -ErrorAction SilentlyContinue
                 }
             }
         }
@@ -723,8 +897,10 @@ function Save-SprintWorkSession {
             $rosterDir = Join-Path $PlanningRoot 'SprintWorkSessionRoster'
             $rosterPath = Join-Path $rosterDir "SprintWorkSessionRoster-$SprintN.jsonl"
             $archiveCreated = $false
+            $conversationArchiveMetrics = $null
             $memoryCopied = $false
             $memoryFileCount = 0
+            $memoryArchiveMetrics = $null
             $memorySkipReason = $null
             # Discriminated skip outcome (Task 14.13). Prose in $memorySkipReason cannot be
             # acted on by a caller, and a boolean cannot tell "this agent has no memory
@@ -734,16 +910,11 @@ function Save-SprintWorkSession {
             #   Empty    -> the store exists but held nothing to copy
             $memorySkipKind = $null
 
-            # ── 1. Compress conversation JSONL with 7-zip ──────────────────────────
+            # ── 1. Archive the complete conversation bundle ───────────────────────
             $convDir = Join-Path $PlanningRoot 'SprintWorkSessionConversations'
             New-Item -ItemType Directory -Path $convDir -Force | Out-Null
             $archive = Join-Path $convDir "$convName.7z"
-            # Keep the staging path short. 7-Zip can silently emit a valid but empty
-            # archive when a transcript staging path exceeds the legacy Win32 path limit.
-            # The durable archive retains the descriptive $convName; only its transient
-            # input lives under the system temporary directory.
             $snapshotDir = Join-Path ([IO.Path]::GetTempPath()) "ATAP-checkpoint-$($nameComponents.Disambiguator)"
-            $snapshot = if ($jsonl) { Join-Path $snapshotDir $jsonl.Name } else { $null }
 
             if (-not $jsonl) {
                 # Transcript selection reported a skip (SC-0327). Continue so the memory
@@ -752,55 +923,50 @@ function Save-SprintWorkSession {
                 # some other session's transcript and reports success.
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "No conversation transcript resolved ($conversationSkipKind); conversation archive skipped. $conversationSkipReason"
             } elseif ($PSCmdlet.ShouldProcess($archive, "Archive conversation JSONL '$($jsonl.Name)'")) {
-                try {
-                    New-Item -ItemType Directory -Path $snapshotDir -Force | Out-Null
-                    Copy-ConversationSnapshot -SourcePath $jsonl.FullName -DestinationPath $snapshot
-                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Archiving snapshot '$snapshot' → '$archive'"
-                    $sevenZipOutput = @(& 7z a $archive $snapshot 2>&1)
-                    if ($LASTEXITCODE -ne 0) {
-                        throw "7z failed to archive conversation snapshot (exit $LASTEXITCODE): $($sevenZipOutput -join ' ')"
-                    }
-                    if (Test-Path $archive) {
-                    # Task 13.76.d: the existence of the .7z proves nothing about its payload.
-                    # `7z a` can emit an archive with zero entries when path/token expansion
-                    # fails, and the previous check reported ConversationArchiveCreated = $true
-                    # for it -- a checkpoint that claims the conversation was saved when it was
-                    # not. Assert the contents before claiming success.
-                    $listing = & 7z l -ba $archive 2>&1
-                    $entries = @($listing | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
-                    if ($entries.Count -eq 0) {
-                        throw "7z archive was created but contains no files: $archive"
-                    }
+                $conversationSources = [System.Collections.Generic.List[object]]::new()
+                $conversationSources.Add([PSCustomObject]@{
+                        SourcePath    = $jsonl.FullName
+                        ArchivePath   = $jsonl.Name
+                        ValidateJsonl = $true
+                    })
 
-                    # The bare listing puts the stored name last on each line; match on the
-                    # file name rather than a column position so 7z formatting changes cannot
-                    # silently turn this assertion into a no-op.
-                    $jsonlFileName = [IO.Path]::GetFileName($snapshot)
-                    $containsRolloutJsonl = @(
-                        $entries | Where-Object { $_ -match [regex]::Escape($jsonlFileName) }
-                    ).Count -gt 0
-                    if (-not $containsRolloutJsonl) {
-                        throw "7z archive created but rollout file '$jsonlFileName' is absent: $archive"
+                # Sidecars live only beneath the exact transcript basename. Close
+                # variants and renamed sibling directories must never be guessed.
+                $sidecarName = $jsonl.BaseName
+                $sidecarRoot = Join-Path $jsonl.Directory.FullName $sidecarName
+                $subagentsRoot = Join-Path $sidecarRoot 'subagents'
+                if (Test-Path -LiteralPath $subagentsRoot -PathType Container) {
+                    foreach ($subagentTranscript in @(Get-ChildItem -LiteralPath $subagentsRoot -File -Filter '*.jsonl' -ErrorAction Stop | Sort-Object Name)) {
+                        $conversationSources.Add([PSCustomObject]@{
+                                SourcePath    = $subagentTranscript.FullName
+                                ArchivePath   = Join-Path $sidecarName 'subagents' $subagentTranscript.Name
+                                ValidateJsonl = $true
+                            })
                     }
+                }
 
-                    $archiveCreated = $true
-                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Conversation saved: $archive ($($entries.Count) entr$(if ($entries.Count -eq 1) { 'y' } else { 'ies' }))"
-                } else {
-                    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message 'Archive not created — verify 7z is on PATH.'
+                $conversationArchiveParameters = @{
+                    Kind                     = 'Conversation'
+                    SourceItems              = $conversationSources.ToArray()
+                    ArchivePath              = $archive
+                    StagingPath              = $snapshotDir
+                    ToolResultsRoot          = Join-Path $sidecarRoot 'tool-results'
+                    ToolResultsArchivePrefix = Join-Path $sidecarName 'tool-results'
                 }
-                } finally {
-                    Remove-Item -LiteralPath $snapshot -Force -ErrorAction SilentlyContinue
-                    Remove-Item -LiteralPath $snapshotDir -Force -ErrorAction SilentlyContinue
-                }
+                $conversationArchiveMetrics = New-VerifiedCheckpointArchive @conversationArchiveParameters
+                $archiveCreated = $true
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Conversation saved and verified: $archive ($($conversationArchiveMetrics.PayloadFileCount) payload files, $($conversationArchiveMetrics.PayloadByteCount) bytes, SHA-256 $($conversationArchiveMetrics.ArchiveSha256))"
             }
 
-            # ── 2. Copy memory files ───────────────────────────────────────────────
-            # The memory source and copy semantics were resolved per-agent above:
-            #   ClaudeMd              -> copy *.md from the slug's memory\ folder
+            # ── 2. Archive memory files ────────────────────────────────────────────
+            # The memory source and selection semantics were resolved per-agent above:
+            #   ClaudeMd              -> archive the complete memory\ directory
             #   AntigravityArtifacts  -> copy every top-level artifact under the brain
             #                            folder EXCEPT the .system_generated subfolder
             #   None                  -> agent has no on-disk memory store (e.g. Codex)
-            $memDstDir = Join-Path $PlanningRoot "SprintWorkSessionMemorys\$memName"
+            $memDstDir = Join-Path $PlanningRoot 'SprintWorkSessionMemorys'
+            $memoryArchive = Join-Path $memDstDir "$memName.7z"
+            $memoryStagingPath = Join-Path ([IO.Path]::GetTempPath()) "ATAP-checkpoint-memory-$($nameComponents.Disambiguator)"
 
             if ($memoryCopyMode -eq 'None' -or -not $memSrcDir) {
                 $memorySkipKind = 'None'
@@ -812,21 +978,26 @@ function Save-SprintWorkSession {
                 $memorySkipKind = 'NotFound'
                 $memorySkipReason = "Memory directory not found: $memSrcDir"
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "$memorySkipReason — memory copy skipped."
-            } elseif ($PSCmdlet.ShouldProcess($memDstDir, "Copy memory files from '$memSrcDir'")) {
+            } elseif ($PSCmdlet.ShouldProcess($memoryArchive, "Archive memory files from '$memSrcDir'")) {
                 New-Item -ItemType Directory -Path $memDstDir -Force | Out-Null
+                $memorySourceFiles = @()
                 switch ($memoryCopyMode) {
                     'ClaudeMd' {
-                        Copy-Item -Path (Join-Path $memSrcDir '*.md') -Destination $memDstDir -Force
+                        $memorySourceFiles = @(Get-ChildItem -LiteralPath $memSrcDir -File -Recurse -Force -ErrorAction SilentlyContinue)
                     }
                     'AntigravityArtifacts' {
-                        # Copy all artifacts directly under the brain folder, excluding the
-                        # .system_generated subfolder (which holds the transcript/logs).
-                        Get-ChildItem -LiteralPath $memSrcDir -Force -ErrorAction SilentlyContinue |
+                        $memorySourceFiles = @(Get-ChildItem -LiteralPath $memSrcDir -Force -ErrorAction SilentlyContinue |
                             Where-Object { $_.Name -ne '.system_generated' } |
-                            ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination $memDstDir -Recurse -Force }
+                            ForEach-Object {
+                                if ($_.PSIsContainer) {
+                                    Get-ChildItem -LiteralPath $_.FullName -File -Recurse -Force -ErrorAction SilentlyContinue
+                                } else {
+                                    $_
+                                }
+                            })
                     }
                 }
-                $memoryFileCount = (Get-ChildItem $memDstDir -ErrorAction SilentlyContinue).Count
+                $memoryFileCount = $memorySourceFiles.Count
                 if ($memoryFileCount -eq 0) {
                     # The store existed but held nothing to copy — a third outcome that is
                     # neither a legitimate 'None' nor a missing-store 'NotFound'.
@@ -834,9 +1005,23 @@ function Save-SprintWorkSession {
                     $memorySkipReason = "Memory directory contained no files to copy: $memSrcDir"
                     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message $memorySkipReason
                 } else {
+                    $memorySourceItems = @($memorySourceFiles | ForEach-Object {
+                            [PSCustomObject]@{
+                                SourcePath    = $_.FullName
+                                ArchivePath   = [IO.Path]::GetRelativePath($memSrcDir, $_.FullName)
+                                ValidateJsonl = $false
+                            }
+                        })
+                    $memoryArchiveParameters = @{
+                        Kind        = 'Memory'
+                        SourceItems = $memorySourceItems
+                        ArchivePath = $memoryArchive
+                        StagingPath = $memoryStagingPath
+                    }
+                    $memoryArchiveMetrics = New-VerifiedCheckpointArchive @memoryArchiveParameters
                     $memoryCopied = $true
                 }
-                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Memory files saved ($memoryFileCount files): $memDstDir"
+                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Memory archive saved ($memoryFileCount files): $memoryArchive"
             }
 
             # ── 3. Append a lightweight session roster entry ───────────────────────
@@ -855,12 +1040,21 @@ function Save-SprintWorkSession {
                 ConversationSkipReason     = $conversationSkipReason
                 ConversationArchivePath    = $archive
                 ConversationArchiveCreated = $archiveCreated
+                ConversationArchiveEntryCount = if ($conversationArchiveMetrics) { $conversationArchiveMetrics.ArchiveEntryCount } else { 0 }
+                ConversationFileCount       = if ($conversationArchiveMetrics) { $conversationArchiveMetrics.PayloadFileCount } else { 0 }
+                ConversationByteCount       = if ($conversationArchiveMetrics) { $conversationArchiveMetrics.PayloadByteCount } else { 0 }
+                ConversationArchiveByteCount = if ($conversationArchiveMetrics) { $conversationArchiveMetrics.ArchiveByteCount } else { 0 }
+                ConversationArchiveSha256   = if ($conversationArchiveMetrics) { $conversationArchiveMetrics.ArchiveSha256 } else { $null }
                 ConversationDbPath         = $conversationDbPath
                 MemorySourcePath           = $memSrcDir
                 MemorySourceKey            = $memorySourceKey
-                MemorySnapshotPath         = $memDstDir
+                MemorySnapshotPath         = $memoryArchive
                 MemorySnapshotCreated      = $memoryCopied
                 MemoryFileCount            = $memoryFileCount
+                MemoryByteCount            = if ($memoryArchiveMetrics) { $memoryArchiveMetrics.PayloadByteCount } else { 0 }
+                MemoryArchiveByteCount     = if ($memoryArchiveMetrics) { $memoryArchiveMetrics.ArchiveByteCount } else { 0 }
+                MemoryArchiveEntryCount    = if ($memoryArchiveMetrics) { $memoryArchiveMetrics.ArchiveEntryCount } else { 0 }
+                MemoryArchiveSha256        = if ($memoryArchiveMetrics) { $memoryArchiveMetrics.ArchiveSha256 } else { $null }
                 MemorySkipKind             = $memorySkipKind
                 MemorySkipReason           = $memorySkipReason
             }

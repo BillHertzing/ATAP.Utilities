@@ -18,6 +18,17 @@
 #>
 
 BeforeAll {
+  # Get-PVal is commonly exposed by the interactive profile as an alias. Pester
+  # mocks a function command, and an alias of the same name wins command
+  # resolution, so remove only that alias for this container and restore it in
+  # AfterAll. This keeps the suite deterministic after any preceding unit file.
+  $script:OriginalGetPValAlias = Get-Alias -Name 'Get-PVal' -ErrorAction SilentlyContinue
+  $script:OriginalGetPValFunction = Get-Command -Name 'Get-PVal' -CommandType Function -ErrorAction SilentlyContinue
+  $script:OriginalRecorderFunction = Get-Command -Name 'Write-GatherCallRecord' -CommandType Function -ErrorAction SilentlyContinue
+  if ($null -ne $script:OriginalGetPValAlias) {
+    Remove-Alias -Name 'Get-PVal' -Scope Global -Force -ErrorAction Stop
+  }
+
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
     function global:Write-PSFMessage {
       param(
@@ -27,6 +38,8 @@ BeforeAll {
       )
     }
   }
+
+  Set-Item -LiteralPath 'Function:\global:Get-PVal' -Value { throw 'Get-PVal test double was not configured.' } -Force
 
   $script:moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
   $script:recorderPath = Join-Path $script:moduleRoot 'public\Write-GatherCallRecord.ps1'
@@ -203,6 +216,17 @@ BeforeAll {
 AfterAll {
   if ($script:fixtureRoot -and (Test-Path -LiteralPath $script:fixtureRoot)) {
     Remove-Item -LiteralPath $script:fixtureRoot -Recurse -Force -ErrorAction SilentlyContinue
+  }
+  Remove-Item -LiteralPath 'Function:\global:Get-PVal' -Force -ErrorAction SilentlyContinue
+  if ($null -ne $script:OriginalGetPValFunction) {
+    Set-Item -LiteralPath 'Function:\global:Get-PVal' -Value $script:OriginalGetPValFunction.ScriptBlock -Force
+  }
+  if ($null -ne $script:OriginalGetPValAlias) {
+    Set-Alias -Name 'Get-PVal' -Value $script:OriginalGetPValAlias.Definition -Scope Global -Option $script:OriginalGetPValAlias.Options -Force
+  }
+  Remove-Item -LiteralPath 'Function:\global:Write-GatherCallRecord' -Force -ErrorAction SilentlyContinue
+  if ($null -ne $script:OriginalRecorderFunction) {
+    Set-Item -LiteralPath 'Function:\global:Write-GatherCallRecord' -Value $script:OriginalRecorderFunction.ScriptBlock -Force
   }
 }
 
@@ -809,6 +833,155 @@ Describe 'Write-GatherCallRecord [public]' -Tag 'Unit' {
   }
 
   Context 'Write target - durable by default, switchable, fail-closed root' {
+
+    BeforeEach {
+      # Other containers can recreate the profile alias after this file's
+      # BeforeAll has run. Remove it immediately before every Corpus example so
+      # Pester's Get-PVal function mock remains the command that PowerShell calls.
+      Remove-Alias -Name 'Get-PVal' -Scope Script -Force -ErrorAction SilentlyContinue
+      Remove-Alias -Name 'Get-PVal' -Scope Global -Force -ErrorAction SilentlyContinue
+      Set-Item -LiteralPath 'Function:\global:Get-PVal' -Value { throw 'Get-PVal test double was not configured.' } -Force
+      . $script:recorderPath
+      $recorderFunction = Get-Command -Name 'Write-GatherCallRecord' -CommandType Function -ErrorAction Stop
+      Set-Item -LiteralPath 'Function:\global:Write-GatherCallRecord' -Value $recorderFunction.ScriptBlock -Force
+    }
+
+    It 'keeps Durable as the default while exposing the exact Corpus target and staging override' {
+      $command = Get-Command -Name 'Write-GatherCallRecord' -CommandType Function
+      $command.Parameters.Keys | Should -Contain 'CorpusGatherRecordsStagingPath'
+      $command.Parameters['StoreTarget'].Attributes.ValidValues | Should -Be @('Durable', 'Generated', 'Corpus')
+      $command.Definition | Should -Match '\[string\]\$StoreTarget\s*=\s*''Durable'''
+    }
+
+    It 'routes Corpus to an explicit absolute mutable staging override' {
+      $root = New-WorktreeFixture -Name 'corpus-explicit'
+      $staging = Join-Path $script:fixtureRoot 'CorpusGatherRecordsStaging-explicit'
+      $argument = New-RecorderArgument -WorktreePath $root
+      $argument.StoreTarget = 'Corpus'
+      $argument.CorpusGatherRecordsStagingPath = $staging
+      $result = Invoke-Recorder -Argument $argument
+
+      $result.Ok | Should -BeTrue
+      $result.Written | Should -BeTrue
+      $result.RecordDirectory | Should -Be ([System.IO.Path]::GetFullPath($staging))
+      $result.RecordDirectory | Should -Not -Match '_Planning|_generated'
+      (Get-ChildItem -LiteralPath $staging -File -Filter '*.jsonl').Count | Should -Be 1
+    }
+
+    It 'resolves the exact CorpusGatherRecordsStagingPath key through Get-PVal' {
+      $root = New-WorktreeFixture -Name 'corpus-setting'
+      $staging = Join-Path $script:fixtureRoot 'CorpusGatherRecordsStaging-setting'
+      $script:GetPValCallCount = 0
+      $script:GetPValConfiguredStaging = $staging
+      Set-Item -LiteralPath 'Function:\global:Get-PVal' -Value {
+        param($ParameterName, $originalPSBoundParameters, $dottedPath)
+        $script:GetPValCallCount++
+        if ($ParameterName -ne 'CorpusGatherRecordsStagingPath' -or
+          $dottedPath -ne 'CorpusGatherRecordsStagingPath') {
+          throw 'wrong setting key'
+        }
+        $script:GetPValConfiguredStaging
+      } -Force
+      $argument = New-RecorderArgument -WorktreePath $root
+      $argument.StoreTarget = 'Corpus'
+      $result = Invoke-Recorder -Argument $argument
+
+      $result.Ok | Should -BeTrue
+      $result.RecordDirectory | Should -Be ([System.IO.Path]::GetFullPath($staging))
+      $script:GetPValCallCount | Should -Be 1
+    }
+
+    It 'fails an explicitly bound blank or null corpus override without falling back to Get-PVal' -ForEach @(
+      @{ Name = 'blank'; Value = '   ' }
+      @{ Name = 'null'; Value = $null }
+    ) {
+      $root = New-WorktreeFixture -Name "corpus-explicit-$Name"
+      $script:GetPValCallCount = 0
+      Set-Item -LiteralPath 'Function:\global:Get-PVal' -Value {
+        $script:GetPValCallCount++
+        Join-Path $script:fixtureRoot 'must-not-be-used'
+      } -Force
+      $argument = New-RecorderArgument -WorktreePath $root
+      $argument.StoreTarget = 'Corpus'
+      $argument.CorpusGatherRecordsStagingPath = $Value
+      $result = Invoke-Recorder -Argument $argument -ErrorAction SilentlyContinue
+
+      $result.Ok | Should -BeFalse
+      $result.Error | Should -Match 'blank'
+      (Get-RecordFile -WorktreePath $root).Count | Should -Be 0
+      $script:GetPValCallCount | Should -Be 0
+    }
+
+    It 'lets StoreRoot bypass Corpus setting resolution without changing the byte format' {
+      $root = New-WorktreeFixture -Name 'corpus-storeroot'
+      $storeRoot = Join-Path $script:fixtureRoot 'corpus-store-root'
+      $script:GetPValCallCount = 0
+      Set-Item -LiteralPath 'Function:\global:Get-PVal' -Value {
+        $script:GetPValCallCount++
+        throw 'must not be called'
+      } -Force
+      $argument = New-RecorderArgument -WorktreePath $root
+      $argument.StoreTarget = 'Corpus'
+      $argument.StoreRoot = $storeRoot
+      $result = Invoke-Recorder -Argument $argument
+
+      $result.Ok | Should -BeTrue
+      $result.RecordDirectory | Should -Be $storeRoot
+      ((Get-Content -LiteralPath $result.RecordPath -Raw) | ConvertFrom-Json).recordVersion | Should -Be '1.0.0'
+      $script:GetPValCallCount | Should -Be 0
+    }
+
+    It 'fails Corpus closed when Get-PVal cannot resolve the setting' {
+      $root = New-WorktreeFixture -Name 'corpus-unavailable'
+      Set-Item -LiteralPath 'Function:\global:Get-PVal' -Value { throw 'settings unavailable' } -Force
+      $argument = New-RecorderArgument -WorktreePath $root
+      $argument.StoreTarget = 'Corpus'
+      $result = Invoke-Recorder -Argument $argument -ErrorAction SilentlyContinue
+
+      $result.Ok | Should -BeFalse
+      $result.Error | Should -Match 'could not be resolved through Get-PVal'
+      (Get-RecordFile -WorktreePath $root).Count | Should -Be 0
+    }
+
+    It 'fails Corpus closed on blank, relative, and ambiguous resolved values' -ForEach @(
+      @{ Name = 'blank'; Value = '   '; ErrorPattern = 'blank' }
+      @{ Name = 'relative'; Value = 'CorpusGatherRecordsStaging'; ErrorPattern = 'relative' }
+      @{ Name = 'ambiguous'; Value = @('C:\stage-a', 'C:\stage-b'); ErrorPattern = 'exactly one' }
+    ) {
+      $root = New-WorktreeFixture -Name "corpus-$Name"
+      $script:GetPValResolvedValue = $Value
+      Set-Item -LiteralPath 'Function:\global:Get-PVal' -Value { $script:GetPValResolvedValue } -Force
+      $argument = New-RecorderArgument -WorktreePath $root
+      $argument.StoreTarget = 'Corpus'
+      $result = Invoke-Recorder -Argument $argument -ErrorAction SilentlyContinue
+
+      $result.Ok | Should -BeFalse
+      $result.Error | Should -Match $ErrorPattern
+      (Get-RecordFile -WorktreePath $root).Count | Should -Be 0
+    }
+
+    It 'does not accept a close-variant corpus target name' {
+      $root = New-WorktreeFixture -Name 'corpus-close-variant'
+      $argument = New-RecorderArgument -WorktreePath $root
+      $argument.StoreTarget = 'Corpora'
+      { Invoke-Recorder -Argument $argument } | Should -Throw
+      (Get-RecordFile -WorktreePath $root).Count | Should -Be 0
+    }
+
+    It 'computes the Corpus staging path but writes nothing under WhatIf' {
+      $root = New-WorktreeFixture -Name 'corpus-whatif'
+      $staging = Join-Path $script:fixtureRoot 'CorpusGatherRecordsStaging-whatif'
+      $argument = New-RecorderArgument -WorktreePath $root
+      $argument.StoreTarget = 'Corpus'
+      $argument.CorpusGatherRecordsStagingPath = $staging
+      $argument.WhatIf = $true
+      $result = Invoke-Recorder -Argument $argument
+
+      $result.Ok | Should -BeTrue
+      $result.Written | Should -BeFalse
+      $result.RecordDirectory | Should -Be ([System.IO.Path]::GetFullPath($staging))
+      Test-Path -LiteralPath $staging | Should -BeFalse
+    }
 
     It 'fails closed when no worktree root is bound, rather than walking up to a .git ancestor' {
       # C00 gate item 3. The old fallback walked up from the current location, which made

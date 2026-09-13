@@ -1,14 +1,14 @@
 function Save-SprintEndSessionTail {
   <#
   .SYNOPSIS
-  Checkpoints and commits the final SprintEnd session tail in stable Planning.
+  Checkpoints the final SprintEnd session tail and commits only its roster metadata.
 
   .DESCRIPTION
   Runs Save-SprintWorkSession against the stable Planning repository after its
-  sprint PR has merged, then stages and commits only the canonical conversation,
-  memory, and roster directories. This preserves work created after the Planning
-  PR merge without treating any agent-local memory directory as the shared
-  system of record. The command does not push.
+  sprint PR has merged, verifies the sidecar-aware checkpoint result, then stages
+  and commits only the canonical roster directory. Conversation and memory
+  archives remain excluded from git by design; this function never presents the
+  roster commit as durability for those raw artifacts. The command does not push.
 
   .PARAMETER PlanningRoot
   Stable Planning repository on its main branch.
@@ -113,16 +113,30 @@ function Save-SprintEndSessionTail {
     $savedLocation = Get-Location
     try {
       Set-Location -LiteralPath $planningRootFull
-      Save-SprintWorkSession @checkpointParameters
+      $checkpoint = Save-SprintWorkSession @checkpointParameters
     } finally {
       Set-Location -LiteralPath $savedLocation
     }
 
-    $canonicalPaths = @(
-      'SprintWorkSessionConversations',
-      'SprintWorkSessionMemorys',
-      'SprintWorkSessionRoster'
-    )
+    if ($null -eq $checkpoint -or -not [bool]$checkpoint.ConversationArchiveCreated) {
+      throw 'Final session-tail capture did not produce a conversation archive.'
+    }
+    if ([string]::IsNullOrWhiteSpace([string]$checkpoint.ConversationArchiveSha256)) {
+      throw 'Final session-tail conversation archive has no verified SHA-256.'
+    }
+    if ([int]$checkpoint.ConversationFileCount -lt 1 -or
+      [int]$checkpoint.ConversationArchiveEntryCount -ne ([int]$checkpoint.ConversationFileCount + 1)) {
+      throw 'Final session-tail conversation archive is not the complete sidecar-aware checkpoint result.'
+    }
+    if ([bool]$checkpoint.MemorySnapshotCreated -and (
+        [string]::IsNullOrWhiteSpace([string]$checkpoint.MemoryArchiveSha256) -or
+        [int]$checkpoint.MemoryFileCount -lt 1 -or
+        [int]$checkpoint.MemoryArchiveEntryCount -ne ([int]$checkpoint.MemoryFileCount + 1)
+      )) {
+      throw 'Final session-tail memory archive is not a complete verified checkpoint result.'
+    }
+
+    $canonicalPaths = @('SprintWorkSessionRoster')
     $statusArguments = @(
       '-C',
       $planningRootFull,
@@ -175,11 +189,15 @@ function Save-SprintEndSessionTail {
       SprintNumber   = $sprintText
       PlanningRoot   = $planningRootFull
       Agent          = $Agent
+      Checkpoint     = $checkpoint
       CanonicalPaths = $canonicalPaths
       ChangedPaths   = $changedPaths
       Committed      = $committed
       CommitHash     = $commitHash
       Pushed         = $false
+      GitDurability  = 'RosterMetadataOnly'
+      RawArtifactsGitTracked = $false
+      ExternalDurabilityState = 'PendingEvidence'
     }
   }
 

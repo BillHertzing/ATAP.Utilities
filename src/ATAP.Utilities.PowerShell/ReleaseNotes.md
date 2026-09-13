@@ -1,5 +1,15 @@
 # Release Notes for ATAP.Utilities.PowerShell
 
+## [0.2.9] — 2026-09-13
+
+### Fixed
+
+- Replace Chromium's SPKI certificate-error switch, which Claude Desktop rejects
+  as a debugging or network override, with an exact CurrentUser trusted-root
+  preflight.
+- Require the PEM to be a currently valid self-signed CA and match both the
+  thumbprint and full-certificate SHA-256 digest in `Cert:\CurrentUser\Root`.
+
 ## [0.2.8] — 2026-09-13
 
 ### Fixed

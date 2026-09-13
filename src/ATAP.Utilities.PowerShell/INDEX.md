@@ -227,16 +227,17 @@ and [Invoke-AceOutpostMeteredPrompt.Tests.ps1](tests/Unit/Invoke-AceOutpostMeter
 For Claude Code, the prompt adapter automatically supplies invocation-scoped Node CA
 settings derived from the same public PEM path the core preflights, rejects conflicting
 caller `--settings` options, and keeps TLS verification enabled. `version.json` records
-module version `0.2.8`. Claude Code children also receive the documented
+module version `0.2.9`. Claude Code children also receive the documented
 `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1` aggregate switch only in their child
 process environment; it is never written to the parent, User, or Machine environment.
 Packaged Chromium desktop clients can opt into the process-private bridge: the harness
 passes a credential-free loopback endpoint through Chromium's command line, accepts
 connections only from the launched PID tree, injects proxy authorization only on the
-private hop to AceOutpost, disables QUIC so traffic cannot bypass the TCP proxy, and
-pins certificate-error handling to the SHA-256 SPKI fingerprint computed from the
-current interception-root PEM. The root is not installed into a Windows trust store,
-and general certificate-error suppression remains prohibited.
+private hop to AceOutpost, and disables QUIC so traffic cannot bypass the TCP proxy.
+Because Claude Desktop rejects Chromium's process-scoped SPKI override, desktop launch
+also requires the currently valid self-signed PEM to match the exact thumbprint and
+full-certificate SHA-256 digest installed in the current user's Trusted Root store.
+General certificate-error suppression remains prohibited.
 The bridge contract is covered by
 [AceOutpostDesktopProxyBridge.Tests.ps1](tests/Unit/AceOutpostDesktopProxyBridge.Tests.ps1).
 Release and deployment evidence is written beneath

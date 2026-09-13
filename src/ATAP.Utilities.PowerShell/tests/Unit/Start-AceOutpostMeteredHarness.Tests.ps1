@@ -20,6 +20,8 @@
 #Requires -Module Pester
 
 BeforeAll {
+  $rootTrustFunctionFile = Join-Path $PSScriptRoot '..\..\private\Test-AceOutpostCurrentUserRootTrust.ps1'
+  . $rootTrustFunctionFile
   $functionFile = Join-Path $PSScriptRoot '..\..\public\Start-AceOutpostMeteredHarness.ps1'
   . $functionFile
   $script:functionFilePath = (Resolve-Path $functionFile).Path
@@ -54,8 +56,6 @@ BeforeAll {
   $script:testRootCertificate = $script:testRootRequest.CreateSelfSigned(
     [DateTimeOffset]::UtcNow.AddMinutes(-5), [DateTimeOffset]::UtcNow.AddDays(1))
   Set-Content -LiteralPath $script:rootPem -Value $script:testRootCertificate.ExportCertificatePem()
-  $script:testRootSpkiFingerprint = [Convert]::ToBase64String(
-    [System.Security.Cryptography.SHA256]::HashData($script:testRootKey.ExportSubjectPublicKeyInfo()))
 
   $script:emptyStateDirectory = Join-Path $TestDrive 'EmptyState'
   New-Item -ItemType Directory -Path $script:emptyStateDirectory -Force | Out-Null
@@ -77,8 +77,10 @@ foreach ($n in $names) { $captured[$n] = [Environment]::GetEnvironmentVariable($
 
   # Obviously fake. Never a real credential.
   $script:fakeCredential = 'test-user:test-secret'
+  $script:secretResolutionCount = 0
   function Get-SecretATAP {
     param([string]$SecretName)
+    $script:secretResolutionCount++
     $script:fakeCredential
   }
 
@@ -318,6 +320,10 @@ Describe 'Start-AceOutpostMeteredHarness' -Tag 'Unit' {
 
   Context 'Chromium desktop proxy bridge' {
 
+    BeforeEach {
+      Mock Test-AceOutpostCurrentUserRootTrust { $true }
+    }
+
     It 'adds a credential-free private proxy endpoint and fail-closed Chromium switches' {
       $outPath = Join-Path $TestDrive 'desktop-bridge-args.txt'
       $result = Start-AceOutpostMeteredHarness -Client ClaudeCode -LaunchMode Wait `
@@ -335,9 +341,10 @@ Describe 'Start-AceOutpostMeteredHarness' -Tag 'Unit' {
       $capturedArguments | Should -Contain "--proxy-server=$($result.ChromiumProxyEndpoint)"
       $capturedArguments | Should -Contain '--proxy-bypass-list=<-loopback>'
       $capturedArguments | Should -Contain '--disable-quic'
-      $capturedArguments | Should -Contain "--ignore-certificate-errors-spki-list=$script:testRootSpkiFingerprint"
+      ($capturedArguments -join ' ') | Should -Not -Match '--ignore-certificate-errors-spki-list'
       $capturedArguments | Should -Not -Contain '--ignore-certificate-errors'
       ($capturedArguments -join ' ') | Should -Not -Match 'test-secret'
+      Should -Invoke Test-AceOutpostCurrentUserRootTrust -Times 1 -Exactly
     }
 
     It 'requires Wait mode so the bridge cannot disappear while the desktop app is running' {
@@ -346,7 +353,7 @@ Describe 'Start-AceOutpostMeteredHarness' -Tag 'Unit' {
       } | Should -Throw '*requires LaunchMode Wait*'
     }
 
-    It 'fails closed before launch when the interception root cannot supply an SPKI fingerprint' {
+    It 'fails closed before launch when the interception root cannot supply valid Chromium trust' {
       $savedPem = Get-Content -LiteralPath $script:rootPem -Raw
       try {
         Set-Content -LiteralPath $script:rootPem -Value 'malformed-public-root'
@@ -356,6 +363,15 @@ Describe 'Start-AceOutpostMeteredHarness' -Tag 'Unit' {
       } finally {
         Set-Content -LiteralPath $script:rootPem -Value $savedPem
       }
+    }
+
+    It 'fails closed before resolving credentials when the exact root is not trusted for the current user' {
+      Mock Test-AceOutpostCurrentUserRootTrust { $false }
+      $resolutionCountBefore = $script:secretResolutionCount
+      {
+        Invoke-ProbeLaunch -Client Codex -ChromiumProxyBridge
+      } | Should -Throw '*not trusted in Cert:\CurrentUser\Root*'
+      $script:secretResolutionCount | Should -Be $resolutionCountBefore
     }
 
     It 'rejects caller-supplied Chromium routing switches' -ForEach @(

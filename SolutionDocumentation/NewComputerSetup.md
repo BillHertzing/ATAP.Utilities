@@ -37,6 +37,13 @@ The end state is:
   item, old/new state, peer host, and a peer action; do not include any secret
   value. After the peer applies its corresponding action, acknowledge it from
   that peer with `Confirm-ParityChangeApplied`.
+- **Certificate installation and removal must be non-interactive:** Always use an
+  approved PowerShell/API or elevation-broker method that cannot display a
+  Windows certificate or UAC dialog requiring someone at the console. Never
+  fall back to double-click installation, certificate-store wizards, or other
+  UI-driven removal. Resolve the exact certificate store, location, and
+  thumbprint; verify state before and after the operation; and fail closed when
+  unattended elevation is unavailable.
 - Use PowerShell 7 (`pwsh`) for all commands in this document.
 - The historical phrase `SQL Server Community Edition` appears in older notes, but for a
   developer workstation that needs SQL Server Agent you should install SQL Server 2022

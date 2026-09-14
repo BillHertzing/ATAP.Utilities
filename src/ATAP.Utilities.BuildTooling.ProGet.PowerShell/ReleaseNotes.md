@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.1.24
+
+- Add `Sync-ProGetPowerShellModules` for validated synchronization of exact module versions
+  between registered ProGet feeds, including explicit repository/feed targeting for
+  disconnected-primary preparation and settings-based tier resolution when explicit targets
+  are omitted.
+- Reissue the 0.1.23 resource-packaging repair. The immutable 0.1.23 package included the
+  broker resources but failed its Development import gate before the synchronization cmdlet
+  had been converted from a standalone script into a valid module function.
+
 ## 0.1.23
 
 - Package the module's `Resources` directory through the shared module build pipeline.

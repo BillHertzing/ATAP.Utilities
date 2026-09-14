@@ -507,6 +507,52 @@ hosts. Re-register with `BiWeekly` only after one verified clean month; the earl
 period in which SQL and package surfaces were absent does not count. The default
 14-day expected cadence and `1.5` multiplier make the stale threshold 21 days.
 
+## ATAP PowerShell module convergence after a LAN return
+
+The parity audit currently records the PowerShell runtime version but not installed ATAP
+module inventory. After `utat01` has been disconnected and then returns to the local LAN,
+run this in an elevated PowerShell 7 terminal on `utat01` to converge AllUsers modules from
+the authoritative stable feed on `utat022`:
+
+```powershell
+$moduleName = 'ATAP.Utilities.BuildTooling.ProGet.PowerShell'
+$requiredVersion = '0.1.24'
+$repositoryName = 'powershellget-stable'
+$feedUrl = 'https://utat022:50000/nuget/powershellget-stable/'
+
+Import-Module $moduleName -RequiredVersion $requiredVersion -Force -ErrorAction Stop
+
+$registeredRepository = Get-PSRepository -Name $repositoryName -ErrorAction Stop
+if ($registeredRepository.SourceLocation.TrimEnd('/') -ne $feedUrl.TrimEnd('/')) {
+  throw "PSRepository '$repositoryName' points to '$($registeredRepository.SourceLocation)', not '$feedUrl'. Re-register it before synchronization."
+}
+
+$syncResults = @(
+  Sync-ProGetPowerShellModules `
+    -Repository $repositoryName `
+    -FeedUrl $feedUrl `
+    -Filter 'ATAP.*' `
+    -Scope AllUsers `
+    -Confirm:$false `
+    -ErrorAction Stop
+)
+
+$syncResults | Format-Table ModuleName, InstalledVersion, ProGetVersion, Status, ActionTaken, ErrorText -AutoSize
+if ($syncResults.Count -eq 0) {
+  throw "No modules matched 'ATAP.*' in '$repositoryName'."
+}
+$failedResults = @($syncResults | Where-Object ActionTaken -EQ 'Failed')
+if ($failedResults.Count -gt 0) {
+  throw "PowerShell module synchronization failed for: $($failedResults.ModuleName -join ', ')."
+}
+```
+
+The repository must already be registered at the displayed HTTPS URI, and ProGet module
+`0.1.24` must already be installed at AllUsers scope. Preserve the output as parity evidence.
+Do not place this command in the scheduled audit yet: automated detection and remediation
+still require installed-module inventory, independently trusted package hashes, rollback,
+and explicit remediation authority.
+
 ## D-6 Windows event thresholds
 
 The deployed wrappers record failure state under `<StatePath>\TaskState` and implement

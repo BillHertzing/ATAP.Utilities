@@ -24,6 +24,51 @@ Sync-ProGetPowerShellModules `
 
 When `FeedUrl` is omitted, the command uses the registered repository's `SourceLocation`.
 
+## UTAT01 stable-feed LAN-return command
+
+Run the following in an elevated PowerShell 7 terminal on `utat01` after it has returned
+to the local LAN. Version `0.1.24` must already be installed at AllUsers scope. The guard
+prevents the explicit URI from disagreeing with the registered repository, the result table
+keeps every module outcome visible, and the final checks turn an empty result or any per-module
+failure into a terminating error.
+
+```powershell
+$moduleName = 'ATAP.Utilities.BuildTooling.ProGet.PowerShell'
+$requiredVersion = '0.1.24'
+$repositoryName = 'powershellget-stable'
+$feedUrl = 'https://utat022:50000/nuget/powershellget-stable/'
+
+Import-Module $moduleName -RequiredVersion $requiredVersion -Force -ErrorAction Stop
+
+$registeredRepository = Get-PSRepository -Name $repositoryName -ErrorAction Stop
+if ($registeredRepository.SourceLocation.TrimEnd('/') -ne $feedUrl.TrimEnd('/')) {
+  throw "PSRepository '$repositoryName' points to '$($registeredRepository.SourceLocation)', not '$feedUrl'. Re-register it before synchronization."
+}
+
+$syncResults = @(
+  Sync-ProGetPowerShellModules `
+    -Repository $repositoryName `
+    -FeedUrl $feedUrl `
+    -Filter 'ATAP.*' `
+    -Scope AllUsers `
+    -Confirm:$false `
+    -ErrorAction Stop
+)
+
+$syncResults | Format-Table ModuleName, InstalledVersion, ProGetVersion, Status, ActionTaken, ErrorText -AutoSize
+if ($syncResults.Count -eq 0) {
+  throw "No modules matched 'ATAP.*' in '$repositoryName'."
+}
+$failedResults = @($syncResults | Where-Object ActionTaken -EQ 'Failed')
+if ($failedResults.Count -gt 0) {
+  throw "PowerShell module synchronization failed for: $($failedResults.ModuleName -join ', ')."
+}
+```
+
+This is the current interactive convergence/remediation command. It is intentionally not yet
+part of the unattended parity task: the parity audit does not currently collect installed module
+inventory, and automatic remediation needs a separately approved hash-pin and rollback contract.
+
 ## Safety contract
 
 - The selected PSRepository must already be registered. The command never registers a repository

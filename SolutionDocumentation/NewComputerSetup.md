@@ -37,13 +37,13 @@ The end state is:
   item, old/new state, peer host, and a peer action; do not include any secret
   value. After the peer applies its corresponding action, acknowledge it from
   that peer with `Confirm-ParityChangeApplied`.
-- **Certificate installation and removal must be non-interactive:** Always use an
-  approved PowerShell/API or elevation-broker method that cannot display a
-  Windows certificate or UAC dialog requiring someone at the console. Never
-  fall back to double-click installation, certificate-store wizards, or other
-  UI-driven removal. Resolve the exact certificate store, location, and
-  thumbprint; verify state before and after the operation; and fail closed when
-  unattended elevation is unavailable.
+- **Certificate installation and removal defaults to non-interactive automation:** Use an
+  approved PowerShell/API or elevation-broker method whenever the host must operate
+  unattended. An explicitly authorized, operator-attended developer-host procedure may use
+  the Windows certificate wizard only when the broker has no registered certificate
+  installer and the procedure pins the exact store, thumbprint, and full DER SHA-256 digest.
+  Never generalize that exception to an unattended service workflow. Verify state before and
+  after every operation and fail closed when the required elevation path is unavailable.
 - Use PowerShell 7 (`pwsh`) for all commands in this document.
 - The historical phrase `SQL Server Community Edition` appears in older notes, but for a
   developer workstation that needs SQL Server Agent you should install SQL Server 2022
@@ -630,6 +630,71 @@ isolated roots and require identical `.nupkg` SHA-256 hashes. Record every
 installation or upgrade in the local parity journal, including Visual Studio,
 MSBuild, SDK, and NuGet Pack versions; require the peer host to install the same
 stable components and repeat the two-pack gate. Never journal credentials.
+
+### 2.3.3 Trust the exact AceOutpost interception root
+
+AceOutpost runs before an interactive user logs on, and a developer host can serve more than
+one authorized developer. Install the public interception root in
+`Cert:\LocalMachine\Root`, not a developer's physical `CurrentUser\Root` store. The service
+can start without this trust entry; the machine-wide root is required so each authorized
+Codex or Claude client on the host can validate certificates issued by the local interception
+CA. Install only the public certificate. The trusted-root copy must not contain a private key.
+
+Prefer an exact certificate-install action registered in the elevation broker. The default
+broker configuration historically registered module installation and parity-task actions but
+no certificate action. Never submit an arbitrary script path or broaden the broker allowlist
+from an unelevated request. If no reviewed certificate action is registered, an operator at
+the developer host may use this explicit manual fallback after approving the Local Machine
+scope.
+
+1. Obtain the reviewed DER `.cer` copied from the active AceOutpost state. For the Task 15.190
+   deployment it is
+   `C:\Users\whertzing\AppData\Local\ATAP\AceOutpostMeteredHarness\AceOutpost-Interception-Root.cer`.
+2. Open it with the Windows certificate viewer rather than relying on the `.cer` file
+   association:
+
+   ```powershell
+   $certificatePath = 'C:\Users\whertzing\AppData\Local\ATAP\AceOutpostMeteredHarness\AceOutpost-Interception-Root.cer'
+   Start-Process -FilePath "$env:SystemRoot\System32\rundll32.exe" `
+     -ArgumentList @('cryptext.dll,CryptExtOpenCER', $certificatePath)
+   ```
+
+3. Select **Install Certificate**, **Local Machine**, **Place all certificates in the
+   following store**, and **Trusted Root Certification Authorities**. Approve the UAC and
+   protected-root security prompts only after checking the displayed certificate identity.
+4. Verify the physical Local Machine store immediately. Do not infer a physical Current User
+   installation from `Cert:\CurrentUser\Root`; Windows can surface a machine root through that
+   logical view.
+
+   ```powershell
+   $expectedThumbprint = '1E9AB6112B86E61262D81FF0B14769130B0098E0'
+   $expectedSha256 = 'E79600C08637741806154A7D0C52CB91187E8AF91DD0D7C6051ADC1146B591FB'
+   $matches = @(Get-ChildItem -LiteralPath 'Cert:\LocalMachine\Root' |
+       Where-Object Thumbprint -eq $expectedThumbprint)
+   if ($matches.Count -ne 1) {
+     throw "Expected exactly one Local Machine interception root; found $($matches.Count)."
+   }
+   $actualSha256 = [Convert]::ToHexString(
+     [Security.Cryptography.SHA256]::HashData($matches[0].RawData))
+   if ($actualSha256 -ne $expectedSha256 -or $matches[0].HasPrivateKey) {
+     throw 'The installed interception root does not match the pinned public certificate.'
+   }
+   ```
+
+   The values above identify the Task 15.190 root issued 2026-09-02 and expiring 2028-09-01.
+   After a controlled CA rotation, replace them with the new deployment's separately reviewed
+   thumbprint and DER SHA-256; never select a root by subject name alone.
+5. When the metered-shortcut installer adopts a certificate installed by this attended
+   procedure, use its explicit `-AdoptExistingTrustedRoot` switch. Without that switch, an
+   already-present certificate remains classified as pre-existing and rollback must preserve
+   it. The saved state must record `TrustedRootStorePath=Cert:\LocalMachine\Root`, the exact
+   thumbprint and DER SHA-256, and `TrustedRootInstalledByInstaller=true` before rollback is
+   considered working.
+
+Rollback must remove only the certificate whose physical store, thumbprint, and full DER
+SHA-256 all match the saved ownership record. A missing field or mismatched digest is a hard
+stop. Local Machine removal requires an attended UAC approval until a reviewed broker action
+for this exact operation is deployed.
 
 ### 2.4 Install Python (for Manim or Copilot code execution)
 

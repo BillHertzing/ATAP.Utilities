@@ -12,6 +12,14 @@ BeforeAll {
     function global:Get-PVal { throw 'Get-PVal test double was not configured.' }
     $script:CreatedGetPValTestDouble = $true
   }
+  if (-not (Get-Command Request-ElevatedInstall -ErrorAction SilentlyContinue)) {
+    function global:Request-ElevatedInstall {
+      [CmdletBinding(SupportsShouldProcess)]
+      param([string]$InstallerId, [hashtable]$Parameters)
+      throw 'Request-ElevatedInstall test double was not configured.'
+    }
+    $script:CreatedRequestElevatedInstallTestDouble = $true
+  }
 
   $script:moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
   $script:functionPath = Join-Path $script:moduleRoot 'public\Invoke-GatherCallRecordReconciliation.ps1'
@@ -106,6 +114,10 @@ BeforeAll {
 AfterAll {
   Remove-Module -Name $script:testModuleName -Force -ErrorAction SilentlyContinue
   Remove-Variable -Name 'Task15191Sentinel' -Scope Global -ErrorAction SilentlyContinue
+  if ($script:CreatedRequestElevatedInstallTestDouble) {
+    Microsoft.PowerShell.Management\Remove-Item -LiteralPath 'Function:\Request-ElevatedInstall' `
+      -ErrorAction SilentlyContinue
+  }
   if ($script:CreatedGetPValTestDouble) {
     Microsoft.PowerShell.Management\Remove-Item -LiteralPath 'Function:\Get-PVal' -ErrorAction SilentlyContinue
   }
@@ -122,6 +134,29 @@ Describe 'Invoke-GatherCallRecordReconciliation [public imported module]' -Tag '
       if ($ParameterName -eq 'CorpusCaptureIdentity') { return $script:captureSid }
       if ($ParameterName -eq 'CorpusExpiryIdentity') { return $script:expirySid }
       throw "unexpected key $ParameterName"
+    }
+    $script:nonAdministrativePrincipal = [pscustomobject]@{}
+    $script:nonAdministrativePrincipal | Add-Member -MemberType ScriptMethod -Name IsInRole `
+      -Value { param($Role) $false }
+    Mock New-Object -ModuleName $script:testModuleName {
+      $script:nonAdministrativePrincipal
+    } -ParameterFilter {
+      $TypeName -eq 'System.Security.Principal.WindowsPrincipal'
+    }
+    Mock Request-ElevatedInstall -ModuleName $script:testModuleName {
+      param($InstallerId, $Parameters, $Confirm)
+      $destinationDirectory = Join-Path ([string]$Parameters.CorpusGatherRecordsPath) `
+        "sprint-$([string]$Parameters.SprintNumber)"
+      [System.IO.Directory]::CreateDirectory($destinationDirectory) | Out-Null
+      $destinationPath = Join-Path $destinationDirectory `
+        ([System.IO.Path]::GetFileName([string]$Parameters.StagingFilePath))
+      [System.IO.File]::Move([string]$Parameters.StagingFilePath, $destinationPath)
+      [pscustomobject]@{
+        requestId = 'unit-broker-request'
+        status = 'succeeded'
+        error = $null
+        transcriptPath = 'unit-broker-transcript.log'
+      }
     }
   }
 
@@ -219,7 +254,24 @@ Describe 'Invoke-GatherCallRecordReconciliation [public imported module]' -Tag '
     $result.Ok | Should -BeTrue
     $result.Counts.Sealed | Should -Be 1
     $result.Files[0].Boundary | Should -Contain 'closed-session'
+    $result.Files[0].Result.Broker.Attempted | Should -BeTrue
+    $result.Files[0].Result.Broker.Status | Should -Be 'succeeded'
+    $result.Files[0].Result.Movement.Performed | Should -BeFalse
     Test-Path -LiteralPath $source | Should -BeFalse
+    Should -Invoke Request-ElevatedInstall -ModuleName $script:testModuleName -Exactly 1 `
+      -ParameterFilter {
+        $InstallerId -eq 'seal-gather-call-record-segment' -and
+        $Parameters.Count -eq 7 -and
+        @($Parameters.Values | Where-Object { $_ -isnot [string] }).Count -eq 0 -and
+        $Parameters.StagingFilePath -eq $source -and
+        $Parameters.CorpusGatherRecordsStagingPath -eq $fixture.Staging -and
+        $Parameters.CorpusGatherRecordsPath -eq $fixture.Corpus -and
+        $Parameters.SprintNumber -eq '0015' -and
+        $Parameters.CaptureIdentity -eq $script:captureSid -and
+        $Parameters.ExpiryIdentity -eq $script:expirySid -and
+        $Parameters.ExpectedSha256 -match '^[0-9A-F]{64}$' -and
+        -not $Confirm
+      }
   }
 
   It 'seals a segment at the maximum-age boundary' {

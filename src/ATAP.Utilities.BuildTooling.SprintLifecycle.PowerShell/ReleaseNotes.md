@@ -1,5 +1,19 @@
 # Release notes
 
+## 0.1.38
+
+- Task 15.191.c keeps privileged disposable ACL application and exact-SDDL restore
+  tests explicit and environment-gated when the test worker is not an administrator.
+  Descriptor shape, fail-closed planning, and mocked rollback coverage continue under
+  every identity.
+- Reconciliation seal-success tests now deterministically exercise the non-administrative
+  elevation-broker boundary, including the exact seven-string request contract and source
+  movement performed by the simulated elevated action. This closes the promoted-package
+  test gap exposed by the immutable failed 0.1.37 Development release.
+- Reconciliation counts a seal when the broker reports `succeeded`, while the unelevated
+  result continues to leave local-only movement, ACL, and post-move hash observations
+  unset. Every other broker status remains a failed primitive.
+
 ## 0.1.37
 
 - Task 15.191.c routes validated non-quarantine corpus sealing from a

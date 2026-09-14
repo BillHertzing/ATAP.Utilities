@@ -16,6 +16,13 @@ BeforeAll {
   . $script:functionPath
   $script:captureSid = 'S-1-5-19'
   $script:expirySid = 'S-1-5-20'
+  $script:isAdministrator = if ($IsWindows) {
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = New-Object -TypeName System.Security.Principal.WindowsPrincipal `
+      -ArgumentList @($identity)
+    $principal.IsInRole(
+      [Security.Principal.WindowsBuiltInRole]::Administrator)
+  } else { $false }
 
   function New-BoundaryFixture {
     param([string]$Name, [switch]$CreateRoots)
@@ -182,7 +189,7 @@ Describe 'Initialize-CorpusStorageBoundary [public]' -Tag Unit {
   }
 
   Context 'ACL application and rollback' {
-    It 'applies create-only immutable roots and mutable staging with protected recovery rules' -Skip:(-not $IsWindows) {
+    It 'applies create-only immutable roots and mutable staging with protected recovery rules' -Skip:(-not $script:isAdministrator) {
       $fixture=New-BoundaryFixture 'apply'
       $result=Invoke-Boundary $fixture
       $result.Ok | Should -BeTrue
@@ -197,7 +204,7 @@ Describe 'Initialize-CorpusStorageBoundary [public]' -Tag Unit {
       @($immutableRules | Where-Object { $_.IdentityReference.Value -eq $script:expirySid -and ($_.FileSystemRights -band [Security.AccessControl.FileSystemRights]::FullControl) -eq [Security.AccessControl.FileSystemRights]::FullControl }).Count | Should -BeGreaterThan 0
     }
 
-    It 'restores an exact captured directory SDDL after a real ACL application' -Skip:(-not $IsWindows) {
+    It 'restores an exact captured directory SDDL after a real ACL application' -Skip:(-not $script:isAdministrator) {
       $fixture=New-BoundaryFixture 'exact-restore' -CreateRoots
       $before=(Get-Acl -LiteralPath $fixture.Gather).Sddl
       $applied=Set-CorpusFileSystemAcl -Path $fixture.Gather -BoundaryKind ImmutableDirectory `
@@ -208,7 +215,7 @@ Describe 'Initialize-CorpusStorageBoundary [public]' -Tag Unit {
       (Get-Acl -LiteralPath $fixture.Gather).Sddl | Should -Be $before
     }
 
-    It 'restores exact SDDL under StrictMode without reading a nonexistent PSCmdlet property' -Skip:(-not $IsWindows) {
+    It 'restores exact SDDL under StrictMode without reading a nonexistent PSCmdlet property' -Skip:(-not $script:isAdministrator) {
       $fixture=New-BoundaryFixture 'strictmode-restore' -CreateRoots
       $before=(Get-Acl -LiteralPath $fixture.Gather).Sddl
       $null=Set-CorpusFileSystemAcl -Path $fixture.Gather -BoundaryKind ImmutableDirectory `

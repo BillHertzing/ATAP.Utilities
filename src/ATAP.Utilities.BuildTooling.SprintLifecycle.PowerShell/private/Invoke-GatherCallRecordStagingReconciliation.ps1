@@ -309,7 +309,11 @@ function Invoke-GatherCallRecordStagingReconciliation {
           } else {
             $file.Status = if ($WhatIfPreference) { 'Planned' } else { 'Completed' }
             $file.Reason = if ($WhatIfPreference) { 'whatif' } else { 'primitive-succeeded' }
-            if ($primitiveResult.Movement.Performed) {
+            $brokerSealingConfirmed = $file.Action -eq 'Seal' -and
+              $null -ne $primitiveResult.PSObject.Properties['Broker'] -and
+              $primitiveResult.Broker.Attempted -and
+              [string]$primitiveResult.Broker.Status -eq 'succeeded'
+            if ($primitiveResult.Movement.Performed -or $brokerSealingConfirmed) {
               if ($file.Action -eq 'Quarantine') { $summary.Counts.Quarantined++ }
               else { $summary.Counts.Sealed++ }
             }

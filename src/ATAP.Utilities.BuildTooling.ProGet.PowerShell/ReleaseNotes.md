@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.1.23
+
+- Package the module's `Resources` directory through the shared module build pipeline.
+  ProGet 0.1.22 contained the corpus-sealing broker contract in source but omitted the
+  broker payload, task XML, and trust-anchor config template from its immutable nupkg,
+  preventing a trusted installed module from activating the action.
+- Strengthen the shared package-staging contract test to pin every supported static payload
+  directory and recursive copy behavior.
+
 ## 0.1.22
 
 - Add the tightly allowlisted `seal-gather-call-record-segment` elevation-broker action.

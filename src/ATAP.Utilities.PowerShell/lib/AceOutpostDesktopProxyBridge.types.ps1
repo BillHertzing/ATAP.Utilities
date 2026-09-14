@@ -211,10 +211,22 @@ namespace ATAP.Utilities.PowerShell
                             Interlocked.Increment(ref acceptedConnectionCount);
                             using (CancellationTokenSource relayCancellation = CancellationTokenSource.CreateLinkedTokenSource(bridgeToken))
                             {
-                                Task clientToUpstream = clientStream.CopyToAsync(upstreamStream, relayCancellation.Token);
-                                Task upstreamToClient = upstreamStream.CopyToAsync(clientStream, relayCancellation.Token);
-                                await Task.WhenAny(clientToUpstream, upstreamToClient).ConfigureAwait(false);
-                                relayCancellation.Cancel();
+                                Task clientToUpstream = RelayAndHalfCloseAsync(
+                                    clientStream,
+                                    upstreamStream,
+                                    upstream.Client,
+                                    relayCancellation.Token);
+                                Task upstreamToClient = RelayAndHalfCloseAsync(
+                                    upstreamStream,
+                                    clientStream,
+                                    client.Client,
+                                    relayCancellation.Token);
+                                Task firstCompleted = await Task.WhenAny(clientToUpstream, upstreamToClient).ConfigureAwait(false);
+                                if (firstCompleted.IsFaulted || firstCompleted.IsCanceled)
+                                {
+                                    relayCancellation.Cancel();
+                                }
+
                                 try
                                 {
                                     await Task.WhenAll(clientToUpstream, upstreamToClient).ConfigureAwait(false);
@@ -239,6 +251,25 @@ namespace ATAP.Utilities.PowerShell
                 {
                     Interlocked.Increment(ref rejectedConnectionCount);
                 }
+            }
+        }
+
+        private static async Task RelayAndHalfCloseAsync(
+            NetworkStream source,
+            NetworkStream destination,
+            Socket destinationSocket,
+            CancellationToken token)
+        {
+            await source.CopyToAsync(destination, token).ConfigureAwait(false);
+            try
+            {
+                destinationSocket.Shutdown(SocketShutdown.Send);
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (SocketException)
+            {
             }
         }
 

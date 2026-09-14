@@ -1,5 +1,16 @@
 # Release Notes for ATAP.Utilities.PowerShell
 
+## [0.2.10] — 2026-09-13
+
+### Fixed
+
+- Preserve TCP half-close semantics in the process-private Chromium proxy bridge so
+  completion of the desktop client's request direction does not cancel a still-active
+  streamed response from AceOutpost.
+- Compile the bridge source under a test-only type name in focused Pester coverage, so a
+  profile-preloaded installed module cannot cause source tests to exercise stale deployed
+  bridge code.
+
 ## [0.2.9] — 2026-09-13
 
 ### Fixed

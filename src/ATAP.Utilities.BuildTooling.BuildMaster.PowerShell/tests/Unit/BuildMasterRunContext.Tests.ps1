@@ -241,6 +241,7 @@ Describe 'BuildMaster Otter plan run-context wiring' -Tag 'Unit' {
       Join-Path $script:plansDir 'PowerShellModule-5Stage.otter'
       Join-Path $script:plansDir 'ReleaseBundle-6Stage.otter'
     )
+    $script:cSharpRunnerPath = Join-Path $script:plansDir 'Invoke-CSharpPackageBuildMasterStage.ps1'
     $script:powerShellRunnerPath = Join-Path $script:plansDir 'Invoke-PowerShellModuleBuildMasterStage.ps1'
     $script:powerShellContextInitializerPath = Join-Path $script:plansDir 'Initialize-PowerShellModuleBuildContext.ps1'
   }
@@ -305,6 +306,15 @@ Describe 'BuildMaster Otter plan run-context wiring' -Tag 'Unit' {
       $text | Should -Not -Match '_generated\\buildmaster\\releasebundle_'
       $text | Should -Not -Match '_generated\\buildmaster\\\$ModuleName'
     }
+  }
+
+  It 'keeps C# promoted-test results in the external build context and partitions them by tier' {
+    $text = Get-Content -LiteralPath $script:cSharpRunnerPath -Raw
+
+    $text | Should -Match 'Initialize-BuildMasterRunContextDirectory\s+-SourcePath\s+\$resolvedArtifactsPath'
+    $text | Should -Match '\$resultsPath\s*=\s*Join-Path\s+-Path\s+\$contextDirectory\s+-ChildPath\s+"test-results/\$Tier"'
+    $text | Should -Not -Match '\$resultsPath\s*=\s*Join-Path\s+-Path\s+\$SourcePath'
+    $text | Should -Not -Match '\$resultsPath\s*=\s*Join-Path\s+-Path\s+\$contextDirectory\s+-ChildPath\s+"\$\(\$Tier\)TestResults"'
   }
 
   It 'uses the captured module resolved version instead of an injected package version' {

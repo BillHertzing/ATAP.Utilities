@@ -293,6 +293,9 @@ Describe 'V4-C02 runner shape: Invoke-CSharpPackageBuildMasterStage.ps1 contract
         $script:RunnerText | Should -Match 'Initialize-BuildMasterRunContextDirectory'
         $script:RunnerText | Should -Match "Join-Path[^\r\n]*PSScriptRoot[^\r\n]*BuildMasterRunContext\.Common\.ps1"
         $script:RunnerText | Should -Match 'Initialize-BuildMasterRunContextDirectory\s+-SourcePath\s+\$resolvedArtifactsPath'
+        $script:RunnerText | Should -Match '\$resultsPath\s*=\s*Join-Path\s+-Path\s+\$contextDirectory\s+-ChildPath\s+"test-results/\$Tier"'
+        $script:RunnerText | Should -Not -Match '\$resultsPath\s*=\s*Join-Path\s+-Path\s+\$SourcePath'
+        $script:RunnerText | Should -Not -Match '\$resultsPath\s*=\s*Join-Path\s+-Path\s+\$contextDirectory\s+-ChildPath\s+"\$\(\$Tier\)TestResults"'
     }
 
     It 'propagates one external ArtifactsContext through build, pack, tests, binlogs, and provenance' {

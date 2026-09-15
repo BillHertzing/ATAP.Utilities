@@ -55,7 +55,7 @@ Describe 'Get-ContentSummary [public]' -Tag 'Unit' {
       'C:\fixture\ATAP.Utilities-wt-137-Sprint-0015-work-items'
     }
     Mock -CommandName Write-GatherCallRecord -ModuleName $script:moduleName {
-      [pscustomobject]@{ recorded = $true }
+      [pscustomobject]@{ Ok = $true; Written = $true }
     }
     Mock -CommandName Invoke-RestMethod -ModuleName $script:moduleName {
       $request = $Body | ConvertFrom-Json
@@ -115,6 +115,10 @@ Describe 'Get-ContentSummary [public]' -Tag 'Unit' {
       )) {
       $parameters.ContainsKey($name) | Should -BeTrue
     }
+    foreach ($name in @('StoreTarget', 'CorpusGatherRecordsStagingPath')) {
+      $parameters.ContainsKey($name) | Should -BeTrue
+    }
+    $parameters['StoreTarget'].Attributes.ValidValues | Should -Be @('Durable', 'Generated', 'Corpus')
   }
 
   It 'posts the exact request contract and maps a real item without changing its content' {
@@ -135,8 +139,44 @@ Describe 'Get-ContentSummary [public]' -Tag 'Unit' {
     }
     Should -Invoke Write-GatherCallRecord -ModuleName $script:moduleName -Times 1 -ParameterFilter {
       $Response.status -eq 'ok' -and @($Response.items).Count -eq 1 -and
-      -not $PSBoundParameters.ContainsKey('NoResponse')
+      -not $PSBoundParameters.ContainsKey('NoResponse') -and
+      $StoreTarget -eq 'Durable' -and
+      -not $PSBoundParameters.ContainsKey('CorpusGatherRecordsStagingPath')
     }
+  }
+
+  It 'forwards Corpus and its exact staging path to exactly one record write' {
+    $stagingPath = 'D:\ATAPArtifacts\CorpusGatherRecordsStaging'
+
+    $result = Get-ContentSummary -Tags @('corpus') -Port 50041 `
+      -WorktreeRoot 'C:\fixture\repo' -StoreTarget Corpus `
+      -CorpusGatherRecordsStagingPath $stagingPath
+
+    $result.status | Should -BeExactly 'ok'
+    Should -Invoke Invoke-RestMethod -ModuleName $script:moduleName -Times 1
+    Should -Invoke Write-GatherCallRecord -ModuleName $script:moduleName -Times 1 -Exactly -ParameterFilter {
+      $StoreTarget -eq 'Corpus' -and
+      $CorpusGatherRecordsStagingPath -ceq $stagingPath
+    }
+  }
+
+  It 'rejects Corpus without a staging path before transport or recording' {
+    { Get-ContentSummary -Tags @('corpus') -Port 50041 `
+        -WorktreeRoot 'C:\fixture\repo' -StoreTarget Corpus } |
+      Should -Throw '*CorpusGatherRecordsStagingPath is required*'
+
+    Should -Invoke Invoke-RestMethod -ModuleName $script:moduleName -Times 0
+    Should -Invoke Write-GatherCallRecord -ModuleName $script:moduleName -Times 0
+  }
+
+  It 'rejects a relative Corpus staging path before transport or recording' {
+    { Get-ContentSummary -Tags @('corpus') -Port 50041 `
+        -WorktreeRoot 'C:\fixture\repo' -StoreTarget Corpus `
+        -CorpusGatherRecordsStagingPath 'CorpusGatherRecordsStaging' } |
+      Should -Throw '*is relative*'
+
+    Should -Invoke Invoke-RestMethod -ModuleName $script:moduleName -Times 0
+    Should -Invoke Write-GatherCallRecord -ModuleName $script:moduleName -Times 0
   }
 
   It 'returns authorized empty as success without fabricating content' {
@@ -594,6 +634,16 @@ Describe 'Get-ContentSummary [public]' -Tag 'Unit' {
 
     { Get-ContentSummary -Tags @('record') -Port 50041 -WorktreeRoot 'C:\fixture\repo' } |
       Should -Throw 'Gather-call recording is mandatory and did not complete.'
+  }
+
+  It 'fails closed when the recorder returns an unsuccessful result' {
+    Mock -CommandName Write-GatherCallRecord -ModuleName $script:moduleName {
+      [pscustomobject]@{ Ok = $false; Written = $false; Error = 'fixture write failure' }
+    }
+
+    { Get-ContentSummary -Tags @('record') -Port 50041 -WorktreeRoot 'C:\fixture\repo' } |
+      Should -Throw 'Gather-call recording is mandatory and did not complete.'
+    Should -Invoke Write-GatherCallRecord -ModuleName $script:moduleName -Times 1 -Exactly
   }
 
   It 'does not send prompt text or secret-shaped values in the REST body' {

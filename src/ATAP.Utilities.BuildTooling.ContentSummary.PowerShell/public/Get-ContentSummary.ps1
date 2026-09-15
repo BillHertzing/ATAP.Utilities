@@ -32,6 +32,11 @@ function Get-ContentSummary {
     Optional sprint task identity written to the gather-call record.
   .PARAMETER Prompt
     Optional caller prompt written only through the recorder's redaction boundary.
+  .PARAMETER StoreTarget
+    Gather-call record destination. Durable remains the default; Corpus writes only to
+    the explicitly supplied mutable corpus staging path.
+  .PARAMETER CorpusGatherRecordsStagingPath
+    Explicit absolute mutable staging directory required when StoreTarget is Corpus.
   .OUTPUTS
     PSCustomObject with agent, status, query, items, truncated, and error members.
   .EXAMPLE
@@ -90,7 +95,16 @@ function Get-ContentSummary {
 
     [Parameter()]
     [AllowEmptyString()]
-    [string]$Prompt = ''
+    [string]$Prompt = '',
+
+    [Parameter()]
+    [ValidateSet('Durable', 'Generated', 'Corpus')]
+    [string]$StoreTarget = 'Durable',
+
+    [Parameter()]
+    [AllowNull()]
+    [AllowEmptyString()]
+    [object]$CorpusGatherRecordsStagingPath
   )
 
   begin {
@@ -99,6 +113,37 @@ function Get-ContentSummary {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Entering function'
 
     $callerBoundParameters = @{} + $PSBoundParameters
+
+    if ($StoreTarget -eq 'Corpus') {
+      if (-not $callerBoundParameters.ContainsKey('CorpusGatherRecordsStagingPath')) {
+        throw [System.ArgumentException]::new(
+          'CorpusGatherRecordsStagingPath is required when StoreTarget is Corpus.')
+      }
+
+      $corpusStagingValues = @($CorpusGatherRecordsStagingPath)
+      if ($corpusStagingValues.Count -ne 1) {
+        throw [System.ArgumentException]::new(
+          "CorpusGatherRecordsStagingPath must contain exactly one absolute path; received $($corpusStagingValues.Count) values.")
+      }
+
+      $corpusStagingPath = if ($null -eq $corpusStagingValues[0]) { $null } else { [string]$corpusStagingValues[0] }
+      if ([string]::IsNullOrWhiteSpace($corpusStagingPath)) {
+        throw [System.ArgumentException]::new(
+          'CorpusGatherRecordsStagingPath must be a non-blank absolute path when StoreTarget is Corpus.')
+      }
+      if (-not [System.IO.Path]::IsPathFullyQualified($corpusStagingPath)) {
+        throw [System.ArgumentException]::new(
+          "CorpusGatherRecordsStagingPath '$corpusStagingPath' is relative; supply one absolute mutable staging path.")
+      }
+      try {
+        [void][System.IO.Path]::GetFullPath($corpusStagingPath)
+      }
+      catch {
+        throw [System.ArgumentException]::new(
+          "CorpusGatherRecordsStagingPath '$corpusStagingPath' is invalid.", $_.Exception)
+      }
+    }
+
     $moduleRoot = Split-Path -Path $PSScriptRoot -Parent
     $sourceRoot = Split-Path -Path $moduleRoot -Parent
 
@@ -681,6 +726,10 @@ function Get-ContentSummary {
             Instance = $Instance
             Prompt = $Prompt
             WorktreeRoot = $effectiveWorktreeRoot
+            StoreTarget = $StoreTarget
+          }
+          if ($callerBoundParameters.ContainsKey('CorpusGatherRecordsStagingPath')) {
+            $recordArguments.CorpusGatherRecordsStagingPath = $CorpusGatherRecordsStagingPath
           }
           if (-not [string]::IsNullOrWhiteSpace($TaskId)) { $recordArguments.TaskId = $TaskId }
           if ($recordAsNoResponse) {
@@ -693,7 +742,12 @@ function Get-ContentSummary {
               $recordArguments.ErrorMessage = $recordErrorMessage
             }
           }
-          Write-GatherCallRecord @recordArguments | Out-Null
+          $recordResult = Write-GatherCallRecord @recordArguments
+          if ($null -eq $recordResult -or
+            $null -eq $recordResult.PSObject.Properties['Ok'] -or
+            -not [bool]$recordResult.Ok) {
+            throw 'Write-GatherCallRecord did not report a successful record write.'
+          }
         }
         catch {
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Gather-call recording failed with exception type $($_.Exception.GetType().FullName)."

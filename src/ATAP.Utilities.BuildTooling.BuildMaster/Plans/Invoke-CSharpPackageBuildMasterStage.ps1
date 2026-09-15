@@ -1226,7 +1226,10 @@ function Invoke-CSharpPackageBuildMasterStage {
         Assert-BuildMasterOperationSucceeded -Result $promotionResult -OperationName 'Promote-ProGetPackage'
         Add-BuildMasterPublishTrace -Path $promotionTracePath -Message $promotionResult.ResponseSummary
 
-        $resultsPath = Join-Path -Path $contextDirectory -ChildPath "$($Tier)TestResults"
+        # The C# run context is rooted beneath the canonical external ArtifactsPath,
+        # not SourcePath. Keep promoted-test output inside that external build context
+        # and partition it by tier so later gates cannot overwrite earlier evidence.
+        $resultsPath = Join-Path -Path $contextDirectory -ChildPath "test-results/$Tier"
         $testFilter = Get-CSharpPackageTestFilterForTier -Tier $Tier
         $testArtifactsContext = [pscustomobject]@{
           Root               = $artifactsContext.Root

@@ -57,6 +57,8 @@ Describe 'Set-GlobalConfigRootKeys population' -Tag 'Unit' {
     $global:configRootKeys['CorpusGatherRecordsStagingPathConfigRootKey'] | Should -BeExactly 'CorpusGatherRecordsStagingPath'
     $global:configRootKeys['ConversationCorpusReconciliationIntervalConfigRootKey'] | Should -BeExactly 'ConversationCorpusReconciliationInterval'
     $global:configRootKeys['ConversationCorpusScrubIntervalConfigRootKey'] | Should -BeExactly 'ConversationCorpusScrubInterval'
+    $global:configRootKeys['CorpusCaptureIdentityConfigRootKey'] | Should -BeExactly 'CorpusCaptureIdentity'
+    $global:configRootKeys['CorpusExpiryIdentityConfigRootKey'] | Should -BeExactly 'CorpusExpiryIdentity'
     $global:configRootKeys.ContainsKey('DatabaseHostConfigRootKey') | Should -BeTrue                      # Add-DatabasesConfigRootKeys
     $global:configRootKeys.ContainsKey('DatabaseATAPUtilitiesNameConfigRootKey') | Should -BeTrue         # Set-DatabasesATAPUtilitiesConfigRootKeys
     $global:configRootKeys.ContainsKey('DatabaseAceCommanderNameConfigRootKey') | Should -BeTrue          # Set-DatabasesAceCommanderConfigRootKeys

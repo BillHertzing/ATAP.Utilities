@@ -72,6 +72,8 @@ function Set-CoreConfigRootKeys {
           'CorpusGatherRecordsStagingPathConfigRootKey'                                                  = 'CorpusGatherRecordsStagingPath'
           'ConversationCorpusReconciliationIntervalConfigRootKey'                                       = 'ConversationCorpusReconciliationInterval'
           'ConversationCorpusScrubIntervalConfigRootKey'                                                = 'ConversationCorpusScrubInterval'
+          'CorpusCaptureIdentityConfigRootKey'                                                           = 'CorpusCaptureIdentity'
+          'CorpusExpiryIdentityConfigRootKey'                                                            = 'CorpusExpiryIdentity'
           'ChocolateyPackagesConfigRootKey'                                                              = 'ChocolateyPackages'
           # Ditto Clipboard Manager Settings
           'DittoDBPathConfigRootKey'                                                                     = 'DittoDBPath'

@@ -146,6 +146,19 @@ function Start-AceOutpostMeteredHarness {
 
     [string]$ParentInvocationId,
 
+    # MSIX/packaged desktop apps (the Claude and Codex desktops are MSIX packages) cannot be
+    # started by CreateProcess on their WindowsApps path from a non-elevated token: the folder
+    # ACL denies it ("Access is denied"). utat022 only ever worked because it runs with UAC
+    # disabled. When this AppUserModelId (PackageFamilyName!ApplicationId, for example
+    # 'Claude_pzs8sxrjxfjjc!Claude') is supplied, the app is started through
+    # IApplicationActivationManager instead - the supported launch path for packaged apps -
+    # which still returns the process id the desktop proxy bridge binds to. Activation cannot
+    # carry an environment block; the desktop clients take the proxy from the --proxy-server
+    # argument (ChromiumProxyBridge) and trust the interception root from the machine store, so
+    # nothing the env block carried is needed for them.
+    [ValidatePattern('^[A-Za-z0-9.\-]+_[a-z0-9]{13}![A-Za-z0-9.\-]+$')]
+    [string]$PackagedAppUserModelId,
+
     [Parameter(ValueFromRemainingArguments)]
     [string[]]$ArgumentList = @()
   )
@@ -380,11 +393,26 @@ function Start-AceOutpostMeteredHarness {
           $startInfo.RedirectStandardError = $true
         }
 
-        $process = [System.Diagnostics.Process]::new()
-        $process.StartInfo = $startInfo
-        $null = $process.Start()
-        $started = $true
-        $processId = $process.Id
+        if (-not [string]::IsNullOrWhiteSpace($PackagedAppUserModelId)) {
+          if ($LaunchMode -eq 'Wait' -and -not $ChromiumProxyBridge) {
+            throw 'A packaged desktop app cannot redirect standard streams; use -ChromiumProxyBridge (desktop) or LaunchMode Detach.'
+          }
+          # Packaged-app activation. The argument vector is joined with quoting equivalent to
+          # ProcessStartInfo.ArgumentList; the desktop bridge switches are already in it.
+          $activationArguments = ($startInfo.ArgumentList | ForEach-Object {
+              if ($_ -match '[\s"]') { '"' + ($_ -replace '"', '\"') + '"' } else { $_ }
+            }) -join ' '
+          $processId = [ATAP.Utilities.PowerShell.PackagedAppActivator]::Activate($PackagedAppUserModelId, $activationArguments)
+          $process = [System.Diagnostics.Process]::GetProcessById($processId)
+          $started = $true
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Activated packaged app '$PackagedAppUserModelId' as process $processId."
+        } else {
+          $process = [System.Diagnostics.Process]::new()
+          $process.StartInfo = $startInfo
+          $null = $process.Start()
+          $started = $true
+          $processId = $process.Id
+        }
 
         if ($ChromiumProxyBridge) {
           try {

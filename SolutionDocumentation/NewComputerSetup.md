@@ -375,6 +375,27 @@ dotnet --list-sdks
 bw --version
 ```
 
+### 2.0.a Enable long paths for Windows and for Git (required)
+
+Some ref names in the shared Dropbox-hosted repositories exceed 260 characters (for
+example `refs/codex/turn-diffs/checkpoints/<sha256>/<sha256>/<ms>/<guid>`). Without long-path
+support `git fsck` reports them as `Filename too long` / `invalid sha1 pointer 0000…`, and
+NBGV history reads can fail. utat01 hit this on 2026-09-16 (Task 15.187); utat022 already had
+both settings. Run in an elevated PowerShell 7 console:
+
+```powershell
+# Windows: allow Win32 paths longer than MAX_PATH for manifest-aware processes.
+New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' `
+  -Name LongPathsEnabled -PropertyType DWord -Value 1 -Force
+
+# Git: every repository, every user on this machine.
+git config --system core.longpaths true
+
+# Verify
+(Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem').LongPathsEnabled   # 1
+git config --system --get core.longpaths                                                    # true
+```
+
 ### 2.0 Register the PowerShell 7 remoting endpoint before any remote connection
 
 After PowerShell 7 is installed, use an elevated **local console** PowerShell 7

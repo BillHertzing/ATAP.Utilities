@@ -56,10 +56,13 @@ function Start-DabMcpServer {
       } else {
         $ConnectionStringSecretName
       }
-      $connectionString = Get-SecretATAP -SecretName $secretName -SecretStoreType 'BitwardenSecretsManager'
-      if ([string]::IsNullOrWhiteSpace($connectionString)) {
-        throw "BWS returned an empty connection string for '$secretName'."
+      if (-not (Get-Command -Name 'Resolve-DabMcpConnectionString' -ErrorAction SilentlyContinue)) {
+        . (Join-Path $PSScriptRoot '..\private\Resolve-DabMcpConnectionString.ps1')
       }
+      # Serialized across concurrently starting connectors and retried only on the BWS
+      # rate-limit reply (Task 15.196.l): ten connectors starting at once otherwise share one
+      # quota and several die with "[429 Too Many Requests] Slow down!".
+      $connectionString = Resolve-DabMcpConnectionString -SecretName $secretName
       $previousConnectionString = [Environment]::GetEnvironmentVariable($ConnectionStringEnvironmentVariable, 'Process')
       $connectionStringEnvironmentWasSet = $null -ne $previousConnectionString
       [Environment]::SetEnvironmentVariable($ConnectionStringEnvironmentVariable, $connectionString, 'Process')

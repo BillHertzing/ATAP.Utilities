@@ -40,6 +40,7 @@ Import-Module -Name 'ATAP.Utilities.BuildTooling.Secrets.PowerShell' `
 
 try {
   . (Join-Path $PSScriptRoot '..\private\Resolve-DabMcpConnectionStringSecretName.ps1')
+  . (Join-Path $PSScriptRoot '..\private\Resolve-DabMcpConnectionString.ps1')
   . (Join-Path $PSScriptRoot '..\public\Start-DabMcpServer.ps1')
 
   # DAB starts Kestrel even in MCP stdio mode. A distinct loopback endpoint keeps

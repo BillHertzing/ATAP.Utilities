@@ -301,3 +301,83 @@ Describe 'DAB MCP helpers' -Tag 'Unit' {
     @($command.Parameters.Keys) | Should -Not -Contain 'AuthorizedRepositories'
   }
 }
+
+Describe 'Resolve-DabMcpConnectionString (Task 15.196.l contention control)' -Tag 'Unit' {
+  BeforeAll {
+    # The helper calls Get-SecretATAP from the Secrets module; give the module scope a stub to mock.
+    InModuleScope $script:moduleName {
+      if (-not (Get-Command -Name Get-SecretATAP -ErrorAction SilentlyContinue)) {
+        function Get-SecretATAP { param([string]$SecretName, [string]$SecretStoreType) throw 'stub' }
+      }
+    }
+  }
+
+  It 'returns the value on the first attempt without sleeping' {
+    InModuleScope $script:moduleName {
+      Mock Get-SecretATAP { 'Server=x;Database=y' }
+      Mock Start-Sleep {}
+      Resolve-DabMcpConnectionString -SecretName 'dbConnectionString.test' | Should -BeExactly 'Server=x;Database=y'
+      Should -Invoke Get-SecretATAP -Times 1 -Exactly
+      Should -Invoke Start-Sleep -Times 0
+    }
+  }
+
+  It 'retries only on the BWS rate-limit signature with capped exponential delay' {
+    InModuleScope $script:moduleName {
+      $script:calls = 0
+      Mock Get-SecretATAP { $script:calls++; if ($script:calls -lt 4) { throw '[429 Too Many Requests] Slow down!' }; 'ok' }
+      Mock Start-Sleep {}
+      Resolve-DabMcpConnectionString -SecretName 'dbConnectionString.test' -InitialRetryDelaySeconds 1 -MaximumRetryDelaySeconds 3 | Should -BeExactly 'ok'
+      Should -Invoke Get-SecretATAP -Times 4 -Exactly
+      Should -Invoke Start-Sleep -Times 1 -ParameterFilter { $Milliseconds -eq 1000 }
+      Should -Invoke Start-Sleep -Times 1 -ParameterFilter { $Milliseconds -eq 2000 }
+      Should -Invoke Start-Sleep -Times 1 -ParameterFilter { $Milliseconds -eq 3000 }
+    }
+  }
+
+  It 'gives up after MaximumAttempts and rethrows the rate-limit error' {
+    InModuleScope $script:moduleName {
+      Mock Get-SecretATAP { throw '[429 Too Many Requests] Slow down!' }
+      Mock Start-Sleep {}
+      { Resolve-DabMcpConnectionString -SecretName 'dbConnectionString.test' -MaximumAttempts 3 } | Should -Throw '*429*'
+      Should -Invoke Get-SecretATAP -Times 3 -Exactly
+      Should -Invoke Start-Sleep -Times 2 -Exactly
+    }
+  }
+
+  It 'does not retry a non-contention failure such as a missing secret' {
+    InModuleScope $script:moduleName {
+      Mock Get-SecretATAP { throw "No Bitwarden Secrets Manager secret found with key 'x'" }
+      Mock Start-Sleep {}
+      { Resolve-DabMcpConnectionString -SecretName 'dbConnectionString.test' } | Should -Throw '*No Bitwarden Secrets Manager secret*'
+      Should -Invoke Get-SecretATAP -Times 1 -Exactly
+      Should -Invoke Start-Sleep -Times 0
+    }
+  }
+
+  It 'rejects an empty value without retrying' {
+    InModuleScope $script:moduleName {
+      Mock Get-SecretATAP { '' }
+      Mock Start-Sleep {}
+      { Resolve-DabMcpConnectionString -SecretName 'dbConnectionString.test' } | Should -Throw '*empty connection string*'
+      Should -Invoke Start-Sleep -Times 0
+    }
+  }
+
+  It 'releases the serialization mutex after resolving' {
+    InModuleScope $script:moduleName {
+      Mock Get-SecretATAP { 'ok' }
+      $null = Resolve-DabMcpConnectionString -SecretName 'dbConnectionString.test'
+      $probe = [System.Threading.Mutex]::new($false, 'Local\ATAP.DabMcp.BwsSecretResolution')
+      try { $probe.WaitOne([TimeSpan]::FromSeconds(2)) | Should -BeTrue } finally { try { $probe.ReleaseMutex() } catch { }; $probe.Dispose() }
+    }
+  }
+
+  It 'is wired into Start-DabMcpServer and the stdio launcher in place of the direct BWS call' {
+    $public = Get-Content -LiteralPath (Join-Path $script:moduleRoot 'public\Start-DabMcpServer.ps1') -Raw
+    $public | Should -Match 'Resolve-DabMcpConnectionString -SecretName'
+    $public | Should -Not -Match "Get-SecretATAP -SecretName \`$secretName"
+    $launcher = Get-Content -LiteralPath (Join-Path $script:moduleRoot 'Mcp\Start-DabMcpServer.ps1') -Raw
+    $launcher | Should -Match 'private\\Resolve-DabMcpConnectionString\.ps1'
+  }
+}

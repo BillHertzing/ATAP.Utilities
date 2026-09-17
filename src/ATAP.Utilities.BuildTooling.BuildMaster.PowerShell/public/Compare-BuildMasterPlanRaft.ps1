@@ -91,6 +91,14 @@ function Compare-BuildMasterPlanRaft {
   .PARAMETER RunnerScriptDirectory
     Directory holding the paired stage-runner .ps1 files. Defaults to the directory
     containing each .otter file.
+  .PARAMETER IncludePipelines
+    Also compare '<Name>.pipeline.json' files against the type-8 pipeline raft item
+    '<Name>' (Task 15.196.r / SC-0444). Pipelines have no runner arguments, so only the
+    content comparison applies: ArgumentSource is 'NotApplicable', ArgumentComparison and
+    MandatoryParameterAnalysis are empty, and SilentHangSignaturePresent is $false
+    (there is no argument list that could hang). Status semantics are unchanged: any byte
+    difference is Drift, because a raft pipeline not written from the committed bytes is
+    exactly the condition that let DatabaseChangePackage-5Stage exist on one host only.
   .OUTPUTS
     PSCustomObject, one per plan, carrying metadata only. Status is one of Match, Drift,
     MissingFromRaft, MissingOnDisk, or Unreachable.
@@ -150,7 +158,9 @@ function Compare-BuildMasterPlanRaft {
 
     [string]$ApplicationName,
 
-    [string]$RunnerScriptDirectory
+    [string]$RunnerScriptDirectory,
+
+    [switch]$IncludePipelines
   )
 
   begin {
@@ -249,18 +259,30 @@ function Compare-BuildMasterPlanRaft {
       return [int]$match[0].Application_Id
     }
 
+    # Pipeline raft items (type 8): named without extension, JSON body. Same naming rule
+    # as Sync-BuildMasterPlans so the two halves cannot disagree about what a pipeline is.
+    $pipelineFileSuffix = '.pipeline.json'
+    $pipelineRaftItemTypeCode = 8
+
+    function Test-PipelineFile {
+      param([Parameter(Mandatory)][System.IO.FileInfo]$File)
+      return $File.Name.EndsWith($pipelineFileSuffix, [System.StringComparison]::OrdinalIgnoreCase)
+    }
+
     function Get-BuildMasterRaftItem {
       param(
         [Parameter(Mandatory)]
         [string]$ItemName,
 
-        [int]$ResolvedApplicationId
+        [int]$ResolvedApplicationId,
+
+        [int]$ItemTypeCode = $RaftItemTypeCode
       )
 
       $body = @{
         API_Key           = $ApiKey
         Raft_Id           = $RaftId
-        RaftItemType_Code = $RaftItemTypeCode
+        RaftItemType_Code = $ItemTypeCode
         RaftItem_Name     = $ItemName
       }
 
@@ -444,7 +466,8 @@ function Compare-BuildMasterPlanRaft {
         $ArgumentComparison,
         $MandatoryParameterAnalysis,
         $SilentHangSignaturePresent,
-        [string]$ArgumentSource
+        [string]$ArgumentSource,
+        [int]$ItemTypeCode = $RaftItemTypeCode
       )
 
       [PSCustomObject]@{
@@ -453,7 +476,7 @@ function Compare-BuildMasterPlanRaft {
         RaftId                   = $RaftId
         RaftItemId               = if ($RaftItem -and $RaftItem.PSObject.Properties['RaftItem_Id']) { $RaftItem.RaftItem_Id } else { $null }
         RaftItemName             = $ItemName
-        RaftItemTypeCode         = $RaftItemTypeCode
+        RaftItemTypeCode         = $ItemTypeCode
         ApplicationId            = if ($ResolvedApplicationId -gt 0) { $ResolvedApplicationId } else { $null }
         ApplicationName          = if ([string]::IsNullOrWhiteSpace($ApplicationName)) { $null } else { $ApplicationName }
         ApplicationScoped        = ($ResolvedApplicationId -gt 0)
@@ -495,6 +518,11 @@ function Compare-BuildMasterPlanRaft {
       if (Test-Path -LiteralPath $candidate -PathType Container) {
         foreach ($file in @(Get-ChildItem -LiteralPath $candidate -Filter '*.otter' -File -Recurse:$Recurse -ErrorAction Stop)) {
           [void]$planFiles.Add($file)
+        }
+        if ($IncludePipelines) {
+          foreach ($file in @(Get-ChildItem -LiteralPath $candidate -Filter "*$pipelineFileSuffix" -File -Recurse:$Recurse -ErrorAction Stop)) {
+            [void]$planFiles.Add($file)
+          }
         }
         continue
       }
@@ -545,21 +573,30 @@ function Compare-BuildMasterPlanRaft {
     }
 
     foreach ($file in $planFiles) {
-      $itemName = if ($PSBoundParameters.ContainsKey('RaftItemName')) { $RaftItemName } else { $file.Name }
+      $isPipeline = (Test-PipelineFile -File $file)
+      $itemTypeCode = if ($isPipeline) { $pipelineRaftItemTypeCode } else { $RaftItemTypeCode }
+      $itemName = if ($PSBoundParameters.ContainsKey('RaftItemName')) {
+        $RaftItemName
+      } elseif ($isPipeline) {
+        $file.Name.Substring(0, $file.Name.Length - $pipelineFileSuffix.Length)
+      } else {
+        $file.Name
+      }
+      $planName = if ($isPipeline) { $itemName } else { $file.BaseName }
       $diskBytes = $null
 
       try {
         $diskBytes = [System.IO.File]::ReadAllBytes($file.FullName)
-        $raftItem = Get-BuildMasterRaftItem -ItemName $itemName -ResolvedApplicationId $resolvedApplicationId
+        $raftItem = Get-BuildMasterRaftItem -ItemName $itemName -ResolvedApplicationId $resolvedApplicationId -ItemTypeCode $itemTypeCode
         $raftBytes = ConvertTo-RaftContentByte -RaftItem $raftItem
 
         if ($null -eq $raftItem -or $null -eq $raftBytes) {
           $reason = if ($null -eq $raftItem) {
-            "Raft $RaftId has no item named '$itemName'$(if ($resolvedApplicationId -gt 0) { " for application $resolvedApplicationId" })."
+            "Raft $RaftId has no type-$itemTypeCode item named '$itemName'$(if ($resolvedApplicationId -gt 0) { " for application $resolvedApplicationId" })."
           } else {
             "Raft item '$itemName' returned no content."
           }
-          New-PlanComparisonRecord -PlanName $file.BaseName -PlanPath $file.FullName -ItemName $itemName `
+          New-PlanComparisonRecord -PlanName $planName -PlanPath $file.FullName -ItemName $itemName -ItemTypeCode $itemTypeCode `
             -RaftItem $raftItem -RaftBytes $raftBytes -DiskBytes $diskBytes -DiskFile $file `
             -ResolvedApplicationId $resolvedApplicationId -Status 'MissingFromRaft' -DriftReasons @('MissingFromRaft') `
             -InformationalReasons @() -Reason $reason -ArgumentComparison @() `
@@ -579,6 +616,21 @@ function Compare-BuildMasterPlanRaft {
           # A whitespace-only difference is still drift - it means the raft was not written
           # from these exact bytes - but it is a materially different diagnosis.
           [void]$driftReasons.Add($(if ($normalizedMatch) { 'WhitespaceOnlyContentDrift' } else { 'ContentDrift' }))
+        }
+
+        if ($isPipeline) {
+          # A pipeline has no Exec Arguments: line and no runner; only the content
+          # comparison applies. $false, not $null: there is no argument list to hang on.
+          $uniqueReasons = @($driftReasons | Select-Object -Unique)
+          $record = New-PlanComparisonRecord -PlanName $planName -PlanPath $file.FullName -ItemName $itemName -ItemTypeCode $itemTypeCode `
+            -RaftItem $raftItem -RaftBytes $raftBytes -DiskBytes $diskBytes -DiskFile $file `
+            -ResolvedApplicationId $resolvedApplicationId -Status $(if ($uniqueReasons.Count -eq 0) { 'Match' } else { 'Drift' }) `
+            -DriftReasons $uniqueReasons -InformationalReasons @() -Reason $null -ArgumentComparison @() `
+            -MandatoryParameterAnalysis @() -SilentHangSignaturePresent $false -ArgumentSource 'NotApplicable'
+          $record.ContentMatches = $bytesMatch
+          $record.NormalizedContentMatches = $normalizedMatch
+          $record
+          continue
         }
 
         # Argument names are taken from the DEPLOYED raft content, because the raft plan is
@@ -662,7 +714,7 @@ function Compare-BuildMasterPlanRaft {
         # reported as a check that found nothing.
         $silentHang = if ($argumentCheckRan) { @($mandatoryAnalysis | Where-Object { $_.SilentHangSignaturePresent }).Count -gt 0 } else { $null }
 
-        $record = New-PlanComparisonRecord -PlanName $file.BaseName -PlanPath $file.FullName -ItemName $itemName `
+        $record = New-PlanComparisonRecord -PlanName $planName -PlanPath $file.FullName -ItemName $itemName -ItemTypeCode $itemTypeCode `
           -RaftItem $raftItem -RaftBytes $raftBytes -DiskBytes $diskBytes -DiskFile $file `
           -ResolvedApplicationId $resolvedApplicationId -Status $status -DriftReasons $uniqueReasons `
           -InformationalReasons @($informationalReasons | Select-Object -Unique) -Reason $null `
@@ -675,7 +727,7 @@ function Compare-BuildMasterPlanRaft {
       } catch {
         # Fail closed. An unreachable or failed server call is never reported as Match.
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "BuildMaster raft comparison failed for '$itemName'. Exception: $($_.Exception.Message)"
-        New-PlanComparisonRecord -PlanName $file.BaseName -PlanPath $file.FullName -ItemName $itemName `
+        New-PlanComparisonRecord -PlanName $planName -PlanPath $file.FullName -ItemName $itemName -ItemTypeCode $itemTypeCode `
           -RaftItem $null -RaftBytes $null -DiskBytes $diskBytes -DiskFile $file `
           -ResolvedApplicationId $resolvedApplicationId -Status 'Unreachable' -DriftReasons @('Unreachable') `
           -InformationalReasons @() -Reason "BuildMaster raft comparison failed: $($_.Exception.Message)" -ArgumentComparison @() `

@@ -404,6 +404,58 @@ Exec
     }
   }
 
+  Context 'pipeline raft items (Task 15.196.r / SC-0444)' {
+    BeforeEach {
+      $script:pipelinePath = Join-Path $script:tempDir 'Fixture-5Stage.pipeline.json'
+      $script:pipelineText = @{ Name = 'Fixture-5Stage'; Stages = @(@{ Name = 'Experimental'; Targets = @(@{ ScriptId = 'global::Fixture.otter'; ServerNames = @('localhost') }) }) } | ConvertTo-Json -Depth 10
+      [System.IO.File]::WriteAllText($script:pipelinePath, $script:pipelineText, [System.Text.UTF8Encoding]::new($false))
+    }
+
+    It 'ignores pipeline files unless IncludePipelines is set' {
+      Mock Invoke-RestMethod { @(New-RaftItemResponse -Content $script:diskText) }
+
+      $results = @(Compare-BuildMasterPlanRaft -Path $script:tempDir @script:commonArgs)
+
+      $results.Count | Should -Be 1
+      $results[0].RaftItemName | Should -Be 'Fixture.otter'
+    }
+
+    It 'compares a pipeline as a type-8 item named without extension and skips the runner analysis' {
+      Mock Invoke-RestMethod {
+        if ($Body['RaftItemType_Code'] -eq 8) { return @(New-RaftItemResponse -Content $script:pipelineText -ItemName 'Fixture-5Stage' -ItemId 15) }
+        @(New-RaftItemResponse -Content $script:diskText)
+      }
+
+      $result = Compare-BuildMasterPlanRaft -Path $script:pipelinePath -IncludePipelines @script:commonArgs
+
+      $result.RaftItemName | Should -Be 'Fixture-5Stage'
+      $result.PlanName | Should -Be 'Fixture-5Stage'
+      $result.RaftItemTypeCode | Should -Be 8
+      $result.RaftItemId | Should -Be 15
+      $result.Status | Should -Be 'Match'
+      $result.ArgumentSource | Should -Be 'NotApplicable'
+      @($result.ArgumentComparison).Count | Should -Be 0
+      $result.SilentHangSignaturePresent | Should -BeFalse
+      Should -Invoke Invoke-RestMethod -Times 1 -Exactly -ParameterFilter { $Uri -like '*/Rafts_GetRaftItems' -and $Body['RaftItemType_Code'] -eq 8 }
+    }
+
+    It 'reports a pipeline whose raft bytes differ as Drift, and an absent one as MissingFromRaft' {
+      Mock Invoke-RestMethod {
+        if ($Body['RaftItem_Name'] -eq 'Fixture-5Stage') { return @(New-RaftItemResponse -Content ($script:pipelineText + ' ') -ItemName 'Fixture-5Stage' -ItemId 15) }
+        @()
+      }
+      $absentPath = Join-Path $script:tempDir 'Absent-5Stage.pipeline.json'
+      [System.IO.File]::WriteAllText($absentPath, (@{ Name = 'Absent-5Stage'; Stages = @() } | ConvertTo-Json -Depth 5), [System.Text.UTF8Encoding]::new($false))
+
+      $results = @(Compare-BuildMasterPlanRaft -Path $script:pipelinePath, $absentPath -IncludePipelines @script:commonArgs)
+
+      ($results | Where-Object RaftItemName -eq 'Fixture-5Stage').Status | Should -Be 'Drift'
+      ($results | Where-Object RaftItemName -eq 'Fixture-5Stage').DriftReasons | Should -Contain 'WhitespaceOnlyContentDrift'
+      ($results | Where-Object RaftItemName -eq 'Absent-5Stage').Status | Should -Be 'MissingFromRaft'
+      ($results | Where-Object RaftItemName -eq 'Absent-5Stage').Reason | Should -Match 'type-8'
+    }
+  }
+
   It 'never calls a BuildMaster write endpoint' {
     Mock Invoke-RestMethod { @(New-RaftItemResponse -Content $script:diskText) }
 

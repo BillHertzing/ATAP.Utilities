@@ -1538,6 +1538,52 @@ sqlcmd -S 'localhost\QA' -E -Q 'SELECT @@SERVERNAME' -C
 sqlcmd -S 'localhost\Integration' -E -Q 'SELECT @@SERVERNAME' -C
 ```
 
+### 6.5.1 Provision the database-package staging root (required on every host with Ace or ATAPUtilities databases)
+
+The Flyway database-package pipeline (`Invoke-DatabasePackageBuildMasterStage`,
+`New-DatabasePreMigrationSnapshot`, `Invoke-DatabasePackageRehearsal`) expands
+packages, writes pre-migration snapshots, and performs clone-rehearsal
+backup/restore under one shared staging root:
+
+```text
+C:\ProgramData\ATAP\DatabasePackageStaging
+```
+
+The stage runner fails closed when the directory is missing
+(`BuildMaster database-package staging root is not provisioned`), so this step
+is a hard prerequisite for Step 8 and Step 9 on any host whose SQL Server
+instances hold `AceCommander` or `ATAPUtilities` databases. It was originally
+provisioned by hand on UTAT022 only; its absence on UTAT01 surfaced as Task
+15.196.p defect D6 (2026-09-17).
+
+Three identities touch the directory: the BuildMaster service (`SvcBuildMaster`)
+writes expanded packages and snapshot metadata; the SQL Server Database Engine
+service (`SvcSQLServer`, every ATAP instance) writes and reads `.bak` files
+during `BACKUP`/`RESTORE`; the interactive developer only needs read access to
+hash backups independently. Run from an elevated PowerShell 7 shell:
+
+```powershell
+$stagingRoot = 'C:\ProgramData\ATAP\DatabasePackageStaging'
+$hostName = $env:COMPUTERNAME
+New-Item -ItemType Directory -Path $stagingRoot -Force | Out-Null
+icacls $stagingRoot /inheritance:r /grant:r `
+  'BUILTIN\Administrators:(OI)(CI)F' `
+  'NT AUTHORITY\SYSTEM:(OI)(CI)F' `
+  "$hostName\SvcBuildMaster:(OI)(CI)M" `
+  "$hostName\SvcSQLServer:(OI)(CI)M" `
+  "$hostName\$env:USERNAME:(OI)(CI)RX"
+
+# Verify: the three grants are present and nothing is inherited.
+(Get-Acl $stagingRoot).Access |
+  Select-Object IdentityReference, FileSystemRights, IsInherited |
+  Format-Table -AutoSize
+```
+
+No `INEDOBMSVC` restart is needed; the runner resolves the path per stage. Do not
+override the location through `ATAP_DATABASE_PACKAGE_STAGING_ROOT` unless the
+host's SQL topology row documents a different volume — both SQL Server and
+BuildMaster must see the same physical path.
+
 ### 6.6 Cap `max server memory` on every instance
 
 SQL Server ships with `max server memory (MB)` set to `2147483647`, which means

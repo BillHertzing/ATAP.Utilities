@@ -17,7 +17,8 @@
     'Confirm-ParityChangeApplied',
     'Invoke-ParityAudit',
     'Invoke-SharedDotNetToolConsumerProbe',
-    'Compare-ParityAudits'
+    'Compare-ParityAudits',
+    'Update-HostPackageFromDriftReport'
   )
   CmdletsToExport = @()
   VariablesToExport = @()

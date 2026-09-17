@@ -15,5 +15,6 @@ Export-ModuleMember -Function @(
   'Confirm-ParityChangeApplied',
   'Invoke-ParityAudit',
   'Invoke-SharedDotNetToolConsumerProbe',
-  'Compare-ParityAudits'
+  'Compare-ParityAudits',
+  'Update-HostPackageFromDriftReport'
 )

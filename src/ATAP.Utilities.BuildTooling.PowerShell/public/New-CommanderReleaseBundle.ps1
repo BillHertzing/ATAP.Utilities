@@ -185,7 +185,7 @@ function New-CommanderReleaseBundle {
       $schemaRelative
       'src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/Invoke-ApplicationReleaseStage.ps1'
       'src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/AceCommander-ApplicationRelease.otter'
-      'src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/AceCommander-ApplicationRelease.pipeline.json'
+      'src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/AceCommander-ApplicationRelease-5Stage.pipeline.json'
     )
     $tooling = @($toolingPaths | ForEach-Object {
         if (@(& git -C $BuildToolingRoot status --porcelain -- $_).Count) { throw "Tooling must be committed before bundling: $_" }

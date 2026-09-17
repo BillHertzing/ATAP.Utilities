@@ -86,11 +86,14 @@ Describe 'Application release fail-closed preparation' {
     $plan | Should -Not -Match '-NoProfile|Flyway|Chocolatey|WinGet'
   }
   It 'wires every stage to the Commander-only script with no automatic listeners' {
-    $pipeline = Get-Content (Join-Path $PSScriptRoot '../AceCommander-ApplicationRelease.pipeline.json') -Raw | ConvertFrom-Json
+    # Task 15.196.r: pipelines are global raft items named by their JSON 'Name'; the file is
+    # '<Name>.pipeline.json' and every stage targets the global:: plan.
+    $pipeline = Get-Content (Join-Path $PSScriptRoot '../AceCommander-ApplicationRelease-5Stage.pipeline.json') -Raw | ConvertFrom-Json
+    $pipeline.Name | Should -Be 'AceCommander-ApplicationRelease-5Stage'
     ($pipeline.Stages.Name -join ',') | Should -Be 'Experimental,Development,Integration,QA,Production'
     foreach ($stage in $pipeline.Stages) {
       @($stage.Targets).Count | Should -Be 1
-      $stage.Targets[0].ScriptId | Should -Be 'AceCommander-ApplicationRelease.otter'
+      $stage.Targets[0].ScriptId | Should -Be 'global::AceCommander-ApplicationRelease.otter'
       ($stage.Targets[0].ServerNames -join ',') | Should -Be 'localhost'
     }
     @($pipeline.EventListeners).Count | Should -Be 0

@@ -1,0 +1,154 @@
+{
+  "Name": "ReleaseBundle-6Stage",
+  "Description": "6-Stage pipeline for AceCommander release bundles. Only the first five stages are wired; the Distribution stage is deferred by the plan (see ReleaseBundle-6Stage.otter header) and must not be added here until Publish-ReleaseBundleDistribution is approved.",
+  "Stages": [
+    {
+      "Name": "Experimental",
+      "Description": "",
+      "Targets": [
+        {
+          "ScriptId": "global::ReleaseBundle-6Stage.otter",
+          "EnvironmentName": "Experimental",
+          "ServerNames": [
+            "localhost"
+          ],
+          "ServerRoleNames": [],
+          "DefaultServerContext": 1
+        }
+      ],
+      "Gate": {
+        "UserApprovals": [],
+        "GroupApprovals": [],
+        "DeploymentWindows": [],
+        "AutomatedChecks": {
+          "Issues": {
+            "Statuses": []
+          }
+        },
+        "AutomaticApprovals": []
+      },
+      "AllowMultipleActiveBuilds": false
+    },
+    {
+      "Name": "Development",
+      "Description": "",
+      "Targets": [
+        {
+          "ScriptId": "global::ReleaseBundle-6Stage.otter",
+          "EnvironmentName": "Development",
+          "ServerNames": [
+            "localhost"
+          ],
+          "ServerRoleNames": [],
+          "DefaultServerContext": 1
+        }
+      ],
+      "Gate": {
+        "UserApprovals": [],
+        "GroupApprovals": [],
+        "DeploymentWindows": [],
+        "AutomatedChecks": {
+          "Issues": {
+            "Statuses": []
+          }
+        },
+        "AutomaticApprovals": []
+      },
+      "AllowMultipleActiveBuilds": false
+    },
+    {
+      "Name": "Integration",
+      "Description": "",
+      "Targets": [
+        {
+          "ScriptId": "global::ReleaseBundle-6Stage.otter",
+          "EnvironmentName": "Integration",
+          "ServerNames": [
+            "localhost"
+          ],
+          "ServerRoleNames": [],
+          "DefaultServerContext": 1
+        }
+      ],
+      "Gate": {
+        "UserApprovals": [],
+        "GroupApprovals": [],
+        "DeploymentWindows": [],
+        "AutomatedChecks": {
+          "Issues": {
+            "Statuses": []
+          }
+        },
+        "AutomaticApprovals": []
+      },
+      "AllowMultipleActiveBuilds": false
+    },
+    {
+      "Name": "QA",
+      "Description": "",
+      "Targets": [
+        {
+          "ScriptId": "global::ReleaseBundle-6Stage.otter",
+          "EnvironmentName": "QA",
+          "ServerNames": [
+            "localhost"
+          ],
+          "ServerRoleNames": [],
+          "DefaultServerContext": 1
+        }
+      ],
+      "Gate": {
+        "UserApprovals": [],
+        "GroupApprovals": [],
+        "DeploymentWindows": [],
+        "AutomatedChecks": {
+          "Issues": {
+            "Statuses": []
+          }
+        },
+        "AutomaticApprovals": []
+      },
+      "AllowMultipleActiveBuilds": false
+    },
+    {
+      "Name": "Production",
+      "Description": "",
+      "Targets": [
+        {
+          "ScriptId": "global::ReleaseBundle-6Stage.otter",
+          "EnvironmentName": "Production",
+          "ServerNames": [
+            "localhost"
+          ],
+          "ServerRoleNames": [],
+          "DefaultServerContext": 1
+        }
+      ],
+      "Gate": {
+        "UserApprovals": [],
+        "GroupApprovals": [],
+        "DeploymentWindows": [],
+        "AutomatedChecks": {
+          "Issues": {
+            "Statuses": []
+          }
+        },
+        "AutomaticApprovals": []
+      },
+      "AllowMultipleActiveBuilds": false
+    }
+  ],
+  "TemplateVariables": [],
+  "EventListeners": [
+    {
+      "Event": 5,
+      "PipelineStageNames": [],
+      "Type": "DeployReleaseEventListener"
+    },
+    {
+      "Event": 5,
+      "PipelineStageNames": [],
+      "Type": "CreateReleaseEventListener"
+    }
+  ]
+}

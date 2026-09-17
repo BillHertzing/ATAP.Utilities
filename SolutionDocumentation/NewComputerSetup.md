@@ -2150,11 +2150,19 @@ command with `-ResumeInstalledThumbprint <thumbprint>` to complete the ACL, cano
 TrustedPublisher steps. Never run CA operations on two hosts at once.
 
 Consumers that **pin** a signer thumbprint are approval boundaries, not configuration, and are not
-updated by this step: `Ace/AceOutpost.Windows/Deployment/Install-AceOutpostRelease.ps1` and
-`New-AceOutpostReleaseBundle.ps1`, `Ace/AceCommander/Deployment/Install-AceCommanderRelease.ps1`,
-and `ATAP.Utilities/src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/CSharpPackageAuthenticodeSigning.ps1`
-(approval record bound to the utat022 certificate and custodian). A new host's signer must be
-admitted there by an explicit decision before that host can produce release bundles.
+updated by this step. A new host's signer must be admitted there by an explicit decision before that
+host can produce release bundles:
+
+- `Ace/AceOutpost.Windows/Deployment/Install-AceOutpostRelease.ps1` (`-ExpectedSignerThumbprint`
+  ValidateSet, plus `-ExpectedRollbackSignerThumbprint` for a mixed-signer rollback),
+  `New-AceOutpostReleaseBundle.ps1` (`Assert-AceOutpostBundlePolicy` release signer list) and
+  `Ace/AceCommander/Deployment/Install-AceCommanderRelease.ps1` (owned-assembly signer list) — the
+  utat022 (`3B5E…`) and utat01 (`D4C1…`) leaves were admitted 2026-09-16 (Ace `2861256`); each
+  release is still bound to exactly one of them.
+- `ATAP.Utilities/src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/CSharpPackageAuthenticodeSigning.ps1`
+  binds C# Authenticode private-key use to a **per-task approval record** (task id, source commit,
+  package set, certificate, custodian, executor host). Signing C# packages from a new host needs a
+  new approval task there, not a thumbprint edit.
 
 ### 9.8 Register the ProGet `powershellget-stable` feed and install ATAP modules
 

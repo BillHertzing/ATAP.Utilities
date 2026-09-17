@@ -2096,6 +2096,66 @@ the raft is assigned in this UI location:
 In that dialog, choose the intended raft in the **Raft** dropdown and save the
 application settings.
 
+### 9.7.1 Issue the host's PowerShell code-signing certificate
+
+BuildMaster signs PowerShell modules (`Set-PSModuleFileSignature`, selected by the application
+variable `CodeSigningCertificateThumbprint`) with a **per-host, non-exportable** machine key. The
+key never leaves the host, so a new host cannot receive a PFX from an existing one; it issues its
+own leaf from the ATAP Foundation root CA. utat022 (2026-08-03, `3B5E16C0…`) and utat01
+(2026-09-16, `D4C19B22…`) were both issued with exactly this command, documented in
+`src/ATAP.Utilities.Security.PKI.PowerShell/Documentation/PKIForNewOrg.md`:
+
+```powershell
+# Elevated, on the host that will sign. Requires the synced PKI tree, OpenSSL, certreq, and the
+# installed ATAP.Utilities.Security.PKI.PowerShell module. Resolves only the root passphrase SecretName.
+$organizationName = 'ATAP Foundation'
+$organizationToken = $organizationName -replace ' ', ''
+$pkiRoot = Join-Path 'C:\Dropbox\Security\PKI' $organizationName
+
+New-PkiWindowsCodeSigningCertificate `
+  -OrganizationName $organizationName `
+  -CARootPath (Join-Path $pkiRoot 'RootCA') `
+  -CodeSigningRootPath (Join-Path $pkiRoot 'CodeSigning') `
+  -CAPassphraseSecretName "PKI.RootCA.Passphrase.$organizationToken" `
+  -PrivateKeyReader 'SvcBuildMaster' `
+  -TrustedPublisherComputerName 'utat022', 'utat01'
+```
+
+What it does: RSA-3072 machine key (`Exportable=FALSE`, KeySpec Signature) via `certreq`, CA
+signature (825 days), `certreq -accept` into `Cert:\LocalMachine\My`, read ACL on the key for
+`PrivateKeyReader` only, canonical `CodeSigning\public\CodeSigning.crt` replaced with the prior one
+archived under `CodeSigning\archive\<thumbprint>`, and the public certificate installed in
+`LocalMachine\TrustedPublisher` on every listed host. Run it from the signing host, not over a
+WinRM hop: the TrustedPublisher step remotes to the other hosts and a second hop has no credential.
+
+Then, on this host's BuildMaster:
+
+```powershell
+Set-BuildMasterApplicationVariables -ApplicationName 'ATAP.Utilities-PowerShell' `
+  -Variables @{ CodeSigningCertificateThumbprint = '<new SHA-1 thumbprint>' } `
+  -BuildMasterBaseUrl 'https://<host>:50017' -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.<host>'
+```
+
+Verify: sign a scratch module with `Set-PSModuleFileSignature -CertificateThumbprint <new>` and
+confirm `Get-AuthenticodeSignature` reports `Valid` on **every** host (copy the file byte-exact;
+re-encoding it produces `HashMismatch`).
+
+Known failure on a Dropbox-synced PKI tree (seen 2026-09-16): OpenSSL can fail its final
+`serial.new -> serial` rename with "Invalid argument" while Dropbox holds the file. The certificate
+is already signed at that point (`RootCA\database\newcerts\<serial>.pem` and the issued
+`CodeSigning\public\CodeSigning-windows-signature-<stamp>.crt` exist) and the key is pending in
+`Cert:\LocalMachine\REQUEST`. Recover by finishing the three renames by copy (`index.txt`,
+`serial`, `index.txt.attr`; keep `.old` copies), `certreq -accept <issued .crt>`, then rerun the
+command with `-ResumeInstalledThumbprint <thumbprint>` to complete the ACL, canonical and
+TrustedPublisher steps. Never run CA operations on two hosts at once.
+
+Consumers that **pin** a signer thumbprint are approval boundaries, not configuration, and are not
+updated by this step: `Ace/AceOutpost.Windows/Deployment/Install-AceOutpostRelease.ps1` and
+`New-AceOutpostReleaseBundle.ps1`, `Ace/AceCommander/Deployment/Install-AceCommanderRelease.ps1`,
+and `ATAP.Utilities/src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/CSharpPackageAuthenticodeSigning.ps1`
+(approval record bound to the utat022 certificate and custodian). A new host's signer must be
+admitted there by an explicit decision before that host can produce release bundles.
+
 ### 9.8 Register the ProGet `powershellget-stable` feed and install ATAP modules
 
 ProGet is now running with the `powershellget-stable` NuGetV2 feed provisioned. This

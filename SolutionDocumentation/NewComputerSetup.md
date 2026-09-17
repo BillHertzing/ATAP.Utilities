@@ -640,7 +640,29 @@ $packTask = Join-Path $dotnetRoot "sdk\$sdkVersion\Sdks\Microsoft.NET.Sdk\tools\
 [Reflection.AssemblyName]::GetAssemblyName($packTask).Version
 ```
 
-The repository pins stable SDK 10.0.400 with `allowPrerelease=false`. BuildMaster
+The repositories pin stable SDK **10.0.401** with `allowPrerelease=false` (both Ace and
+ATAP.Utilities `global.json`; raised from 10.0.400 on 2026-09-17 so that both hosts run the
+same SDK). **The exact pinned SDK must be installed even when a newer patch is present.**
+`global.json` says `rollForward: latestPatch`, so `dotnet` itself would compile with any
+later patch, but each repository's `Build/Test-ToolchainBaseline.ps1` (run from
+`Directory.Build.targets` on every publish) requires the pinned version to appear in
+`dotnet --list-sdks` and fails the build with `ATAPTOOLCHAIN003: Pinned SDK not installed`
+otherwise — that gate is what makes the build deterministic across hosts. UTAT01 had
+10.0.401 only while the pin still said 10.0.400 and failed the first BuildMaster-driven
+AceOutpost build this way (Task 15.196.q defect D11, 2026-09-17); the pin was moved
+rather than a second SDK installed. When a host lacks the pinned SDK, install it
+machine-wide from an elevated PowerShell 7 session and verify it is listed:
+
+```powershell
+$pinnedSdk = (Get-Content -LiteralPath 'C:\Dropbox\whertzing\GitHub\Ace\global.json' -Raw | ConvertFrom-Json).sdk.version
+winget install --id Microsoft.DotNet.SDK.10 --version $pinnedSdk --exact --scope machine --accept-package-agreements --accept-source-agreements
+if (-not ((dotnet --list-sdks) -match "^$([regex]::Escape($pinnedSdk)) ")) { throw "Pinned SDK $pinnedSdk is not installed." }
+```
+
+If winget does not carry that exact build, use the official install script with
+`-Version $pinnedSdk -InstallDir 'C:\Program Files\dotnet'` so the SDK lands in the
+machine root that the BuildMaster service identity resolves. Record the install in the
+parity journal. BuildMaster
 uses `dotnet build`, but production pack uses Visual Studio MSBuild `/t:Pack`
 with `Deterministic=true` and `DeterministicTimestamp` derived from the Git
 `HEAD` commit epoch. Do not substitute `dotnet pack`: an older SDK feature band

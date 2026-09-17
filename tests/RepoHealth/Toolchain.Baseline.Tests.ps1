@@ -23,7 +23,7 @@ BeforeAll {
     [IO.Directory]::CreateDirectory((Join-Path $root 'src\Probe')) | Out-Null
     [IO.File]::WriteAllText((Join-Path $root 'src\Probe\Probe.csproj'), '<Project Sdk="Microsoft.NET.Sdk" />')
     if (-not $NoGlobalJson) {
-      $text = if ($Malformed) { '{ "sdk": ' } else { '{"sdk":{"version":"10.0.400","rollForward":"latestPatch","allowPrerelease":false}}' }
+      $text = if ($Malformed) { '{ "sdk": ' } else { '{"sdk":{"version":"10.0.401","rollForward":"latestPatch","allowPrerelease":false}}' }
       [IO.File]::WriteAllText((Join-Path $root 'global.json'), $text)
     }
     (Resolve-Path -LiteralPath $root).Path
@@ -37,8 +37,8 @@ BeforeAll {
     Mock Invoke-ToolchainProcess {
       if ($WorkingDirectory -ne $script:mockRoot) { throw "Wrong working directory '$WorkingDirectory'." }
       switch -Regex ($ArgumentList -join ' ') {
-        '^--list-sdks$' { New-ProbeResult -StdOut "10.0.400 [$script:mockSdkBase]"; break }
-        '^--version$' { New-ProbeResult -StdOut '10.0.400'; break }
+        '^--list-sdks$' { New-ProbeResult -StdOut "10.0.401 [$script:mockSdkBase]"; break }
+        '^--version$' { New-ProbeResult -StdOut '10.0.401'; break }
         '^msbuild -version -nologo$' { New-ProbeResult -StdOut '18.0.0'; break }
         '^nuget --version$' { New-ProbeResult -StdOut 'NuGet Command Line 7.0.0'; break }
         '^msbuild .*Deterministic' { New-ProbeResult -StdOut (@{Properties=@{Deterministic='true';ContinuousIntegrationBuild=$script:mockCib}}|ConvertTo-Json -Compress); break }
@@ -86,8 +86,8 @@ Describe 'Toolchain baseline hermetic contract' -Tag RepoHealth,Toolchain {
   }
   It 'reports SDK, SDK-owned MSBuild, NuGet, and deterministic facts' {
     $actual=Test-ToolchainBaseline -RepoRoot $script:fixture
-    $actual.Facts.PinnedVersion | Should -BeExactly '10.0.400'
-    $actual.Facts.SelectedVersion | Should -BeExactly '10.0.400'
+    $actual.Facts.PinnedVersion | Should -BeExactly '10.0.401'
+    $actual.Facts.SelectedVersion | Should -BeExactly '10.0.401'
     $actual.Facts.MSBuildVersion | Should -BeExactly '18.0.0'
     $actual.Facts.NuGetCliVersion | Should -BeExactly '7.0.0'
     $actual.Facts.Deterministic | Should -BeExactly 'true'
@@ -108,8 +108,8 @@ Describe 'Toolchain baseline hermetic contract' -Tag RepoHealth,Toolchain {
   It 'fails closed when the SDK NuGet CLI is unavailable' {
     Mock Invoke-ToolchainProcess {
       if (($ArgumentList -join ' ') -eq 'nuget --version') { New-ProbeResult -ExitCode 1 -StdErr 'unavailable' }
-      elseif (($ArgumentList -join ' ') -eq '--list-sdks') { New-ProbeResult -StdOut "10.0.400 [$(Join-Path $script:fixture 'sdk')]" }
-      elseif (($ArgumentList -join ' ') -eq '--version') { New-ProbeResult -StdOut '10.0.400' }
+      elseif (($ArgumentList -join ' ') -eq '--list-sdks') { New-ProbeResult -StdOut "10.0.401 [$(Join-Path $script:fixture 'sdk')]" }
+      elseif (($ArgumentList -join ' ') -eq '--version') { New-ProbeResult -StdOut '10.0.401' }
       elseif (($ArgumentList -join ' ') -eq 'msbuild -version -nologo') { New-ProbeResult -StdOut '18.0.0' }
       else { New-ProbeResult -StdOut (@{Properties=@{Deterministic='true';ContinuousIntegrationBuild=''}}|ConvertTo-Json -Compress) }
     }

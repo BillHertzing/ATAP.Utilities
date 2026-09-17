@@ -17,7 +17,7 @@ Visual Studio Build Tools 2026 MSBuild. Production agents require:
 - `Microsoft.VisualStudio.Workload.MSBuildTools`;
 - `Microsoft.VisualStudio.Component.NuGet.BuildTools` with NuGet 7.8+;
 - `Microsoft.NetCore.Component.SDK`, the SDK resolver used by full MSBuild; and
-- the stable SDK pinned by `global.json` (currently 10.0.400, selecting NuGet
+- the stable SDK pinned by `global.json` (currently 10.0.401, selecting NuGet
   Pack 7.9).
 
 `Invoke-CSharpPackageBuildMasterStage.ps1` discovers the stable installation

@@ -99,7 +99,7 @@ $sourceDateEpoch = (& git show -s --format=%ct HEAD).Trim()
 
 The sanctioned production path requires stable Visual Studio Build Tools 2026
 18.8+, MSBuild 18.8+, `Microsoft.NetCore.Component.SDK`, and NuGet Pack 7.8+.
-Repository `global.json` pins stable SDK 10.0.400 so Visual Studio MSBuild loads
+Repository `global.json` pins stable SDK 10.0.401 so Visual Studio MSBuild loads
 NuGet Pack 7.9 rather than the non-deterministic NuGet 7.6 task in older SDK
 bands. The BuildMaster runner fails closed if a component is absent or too old.
 Local exploratory `dotnet pack` output is not eligible for immutable publication.

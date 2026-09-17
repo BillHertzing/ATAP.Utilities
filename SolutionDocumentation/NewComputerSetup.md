@@ -1916,6 +1916,58 @@ future database requires a reviewed allow-list change followed by reconciliation
 it never inherits this grant merely by existing. Do not copy or restore an
 application or Inedo database to establish parity.
 
+### 9.2.2 Grant SvcBuildMaster the server-level rehearsal roles (required on every BuildMaster + database host)
+
+The §9.2.1 database-scoped grant lets the pipeline apply a package to an
+admitted database. It does **not** cover the clone-rehearsal lifecycle that every
+`DatabaseChangePackage-5Stage` stage runs first: restore a copy-only backup of the
+current tier database as `<Database>-rehearsal-<BuildId>-<Stage>`, migrate it, and
+drop it. That needs server-level rights on **each** tier instance. The approved SQL
+contract (Task 14.74 SQL drift decisions, 2026-08-12) is, for the local
+`SvcBuildMaster` login on every ATAP instance:
+
+| Right | Why |
+| --- | --- |
+| `CONNECT SQL` | login (granted by §9.2.1) |
+| `dbcreator` server role | `RESTORE DATABASE` as a new name, `DROP DATABASE` of the rehearsal clone |
+| `bulkadmin` server role | `BULK INSERT` of seed CSVs during rehearsal and apply |
+| `db_owner` on admitted databases only | Flyway DDL/DML in the real target (§9.2.1) |
+
+Without `dbcreator` the Experimental stage publishes the package to ProGet and then
+fails with `CREATE DATABASE permission denied in database 'master'` (UTAT01,
+Task 15.196.p defect D8, BuildMaster execution 224). Run from a profile-loaded
+PowerShell 7 session as a `sysadmin` principal, once per host, after §9.2.1:
+
+```powershell
+$login = "$($env:COMPUTERNAME.ToUpperInvariant())\SvcBuildMaster"
+$developerName = $env:USERNAME
+$secretNames = @(
+  "dbConnectionString.ATAPUtilities.$($env:COMPUTERNAME.ToLowerInvariant()).Exp.$developerName"
+  "dbConnectionString.ATAPUtilities.localhost.Dev.$developerName"
+  'dbConnectionString.ATAPUtilities.localhost.Integration'
+  'dbConnectionString.ATAPUtilities.localhost.QA'
+  'dbConnectionString.ATAPUtilities.localhost.Production'
+)
+$grant = @"
+IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = N'$login') THROW 60700, N'SvcBuildMaster login missing - run 9.2.1 first', 1;
+IF NOT EXISTS (SELECT 1 FROM sys.server_role_members m JOIN sys.server_principals r ON r.principal_id = m.role_principal_id JOIN sys.server_principals p ON p.principal_id = m.member_principal_id WHERE r.name = 'dbcreator' AND p.name = N'$login')
+  ALTER SERVER ROLE [dbcreator] ADD MEMBER [$login];
+IF NOT EXISTS (SELECT 1 FROM sys.server_role_members m JOIN sys.server_principals r ON r.principal_id = m.role_principal_id JOIN sys.server_principals p ON p.principal_id = m.member_principal_id WHERE r.name = 'bulkadmin' AND p.name = N'$login')
+  ALTER SERVER ROLE [bulkadmin] ADD MEMBER [$login];
+SELECT @@SERVERNAME AS Instance,
+  STUFF((SELECT ',' + r.name FROM sys.server_role_members m JOIN sys.server_principals r ON r.principal_id = m.role_principal_id JOIN sys.server_principals p ON p.principal_id = m.member_principal_id WHERE p.name = N'$login' FOR XML PATH('')),1,1,'') AS ServerRoles;
+"@
+foreach ($secretName in $secretNames) {
+  $cs = Get-SecretATAP -SecretName $secretName
+  try { Invoke-Sqlcmd -ConnectionString $cs -Query $grant } finally { $cs = $null }
+}
+```
+
+Every row must report `dbcreator,bulkadmin`. Do **not** add `sysadmin`,
+`securityadmin`, or `serveradmin`; the rehearsal never needs them. Record the
+change with `Add-ParityChangeEntry` and repeat on the peer host with its own
+`<PeerHost>\SvcBuildMaster` login.
+
 ### 9.3 Reconfigure the Windows services to use the dedicated accounts
 
 ```powershell

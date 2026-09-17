@@ -69,11 +69,6 @@
       "sha256": "D8707B00E8E303BC9735EF6107A2D6D6B990293D456ADE1C407349C73559E5CB"
     },
     {
-      "path": "SQL/V00150__Task15196p_utat01_rehearsal_marker.sql",
-      "kind": "migration",
-      "sha256": "23EB269F1B579541D43BCA618038938CD2C1A1845AD064D5206A52DEC67873C8"
-    },
-    {
       "path": "Data/BuildSet.csv",
       "kind": "seed",
       "sha256": "8090B31A09A7B5756894FC4438355535DB87D7390EBADC5D2BAA354751EA2DC7"

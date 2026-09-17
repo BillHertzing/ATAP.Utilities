@@ -40,9 +40,12 @@ $defaultPerMachineSettings = @{
   # Machine Settings
   'utat01'    = @{
     $global:configRootKeys['ArtifactsPathConfigRootKey']                             = $utat01ArtifactsPath
-    $global:configRootKeys['CorpusAIConversationPathConfigRootKey']                  = Join-Path $utat01ArtifactsPath 'CorpusAIConversation'
-    $global:configRootKeys['CorpusGatherRecordsPathConfigRootKey']                   = Join-Path $utat01ArtifactsPath 'CorpusGatherRecords'
-    $global:configRootKeys['CorpusGatherRecordsStagingPathConfigRootKey']            = Join-Path $utat01ArtifactsPath 'CorpusGatherRecordsStaging'
+    # [IO.Path]::Combine, not Join-Path: Join-Path is provider-aware and throws 'Cannot find drive'
+    # when the drive letter does not exist on the host evaluating this table. Every host evaluates
+    # every host's table, so a utat022-only D: drive must not break utat01 (Task 15.196.p).
+    $global:configRootKeys['CorpusAIConversationPathConfigRootKey']                  = [IO.Path]::Combine($utat01ArtifactsPath, 'CorpusAIConversation')
+    $global:configRootKeys['CorpusGatherRecordsPathConfigRootKey']                   = [IO.Path]::Combine($utat01ArtifactsPath, 'CorpusGatherRecords')
+    $global:configRootKeys['CorpusGatherRecordsStagingPathConfigRootKey']            = [IO.Path]::Combine($utat01ArtifactsPath, 'CorpusGatherRecordsStaging')
     $global:configRootKeys['ConversationCorpusReconciliationIntervalConfigRootKey'] = [TimeSpan]::FromMinutes(15)
     $global:configRootKeys['ConversationCorpusScrubIntervalConfigRootKey']          = [TimeSpan]::FromDays(1)
     $global:configRootKeys['DropBoxBasePathConfigRootKey']         = 'C:/Dropbox/'
@@ -63,9 +66,9 @@ $defaultPerMachineSettings = @{
 
   'utat022'   = @{
     $global:configRootKeys['ArtifactsPathConfigRootKey']                             = $utat022ArtifactsPath
-    $global:configRootKeys['CorpusAIConversationPathConfigRootKey']                  = Join-Path $utat022ArtifactsPath 'CorpusAIConversation'
-    $global:configRootKeys['CorpusGatherRecordsPathConfigRootKey']                   = Join-Path $utat022ArtifactsPath 'CorpusGatherRecords'
-    $global:configRootKeys['CorpusGatherRecordsStagingPathConfigRootKey']            = Join-Path $utat022ArtifactsPath 'CorpusGatherRecordsStaging'
+    $global:configRootKeys['CorpusAIConversationPathConfigRootKey']                  = [IO.Path]::Combine($utat022ArtifactsPath, 'CorpusAIConversation')
+    $global:configRootKeys['CorpusGatherRecordsPathConfigRootKey']                   = [IO.Path]::Combine($utat022ArtifactsPath, 'CorpusGatherRecords')
+    $global:configRootKeys['CorpusGatherRecordsStagingPathConfigRootKey']            = [IO.Path]::Combine($utat022ArtifactsPath, 'CorpusGatherRecordsStaging')
     $global:configRootKeys['ConversationCorpusReconciliationIntervalConfigRootKey'] = [TimeSpan]::FromMinutes(15)
     $global:configRootKeys['ConversationCorpusScrubIntervalConfigRootKey']          = [TimeSpan]::FromDays(1)
     $global:configRootKeys['DropBoxBasePathConfigRootKey']         = 'C:/Dropbox/'
@@ -203,7 +206,7 @@ foreach ($supportedCorpusHost in $supportedCorpusHosts) {
   }
 
   foreach ($corpusPathKey in $corpusConfigurationContract.Keys) {
-    $expectedCorpusPath = Join-Path $artifactRoot $corpusConfigurationContract[$corpusPathKey]
+    $expectedCorpusPath = [IO.Path]::Combine($artifactRoot, $corpusConfigurationContract[$corpusPathKey])
     if (-not $hostSettings.ContainsKey($corpusPathKey) -or
       -not ([string]$hostSettings[$corpusPathKey]).Equals($expectedCorpusPath, [StringComparison]::OrdinalIgnoreCase)) {
       throw "Corpus configuration for host '$supportedCorpusHost' requires $corpusPathKey to be derived from $artifactKey."

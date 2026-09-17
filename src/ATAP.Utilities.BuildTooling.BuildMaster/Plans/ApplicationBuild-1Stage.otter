@@ -1,0 +1,59 @@
+##########################################################################
+# ApplicationBuild-1Stage - BuildMaster OtterScript Plan (thin-runner shape)
+#
+# !! EDITING THIS FILE IS NOT ENOUGH - SYNC IT TO THE RAFT !!
+#   BuildMaster executes the copy of this plan stored in its raft, NOT this
+#   file. Committing a change here does nothing until you run:
+#       Sync-BuildMasterPlans -Path <thisFile> -IncludePipelines
+#   The paired stage runner (Invoke-ApplicationBuildMasterStage.ps1) IS read
+#   from disk at run time. See BuildMaster-Plan-Raft-Sync-Requirement.md.
+#
+# Task 15.196.q / SC-0443. One stage, 'Build': deterministic publish of one
+# admitted application (AceOutpost or AceCommander) from the Ace worktree,
+# Authenticode signing of the allowlisted owned files AS THE BUILDMASTER SERVICE
+# IDENTITY with the leaf admitted for this host, bundle construction through the
+# product's own entry point, upload to releasebundle-experimental, and a
+# nonsecret release context. Promotion beyond Experimental is the
+# AceCommander-ApplicationRelease adapter's job; installation is a host-side
+# elevation-broker operation. This plan never does either.
+#
+# Variables (Application Variables - set in BuildMaster Application config):
+#   $ApplicationName            - BuildMaster application name, e.g. "AceOutpost-Build"
+#   $ProductId                  - Admitted product id: AceOutpost | AceCommander
+#   $SourcePath                 - Committed Ace worktree (HEAD must equal what $SourceTag peels to)
+#   $BuildToolingSourcePath     - Committed ATAP.Utilities worktree (runner, boundary, bundle primitives)
+#   $Branch                     - Source branch recorded in the bundle
+#   $ArtifactsRoot              - Host artifact root (C:\ATAPArtifacts on utat01, D:\ATAPArtifacts on utat022)
+#   $ReleaseVersion             - Immutable release version (release variable, set per release)
+#   $SourceTag                  - Git tag that peels to HEAD (release variable, set per release)
+#   $ReleaseNotes               - Human-readable release summary (release variable)
+#   $ExpectedTestsPassed        - Exact passing test count recorded in bundle evidence (release variable)
+#   $ConversationId             - Canonical GUID stamped into bundle evidence (release variable)
+#   $DatabasePackagePinnedVersion / $DatabasePackageCompatibleVersionRange / $DatabasePackageLifecycleCeiling
+#                               - Referenced ATAPUtilities.Database contract (no database is embedded)
+#   $ProGetBaseUrl              - e.g. https://utat01:50000
+#   $ProGetApiKeySecretName     - SecretName only, e.g. ProGet.BuildMaster.API.Key.utat01 (never a value)
+#   $CodeSigningCertificateThumbprint
+#                               - Signer leaf for THIS host; refused by the approval boundary unless admitted
+#   $ApplicationBuildExpectedHostName
+#                               - Host this application is bound to (utat01 or utat022)
+#
+# Never put $Decrypt(...) or any secret value in this plan; the runner resolves
+# SecretNames with Get-SecretATAP immediately before the authenticated call.
+##########################################################################
+
+set $BuildToolingModuleManifest = $PathCombine($BuildToolingSourcePath, src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1);
+set $BuildMasterPlanScriptDir = $PathCombine($BuildToolingSourcePath, src\ATAP.Utilities.BuildTooling.BuildMaster\Plans);
+set $InvokeApplicationBuildStageScript = $PathCombine($BuildMasterPlanScriptDir, Invoke-ApplicationBuildMasterStage.ps1);
+
+set $BuildMasterBuildId = $BuildMasterId(build);
+set $BuildMasterBuildNumber = $BuildNumber;
+set $BuildMasterExecutionId = $ExecutionId;
+
+InedoCore::Exec
+(
+    FileName: pwsh,
+    Arguments: >>-NoProfile -File "$InvokeApplicationBuildStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -ProductId "$ProductId" -Branch "$Branch" -Stage "Build" -ArtifactsRoot "$ArtifactsRoot" -ReleaseVersion "$ReleaseVersion" -SourceTag "$SourceTag" -ProGetUrl "$ProGetBaseUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName" -CodeSigningCertificateThumbprint "$CodeSigningCertificateThumbprint" -ReleaseNotes "$ReleaseNotes" -ExpectedTestsPassed "$ExpectedTestsPassed" -ConversationId "$ConversationId" -DatabasePackagePinnedVersion "$DatabasePackagePinnedVersion" -DatabasePackageCompatibleVersionRange "$DatabasePackageCompatibleVersionRange" -DatabasePackageLifecycleCeiling "$DatabasePackageLifecycleCeiling" -ExpectedHostName "$ApplicationBuildExpectedHostName">>,
+    WorkingDirectory: $BuildToolingSourcePath,
+    SuccessExitCode: 0
+);

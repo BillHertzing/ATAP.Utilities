@@ -1,0 +1,35 @@
+{
+  "Name": "ApplicationBuild-1Stage",
+  "Description": "Single Build stage for admitted ATAP applications (AceOutpost, AceCommander): deterministic publish, Authenticode signing as the BuildMaster service identity with the host's admitted leaf, bundle, upload to releasebundle-experimental (Task 15.196.q / SC-0443).",
+  "Stages": [
+    {
+      "Name": "Build",
+      "Description": "",
+      "Targets": [
+        {
+          "ScriptId": "global::ApplicationBuild-1Stage.otter",
+          "EnvironmentName": "Experimental",
+          "ServerNames": [
+            "localhost"
+          ],
+          "ServerRoleNames": [],
+          "DefaultServerContext": 1
+        }
+      ],
+      "Gate": {
+        "UserApprovals": [],
+        "GroupApprovals": [],
+        "DeploymentWindows": [],
+        "AutomatedChecks": {
+          "Issues": {
+            "Statuses": []
+          }
+        },
+        "AutomaticApprovals": []
+      },
+      "AllowMultipleActiveBuilds": false
+    }
+  ],
+  "TemplateVariables": [],
+  "EventListeners": []
+}

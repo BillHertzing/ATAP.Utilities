@@ -260,19 +260,27 @@ function Invoke-ApplicationBuildMasterStage {
 
     # 5. Upload to the Experimental feed, retry-safe on identical bytes.
     $baseUrl = $ProGetUrl.TrimEnd('/')
-    $downloadUrl = "$baseUrl/upack/$ExperimentalFeed/download/$ProductId/$ReleaseVersion"
+    # ProGet universal feeds key a package by its base version: '0.1.2+7cf4be82e0' uploads
+    # with the full string but is addressed and made immutable as '0.1.2'. Two releases that
+    # differ only in build metadata therefore COLLIDE on the feed; the probe below is what
+    # turns that into a fail-closed refusal instead of a silent overwrite.
+    $feedVersion = ($ReleaseVersion -split '\+', 2)[0]
+    $downloadUrl = "$baseUrl/upack/$ExperimentalFeed/download/$ProductId/$feedVersion"
     $existingPath = Join-Path $buildEvidence 'feed-existing.upack'
     $feedState = 'uploaded'
     $apiKey = [string](Get-SecretATAP -SecretName $ProGetApiKeySecretName -SecretStoreType BitwardenSecretsManager -ErrorAction Stop)
     try {
       $headers = @{ 'X-ApiKey' = $apiKey }
-      $probe = Invoke-WebRequest -Uri $downloadUrl -Headers $headers -OutFile $existingPath -SkipHttpErrorCheck -PassThru -ErrorAction Stop
+      # -OutFile still throws on a 404 even with -SkipHttpErrorCheck, so probe into memory.
+      $probe = Invoke-WebRequest -Uri $downloadUrl -Headers $headers -SkipHttpErrorCheck -ErrorAction Stop
       if ($probe.StatusCode -eq 200) {
+        [IO.File]::WriteAllBytes($existingPath, [byte[]]$probe.Content)
         $existingSha = (Get-FileHash -LiteralPath $existingPath -Algorithm SHA256).Hash.ToLowerInvariant()
-        if ($existingSha -cne $bundleSha) { throw "Feed '$ExperimentalFeed' already holds $ProductId $ReleaseVersion with different bytes ($existingSha); versions are immutable." }
+        if ($existingSha -cne $bundleSha) { throw "Feed '$ExperimentalFeed' already holds $ProductId $feedVersion (feed versions ignore '+' build metadata) with different bytes ($existingSha); versions are immutable. Bump the base version or have the operator remove the orphaned package." }
         $feedState = 'already-present-identical'
+      } elseif ($probe.StatusCode -ne 404) {
+        throw "Feed probe of '$downloadUrl' returned HTTP $($probe.StatusCode)."
       } else {
-        Remove-Item -LiteralPath $existingPath -Force -ErrorAction SilentlyContinue
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling $baseUrl/upack/$ExperimentalFeed/upload" -Tag 'RestCall'
         Invoke-RestMethod -Uri "$baseUrl/upack/$ExperimentalFeed/upload" -Method Post -InFile $bundlePath -ContentType 'application/zip' -Headers $headers -MaximumRedirection 0 -TimeoutSec 300 -ErrorAction Stop | Out-Null
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from $baseUrl/upack/$ExperimentalFeed/upload" -Tag 'RestCall'
@@ -290,7 +298,7 @@ function Invoke-ApplicationBuildMasterStage {
       bundlePath = $bundlePath; bundleSha256 = $bundleSha; bundleContextPath = [string]$bundle.ContextPath
       signerThumbprint = $signer; signedBy = "$env:USERDOMAIN\$env:USERNAME"; signedFiles = @($toSign.Name); timestampAuthority = $tsa.AbsoluteUri
       signedInventoryPath = $inventoryPath; signedInventorySha256 = $inventorySha.ToLowerInvariant()
-      proGetBaseUrl = $baseUrl; experimentalFeed = $ExperimentalFeed; feedState = $feedState
+      proGetBaseUrl = $baseUrl; experimentalFeed = $ExperimentalFeed; feedVersion = $feedVersion; feedState = $feedState
       databasePackageReference = $databaseReference; ceilingTier = 'Production'
       installerRelativePath = $contract.InstallerRelativePath; evidenceRoot = $EvidenceRoot
       buildMaster = @{ applicationName = $ApplicationName; buildId = $BuildMasterBuildId; buildNumber = $BuildNumber; executionId = $ExecutionId; host = $env:COMPUTERNAME }

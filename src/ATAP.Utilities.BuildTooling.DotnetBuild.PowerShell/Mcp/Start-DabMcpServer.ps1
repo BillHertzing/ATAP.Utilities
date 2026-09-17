@@ -41,7 +41,12 @@ Import-Module -Name 'ATAP.Utilities.BuildTooling.Secrets.PowerShell' `
 try {
   . (Join-Path $PSScriptRoot '..\private\Resolve-DabMcpConnectionStringSecretName.ps1')
   . (Join-Path $PSScriptRoot '..\private\Resolve-DabMcpConnectionString.ps1')
+  . (Join-Path $PSScriptRoot '..\private\Join-DabMcpProcessLifetime.ps1')
   . (Join-Path $PSScriptRoot '..\public\Start-DabMcpServer.ps1')
+
+  # Bind dab.exe's lifetime to this launcher (kill-on-close job) and clear a leftover listener on
+  # this entry's port, so a harness restart cannot leave orphaned dab.exe behind (Task 15.196.l).
+  $null = Join-DabMcpProcessLifetime -McpHostUrl $McpHostUrl
 
   # DAB starts Kestrel even in MCP stdio mode. A distinct loopback endpoint keeps
   # this process from colliding with the normal DAB host or another tier's MCP server.

@@ -373,11 +373,33 @@ Describe 'Resolve-DabMcpConnectionString (Task 15.196.l contention control)' -Ta
     }
   }
 
+  It 'binds the launcher to a kill-on-close job object and stops only a dab.exe leftover on the entry port (Task 15.196.l item 5)' {
+    InModuleScope $script:moduleName {
+      Mock Get-NetTCPConnection { @([pscustomobject]@{ OwningProcess = 4242 }, [pscustomobject]@{ OwningProcess = 4343 }) } -ParameterFilter { $LocalPort -eq 5142 }
+      Mock Get-Process { if ($Id -eq 4242) { [pscustomobject]@{ Id = 4242; ProcessName = 'dab' } } else { [pscustomobject]@{ Id = 4343; ProcessName = 'sqlservr' } } }
+      Mock Stop-Process {}
+      Mock Start-Sleep {}
+      $r = Join-DabMcpProcessLifetime -McpHostUrl 'http://127.0.0.1:5142'
+      $r.JobAssigned | Should -BeTrue
+      @($r.LeftoverStopped) | Should -Be @(4242)
+      Should -Invoke Stop-Process -Times 1 -Exactly -ParameterFilter { $Id -eq 4242 -and $Force }
+      Should -Invoke Stop-Process -Times 0 -ParameterFilter { $Id -eq 4343 }
+    }
+  }
+
+  It 'never writes to the host stream from the lifetime helper (MCP stdout must stay pure)' {
+    $source = Get-Content -LiteralPath (Join-Path $script:moduleRoot 'private\Join-DabMcpProcessLifetime.ps1') -Raw
+    $source | Should -Not -Match "Level (Important|Output|Host|Warning)"
+    $source | Should -Not -Match 'Write-Host|Write-Output|Write-Warning'
+  }
+
   It 'is wired into Start-DabMcpServer and the stdio launcher in place of the direct BWS call' {
     $public = Get-Content -LiteralPath (Join-Path $script:moduleRoot 'public\Start-DabMcpServer.ps1') -Raw
     $public | Should -Match 'Resolve-DabMcpConnectionString -SecretName'
     $public | Should -Not -Match "Get-SecretATAP -SecretName \`$secretName"
     $launcher = Get-Content -LiteralPath (Join-Path $script:moduleRoot 'Mcp\Start-DabMcpServer.ps1') -Raw
     $launcher | Should -Match 'private\\Resolve-DabMcpConnectionString\.ps1'
+    $launcher | Should -Match 'private\\Join-DabMcpProcessLifetime\.ps1'
+    $launcher | Should -Match 'Join-DabMcpProcessLifetime -McpHostUrl \$McpHostUrl'
   }
 }

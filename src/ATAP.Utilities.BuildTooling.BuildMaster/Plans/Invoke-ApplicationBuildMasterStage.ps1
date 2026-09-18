@@ -168,7 +168,8 @@ function Invoke-ApplicationBuildMasterStage {
     function Write-StageJson {
       param([Parameter(Mandatory)]$Object, [Parameter(Mandatory)][string]$Path)
       [IO.Directory]::CreateDirectory((Split-Path -Parent $Path)) | Out-Null
-      [IO.File]::WriteAllText($Path, ($Object | ConvertTo-Json -Depth 12), [Text.UTF8Encoding]::new($false))
+      # -InputObject keeps a one-element array an array (piping would unwrap it to an object).
+      [IO.File]::WriteAllText($Path, (ConvertTo-Json -InputObject $Object -Depth 12), [Text.UTF8Encoding]::new($false))
       (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash
     }
   }
@@ -248,7 +249,14 @@ function Invoke-ApplicationBuildMasterStage {
       'BuildToolingFunction' {
         . (Join-Path $buildToolingRoot "src\ATAP.Utilities.BuildTooling.PowerShell\public\$($contract.BundleFunctionName).ps1")
         $bundleParameters.ProGetBaseUrl = $ProGetUrl
-        $bundleParameters.SignedInventorySha256 = $inventorySha
+        # New-CommanderReleaseBundle reads SignedInventoryPath as a bare array of
+        # { path, size, sha256 } — one element per file under PublishRoot — not the
+        # wrapped { files = [...] } document written above (execution 246 failed
+        # 'inventory 1, publish 1349'). Hand it the flat form on its own file.
+        $flatInventoryPath = Join-Path $buildEvidence 'signed-publish-inventory.flat.json'
+        $flatInventorySha = Write-StageJson -Path $flatInventoryPath -Object $inventory
+        $bundleParameters.SignedInventoryPath = $flatInventoryPath
+        $bundleParameters.SignedInventorySha256 = $flatInventorySha
         $bundle = & $contract.BundleFunctionName @bundleParameters -Confirm:$false
       }
       default { throw "Unknown bundle entry point kind '$($contract.BundleEntryPointKind)'." }

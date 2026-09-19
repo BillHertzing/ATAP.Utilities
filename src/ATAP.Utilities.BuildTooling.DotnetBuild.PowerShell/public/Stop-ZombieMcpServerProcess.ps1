@@ -153,7 +153,13 @@ function Stop-ZombieMcpServerProcess {
       $commandInfo = Get-Command -Name $resolvedCommand -ErrorAction SilentlyContinue
       $commandPath = if ($commandInfo) { [string]$commandInfo.Source } elseif ([IO.Path]::IsPathRooted($resolvedCommand)) { [IO.Path]::GetFullPath($resolvedCommand) } else { $null }
       $commandLeaf = [IO.Path]::GetFileName($resolvedCommand)
-      $requiresFingerprint = $commandLeaf -in $genericRuntimeNames
+      # cleanupProcess identifies a wrapped child, but its executable may be shared by
+      # several simultaneously healthy canonical entries (ten dab.exe tiers/roles in
+      # Task 15.196.l.5). Never let metadata alone turn an exact-port cleanup into
+      # "kill every process with this image". A wrapped-child binary match additionally
+      # requires at least one declared command-line fingerprint; an entry with no safe
+      # unique fingerprint relies on its exact listening port instead.
+      $requiresFingerprint = $null -ne $cleanupProcess -or $commandLeaf -in $genericRuntimeNames
       $launcherLeaf = [IO.Path]::GetFileName([string]$server.command)
       $isPowerShellCommandWrapper = $launcherLeaf -in @('pwsh', 'pwsh.exe', 'powershell', 'powershell.exe') -and
         @($serverArguments | Where-Object { $_ -in @('-Command', '-EncodedCommand') }).Count -gt 0

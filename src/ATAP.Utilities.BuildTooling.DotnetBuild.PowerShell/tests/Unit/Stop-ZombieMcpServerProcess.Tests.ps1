@@ -22,6 +22,7 @@ Describe 'Stop-ZombieMcpServerProcess' -Tag 'Unit' {
           serverId = 'ai.mcp.dab-ro-ataputilities-exp.v1'; nativeKey = 'dab-RO-ataputilities-exp'; ownership = 'canonical';
           transport = 'stdio'; command = 'pwsh'; args = @('-Command', 'Start-DabMcpServer');
           env = @(@{ name = 'ASPNETCORE_URLS'; value = 'http://127.0.0.1:5102' })
+          cleanupProcess = @{ executable = 'C:/mcp/dab.exe'; argumentFingerprints = @() }
         },
         @{
           serverId = 'ai.mcp.plantuml.v1'; nativeKey = 'plantuml'; ownership = 'canonical';
@@ -67,6 +68,25 @@ Describe 'Stop-ZombieMcpServerProcess' -Tag 'Unit' {
       $result = Stop-ZombieMcpServerProcess -CatalogPath $CatalogPath -NativeKey 'dab-RO-ataputilities-exp' -PassThru
       $result.Ports | Should -Be @(5102)
       $result.CandidateProcessIds | Should -BeNullOrEmpty
+    }
+  }
+
+  It 'uses an exact DAB port without broad-matching every dab.exe process' {
+    InModuleScope $script:ModuleName -Parameters @{ CatalogPath = $script:CatalogPath } {
+      Mock Get-CimInstance {
+        @(
+          [pscustomobject]@{ ProcessId = 4150; ExecutablePath = 'C:/mcp/dab.exe'; CommandLine = 'dab start'; CreationDate = $null },
+          [pscustomobject]@{ ProcessId = 4151; ExecutablePath = 'C:/mcp/dab.exe'; CommandLine = 'dab start'; CreationDate = $null }
+        )
+      }
+      Mock Get-NetTCPConnection { @([pscustomobject]@{ LocalPort = 5102; OwningProcess = 4150 }) }
+      Mock Stop-Process {}
+
+      $result = Stop-ZombieMcpServerProcess -CatalogPath $CatalogPath -NativeKey 'dab-RO-ataputilities-exp' -Confirm:$false -PassThru
+
+      $result.CandidateProcessIds | Should -Be @(4150)
+      Should -Invoke Stop-Process -Times 1 -Exactly -ParameterFilter { $Id -eq 4150 -and $Force }
+      Should -Invoke Stop-Process -Times 0 -Exactly -ParameterFilter { $Id -eq 4151 }
     }
   }
 

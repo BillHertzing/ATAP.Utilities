@@ -1,6 +1,15 @@
 #Requires -Module Pester
 
 BeforeAll {
+  $script:CreatedNetTcpConnectionShim = $false
+  if (-not (Get-Command -Name Get-NetTCPConnection -ErrorAction SilentlyContinue)) {
+    function global:Get-NetTCPConnection {
+      [CmdletBinding()]
+      param([string] $State, [int] $LocalPort)
+      @()
+    }
+    $script:CreatedNetTcpConnectionShim = $true
+  }
   $script:ModuleRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
   $script:ModuleName = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'
   $script:ManifestPath = Join-Path $script:ModuleRoot "$script:ModuleName.psd1"
@@ -15,7 +24,7 @@ Describe 'Stop-ZombieMcpServerProcess' -Tag 'Unit' {
       servers = @(
         @{
           serverId = 'ai.mcp.drawio.v1'; nativeKey = 'drawio'; ownership = 'canonical';
-          transport = 'stdio'; command = 'node';
+          transport = 'stdio'; command = 'pwsh';
           args = @('C:/mcp/drawio/index.js'); expectedListeningPorts = @(3333); env = @()
         },
         @{
@@ -26,8 +35,8 @@ Describe 'Stop-ZombieMcpServerProcess' -Tag 'Unit' {
         },
         @{
           serverId = 'ai.mcp.plantuml.v1'; nativeKey = 'plantuml'; ownership = 'canonical';
-          transport = 'stdio'; command = 'pwsh'; args = @('-Command', "& 'node' 'C:/mcp/plantuml/server.js'"); env = @()
-          cleanupProcess = @{ executable = 'node'; argumentFingerprints = @('C:/mcp/plantuml/server.js') }
+          transport = 'stdio'; command = 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe'; args = @('-Command', "& 'pwsh' 'C:/mcp/plantuml/server.js'"); env = @()
+          cleanupProcess = @{ executable = (Join-Path $PSHOME 'pwsh.exe'); argumentFingerprints = @('C:/mcp/plantuml/server.js') }
         },
         @{
           serverId = 'ai.mcp.wrapper-no-metadata.v1'; nativeKey = 'wrapper-no-metadata'; ownership = 'canonical';
@@ -92,11 +101,11 @@ Describe 'Stop-ZombieMcpServerProcess' -Tag 'Unit' {
 
   It 'requires a server fingerprint before matching a generic runtime binary' {
     InModuleScope $script:ModuleName -Parameters @{ CatalogPath = $script:CatalogPath } {
-      $nodePath = (Get-Command node -ErrorAction Stop).Source
+      $pwshPath = (Get-Command pwsh -ErrorAction Stop).Source
       Mock Get-CimInstance {
         @(
-          [pscustomobject]@{ ProcessId = 4200; ExecutablePath = $nodePath; CommandLine = 'node C:/mcp/drawio/index.js'; CreationDate = $null },
-          [pscustomobject]@{ ProcessId = 4201; ExecutablePath = $nodePath; CommandLine = 'node C:/unrelated/index.js'; CreationDate = $null }
+          [pscustomobject]@{ ProcessId = 4200; ExecutablePath = $pwshPath; CommandLine = 'pwsh C:/mcp/drawio/index.js'; CreationDate = $null },
+          [pscustomobject]@{ ProcessId = 4201; ExecutablePath = $pwshPath; CommandLine = 'pwsh C:/unrelated/index.js'; CreationDate = $null }
         )
       }
       Mock Get-NetTCPConnection { @() }
@@ -112,14 +121,14 @@ Describe 'Stop-ZombieMcpServerProcess' -Tag 'Unit' {
 
   It 'matches only the explicitly declared child of a portless PowerShell wrapper' {
     InModuleScope $script:ModuleName -Parameters @{ CatalogPath = $script:CatalogPath } {
-      $nodePath = (Get-Command node -ErrorAction Stop).Source
       $pwshPath = (Get-Command pwsh -ErrorAction Stop).Source
+      $wrapperPath = 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe'
       Mock Get-CimInstance {
         @(
-          [pscustomobject]@{ ProcessId = 4250; ExecutablePath = $nodePath.ToUpperInvariant(); CommandLine = 'node.exe C:\MCP\PLANTUML\SERVER.JS'; CreationDate = $null },
-          [pscustomobject]@{ ProcessId = 4251; ExecutablePath = $nodePath; CommandLine = 'node.exe C:/mcp/plantuml/server.js.backup'; CreationDate = $null },
-          [pscustomobject]@{ ProcessId = 4252; ExecutablePath = $pwshPath; CommandLine = "pwsh -Command & 'node' 'C:/mcp/plantuml/server.js'"; CreationDate = $null },
-          [pscustomobject]@{ ProcessId = 4253; ExecutablePath = $nodePath; CommandLine = 'node.exe C:/mcp/unrelated/server.js'; CreationDate = $null }
+          [pscustomobject]@{ ProcessId = 4250; ExecutablePath = $pwshPath.ToUpperInvariant(); CommandLine = 'pwsh.exe C:\MCP\PLANTUML\SERVER.JS'; CreationDate = $null },
+          [pscustomobject]@{ ProcessId = 4251; ExecutablePath = $pwshPath; CommandLine = 'pwsh.exe C:/mcp/plantuml/server.js.backup'; CreationDate = $null },
+          [pscustomobject]@{ ProcessId = 4252; ExecutablePath = $wrapperPath; CommandLine = "powershell.exe -Command & 'pwsh' 'C:/mcp/plantuml/server.js'"; CreationDate = $null },
+          [pscustomobject]@{ ProcessId = 4253; ExecutablePath = $pwshPath; CommandLine = 'pwsh.exe C:/mcp/unrelated/server.js'; CreationDate = $null }
         )
       }
       Mock Get-NetTCPConnection { @() }
@@ -127,7 +136,7 @@ Describe 'Stop-ZombieMcpServerProcess' -Tag 'Unit' {
 
       $result = Stop-ZombieMcpServerProcess -CatalogPath $CatalogPath -NativeKey plantuml -Confirm:$false -PassThru
 
-      $result.ResolvedCommand | Should -Be $nodePath
+      $result.ResolvedCommand | Should -Be $pwshPath
       $result.CandidateProcessIds | Should -Be @(4250)
       Should -Invoke Stop-Process -Times 1 -Exactly -ParameterFilter { $Id -eq 4250 }
       Should -Invoke Stop-Process -Times 0 -Exactly -ParameterFilter { $Id -in @(4251, 4252, 4253) }
@@ -156,11 +165,11 @@ Describe 'Stop-ZombieMcpServerProcess' -Tag 'Unit' {
 
   It 'de-duplicates port and binary matches while excluding the current process' {
     InModuleScope $script:ModuleName -Parameters @{ CatalogPath = $script:CatalogPath } {
-      $nodePath = (Get-Command node -ErrorAction Stop).Source
+      $pwshPath = (Get-Command pwsh -ErrorAction Stop).Source
       Mock Get-CimInstance {
         @(
-          [pscustomobject]@{ ProcessId = 4270; ExecutablePath = $nodePath; CommandLine = 'node C:/mcp/drawio/index.js'; CreationDate = $null },
-          [pscustomobject]@{ ProcessId = $PID; ExecutablePath = $nodePath; CommandLine = 'node C:/mcp/drawio/index.js'; CreationDate = $null }
+          [pscustomobject]@{ ProcessId = 4270; ExecutablePath = $pwshPath; CommandLine = 'pwsh C:/mcp/drawio/index.js'; CreationDate = $null },
+          [pscustomobject]@{ ProcessId = $PID; ExecutablePath = $pwshPath; CommandLine = 'pwsh C:/mcp/drawio/index.js'; CreationDate = $null }
         )
       }
       Mock Get-NetTCPConnection {
@@ -181,11 +190,11 @@ Describe 'Stop-ZombieMcpServerProcess' -Tag 'Unit' {
 
   It 'filters candidates younger than MinimumAge' {
     InModuleScope $script:ModuleName -Parameters @{ CatalogPath = $script:CatalogPath } {
-      $nodePath = (Get-Command node -ErrorAction Stop).Source
+      $pwshPath = (Get-Command pwsh -ErrorAction Stop).Source
       Mock Get-CimInstance {
         @(
-          [pscustomobject]@{ ProcessId = 4280; ExecutablePath = $nodePath; CommandLine = 'node C:/mcp/drawio/index.js'; CreationDate = [datetime]::UtcNow.AddHours(-2) },
-          [pscustomobject]@{ ProcessId = 4281; ExecutablePath = $nodePath; CommandLine = 'node C:/mcp/drawio/index.js'; CreationDate = [datetime]::UtcNow.AddMinutes(-1) }
+          [pscustomobject]@{ ProcessId = 4280; ExecutablePath = $pwshPath; CommandLine = 'pwsh C:/mcp/drawio/index.js'; CreationDate = [datetime]::UtcNow.AddHours(-2) },
+          [pscustomobject]@{ ProcessId = 4281; ExecutablePath = $pwshPath; CommandLine = 'pwsh C:/mcp/drawio/index.js'; CreationDate = [datetime]::UtcNow.AddMinutes(-1) }
         )
       }
       Mock Get-NetTCPConnection { @() }
@@ -254,5 +263,11 @@ Describe 'Stop-ZombieMcpServerProcess' -Tag 'Unit' {
       { Stop-ZombieMcpServerProcess -CatalogPath $CatalogPath -NativeKey deferred -Confirm:$false } |
         Should -Throw '*not found*'
     }
+  }
+}
+
+AfterAll {
+  if ($script:CreatedNetTcpConnectionShim) {
+    Remove-Item -LiteralPath Function:\Get-NetTCPConnection -ErrorAction SilentlyContinue
   }
 }

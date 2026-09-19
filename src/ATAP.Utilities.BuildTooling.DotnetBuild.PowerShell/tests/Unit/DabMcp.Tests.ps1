@@ -1,11 +1,26 @@
 #Requires -Module Pester
 
 BeforeAll {
+  $script:CreatedNetTcpConnectionShim = $false
+  if (-not (Get-Command -Name Get-NetTCPConnection -ErrorAction SilentlyContinue)) {
+    function global:Get-NetTCPConnection {
+      [CmdletBinding()]
+      param([string] $State, [int] $LocalPort)
+      @()
+    }
+    $script:CreatedNetTcpConnectionShim = $true
+  }
   $script:moduleRoot = (Join-Path $PSScriptRoot '..\..' | Resolve-Path).Path
   $script:moduleName = 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell'
   $script:manifestPath = Join-Path $script:moduleRoot "$script:moduleName.psd1"
   Remove-Module $script:moduleName -Force -ErrorAction SilentlyContinue
   Import-Module -Name $script:manifestPath -Force -ErrorAction Stop
+}
+
+AfterAll {
+  if ($script:CreatedNetTcpConnectionShim) {
+    Remove-Item -LiteralPath Function:\Get-NetTCPConnection -ErrorAction SilentlyContinue
+  }
 }
 
 Describe 'DAB MCP helpers' -Tag 'Unit' {

@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.1.10
+
+- Limits DAB stale-process cleanup to the exact configured listening port so
+  parallel tier and role instances remain untouched.
+- Makes lifecycle tests independent of profile-provided networking cmdlets and
+  optional Node.js installation on BuildMaster workers.
+- Supersedes 0.1.9, which did not pass the Development promotion gate.
+
 ## 0.1.8
 
 - Restricts local package staging to a repository-owned `_generated` tree;

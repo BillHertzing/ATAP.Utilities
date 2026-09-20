@@ -46,9 +46,9 @@ Describe 'V00150 Ace AISupervisor CacheTokens static contract' {
     $migration | Should -Match 'SUM\(\[CacheTokens\]\) AS \[CacheTokens\]'
   }
 
-  It 'binds package version 0.1.16 to the exact V00150 bytes' {
-    $version.version | Should -BeExactly '0.1.16'
-    $allowlist.sourceVersion | Should -BeExactly '0.1.16'
+  It 'binds package version 0.1.17 to the exact V00150 bytes' {
+    $version.version | Should -BeExactly '0.1.17'
+    $allowlist.sourceVersion | Should -BeExactly '0.1.17'
     $entry = @($allowlist.files | Where-Object path -EQ 'SQL/V00150__Add_AISupervisor_CacheTokens.sql')
     $entry.Count | Should -Be 1
     $entry[0].kind | Should -BeExactly 'migration'
@@ -61,5 +61,7 @@ Describe 'V00150 Ace AISupervisor CacheTokens static contract' {
     }
     $migration | Should -Match 'does not match the V00070 contract'
     $migration | Should -Match 'V00150 postcondition verification failed'
+    $migration | Should -Match "CHARINDEX\(N'\[CacheTokens\]', @TokenTimelineDefinition\) > 0"
+    $migration | Should -Not -Match "@TokenTimelineDefinition LIKE N'%\[CacheTokens\]%'"
   }
 }

@@ -95,7 +95,7 @@ BEGIN TRY
 
     IF @ExchangeTimelineDefinition IS NULL
        OR (LEN(@ExchangeTimelineDefinition) - LEN(REPLACE(@ExchangeTimelineDefinition, @ExchangeTimelineAnchor, N''))) / LEN(@ExchangeTimelineAnchor) <> 1
-       OR @ExchangeTimelineDefinition LIKE N'%usage.[CacheTokens]%'
+       OR CHARINDEX(N'usage.[CacheTokens]', @ExchangeTimelineDefinition) > 0
         THROW 60604, N'QueryAISupervisorExchangeTimeline does not match the V00070 contract.', 1;
 
     SET @ExchangeTimelineDefinition = REPLACE(
@@ -118,7 +118,7 @@ BEGIN TRY
     IF @TokenTimelineDefinition IS NULL
        OR (LEN(@TokenTimelineDefinition) - LEN(REPLACE(@TokenTimelineDefinition, @TokenBucketAnchor, N''))) / LEN(@TokenBucketAnchor) <> 1
        OR (LEN(@TokenTimelineDefinition) - LEN(REPLACE(@TokenTimelineDefinition, @TokenSumAnchor, N''))) / LEN(@TokenSumAnchor) <> 1
-       OR @TokenTimelineDefinition LIKE N'%[CacheTokens]%'
+       OR CHARINDEX(N'[CacheTokens]', @TokenTimelineDefinition) > 0
         THROW 60605, N'QueryAISupervisorTokenTimeline does not match the V00070 contract.', 1;
 
     SET @TokenTimelineDefinition = REPLACE(
@@ -137,9 +137,9 @@ BEGIN TRY
 
     IF COL_LENGTH(N'Ace.AISupervisorUsage', N'CacheTokens') IS NULL
        OR OBJECT_DEFINITION(OBJECT_ID(N'[Ace].[CaptureAISupervisorAttempt]', N'P')) NOT LIKE N'%@CacheTokens bigint = NULL%'
-       OR OBJECT_DEFINITION(OBJECT_ID(N'[Ace].[CaptureAISupervisorAttempt]', N'P')) NOT LIKE N'%@AttemptId, @RequestTokens, @ResponseTokens, @CacheTokens, @AvailabilityCode%'
-       OR OBJECT_DEFINITION(OBJECT_ID(N'[Ace].[QueryAISupervisorExchangeTimeline]', N'P')) NOT LIKE N'%usage.[ResponseTokens], usage.[CacheTokens], usage.[AvailabilityCode]%'
-       OR OBJECT_DEFINITION(OBJECT_ID(N'[Ace].[QueryAISupervisorTokenTimeline]', N'P')) NOT LIKE N'%SUM([CacheTokens]) AS [CacheTokens]%'
+       OR CHARINDEX(N'@AttemptId, @RequestTokens, @ResponseTokens, @CacheTokens, @AvailabilityCode', OBJECT_DEFINITION(OBJECT_ID(N'[Ace].[CaptureAISupervisorAttempt]', N'P'))) = 0
+       OR CHARINDEX(N'usage.[ResponseTokens], usage.[CacheTokens], usage.[AvailabilityCode]', OBJECT_DEFINITION(OBJECT_ID(N'[Ace].[QueryAISupervisorExchangeTimeline]', N'P'))) = 0
+       OR CHARINDEX(N'SUM([CacheTokens]) AS [CacheTokens]', OBJECT_DEFINITION(OBJECT_ID(N'[Ace].[QueryAISupervisorTokenTimeline]', N'P'))) = 0
         THROW 60606, N'V00150 postcondition verification failed.', 1;
 
     COMMIT TRANSACTION;

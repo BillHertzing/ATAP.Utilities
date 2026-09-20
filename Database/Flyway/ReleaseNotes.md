@@ -1,9 +1,21 @@
 # ATAPUtilities.Database release notes
 
+## 0.1.17
+
+Status: source corrected after the 0.1.16 Experimental rehearsal failed;
+approved for a new canonical utat01 five-tier BuildMaster release.
+
+- Replaces bracketed `LIKE` expressions in V00150's fail-closed procedure
+  guards and postconditions with literal `CHARINDEX` checks. In T-SQL `LIKE`,
+  `[CacheTokens]` is a character class rather than a literal identifier.
+- Leaves immutable packages 0.1.15 and 0.1.16 quarantined in
+  `database-experimental`; both failed disposable rehearsals and neither was
+  applied to a permanent database or promoted to a higher feed.
+
 ## 0.1.16
 
-Status: source corrected after the 0.1.15 Experimental rehearsal failed;
-approved for a new canonical utat01 five-tier BuildMaster release.
+Status: immutable package published to `database-experimental`; disposable
+rehearsal failed before permanent apply, and no higher promotion occurred.
 
 - Retains the V00150 contract introduced by 0.1.15, but compiles the replacement
   token-count check constraint only after SQL Server has added `CacheTokens`.

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageId": "ATAPUtilities.Database",
-  "sourceVersion": "0.1.16",
+  "sourceVersion": "0.1.17",
   "files": [
     {
       "path": "SQL/V00010__Create_ATAPUtilities_Initial_Schema_And_Seed.sql",
@@ -71,7 +71,7 @@
     {
       "path": "SQL/V00150__Add_AISupervisor_CacheTokens.sql",
       "kind": "migration",
-      "sha256": "1874FDC34860D82D95B69DF0FBB4CC0F1277783D2AAAB0FA6C486CAC72F3187F"
+      "sha256": "55D78FA138C721E4BBE26534D494A9FDA9C95FDA0BE57040E2159DBC7B77E805"
     },
     {
       "path": "Data/BuildSet.csv",

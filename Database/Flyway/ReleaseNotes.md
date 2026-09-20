@@ -1,5 +1,19 @@
 # ATAPUtilities.Database release notes
 
+## 0.1.15
+
+Status: source verified; approved for the canonical utat01 five-tier
+BuildMaster release.
+
+- Retains immutable V00010 through V00140 migration bytes.
+- Adds V00150 with nullable, non-negative `CacheTokens` usage alongside
+  `RequestTokens` and `ResponseTokens` in the Ace AISupervisor telemetry
+  capture and timeline contracts.
+- Preserves the existing request/response availability classification so
+  callers that do not yet supply cache usage remain compatible.
+- Defers proxy response parsing and automatic CacheTokens population until
+  after DPOM; this release establishes the additive database contract only.
+
 ## 0.1.13
 
 Status: source and disposable-database verified; unbuilt, unpublished, and not

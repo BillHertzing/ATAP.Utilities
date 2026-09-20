@@ -37,11 +37,14 @@ BEGIN TRY
     ALTER TABLE [Ace].[AISupervisorUsage]
         ADD [CacheTokens] bigint NULL;
 
-    ALTER TABLE [Ace].[AISupervisorUsage]
-        ADD CONSTRAINT [CK_Ace_AISupervisorUsage_Counts]
-            CHECK (([RequestTokens] IS NULL OR [RequestTokens] >= 0)
-               AND ([ResponseTokens] IS NULL OR [ResponseTokens] >= 0)
-               AND ([CacheTokens] IS NULL OR [CacheTokens] >= 0));
+    -- CacheTokens does not exist when SQL Server compiles this outer batch.
+    -- Compile the replacement constraint only after ADD COLUMN has completed.
+    EXEC sys.sp_executesql N'
+        ALTER TABLE [Ace].[AISupervisorUsage]
+            ADD CONSTRAINT [CK_Ace_AISupervisorUsage_Counts]
+                CHECK (([RequestTokens] IS NULL OR [RequestTokens] >= 0)
+                   AND ([ResponseTokens] IS NULL OR [ResponseTokens] >= 0)
+                   AND ([CacheTokens] IS NULL OR [CacheTokens] >= 0));';
 
     DECLARE @CaptureDefinition nvarchar(max) =
         OBJECT_DEFINITION(OBJECT_ID(N'[Ace].[CaptureAISupervisorAttempt]', N'P'));

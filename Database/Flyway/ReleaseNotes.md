@@ -1,9 +1,20 @@
 # ATAPUtilities.Database release notes
 
+## 0.1.16
+
+Status: source corrected after the 0.1.15 Experimental rehearsal failed;
+approved for a new canonical utat01 five-tier BuildMaster release.
+
+- Retains the V00150 contract introduced by 0.1.15, but compiles the replacement
+  token-count check constraint only after SQL Server has added `CacheTokens`.
+- Leaves the immutable 0.1.15 package quarantined in `database-experimental`;
+  it failed in a disposable rehearsal and was not applied to any permanent
+  database or promoted to a higher feed.
+
 ## 0.1.15
 
-Status: source verified; approved for the canonical utat01 five-tier
-BuildMaster release.
+Status: immutable package published to `database-experimental`; disposable
+rehearsal failed before permanent apply, and no higher promotion occurred.
 
 - Retains immutable V00010 through V00140 migration bytes.
 - Adds V00150 with nullable, non-negative `CacheTokens` usage alongside

@@ -23,6 +23,7 @@ Describe 'V00150 Ace AISupervisor CacheTokens static contract' {
     $migration | Should -Match 'BEGIN TRANSACTION'
     $migration | Should -Match 'ADD \[CacheTokens\] bigint NULL'
     $migration | Should -Match '\[CacheTokens\] IS NULL OR \[CacheTokens\] >= 0'
+    $migration | Should -Match "EXEC sys\.sp_executesql N'\s*ALTER TABLE \[Ace\]\.\[AISupervisorUsage\]\s*ADD CONSTRAINT \[CK_Ace_AISupervisorUsage_Counts\]"
     $migration | Should -Match 'COL_LENGTH\(N''Ace\.AISupervisorUsage'', N''CacheTokens''\)'
     $migration | Should -Not -Match '(?im)^\s*UPDATE\s+\[Ace\]\.\[AISupervisorUsage\]'
   }
@@ -45,9 +46,9 @@ Describe 'V00150 Ace AISupervisor CacheTokens static contract' {
     $migration | Should -Match 'SUM\(\[CacheTokens\]\) AS \[CacheTokens\]'
   }
 
-  It 'binds package version 0.1.15 to the exact V00150 bytes' {
-    $version.version | Should -BeExactly '0.1.15'
-    $allowlist.sourceVersion | Should -BeExactly '0.1.15'
+  It 'binds package version 0.1.16 to the exact V00150 bytes' {
+    $version.version | Should -BeExactly '0.1.16'
+    $allowlist.sourceVersion | Should -BeExactly '0.1.16'
     $entry = @($allowlist.files | Where-Object path -EQ 'SQL/V00150__Add_AISupervisor_CacheTokens.sql')
     $entry.Count | Should -Be 1
     $entry[0].kind | Should -BeExactly 'migration'

@@ -33,6 +33,8 @@ param(
   [string]$DatabasePackagePinnedVersion,
   [string]$DatabasePackageCompatibleVersionRange,
   [string]$DatabasePackageLifecycleCeiling,
+  [string]$DatabaseEvidencePath,
+  [string]$DatabaseEvidenceSha256,
   [string]$ExperimentalFeed,
   [string]$EvidenceRoot,
   [string]$ExpectedHostName
@@ -102,6 +104,8 @@ function Invoke-ApplicationBuildMasterStage {
     [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$DatabasePackagePinnedVersion,
     [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$DatabasePackageCompatibleVersionRange,
     [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$DatabasePackageLifecycleCeiling,
+    [Parameter(Mandatory)][AllowEmptyString()][string]$DatabaseEvidencePath,
+    [Parameter(Mandatory)][AllowEmptyString()][string]$DatabaseEvidenceSha256,
     [string]$ExperimentalFeed = 'releasebundle-experimental',
     [AllowEmptyString()][string]$EvidenceRoot = '',
     [AllowEmptyString()][string]$ExpectedHostName = ''
@@ -131,6 +135,27 @@ function Invoke-ApplicationBuildMasterStage {
     if ($hostName -ine $env:COMPUTERNAME) { throw "This stage is bound to host '$hostName' but is running on '$env:COMPUTERNAME'." }
 
     $contract = Get-ApplicationReleaseAuthenticodeContract -ProductId $ProductId
+    # Repository-owned bundle entry points may require database release evidence that is not
+    # part of the product-neutral BuildToolingFunction contract. Validate it before any
+    # publish, compile, or signing work, then forward it only to the repository script.
+    if ($contract.BundleEntryPointKind -eq 'RepositoryScript') {
+      if ([string]::IsNullOrWhiteSpace($DatabaseEvidencePath)) {
+        throw "DatabaseEvidencePath is required for product '$ProductId'."
+      }
+      if ($DatabaseEvidencePath -notmatch '[\\/]_generated[\\/]') {
+        throw "DatabaseEvidencePath '$DatabaseEvidencePath' must be under a _generated folder (SC-0033)."
+      }
+      if (-not (Test-Path -LiteralPath $DatabaseEvidencePath -PathType Leaf)) {
+        throw "DatabaseEvidencePath '$DatabaseEvidencePath' does not identify an existing file."
+      }
+      if ($DatabaseEvidenceSha256 -notmatch '\A[0-9A-Fa-f]{64}\z') {
+        throw 'DatabaseEvidenceSha256 must be exactly 64 hexadecimal characters.'
+      }
+      $actualDatabaseEvidenceSha256 = (Get-FileHash -LiteralPath $DatabaseEvidencePath -Algorithm SHA256).Hash
+      if ($actualDatabaseEvidenceSha256 -ine $DatabaseEvidenceSha256) {
+        throw "Database evidence SHA-256 '$actualDatabaseEvidenceSha256' does not match DatabaseEvidenceSha256 '$DatabaseEvidenceSha256'."
+      }
+    }
     $signer = Test-ApplicationReleaseSignerAdmitted -HostName $hostName -Thumbprint $CodeSigningCertificateThumbprint
     $tsa = if ([string]::IsNullOrWhiteSpace($TimestampServerUri)) { Get-ApplicationReleaseTimestampServerUri } else { [uri]$TimestampServerUri }
     if ($tsa.AbsoluteUri -cne (Get-ApplicationReleaseTimestampServerUri).AbsoluteUri) {
@@ -239,6 +264,8 @@ function Invoke-ApplicationBuildMasterStage {
     switch ($contract.BundleEntryPointKind) {
       'RepositoryScript' {
         . (Join-Path $SourcePath $contract.BundleEntryPoint)
+        $bundleParameters.DatabaseEvidencePath = $DatabaseEvidencePath
+        $bundleParameters.DatabaseEvidenceSha256 = $DatabaseEvidenceSha256
         $bundleParameters.ApplicationProvenanceSha256 = (Get-FileHash -LiteralPath $provenancePath -Algorithm SHA256).Hash
         $bundleParameters.BuildUtc = [DateTime]::UtcNow.ToString('o')
         $bundleParameters.ExpectedSignerThumbprint = $signer

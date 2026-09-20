@@ -45,6 +45,11 @@ Describe 'ApplicationBuild-1Stage.otter is a thin runner plan' {
     $script:PlanText | Should -Not -Match '[0-9A-F]{40}'
   }
 
+  It 'maps database evidence path and hash exactly once into the runner' {
+    ([regex]::Matches($script:PlanText, '-DatabaseEvidencePath\s+"\$DatabaseEvidencePath"')).Count | Should -Be 1
+    ([regex]::Matches($script:PlanText, '-DatabaseEvidenceSha256\s+"\$DatabaseEvidenceSha256"')).Count | Should -Be 1
+  }
+
   It 'passes every mandatory runner parameter (the silent-hang guard)' {
     $tokens = $null; $errors = $null
     $ast = [System.Management.Automation.Language.Parser]::ParseFile($script:RunnerPath, [ref]$tokens, [ref]$errors)
@@ -79,6 +84,21 @@ Describe 'ApplicationBuild-1Stage.otter is a thin runner plan' {
     $script:RunnerText | Should -Not -Match 'Set-AuthenticodeSignature\s'
     $script:RunnerText | Should -Not -Match '\$Decrypt\('
   }
+
+  It 'forwards database evidence only through the repository-script bundle branch' {
+    $repositoryBranch = [regex]::Match(
+      $script:RunnerText,
+      "(?s)'RepositoryScript'\s*\{(?<body>.*?)\n\s*\}\s*'BuildToolingFunction'"
+    ).Groups['body'].Value
+    $buildToolingBranch = [regex]::Match(
+      $script:RunnerText,
+      "(?s)'BuildToolingFunction'\s*\{(?<body>.*?)\n\s*\}\s*default"
+    ).Groups['body'].Value
+
+    $repositoryBranch | Should -Match '\$bundleParameters\.DatabaseEvidencePath\s*=\s*\$DatabaseEvidencePath'
+    $repositoryBranch | Should -Match '\$bundleParameters\.DatabaseEvidenceSha256\s*=\s*\$DatabaseEvidenceSha256'
+    $buildToolingBranch | Should -Not -Match 'DatabaseEvidence(?:Path|Sha256)'
+  }
 }
 
 Describe 'Invoke-ApplicationBuildMasterStage fails closed before any compile' {
@@ -88,6 +108,10 @@ Describe 'Invoke-ApplicationBuildMasterStage fails closed before any compile' {
     New-Item -ItemType Directory -Path (Join-Path $script:tmp 'ace') -Force | Out-Null
     $script:manifest = Join-Path $script:tmp 'src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1'
     Set-Content -LiteralPath $script:manifest -Value '@{}'
+    $script:databaseEvidencePath = Join-Path $script:tmp '_generated\database\release-evidence.json'
+    New-Item -ItemType Directory -Path (Split-Path -Parent $script:databaseEvidencePath) -Force | Out-Null
+    Set-Content -LiteralPath $script:databaseEvidencePath -Value '{"version":"0.1.17"}'
+    $script:databaseEvidenceSha256 = (Get-FileHash -LiteralPath $script:databaseEvidencePath -Algorithm SHA256).Hash
     # The runner derives the ATAP.Utilities worktree root from the manifest path and reads the
     # shared signer from there; give the fake root a copy so the dot-source resolves.
     $signerDir = Join-Path $script:tmp 'src\ATAP.Utilities.BuildTooling.ProGet.PowerShell\public'
@@ -104,6 +128,7 @@ Describe 'Invoke-ApplicationBuildMasterStage fails closed before any compile' {
       ProGetUrl = 'https://utat01:50000'; ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key.utat01'
       ReleaseNotes = 'n'; ExpectedTestsPassed = 1; ConversationId = '01a0a0b5-f9cf-7b83-8096-f3fdd7138ae0'
       DatabasePackagePinnedVersion = '0.1.13'; DatabasePackageCompatibleVersionRange = '[0.1.13,0.1.14)'; DatabasePackageLifecycleCeiling = 'database-experimental'
+      DatabaseEvidencePath = $script:databaseEvidencePath; DatabaseEvidenceSha256 = $script:databaseEvidenceSha256
       EvidenceRoot = (Join-Path $script:tmp '_generated\q')
     }
   }
@@ -128,6 +153,28 @@ Describe 'Invoke-ApplicationBuildMasterStage fails closed before any compile' {
   It 'refuses an evidence root outside _generated' {
     $params = $script:common.Clone(); $params.EvidenceRoot = (Join-Path $script:tmp 'elsewhere')
     { Invoke-ApplicationBuildMasterStage @params -ProductId 'AceOutpost' -CodeSigningCertificateThumbprint $script:hostLeaf -Confirm:$false } | Should -Throw -ExpectedMessage '*_generated*'
+  }
+
+  It 'requires non-empty database evidence for the repository-script product' {
+    $params = $script:common.Clone(); $params.DatabaseEvidencePath = ''; $params.DatabaseEvidenceSha256 = ''
+    { Invoke-ApplicationBuildMasterStage @params -ProductId 'AceOutpost' -CodeSigningCertificateThumbprint $script:hostLeaf -Confirm:$false } | Should -Throw -ExpectedMessage '*DatabaseEvidencePath is required*'
+  }
+
+  It 'refuses database evidence outside _generated' {
+    $params = $script:common.Clone()
+    $params.DatabaseEvidencePath = $script:manifest
+    $params.DatabaseEvidenceSha256 = (Get-FileHash -LiteralPath $script:manifest -Algorithm SHA256).Hash
+    { Invoke-ApplicationBuildMasterStage @params -ProductId 'AceOutpost' -CodeSigningCertificateThumbprint $script:hostLeaf -Confirm:$false } | Should -Throw -ExpectedMessage '*must be under a _generated folder*'
+  }
+
+  It 'refuses a malformed database evidence hash' {
+    $params = $script:common.Clone(); $params.DatabaseEvidenceSha256 = 'not-a-sha256'
+    { Invoke-ApplicationBuildMasterStage @params -ProductId 'AceOutpost' -CodeSigningCertificateThumbprint $script:hostLeaf -Confirm:$false } | Should -Throw -ExpectedMessage '*exactly 64 hexadecimal characters*'
+  }
+
+  It 'refuses a database evidence hash that does not match the file' {
+    $params = $script:common.Clone(); $params.DatabaseEvidenceSha256 = ('A' * 64)
+    { Invoke-ApplicationBuildMasterStage @params -ProductId 'AceOutpost' -CodeSigningCertificateThumbprint $script:hostLeaf -Confirm:$false } | Should -Throw -ExpectedMessage '*does not match DatabaseEvidenceSha256*'
   }
 
   It 'refuses an unversioned or malformed release version' {

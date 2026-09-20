@@ -31,6 +31,8 @@
 #   $ConversationId             - Canonical GUID stamped into bundle evidence (release variable)
 #   $DatabasePackagePinnedVersion / $DatabasePackageCompatibleVersionRange / $DatabasePackageLifecycleCeiling
 #                               - Referenced ATAPUtilities.Database contract (no database is embedded)
+#   $DatabaseEvidencePath       - AceOutpost database release evidence under _generated
+#   $DatabaseEvidenceSha256     - Exact SHA-256 of that evidence (64 hexadecimal characters)
 #   $ProGetBaseUrl              - e.g. https://utat01:50000
 #   $ProGetApiKeySecretName     - SecretName only, e.g. ProGet.BuildMaster.API.Key.utat01 (never a value)
 #   $CodeSigningCertificateThumbprint
@@ -53,7 +55,7 @@ set $BuildMasterExecutionId = $ExecutionId;
 InedoCore::Exec
 (
     FileName: pwsh,
-    Arguments: >>-NoProfile -File "$InvokeApplicationBuildStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -ProductId "$ProductId" -Branch "$Branch" -Stage "Build" -ArtifactsRoot "$ArtifactsRoot" -ReleaseVersion "$ReleaseVersion" -SourceTag "$SourceTag" -ProGetUrl "$ProGetBaseUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName" -CodeSigningCertificateThumbprint "$CodeSigningCertificateThumbprint" -ReleaseNotes "$ReleaseNotes" -ExpectedTestsPassed "$ExpectedTestsPassed" -ConversationId "$ConversationId" -DatabasePackagePinnedVersion "$DatabasePackagePinnedVersion" -DatabasePackageCompatibleVersionRange "$DatabasePackageCompatibleVersionRange" -DatabasePackageLifecycleCeiling "$DatabasePackageLifecycleCeiling" -ExpectedHostName "$ApplicationBuildExpectedHostName">>,
+    Arguments: >>-NoProfile -File "$InvokeApplicationBuildStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -ProductId "$ProductId" -Branch "$Branch" -Stage "Build" -ArtifactsRoot "$ArtifactsRoot" -ReleaseVersion "$ReleaseVersion" -SourceTag "$SourceTag" -ProGetUrl "$ProGetBaseUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName" -CodeSigningCertificateThumbprint "$CodeSigningCertificateThumbprint" -ReleaseNotes "$ReleaseNotes" -ExpectedTestsPassed "$ExpectedTestsPassed" -ConversationId "$ConversationId" -DatabasePackagePinnedVersion "$DatabasePackagePinnedVersion" -DatabasePackageCompatibleVersionRange "$DatabasePackageCompatibleVersionRange" -DatabasePackageLifecycleCeiling "$DatabasePackageLifecycleCeiling" -DatabaseEvidencePath "$DatabaseEvidencePath" -DatabaseEvidenceSha256 "$DatabaseEvidenceSha256" -ExpectedHostName "$ApplicationBuildExpectedHostName">>,
     WorkingDirectory: $BuildToolingSourcePath,
     SuccessExitCode: 0
 );

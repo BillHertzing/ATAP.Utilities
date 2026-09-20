@@ -1,9 +1,11 @@
 {
   "mcpServers": {
     "plantuml": {
-      "command": "node",
+      "command": "pwsh",
       "args": [
-        "C:/Dropbox/whertzing/GitHub/OSSForks/plantuml-mcp-server/dist/plantuml-mcp-server.js"
+        "-NonInteractive",
+        "-Command",
+        "& { $WarningPreference = 'SilentlyContinue'; $ProgressPreference = 'SilentlyContinue'; Import-Module -Name 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell' -DisableNameChecking -WarningAction SilentlyContinue -ErrorAction Stop; Stop-ZombieMcpServerProcess -CatalogPath 'C:/Dropbox/whertzing/GitHub/SharedVSCode-wt-64-Sprint-0015-work-items/.ai/config/common/mcp-servers.json' -NativeKey 'plantuml' -Quiet -Confirm:$false; & 'node' 'C:/Dropbox/whertzing/GitHub/OSSForks/plantuml-mcp-server/dist/plantuml-mcp-server.js' }"
       ],
       "env": {
         "MCP_TRANSPORT": "stdio",
@@ -13,18 +15,12 @@
     },
     "drawio": {
       "type": "stdio",
-      "command": "node",
+      "command": "pwsh",
       "args": [
-        "C:/Users/whertzing/AppData/Local/npm-cache/_npx/a34dfef1e92abe10/node_modules/drawio-mcp-server/build/index.js"
+        "-NonInteractive",
+        "-Command",
+        "& { $WarningPreference = 'SilentlyContinue'; $ProgressPreference = 'SilentlyContinue'; Import-Module -Name 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell' -DisableNameChecking -WarningAction SilentlyContinue -ErrorAction Stop; Stop-ZombieMcpServerProcess -CatalogPath 'C:/Dropbox/whertzing/GitHub/SharedVSCode-wt-64-Sprint-0015-work-items/.ai/config/common/mcp-servers.json' -NativeKey 'drawio' -Quiet -Confirm:$false; & 'node' 'C:/Users/whertzing/AppData/Roaming/npm/node_modules/drawio-mcp-server/build/index.js' }"
       ]
-    },
-    "mssql-ataputilities-Exp-whertzing": {
-      "type": "stdio",
-      "command": "C:/Dropbox/whertzing/GitHub/OSSForks/aaronontheweb/mssql-mcp/src/MSSQL.MCP.IntegrationTests/bin/Release/net9.0/MSSQL.MCP.exe",
-      "args": [],
-      "env": {
-        "MSSQL_CONNECTION_STRING": "Server=localhost\\Expwhertzing;Database=ATAPUtilities;Trusted_Connection=true;TrustServerCertificate=true;"
-      }
     }
   }
 }

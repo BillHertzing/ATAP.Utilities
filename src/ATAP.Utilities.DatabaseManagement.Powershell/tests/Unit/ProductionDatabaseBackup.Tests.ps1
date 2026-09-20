@@ -8,6 +8,7 @@ BeforeAll {
   . $protectPath
   . $restorePath
   . $schedulerPath
+  . $healthPath
   function Write-PSFMessage { param($FunctionName, $ModuleName, $Level, $Message, $Tag) }
 }
 
@@ -120,5 +121,58 @@ Describe 'Production-only invocation and health contracts' {
     foreach ($name in @('Invoke-SqlServerBackup','Protect-SqlServerBackupArtifact','Restore-SqlServerBackupArtifact','Publish-SqlServerBackupArtifact','Install-ProductionDatabaseBackupScheduledTasks','Test-DatabaseBackupHealth')) {
       $manifest.FunctionsToExport | Should -Contain $name
     }
+  }
+}
+
+Describe 'Production backup differential-chain health' {
+  BeforeEach {
+    $global:ConfigRootKeys = @{
+      LocalDBsRootPathConfigRootKey              = 'LocalDBsRootPath'
+      DatabaseBackupPublicationRootConfigRootKey = 'DatabaseBackupPublicationRoot'
+      FastTempBasePathConfigRootKey              = 'FastTempBasePath'
+    }
+    Mock Get-PVal {
+      if ($originalPSBoundParameters.ContainsKey($ParameterName)) {
+        return $originalPSBoundParameters[$ParameterName]
+      }
+      return $DefaultValue
+    }
+    Mock sqlcmd {
+      $global:LASTEXITCODE = 0
+      return $script:sqlcmdRow
+    }
+
+    $script:localRoot = Join-Path $TestDrive 'local'
+    $script:publicationRoot = Join-Path $TestDrive 'published'
+    $publishedDatabaseRoot = Join-Path (Join-Path $script:publicationRoot 'utat01') 'ATAPUtilities'
+    New-Item -ItemType Directory -Path $publishedDatabaseRoot -Force | Out-Null
+    $script:publishedArtifact = Join-Path $publishedDatabaseRoot 'ATAPUtilities.bak.gz.atapenc'
+    [IO.File]::WriteAllBytes($script:publishedArtifact, [byte[]]::new(4096))
+  }
+
+  It 'treats a differential older than a newer valid full as an obsolete prior chain' {
+    $lastFull = (Get-Date).AddMinutes(-30)
+    $lastDiff = (Get-Date).AddDays(-1)
+    (Get-Item -LiteralPath $script:publishedArtifact).LastWriteTime = $lastFull
+    $script:sqlcmdRow = 'ATAPUtilities|SIMPLE|{0}|{1}|NULL|200|100' -f $lastFull.ToString('s'), $lastDiff.ToString('s')
+
+    $result = Test-DatabaseBackupHealth -ComputerName 'utat01' -LocalDBsRoot $script:localRoot `
+      -DatabaseBackupPublicationRoot $script:publicationRoot
+
+    $result.Healthy | Should -BeTrue
+    $result.Findings.Check | Should -Not -Contain 'IncompatibleDifferentialBase'
+  }
+
+  It 'reports a newer differential whose base does not match the applicable full' {
+    $lastFull = (Get-Date).AddHours(-2)
+    $lastDiff = (Get-Date).AddMinutes(-30)
+    (Get-Item -LiteralPath $script:publishedArtifact).LastWriteTime = $lastFull
+    $script:sqlcmdRow = 'ATAPUtilities|SIMPLE|{0}|{1}|NULL|200|100' -f $lastFull.ToString('s'), $lastDiff.ToString('s')
+
+    $result = Test-DatabaseBackupHealth -ComputerName 'utat01' -LocalDBsRoot $script:localRoot `
+      -DatabaseBackupPublicationRoot $script:publicationRoot
+
+    $result.Healthy | Should -BeFalse
+    @($result.Findings | Where-Object Check -eq 'IncompatibleDifferentialBase') | Should -HaveCount 1
   }
 }

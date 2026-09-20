@@ -246,8 +246,14 @@ WHERE d.database_id > 4
             -Detail "Last full backup recorded $($lastFull.ToString('yyyy-MM-dd HH:mm')), older than the $MaxFullAgeDays-day threshold."
         }
 
+        # A full backup starts a new differential chain. The newest differential row can
+        # legitimately belong to the preceding chain when a full has run since it. In that
+        # case the newer full is current coverage and the older differential is obsolete,
+        # not incompatible. A differential newer than the full must still reference that
+        # full's checkpoint LSN.
+        $differentialPredatesLatestFull = $null -ne $lastDiff -and $null -ne $lastFull -and $lastDiff -lt $lastFull
         $compatibleDifferential = $null -ne $lastDiff -and $fullCheckpointLsn -notin @('', 'NULL') -and $differentialBaseLsn -eq $fullCheckpointLsn
-        if ($null -ne $lastDiff -and -not $compatibleDifferential) {
+        if ($null -ne $lastDiff -and -not $differentialPredatesLatestFull -and -not $compatibleDifferential) {
           Add-Finding -Severity 'Critical' -Check 'IncompatibleDifferentialBase' -Instance $instance -Database $db `
             -Detail 'The newest differential does not reference the newest full backup checkpoint LSN and cannot satisfy the restore chain.'
         }

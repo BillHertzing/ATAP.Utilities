@@ -1555,11 +1555,25 @@ Describe 'Save-SprintWorkSession' {
       $subagentsRoot = Join-Path $script:sidecarRoot 'subagents'
       $toolResultsRoot = Join-Path $script:sidecarRoot 'tool-results'
       New-Item -ItemType Directory -Path $subagentsRoot, $toolResultsRoot -Force | Out-Null
-      $mainRecord = [pscustomobject]@{ role = 'assistant'; content = 'C:\fixture\tool-results\overflow-main.txt' }
-      $mainRecord | ConvertTo-Json -Compress | Set-Content -LiteralPath $script:jsonlPath -Encoding UTF8
+      # A genuine overflow reference is the harness-written persistedOutputPath
+      # field, nested inside toolUseResult exactly as Claude Code records it.
+      $mainRecord = [pscustomobject]@{
+        role           = 'assistant'
+        toolUseResult  = [pscustomobject]@{
+          persistedOutputPath = (Join-Path $toolResultsRoot 'overflow-main.txt')
+          persistedOutputSize = 149677
+        }
+      }
+      $mainRecord | ConvertTo-Json -Compress -Depth 5 | Set-Content -LiteralPath $script:jsonlPath -Encoding UTF8
       $subagentPath = Join-Path $subagentsRoot 'agent-a1.jsonl'
-      $subagentRecord = [pscustomobject]@{ role = 'assistant'; content = 'C:\fixture\tool-results\overflow-agent.txt' }
-      $subagentRecord | ConvertTo-Json -Compress | Set-Content -LiteralPath $subagentPath -Encoding UTF8
+      $subagentRecord = [pscustomobject]@{
+        role          = 'assistant'
+        toolUseResult = [pscustomobject]@{
+          persistedOutputPath = (Join-Path $toolResultsRoot 'overflow-agent.txt')
+          persistedOutputSize = 98304
+        }
+      }
+      $subagentRecord | ConvertTo-Json -Compress -Depth 5 | Set-Content -LiteralPath $subagentPath -Encoding UTF8
       Set-Content -LiteralPath (Join-Path $toolResultsRoot 'overflow-main.txt') -Value 'main overflow' -Encoding UTF8
       Set-Content -LiteralPath (Join-Path $toolResultsRoot 'overflow-agent.txt') -Value 'agent overflow' -Encoding UTF8
 
@@ -1609,12 +1623,75 @@ Describe 'Save-SprintWorkSession' {
     It 'rejects a renamed referenced tool result as a dangling reference' {
       $toolResultsRoot = Join-Path $script:sidecarRoot 'tool-results'
       New-Item -ItemType Directory -Path $toolResultsRoot -Force | Out-Null
-      [pscustomobject]@{ role = 'assistant'; content = 'C:\fixture\tool-results\original.txt' } |
-        ConvertTo-Json -Compress |
-        Set-Content -LiteralPath $script:jsonlPath -Encoding UTF8
+      [pscustomobject]@{
+        role          = 'assistant'
+        toolUseResult = [pscustomobject]@{
+          persistedOutputPath = (Join-Path $toolResultsRoot 'original.txt')
+          persistedOutputSize = 4096
+        }
+      } | ConvertTo-Json -Compress -Depth 5 | Set-Content -LiteralPath $script:jsonlPath -Encoding UTF8
       Set-Content -LiteralPath (Join-Path $toolResultsRoot 'renamed.txt') -Value 'renamed' -Encoding UTF8
 
       { Invoke-SidecarCheckpoint } | Should -Throw -ExpectedMessage '*Dangling overflow tool-result reference*original.txt*'
+    }
+
+    It 'ignores a tool-results path that appears only as transcript text' {
+      # SC-0328: running this module's own Pester suite writes the dangling-reference
+      # failure message -- naming a synthetic fixture's original.txt -- into the
+      # session transcript. Transcripts are append-only, so a text match made every
+      # later checkpoint for that session fail closed on a file that never existed.
+      $toolResultsRoot = Join-Path $script:sidecarRoot 'tool-results'
+      New-Item -ItemType Directory -Path $toolResultsRoot -Force | Out-Null
+      $quotedFailure = "Dangling overflow tool-result reference 'original.txt'; expected exact file 'C:\fixture\ssws-test-1\fake-session\tool-results\original.txt'."
+      @(
+        ([pscustomobject]@{ role = 'assistant'; content = $quotedFailure }),
+        # The literal field name quoted inside a string value must not count either.
+        ([pscustomobject]@{ role = 'user'; content = 'the harness writes {"persistedOutputPath":"C:\fixture\tool-results\quoted.txt"} for overflow' }),
+        ([pscustomobject]@{ role = 'user'; toolUse = [pscustomobject]@{ command = "grep -n 'tool-results[\\/]ghost.txt' transcript.jsonl" } })
+      ) | ForEach-Object { $_ | ConvertTo-Json -Compress -Depth 5 } |
+        Set-Content -LiteralPath $script:jsonlPath -Encoding UTF8
+
+      $entry = Invoke-SidecarCheckpoint
+
+      $entry.ConversationArchiveCreated | Should -BeTrue
+      $entry.ConversationFileCount | Should -Be 1 -Because 'no overflow sidecar is genuinely referenced'
+    }
+
+    It 'ignores a subagent persistedOutputPath that belongs to another session' {
+      # A replayed or fixture transcript can carry a structurally valid reference
+      # into a tool-results directory this checkpoint has no claim on.
+      $subagentsRoot = Join-Path $script:sidecarRoot 'subagents'
+      $toolResultsRoot = Join-Path $script:sidecarRoot 'tool-results'
+      New-Item -ItemType Directory -Path $subagentsRoot, $toolResultsRoot -Force | Out-Null
+      [pscustomobject]@{
+        role          = 'assistant'
+        toolUseResult = [pscustomobject]@{
+          persistedOutputPath = (Join-Path $script:sessionDir 'other-session\tool-results\foreign.txt')
+          persistedOutputSize = 2048
+        }
+      } | ConvertTo-Json -Compress -Depth 5 |
+        Set-Content -LiteralPath (Join-Path $subagentsRoot 'agent-foreign.jsonl') -Encoding UTF8
+
+      $entry = Invoke-SidecarCheckpoint
+
+      $entry.ConversationArchiveCreated | Should -BeTrue
+      $entry.ConversationFileCount | Should -Be 2 -Because 'only the two transcripts belong to this bundle'
+    }
+
+    It 'still rejects a dangling reference carried by a subagent transcript' {
+      $subagentsRoot = Join-Path $script:sidecarRoot 'subagents'
+      $toolResultsRoot = Join-Path $script:sidecarRoot 'tool-results'
+      New-Item -ItemType Directory -Path $subagentsRoot, $toolResultsRoot -Force | Out-Null
+      [pscustomobject]@{
+        role          = 'assistant'
+        toolUseResult = [pscustomobject]@{
+          persistedOutputPath = (Join-Path $toolResultsRoot 'agent-missing.txt')
+          persistedOutputSize = 512
+        }
+      } | ConvertTo-Json -Compress -Depth 5 |
+        Set-Content -LiteralPath (Join-Path $subagentsRoot 'agent-dangling.jsonl') -Encoding UTF8
+
+      { Invoke-SidecarCheckpoint } | Should -Throw -ExpectedMessage '*Dangling overflow tool-result reference*agent-missing.txt*'
     }
 
     It 'ignores absent and close-variant sidecar directories instead of guessing' {
@@ -1633,9 +1710,13 @@ Describe 'Save-SprintWorkSession' {
     It 'makes a failed dangling-reference retry idempotent once the exact sidecar arrives' {
       $toolResultsRoot = Join-Path $script:sidecarRoot 'tool-results'
       New-Item -ItemType Directory -Path $toolResultsRoot -Force | Out-Null
-      [pscustomobject]@{ role = 'assistant'; content = 'C:\fixture\tool-results\retry.txt' } |
-        ConvertTo-Json -Compress |
-        Set-Content -LiteralPath $script:jsonlPath -Encoding UTF8
+      [pscustomobject]@{
+        role          = 'assistant'
+        toolUseResult = [pscustomobject]@{
+          persistedOutputPath = (Join-Path $toolResultsRoot 'retry.txt')
+          persistedOutputSize = 1024
+        }
+      } | ConvertTo-Json -Compress -Depth 5 | Set-Content -LiteralPath $script:jsonlPath -Encoding UTF8
 
       { Invoke-SidecarCheckpoint } | Should -Throw
       Set-Content -LiteralPath (Join-Path $toolResultsRoot 'retry.txt') -Value 'arrived' -Encoding UTF8

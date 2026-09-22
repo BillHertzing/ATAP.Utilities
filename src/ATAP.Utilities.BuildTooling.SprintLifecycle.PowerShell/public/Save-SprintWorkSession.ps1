@@ -241,6 +241,46 @@ function Save-SprintWorkSession {
             }
         }
 
+        function Get-CheckpointOverflowPath {
+            # Walks a parsed JSONL record and yields the value of every
+            # 'persistedOutputPath' PROPERTY. That is the only field the harness
+            # writes when it spills an oversized tool result to
+            # <session>\tool-results\<name>.txt; it always travels with
+            # 'persistedOutputSize' in the same object.
+            #
+            # A property walk -- not a text match -- is the point. A transcript
+            # routinely CONTAINS tool-results paths as ordinary prose: a preview
+            # blob, a Bash command line, a Grep pattern, or this function's own
+            # failure message quoted back by a test run. Those are string VALUES,
+            # never property names, so they are stepped over here (SC-0328).
+            [CmdletBinding()]
+            param(
+                [Parameter(Mandatory)]
+                [AllowNull()]
+                [object] $Node
+            )
+
+            if ($null -eq $Node) { return }
+            # Strings are IEnumerable, so they must be dismissed before the
+            # collection branch or every record is walked one character at a time.
+            if ($Node -is [string] -or $Node -is [ValueType]) { return }
+
+            if ($Node -is [System.Collections.IEnumerable]) {
+                foreach ($item in $Node) { Get-CheckpointOverflowPath -Node $item }
+                return
+            }
+
+            foreach ($property in $Node.PSObject.Properties) {
+                if ($property.Name -eq 'persistedOutputPath') {
+                    if ($property.Value -is [string] -and -not [string]::IsNullOrWhiteSpace($property.Value)) {
+                        $property.Value
+                    }
+                    continue
+                }
+                Get-CheckpointOverflowPath -Node $property.Value
+            }
+        }
+
         function New-VerifiedCheckpointArchive {
             [CmdletBinding()]
             param(
@@ -294,12 +334,34 @@ function Save-SprintWorkSession {
                 }
 
                 if ($ToolResultsRoot) {
-                    $referencePattern = '(?i)(?:^|[\\/])tool-results[\\/]+(?<Name>[A-Za-z0-9][A-Za-z0-9._-]*\.txt)'
+                    # Only THIS session's own overflow sidecars are part of this bundle.
+                    # A persistedOutputPath that points into some other session's
+                    # tool-results directory -- a replayed transcript, or a test
+                    # fixture's synthetic session -- names a file this checkpoint has
+                    # no claim on, so it is skipped rather than demanded (SC-0328).
+                    $normalizedToolResultsRoot = [IO.Path]::GetFullPath($ToolResultsRoot).TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
                     $referencedNames = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
                     foreach ($stagedJsonl in @($stagedItems | Where-Object { $_.ArchivePath -like '*.jsonl' })) {
-                        $content = Get-Content -LiteralPath $stagedJsonl.StagedPath -Raw
-                        foreach ($match in [regex]::Matches($content, $referencePattern)) {
-                            $null = $referencedNames.Add($match.Groups['Name'].Value)
+                        foreach ($line in [IO.File]::ReadLines($stagedJsonl.StagedPath)) {
+                            # Cheap prefilter: only the few lines that could carry the
+                            # field are re-parsed. Text that merely quotes the name is
+                            # still discarded by the property walk below.
+                            if ($line -notlike '*persistedOutputPath*') { continue }
+                            $record = $line | ConvertFrom-Json -ErrorAction Stop
+                            foreach ($overflowPath in @(Get-CheckpointOverflowPath -Node $record)) {
+                                try {
+                                    $candidateDirectory = [IO.Path]::GetDirectoryName($overflowPath)
+                                    if (-not $candidateDirectory) { continue }
+                                    $candidateDirectory = [IO.Path]::GetFullPath($candidateDirectory).TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+                                    $candidateName = [IO.Path]::GetFileName($overflowPath)
+                                } catch {
+                                    # Not a well-formed path, so it cannot name a sidecar
+                                    # of this session's tool-results directory.
+                                    continue
+                                }
+                                if (-not $candidateDirectory.Equals($normalizedToolResultsRoot, [StringComparison]::OrdinalIgnoreCase)) { continue }
+                                if ($candidateName) { $null = $referencedNames.Add($candidateName) }
+                            }
                         }
                     }
 

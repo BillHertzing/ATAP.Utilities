@@ -887,6 +887,65 @@ Describe 'Save-SprintWorkSession' {
         Set-Location $savedLocation
       }
     }
+
+    It 'auto-resolves a SINGLE matching _Planning worktree under Set-StrictMode -Version Latest' {
+      # Regression: with exactly one match, `Sort-Object FullName -Unique` emits a bare
+      # DirectoryInfo rather than an array, so the resolver's `.Count` test threw
+      # "The property 'Count' cannot be found on this object." A real /checkpoint died
+      # here. Two-or-more and zero matches both build arrays, which is why it survived.
+      # The function inherits strict mode from its caller, so the mode must be set here —
+      # the sibling test above exercises the same single-match path WITHOUT strict mode
+      # and therefore cannot catch this.
+      $savedLocation = Get-Location
+      Set-Location $script:atapWt
+      try {
+        $savedSettings = $global:settings
+        try {
+          $global:settings = $null
+
+          # Guard the fixture precondition this regression depends on: the search roots
+          # ($GitHubRoot and the parent of cwd, both $script:gitRoot here) must yield
+          # exactly ONE matching planning worktree.
+          @(Get-ChildItem $script:gitRoot -Directory |
+              Where-Object { $_.Name -match "^_Planning-wt-\d+-sprint-$($script:sprintNumber)(-|$)" }).Count |
+            Should -Be 1 -Because 'this test is only meaningful for the single-match case'
+
+          # Part 1 — the resolver itself, under strict mode. -WhatIf is deliberate: the
+          # resolver runs before any ShouldProcess-gated archiving, so this reaches the
+          # regressed line without entering the archive path. (The suite's global:7z
+          # stand-in reads $global:MockSevenZipForcedEntries unconditionally, so a full
+          # strict-mode checkpoint would trip the stand-in rather than the function.)
+          # Do not pass -PlanningRoot; the auto-resolver must pick the single match.
+          {
+            Set-StrictMode -Version Latest
+            Save-SprintWorkSession `
+              -SprintN $script:sprintNumber `
+              -ClaudeProjectsRoot $script:claudeProjectsRoot `
+              -GitHubRoot $script:gitRoot `
+              -WhatIf
+          } | Should -Not -Throw -Because 'one match must not collapse to a scalar before .Count'
+
+          # Part 2 — the single match is actually SELECTED, not merely non-throwing.
+          # A real (non-WhatIf) run puts the roster under the auto-resolved root.
+          $rosterDir = Join-Path $script:planningWt 'SprintWorkSessionRoster'
+          $rosterPath = Join-Path $rosterDir "SprintWorkSessionRoster-$($script:sprintNumber).jsonl"
+          Remove-Item -LiteralPath $rosterPath -Force -ErrorAction SilentlyContinue
+
+          Save-SprintWorkSession `
+            -SprintN $script:sprintNumber `
+            -ClaudeProjectsRoot $script:claudeProjectsRoot `
+            -GitHubRoot $script:gitRoot `
+            -Confirm:$false
+
+          Test-Path -LiteralPath $rosterPath |
+            Should -BeTrue -Because 'the auto-resolved planning root is where artifacts land'
+        } finally {
+          $global:settings = $savedSettings
+        }
+      } finally {
+        Set-Location $savedLocation
+      }
+    }
   }
 
   Context 'checkpoint roster logging' {

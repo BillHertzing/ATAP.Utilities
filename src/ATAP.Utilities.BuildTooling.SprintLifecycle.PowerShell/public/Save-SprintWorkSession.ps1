@@ -557,7 +557,9 @@ function Save-SprintWorkSession {
                     $planningWTs += @(Get-ChildItem $root -Directory -ErrorAction SilentlyContinue |
                             Where-Object { $_.Name -match "^_Planning-wt-\d+-sprint-$SprintN(-|$)" })
                 }
-                $planningWTs = $planningWTs | Sort-Object FullName -Unique
+                # @(...) is load-bearing: with exactly one match Sort-Object -Unique emits a
+                # bare DirectoryInfo, and the .Count below then throws under Set-StrictMode.
+                $planningWTs = @($planningWTs | Sort-Object FullName -Unique)
 
                 if ($planningWTs.Count -eq 1) {
                     $PlanningRoot = $planningWTs[0].FullName

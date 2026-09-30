@@ -153,11 +153,15 @@ function Start-AceOutpostMeteredHarness {
     # 'Claude_pzs8sxrjxfjjc!Claude') is supplied, the app is started through
     # IApplicationActivationManager instead - the supported launch path for packaged apps -
     # which still returns the process id the desktop proxy bridge binds to. Activation cannot
-    # carry an environment block; the desktop clients take the proxy from the --proxy-server
-    # argument (ChromiumProxyBridge) and trust the interception root from the machine store, so
-    # nothing the env block carried is needed for them.
+    # carry an environment block. Codex Desktop's app-server needs the proxy environment, so
+    # PackagedAppBootstrapExecutablePath selects the private package-token launch below.
     [ValidatePattern('^[A-Za-z0-9.\-]+_[a-z0-9]{13}![A-Za-z0-9.\-]+$')]
     [string]$PackagedAppUserModelId,
+
+    # Codex Desktop's packaged activation does not receive ProcessStartInfo.Environment.
+    # A suspended alias from the same package supplies its token for a private environment
+    # launch; the bridge is bound to the suspended desktop PID before it resumes.
+    [string]$PackagedAppBootstrapExecutablePath,
 
     [Parameter(ValueFromRemainingArguments)]
     [string[]]$ArgumentList = @()
@@ -181,6 +185,22 @@ function Start-AceOutpostMeteredHarness {
 
     if ($ChromiumProxyBridge -and $LaunchMode -ne 'Wait') {
       throw 'ChromiumProxyBridge requires LaunchMode Wait so the private bridge remains available for the desktop process lifetime.'
+    }
+    if ($PSBoundParameters.ContainsKey('PackagedAppBootstrapExecutablePath')) {
+      if ($Client -ne 'Codex' -or -not $ChromiumProxyBridge -or
+          [string]::IsNullOrWhiteSpace($PackagedAppUserModelId)) {
+        throw 'A private packaged-app bootstrap requires Codex, ChromiumProxyBridge, and PackagedAppUserModelId.'
+      }
+      if (-not (Test-Path -LiteralPath $PackagedAppBootstrapExecutablePath -PathType Leaf)) {
+        throw "The packaged-app bootstrap alias was not found at '$PackagedAppBootstrapExecutablePath'."
+      }
+      if (-not ('ATAP.Utilities.PowerShell.PackagedAppPrivateLauncher' -as [type])) {
+        $privateLauncherTypePath = Join-Path $PSScriptRoot '..\lib\PackagedAppPrivateLauncher.types.ps1'
+        if (-not (Test-Path -LiteralPath $privateLauncherTypePath -PathType Leaf)) {
+          throw "The private packaged-app launcher was not found at '$privateLauncherTypePath'."
+        }
+        . $privateLauncherTypePath
+      }
     }
     if ($ChromiumProxyBridge) {
       if (-not ('ATAP.Utilities.PowerShell.AceOutpostDesktopProxyBridge' -as [type])) {
@@ -377,6 +397,7 @@ function Start-AceOutpostMeteredHarness {
       $bridgeEndpoint = $null
       $bridgeAcceptedConnectionCount = $null
       $bridgeRejectedConnectionCount = $null
+      $bridgeBoundToDesktop = $false
 
       if ($PSCmdlet.ShouldProcess("$Client harness '$resolvedHarnessPath' ($LaunchMode)", 'Start with a private AceOutpost proxy environment block')) {
         if ($ChromiumProxyBridge) {
@@ -402,10 +423,35 @@ function Start-AceOutpostMeteredHarness {
           $activationArguments = ($startInfo.ArgumentList | ForEach-Object {
               if ($_ -match '[\s"]') { '"' + ($_ -replace '"', '\"') + '"' } else { $_ }
             }) -join ' '
-          $processId = [ATAP.Utilities.PowerShell.PackagedAppActivator]::Activate($PackagedAppUserModelId, $activationArguments)
-          $process = [System.Diagnostics.Process]::GetProcessById($processId)
-          $started = $true
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Activated packaged app '$PackagedAppUserModelId' as process $processId."
+          if ($PSBoundParameters.ContainsKey('PackagedAppBootstrapExecutablePath')) {
+            # The bridge adds the proxy credential after checking the desktop process tree.
+            # No credential-bearing proxy URL enters the packaged app or an ambient scope.
+            $startInfo.Environment['HTTP_PROXY'] = $bridgeEndpoint
+            $startInfo.Environment['HTTPS_PROXY'] = $bridgeEndpoint
+            foreach ($inheritedProxyName in @('ALL_PROXY', 'WS_PROXY', 'WSS_PROXY')) {
+              $null = $startInfo.Environment.Remove($inheritedProxyName)
+            }
+            $privateLaunch = $null
+            try {
+              $privateLaunch = [ATAP.Utilities.PowerShell.PackagedAppPrivateLauncher]::Prepare(
+                $PackagedAppUserModelId, $PackagedAppBootstrapExecutablePath,
+                $resolvedHarnessPath, $activationArguments, $WorkingDirectory,
+                $startInfo.Environment)
+              $bridge.SetAllowedRootProcess($privateLaunch.ProcessId)
+              $bridgeBoundToDesktop = $true
+              $process = $privateLaunch.Resume()
+              $processId = $process.Id
+              $started = $true
+              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Started private-environment packaged app '$PackagedAppUserModelId' as process $processId."
+            } finally {
+              if ($null -ne $privateLaunch) { $privateLaunch.Dispose() }
+            }
+          } else {
+            $processId = [ATAP.Utilities.PowerShell.PackagedAppActivator]::Activate($PackagedAppUserModelId, $activationArguments)
+            $process = [System.Diagnostics.Process]::GetProcessById($processId)
+            $started = $true
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Activated packaged app '$PackagedAppUserModelId' as process $processId."
+          }
         } else {
           $process = [System.Diagnostics.Process]::new()
           $process.StartInfo = $startInfo
@@ -416,7 +462,7 @@ function Start-AceOutpostMeteredHarness {
 
         if ($ChromiumProxyBridge) {
           try {
-            $bridge.SetAllowedRootProcess($processId)
+            if (-not $bridgeBoundToDesktop) { $bridge.SetAllowedRootProcess($processId) }
           } catch {
             try { $process.Kill($true) } catch { }
             throw "The desktop proxy bridge could not bind authorization to the launched process. The desktop process was terminated: $($_.Exception.Message)"

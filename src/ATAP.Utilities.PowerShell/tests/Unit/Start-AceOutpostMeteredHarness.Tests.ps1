@@ -353,6 +353,28 @@ Describe 'Start-AceOutpostMeteredHarness' -Tag 'Unit' {
       } | Should -Throw '*requires LaunchMode Wait*'
     }
 
+    It 'refuses a private package bootstrap for a client other than Codex' {
+      {
+        Start-AceOutpostMeteredHarness -Client ClaudeCode -LaunchMode Wait `
+          -ProxyPort $script:proxyPort -StateDirectory $script:stateDirectory `
+          -HarnessPath $script:pwshPath -ChromiumProxyBridge `
+          -PackagedAppUserModelId 'OpenAI.Codex_2p2nqsd0c76g0!App' `
+          -PackagedAppBootstrapExecutablePath $script:pwshPath -Confirm:$false
+      } | Should -Throw '*requires Codex, ChromiumProxyBridge, and PackagedAppUserModelId*'
+    }
+
+    It 'refuses a missing package bootstrap before resolving a credential' {
+      $resolutionCountBefore = $script:secretResolutionCount
+      {
+        Start-AceOutpostMeteredHarness -Client Codex -LaunchMode Wait `
+          -ProxyPort $script:proxyPort -StateDirectory $script:stateDirectory `
+          -HarnessPath $script:pwshPath -ChromiumProxyBridge `
+          -PackagedAppUserModelId 'OpenAI.Codex_2p2nqsd0c76g0!App' `
+          -PackagedAppBootstrapExecutablePath (Join-Path $TestDrive 'missing-alias.exe') -Confirm:$false
+      } | Should -Throw '*bootstrap alias was not found*'
+      $script:secretResolutionCount | Should -Be $resolutionCountBefore
+    }
+
     It 'fails closed before launch when the interception root cannot supply valid Chromium trust' {
       $savedPem = Get-Content -LiteralPath $script:rootPem -Raw
       try {

@@ -116,7 +116,7 @@ function Start-AceOutpostMeteredHarness {
   [OutputType([PSCustomObject])]
   param(
     [Parameter(Mandatory)]
-    [ValidateSet('ClaudeCode', 'Codex')]
+    [ValidateSet('ClaudeCode', 'ClaudeDesktop', 'Codex')]
     [string]$Client,
 
     [ValidateSet('Wait', 'Detach')]
@@ -163,6 +163,15 @@ function Start-AceOutpostMeteredHarness {
     # launch; the bridge is bound to the suspended desktop PID before it resumes.
     [string]$PackagedAppBootstrapExecutablePath,
 
+    # Claude's MSIX package declares no appExecutionAlias, so it has no package-owned alias to
+    # supply a token and cannot use PackagedAppBootstrapExecutablePath. Its metered instance is
+    # therefore an ordinary activation, and a later Start-menu or self-restart activation creates
+    # a second process outside the metered tree. The bridge correctly rejects that orphan, which
+    # the desktop surfaces as "Couldn't connect to Claude". This switch registers the supplied
+    # AppUserModelId with a guard that terminates any same-package process outside the tree and
+    # foregrounds the metered window, so the activation is routed back into the meter.
+    [switch]$GuardPackagedAppReactivation,
+
     [Parameter(ValueFromRemainingArguments)]
     [string[]]$ArgumentList = @()
   )
@@ -172,9 +181,15 @@ function Start-AceOutpostMeteredHarness {
     $mn = 'ATAP.Utilities.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
 
+    # ClaudeDesktop is a separate client from ClaudeCode even though both are Claude and both
+    # trust the root through NODE_EXTRA_CA_CERTS. They are distinct ClientIds so the proxy
+    # authenticates, and therefore meters, the packaged desktop separately from the CLI. Before
+    # this entry existed the desktop adapter passed -Client ClaudeCode and every desktop
+    # exchange was attributed to the CLI's credential.
     $clientSettings = @{
-      ClaudeCode = @{ ClientId = 'claude-code'; TrustVariable = 'NODE_EXTRA_CA_CERTS'; Executable = 'claude' }
-      Codex      = @{ ClientId = 'codex'; TrustVariable = 'SSL_CERT_FILE'; Executable = 'codex' }
+      ClaudeCode    = @{ ClientId = 'claude-code'; TrustVariable = 'NODE_EXTRA_CA_CERTS'; Executable = 'claude' }
+      ClaudeDesktop = @{ ClientId = 'claude-desktop'; TrustVariable = 'NODE_EXTRA_CA_CERTS'; Executable = 'claude' }
+      Codex         = @{ ClientId = 'codex'; TrustVariable = 'SSL_CERT_FILE'; Executable = 'codex' }
     }
     $clientSetting = $clientSettings[$Client]
     $rootPem = Join-Path -Path $StateDirectory -ChildPath 'AceOutpost-Interception-Root.pem'
@@ -185,6 +200,21 @@ function Start-AceOutpostMeteredHarness {
 
     if ($ChromiumProxyBridge -and $LaunchMode -ne 'Wait') {
       throw 'ChromiumProxyBridge requires LaunchMode Wait so the private bridge remains available for the desktop process lifetime.'
+    }
+    if ($GuardPackagedAppReactivation) {
+      if ([string]::IsNullOrWhiteSpace($PackagedAppUserModelId) -or -not $ChromiumProxyBridge) {
+        throw 'GuardPackagedAppReactivation requires PackagedAppUserModelId and ChromiumProxyBridge.'
+      }
+      if (-not ('ATAP.Utilities.PowerShell.PackagedAppReactivationGuard' -as [type])) {
+        $reactivationGuardTypePath = Join-Path $PSScriptRoot '..\lib\AceOutpostPackagedAppReactivationGuard.types.ps1'
+        if (-not (Test-Path -LiteralPath $reactivationGuardTypePath -PathType Leaf)) {
+          throw "The packaged-app re-activation guard was not found at '$reactivationGuardTypePath'."
+        }
+        . $reactivationGuardTypePath
+      }
+      if (-not ('ATAP.Utilities.PowerShell.PackagedAppReactivationGuard' -as [type])) {
+        throw 'The packaged-app re-activation guard type could not be loaded.'
+      }
     }
     if ($PSBoundParameters.ContainsKey('PackagedAppBootstrapExecutablePath')) {
       if ($Client -ne 'Codex' -or -not $ChromiumProxyBridge -or
@@ -239,7 +269,7 @@ function Start-AceOutpostMeteredHarness {
 
   process {
     $credential = $username = $secret = $proxyUrl = $null
-    $process = $bridge = $null
+    $process = $bridge = $reactivationGuard = $null
     $rootCertificate = $rootChain = $null
 
     try {
@@ -398,6 +428,7 @@ function Start-AceOutpostMeteredHarness {
       $bridgeAcceptedConnectionCount = $null
       $bridgeRejectedConnectionCount = $null
       $bridgeBoundToDesktop = $false
+      $reactivationGuardTerminatedCount = $null
 
       if ($PSCmdlet.ShouldProcess("$Client harness '$resolvedHarnessPath' ($LaunchMode)", 'Start with a private AceOutpost proxy environment block')) {
         if ($ChromiumProxyBridge) {
@@ -467,10 +498,21 @@ function Start-AceOutpostMeteredHarness {
             try { $process.Kill($true) } catch { }
             throw "The desktop proxy bridge could not bind authorization to the launched process. The desktop process was terminated: $($_.Exception.Message)"
           }
+          # The guard starts only after the bridge is bound, so the metered root is already a
+          # known tree member and can never be mistaken for an orphan and terminated.
+          if ($GuardPackagedAppReactivation) {
+            $reactivationGuard = [ATAP.Utilities.PowerShell.PackagedAppReactivationGuard]::new(
+              $PackagedAppUserModelId, $resolvedHarnessPath, $processId)
+            $reactivationGuard.Start()
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Re-activation guard registered for '$PackagedAppUserModelId' around metered root $processId."
+          }
           $process.WaitForExit()
           $exitCode = $process.ExitCode
           $bridgeAcceptedConnectionCount = $bridge.AcceptedConnectionCount
           $bridgeRejectedConnectionCount = $bridge.RejectedConnectionCount
+          if ($null -ne $reactivationGuard) {
+            $reactivationGuardTerminatedCount = $reactivationGuard.TerminatedProcessCount
+          }
         } elseif ($LaunchMode -eq 'Wait') {
           # R-34. Both redirected streams begin draining here, BEFORE the wait below. Waiting
           # on the process while either redirected buffer can still fill is a deadlock, and a
@@ -498,6 +540,8 @@ function Start-AceOutpostMeteredHarness {
         ChromiumProxyEndpoint   = $bridgeEndpoint
         BridgeAcceptedConnectionCount = $bridgeAcceptedConnectionCount
         BridgeRejectedConnectionCount = $bridgeRejectedConnectionCount
+        ReactivationGuardEnabled = [bool]$GuardPackagedAppReactivation
+        ReactivationGuardTerminatedCount = $reactivationGuardTerminatedCount
         TrustVariable           = $clientSetting.TrustVariable
         CredentialSecretName    = $CredentialSecretName
         ComposedVariableNames   = @($composed.Keys)
@@ -515,6 +559,9 @@ function Start-AceOutpostMeteredHarness {
       $rootCertificateSha256 = $rootCertificateThumbprint = $null
       $composed = $null
       $startInfo = $null
+      # The guard stops before the bridge so no orphan can be terminated once the metered root
+      # it was protecting is already gone.
+      if ($null -ne $reactivationGuard) { $reactivationGuard.Dispose() }
       if ($null -ne $bridge) { $bridge.Dispose() }
       if ($null -ne $process -and $LaunchMode -eq 'Wait') { $process.Dispose() }
     }

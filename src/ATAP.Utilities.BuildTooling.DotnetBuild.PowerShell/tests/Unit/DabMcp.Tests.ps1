@@ -49,6 +49,60 @@ Describe 'DAB MCP helpers' -Tag 'Unit' {
     Test-Path -LiteralPath $configPath | Should -BeFalse
   }
 
+  It 'advertises only describe, read, and aggregate tools for all-entities read-only mode' {
+    # Model the external CLI's file operations without requiring DAB on the gate host.
+    # Derive configuration values from the actual arguments, then verify those calls.
+    InModuleScope $script:moduleName {
+      Mock Get-Command { [pscustomobject]@{ Source = 'test-dab.exe' } } -ParameterFilter { $Name -eq 'dab' }
+      Mock Invoke-DabCommand {
+        param($DabPath, $ArgumentList)
+        $path = $ArgumentList[[array]::IndexOf($ArgumentList, '--config') + 1]
+        if ($ArgumentList[0] -eq 'init') {
+          @{ runtime = @{ mcp = @{} }; autoentities = @{} } | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $path
+        } else {
+          $document = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json -AsHashtable
+          if ($ArgumentList[0] -eq 'auto-config') {
+            $permission = $ArgumentList[[array]::IndexOf($ArgumentList, '--permissions') + 1] -split ':'
+            $document.autoentities['all-database-objects'] = @{ permissions = @(@{ role = $permission[0]; actions = @(@{ action = $permission[1] }) }) }
+          } elseif ($ArgumentList[0] -eq 'configure') {
+            $document.runtime.mcp['dml-tools'] = @{}
+            for ($index = 1; $index -lt $ArgumentList.Count - 1; $index += 2) {
+              $argument = $ArgumentList[$index]
+              if ($argument -eq '--runtime.mcp.enabled') {
+                $document.runtime.mcp.enabled = [bool]::Parse($ArgumentList[$index + 1])
+              } elseif ($argument -like '--runtime.mcp.dml-tools.*') {
+                $document.runtime.mcp['dml-tools'][$argument.Substring('--runtime.mcp.dml-tools.'.Length)] = [bool]::Parse($ArgumentList[$index + 1])
+              }
+            }
+          } else { throw "Unexpected DAB operation '$($ArgumentList[0])'." }
+          $document | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $path
+        }
+        [pscustomobject]@{ ExitCode = 0 }
+      }
+    }
+    $configPath = Join-Path $TestDrive 'read-only\dab-ro-config.json'
+    $result = Initialize-DabMcpConfiguration -ConfigPath $configPath -ExposureMode AllEntitiesReadOnly -Confirm:$false
+    $configuration = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json
+    $tools = $configuration.runtime.mcp.'dml-tools'
+
+    InModuleScope $script:moduleName {
+      Should -Invoke Invoke-DabCommand -Times 3 -Exactly
+      Should -Invoke Invoke-DabCommand -Times 1 -Exactly -ParameterFilter { $DabPath -eq 'test-dab.exe' -and $ArgumentList[0] -eq 'init' -and $ArgumentList -contains "@env('DAB_ATAPUTILITIES_CONNECTION_STRING')" }
+      Should -Invoke Invoke-DabCommand -Times 1 -Exactly -ParameterFilter { $ArgumentList[0] -eq 'auto-config' -and $ArgumentList -contains 'mcp-reader:read' }
+      Should -Invoke Invoke-DabCommand -Times 1 -Exactly -ParameterFilter { $ArgumentList[0] -eq 'configure' -and $ArgumentList -contains '--runtime.mcp.dml-tools.execute-entity' }
+    }
+    $result.Action | Should -BeExactly 'Created'
+    $configuration.runtime.mcp.enabled | Should -BeTrue
+    $tools.'describe-entities' | Should -BeTrue
+    $tools.'read-records' | Should -BeTrue
+    $tools.'aggregate-records' | Should -BeTrue
+    $tools.'create-record' | Should -BeFalse
+    $tools.'update-record' | Should -BeFalse
+    $tools.'delete-record' | Should -BeFalse
+    $tools.'execute-entity' | Should -BeFalse
+    @($configuration.autoentities.'all-database-objects'.permissions[0].actions.action) | Should -Be @('read')
+  }
+
   It 'plans the exact ContentSummary contract without resolving DAB or a secret' {
     $configPath = Join-Path $TestDrive 'whatif\dab-contentsummary-config.json'
     $result = Initialize-DabMcpConfiguration `

@@ -114,10 +114,11 @@ Describe 'Production-only invocation and health contracts' {
     $source | Should -Not -Match 'BuildSets'
   }
 
-  It 'exports every production backup command and prepares package version 0.1.22' {
+  It 'exports every production backup command with aligned stable package metadata' {
     $manifest = Import-PowerShellDataFile (Join-Path $moduleRoot 'ATAP.Utilities.DatabaseManagement.Powershell.psd1')
     $version = Get-Content -LiteralPath (Join-Path $moduleRoot 'version.json') -Raw | ConvertFrom-Json
-    $version.version | Should -Be '0.1.22'
+    $version.version | Should -Match '^\d+\.\d+\.\d+$'
+    $manifest.ModuleVersion | Should -Be $version.version
     foreach ($name in @('Invoke-SqlServerBackup','Protect-SqlServerBackupArtifact','Restore-SqlServerBackupArtifact','Publish-SqlServerBackupArtifact','Install-ProductionDatabaseBackupScheduledTasks','Test-DatabaseBackupHealth')) {
       $manifest.FunctionsToExport | Should -Contain $name
     }

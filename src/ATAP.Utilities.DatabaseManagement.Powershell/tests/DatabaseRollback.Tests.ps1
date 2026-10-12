@@ -63,6 +63,23 @@ Describe 'DatabaseRollback — Test-DatabaseRollbackReadiness' {
     }
   }
 
+  Context 'stale ISO evidence with explicit timezone offsets' {
+    It 'rejects stale evidence with offset <OffsetMinutes> minutes' -TestCases @(
+      @{ OffsetMinutes = 330 },
+      @{ OffsetMinutes = -420 }
+    ) {
+      param($OffsetMinutes)
+      $bakPath = New-FakeBak
+      $evidencePath = New-FakeEvidence -BackupFile $bakPath
+      $evidence = Get-Content $evidencePath -Raw | ConvertFrom-Json
+      $evidence.timestamp = [datetimeoffset]::UtcNow.AddMinutes(-90).ToOffset(
+        [timespan]::FromMinutes($OffsetMinutes)).ToString('o')
+      $evidence | ConvertTo-Json | Set-Content $evidencePath
+      $result = Test-DatabaseRollbackReadiness -EvidencePath $evidencePath -MaxAgeMinutes 60
+      $result.IsReady | Should -BeFalse
+      $result.Reason | Should -Match 'minutes old'
+    }
+  }
   Context 'IsReady = $false — missing backup file' {
     It 'Returns IsReady = $false when backup file path does not exist' {
       $missingBak = Join-Path $TestDrive 'does-not-exist.bak'

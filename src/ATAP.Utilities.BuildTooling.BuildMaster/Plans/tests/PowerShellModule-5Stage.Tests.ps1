@@ -189,26 +189,82 @@ Describe 'PowerShell module BuildMaster external artifact boundary' {
         $resolved | Should -Exist
     }
 
-    It 'uses ATAP_ARTIFACTS_ROOT when no explicit root is supplied' {
+    It 'uses canonical ARTIFACTS_PATH before legacy ATAP_ARTIFACTS_ROOT' {
         $original = [Environment]::GetEnvironmentVariable('ATAP_ARTIFACTS_ROOT', 'Process')
-        $environmentRoot = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)) 'ATAPArtifacts/Pester/PowerShellModuleBuildMaster/env'
+        $machineRoot = [Environment]::GetEnvironmentVariable('ARTIFACTS_PATH', 'Machine')
+        $environmentRoot = Join-Path $machineRoot 'Pester/PowerShellModuleBuildMaster/legacy-env'
+        $canonicalRoot = @('Process', 'User', 'Machine') |
+            ForEach-Object { [Environment]::GetEnvironmentVariable('ARTIFACTS_PATH', [EnvironmentVariableTarget]$_) } |
+            Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+            Select-Object -First 1
         try {
             [Environment]::SetEnvironmentVariable('ATAP_ARTIFACTS_ROOT', $environmentRoot, 'Process')
             $resolved = Resolve-PowerShellModuleArtifactDirectory `
                 -SourcePath $script:RepoRoot `
                 -BuildMasterBuildId '910002'
-            $resolved | Should -Be ([IO.Path]::GetFullPath((Join-Path $environmentRoot 'BuildMaster/PowerShellModules/910002')))
+            $expectedRoot = if ($canonicalRoot) { $canonicalRoot } else { $environmentRoot }
+            $resolved | Should -Be ([IO.Path]::GetFullPath((Join-Path $expectedRoot 'BuildMaster/PowerShellModules/910002')))
         }
         finally {
             [Environment]::SetEnvironmentVariable('ATAP_ARTIFACTS_ROOT', $original, 'Process')
         }
     }
 
-    It 'defaults this Dropbox worktree owner to the matching external user artifact root' {
-        $configuredRoot = @('Process', 'User', 'Machine') |
-            ForEach-Object { [Environment]::GetEnvironmentVariable('ATAP_ARTIFACTS_ROOT', [EnvironmentVariableTarget]$_) } |
-            Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
-            Select-Object -First 1
+    It 'uses canonical ARTIFACTS_PATH when the legacy root is absent' {
+        $originalCanonical = [Environment]::GetEnvironmentVariable('ARTIFACTS_PATH', 'Process')
+        $originalLegacy = [Environment]::GetEnvironmentVariable('ATAP_ARTIFACTS_ROOT', 'Process')
+        $machineRoot = [Environment]::GetEnvironmentVariable('ARTIFACTS_PATH', 'Machine')
+        $canonicalRoot = Join-Path $machineRoot 'Pester/PowerShellModuleBuildMaster/canonical'
+        try {
+            [Environment]::SetEnvironmentVariable('ATAP_ARTIFACTS_ROOT', $null, 'Process')
+            [Environment]::SetEnvironmentVariable('ARTIFACTS_PATH', $canonicalRoot, 'Process')
+            $resolved = Resolve-PowerShellModuleArtifactDirectory `
+                -SourcePath $script:RepoRoot `
+                -BuildMasterBuildId '910006'
+            $resolved | Should -Be ([IO.Path]::GetFullPath((Join-Path $canonicalRoot 'BuildMaster/PowerShellModules/910006')))
+        }
+        finally {
+            [Environment]::SetEnvironmentVariable('ARTIFACTS_PATH', $originalCanonical, 'Process')
+            [Environment]::SetEnvironmentVariable('ATAP_ARTIFACTS_ROOT', $originalLegacy, 'Process')
+        }
+    }
+
+    It 'keeps canonical root ahead of stale legacy and explicit root ahead of both' {
+        $originalCanonical = [Environment]::GetEnvironmentVariable('ARTIFACTS_PATH', 'Process')
+        $originalLegacy = [Environment]::GetEnvironmentVariable('ATAP_ARTIFACTS_ROOT', 'Process')
+        $machineRoot = [Environment]::GetEnvironmentVariable('ARTIFACTS_PATH', 'Machine')
+        $canonicalRoot = Join-Path $machineRoot 'Pester/PowerShellModuleBuildMaster/canonical-precedence'
+        $userProfile = [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)
+        $legacyRoot = Join-Path $userProfile 'ATAPArtifacts/Pester/PowerShellModuleBuildMaster/stale-legacy'
+        $explicitRoot = Join-Path $machineRoot 'Pester/PowerShellModuleBuildMaster/explicit-precedence'
+        try {
+            [Environment]::SetEnvironmentVariable('ARTIFACTS_PATH', $canonicalRoot, 'Process')
+            [Environment]::SetEnvironmentVariable('ATAP_ARTIFACTS_ROOT', $legacyRoot, 'Process')
+            $canonicalResolved = Resolve-PowerShellModuleArtifactDirectory `
+                -SourcePath $userProfile `
+                -BuildMasterBuildId '910007'
+            $explicitResolved = Resolve-PowerShellModuleArtifactDirectory `
+                -ArtifactsRoot $explicitRoot `
+                -SourcePath $script:RepoRoot `
+                -BuildMasterBuildId '910008'
+            $canonicalResolved | Should -Be ([IO.Path]::GetFullPath((Join-Path $canonicalRoot 'BuildMaster/PowerShellModules/910007')))
+            $explicitResolved | Should -Be ([IO.Path]::GetFullPath((Join-Path $explicitRoot 'BuildMaster/PowerShellModules/910008')))
+        }
+        finally {
+            [Environment]::SetEnvironmentVariable('ARTIFACTS_PATH', $originalCanonical, 'Process')
+            [Environment]::SetEnvironmentVariable('ATAP_ARTIFACTS_ROOT', $originalLegacy, 'Process')
+        }
+    }
+
+    It 'defaults this Dropbox worktree owner to the configured external artifact root' {
+        $configuredRoot = $null
+        foreach ($variable in @('ARTIFACTS_PATH', 'ATAP_ARTIFACTS_ROOT')) {
+            $configuredRoot = @('Process', 'User', 'Machine') |
+                ForEach-Object { [Environment]::GetEnvironmentVariable($variable, [EnvironmentVariableTarget]$_) } |
+                Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+                Select-Object -First 1
+            if ($configuredRoot) { break }
+        }
         $expectedRoot = if ($configuredRoot) {
             $configuredRoot
         }

@@ -7,6 +7,8 @@
 #       bounded error when it cannot be found),
 #   (c) registration-hash/runtime markers are written under a machine-state root
 #       (ProgramData), never beside the source .pssc inside a Git worktree.
+#   (d) inter-host bootstrap and result polling bind PowerShell.7 explicitly;
+#       a missing endpoint fails closed without using the default WinRM endpoint.
 #
 # Everything that would actually register a PSSession configuration, touch
 # WSMan/WinRM, or require elevation is mocked. The "agent shell" scenario is
@@ -35,6 +37,48 @@ BeforeAll {
 
   $script:worktreeProfilesDir = Join-Path $script:moduleRoot 'Profiles'
   $script:realPsscPath = Join-Path $script:worktreeProfilesDir 'WithProfiles.pssc'
+}
+
+Describe 'Register-ProfiledRemotingEndpoint PowerShell 7 remote boundary' -Tag 'Unit' {
+
+  It 'pins every computer-name remoting connection to the PowerShell.7 endpoint' {
+    $tokens = $null
+    $parseErrors = $null
+    $ast = [System.Management.Automation.Language.Parser]::ParseFile($script:publicPath, [ref]$tokens, [ref]$parseErrors)
+    $parseErrors | Should -BeNullOrEmpty
+
+    $connections = @($ast.FindAll({
+      param($node)
+      if ($node -isnot [System.Management.Automation.Language.CommandAst]) { return $false }
+      if ($node.GetCommandName() -notin @('New-PSSession', 'Invoke-Command')) { return $false }
+      @($node.CommandElements | Where-Object {
+        $_ -is [System.Management.Automation.Language.CommandParameterAst] -and $_.ParameterName -eq 'ComputerName'
+      }).Count -gt 0
+    }, $true))
+
+    $connections.Count | Should -Be 2
+    foreach ($connection in $connections) {
+      $connection.Extent.Text | Should -Match "-ConfigurationName\s+'PowerShell\.7'"
+    }
+  }
+
+  It 'fails closed with a local repair instruction when PowerShell.7 is unavailable' {
+    Mock -CommandName Write-PSFMessage -MockWith { }
+    Mock -CommandName New-PSSession -MockWith { throw 'PowerShell.7 endpoint unavailable' }
+    Mock -CommandName Invoke-Command -MockWith { throw 'Invoke-Command must not run after the connection fails' }
+    $credential = [PSCredential]::new('test-user', (ConvertTo-SecureString 'test-only-value' -AsPlainText -Force))
+
+    $result = Register-ProfiledRemotingEndpoint -ComputerName 'remote-example' -Credential $credential `
+      -Path $script:realPsscPath -WhatIf
+
+    $result.Ok | Should -BeFalse
+    $result.Action | Should -Be 'RemoteConnectionFailed'
+    $result.Failures[0] | Should -Match 'PowerShell\.7.*separately approved elevated PowerShell 7 route'
+    Should -Invoke -CommandName New-PSSession -Times 1 -Exactly -ParameterFilter {
+      $ComputerName -eq 'remote-example' -and $ConfigurationName -eq 'PowerShell.7'
+    }
+    Should -Invoke -CommandName Invoke-Command -Times 0 -Exactly
+  }
 }
 
 Describe 'Resolve-ATAPMachineEnvironmentVariable' -Tag 'Unit' {

@@ -72,7 +72,7 @@ Describe 'DotnetBuild child module contract' -Tag 'Unit', 'Contract' {
     $versionDocument = Get-Content -LiteralPath $script:versionJsonPath -Raw | ConvertFrom-Json
     $stableBaseVersion = Get-StableBaseVersionForContract -Version ([string] $versionDocument.version)
     $releaseNotes = Get-Content -LiteralPath $script:releaseNotesPath -Raw
-    $releaseHeading = [regex]::Match($releaseNotes, '(?m)^## (?<version>\S+)$')
+    $releaseHeading = [regex]::Match($releaseNotes, '(?m)^## (?<version>\S+)\r?$')
 
     [string] $manifest.ModuleVersion | Should -BeExactly $stableBaseVersion
     $releaseHeading.Success | Should -BeTrue

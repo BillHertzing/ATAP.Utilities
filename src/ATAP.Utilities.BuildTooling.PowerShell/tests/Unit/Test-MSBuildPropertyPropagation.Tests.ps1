@@ -73,6 +73,7 @@ BeforeAll {
     }
     $probe = $probe.Parent
   }
+  $script:dotnetPath = (Get-Command dotnet -CommandType Application -ErrorAction Stop).Source
   $script:propsFile = Join-Path $script:repoRoot 'Directory.Build.props'
   $script:packagesPropsFile = Join-Path $script:repoRoot 'Directory.Packages.props'
   $script:probeProject = Join-Path $script:repoRoot 'src\ATAP.Utilities.RRSBS.Contracts\ATAP.Utilities.RRSBS.Contracts.csproj'
@@ -84,7 +85,7 @@ BeforeAll {
       [AllowEmptyString()][string] $InputStage
     )
 
-    $result = & dotnet msbuild $script:probeProject `
+    $result = & $script:dotnetPath msbuild $script:probeProject `
       "-getProperty:$PropertyName" `
       "-p:PackageLifeCycleStage=$InputStage" `
       '-p:NBGV_BuildingRef=refs/heads/137-Sprint-0015-work-items' `
@@ -103,7 +104,7 @@ BeforeAll {
       [Parameter(Mandatory)][string] $BuildingRef
     )
 
-    $output = & dotnet msbuild $script:probeProject `
+    $output = & $script:dotnetPath msbuild $script:probeProject `
       '-target:ValidatePackageLifeCycleStage' `
       "-p:PackageLifeCycleStage=$InputStage" `
       "-p:NBGV_BuildingRef=$BuildingRef" `
@@ -201,7 +202,7 @@ Describe 'Task 15.180 exact VersionOverride fixture allowlist' -Tag 'Unit', 'CPM
   It 'contains exactly the four ratified conditional local enables' {
     $actual = @(Get-ChildItem -LiteralPath $script:repoRoot -Recurse -Filter *.csproj -File |
         Where-Object {
-          $_.FullName -notmatch '\\(bin|obj|_generated|OpenHardwareMonitorLib)\\'
+          $_.FullName.Substring($script:repoRoot.Length + 1) -notmatch '(^|[\\/])(bin|obj|_generated|OpenHardwareMonitorLib)([\\/]|$)'
         } |
         ForEach-Object {
           [xml] $project = Get-Content -LiteralPath $_.FullName -Raw

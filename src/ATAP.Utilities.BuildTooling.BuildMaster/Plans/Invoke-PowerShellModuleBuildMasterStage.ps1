@@ -28,8 +28,8 @@
 
 .PARAMETER ArtifactsRoot
   External root for packages, logs, promoted-module restores, test results,
-  signature evidence, and temporary files. Defaults to ATAP_ARTIFACTS_ROOT
-  when set. For a source under <drive>\Dropbox\<owner>, the default is
+  signature evidence, and temporary files. Defaults to canonical ARTIFACTS_PATH
+  when set, then legacy ATAP_ARTIFACTS_ROOT. For a source under <drive>\Dropbox\<owner> with neither set, the default is
   <drive>\Users\<owner>\ATAPArtifacts; other source layouts default to the
   current UserProfile\ATAPArtifacts. Paths beneath Dropbox are rejected.
 
@@ -900,8 +900,9 @@ function Resolve-PowerShellModuleArtifactDirectory {
   .SYNOPSIS
     Resolves the external artifact directory for one BuildMaster module run.
   .DESCRIPTION
-    Uses the explicit root first, then ATAP_ARTIFACTS_ROOT at process, user,
-    or machine scope, and finally the current user's ATAPArtifacts directory.
+    Uses the explicit root first, then canonical ARTIFACTS_PATH at process,
+    user, or machine scope, then legacy ATAP_ARTIFACTS_ROOT at those scopes, and
+    finally the current user's ATAPArtifacts directory.
     The resolved directory must be absolute, outside Dropbox, and outside the
     repository source tree.
   .OUTPUTS
@@ -923,6 +924,15 @@ function Resolve-PowerShellModuleArtifactDirectory {
   PROCESS {
     $resolvedRootInput = $ArtifactsRoot
     $resolvedSource = [IO.Path]::GetFullPath($SourcePath).TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+    if ([string]::IsNullOrWhiteSpace($resolvedRootInput)) {
+      foreach ($scope in @('Process', 'User', 'Machine')) {
+        $candidate = [Environment]::GetEnvironmentVariable('ARTIFACTS_PATH', [EnvironmentVariableTarget]$scope)
+        if (-not [string]::IsNullOrWhiteSpace($candidate)) {
+          $resolvedRootInput = $candidate
+          break
+        }
+      }
+    }
     if ([string]::IsNullOrWhiteSpace($resolvedRootInput)) {
       foreach ($scope in @('Process', 'User', 'Machine')) {
         $candidate = [Environment]::GetEnvironmentVariable('ATAP_ARTIFACTS_ROOT', [EnvironmentVariableTarget]$scope)

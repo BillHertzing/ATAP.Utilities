@@ -12,7 +12,7 @@
     RootModule           = 'ATAP.Utilities.DatabaseManagement.Powershell.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '0.1.10'
+    ModuleVersion        = '0.1.24'
 
     # Supported PSEditions
     CompatiblePSEditions = 'Desktop', 'Core'

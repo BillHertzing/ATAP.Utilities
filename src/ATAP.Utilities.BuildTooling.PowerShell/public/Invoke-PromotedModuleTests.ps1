@@ -408,7 +408,7 @@ function Invoke-PromotedModuleTests {
             $modulePathEntries = @($env:PSModulePath -split [IO.Path]::PathSeparator)
             if ((Test-Path -LiteralPath $sourceFamilyRoot -PathType Container) -and
                 $sourceFamilyRoot -notin $modulePathEntries) {
-                $env:PSModulePath = $sourceFamilyRoot + [IO.Path]::PathSeparator + $env:PSModulePath
+                $env:PSModulePath = $env:PSModulePath + [IO.Path]::PathSeparator + $sourceFamilyRoot
             }
             Import-Module -Name $savedModulePath -Force -ErrorAction Stop
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Imported promoted module $target"

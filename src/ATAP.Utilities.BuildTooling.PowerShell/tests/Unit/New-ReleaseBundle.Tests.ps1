@@ -7,8 +7,21 @@ BeforeAll {
     $fixturesDir = Join-Path $moduleRoot 'tests/fixtures/New-ReleaseBundle'
     . (Join-Path $publicDir 'New-ReleaseBundle.ps1')
 
-    $script:fixtureManifest = Join-Path $fixturesDir 'manifest/manifest.json'
-    $script:fixtureSourceRoot = Join-Path $fixturesDir 'source'
+    # Git may materialize LF or CRLF. Derive only fixture metadata from a private
+    # checkout copy; the production verifier still enforces exact size and hash.
+    $script:fixtureManifest = Join-Path $TestDrive 'checkout-manifest.json'
+    $script:fixtureSourceRoot = Join-Path $TestDrive 'checkout-release-source'
+    Copy-Item -LiteralPath (Join-Path $fixturesDir 'source') -Destination $script:fixtureSourceRoot -Recurse
+    $fixtureManifestObject = Get-Content (Join-Path $fixturesDir 'manifest/manifest.json') -Raw | ConvertFrom-Json
+    foreach ($payload in $fixtureManifestObject.payloadFiles) {
+        $fixturePath = Join-Path $script:fixtureSourceRoot $payload.path
+        $payload.sizeBytes = (Get-Item -LiteralPath $fixturePath).Length
+        $payload.checksumSha256 = (Get-FileHash -LiteralPath $fixturePath -Algorithm SHA256).Hash.ToLowerInvariant()
+        foreach ($testEvidence in @($fixtureManifestObject.testEvidence | Where-Object path -eq $payload.path)) {
+            $testEvidence.checksumSha256 = $payload.checksumSha256
+        }
+    }
+    $fixtureManifestObject | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $script:fixtureManifest -Encoding utf8NoBOM
     $script:fixedTimestamp = [DateTimeOffset]::new(2000, 1, 1, 0, 0, 0, [TimeSpan]::Zero)
     $script:fixedAttributes = -2119958528
     # Fixture output MUST NOT live under Dropbox. These tests create a .upack and

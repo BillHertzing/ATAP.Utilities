@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.1.11
+
+- Makes the read-only DAB configuration unit test independent of a globally
+  installed DAB CLI while verifying the exact read-only command contract.
+- Accepts both Windows and Unix line endings in the release-heading contract.
+- Supersedes 0.1.10 after its Development gate exposed host-dependent tests;
+  no shipped runtime function changes are included in this patch.
+
 ## 0.1.10
 
 - Limits DAB stale-process cleanup to the exact configured listening port so

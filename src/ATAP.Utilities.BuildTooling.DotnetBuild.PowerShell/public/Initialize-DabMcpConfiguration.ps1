@@ -17,7 +17,8 @@ function Initialize-DabMcpConfiguration {
 
   .PARAMETER ExposureMode
   Keeps the legacy explicit-entity initializer by default. The two all-entities modes
-  configure supported objects in every schema. ContentSummaryExecuteOnly writes the
+  configure supported objects in every schema. AllEntitiesReadOnly advertises only
+  describe, read, and aggregate MCP tools. ContentSummaryExecuteOnly writes the
   dedicated, least-privilege ContentSummary configuration without invoking DAB or a
   secret provider.
 
@@ -382,11 +383,24 @@ function Initialize-DabMcpConfiguration {
           '--template.rest.enabled', 'false', '--template.graphql.enabled', 'false',
           '--permissions', "$role`:$actions"
         ) | Out-Null
-        Invoke-DabCommand -DabPath $dab.Source -ArgumentList @(
+        $mcpToolArguments = if ($isReadWrite) {
+          @('--runtime.mcp.dml-tools.enabled', 'true')
+        } else {
+          @(
+            '--runtime.mcp.dml-tools.describe-entities', 'true',
+            '--runtime.mcp.dml-tools.read-records', 'true',
+            '--runtime.mcp.dml-tools.aggregate-records', 'true',
+            '--runtime.mcp.dml-tools.create-record', 'false',
+            '--runtime.mcp.dml-tools.update-record', 'false',
+            '--runtime.mcp.dml-tools.delete-record', 'false',
+            '--runtime.mcp.dml-tools.execute-entity', 'false'
+          )
+        }
+        Invoke-DabCommand -DabPath $dab.Source -ArgumentList (@(
           'configure', '--config', $ConfigPath,
           '--runtime.rest.enabled', 'false', '--runtime.graphql.enabled', 'false',
-          '--runtime.mcp.enabled', 'true', '--runtime.mcp.dml-tools.enabled', $isReadWrite.ToString().ToLowerInvariant()
-        ) | Out-Null
+          '--runtime.mcp.enabled', 'true'
+        ) + $mcpToolArguments) | Out-Null
       }
       [pscustomobject]@{ ConfigPath = $ConfigPath; Action = 'Created'; ExposureMode = $ExposureMode; WhatIf = $false; ExitCode = $result.ExitCode }
     }

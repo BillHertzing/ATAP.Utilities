@@ -2,9 +2,9 @@
 
 Sprint lifecycle commands for SprintStart, SprintEnd, worktree teardown, checkpoint archival, and sprint-boundary validation.
 
-Version 0.1.34 is the current release and is the version a name-only
-`Import-Module` resolves to from the AllUsers path; it is the first release to export
-`Write-GatherCallRecord`. Version 0.1.14 remains the accepted **two-host** deploy state for
+Version 0.1.39 is the current release and is the version a name-only
+`Import-Module` resolves to from the AllUsers path on UTAT022. Version 0.1.34 was
+the first release to export `Write-GatherCallRecord`. Version 0.1.14 remains the accepted **two-host** deploy state for
 service-profile discovery — the claims in the rest of this paragraph were verified at 0.1.14 on both
 UTAT01 and UTAT022 and have not been re-verified on UTAT022 since. Service-profile fallback discovery is bounded to `SvcBuildMaster`, `SvcProGet`, and `SvcSQLServer`; an authenticated service identity manages only its own profile, while an operator session may deploy the approved set. Focused discovery tests pass 8/8, isolated SprintEnd lifecycle tests pass 25/25, and all six host/account targets are idempotent at the canonical profile hash.
 
@@ -36,8 +36,16 @@ failures. Cleanup and final boundary checks audit task bindings without writing.
 `WhatIf` describes planned changes and does not prove deployment.
 
 Task 15.208 source verification recorded 283 passing tests and 26 existing
-skipped tests. Package promotion, installation, and live scheduled-task
-acceptance remain pending.
+skipped tests. Version 0.1.39 passed all five promotion gates in BuildMaster build
+21506 (execution 22683), including Production tests with 396 passing, zero failing,
+and 99 skipped tests. The package is promoted to `powershellget-stable`, installed
+in the UTAT022 AllUsers scope, and verified by a fresh name-only import. The
+[live scheduled-task acceptance evidence](../../_generated/Sprint0015/Task15.208/release/live/acceptance.json)
+records End, repeated End, Start, and repeated Start for both retained tasks.
+Both tasks remain disabled, with their final actions targeting the current sprint
+`LoginScript.ps1`; full XML comparison preserves every other task property. This
+acceptance covers action maintenance without running the tasks or a full sprint
+teardown.
 
 ## Gather-call recorder — `Write-GatherCallRecord`
 

@@ -100,6 +100,12 @@ function Set-SprintBoundaryContext {
   .PARAMETER SkipProfileSymlinks
     Skip the machine-wide PowerShell 7 profile-symlink retarget concern. Intended
     only for narrowly scoped repair or diagnostic calls.
+  .PARAMETER LoginScriptPath
+    Invocation-only development override for the retained login scheduled-task pair.
+    Defaults are selected independently of profile root fallback behavior.
+  .PARAMETER SkipLoginScheduledTasks
+    Skip the global login pair concern for internal per-worktree provisioning or
+    isolated diagnostics. A skipped concern supplies no deployed verification.
   .PARAMETER SkipSharedVSCodeSettings
     Skip the machine-global SharedVSCode settings concern (shared-settings
     render and Set-UserSettingsSymlink). Used by
@@ -196,6 +202,11 @@ function Set-SprintBoundaryContext {
 
     [switch]$SkipProfileSymlinks,
 
+    [ValidateNotNullOrEmpty()]
+    [string]$LoginScriptPath,
+
+    [switch]$SkipLoginScheduledTasks,
+
     [switch]$SkipSharedVSCodeSettings,
 
     [switch]$AllowUserGlobalWrite,
@@ -249,6 +260,9 @@ function Set-SprintBoundaryContext {
     $concerns = [System.Collections.Generic.List[object]]::new()
     $perWorktree = [System.Collections.Generic.List[object]]::new()
     $errors = [System.Collections.Generic.List[string]]::new()
+    # Preserve invocation input before legacy profile resolution can mutate it.
+    $loginUtilitiesRootWasBound = $PSBoundParameters.ContainsKey('ATAPUtilitiesRoot')
+    $loginUtilitiesRoot = $ATAPUtilitiesRoot
   }
 
   process {
@@ -613,6 +627,51 @@ function Set-SprintBoundaryContext {
       })
 
     # ------------------------------------------------------------------
+    # Machine-global concern: retained login scheduled-task pair (once).
+    # Selection belongs to the private helper; profile fallback is never reused.
+    # ------------------------------------------------------------------
+    $loginScheduledTasks = $null
+    $loginScheduledTasksOk = $true
+    $loginScheduledTaskError = $null
+    if (-not $SkipLoginScheduledTasks) {
+      try {
+        if (-not (Get-Command -Name 'Set-SprintLoginScheduledTaskTarget' -ErrorAction SilentlyContinue)) {
+          $loginHelperPath = Join-Path $PSScriptRoot '../private/Set-SprintLoginScheduledTaskTarget.ps1'
+          if (-not (Test-Path -LiteralPath $loginHelperPath -PathType Leaf)) { throw "Required helper not found: $loginHelperPath" }
+          . $loginHelperPath
+        }
+        $loginParameters = @{
+          Boundary = $Boundary
+          GitRoot = $GitRoot
+          WorktreePaths = $WorktreePaths
+          Confirm = $false
+          WhatIf = [bool]$WhatIfPreference
+        }
+        if ($loginUtilitiesRootWasBound) { $loginParameters.ATAPUtilitiesRoot = $loginUtilitiesRoot }
+        if ($PSBoundParameters.ContainsKey('LoginScriptPath')) { $loginParameters.LoginScriptPath = $LoginScriptPath }
+        $loginApproved = $PSCmdlet.ShouldProcess('ATAPLoginScript and Unlock BitWarden', "Maintain retained login scheduled-task pair ($Boundary)")
+        $loginParameters.WhatIf = [bool]($WhatIfPreference -or -not $loginApproved)
+        $loginScheduledTasks = Set-SprintLoginScheduledTaskTarget @loginParameters
+        if ($null -eq $loginScheduledTasks -or -not $loginScheduledTasks.Ok) {
+          throw "Login pair maintenance reported failures: $($loginScheduledTasks.Failures -join '; ')"
+        }
+      } catch {
+        $loginScheduledTasksOk = $false
+        $loginScheduledTaskError = "Login scheduled-task maintenance failed: $($_.Exception.Message)"
+        $errors.Add($loginScheduledTaskError)
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $loginScheduledTaskError
+      }
+    }
+    $concerns.Add([PSCustomObject]@{
+        Concern = 'LoginScheduledTasks'
+        Action = ($SkipLoginScheduledTasks ? 'Skipped' : "Set-SprintLoginScheduledTaskTarget ($Boundary)")
+        StableByDesign = $false
+        Succeeded = $loginScheduledTasksOk
+        Error = $loginScheduledTaskError
+        Result = $loginScheduledTasks
+      })
+
+    # ------------------------------------------------------------------
     # Machine-global concern: PowerShell 7 profile deployment and HostSettings link (once)
     # profile.ps1 is copied from ATAP.IAC; HostSettings.ps1 links to ATAP.IAC. Formerly
     # 'stable-by-design / no-op'; now actively retargeted per H09/SC-0188 (Task
@@ -883,6 +942,8 @@ function Set-SprintBoundaryContext {
       Concerns    = $concerns.ToArray()
       PerWorktree = $perWorktree.ToArray()
       Errors      = $errors.ToArray()
+      LoginScheduledTasks = $loginScheduledTasks
+      LoginScheduledTaskError = $loginScheduledTaskError
     }
   }
 }

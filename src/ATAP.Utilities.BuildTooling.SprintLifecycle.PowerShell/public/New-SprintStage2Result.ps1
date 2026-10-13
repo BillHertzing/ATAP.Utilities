@@ -20,6 +20,10 @@ function New-SprintStage2Result {
     HostSettings.ps1 was successfully retargeted to the sprint worktree.
   .PARAMETER ProfileSymlinkError
     Any error that occurred while deploying the profile or retargeting HostSettings.
+  .PARAMETER LoginScheduledTasks
+    Structured private-helper result for the retained login scheduled-task pair.
+  .PARAMETER LoginScheduledTaskError
+    Failure selecting, validating or maintaining the login pair.
   .PARAMETER BuildMasterVariablesSet
     Array of BuildMaster variable names that were successfully set.
   .PARAMETER BuildMasterVariablesErrors
@@ -72,6 +76,10 @@ function New-SprintStage2Result {
     [Parameter(Mandatory=$false)]
     [string]$ProfileSymlinkError,
 
+    [PSCustomObject]$LoginScheduledTasks,
+
+    [string]$LoginScheduledTaskError,
+
     [Parameter(Mandatory=$false)]
     [array]$BuildMasterVariablesSet = @(),
 
@@ -119,6 +127,8 @@ function New-SprintStage2Result {
         userSettingsError          = $UserSettingsError
         profileSymlinksRetargeted  = $ProfileSymlinksRetargeted
         profileSymlinkError        = $ProfileSymlinkError
+        loginScheduledTasks        = $LoginScheduledTasks
+        loginScheduledTaskError    = $LoginScheduledTaskError
         buildMasterVariablesSet    = $BuildMasterVariablesSet
         buildMasterVariablesErrors = $BuildMasterVariablesErrors
         buildMasterVariablesError  = $BuildMasterError

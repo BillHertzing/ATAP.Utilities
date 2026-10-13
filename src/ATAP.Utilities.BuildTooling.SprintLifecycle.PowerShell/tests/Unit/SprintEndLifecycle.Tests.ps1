@@ -1,6 +1,15 @@
 #Requires -Version 7.0
 
 BeforeAll {
+  # Task 15.208: isolate login maintenance from the host Task Scheduler.
+  function Set-SprintLoginScheduledTaskTarget {
+    [CmdletBinding(SupportsShouldProcess)]
+    param([string]$Boundary, [string]$ATAPUtilitiesRoot, [string]$GitRoot,
+      [string]$LoginScriptPath, [string[]]$WorktreePaths, [switch]$CheckOnly)
+    [PSCustomObject]@{ Ok = $true; Boundary = $Boundary; SelectionMode = 'SprintDefault';
+      TargetPath = $LoginScriptPath; TargetHash = 'fixture'; Planned = [bool]$WhatIfPreference;
+      Changed = $false; Tasks = @(); Rollback = @{ Attempted = $false; Succeeded = $true; Failures = @() }; Failures = @() }
+  }
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
   }
@@ -16,6 +25,9 @@ BeforeAll {
 }
 
 Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
+  BeforeEach {
+    Mock Set-SprintLoginScheduledTaskTarget { [PSCustomObject]@{ Ok = $true; Planned = $false; Changed = $false; Tasks = @(); Failures = @() } }
+  }
   Context 'Test-SprintEndCommandSurface' {
     It 'returns one structured failure for a missing parameter contract' {
       function Test-Task106Command { param([string]$Present) }

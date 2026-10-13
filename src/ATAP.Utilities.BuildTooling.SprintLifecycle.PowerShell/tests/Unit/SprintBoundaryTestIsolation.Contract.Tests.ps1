@@ -87,4 +87,16 @@ Describe 'Sprint-boundary test isolation contract' -Tag 'Unit' {
 
     $violations | Should -BeNullOrEmpty
   }
-}
+
+  It 'isolates every lifecycle fixture from retained host login scheduled tasks' {
+    $violations = [Collections.Generic.List[string]]::new()
+    foreach ($name in @('SprintLoginScheduledTaskLifecycle', 'Set-SprintBoundaryContext',
+        'New-SprintStageDryRun', 'New-SprintStage2.DatabaseReset', 'New-SprintStage2.JunctionScope',
+        'New-SprintStage2.OverviewWorkspace', 'SprintEndLifecycle', 'Test-SprintEndBoundaryState',
+        'SprintEndApprovalPlan', 'SprintEndStableWorktreeBoundary', 'SprintEndTask12Fixes',
+        'SprintEndRehearsal', 'GatherCallRecord.SprintEndIntegration')) {
+      $source = Get-Content -LiteralPath (Join-Path $script:testRoot "$name.Tests.ps1") -Raw
+      if ($source -notmatch '(?m)Mock[^\r\n]*\bSet-SprintLoginScheduledTaskTarget\b') { $violations.Add($name) }
+    }
+    $violations | Should -BeNullOrEmpty
+  }}

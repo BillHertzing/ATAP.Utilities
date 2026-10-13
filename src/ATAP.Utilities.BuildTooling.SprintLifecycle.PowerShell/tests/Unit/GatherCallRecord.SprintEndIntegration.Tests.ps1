@@ -53,6 +53,15 @@
 #>
 
 BeforeAll {
+  # Task 15.208: isolate login maintenance from the host Task Scheduler.
+  function Set-SprintLoginScheduledTaskTarget {
+    [CmdletBinding(SupportsShouldProcess)]
+    param([string]$Boundary, [string]$ATAPUtilitiesRoot, [string]$GitRoot,
+      [string]$LoginScriptPath, [string[]]$WorktreePaths, [switch]$CheckOnly)
+    [PSCustomObject]@{ Ok = $true; Boundary = $Boundary; SelectionMode = 'SprintDefault';
+      TargetPath = $LoginScriptPath; TargetHash = 'fixture'; Planned = [bool]$WhatIfPreference;
+      Changed = $false; Tasks = @(); Rollback = @{ Attempted = $false; Succeeded = $true; Failures = @() }; Failures = @() }
+  }
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
     function global:Write-PSFMessage {
       param(
@@ -229,6 +238,9 @@ AfterAll {
 
 # Remove -Skip on the line below when Task 15.183.d lands the SprintEnd integration.
 Describe 'SprintEnd gather-call correlation integration [Blocked by Task 15.183.d - SprintEnd integration not yet implemented]' -Tag 'Unit', 'Blocked-15.183.d' -Skip {
+  BeforeEach {
+    Mock Set-SprintLoginScheduledTaskTarget { [PSCustomObject]@{ Ok = $true; Planned = $false; Changed = $false; Tasks = @(); Failures = @() } }
+  }
 
   BeforeEach {
     Reset-PhaseTrace

@@ -67,7 +67,7 @@ BeforeAll {
       [string]$Boundary, [string]$SharedVSCodeWorktreePath, [string[]]$WorktreePaths = @(),
       [string]$TemplateRef, [string]$Profile, [string[]]$JunctionFolderNames,
       [string[]]$StableJunctionFolderNames, [string]$GitRoot,
-      [switch]$SkipSharedVSCodeSettings, [switch]$SkipProfileSymlinks,
+      [switch]$SkipSharedVSCodeSettings, [switch]$SkipProfileSymlinks, [switch]$SkipLoginScheduledTasks,
       [switch]$AllowUserGlobalWrite, [switch]$CheckpointConfirmed, [switch]$SkipAIAdapterLifecycle
     )
     $global:stage1ExternalCalls.Add('Set-SprintBoundaryContext') | Out-Null

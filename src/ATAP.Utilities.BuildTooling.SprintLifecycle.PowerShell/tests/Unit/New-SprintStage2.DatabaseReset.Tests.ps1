@@ -1,4 +1,14 @@
 BeforeAll {
+  function global:Confirm-WorktreeGitPointerOwnership { [CmdletBinding(SupportsShouldProcess)] param([string]$WorktreePath) [PSCustomObject]@{ Verified = $true; Repaired = $false } }
+  # Task 15.208: isolate login maintenance from the host Task Scheduler.
+  function global:Set-SprintLoginScheduledTaskTarget {
+    [CmdletBinding(SupportsShouldProcess)]
+    param([string]$Boundary, [string]$ATAPUtilitiesRoot, [string]$GitRoot,
+      [string]$LoginScriptPath, [string[]]$WorktreePaths, [switch]$CheckOnly)
+    [PSCustomObject]@{ Ok = $true; Boundary = $Boundary; SelectionMode = 'SprintDefault';
+      TargetPath = $LoginScriptPath; TargetHash = 'fixture'; Planned = [bool]$WhatIfPreference;
+      Changed = $false; Tasks = @(); Rollback = @{ Attempted = $false; Succeeded = $true; Failures = @() }; Failures = @() }
+  }
   $script:priorModuleAutoLoad = $global:PSModuleAutoLoadingPreference
   $global:PSModuleAutoLoadingPreference = 'None'
   Remove-Module 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell' -Force -ErrorAction SilentlyContinue
@@ -7,6 +17,8 @@ BeforeAll {
   }
 
   $script:stubbedFunctionNames = @(
+    'Set-SprintLoginScheduledTaskTarget'
+    'Confirm-WorktreeGitPointerOwnership'
     'Assert-GitAvailable',
     'gh',
     'git',
@@ -87,7 +99,7 @@ BeforeAll {
       [string]$Boundary, [string]$SharedVSCodeWorktreePath, [string[]]$WorktreePaths = @(),
       [string]$TemplateRef, [string]$Profile, [string[]]$JunctionFolderNames,
       [string[]]$StableJunctionFolderNames, [string]$GitRoot,
-      [switch]$SkipSharedVSCodeSettings, [switch]$SkipProfileSymlinks,
+      [switch]$SkipSharedVSCodeSettings, [switch]$SkipProfileSymlinks, [switch]$SkipLoginScheduledTasks,
       [switch]$AllowUserGlobalWrite, [switch]$CheckpointConfirmed, [switch]$SkipAIAdapterLifecycle
     )
     $global:stage2DatabaseResetCalls.Add('Set-SprintBoundaryContext') | Out-Null
@@ -243,6 +255,8 @@ AfterAll {
 
 Describe 'New-SprintStage2 database reset wiring' -Tag 'Unit' {
   BeforeEach {
+    Mock Confirm-WorktreeGitPointerOwnership { [PSCustomObject]@{ Verified = $true; Repaired = $false } }
+    Mock Set-SprintLoginScheduledTaskTarget { [PSCustomObject]@{ Ok = $true; Planned = [bool]$WhatIfPreference; Changed = $false; Tasks = @(); Failures = @() } }
     $script:priorWhatIf = $WhatIfPreference
     $WhatIfPreference = $false
     $global:stage2DatabaseResetCalls = [System.Collections.Generic.List[string]]::new()
@@ -397,5 +411,43 @@ Describe 'New-SprintStage2 database reset wiring' -Tag 'Unit' {
     $result.repoResults.repoName | Should -Contain 'ATAP.Utilities'
     $result.repoResults.repoName | Should -Contain 'ATAP.IAC'
     $result.repoResults.Count | Should -Be 2
+  }
+
+  It 'maintains login once with the successful Utilities result despite profile skip' {
+    Mock Set-SprintLoginScheduledTaskTarget { [PSCustomObject]@{ Ok = $true; Planned = $false; Changed = $false; Failures = @() } }
+    Mock Set-SprintBoundaryContext {
+      if (-not $SkipLoginScheduledTasks) { throw 'Internal provisioning must skip global login maintenance.' }
+      [PSCustomObject]@{ PerWorktree = @([PSCustomObject]@{
+          JunctionsRetargeted = $true; ContextError = $null; AdapterError = $null
+        }); Errors = @() }
+    }
+    $result = New-SprintStage2 -Stage1Result $script:stage1 -TasksFilePath $script:tasksPath -GitRoot $script:tempGitRoot `
+      -Owner 'owner' -SkipDatabaseReset -SkipPowerShellProfileRetarget -Confirm:$false
+    $result.infrastructure.loginScheduledTaskError | Should -BeNullOrEmpty
+    $result.infrastructure.loginScheduledTasks.Ok | Should -BeTrue
+    Should -Invoke Set-SprintLoginScheduledTaskTarget -Times 1 -ParameterFilter {
+      $Boundary -eq 'Start' -and $ATAPUtilitiesRoot -eq (Join-Path $script:tempGitRoot 'ATAP.Utilities-wt-321-Sprint-0008-work-items') -and
+      -not $PesterBoundParameters.ContainsKey('LoginScriptPath')
+    }
+    Should -Invoke Set-SprintBoundaryContext -Times 1 -ParameterFilter { $SkipLoginScheduledTasks }
+  }
+
+  It 'surfaces helper pair failure in Stage2 infrastructure while preserving the structured result' {
+    Mock Set-SprintLoginScheduledTaskTarget { [PSCustomObject]@{ Ok = $false; Failures = @('readback mismatch'); Rollback = @{ Attempted = $true; Succeeded = $false } } }
+    $result = New-SprintStage2 -Stage1Result $script:stage1 -TasksFilePath $script:tasksPath -GitRoot $script:tempGitRoot `
+      -Owner 'owner' -SkipDatabaseReset -SkipPowerShellProfileRetarget -LoginScriptPath (Join-Path $script:tempGitRoot 'Development/LoginScript.ps1') -Confirm:$false
+    $result.infrastructure.loginScheduledTaskError | Should -Match 'readback mismatch'
+    $result.infrastructure.loginScheduledTasks.Rollback.Succeeded | Should -BeFalse
+    Should -Invoke Set-SprintLoginScheduledTaskTarget -Times 1 -ParameterFilter { $PesterBoundParameters.ContainsKey('LoginScriptPath') }
+  }
+
+  It 'reports zero candidates before global maintenance when no downstream repository is selected' {
+    Mock Get-SprintTaskRepositoryNames { @() }
+    $result = New-SprintStage2 -Stage1Result $script:stage1 -TasksFilePath $script:tasksPath -GitRoot $script:tempGitRoot `
+      -Owner 'owner' -SkipDatabaseReset -SkipPowerShellProfileRetarget -Confirm:$false
+    $result.infrastructure.loginScheduledTaskError | Should -Match 'found 0'
+    $result.repoResults | Should -BeNullOrEmpty
+    Should -Invoke Set-SprintLoginScheduledTaskTarget -Times 0
+    $global:stage2DatabaseResetCalls | Should -Not -Contain 'Set-BuildMasterSprintVariables'
   }
 }

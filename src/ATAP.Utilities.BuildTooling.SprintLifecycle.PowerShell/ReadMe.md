@@ -14,6 +14,31 @@ retry handoff instead of recursively deleting the worktree.
 
 The parent `ATAP.Utilities.BuildTooling.PowerShell` module retains the legacy command surface by requiring this child module.
 
+## Login scheduled-task lifecycle
+
+[`Set-SprintLoginScheduledTaskTarget`](private/Set-SprintLoginScheduledTaskTarget.ps1)
+maintains the existing `ATAPLoginScript` and `Unlock BitWarden` scheduled-task
+actions. [`New-SprintStage2`](public/New-SprintStage2.ps1) selects the single
+successful active ATAP.Utilities sprint worktree and its
+`src/ATAP.Utilities.PowerShell/Profiles/LoginScript.ps1` for SprintStart.
+[`Invoke-SprintEndLifecycle`](public/Invoke-SprintEndLifecycle.ps1) selects the
+stable ATAP.Utilities login script before sprint worktree teardown.
+
+An explicitly supplied `LoginScriptPath` takes precedence for that invocation
+only; supply it again for each lifecycle invocation that needs the development
+override. Empty or invalid paths fail closed. A SprintEnd override must survive
+the planned worktree removals.
+
+The helper conservatively replaces the recognized login script action binding
+while preserving other arguments, actions, task properties, and disabled state.
+It compensates attempted writes when an update fails and reports rollback
+failures. Cleanup and final boundary checks audit task bindings without writing.
+`WhatIf` describes planned changes and does not prove deployment.
+
+Task 15.208 source verification recorded 283 passing tests and 26 existing
+skipped tests. Package promotion, installation, and live scheduled-task
+acceptance remain pending.
+
 ## Gather-call recorder — `Write-GatherCallRecord`
 
 `Write-GatherCallRecord` appends exactly one immutable record per invocation of the

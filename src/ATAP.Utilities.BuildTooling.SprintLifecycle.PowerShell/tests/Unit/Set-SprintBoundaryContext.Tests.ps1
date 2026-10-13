@@ -40,6 +40,7 @@ Describe 'Set-SprintBoundaryContext [public]' {
   }
 
   BeforeEach {
+    Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-SprintLoginScheduledTaskTarget { [PSCustomObject]@{ Ok = $true; Planned = $false; Changed = $false; Tasks = @(); Failures = @() } }
     Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-WorktreeJunctions { [PSCustomObject]@{ Success = $true; Errors = @() } }
     Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Initialize-DownstreamSprintFromSharedVSCode { }
     Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Reset-DownstreamToSharedVSCodeMain { }
@@ -366,6 +367,7 @@ Describe 'Set-SprintBoundaryContext [public]' {
 
   Context 'Single-entry Start ordering (Task 12.2.b): junctions -> context -> adapter render' {
     BeforeEach {
+    Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-SprintLoginScheduledTaskTarget { [PSCustomObject]@{ Ok = $true; Planned = $false; Changed = $false; Tasks = @(); Failures = @() } }
       $global:sbcCallOrder = [System.Collections.Generic.List[string]]::new()
       Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-WorktreeJunctions {
         $global:sbcCallOrder.Add('junctions')

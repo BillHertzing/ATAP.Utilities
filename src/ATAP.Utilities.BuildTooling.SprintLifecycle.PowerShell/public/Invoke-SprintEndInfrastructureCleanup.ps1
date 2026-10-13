@@ -19,6 +19,13 @@ function Invoke-SprintEndInfrastructureCleanup {
   .PARAMETER Apply
   Executes cleanup. Without Apply, only the read-only health check runs.
 
+  .PARAMETER LoginScriptPath
+  Explicit development LoginScript.ps1 target for this invocation only. An explicitly
+  supplied empty target is invalid. Omit to audit the stable Utilities default.
+
+  .PARAMETER WorktreePaths
+  Worktrees being removed. The selected login target must survive their removal.
+
   .PARAMETER ProfiledRemotingPolicy
   Policy passed to the stable boundary reassertion. Defaults to Auto.
 
@@ -48,6 +55,13 @@ function Invoke-SprintEndInfrastructureCleanup {
     [switch]$Apply,
 
     [Parameter()]
+    [AllowNull()][AllowEmptyString()]
+    [string]$LoginScriptPath,
+
+    [Parameter()]
+    [string[]]$WorktreePaths = @(),
+
+    [Parameter()]
     [ValidateSet('Disabled', 'Auto', 'Required')]
     [string]$ProfiledRemotingPolicy = 'Auto'
   )
@@ -70,6 +84,49 @@ function Invoke-SprintEndInfrastructureCleanup {
   }
 
   process {
+    $databaseResults = @()
+    $buildMasterResult = $null
+    $boundaryResult = $null
+    $actions = [System.Collections.Generic.List[string]]::new()
+    $failures = [System.Collections.Generic.List[string]]::new()
+    $loginScheduledTasks = $null
+    try {
+      if (-not (Get-Command Set-SprintLoginScheduledTaskTarget -ErrorAction SilentlyContinue)) {
+        . (Join-Path $PSScriptRoot '..\private\Set-SprintLoginScheduledTaskTarget.ps1')
+      }
+      $loginParameters = @{
+        Boundary = 'End'
+        GitRoot = $GitRoot
+        WorktreePaths = $WorktreePaths
+        Confirm = $false
+      }
+      if ($PSBoundParameters.ContainsKey('LoginScriptPath')) {
+        $loginParameters.LoginScriptPath = $LoginScriptPath
+      }
+      if ($Apply -and $WhatIfPreference) {
+        # The outer lifecycle only planned the boundary reset. Validate and plan
+        # this pair without demanding that the retained sprint bindings changed.
+        $loginParameters.WhatIf = $true
+      } else {
+        $loginParameters.CheckOnly = $true
+      }
+      $loginScheduledTasks = Set-SprintLoginScheduledTaskTarget @loginParameters
+      if ($null -eq $loginScheduledTasks -or -not $loginScheduledTasks.Ok) {
+        [void]$failures.Add('LoginScheduledTasks')
+      }
+    } catch {
+      [void]$failures.Add("LoginScheduledTasks: $($_.Exception.Message)")
+    }
+    if ($failures.Count -gt 0) {
+      return [PSCustomObject]@{
+        Ok = $false; Applied = $false; Planned = [bool]($Apply -and $WhatIfPreference)
+        Health = $null; DatabaseResults = $databaseResults; DatabaseCleanupMode = 'SprintDatabasesOnly'
+        BuildMasterResult = $null; BoundaryResult = $null; LoginScheduledTasks = $loginScheduledTasks
+        BitwardenSecretsRemoved = $false; SqlInstancesRetained = $true
+        Actions = $actions.ToArray(); Failures = $failures.ToArray()
+      }
+    }
+
     # The End-boundary preview plans removal of a process-scoped BWS token but
     # correctly leaves the current process unchanged. Project that one planned
     # removal while running the read-only health check, then restore the exact
@@ -91,11 +148,6 @@ function Invoke-SprintEndInfrastructureCleanup {
         [Environment]::SetEnvironmentVariable('BWS_ACCESS_TOKEN', $priorProcessBwsAccessToken, 'Process')
       }
     }
-    $databaseResults = @()
-    $buildMasterResult = $null
-    $boundaryResult = $null
-    $actions = [System.Collections.Generic.List[string]]::new()
-
     if ($Apply) {
       if (-not $health.AllOk) {
         throw "Sprint infrastructure health failed: $($health.Failures -join ', ')."
@@ -111,28 +163,42 @@ function Invoke-SprintEndInfrastructureCleanup {
       }
       $stableSharedVSCode = Join-Path ([IO.Path]::GetFullPath($GitRoot)) 'SharedVSCode'
       if ($PSCmdlet.ShouldProcess($stableSharedVSCode, 'Reassert stable SprintEnd boundary')) {
-        $boundaryResult = Set-SprintBoundaryContext `
-          -Boundary End `
-          -SharedVSCodeWorktreePath $stableSharedVSCode `
-          -WorktreePaths @() `
-          -ProfiledRemotingPolicy $ProfiledRemotingPolicy `
-          -Confirm:$false
-        [void]$actions.Add('Reasserted stable boundary.')
+        try {
+          $boundaryResult = Set-SprintBoundaryContext `
+            -Boundary End `
+            -SharedVSCodeWorktreePath $stableSharedVSCode `
+            -GitRoot $GitRoot `
+            -WorktreePaths @() `
+            -SkipLoginScheduledTasks `
+            -ProfiledRemotingPolicy $ProfiledRemotingPolicy `
+            -Confirm:$false
+          if ($null -eq $boundaryResult -or @($boundaryResult.Errors).Count -gt 0) {
+            [void]$failures.Add('BoundaryReset')
+          } else {
+            [void]$actions.Add('Reasserted stable boundary.')
+          }
+        } catch {
+          [void]$failures.Add("BoundaryReset: $($_.Exception.Message)")
+        }
       }
     }
 
+    $cleanupOk = ($health.AllOk -and $failures.Count -eq 0 -and
+      (-not $Apply -or $WhatIfPreference -or ($null -ne $buildMasterResult -and $null -ne $boundaryResult)))
     return [PSCustomObject]@{
-      Ok                         = ($health.AllOk -and (-not $Apply -or $WhatIfPreference -or $null -ne $buildMasterResult))
-      Applied                    = [bool]($Apply -and -not $WhatIfPreference)
+      Ok                         = $cleanupOk
+      Applied                    = [bool]($Apply -and -not $WhatIfPreference -and $cleanupOk)
       Planned                    = [bool]($Apply -and $WhatIfPreference)
       Health                     = $health
       DatabaseResults            = $databaseResults
       DatabaseCleanupMode        = 'SprintDatabasesOnly'
       BuildMasterResult          = $buildMasterResult
       BoundaryResult             = $boundaryResult
+      LoginScheduledTasks        = $loginScheduledTasks
       BitwardenSecretsRemoved    = $false
       SqlInstancesRetained       = $true
       Actions                    = $actions.ToArray()
+      Failures                   = $failures.ToArray()
     }
   }
 

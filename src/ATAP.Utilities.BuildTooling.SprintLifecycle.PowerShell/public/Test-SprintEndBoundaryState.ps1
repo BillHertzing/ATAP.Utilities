@@ -22,6 +22,13 @@ function Test-SprintEndBoundaryState {
   .PARAMETER ProfilePaths
   Machine, user, and service-account PowerShell profile paths to verify.
 
+  .PARAMETER LoginScriptPath
+  Invocation-only approved development target for the read-only login pair audit.
+
+  .PARAMETER WorktreePaths
+  Worktree removal roots that the login target must survive. SearchRoots is only
+  a configuration scan scope and does not select the login target.
+
   .PARAMETER ATAPUtilitiesRoot
   Optional ATAP.Utilities repository or worktree root used to resolve the
   expected managed profile sources. Defaults to `<GitRoot>\ATAP.Utilities`.
@@ -78,6 +85,11 @@ function Test-SprintEndBoundaryState {
 
     [Parameter()]
     [string[]]$SearchRoots,
+
+    [ValidateNotNullOrEmpty()]
+    [string]$LoginScriptPath,
+
+    [string[]]$WorktreePaths = @(),
 
     [Parameter()]
     [string[]]$ProfilePaths = @(
@@ -345,6 +357,31 @@ function Test-SprintEndBoundaryState {
         }
     )
     $failures = [System.Collections.Generic.List[string]]::new()
+    $loginScheduledTasks = $null
+    $loginScheduledTaskError = $null
+    try {
+      if (-not (Get-Command -Name 'Set-SprintLoginScheduledTaskTarget' -ErrorAction SilentlyContinue)) {
+        $loginHelperPath = Join-Path $PSScriptRoot '../private/Set-SprintLoginScheduledTaskTarget.ps1'
+        if (-not (Test-Path -LiteralPath $loginHelperPath -PathType Leaf)) { throw "Required helper not found: $loginHelperPath" }
+        . $loginHelperPath
+      }
+      $loginAuditParameters = @{
+        Boundary = 'End'
+        GitRoot = $gitRootFull
+        WorktreePaths = $WorktreePaths
+        CheckOnly = $true
+        Confirm = $false
+      }
+      if ($PSBoundParameters.ContainsKey('LoginScriptPath')) { $loginAuditParameters.LoginScriptPath = $LoginScriptPath }
+      $loginScheduledTasks = Set-SprintLoginScheduledTaskTarget @loginAuditParameters
+      if ($null -eq $loginScheduledTasks -or -not $loginScheduledTasks.Ok) {
+        throw "Login pair audit reported failures: $($loginScheduledTasks.Failures -join '; ')"
+      }
+    } catch {
+      $loginScheduledTaskError = "Login scheduled-task audit failed: $($_.Exception.Message)"
+      [void]$failures.Add('LoginScheduledTasks')
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $loginScheduledTaskError
+    }
     if ($liveStaleReferences.Count -gt 0) { [void]$failures.Add('StaleSprintReferences') }
     if ($environmentFindings.Count -gt 0) { [void]$failures.Add('SecretEnvironmentVariables') }
     if (-not $freshShell.Ok) { [void]$failures.Add('FreshShellProfile') }
@@ -359,6 +396,8 @@ function Test-SprintEndBoundaryState {
       ManagedProfileFailures       = @($managedProfileFailures)
       SecretEnvironmentVariables   = $environmentFindings.ToArray()
       FreshShell                   = $freshShell
+      LoginScheduledTasks          = $loginScheduledTasks
+      LoginScheduledTaskError      = $loginScheduledTaskError
       Failures                     = $failures.ToArray()
     }
     if (-not $result.Ok -and $ThrowOnFailure) {

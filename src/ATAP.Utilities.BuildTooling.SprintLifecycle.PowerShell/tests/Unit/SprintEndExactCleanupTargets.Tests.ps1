@@ -20,7 +20,7 @@ BeforeAll {
   }
 }
 
-Describe 'SprintEnd exact database cleanup and failure gates' {
+Describe 'SprintEnd exact database cleanup and failure gates' -Tag 'Unit' {
   BeforeEach {
     $script:parameters = @{ GitRoot = $TestDrive; BuildMasterAdminApiKeySecretName = 'fixture'; Apply = $true; Confirm = $false; DeveloperNames = @('WHERTZING') }
     Mock Write-PSFMessage {}

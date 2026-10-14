@@ -26,7 +26,7 @@ BeforeAll {
   function Test-SprintEndBoundaryState { param($GitRoot, $TestFreshShell, $ThrowOnFailure) }
 }
 
-Describe 'Generated SprintEnd handoff cleanup contract' {
+Describe 'Generated SprintEnd handoff cleanup contract' -Tag 'Unit' {
   BeforeEach {
     Mock Write-PSFMessage {}
   }

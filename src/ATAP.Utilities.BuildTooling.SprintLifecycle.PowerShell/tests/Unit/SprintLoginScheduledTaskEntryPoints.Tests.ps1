@@ -16,6 +16,11 @@ BeforeAll {
     param([string[]]$DeveloperNames, [switch]$Force)
   }
   function Clear-BuildMasterSprintVariables { [CmdletBinding(SupportsShouldProcess)] param() }
+  function Get-DbaDatabase {
+    [CmdletBinding()]
+    param([string]$SqlInstance, [string]$Database, [switch]$EnableException)
+    throw 'Database absence verification requires an isolated mock.'
+  }
   function Set-SprintBoundaryContext {
     [CmdletBinding(SupportsShouldProcess)]
     param([string]$Boundary, [string]$SharedVSCodeWorktreePath, [string]$GitRoot,
@@ -42,8 +47,22 @@ Describe 'Task 15.208 public cleanup entrypoint gates' -Tag 'Unit' {
       $script:callOrder.Add('health')
       [pscustomobject]@{ AllOk = $true; Failures = @() }
     }
-    Mock Remove-SprintDatabases { $script:callOrder.Add('database'); [pscustomobject]@{ Ok = $true } }
-    Mock Clear-BuildMasterSprintVariables { $script:callOrder.Add('buildmaster'); [pscustomobject]@{ Ok = $true } }
+    Mock Remove-SprintDatabases {
+      $script:callOrder.Add('database')
+      foreach ($developer in $DeveloperNames) {
+        foreach ($instance in @("Dev$developer", "Exp$developer")) {
+          foreach ($database in @('ATAPUtilities', 'AceCommander')) {
+            [pscustomobject]@{ instanceName = $instance; database = $database; instanceReady = $true;
+              dropped = $true; skipped = $false; dryRun = $false; error = $null }
+          }
+        }
+      }
+    }
+    Mock Get-DbaDatabase { }
+    Mock Clear-BuildMasterSprintVariables {
+      $script:callOrder.Add('buildmaster')
+      [pscustomobject]@{ variablesCleared = @(); errors = @() }
+    }
     Mock Set-SprintBoundaryContext { $script:callOrder.Add('boundary'); [pscustomobject]@{ Errors = @() } }
     $script:invokeParameters = @{ GitRoot = $script:root; BuildMasterAdminApiKeySecretName = 'fixture'; Confirm = $false }
   }

@@ -13,6 +13,11 @@ BeforeAll {
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
   }
+  function Get-DbaDatabase {
+    [CmdletBinding()]
+    param([string]$SqlInstance, [string]$Database, [switch]$EnableException)
+    throw 'Database absence verification requires an isolated mock.'
+  }
 
   $moduleRoot = Join-Path $PSScriptRoot '..\..'
   . (Join-Path $moduleRoot 'private\Invoke-SprintEndNativeCommand.ps1')
@@ -110,7 +115,8 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $text | Should -Match 'pull --ff-only'
       $text | Should -Match 'Test-SprintEndPullOverlap'
       $text | Should -Match 'branch -D'
-      $text | Should -Match 'Remove-SprintDatabases'
+      $text | Should -Match 'Invoke-SprintEndInfrastructureCleanup'
+      $text | Should -Not -Match 'Remove-SprintDatabases'
       $text | Should -Match 'Set-SprintBoundaryContext @boundaryParams'
       $text | Should -Match "ProfiledRemotingPolicy = 'Auto'"
       $text | Should -Match 'Test-SprintEndBoundaryState @boundaryTestParams'
@@ -581,8 +587,16 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
         [PSCustomObject]@{ AllOk = $true; Failures = @() }
       }
       Mock Remove-SprintDatabases {
-        @([PSCustomObject]@{ database = 'ATAPUtilities'; dropped = $true })
+        foreach ($developer in $DeveloperNames) {
+          foreach ($instance in @("Dev$developer", "Exp$developer")) {
+            foreach ($database in @('ATAPUtilities', 'AceCommander')) {
+              [PSCustomObject]@{ instanceName = $instance; database = $database; instanceReady = $true;
+                dropped = $true; skipped = $false; dryRun = $false; error = $null }
+            }
+          }
+        }
       }
+      Mock Get-DbaDatabase { }
       Mock Clear-BuildMasterSprintVariables {
         [PSCustomObject]@{ variablesCleared = @('App/SprintNumber'); errors = @() }
       }
@@ -994,7 +1008,8 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $handoffSource | Should -Match 'Remove-SprintWorktreeSafely'
       $handoffSource | Should -Not -Match 'worktree remove.*--force'
       $handoffSource | Should -Match 'pull --ff-only origin main'
-      $handoffSource | Should -Match 'Remove-SprintDatabases'
+      $handoffSource | Should -Match 'Invoke-SprintEndInfrastructureCleanup'
+      $handoffSource | Should -Not -Match 'Remove-SprintDatabases'
       $handoffSource | Should -Match 'Set-SprintBoundaryContext'
       $handoffSource | Should -Match 'Remove-Item @handoffRemovalParams'
     }

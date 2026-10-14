@@ -36,6 +36,11 @@ function Invoke-SprintEndLifecycle {
   .PARAMETER ApplyBoundary
   Applies the SprintEnd AIAdapter/template boundary reset.
 
+  .PARAMETER SkipSharedVSCodeSettings
+  Defers the shared settings render and symlink retarget during the boundary
+  pass, for a premerge close. Stable settings must be reasserted after merge;
+  this switch does not skip the final stable boundary verification.
+
   .PARAMETER ProfiledRemotingPolicy
   Controls the profiled-remoting boundary concern. Auto is the safe default;
   Disabled opts out, while Required fails when remoting is unavailable.
@@ -88,6 +93,11 @@ function Invoke-SprintEndLifecycle {
   .PARAMETER CleanupInfrastructure
   Drops sprint databases, clears BuildMaster variables, and reasserts stable boundary.
 
+  .PARAMETER DatabaseCleanupTargets
+  Reviewed exact database targets (InstanceName and Databases) forwarded to the
+  infrastructure cleanup and generated handoff. Omission retains helper defaults;
+  an explicitly supplied empty list is forwarded for fail-closed validation.
+
   .PARAMETER TestFreshShell
   Includes profile-enabled fresh-shell verification in the final boundary audit.
 
@@ -131,6 +141,9 @@ function Invoke-SprintEndLifecycle {
 
     [Parameter()]
     [switch]$ApplyBoundary,
+
+    [Parameter()]
+    [switch]$SkipSharedVSCodeSettings,
 
     [Parameter()]
     [ValidateSet('Disabled', 'Auto', 'Required')]
@@ -177,6 +190,10 @@ function Invoke-SprintEndLifecycle {
 
     [Parameter()]
     [switch]$CleanupInfrastructure,
+
+    [Parameter()]
+    [AllowEmptyCollection()]
+    [object[]]$DatabaseCleanupTargets,
 
     [Parameter()]
     [switch]$TestFreshShell,
@@ -328,6 +345,9 @@ function Invoke-SprintEndLifecycle {
         Confirm                     = $false
       }
       if ($WhatIfPreference) { $boundaryParameters.WhatIf = $true }
+      if ($PSBoundParameters.ContainsKey('SkipSharedVSCodeSettings')) {
+        $boundaryParameters.SkipSharedVSCodeSettings = [bool]$SkipSharedVSCodeSettings
+      }
       if ($PSBoundParameters.ContainsKey('LoginScriptPath')) { $boundaryParameters.LoginScriptPath = $LoginScriptPath }
       $phases.BoundaryReset = Set-SprintBoundaryContext @boundaryParameters
       if (@($phases.BoundaryReset.Errors).Count -gt 0) { [void]$failures.Add('BoundaryReset') }
@@ -467,6 +487,9 @@ function Invoke-SprintEndLifecycle {
         Confirm       = $false
       }
       if ($WhatIfPreference) { $handoffParameters.WhatIf = $true }
+      if ($PSBoundParameters.ContainsKey('DatabaseCleanupTargets')) {
+        $handoffParameters.DatabaseCleanupTargets = $DatabaseCleanupTargets
+      }
       try {
         $phases.Handoff = New-SprintEndHandoff @handoffParameters
       } catch {
@@ -490,6 +513,9 @@ function Invoke-SprintEndLifecycle {
         Confirm = $false
       }
       if ($WhatIfPreference) { $cleanupParameters.WhatIf = $true }
+      if ($PSBoundParameters.ContainsKey('DatabaseCleanupTargets')) {
+        $cleanupParameters.DatabaseCleanupTargets = $DatabaseCleanupTargets
+      }
       if ($PSBoundParameters.ContainsKey('LoginScriptPath')) { $cleanupParameters.LoginScriptPath = $LoginScriptPath }
       $phases.InfrastructureCleanup = Invoke-SprintEndInfrastructureCleanup @cleanupParameters
       if (-not $phases.InfrastructureCleanup.Ok) { [void]$failures.Add('InfrastructureCleanup') }

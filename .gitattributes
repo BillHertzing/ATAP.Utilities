@@ -3,43 +3,21 @@
 # Source: SharedVSCode/.gitattributes
 # Regenerate using Set-DownstreamSharedVSCodeContext
 # ===================================================================
-# ===================================================================
-# GENERATED FILE - DO NOT EDIT DIRECTLY
-# Source: C:\dropbox\whertzing\GitHub\SharedVSCode-wt-40-sprint-0006-work-items\.gitattributes
-# Generated: 2026-04-13T18:46:45Z
-# Regenerate using Set-DownstreamSharedVSCodeContext
-# ===================================================================
-# ===================================================================
-# GENERATED FILE - DO NOT EDIT DIRECTLY
-# Source: C:\dropbox\whertzing\GitHub\SharedVSCode-wt-40-sprint-0006-work-items\.gitattributes
-# Generated: 2026-04-13T18:46:37Z
-# Regenerate using Set-DownstreamSharedVSCodeContext
-# ===================================================================
-# ===================================================================
-# GENERATED FILE - DO NOT EDIT DIRECTLY
-# Source: C:\dropbox\whertzing\GitHub\SharedVSCode-wt-40-sprint-0006-work-items\.gitattributes
-# Generated: 2026-04-13T18:46:34Z
-# Regenerate using Set-DownstreamSharedVSCodeContext
-# ===================================================================
-*             text=auto
+* text=auto eol=lf
 
-# Windows line endings
-Windows/**    text eol=crlf
+# Windows-native command scripts
+*.bat text eol=crlf
+*.cmd text eol=crlf
 
-# Linux line endings
-Wsl2Ubuntu/** text eol=lf
+# Binary payloads retained or verified from the SharedVSCode and Ace inventories
+*.dll  -text
+*.docx -text
+*.gz   -text
+*.ico  -text
+*.jpg  -text
+*.png  -text
+*.wasm -text
 
-*.jpg         -text
-
-# Prevent NuGet.config merge conflicts — each branch deliberately has a different feed list
-NuGet.config  merge=ours
-
-
-
-
-
-
-
-
-
+# Prevent NuGet.config merge conflicts -- each branch deliberately has a different feed list
+NuGet.config merge=ours
 

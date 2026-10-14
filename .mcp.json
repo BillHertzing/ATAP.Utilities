@@ -5,7 +5,7 @@
       "args": [
         "-NonInteractive",
         "-Command",
-        "& { $WarningPreference = 'SilentlyContinue'; $ProgressPreference = 'SilentlyContinue'; Import-Module -Name 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell' -DisableNameChecking -WarningAction SilentlyContinue -ErrorAction Stop; Stop-ZombieMcpServerProcess -CatalogPath 'C:/Dropbox/whertzing/GitHub/SharedVSCode-wt-64-Sprint-0015-work-items/.ai/config/common/mcp-servers.json' -NativeKey 'plantuml' -Quiet -Confirm:$false; & 'node' 'C:/Dropbox/whertzing/GitHub/OSSForks/plantuml-mcp-server/dist/plantuml-mcp-server.js' }"
+        "& { $WarningPreference = 'SilentlyContinue'; $ProgressPreference = 'SilentlyContinue'; Import-Module -Name 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell' -DisableNameChecking -WarningAction SilentlyContinue -ErrorAction Stop; Stop-ZombieMcpServerProcess -CatalogPath 'C:/Dropbox/whertzing/GitHub/SharedVSCode/.ai/config/common/mcp-servers.json' -NativeKey 'plantuml' -Quiet -Confirm:$false; & 'node' 'C:/Dropbox/whertzing/GitHub/OSSForks/plantuml-mcp-server/dist/plantuml-mcp-server.js' }"
       ],
       "env": {
         "MCP_TRANSPORT": "stdio",
@@ -19,7 +19,7 @@
       "args": [
         "-NonInteractive",
         "-Command",
-        "& { $WarningPreference = 'SilentlyContinue'; $ProgressPreference = 'SilentlyContinue'; Import-Module -Name 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell' -DisableNameChecking -WarningAction SilentlyContinue -ErrorAction Stop; Stop-ZombieMcpServerProcess -CatalogPath 'C:/Dropbox/whertzing/GitHub/SharedVSCode-wt-64-Sprint-0015-work-items/.ai/config/common/mcp-servers.json' -NativeKey 'drawio' -Quiet -Confirm:$false; & 'node' 'C:/Users/whertzing/AppData/Roaming/npm/node_modules/drawio-mcp-server/build/index.js' }"
+        "& { $WarningPreference = 'SilentlyContinue'; $ProgressPreference = 'SilentlyContinue'; Import-Module -Name 'ATAP.Utilities.BuildTooling.DotnetBuild.PowerShell' -DisableNameChecking -WarningAction SilentlyContinue -ErrorAction Stop; Stop-ZombieMcpServerProcess -CatalogPath 'C:/Dropbox/whertzing/GitHub/SharedVSCode/.ai/config/common/mcp-servers.json' -NativeKey 'drawio' -Quiet -Confirm:$false; & 'node' 'C:/Users/whertzing/AppData/Roaming/npm/node_modules/drawio-mcp-server/build/index.js' }"
       ]
     }
   }

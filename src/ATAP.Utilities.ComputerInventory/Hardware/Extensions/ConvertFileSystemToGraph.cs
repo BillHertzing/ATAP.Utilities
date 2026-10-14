@@ -66,6 +66,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware {
     public static bool IsMailFile(this FileInfo f) {
       return Regex.Match(f.Extension, mailFileExtensionRegex).Success;
     }
+    [ETWLog]
     public static bool IsMailFile(string str) {
       return Regex.Match(str, mailFileExtensionRegex).Success;
     }

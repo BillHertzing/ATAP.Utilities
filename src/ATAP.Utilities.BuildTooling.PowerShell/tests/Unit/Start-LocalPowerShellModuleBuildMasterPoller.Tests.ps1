@@ -4,8 +4,8 @@
 
 BeforeAll {
   $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
-  . (Join-Path $publicDir 'Start-BuildMasterPackagePipeline.ps1')
-  . (Join-Path $publicDir 'Start-LocalPowerShellModuleBuildMasterPoller.ps1')
+  . (Join-Path $publicDir '../../ATAP.Utilities.BuildTooling.BuildMaster.PowerShell/public/Start-BuildMasterPackagePipeline.ps1')
+  . (Join-Path $publicDir '../../ATAP.Utilities.BuildTooling.GitWorktree.PowerShell/public/Start-LocalPowerShellModuleBuildMasterPoller.ps1')
 
   function Invoke-TestGit {
     param(

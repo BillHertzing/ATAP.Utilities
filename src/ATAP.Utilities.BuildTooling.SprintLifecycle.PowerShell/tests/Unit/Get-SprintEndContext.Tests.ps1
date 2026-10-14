@@ -55,13 +55,19 @@ Describe 'Get-SprintEndContext [public]' -Tag 'Unit' {
     }
 
     It 'Returns Ok=false when the path contains no sprint pattern' {
-      $r = Get-SprintEndContext `
-        -CurrentPath 'C:\GitHub\ATAP.Utilities' `
-        -GitRoot ([System.IO.Path]::GetTempPath())
-      $r.Ok | Should -BeFalse
-      $r.ClosedSprintNumber | Should -BeNullOrEmpty
-      $r.NextSprintNumber | Should -BeNullOrEmpty
-      $r.Detail | Should -Not -BeNullOrEmpty
+      $emptyGitRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('sprint-end-context-empty-' + [guid]::NewGuid().ToString('N'))
+      New-Item -ItemType Directory -Path $emptyGitRoot -Force | Out-Null
+      try {
+        $r = Get-SprintEndContext `
+          -CurrentPath 'C:\GitHub\ATAP.Utilities' `
+          -GitRoot $emptyGitRoot
+        $r.Ok | Should -BeFalse
+        $r.ClosedSprintNumber | Should -BeNullOrEmpty
+        $r.NextSprintNumber | Should -BeNullOrEmpty
+        $r.Detail | Should -Not -BeNullOrEmpty
+      } finally {
+        Remove-Item -LiteralPath $emptyGitRoot -Recurse -Force -ErrorAction SilentlyContinue
+      }
     }
   }
 

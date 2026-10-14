@@ -1,50 +1,79 @@
 # ATAP.Utilities.BuildTooling.CSharp
 
-If you are viewing this ReadMe.md in GitHub, [here is this same ReadMe on the documentation site]()
+This project is the canonical NuGet distribution point for the ATAP C# MSBuild
+package contract. It builds the custom-task assembly and ships identical
+`ATAP.Utilities.BuildTooling.CSharp.targets` bytes through both NuGet import
+conventions:
 
-## Introduction
+- `build/ATAP.Utilities.BuildTooling.CSharp.targets` for direct consumers.
+- `buildTransitive/ATAP.Utilities.BuildTooling.CSharp.targets` for transitive consumers.
+- `tools/<target-framework>/ATAP.Utilities.BuildTooling.CSharp.dll` as an
+  MSBuild-hosted task assembly, not a consumer compile reference.
 
-This project provides:
-an additional Targets file that can be imported in a project's build definition (.csproj)
-a .dll file that contains additional MSBuild Task definitions written in CSharp
+The imported file exposes version, compatibility, provenance, and task-assembly
+properties. Its only target is a pre-compilation, side-effect-free compatibility
+gate with stable diagnostics `ATAPBUILD020` through `ATAPBUILD022`. It has no
+pack, publish, copy, delete, credential, or external-system target.
 
-Authenticated ProGet publishing is delegated to
-`Invoke-ProGetNuGetPublish.ps1`. MSBuild supplies only
-`ProGetApiKeySecretName` (administrator by default because the legacy replace
-workflow deletes before pushing); the wrapper resolves the value through
-`Get-SecretATAP` only at the authenticated leaf.
+## Bootstrap and exact selection
 
-Repository-wide C# build health checks run through
-`Build\Invoke-RepoHealthGate.ps1` after restore and before pack or publish.
-Those checks live outside this project and outside PowerShell module package
-tests because they audit shared `Directory.Build.props` behavior across the
-repository.
+NuGet restore is the only first-use deployment mechanism. A repository selects
+one exact immutable package version through Central Package Management and its
+lock files; it never copies an editable targets or task-assembly fork into a
+consumer. Direct and transitive consumers import identical package bytes.
 
-Repository-wide C# build health checks run through
-`Build\Invoke-RepoHealthGate.ps1` after restore and before pack or publish.
-Those checks live outside this project and outside PowerShell module package
-tests because they audit shared `Directory.Build.props` behavior across the
-repository.
+After restore, `ATAPValidateBuildToolingCompatibility` fails closed when the
+contract version or compatibility sentinel differs from the repository-required
+values. Projects registering a packaged custom task set
+`ATAPBuildToolingRequireTaskAssembly=true`, which makes a missing task assembly
+fail closed. A completely absent package/import is detected by the repository
+bootstrap gate owned by Tasks 15.180.j and 15.180.k.
 
-## ATAP.Utilities.BuildTooling.Targets
+Repeated restore of the same immutable version is idempotent. Rollback changes
+the exact central version and lock to a previously verified immutable package,
+then performs forced locked restore; it never overwrites or re-signs a published
+version.
 
-This is a .targets file that can be imported into a project, either by inclusion in a .csproj file, or solution-wide by inclusion in to a Directory.Build.props file
+## Provenance and signing
 
-### BeforeCompile Tasks
+The SDK package records repository type, URL, and commit metadata. The imported
+`ATAPBuildToolingImportProvenance` property records the evaluated package path,
+and package verification hashes every payload. Local candidates may be unsigned.
+Promotion requires the separately authorized signing/publication pipeline to
+validate the intended signing identity and immutable package hash; this project
+never reads a signing key or publication credential.
 
----Stoping point---
+## Release and publication boundary
 
-Additional tasks and targets for MSBuild extensions
+`GeneratePackageOnBuild` is disabled. An ordinary `Release` build only compiles;
+it does not pack, publish, deploy, update a sentinel file, read credentials, or
+mutate a feed. Packaging requires explicit `dotnet pack`. Publication requires a
+separately authorized workflow and is not implemented by this project or its
+imported targets.
 
-- additional Targets file
-- Additional BeforeCompile Tasks to evaluate a project's inputs and outputs
-- Tasks to Create a lockfile, and update the AssemblyInformation in Properties/AssemblyInfo.cs
-- Tasks to Delete the Lockfile \* conditional call UpdateAssemblyVersion if the lockfile does not exists
+Repository integration and missing-import enforcement belong to Tasks 15.180.j
+and 15.180.k; publication and deployed parity remain gated by Tasks 15.180.s and
+15.180.t.
 
-* DLL with these tasks (**OBSOLETE** — wrapped in `#if false`, not compiled):
-  > These three MSBuild Task classes have been superseded by
-  > [Nerdbank.GitVersioning (NBGV)](https://github.com/dotnet/Nerdbank.GitVersioning).
-  > The code is retained for historical reference only.
-  - ~~GetVersion~~ — read AssemblyVersion, AssemblyFileVersion, and AssemblyInformationalVersion from an `AssemblyInfo.cs` file.
-  - ~~SetVersion~~ — write updated version values back to an `AssemblyInfo.cs` file.
-  - ~~UpdateVersion~~ — combine GetVersion + MakeBuild + MakePackageVersion + SetVersion into a single build step.
+## Import interface
+
+| Property | Meaning |
+| --- | --- |
+| `ATAPBuildToolingImported` | `true` when the contract file was evaluated. |
+| `ATAPBuildToolingPackageId` | Stable package identity. |
+| `ATAPBuildToolingContractVersion` | Integer compatibility contract; currently `1`. |
+| `ATAPBuildToolingCompatibilitySentinel` | Stable identity `ATAP.Utilities.BuildTooling.CSharp/1`. |
+| `ATAPBuildToolingRequiredContractVersion` | Consumer-required version; defaults to `1`. |
+| `ATAPBuildToolingRequiredCompatibilitySentinel` | Consumer-required sentinel; defaults to v1. |
+| `ATAPBuildToolingImportProvenance` | Exact imported targets-file path. |
+| `ATAPBuildToolingImportDirectory` | Directory containing the imported targets file. |
+| `ATAPBuildToolingTaskTargetFramework` | Task-assembly TFM; defaults to `net10.0`. |
+| `ATAPUtilitiesBuildToolingTasksAssembly` | Package-relative custom-task assembly path. |
+
+## Validation boundary
+
+Task 15.180.d performs static validation, offline local packing, package payload
+inspection, and isolated local-feed consumer evaluation. It does not contact or
+mutate a feed, use credentials or signing keys, publish, install to either real
+repository, or deploy. Evidence separates verified package/isolated-consumer
+claims from later repository and deployed-state claims.

@@ -82,6 +82,9 @@ function New-SprintStage2 {
   .PARAMETER ProGetBaseUrl
     Base URL for the ProGet server.
     Defaults to 'https://utat022:50000'.
+  .PARAMETER LoginScriptPath
+    Invocation-only development override for both retained login scheduled tasks.
+    An explicitly supplied empty value is invalid.
   .PARAMETER BuildMasterBaseUrl
     Base URL for the BuildMaster server.
     Defaults to 'https://utat022:50017'.
@@ -137,6 +140,9 @@ function New-SprintStage2 {
     [switch]$SkipDatabaseReset,
 
     [switch]$SkipPowerShellProfileRetarget,
+
+    [ValidateNotNullOrEmpty()]
+    [string]$LoginScriptPath,
 
     [switch]$AllowUserGlobalWrite,
 
@@ -377,10 +383,11 @@ function New-SprintStage2 {
       $ExcludeRepos -notcontains $_
     } | Select-Object -Unique
 
-    if ($repoNames.Count -eq 0) {
+    if ($repoNames.Count -eq 0 -and -not $PSBoundParameters.ContainsKey('LoginScriptPath')) {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-        -Message 'No downstream repos found in TASKS.md — nothing to do'
-      return @()
+        -Message 'No downstream repos found in TASKS.md; login target selection will fail closed.'
+      return New-SprintStage2Result -DryRun:$DryRun -RepoResults @() `
+        -LoginScheduledTaskError 'Login scheduled-task maintenance requires exactly one successful active ATAP.Utilities worktree result; found 0.'
     }
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
@@ -518,6 +525,7 @@ function New-SprintStage2 {
             -GitRoot $GitRoot `
             -SkipSharedVSCodeSettings `
             -SkipProfileSymlinks `
+            -SkipLoginScheduledTasks `
             -Confirm:$false
 
           $repoBoundaryEntry = @($boundaryResult.PerWorktree) | Select-Object -First 1
@@ -759,6 +767,55 @@ function New-SprintStage2 {
     }
 
     # ===================================================================
+    # 6d. Maintain the login pair once, independently of profile deployment.
+    # Default Start uses only this invocation's successful active Utilities result.
+    # An explicitly bound development override is validated on its own merits.
+    # The private helper validates the actual directory, file and task definitions.
+    # ===================================================================
+    $loginScheduledTasks = $null
+    $loginScheduledTaskError = $null
+    try {
+      $loginUtilitiesCandidates = @($repoResults | Where-Object {
+          $_.repoName -eq 'ATAP.Utilities' -and
+          [string]::IsNullOrWhiteSpace($_.error) -and
+          -not [string]::IsNullOrWhiteSpace($_.worktreePath) -and
+          (Split-Path $_.worktreePath -Leaf) -match ('^ATAP\.Utilities-wt-\d+-Sprint-' + [regex]::Escape($sprintNum) + '-work-items$')
+        } | ForEach-Object { [IO.Path]::GetFullPath($_.worktreePath).TrimEnd('\', '/') } | Sort-Object -Unique)
+      $loginOverrideBound = $PSBoundParameters.ContainsKey('LoginScriptPath')
+      if (-not $loginOverrideBound -and $loginUtilitiesCandidates.Count -ne 1) {
+        throw "Login scheduled-task maintenance requires exactly one successful active ATAP.Utilities worktree result; found $($loginUtilitiesCandidates.Count)."
+      }
+      if (-not (Get-Command -Name 'Set-SprintLoginScheduledTaskTarget' -ErrorAction SilentlyContinue)) {
+        $loginHelperPath = Join-Path $PSScriptRoot '../private/Set-SprintLoginScheduledTaskTarget.ps1'
+        if (-not (Test-Path -LiteralPath $loginHelperPath -PathType Leaf)) { throw "Required helper not found: $loginHelperPath" }
+        . $loginHelperPath
+      }
+      $loginParameters = @{
+        Boundary = 'Start'
+        GitRoot = $GitRoot
+        WorktreePaths = @($repoResults | Where-Object { -not $_.error -and $_.worktreePath } | ForEach-Object { $_.worktreePath })
+        Confirm = $false
+        WhatIf = [bool]$WhatIfPreference
+      }
+      if ($loginOverrideBound) {
+        $loginParameters.LoginScriptPath = $LoginScriptPath
+        $loginMaintenanceTarget = 'ATAPLoginScript and Unlock BitWarden'
+      } else {
+        $loginParameters.ATAPUtilitiesRoot = $loginUtilitiesCandidates[0]
+        $loginMaintenanceTarget = $loginUtilitiesCandidates[0]
+      }
+      $loginApproved = $PSCmdlet.ShouldProcess($loginMaintenanceTarget, 'Maintain retained login scheduled-task pair (Start)')
+      $loginParameters.WhatIf = [bool]($WhatIfPreference -or -not $loginApproved)
+      $loginScheduledTasks = Set-SprintLoginScheduledTaskTarget @loginParameters
+      if ($null -eq $loginScheduledTasks -or -not $loginScheduledTasks.Ok) {
+        throw "Login pair maintenance reported failures: $($loginScheduledTasks.Failures -join '; ')"
+      }
+    } catch {
+      $loginScheduledTaskError = "Login scheduled-task maintenance failed: $($_.Exception.Message)"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $loginScheduledTaskError
+    }
+
+    # ===================================================================
     # 7. Set BuildMaster sprint application variables (Area 7.2-1)
     # Sets SprintNumber, UserName, SprintBranchName for each application.
     # These are consumed by the 5-Stage OtterScript plans and are cleared
@@ -885,6 +942,8 @@ function New-SprintStage2 {
       -UserSettingsError $userSettingsError `
       -ProfileSymlinksRetargeted $profileSymlinksRetargeted `
       -ProfileSymlinkError $profileSymlinkError `
+      -LoginScheduledTasks $loginScheduledTasks `
+      -LoginScheduledTaskError $loginScheduledTaskError `
       -BuildMasterVariablesSet $(if ($buildMasterResult) { $buildMasterResult.variablesSet } else { @() }) `
       -BuildMasterVariablesErrors $(if ($buildMasterResult) { $buildMasterResult.errors } else { @() }) `
       -BuildMasterError $buildMasterError `

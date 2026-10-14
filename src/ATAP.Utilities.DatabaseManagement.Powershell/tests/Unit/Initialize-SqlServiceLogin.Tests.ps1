@@ -197,6 +197,36 @@ Describe 'Initialize-SqlServiceLogin' -Tag 'Unit' {
 
       $script:capturedUserQuery | Should -Match 'ALTER ROLE \[db_owner\] ADD MEMBER'
     }
+
+    It 'finds an existing database user by login SID before creating a short-name user' {
+      Mock -CommandName Invoke-DbaQuery -MockWith {
+        param($Query, $Database)
+        if ($Database -eq $script:database) { $script:capturedUserQuery = $Query }
+      }
+
+      Initialize-SqlServiceLogin `
+        -SqlInstance $script:instance `
+        -DatabaseName $script:database `
+        -ServiceAccount $script:account | Out-Null
+
+      $script:capturedUserQuery | Should -Match 'SUSER_SID\(@login\)'
+      $script:capturedUserQuery | Should -Match 'IF @mappedUser IS NULL'
+    }
+
+    It 'grants db_owner to the actual SID-mapped username' {
+      Mock -CommandName Invoke-DbaQuery -MockWith {
+        param($Query, $Database)
+        if ($Database -eq $script:database) { $script:capturedUserQuery = $Query }
+      }
+
+      Initialize-SqlServiceLogin `
+        -SqlInstance $script:instance `
+        -DatabaseName $script:database `
+        -ServiceAccount $script:account | Out-Null
+
+      $script:capturedUserQuery | Should -Match 'QUOTENAME\(@mappedUser\)'
+      $script:capturedUserQuery | Should -Match 'memberPrincipal\.\[name\] = @mappedUser'
+    }
   }
 
   # -------------------------------------------------------------------------

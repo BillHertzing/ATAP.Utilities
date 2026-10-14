@@ -150,6 +150,36 @@ function Resolve-BuildMasterPackageModuleName {
   throw "ModuleName was not supplied and no default module project could be inferred. Run from a module project folder, pass -ProjectPath, or pass -ModuleName."
 }
 
+function ConvertTo-BuildMasterBoundedReleaseNumber {
+  [CmdletBinding()]
+  [OutputType([string])]
+  param(
+    [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
+    [string]$Candidate,
+
+    [Parameter(Mandatory = $false)]
+    [ValidateRange(16, 255)]
+    [int]$MaximumLength = 50
+  )
+
+  if ($Candidate.Length -le $MaximumLength) {
+    return $Candidate
+  }
+
+  $candidateBytes = [System.Text.Encoding]::UTF8.GetBytes($Candidate)
+  $digest = [System.Convert]::ToHexString(
+    [System.Security.Cryptography.SHA256]::HashData($candidateBytes)
+  ).Substring(0, 12).ToLowerInvariant()
+  $suffix = "-$digest"
+  $prefixLength = $MaximumLength - $suffix.Length
+  if ($prefixLength -lt 1) {
+    throw "BuildMaster release-number maximum length '$MaximumLength' is too small for the collision-resistant suffix."
+  }
+
+  return $Candidate.Substring(0, $prefixLength) + $suffix
+}
+
 function Start-BuildMasterPackagePipeline {
   <#
 .SYNOPSIS
@@ -323,6 +353,7 @@ function Start-BuildMasterPackagePipeline {
     } else {
       $releaseNumber = '{0}-{1}' -f $ResolvedPackageVersion, $ModuleName
     }
+    $releaseNumber = ConvertTo-BuildMasterBoundedReleaseNumber -Candidate $releaseNumber
     $effectiveReason = if ([string]::IsNullOrWhiteSpace($Reason)) {
       "Package orchestration detected $effectivePackageName $ResolvedPackageVersion"
     } else {

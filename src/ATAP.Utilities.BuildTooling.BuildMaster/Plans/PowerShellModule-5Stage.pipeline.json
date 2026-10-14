@@ -1,0 +1,154 @@
+{
+  "Name": "PowerShellModule-5Stage",
+  "Description": "5-Stage pipeline for creating Modules from PowerShell projects",
+  "Stages": [
+    {
+      "Name": "Experimental",
+      "Description": "",
+      "Targets": [
+        {
+          "ScriptId": "global::PowerShellModule-5Stage.otter",
+          "EnvironmentName": "Experimental",
+          "ServerNames": [
+            "localhost"
+          ],
+          "ServerRoleNames": [],
+          "DefaultServerContext": 1
+        }
+      ],
+      "Gate": {
+        "UserApprovals": [],
+        "GroupApprovals": [],
+        "DeploymentWindows": [],
+        "AutomatedChecks": {
+          "Issues": {
+            "Statuses": []
+          }
+        },
+        "AutomaticApprovals": []
+      },
+      "AllowMultipleActiveBuilds": false
+    },
+    {
+      "Name": "Development",
+      "Description": "",
+      "Targets": [
+        {
+          "ScriptId": "global::PowerShellModule-5Stage.otter",
+          "EnvironmentName": "Development",
+          "ServerNames": [
+            "localhost"
+          ],
+          "ServerRoleNames": [],
+          "DefaultServerContext": 1
+        }
+      ],
+      "Gate": {
+        "UserApprovals": [],
+        "GroupApprovals": [],
+        "DeploymentWindows": [],
+        "AutomatedChecks": {
+          "Issues": {
+            "Statuses": []
+          }
+        },
+        "AutomaticApprovals": []
+      },
+      "AllowMultipleActiveBuilds": false
+    },
+    {
+      "Name": "Integration",
+      "Description": "",
+      "Targets": [
+        {
+          "ScriptId": "global::PowerShellModule-5Stage.otter",
+          "EnvironmentName": "Integration",
+          "ServerNames": [
+            "localhost"
+          ],
+          "ServerRoleNames": [],
+          "DefaultServerContext": 1
+        }
+      ],
+      "Gate": {
+        "UserApprovals": [],
+        "GroupApprovals": [],
+        "DeploymentWindows": [],
+        "AutomatedChecks": {
+          "Issues": {
+            "Statuses": []
+          }
+        },
+        "AutomaticApprovals": []
+      },
+      "AllowMultipleActiveBuilds": false
+    },
+    {
+      "Name": "QA",
+      "Description": "",
+      "Targets": [
+        {
+          "ScriptId": "global::PowerShellModule-5Stage.otter",
+          "EnvironmentName": "QA",
+          "ServerNames": [
+            "localhost"
+          ],
+          "ServerRoleNames": [],
+          "DefaultServerContext": 1
+        }
+      ],
+      "Gate": {
+        "UserApprovals": [],
+        "GroupApprovals": [],
+        "DeploymentWindows": [],
+        "AutomatedChecks": {
+          "Issues": {
+            "Statuses": []
+          }
+        },
+        "AutomaticApprovals": []
+      },
+      "AllowMultipleActiveBuilds": false
+    },
+    {
+      "Name": "Production",
+      "Description": "",
+      "Targets": [
+        {
+          "ScriptId": "global::PowerShellModule-5Stage.otter",
+          "EnvironmentName": "Production",
+          "ServerNames": [
+            "localhost"
+          ],
+          "ServerRoleNames": [],
+          "DefaultServerContext": 1
+        }
+      ],
+      "Gate": {
+        "UserApprovals": [],
+        "GroupApprovals": [],
+        "DeploymentWindows": [],
+        "AutomatedChecks": {
+          "Issues": {
+            "Statuses": []
+          }
+        },
+        "AutomaticApprovals": []
+      },
+      "AllowMultipleActiveBuilds": false
+    }
+  ],
+  "TemplateVariables": [],
+  "EventListeners": [
+    {
+      "Event": 5,
+      "PipelineStageNames": [],
+      "Type": "DeployReleaseEventListener"
+    },
+    {
+      "Event": 5,
+      "PipelineStageNames": [],
+      "Type": "CreateReleaseEventListener"
+    }
+  ]
+}

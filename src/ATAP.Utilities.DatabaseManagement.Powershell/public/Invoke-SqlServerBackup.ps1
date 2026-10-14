@@ -3,11 +3,19 @@
     Performs a SQL Server backup of a specified database to the standard backup location.
 
 .DESCRIPTION
-    Backs up a SQL Server database on localhost\Production to
-    C:\Dropbox\Backups\utat022\<DatabaseName>\.
+    Backs up a SQL Server database to the host's publication subtree,
+    <DatabaseBackupPublicationRoot>\<lowercase-hostname>\<DatabaseName>\.
     Supports Full and Differential backup types.
     Uses dbaTools for reliable SQL Server backup operations with built-in verification.
-    Intended to be called from Cobian Backup jobs on utat022.
+    Intended to be called from a scheduler (Windows Task Scheduler today) on any ATAP host.
+
+    No filesystem root is hardcoded. Every root is resolved through Get-PVal from
+    $global:Settings keyed by $global:ConfigRootKeys:
+        LocalDBsRootPathConfigRootKey                 -> instance-local staging root (C:/LocalDBs)
+        DatabaseBackupPublicationRootConfigRootKey    -> off-host publication root (C:/Dropbox/Backups)
+    The host namespace is derived from ComputerName (lowercased), so UTAT022 publishes
+    under .../utat022 and UTAT01 under .../utat01 with no per-host edits.
+    If a required root cannot be resolved the function throws rather than guessing a path.
 
     Backup file naming convention:
         <DatabaseName>_FULL_yyyyMMdd_HHmmss.bak   (weekly full)
@@ -25,19 +33,38 @@
     The SQL Server instance to connect to. Default: 'localhost\Production'.
     Override when calling from a remote host or in testing.
 
+.PARAMETER ComputerName
+    Host namespace for the publication subtree. Default: the lowercased name of the
+    machine this runs on ($env:COMPUTERNAME), resolved through Get-PVal.
+
+.PARAMETER DatabaseBackupPublicationRoot
+    Off-host publication root. Resolved through Get-PVal from
+    $global:Settings[$global:ConfigRootKeys['DatabaseBackupPublicationRootConfigRootKey']],
+    canonically 'C:/Dropbox/Backups'. Throws if it cannot be resolved; never guessed.
+    SQL Server never writes directly into this tree.
+
+.PARAMETER LocalDBsRoot
+    Instance-local staging root. Resolved through Get-PVal from
+    $global:Settings[$global:ConfigRootKeys['LocalDBsRootPathConfigRootKey']],
+    canonically 'C:/LocalDBs'. Per-instance staging is
+    <LocalDBsRoot>/<INSTANCE>/Backup/<Database>/. Throws if it cannot be resolved.
+
 .PARAMETER BackupRoot
     Root folder under which per-database subdirectories are created.
-    Default: 'C:\Dropbox\Backups\utat022'.
-    All subdirectories in this tree are backed up automatically via Dropbox sync.
+    Default: <DatabaseBackupPublicationRoot>/<lowercase ComputerName>, so on UTAT022 this
+    resolves to 'C:/Dropbox/Backups/utat022' and on UTAT01 to 'C:/Dropbox/Backups/utat01'
+    with no per-host edit. All subdirectories in this tree sync offsite via Dropbox.
 
 .PARAMETER TemporaryDirectory
-    Staging directory to which the .bak file is written during the backup operation.
-    Once the backup and verification are complete, the file is moved from this directory
-    to the per-database subdirectory under BackupRoot.
-    Writing first to a fast local temp drive (e.g. a RAM disk or NVMe scratch volume)
-    reduces I/O contention on the Dropbox-synced backup destination.
-    Default: <FastTempBasePath>\CobianReflectorBackup  (resolved from
-    $global:Settings[$global:ConfigRootKeys['FastTempBasePathConfigRootKey']]).
+    Instance-local backup root to which SQL Server writes the .bak file. The database
+    name is appended by the function. Defaults to
+    <LocalDBsRoot>\PRODUCTION\Backup, producing the canonical production staging path
+    C:\LocalDBs\PRODUCTION\Backup\ATAPUtilities for the protected database.
+
+.PARAMETER TrustServerCertificate
+    Keeps SQL transport encryption enabled while accepting the certificate presented by
+    the fixed local Production endpoint. This override is permitted only with the
+    Production-only ProtectAndPublish workflow.
 
 .PARAMETER CompressBackup
     When specified, enables SQL Server native backup compression.
@@ -155,26 +182,59 @@ function Invoke-SqlServerBackup {
     [string] $BackupType = 'Full',
 
     [Parameter()]
-    [ValidateNotNullOrEmpty()]
-    [string] $BackupRoot = 'C:\Dropbox\Backups\utat022',
+    [ValidateSet('Production')]
+    [string] $Environment = 'Production',
+
+    # Host namespace for published backups. Defaults to the lowercase name of the
+    # machine this runs on, so UTAT022 and UTAT01 each publish under their own subtree
+    # without either host hardcoding the other's name.
+    [Parameter()]
+    [string] $ComputerName,
+
+    # Off-host publication root. Resolved from
+    # $global:Settings[$global:ConfigRootKeys['DatabaseBackupPublicationRootConfigRootKey']]
+    # (canonically 'C:/Dropbox/Backups'). Never hardcoded.
+    [Parameter()]
+    [string] $DatabaseBackupPublicationRoot,
+
+    # Instance-local root beneath which SQL Server writes backups. Resolved from
+    # $global:Settings[$global:ConfigRootKeys['LocalDBsRootPathConfigRootKey']]
+    # (canonically 'C:/LocalDBs'). Never hardcoded.
+    [Parameter()]
+    [string] $LocalDBsRoot,
+
+    # Final per-database publication directory. Derived as
+    # <DatabaseBackupPublicationRoot>/<lowercase ComputerName>/ when not supplied.
+    [Parameter()]
+    [string] $BackupRoot,
 
     [Parameter()]
-    [string] $TemporaryDirectory = $(Join-Path $global:Settings[$global:ConfigRootKeys['FastTempBasePathConfigRootKey']] 'CobianReflectorBackup'),
+    [string] $TemporaryDirectory,
 
     [Parameter()]
     [switch] $CompressBackup,
 
     [Parameter()]
-    [switch] $SevenZipCompress
+    [switch] $SevenZipCompress,
+
+    [Parameter()]
+    [switch] $ProtectAndPublish,
+
+    [Parameter()]
+    [ValidateSet('dbEncryption.ATAPUtilities.Production')]
+    [string] $EncryptionSecretName = 'dbEncryption.ATAPUtilities.Production',
+
+    [Parameter()]
+    [switch] $TrustServerCertificate
 
     # SCAFFOLD: multi-machine (Explainer 0022, section 4B)
-    # Add -ComputerName [string] parameter (default: 'localhost') to support remote invocation
-    # via Invoke-Command. When ComputerName != localhost, wrap PROCESS block body in
-    # Invoke-Command -ComputerName $ComputerName -ScriptBlock { ... }.
-    # Also add -Environment [ValidateSet('Experimental','Development','Testing','Production')]
-    # and derive $SqlInstance from $global:settings[$global:configRootKeys['Database{Env}InstanceConfigRootKey']]
-    # instead of accepting it as a raw string. BackupRoot default should then resolve to
-    # "C:\Dropbox\Backups\$ComputerName" dynamically.
+    # The path half of this scaffold is implemented (Task 15.192): ComputerName,
+    # DatabaseBackupPublicationRoot and LocalDBsRoot are resolved through Get-PVal from
+    # $global:Settings/$global:ConfigRootKeys, so BackupRoot derives per host.
+    # Still outstanding: add -ComputerName remote invocation via Invoke-Command (wrap the
+    # PROCESS block body when ComputerName is not the local machine), and add
+    # -Environment [ValidateSet('Production','QA','Integration','Development','Experimental')]
+    # deriving $SqlInstance from the 5-tier settings rather than a raw string.
 )
 
 begin {
@@ -186,6 +246,13 @@ begin {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
         throw $msg
     }
+    if ($TrustServerCertificate.IsPresent -and -not $ProtectAndPublish.IsPresent) {
+        throw 'TrustServerCertificate is restricted to the Production-only ProtectAndPublish workflow.'
+    }
+
+    if ($ProtectAndPublish.IsPresent -and ($CompressBackup.IsPresent -or $SevenZipCompress.IsPresent)) {
+        throw 'ProtectAndPublish performs its own compression and cannot be combined with CompressBackup or SevenZipCompress.'
+    }
 
     # Check and populate BackupType parameter
     if ([string]::IsNullOrWhiteSpace($BackupType)) {
@@ -193,16 +260,57 @@ begin {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'BackupType not specified — defaulting to Full.'
     }
 
-    # Check and populate BackupRoot parameter
-    if ([string]::IsNullOrWhiteSpace($BackupRoot)) {
-        $BackupRoot = 'C:\Dropbox\Backups\utat022'
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'BackupRoot not specified — defaulting to C:\Dropbox\Backups\utat022.'
+    # ------------------------------------------------------------------------
+    # Path resolution (Task 15.192).
+    # Every root below comes from $global:Settings keyed by $global:ConfigRootKeys and
+    # is populated through Get-PVal. No filesystem root is hardcoded here, so the same
+    # function runs unchanged on UTAT022, UTAT01, and any future host.
+    # ------------------------------------------------------------------------
+    $effectiveSettings = if ($PSBoundParameters.ContainsKey('Settings') -and $Settings) { $Settings } else { $global:Settings }
+
+    # Host namespace for the publication subtree. Lowercased per the policy, which
+    # requires backups from UTAT022 to land under .../utat022 and UTAT01 under .../utat01.
+    $ComputerName = Get-PVal -ParameterName 'ComputerName' -originalPSBoundParameters $PSBoundParameters -DefaultValue $env:COMPUTERNAME -AllowMissing
+    if ([string]::IsNullOrWhiteSpace($ComputerName)) { $ComputerName = $env:COMPUTERNAME }
+    $ComputerName = $ComputerName.ToLowerInvariant()
+
+    # Instance-local staging root, e.g. C:/LocalDBs. Per-instance staging is
+    # <LocalDBsRoot>/<INSTANCE>/Backup/<Database>/ and SQL writes only beneath it.
+    $localDBsRootKey = $global:ConfigRootKeys['LocalDBsRootPathConfigRootKey']
+    $localDBsRootDefault = if ($localDBsRootKey -and $effectiveSettings -and $effectiveSettings.ContainsKey($localDBsRootKey)) { $effectiveSettings[$localDBsRootKey] } else { $null }
+    $LocalDBsRoot = Get-PVal -ParameterName 'LocalDBsRoot' -originalPSBoundParameters $PSBoundParameters -DefaultValue $localDBsRootDefault -AllowMissing
+    if ([string]::IsNullOrWhiteSpace($LocalDBsRoot)) {
+        $msg = "LocalDBsRoot could not be resolved. Set the '$($global:ConfigRootKeys['LocalDBsRootPathConfigRootKey'])' host setting (ATAP.IAC Windows/HostSettings.ps1) or pass -LocalDBsRoot explicitly. Refusing to guess a filesystem root for database backups."
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
+        throw $msg
     }
 
-    # Check and populate TemporaryDirectory parameter
+    # Off-host publication root, e.g. C:/Dropbox/Backups. SQL never writes here directly;
+    # only the verified post-success publisher moves completed artifacts into it.
+    $publicationRootKey = $global:ConfigRootKeys['DatabaseBackupPublicationRootConfigRootKey']
+    $publicationRootDefault = if ($publicationRootKey -and $effectiveSettings -and $effectiveSettings.ContainsKey($publicationRootKey)) { $effectiveSettings[$publicationRootKey] } else { $null }
+    $DatabaseBackupPublicationRoot = Get-PVal -ParameterName 'DatabaseBackupPublicationRoot' -originalPSBoundParameters $PSBoundParameters -DefaultValue $publicationRootDefault -AllowMissing
+    if ([string]::IsNullOrWhiteSpace($DatabaseBackupPublicationRoot)) {
+        $msg = "DatabaseBackupPublicationRoot could not be resolved. Set the '$($global:ConfigRootKeys['DatabaseBackupPublicationRootConfigRootKey'])' host setting (ATAP.IAC Windows/HostSettings.ps1) or pass -DatabaseBackupPublicationRoot explicitly. Refusing to guess a filesystem root for database backups."
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
+        throw $msg
+    }
+
+    # BackupRoot is the per-host publication subtree unless the caller overrides it.
+    $BackupRoot = Get-PVal -ParameterName 'BackupRoot' -originalPSBoundParameters $PSBoundParameters -DefaultValue (Join-Path $DatabaseBackupPublicationRoot $ComputerName) -AllowMissing
+    if ([string]::IsNullOrWhiteSpace($BackupRoot)) {
+        $BackupRoot = Join-Path $DatabaseBackupPublicationRoot $ComputerName
+    }
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Resolved LocalDBsRoot=[$LocalDBsRoot] DatabaseBackupPublicationRoot=[$DatabaseBackupPublicationRoot] ComputerName=[$ComputerName] BackupRoot=[$BackupRoot]."
+
+    # SQL Server writes only beneath the instance-local policy root. The per-database
+    # directory is appended later, producing .../PRODUCTION/Backup/ATAPUtilities.
+    $instanceBackupRoot = Join-Path (Join-Path $LocalDBsRoot $Environment.ToUpperInvariant()) 'Backup'
+    $TemporaryDirectory = Get-PVal -ParameterName 'TemporaryDirectory' -originalPSBoundParameters $PSBoundParameters -DefaultValue $instanceBackupRoot -AllowMissing
     if ([string]::IsNullOrWhiteSpace($TemporaryDirectory)) {
-        $TemporaryDirectory = Join-Path $global:Settings[$global:ConfigRootKeys['FastTempBasePathConfigRootKey']] 'CobianReflectorBackup'
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "TemporaryDirectory not specified — defaulting to $TemporaryDirectory."
+        $msg = 'TemporaryDirectory could not be resolved from the instance-local backup root.'
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
+        throw $msg
     }
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Backup starting: [$BackupType] of [$DatabaseName] on [$SqlInstance] → [$BackupRoot] (via temp: [$TemporaryDirectory])."
@@ -229,8 +337,25 @@ begin {
         }
     }
 
+    # The split above is authoritative, so the resolver must be handed a COPY of the bound
+    # parameters with the raw -SqlInstance removed. Resolve-DatabaseSqlConnection declares
+    # [Alias('SqlInstance')] on its -InstanceName parameter and, when -InstanceName arrives
+    # empty, re-reads the caller's original bound value through that alias. That silently
+    # undoes the split and composes DataSource as "<host>\<original>", e.g.
+    #   -SqlInstance 'localhost,50020'   -> 'localhost,50020\localhost,50020'
+    #   -SqlInstance 'localhost\PRODUCTION' -> 'localhost\localhost\PRODUCTION'
+    # The first still opens because SqlClient honours the ,port and ignores the bogus
+    # instance; the second does not resolve at all. Verified 2026-09-10 (Task 15.192.f).
+    $resolverBoundParameters = @{}
+    foreach ($key in $PSBoundParameters.Keys) { $resolverBoundParameters[$key] = $PSBoundParameters[$key] }
+    foreach ($stale in @('SqlInstance', 'InstanceName', 'DatabaseHost')) {
+        if ($resolverBoundParameters.ContainsKey($stale)) { [void]$resolverBoundParameters.Remove($stale) }
+    }
+    if (-not [string]::IsNullOrWhiteSpace($SqlInstance)) { $resolverBoundParameters['InstanceName'] = $SqlInstance }
+    if (-not [string]::IsNullOrWhiteSpace($DatabaseHost)) { $resolverBoundParameters['DatabaseHost'] = $DatabaseHost }
+
     $resolution = Resolve-DatabaseSqlConnection `
-        -OriginalPSBoundParameters $PSBoundParameters `
+        -OriginalPSBoundParameters $resolverBoundParameters `
         -SqlConnection $SqlConnection `
         -DBConnectionStringSecretName $DBConnectionStringSecretName `
         -DatabaseHost $DatabaseHost `
@@ -245,6 +370,7 @@ begin {
 
     $resolvedSqlConnection = $resolution.Connection
     $resolvedConnectionOwnedByFunction = -not [bool]$resolution.IsCallerOwned
+    $backupDbaConnection = $null
 
     $resolvedConnectionStringBuilder = [Microsoft.Data.SqlClient.SqlConnectionStringBuilder]::new($resolvedSqlConnection.ConnectionString)
     $SqlInstance = $resolvedConnectionStringBuilder.DataSource
@@ -253,6 +379,17 @@ begin {
             $resolvedConnectionStringBuilder.InitialCatalog
         } else {
             $resolvedSqlConnection.Database
+        }
+    }
+
+    if ($ProtectAndPublish.IsPresent) {
+        if ($DatabaseName -ne 'ATAPUtilities' -or $Environment -ne 'Production' -or $SqlInstance -ne 'localhost,50020') {
+            throw 'ProtectAndPublish is restricted to database ATAPUtilities on the Production endpoint localhost,50020.'
+        }
+        foreach ($helperName in @('Protect-SqlServerBackupArtifact', 'Restore-SqlServerBackupArtifact', 'Publish-SqlServerBackupArtifact')) {
+            if (-not (Get-Command -Name $helperName -CommandType Function -ErrorAction SilentlyContinue)) {
+                . (Join-Path $PSScriptRoot "$helperName.ps1")
+            }
         }
     }
 
@@ -276,12 +413,6 @@ begin {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "7-Zip found: $sevenZipExe"
     }
 
-    # SCAFFOLD: dbatools-config (Explainer 0022, section 4B / inconsistency C-04)
-    # ATAP.Utilities database scripts set these before every dbaTools call; this script does not.
-    # Add:
-    #   Set-DbatoolsConfig -FullName 'sql.connection.trustcert' -Value $true
-    #   Set-DbatoolsConfig -FullName 'sql.connection.encrypt'   -Value $false
-    # or make them parameters so callers can control TLS policy per environment.
 
     # Build per-database backup subdirectory (final destination)
     $backupDir = Join-Path $BackupRoot $DatabaseName
@@ -302,7 +433,7 @@ begin {
     $backupFileName = "${DatabaseName}_${typeCode}_${timestamp}.bak"
     $tempFilePath = Join-Path $tempDir $backupFileName
     # Final file in the backup directory: .bak.7z when using 7-Zip, .bak otherwise
-    $finalFileName = if ($SevenZipCompress.IsPresent) { "$backupFileName.7z" } else { $backupFileName }
+    $finalFileName = if ($ProtectAndPublish.IsPresent) { "$backupFileName.gz.atapenc" } elseif ($SevenZipCompress.IsPresent) { "$backupFileName.7z" } else { $backupFileName }
     $backupFilePath = Join-Path $backupDir $finalFileName
 
     $startTime = Get-Date
@@ -312,14 +443,28 @@ process {
     try {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Initiating $BackupType backup → $tempFilePath (staging), then → $backupFilePath"
 
+        $backupSqlInstance = $SqlInstance
+        if ($TrustServerCertificate.IsPresent) {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message 'Using the approved encrypted-loopback SQL certificate trust override for localhost,50020.'
+            $backupDbaConnection = Connect-DbaInstance `
+                -SqlInstance $SqlInstance `
+                -Database $DatabaseName `
+                -EncryptConnection `
+                -TrustServerCertificate `
+                -AllowTrustServerCertificate `
+                -DisableException:$false
+            $backupSqlInstance = $backupDbaConnection
+        }
+
         $backupParams = @{
-            SqlInstance     = $SqlInstance
+            SqlInstance     = $backupSqlInstance
             Database        = $DatabaseName
             Path            = $tempDir
             FilePath        = $backupFileName
             Type            = $BackupType
             CompressBackup  = $CompressBackup.IsPresent
             Verify          = $true
+            Checksum        = $true
             EnableException = $true
         }
 
@@ -340,7 +485,36 @@ process {
 
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Backup written to temp in $($duration.TotalSeconds.ToString('F1'))s — $tempFilePath"
 
-            if ($SevenZipCompress.IsPresent) {
+            if ($ProtectAndPublish.IsPresent) {
+                $protectedPath = "$tempFilePath.gz.atapenc"
+                $restoreVerificationPath = "$tempFilePath.roundtrip"
+                $protected = Protect-SqlServerBackupArtifact -InputPath $tempFilePath -OutputPath $protectedPath -EncryptionSecretName $EncryptionSecretName -Confirm:$false
+                try {
+                    $restored = Restore-SqlServerBackupArtifact -InputPath $protectedPath -OutputPath $restoreVerificationPath -EncryptionSecretName $EncryptionSecretName -Confirm:$false
+                    $originalHash = (Get-FileHash -LiteralPath $tempFilePath -Algorithm SHA256).Hash.ToUpperInvariant()
+                    if (-not $restored.AuthenticationVerified -or $restored.OutputSha256 -ne $originalHash) {
+                        throw 'Protected backup round-trip verification failed.'
+                    }
+                }
+                finally {
+                    if (Test-Path -LiteralPath $restoreVerificationPath -PathType Leaf) {
+                        [System.IO.File]::Delete($restoreVerificationPath)
+                    }
+                }
+                $publicationInput = [pscustomobject]@{
+                    StagedArtifactPath = $protected.OutputPath
+                    DatabaseName = 'ATAPUtilities'
+                    ExpectedLengthBytes = [long]$protected.OutputLengthBytes
+                    ExpectedSha256 = $protected.OutputSha256
+                    HeaderVerified = $true
+                    ChecksumVerified = $true
+                    CompressionVerified = [bool]$protected.CompressionVerified
+                    EncryptionVerified = [bool]$protected.EncryptionVerified
+                }
+                $publication = Publish-SqlServerBackupArtifact -InputObject $publicationInput -Settings $Settings -ComputerName $ComputerName -DatabaseBackupPublicationRoot $DatabaseBackupPublicationRoot -StagingRoot $TemporaryDirectory -AllowNonRedirectingReparsePoints -Confirm:$false
+                $backupFilePath = $publication.DestinationPath
+                [System.IO.File]::Delete($tempFilePath)
+            } elseif ($SevenZipCompress.IsPresent) {
                 # Compress to .bak.7z in the temp directory, then discard the raw .bak
                 $tempZipPath = "$tempFilePath.7z"
                 Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Compressing with 7-Zip: $tempFilePath → $tempZipPath"
@@ -397,6 +571,9 @@ process {
         }
         throw
     } finally {
+        if ($null -ne $backupDbaConnection) {
+            $backupDbaConnection.ConnectionContext.Disconnect()
+        }
         if ($resolvedConnectionOwnedByFunction -and $null -ne $resolvedSqlConnection) {
             $resolvedSqlConnection.Dispose()
         }

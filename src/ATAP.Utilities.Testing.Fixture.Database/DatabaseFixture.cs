@@ -1,6 +1,5 @@
 using System;
 using System.Data;
-using TestingExtensions = ATAP.Utilities.Testing.Extensions;
 
 namespace ATAP.Utilities.Testing {
 

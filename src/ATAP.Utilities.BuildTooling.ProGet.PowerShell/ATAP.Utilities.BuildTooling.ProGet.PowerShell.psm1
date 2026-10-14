@@ -46,6 +46,7 @@ Export-ModuleMember -Function @(
   'Resolve-PromotionTierFromFeedName'
   'Set-FloatingPackagePins'
   'Set-PSModuleFileSignature'
+  'Sync-ProGetPowerShellModules'
   'Test-PSModulePackageSignature'
   'Test-ProGetFeedSet'
   'Test-PromotionWithinCeiling'

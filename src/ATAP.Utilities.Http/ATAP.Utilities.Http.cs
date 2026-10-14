@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using ServiceStack.Text;
 using ServiceStack;
 using ATAP.Utilities.ConcurrentObservableCollections;
+using ATAP.Utilities.ETW;
 
 namespace ATAP.Utilities.Http
 {
@@ -229,6 +230,7 @@ namespace ATAP.Utilities.Http
       this.aPIKey = aPIKey;
       return this;
     }
+    [ETWLog]
     public static GatewayBuilder CreateNew()
     {
       return new GatewayBuilder();
@@ -265,14 +267,14 @@ namespace ATAP.Utilities.Http
     // ToDo replace DefaultAPIKEy auth with a more robust and extendable solution
     public string DefaultAPIKey { get; set; }
 
-    public string GetJsonFromUrl(IGatewayEntry entry, Action<HttpWebRequest> requestFilter = null,
-Action<HttpWebResponse> responseFilter = null)
+    public string GetJsonFromUrl(IGatewayEntry entry, Action<HttpRequestMessage> requestFilter = null,
+Action<HttpResponseMessage> responseFilter = null)
     {
       string r = new Uri(BaseUri, entry.RUri).AbsolutePath.GetJsonFromUrl(requestFilter, responseFilter);
       return r;
     }
-    public Task<string> PostJsonToUrlAsync(IGatewayEntry entry, string json, Action<HttpWebRequest> requestFilter = null,
-Action<HttpWebResponse> responseFilter = null)
+    public Task<string> PostJsonToUrlAsync(IGatewayEntry entry, string json, Action<HttpRequestMessage> requestFilter = null,
+Action<HttpResponseMessage> responseFilter = null)
     {
       return new Uri(BaseUri, entry.RUri).AbsolutePath.PostJsonToUrlAsync(json, requestFilter, responseFilter);
     }

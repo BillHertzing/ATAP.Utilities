@@ -175,6 +175,21 @@ period does not count. The compare wrapper passes the expected cadence and
 `1.5` stale multiplier into `Compare-ParityAudits`, so stale snapshots are reported as
 their own drift-report line.
 
+Task 15.167 adds a separate shared .NET tool contract for
+C:\ProgramData\dotnet\tools. The collector does not reuse NuGetToolPath, because
+that field remains an identity-scoped user inventory with a deliberately narrow ACL
+grant boundary. The shared policy pins package ID, launcher, version, logical
+consumers, exact actual identities, evidence freshness, and the deployment journal
+plus peer acknowledgement records that comparison must find.
+
+SvcParityAudit is checked in the scheduled process. Developer and BuildMaster
+evidence is produced by Invoke-SharedDotNetToolConsumerProbe in a process already
+owned by that identity. Evidence schema version 1 records host, logical identity,
+actual identity, capture time, resolved launcher, exact version, and version/help
+exit codes. A logical label is never treated as impersonation. Absent, unreadable,
+stale, wrong-host, wrong-identity, wrong-path, user-only, inaccessible, and
+version-skewed states remain actionable audit or comparison findings.
+
 The deployed wrappers maintain failure state and implement the D-6 Windows Application-log
 contract for source `ATAP.SystemParityMonitor`: event `12380` or `12381` on the second
 consecutive audit or

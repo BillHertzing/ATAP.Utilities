@@ -110,7 +110,7 @@ namespace ATAP.Utilities.GenerateProgram {
         "ServiceStack ORMLite (database) utilities", new GBody(new List<string>() {
           "<PackageReference Include=\"ServiceStack\" />",
           "<PackageReference Include=\"ServiceStack.OrmLite\" />",
-          "<PackageReference Include=\"ServiceStack.OrmLite.SqlServer\" />"
+          "<PackageReference Include=\"ServiceStack.OrmLite.SqlServer.Data\" />"
         }));
     }
 

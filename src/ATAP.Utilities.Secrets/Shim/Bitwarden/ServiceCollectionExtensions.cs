@@ -4,6 +4,7 @@ using System;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+[System.Obsolete(BitwardenPasswordManagerCompatibility.Message, DiagnosticId = BitwardenPasswordManagerCompatibility.DiagnosticId, UrlFormat = BitwardenPasswordManagerCompatibility.UrlFormat)]
 public static class ServiceCollectionExtensions
 {
   public static IServiceCollection AddBitwardenSecrets(

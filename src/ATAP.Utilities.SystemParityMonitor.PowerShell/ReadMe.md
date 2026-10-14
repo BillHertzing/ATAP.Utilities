@@ -135,6 +135,26 @@ Set-ParityPrimaryRole `
   module root. A package missing either folder is not deployable for parity monitoring.
   Version `0.1.2` replaces the temporary manual `scripts\` copy used for 0.1.1.
 
+Task 15.167 source keeps administrator-managed .NET tools in a separate
+SharedDotNetTools.v1.json policy. It inspects .store metadata without
+dotnet tool list, executes the exact shared launcher under SvcParityAudit,
+and consumes fresh schema-v1 evidence for developer and BuildMaster identities.
+Logical identities make peer rows comparable; the evidence still records and
+validates the exact Windows identity. Missing, inaccessible, wrong-version,
+stale, wrong-identity, or user-scoped-only results begin with AuditError=.
+
+Invoke-SharedDotNetToolConsumerProbe creates consumer evidence only when the
+current Windows identity exactly matches policy. It does not impersonate,
+retrieve secrets, or accept an administrator result for a missing consumer.
+Peer comparison also validates the exact Task 15.167 journal entry IDs and
+requires the configured acknowledgement status.
+
+This is source behavior, not deployed nightly coverage. The SystemParityMonitor
+and protected dispatcher packages must pass normal release gates, the policy
+and consumer evidence must be materialized on both hosts, acknowledgements must
+reach Verified, and a fresh scheduled comparison must pass before Task 15.100.i
+or Task 15.167.c can close.
+
 ## Coverage boundary
 
 The audit covers the surfaces explicitly emitted by `Invoke-ParityAudit`: operating

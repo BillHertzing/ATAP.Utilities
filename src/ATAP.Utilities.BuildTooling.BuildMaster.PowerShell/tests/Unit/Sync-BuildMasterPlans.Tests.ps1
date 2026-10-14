@@ -139,4 +139,89 @@ Describe 'Sync-BuildMasterPlans [public]' {
 
     { Sync-BuildMasterPlans -Path $emptyDir -BuildMasterAdminApiKeySecretName 'test-key' -BuildMasterBaseUrl 'http://buildmaster.test' } | Should -Throw -ExpectedMessage '*No .otter files found*'
   }
+
+  Context 'pipeline raft items (Task 15.196.r / SC-0444)' {
+    BeforeEach {
+      $pipeline = @{
+        Name        = 'Sample-5Stage'
+        Description = 'test'
+        Stages      = @(@{ Name = 'Experimental'; Targets = @(@{ ScriptId = 'global::Build.otter'; ServerNames = @('localhost') }) })
+      } | ConvertTo-Json -Depth 10
+      Set-Content -LiteralPath (Join-Path $script:tempDir 'Sample-5Stage.pipeline.json') -Value $pipeline -Encoding UTF8
+    }
+
+    It 'ignores pipeline files unless IncludePipelines is set' {
+      Sync-BuildMasterPlans -Path $script:tempDir -BuildMasterAdminApiKeySecretName 'test-key' -BuildMasterBaseUrl 'http://buildmaster.test' -SkipExistingLookup | Out-Null
+
+      $uploadCalls = @($script:restCalls | Where-Object { $_.Uri -like '*/Rafts_CreateOrUpdateRaftItem' })
+      $uploadCalls.Body.RaftItem_Name | Should -Not -Contain 'Sample-5Stage'
+      $uploadCalls.Body.RaftItemType_Code | Should -Not -Contain 8
+    }
+
+    It 'uploads a pipeline as a type-8 raft item named without extension' {
+      $result = Sync-BuildMasterPlans -Path $script:tempDir -IncludePipelines -BuildMasterAdminApiKeySecretName 'test-key' -BuildMasterBaseUrl 'http://buildmaster.test' -SkipExistingLookup
+
+      $pipelineCall = @($script:restCalls | Where-Object { $_.Uri -like '*/Rafts_CreateOrUpdateRaftItem' -and $_.Body.RaftItem_Name -eq 'Sample-5Stage' })
+      $pipelineCall.Count | Should -Be 1
+      $pipelineCall[0].Body.RaftItemType_Code | Should -Be 8
+      $pipelineCall[0].Body.ContainsKey('Application_Id') | Should -BeFalse
+      ([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($pipelineCall[0].Body.Content_Bytes)) | ConvertFrom-Json).Name | Should -Be 'Sample-5Stage'
+      # The .otter beside it still goes up as type 6.
+      $planCall = @($script:restCalls | Where-Object { $_.Uri -like '*/Rafts_CreateOrUpdateRaftItem' -and $_.Body.RaftItem_Name -eq 'Build.otter' })
+      $planCall[0].Body.RaftItemType_Code | Should -Be 6
+      ($result.PlansSynced | Where-Object Name -eq 'Sample-5Stage').RaftItemTypeCode | Should -Be 8
+      $result.Errors.Count | Should -Be 0
+    }
+
+    It 'looks up the existing pipeline id with the pipeline type code' {
+      $script:invokeRestMethodHandler = {
+        param($Uri, $Method, $Body)
+        [void]$script:restCalls.Add([PSCustomObject]@{ Uri = $Uri; Method = $Method; Body = $Body })
+        if ($Uri -like '*/Rafts_GetRaftItems' -and $Body.RaftItemType_Code -eq 8) {
+          return @([PSCustomObject]@{ RaftItem_Id = 15; RaftItem_Name = 'Sample-5Stage' })
+        }
+        if ($Uri -like '*/Rafts_GetRaftItems') { return @() }
+        return @{}
+      }
+
+      Sync-BuildMasterPlans -Path (Join-Path $script:tempDir 'Sample-5Stage.pipeline.json') -IncludePipelines -BuildMasterAdminApiKeySecretName 'test-key' -BuildMasterBaseUrl 'http://buildmaster.test' | Out-Null
+
+      $lookup = @($script:restCalls | Where-Object { $_.Uri -like '*/Rafts_GetRaftItems' })
+      $lookup[0].Body.RaftItemType_Code | Should -Be 8
+      $uploadCall = @($script:restCalls | Where-Object { $_.Uri -like '*/Rafts_CreateOrUpdateRaftItem' })[0]
+      $uploadCall.Body.RaftItem_Id | Should -Be 15
+    }
+
+    It 'fails closed when the file name and the declared Name disagree' {
+      Set-Content -LiteralPath (Join-Path $script:tempDir 'Other-5Stage.pipeline.json') -Value (@{ Name = 'Sample-5Stage'; Stages = @(@{ Name = 'x' }) } | ConvertTo-Json -Depth 5) -Encoding UTF8
+
+      $result = Sync-BuildMasterPlans -Path $script:tempDir -IncludePipelines -BuildMasterAdminApiKeySecretName 'test-key' -BuildMasterBaseUrl 'http://buildmaster.test' -SkipExistingLookup
+
+      $result.Errors | Should -Match "declares Name 'Sample-5Stage'"
+      @($script:restCalls | Where-Object { $_.Uri -like '*/Rafts_CreateOrUpdateRaftItem' -and $_.Body.RaftItem_Name -eq 'Other-5Stage' }).Count | Should -Be 0
+    }
+
+    It 'fails closed on invalid JSON and on a pipeline with no stages' {
+      Set-Content -LiteralPath (Join-Path $script:tempDir 'Broken-5Stage.pipeline.json') -Value '{ not json' -Encoding UTF8
+      Set-Content -LiteralPath (Join-Path $script:tempDir 'Empty-5Stage.pipeline.json') -Value (@{ Name = 'Empty-5Stage'; Stages = @() } | ConvertTo-Json -Depth 5) -Encoding UTF8
+
+      $result = Sync-BuildMasterPlans -Path $script:tempDir -IncludePipelines -BuildMasterAdminApiKeySecretName 'test-key' -BuildMasterBaseUrl 'http://buildmaster.test' -SkipExistingLookup
+
+      ($result.Errors -join "`n") | Should -Match 'not valid JSON'
+      ($result.Errors -join "`n") | Should -Match 'declares no Stages'
+      @($script:restCalls | Where-Object { $_.Uri -like '*/Rafts_CreateOrUpdateRaftItem' }).Body.RaftItem_Name | Should -Not -Contain 'Broken-5Stage'
+      @($script:restCalls | Where-Object { $_.Uri -like '*/Rafts_CreateOrUpdateRaftItem' }).Body.RaftItem_Name | Should -Not -Contain 'Empty-5Stage'
+    }
+
+    It 'refuses an application-scoped pipeline upload' {
+      $result = Sync-BuildMasterPlans -Path (Join-Path $script:tempDir 'Sample-5Stage.pipeline.json') -IncludePipelines -ApplicationId 42 -BuildMasterAdminApiKeySecretName 'test-key' -BuildMasterBaseUrl 'http://buildmaster.test' -SkipExistingLookup
+
+      $result.Errors | Should -Match 'global by decision'
+      @($script:restCalls | Where-Object { $_.Uri -like '*/Rafts_CreateOrUpdateRaftItem' }).Count | Should -Be 0
+    }
+
+    It 'accepts a single pipeline file path only with IncludePipelines' {
+      { Sync-BuildMasterPlans -Path (Join-Path $script:tempDir 'Sample-5Stage.pipeline.json') -BuildMasterAdminApiKeySecretName 'test-key' -BuildMasterBaseUrl 'http://buildmaster.test' -SkipExistingLookup } | Should -Throw -ExpectedMessage '*is not an .otter file*'
+    }
+  }
 }

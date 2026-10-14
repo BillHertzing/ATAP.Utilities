@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 
+[System.Obsolete(BitwardenPasswordManagerCompatibility.Message, DiagnosticId = BitwardenPasswordManagerCompatibility.DiagnosticId, UrlFormat = BitwardenPasswordManagerCompatibility.UrlFormat)]
 public static class ConfigurationBuilderExtensions
 {
   public static IConfigurationBuilder AddBitwardenSecrets(

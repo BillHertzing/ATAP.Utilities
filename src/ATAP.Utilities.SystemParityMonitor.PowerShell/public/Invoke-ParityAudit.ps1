@@ -26,6 +26,12 @@ tool inventories. Each record must contain Identity and may contain PipPath,
 NpmPrefix, and NuGetToolPath. The audit never derives these paths from the
 identity running the audit.
 
+.PARAMETER SharedDotNetToolPolicy
+Optional schema-v1 policy for administrator-managed shared .NET tools and
+identity-explicit consumer evidence. The collector keeps this separate from
+user-scoped PackageManagerProfiles and never treats a logical identity label as
+proof that the audit ran under that identity.
+
 .PARAMETER ExpectedSurfaceMinimumCounts
 Minimum required row count by category. The default requires OS, PowerShell,
 three service rows, SQL, PackageManager, Shares, and ParityState. Missing or thin coverage is written into the
@@ -49,6 +55,8 @@ Invoke-ParityAudit -StatePath C:\ProgramData\ATAP\ParityState -HostName utat022
     [string] $OutputPath,
 
     [object[]] $PackageManagerProfiles = @(),
+
+    [object] $SharedDotNetToolPolicy,
 
     [hashtable] $ExpectedSurfaceMinimumCounts = @{
       OS = 1
@@ -114,6 +122,12 @@ Invoke-ParityAudit -StatePath C:\ProgramData\ATAP\ParityState -HostName utat022
 
       foreach ($packageSurface in @(Get-PackageManagerParitySurfaces -HostName $HostName -PackageManagerProfiles $PackageManagerProfiles)) {
         $surfaces.Add($packageSurface)
+      }
+
+      if ($null -ne $SharedDotNetToolPolicy) {
+        foreach ($sharedToolSurface in @(Get-SharedDotNetToolParitySurfaces -HostName $HostName -StatePath $StatePath -Policy $SharedDotNetToolPolicy -PackageManagerProfiles $PackageManagerProfiles)) {
+          $surfaces.Add($sharedToolSurface)
+        }
       }
 
       $shareSource = if (Get-Command -Name 'Get-SmbShare' -ErrorAction SilentlyContinue) {

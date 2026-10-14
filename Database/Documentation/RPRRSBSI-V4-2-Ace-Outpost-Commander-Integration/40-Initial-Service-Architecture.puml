@@ -1,0 +1,41 @@
+@startuml
+title V4-2 AceOutpost and AceCommander Initial Service Architecture
+skinparam defaultFontName Segoe UI
+skinparam shadowing false
+left to right direction
+
+package "AceOutpost" {
+  component Scheduler
+  component "ContentSummary ingestion plugin" as Plugin
+  component "Host repositories" as Repos
+  database "Local projection/outbox" as Local
+  component "AISupervisor proxy" as Proxy
+  component "Claude adapter" as Claude
+  component "Codex adapter" as Codex
+  component "Sync client" as Sync
+}
+package "Ace central" {
+  component "Versioned APIs" as Api
+  database "Ace schema" as Ace
+  component "Authorized query services" as Query
+}
+package "AceCommander" {
+  component "Raw summary view" as Raw
+  component "Tag-set query view" as Tags
+  component "Token timeline" as Tokens
+}
+
+Scheduler --> Plugin
+Plugin --> Repos
+Repos --> Local
+Claude --> Proxy
+Codex --> Proxy
+Proxy --> Repos
+Local --> Sync
+Sync --> Api
+Api --> Ace
+Ace --> Query
+Query --> Raw
+Query --> Tags
+Query --> Tokens
+@enduml

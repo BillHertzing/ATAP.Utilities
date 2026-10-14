@@ -4,6 +4,8 @@ using ATAP.Utilities.Images.Enumerations;
 using FluentAssertions;
 using Xunit.Abstractions;
 using ATAP.Utilities.Testing;
+using System.Text.Json;
+using System.Collections.Generic;
 
 namespace ATAP.Utilities.Images.Enumerations.Tests
 {
@@ -16,9 +18,11 @@ namespace ATAP.Utilities.Images.Enumerations.Tests
     [MemberData(nameof(DefaultEnumerationsTestDataGenerator.DefaultEnumerationsTestData), MemberType = typeof(DefaultEnumerationsTestDataGenerator))]
     public void DefaultEnumerationSerializeToJSON(DefaultEnumerationsTestData inDefaultEnumerationsTestData)
     {
-      string str = DiFixture.Serializer.Serialize(DefaultEnumerations.Production);
-      // TestOutput.WriteLine(str);
+      string str = JsonSerializer.Serialize(DefaultEnumerations.Production);
+
       str.Should().Be(inDefaultEnumerationsTestData.SerializedDefaultEnumerations);
+
+      JsonSerializer.Deserialize<Dictionary<string, int>>(str).Should().BeEquivalentTo(DefaultEnumerations.Production);
     }
 
     // ToDo: Add more tests for Enumerations serialization

@@ -14,5 +14,7 @@ Export-ModuleMember -Function @(
   'Get-PeerPendingChanges',
   'Confirm-ParityChangeApplied',
   'Invoke-ParityAudit',
-  'Compare-ParityAudits'
+  'Invoke-SharedDotNetToolConsumerProbe',
+  'Compare-ParityAudits',
+  'Update-HostPackageFromDriftReport'
 )

@@ -1,21 +1,54 @@
 #Requires -Version 7.0
 
 BeforeAll {
+  # Task 15.208: isolate login maintenance from the host Task Scheduler.
+  function Set-SprintLoginScheduledTaskTarget {
+    [CmdletBinding(SupportsShouldProcess)]
+    param([string]$Boundary, [string]$ATAPUtilitiesRoot, [string]$GitRoot,
+      [string]$LoginScriptPath, [string[]]$WorktreePaths, [switch]$CheckOnly)
+    [PSCustomObject]@{ Ok = $true; Boundary = $Boundary; SelectionMode = 'SprintDefault';
+      TargetPath = $LoginScriptPath; TargetHash = 'fixture'; Planned = [bool]$WhatIfPreference;
+      Changed = $false; Tasks = @(); Rollback = @{ Attempted = $false; Succeeded = $true; Failures = @() }; Failures = @() }
+  }
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
   }
 
   $moduleRoot = Join-Path $PSScriptRoot '..\..'
   . (Join-Path $moduleRoot 'public\Test-SprintEndBoundaryState.ps1')
+  $script:physicalEnumerationCommand = Get-Command Get-ChildItem -CommandType Cmdlet
+  $script:physicalSearchCommand = Get-Command Select-String -CommandType Cmdlet
+  function Install-LogicalAuditProjection {
+    # Physical fixtures stay under SC-0033 evidence. Project their scan identities
+    # outside that ancestor so these two cases actually exercise live descendants.
+    # Production classification remains unchanged; content reads use the real files.
+    $script:logicalProjectionRoot = 'C:\LifecycleFixture'
+    $script:logicalToPhysical = @{}
+    Mock Get-ChildItem -ParameterFilter { $File -and $Recurse } {
+      foreach ($physicalFile in & $script:physicalEnumerationCommand -LiteralPath $LiteralPath -Filter $Filter -File -Recurse) {
+        $logicalPath = Join-Path $script:logicalProjectionRoot ([IO.Path]::GetRelativePath($TestDrive, $physicalFile.FullName))
+        $script:logicalToPhysical[$logicalPath] = $physicalFile.FullName
+        [PSCustomObject]@{ FullName = $logicalPath }
+      }
+    }
+    Mock Select-String -ParameterFilter { $script:logicalToPhysical.ContainsKey([string]$LiteralPath) } {
+      & $script:physicalSearchCommand -LiteralPath $script:logicalToPhysical[[string]$LiteralPath] -Pattern $Pattern -AllMatches
+    }
+  }
 }
 
 Describe 'Test-SprintEndBoundaryState stale-reference scope split' -Tag 'Unit' {
+  BeforeEach {
+    Mock Set-SprintLoginScheduledTaskTarget { [PSCustomObject]@{ Ok = $true; Planned = $false; Changed = $false; Tasks = @(); Failures = @() } }
+  }
   Context 'live configuration vs historical evidence' {
     It 'fails the gate when a stale sprint path appears in a live adapter/settings/workspace fixture' {
       $gitRoot = Join-Path $TestDrive 'live-only'
       New-Item -ItemType Directory -Path $gitRoot -Force | Out-Null
       Set-Content -LiteralPath (Join-Path $gitRoot 'Overview.code-workspace') `
         -Value '{"folders":[{"path":"SharedVSCode-wt-48-Sprint-0010-work-items"}]}'
+
+      Install-LogicalAuditProjection
 
       $result = Test-SprintEndBoundaryState `
         -GitRoot $gitRoot `
@@ -110,6 +143,7 @@ Describe 'Test-SprintEndBoundaryState stale-reference scope split' -Tag 'Unit' {
       Set-Content -LiteralPath (Join-Path $historyDir 'Overview.Sprint0010.code-workspace') `
         -Value '{"folders":[{"path":"SharedVSCode-wt-48-Sprint-0010-work-items"}]}'
 
+      Install-LogicalAuditProjection
       $result = Test-SprintEndBoundaryState `
         -GitRoot $gitRoot `
         -SearchRoots @($gitRoot) `
@@ -121,7 +155,7 @@ Describe 'Test-SprintEndBoundaryState stale-reference scope split' -Tag 'Unit' {
       $result.LiveStaleReferences.Count | Should -Be 1
       $result.HistoricalStaleReferences.Count | Should -Be 1
       $result.StaleReferences.Count | Should -Be 2
-      $result.LiveStaleReferences[0].Path | Should -Be (Join-Path $gitRoot 'Overview.code-workspace')
+      $result.LiveStaleReferences[0].Path | Should -Be (Join-Path $script:logicalProjectionRoot 'mixed/Overview.code-workspace')
     }
 
     It 'does not fail the gate when no stale references exist anywhere' {

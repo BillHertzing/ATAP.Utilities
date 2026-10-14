@@ -1,0 +1,161 @@
+@startuml
+title RPRRSBSI-V4 Tags Expert System — ruled Tag slice through 2026-08-30
+skinparam linetype ortho
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 10
+skinparam entity {
+  BackgroundColor #F0F4FF
+  BorderColor #3366CC
+}
+
+package "ATAPUtilities (C-08)" {
+  entity TagNamespace {
+    * TagNamespaceId : durable identity <<PK>>
+    --
+    NamespaceCode : immutable <<UQ>>
+  }
+
+  entity TagNamespaceSteward {
+    * TagNamespaceStewardId : identity <<PK>>
+    --
+    TagNamespaceId : identity <<FK>>
+    PrincipalId : required opaque actor
+    SourceReference : provenance
+    OccurredAtUtc : source event instant
+    RecordedAtUtc : recording instant
+    StewardHistory : retained
+  }
+
+  entity Tag {
+    * TagId : durable identity <<PK>>
+    --
+    PhiloteId : identity <<FK>>
+    TagNamespaceId : identity <<FK>>
+    TagCode : immutable canonical code
+  }
+
+  entity PhiloteValidityPeriod {
+    * PhiloteValidityPeriodId : identity <<PK>>
+    --
+    PhiloteId : identity <<FK>>
+    ValidFromUtc : instant
+    ValidToUtc : instant?
+  }
+
+  entity TagState {
+    * TagStateId : state identity <<PK>>
+    --
+    TagId : durable identity <<FK>>
+    ValidFromUtc : instant
+    ValidToUtc : instant?
+    Label : temporal payload
+    Description : temporal payload
+    SuccessorTagId : required unless erroneous <<FK>>
+    WithdrawalReason : required when erroneous
+  }
+
+  entity TagAliasType {
+    * TagAliasTypeId : identity <<PK>>
+    --
+    AliasTypeCode : controlled vocabulary <<UQ>>
+  }
+
+  entity TagAlias {
+    * TagAliasId : identity <<PK>>
+    --
+    TagId : durable identity <<FK>>
+    TagAliasTypeId : identity <<FK>>
+    AliasCode : non-canonical code
+    ValidFromUtc : instant
+    ValidToUtc : instant?
+  }
+
+  entity TagRelationType {
+    * TagRelationTypeId : identity <<PK>>
+    --
+    RelationTypeCode : controlled code <<UQ>>
+  }
+
+  entity TagRelation {
+    * TagRelationId : identity <<PK>>
+    --
+    EndpointATagId : durable identity <<FK>>
+    EndpointBTagId : durable identity <<FK>>
+    TagRelationTypeId : identity <<FK>>
+  }
+
+  entity TagAssignment {
+    * TagAssignmentId : identity <<PK>>
+    --
+    TagId : durable identity <<FK>>
+    EntityType : pending C-21
+    EntityId : typed endpoint
+  }
+
+  entity "C-14 namespace/code collision trigger" as AliasTrigger <<trigger>>
+  entity "C-15 transactional retraction procedure" as RetractPath <<write path>>
+  entity "C-15 sanctioned as-of resolver" as ResolvePath <<read path>>
+}
+
+TagNamespace ||--o{ TagNamespaceSteward : records history
+TagNamespace ||--o{ Tag : scopes canonical code
+Tag ||--o{ PhiloteValidityPeriod : identity lifespan
+Tag ||--o{ TagState : payload history
+Tag ||--o{ TagAlias : owns namespace-local alias
+TagAliasType ||--o{ TagAlias : types
+TagRelationType ||--o{ TagRelation : types
+Tag ||--o{ TagRelation : durable endpoint A
+Tag ||--o{ TagRelation : durable endpoint B
+Tag ||--o{ TagAssignment : durable endpoint
+TagState }o--> Tag : successor unless erroneous
+
+AliasTrigger ..> Tag : checks canonical codes
+AliasTrigger ..> TagAlias : checks every alias ever
+RetractPath ..> PhiloteValidityPeriod : closes or gaps
+RetractPath ..> TagState : appends terminal state
+ResolvePath ..> PhiloteValidityPeriod : resolves identity as-of
+ResolvePath ..> TagState : resolves payload as-of
+
+note right of TagNamespaceSteward
+  Self-steward on namespace creation.
+  Co-stewards and transfer history required.
+  Active stewardship gates initial authoring.
+  Generalized approval workflow is deferred.
+end note
+
+note right of TagState
+  No Philote on TagState.
+  State interval must be contained by
+  the Tag Philote validity coverage.
+  Multi-hop is allowed; cycles are rejected.
+  Resolve to first active terminal successor.
+  Erroneous withdrawal has reason, no successor.
+end note
+
+note bottom of TagAlias
+  Temporal as-of alias, but permanent code claim.
+  Retired aliases are included in trigger checks.
+  Codes use Latin1_General_100_CI_AS_SC.
+  Trigger behavior/performance validates on Express.
+end note
+
+note bottom of TagRelation
+  D-6/C-05 and C-12 currently require durable roots.
+  C-22 must explicitly reconcile roots vs exact states.
+  Weight/traversal behavior is HITL-PENDING C-19.
+end note
+
+note bottom of TagAssignment
+  Active TagState resolves as-of.
+  C-21 EntityType codes and C-27 confidence
+  are HITL-PENDING. C-16 provenance is required.
+end note
+
+legend bottom
+  Normative slice includes C-16, C-20, C-26, FU-4, FU-6.
+  One authoritative ATAPUtilities catalog; no initial tenant discriminator.
+  HITL-PENDING: D-3 cases, C-17..C-19, C-21..C-25, C-27.
+  No SQL, seed identity, live inventory, localization,
+  ordering, or authorization invariant is inferred.
+endlegend
+@enduml

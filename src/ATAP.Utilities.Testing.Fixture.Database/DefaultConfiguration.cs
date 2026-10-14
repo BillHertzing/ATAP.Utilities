@@ -5,7 +5,7 @@ namespace ATAP.Utilities.Testing.Fixture.Database {
     public static Dictionary<string, string> Production =
     new Dictionary<string, string> {
 #region GenericTestDefault settings
-      {StringConstants.ShimName, StringConstants.ShimMSSQL},
+      {StringConstants.DatabaseProviderConfigRootKey, StringConstants.DatabaseProviderDefault},
       // {GenericTestStringConstants.KindOfHostBuilderToBuildConfigRootKey,SupportedKindsOfHostBuilders.ConsoleHostBuilder.ToString()},
       // {GenericTestStringConstants.WebHostBuilderToBuildConfigRootKey, SupportedWebHostBuilders.KestrelAloneWebHostBuilder.ToString()},
       // {GenericTestStringConstants.GenericHostLifetimeConfigRootKey, SupportedGenericHostLifetimes.ConsoleLifetime.ToString()},

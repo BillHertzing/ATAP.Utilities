@@ -420,6 +420,7 @@ function New-SprintStage1 {
           -GitRoot $GitRoot `
           -SkipSharedVSCodeSettings `
           -SkipProfileSymlinks `
+          -SkipLoginScheduledTasks `
           -Confirm:$false
 
         $planBoundaryEntry = @($boundaryResult.PerWorktree) | Select-Object -First 1

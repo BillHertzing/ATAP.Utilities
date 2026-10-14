@@ -14,6 +14,11 @@
     <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
     <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
     <PackageLabel>Alpha</PackageLabel>
+    <ATAPEnableFody>true</ATAPEnableFody>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
+  </ItemGroup>
 
 </Project>

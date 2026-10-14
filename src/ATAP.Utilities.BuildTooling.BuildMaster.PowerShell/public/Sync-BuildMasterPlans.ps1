@@ -16,12 +16,28 @@ function Sync-BuildMasterPlans {
     BuildMaster stores scripts and plans in rafts. The default raft item type
     is DeploymentScript (6), which is appropriate for .otter deployment plans.
     Use -RaftItemTypeCode to target a different BuildMaster script type.
+
+    PIPELINES (Task 15.196.r / SC-0444). Pipelines are raft items too, of type 8,
+    with a JSON body and a name WITHOUT extension. A plan syncing without its
+    pipeline is exactly what left DatabaseChangePackage-5Stage executable on
+    utat022 and unreachable on utat01 (defect D7). With -IncludePipelines the
+    cmdlet also uploads every '<Name>.pipeline.json' beside the plans as raft
+    item '<Name>' of type 8, after verifying the file parses as JSON and its
+    'Name' property equals '<Name>' - a mismatch fails closed, because a
+    pipeline stored under one name whose body declares another is unusable.
+    Every ATAP pipeline is global and raft-stored by decision (2026-09-17); an
+    application-scoped pipeline cannot be carried by this cmdlet at all.
   .PARAMETER Path
     A local .otter file or a directory containing .otter files. When omitted,
     the cmdlet uses BuildMaster.PlansDirectory from $global:settings when that
-    ConfigRootKey is available.
+    ConfigRootKey is available. A single '*.pipeline.json' file is accepted
+    when -IncludePipelines is set.
   .PARAMETER Recurse
     Recursively include .otter files under a directory path.
+  .PARAMETER IncludePipelines
+    Also sync '*.pipeline.json' files as type-8 pipeline raft items. Ignored for
+    application-scoped uploads (-ApplicationId / -ApplicationName), which fail
+    closed for pipelines.
   .PARAMETER BuildMasterBaseUrl
     Base URL for the BuildMaster server. Defaults to BuildMaster.BaseUrl from
     $global:settings, then BUILDMASTER_BASE_URL from the process environment,
@@ -81,7 +97,9 @@ function Sync-BuildMasterPlans {
 
     [switch]$PreserveDirectoryStructure,
 
-    [switch]$SkipExistingLookup
+    [switch]$SkipExistingLookup,
+
+    [switch]$IncludePipelines
   )
 
   begin {
@@ -181,13 +199,15 @@ function Sync-BuildMasterPlans {
         [Parameter(Mandatory)]
         [string]$RaftItemName,
 
-        [int]$ResolvedApplicationId
+        [int]$ResolvedApplicationId,
+
+        [int]$ItemTypeCode = $RaftItemTypeCode
       )
 
       $body = @{
         API_Key           = $ApiKey
         Raft_Id           = $RaftId
-        RaftItemType_Code = $RaftItemTypeCode
+        RaftItemType_Code = $ItemTypeCode
         RaftItem_Name     = $RaftItemName
       }
 
@@ -222,6 +242,42 @@ function Sync-BuildMasterPlans {
       $relativePath = [System.IO.Path]::GetRelativePath($RootPath, $File.FullName)
       return ($relativePath -replace '\\', '/')
     }
+
+    # Pipeline raft items (type 8) are named WITHOUT extension and carry a JSON body
+    # whose 'Name' must equal the raft item name. Fail closed on either violation:
+    # a pipeline stored under a name its body does not declare is unusable and, worse,
+    # looks synced.
+    $pipelineFileSuffix = '.pipeline.json'
+    $pipelineRaftItemTypeCode = 8
+
+    function Test-PipelineFile {
+      param([Parameter(Mandatory)][System.IO.FileInfo]$File)
+      return $File.Name.EndsWith($pipelineFileSuffix, [System.StringComparison]::OrdinalIgnoreCase)
+    }
+
+    function Get-PipelineRaftItemName {
+      param([Parameter(Mandatory)][System.IO.FileInfo]$File)
+
+      $itemName = $File.Name.Substring(0, $File.Name.Length - $pipelineFileSuffix.Length)
+      if ([string]::IsNullOrWhiteSpace($itemName)) {
+        throw "Pipeline file '$($File.FullName)' has no name before '$pipelineFileSuffix'."
+      }
+
+      try {
+        $document = Get-Content -LiteralPath $File.FullName -Raw -ErrorAction Stop | ConvertFrom-Json -Depth 32 -ErrorAction Stop
+      } catch {
+        throw "Pipeline file '$($File.FullName)' is not valid JSON: $($_.Exception.Message)"
+      }
+      $declaredName = if ($document.PSObject.Properties['Name']) { [string]$document.Name } else { '' }
+      if ($declaredName -cne $itemName) {
+        throw "Pipeline file '$($File.Name)' declares Name '$declaredName'; the raft item name derived from the file name is '$itemName'. They must match exactly."
+      }
+      if (-not $document.PSObject.Properties['Stages'] -or @($document.Stages).Count -eq 0) {
+        throw "Pipeline file '$($File.Name)' declares no Stages."
+      }
+
+      return $itemName
+    }
   }
 
   process {
@@ -231,16 +287,20 @@ function Sync-BuildMasterPlans {
     if ($item.PSIsContainer) {
       $rootPath = $item.FullName
       $files = @(Get-ChildItem -LiteralPath $item.FullName -Filter '*.otter' -File -Recurse:$Recurse -ErrorAction Stop)
+      if ($IncludePipelines) {
+        $files += @(Get-ChildItem -LiteralPath $item.FullName -Filter "*$pipelineFileSuffix" -File -Recurse:$Recurse -ErrorAction Stop)
+      }
     } else {
-      if ($item.Extension -ne '.otter') {
-        throw "Path '$($item.FullName)' is not an .otter file."
+      $isPipelineFile = (Test-PipelineFile -File $item)
+      if ($item.Extension -ne '.otter' -and -not ($IncludePipelines -and $isPipelineFile)) {
+        throw "Path '$($item.FullName)' is not an .otter file$(if ($IncludePipelines) { " or a *$pipelineFileSuffix file" })."
       }
       $rootPath = Split-Path -Parent $item.FullName
       $files = @($item)
     }
 
     if ($files.Count -eq 0) {
-      throw "No .otter files found under '$($item.FullName)'."
+      throw "No .otter$(if ($IncludePipelines) { " or *$pipelineFileSuffix" }) files found under '$($item.FullName)'."
     }
 
     $resolvedApplicationId = $ApplicationId
@@ -253,14 +313,28 @@ function Sync-BuildMasterPlans {
     $uploadUri = "$nativeApiBaseUrl/Rafts_CreateOrUpdateRaftItem"
 
     foreach ($file in $files) {
-      $raftItemName = Get-RelativeRaftItemName -File $file -RootPath $rootPath
+      $isPipeline = (Test-PipelineFile -File $file)
+      $raftItemName = $null
 
       try {
+        if ($isPipeline) {
+          if ($resolvedApplicationId -gt 0) {
+            throw 'Pipelines are global by decision (Task 15.196.r); an application-scoped pipeline upload is refused.'
+          }
+          $raftItemName = Get-PipelineRaftItemName -File $file
+          $itemTypeCode = $pipelineRaftItemTypeCode
+          $itemKind = 'pipeline'
+        } else {
+          $raftItemName = Get-RelativeRaftItemName -File $file -RootPath $rootPath
+          $itemTypeCode = $RaftItemTypeCode
+          $itemKind = 'OtterScript plan'
+        }
+
         $contentBytes = [System.IO.File]::ReadAllBytes($file.FullName)
         $body = @{
           API_Key              = $ApiKey
           Raft_Id              = $RaftId
-          RaftItemType_Code    = $RaftItemTypeCode
+          RaftItemType_Code    = $itemTypeCode
           RaftItem_Name        = $raftItemName
           ModifiedOn_Date      = (Get-Date).ToString('o')
           ModifiedBy_User_Name = $ModifiedByUserName
@@ -272,26 +346,27 @@ function Sync-BuildMasterPlans {
         }
 
         if (-not $SkipExistingLookup) {
-          $existingRaftItemId = Get-BuildMasterRaftItemId -RaftItemName $raftItemName -ResolvedApplicationId $resolvedApplicationId
+          $existingRaftItemId = Get-BuildMasterRaftItemId -RaftItemName $raftItemName -ResolvedApplicationId $resolvedApplicationId -ItemTypeCode $itemTypeCode
           if ($null -ne $existingRaftItemId) {
             $body['RaftItem_Id'] = $existingRaftItemId
           }
         }
 
-        if ($PSCmdlet.ShouldProcess($raftItemName, "Upload OtterScript plan to BuildMaster raft $RaftId")) {
+        if ($PSCmdlet.ShouldProcess($raftItemName, "Upload $itemKind to BuildMaster raft $RaftId (type $itemTypeCode)")) {
           Invoke-RestMethod -Uri $uploadUri -Method Post -Body $body -ErrorAction Stop | Out-Null
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Uploaded BuildMaster plan '$raftItemName'"
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Uploaded BuildMaster $itemKind '$raftItemName'"
         }
 
         [void]$uploaded.Add([PSCustomObject]@{
             Name             = $raftItemName
             Path             = $file.FullName
             RaftId           = $RaftId
-            RaftItemTypeCode = $RaftItemTypeCode
+            RaftItemTypeCode = $itemTypeCode
             ApplicationId    = if ($resolvedApplicationId -gt 0) { $resolvedApplicationId } else { $null }
             Uploaded         = -not $WhatIfPreference
           })
       } catch {
+        if ([string]::IsNullOrWhiteSpace($raftItemName)) { $raftItemName = $file.Name }
         $errMsg = "Failed to sync BuildMaster plan '$raftItemName'. Exception: $($_.Exception.Message)"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errMsg
         [void]$errors.Add($errMsg)

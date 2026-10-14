@@ -25,6 +25,10 @@ function New-SprintEndHandoff {
   .PARAMETER ProfiledRemotingPolicy
   Policy embedded in the pre-removal stable boundary reset. Defaults to Auto.
 
+  .PARAMETER DatabaseCleanupTargets
+  Optional exact cleanup records containing InstanceName and Databases. Omit to
+  retain the cleanup command's default targeting; an explicit empty value is invalid.
+
   .OUTPUTS
   FileInfo for the generated handoff, or a planned result under WhatIf.
 
@@ -55,7 +59,12 @@ function New-SprintEndHandoff {
 
     [Parameter()]
     [ValidateSet('Disabled', 'Auto', 'Required')]
-    [string]$ProfiledRemotingPolicy = 'Auto'
+    [string]$ProfiledRemotingPolicy = 'Auto',
+
+    [Parameter()]
+    [AllowNull()]
+    [AllowEmptyCollection()]
+    [object[]]$DatabaseCleanupTargets
   )
 
   begin {
@@ -83,6 +92,24 @@ function New-SprintEndHandoff {
         [string]$Value
       )
       return "'" + ($Value -replace "'", "''") + "'"
+    }
+
+    $databaseTargetLines = [System.Collections.Generic.List[string]]::new()
+    if ($PSBoundParameters.ContainsKey('DatabaseCleanupTargets')) {
+      if (@($DatabaseCleanupTargets).Count -eq 0 -or $null -eq $DatabaseCleanupTargets) {
+        throw 'DatabaseCleanupTargets must contain at least one exact target record when supplied.'
+      }
+      foreach ($target in $DatabaseCleanupTargets) {
+        $instanceName = [string]$target.InstanceName
+        $databases = @($target.Databases)
+        if ([string]::IsNullOrWhiteSpace($instanceName) -or $databases.Count -eq 0 -or
+          @($databases | Where-Object { $_ -isnot [string] -or [string]::IsNullOrWhiteSpace($_) }).Count -gt 0) {
+          throw 'Every DatabaseCleanupTargets record requires InstanceName and nonempty exact Databases names.'
+        }
+        $instanceLiteral = ConvertTo-SprintEndHandoffSingleQuotedLiteral -Value $instanceName
+        $databaseLiterals = @($databases | ForEach-Object { ConvertTo-SprintEndHandoffSingleQuotedLiteral -Value $_ })
+        $databaseTargetLines.Add("    @{ InstanceName = $instanceLiteral; Databases = @($($databaseLiterals -join ', ')) }")
+      }
     }
 
     $gitRootFull = [IO.Path]::GetFullPath($GitRoot)
@@ -125,6 +152,7 @@ function New-SprintEndHandoff {
     $lines.Add("`$env:GIT_EDITOR = 'true'")
     $lines.Add("`$env:GIT_MERGE_AUTOEDIT = 'no'")
     $lines.Add("Import-Module ATAP.Utilities.BuildTooling.PowerShell -Force")
+    $lines.Add("Import-Module ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell -Force")
     $lines.Add('')
 
     # CP06-D01/D02 (Sprint 0012 close incident, Task 13.20.a): the boundary
@@ -187,8 +215,22 @@ function New-SprintEndHandoff {
     }
     $lines.Add('')
     $lines.Add('# Infrastructure cleanup: databases only; never SQL instances or Bitwarden secrets.')
-    $lines.Add("Remove-SprintDatabases -DeveloperNames @(`$env:USERNAME) -Force -Confirm:`$false")
-    $lines.Add("Clear-BuildMasterSprintVariables -Confirm:`$false")
+    $lines.Add('$cleanupParams = @{')
+    $lines.Add("  GitRoot = $gitRootLiteral")
+    $lines.Add('  DeveloperNames = @($env:USERNAME)')
+    $lines.Add('  Apply = $true')
+    $lines.Add('  Confirm = $false')
+    $lines.Add("  ProfiledRemotingPolicy = '$ProfiledRemotingPolicy'")
+    if ($PSBoundParameters.ContainsKey('DatabaseCleanupTargets')) {
+      $lines.Add('  DatabaseCleanupTargets = @(')
+      foreach ($targetLine in $databaseTargetLines) { $lines.Add($targetLine) }
+      $lines.Add('  )')
+    }
+    $lines.Add('}')
+    $lines.Add('$cleanupResult = Invoke-SprintEndInfrastructureCleanup @cleanupParams')
+    $lines.Add('if ($null -eq $cleanupResult -or -not $cleanupResult.Ok -or -not $cleanupResult.Applied -or @($cleanupResult.Failures).Count -gt 0) {')
+    $lines.Add('  throw "Infrastructure cleanup did not meet acceptance; retain this handoff. Failures: $($cleanupResult.Failures -join ''; '')"')
+    $lines.Add('}')
     $lines.Add('$boundaryTestParams = @{')
     $lines.Add("  GitRoot = $gitRootLiteral")
     $lines.Add('  TestFreshShell = $true')

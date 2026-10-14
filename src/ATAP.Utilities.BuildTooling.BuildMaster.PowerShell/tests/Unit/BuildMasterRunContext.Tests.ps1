@@ -241,6 +241,7 @@ Describe 'BuildMaster Otter plan run-context wiring' -Tag 'Unit' {
       Join-Path $script:plansDir 'PowerShellModule-5Stage.otter'
       Join-Path $script:plansDir 'ReleaseBundle-6Stage.otter'
     )
+    $script:cSharpRunnerPath = Join-Path $script:plansDir 'Invoke-CSharpPackageBuildMasterStage.ps1'
     $script:powerShellRunnerPath = Join-Path $script:plansDir 'Invoke-PowerShellModuleBuildMasterStage.ps1'
     $script:powerShellContextInitializerPath = Join-Path $script:plansDir 'Initialize-PowerShellModuleBuildContext.ps1'
   }
@@ -307,6 +308,15 @@ Describe 'BuildMaster Otter plan run-context wiring' -Tag 'Unit' {
     }
   }
 
+  It 'keeps C# promoted-test results in the external build context and partitions them by tier' {
+    $text = Get-Content -LiteralPath $script:cSharpRunnerPath -Raw
+
+    $text | Should -Match 'Initialize-BuildMasterRunContextDirectory\s+-SourcePath\s+\$resolvedArtifactsPath'
+    $text | Should -Match '\$resultsPath\s*=\s*Join-Path\s+-Path\s+\$contextDirectory\s+-ChildPath\s+"test-results/\$Tier"'
+    $text | Should -Not -Match '\$resultsPath\s*=\s*Join-Path\s+-Path\s+\$SourcePath'
+    $text | Should -Not -Match '\$resultsPath\s*=\s*Join-Path\s+-Path\s+\$contextDirectory\s+-ChildPath\s+"\$\(\$Tier\)TestResults"'
+  }
+
   It 'uses the captured module resolved version instead of an injected package version' {
     $text = Get-Content -LiteralPath $script:powerShellRunnerPath -Raw
     $scriptParamBlock = $text.Substring(0, $text.IndexOf('$ErrorActionPreference'))
@@ -341,7 +351,13 @@ Describe 'BuildMaster Otter plan run-context wiring' -Tag 'Unit' {
   It 'uses a build-id scoped PowerShell module output root for BuildMaster package staging' {
     $text = Get-Content -LiteralPath $script:powerShellRunnerPath -Raw
 
-    $text | Should -Match '\$moduleBuildOutputRoot = Join-Path -Path \$contextDirectory'
+    # Module build outputs were externalized out of _generated\buildmaster by
+    # d2efd49fd; the output root now hangs off $artifactDirectory. Build-id
+    # scoping is unchanged, so it is re-anchored here on the resolver that
+    # composes the artifact directory rather than on $contextDirectory.
+    $text | Should -Match '\$artifactDirectory = Resolve-PowerShellModuleArtifactDirectory'
+    $text | Should -Match 'Join-Path ''BuildMaster/PowerShellModules'' \$BuildMasterBuildId'
+    $text | Should -Match '\$moduleBuildOutputRoot = Join-Path -Path \$artifactDirectory'
     $text | Should -Match '\$moduleBuildPackageOutputPath = Join-Path -Path \$moduleBuildOutputRoot'
     $text | Should -Match 'build-scoped package output'
     $text | Should -Not -Match '_generated/psmodules/\$ModuleName/packages'
@@ -376,7 +392,9 @@ Describe 'BuildMaster Otter plan run-context wiring' -Tag 'Unit' {
   It 'uses a build-scoped signature-verification evidence directory' {
     $text = Get-Content -LiteralPath $script:powerShellRunnerPath -Raw
 
-    $text | Should -Match '-EvidenceRoot \(Join-Path -Path \$contextDirectory -ChildPath ''promotion-signature-verification''\)'
+    # Signature evidence moved to the external artifact directory in d2efd49fd.
+    # It is still one build-scoped directory under that name, not a shared root.
+    $text | Should -Match '-EvidenceRoot \(Join-Path -Path \$artifactDirectory -ChildPath ''promotion-signature-verification''\)'
   }
 
   It 'translates BuildMaster stage names to the current module.build.ps1 tier names' {
@@ -404,7 +422,10 @@ Describe 'BuildMaster Otter plan run-context wiring' -Tag 'Unit' {
     $text | Should -Match '-CeilingTier \$ceilingTier'
     $text | Should -Match 'Invoke-PromotedModuleTests'
     $text | Should -Match '-Feed \$destinationFeed'
-    $text | Should -Match '\$\(\$Tier\)TestResults'
+    # Promoted-module test results moved to the external artifact directory in
+    # d2efd49fd. The directory stays per-tier, so a later tier cannot overwrite
+    # an earlier tier's results within one build.
+    $text | Should -Match '\$resultsPath = Join-Path -Path \$artifactDirectory -ChildPath "test-results/\$Tier"'
     $text | Should -Match '-ProGetBaseUrl \$ProGetUrl'
     $text | Should -Match '-ProGetApiKeySecretName \$ProGetApiKeySecretName'
     $text | Should -Not -Match '-ApiKey\s+\$script:resolvedProGetApiKey'

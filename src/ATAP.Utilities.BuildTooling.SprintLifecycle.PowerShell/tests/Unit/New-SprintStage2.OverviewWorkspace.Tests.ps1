@@ -3,6 +3,16 @@
 # produces the manifest that Build-CLAUDEPerRepository / CLAUDE.md propagation
 # (Task 10.3) depend on, with no manual agent step.
 BeforeAll {
+  function global:Confirm-WorktreeGitPointerOwnership { [CmdletBinding(SupportsShouldProcess)] param([string]$WorktreePath) [PSCustomObject]@{ Verified = $true; Repaired = $false } }
+  # Task 15.208: isolate login maintenance from the host Task Scheduler.
+  function global:Set-SprintLoginScheduledTaskTarget {
+    [CmdletBinding(SupportsShouldProcess)]
+    param([string]$Boundary, [string]$ATAPUtilitiesRoot, [string]$GitRoot,
+      [string]$LoginScriptPath, [string[]]$WorktreePaths, [switch]$CheckOnly)
+    [PSCustomObject]@{ Ok = $true; Boundary = $Boundary; SelectionMode = 'SprintDefault';
+      TargetPath = $LoginScriptPath; TargetHash = 'fixture'; Planned = [bool]$WhatIfPreference;
+      Changed = $false; Tasks = @(); Rollback = @{ Attempted = $false; Succeeded = $true; Failures = @() }; Failures = @() }
+  }
   Remove-Module 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell' -Force -ErrorAction SilentlyContinue
   # New-SprintStage2's begin block runs an autoload contract (Get-Command -Name
   # <exported>) over its dependencies. On a workstation where the installed
@@ -19,6 +29,8 @@ BeforeAll {
   }
 
   $script:stubbedFunctionNames = @(
+    'Set-SprintLoginScheduledTaskTarget'
+    'Confirm-WorktreeGitPointerOwnership'
     'Assert-GitAvailable',
     'gh',
     'git',
@@ -84,7 +96,7 @@ BeforeAll {
       [string]$Boundary, [string]$SharedVSCodeWorktreePath, [string[]]$WorktreePaths = @(),
       [string]$TemplateRef, [string]$Profile, [string[]]$JunctionFolderNames,
       [string[]]$StableJunctionFolderNames, [string]$GitRoot,
-      [switch]$SkipSharedVSCodeSettings, [switch]$SkipProfileSymlinks,
+      [switch]$SkipSharedVSCodeSettings, [switch]$SkipProfileSymlinks, [switch]$SkipLoginScheduledTasks,
       [switch]$AllowUserGlobalWrite, [switch]$CheckpointConfirmed, [switch]$SkipAIAdapterLifecycle
     )
     [PSCustomObject]@{
@@ -201,6 +213,8 @@ AfterAll {
 
 Describe 'New-SprintStage2 Overview workspace generation (Task 10.14.a)' -Tag 'Unit', 'PromotedModuleHostSensitive' {
   BeforeEach {
+    Mock Confirm-WorktreeGitPointerOwnership { [PSCustomObject]@{ Verified = $true; Repaired = $false } }
+    Mock Set-SprintLoginScheduledTaskTarget { [PSCustomObject]@{ Ok = $true; Planned = [bool]$WhatIfPreference; Changed = $false; Tasks = @(); Failures = @() } }
     $global:overviewStubCalls = [System.Collections.Generic.List[string]]::new()
     $global:overviewStubMode = 'valid'
     $script:tempGitRoot = Join-Path ([System.IO.Path]::GetTempPath()) "stage2_overview_$([guid]::NewGuid().ToString('N'))"

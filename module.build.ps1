@@ -389,7 +389,7 @@ Task BuildManifest {
 # Stream E  StageContent — copy optional static payload before signing.
 # ---------------------------------------------------------------------------
 Task StageContent BuildPSM1, BuildManifest, {
-  $moduleContentDirectories = @('scripts', 'Documentation', 'Profiles', 'CertificateRequestConfigurations')
+  $moduleContentDirectories = @('scripts', 'Resources', 'Documentation', 'Profiles', 'CertificateRequestConfigurations')
   foreach ($contentDirectoryName in $moduleContentDirectories) {
     $sourceContentDirectory = Join-Path $script:ModuleRoot $contentDirectoryName
     if (Test-Path -LiteralPath $sourceContentDirectory -PathType Container) {

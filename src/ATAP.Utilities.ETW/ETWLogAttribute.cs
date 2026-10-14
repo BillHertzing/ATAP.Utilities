@@ -21,7 +21,7 @@ namespace ATAP.Utilities.ETW {
     [DebuggerStepThrough]
     public override void OnException(MethodExecutionArgs args) {
       //ToDo: Add Error level or category to ATAPUtilitiesETWProvider
-      ATAPUtilitiesETWProvider.Log.Information($"OnException: {args.Exception.GetType()}: {args.Exception.Message}");
+      ATAPUtilitiesETWProvider.Log.Information($"OnException: {args.Exception.GetType().FullName}");
     }
   }
 }

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using ATAP.Utilities.ETW;
 
 // https://www.nexmo.com/blog/2020/02/10/adaptive-library-logging-with-microsoft-extensions-logging-dr
 namespace ATAP.Utilities.Logging {
@@ -16,6 +17,7 @@ namespace ATAP.Utilities.Logging {
       _loggers.Clear();
     }
 
+    [ETWLog]
     public static ILogger GetLogger(string category) {
       if (!_loggers.ContainsKey(category)) {
         _loggers[category] = _loggerFactory?.CreateLogger(category) ?? NullLogger.Instance;

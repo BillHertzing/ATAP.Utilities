@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "1.0.0",
+  "repository": "Fixture",
+  "applications": [
+    {
+      "projectPath": "Root/Root.csproj",
+      "classification": "ShippingRoot",
+      "shipping": true,
+      "componentOf": null,
+      "qualityTier": "Production",
+      "publish": {
+        "configuration": "Release",
+        "targetFramework": "net10.0",
+        "runtimeIdentifier": null,
+        "selfContained": false,
+        "publishSingleFile": false,
+        "publishTrimmed": false,
+        "useAppHost": false,
+        "independentComponentPublish": false
+      }
+    },
+    {
+      "projectPath": "Client/Client.csproj",
+      "classification": "ShippingComponent",
+      "shipping": true,
+      "componentOf": "Root/Root.csproj",
+      "qualityTier": "Production"
+    },
+    {
+      "projectPath": "Imported/Imported.csproj",
+      "classification": "NonshippingApplicationCandidate",
+      "shipping": false,
+      "componentOf": null,
+      "qualityTier": "Production"
+    }
+  ]
+}

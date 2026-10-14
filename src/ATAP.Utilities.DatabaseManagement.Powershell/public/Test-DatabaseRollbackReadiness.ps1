@@ -102,8 +102,17 @@ function Test-DatabaseRollbackReadiness {
     # ── Check 4: evidence age ─────────────────────────────────────────────────
     $snapshotTime = $null
     try {
-      $snapshotTime = [datetime]::Parse($evidence.timestamp, $null,
-        [System.Globalization.DateTimeStyles]::RoundtripKind)
+      # ConvertFrom-Json on PowerShell 7.5+ materializes ISO timestamps as DateTime.
+      # Preserve that Kind instead of stringifying and reinterpreting UTC as local.
+      if ($evidence.timestamp -is [datetime]) {
+        $snapshotTime = $evidence.timestamp
+      } elseif ($evidence.timestamp -is [datetimeoffset]) {
+        $snapshotTime = $evidence.timestamp.UtcDateTime
+      } else {
+        $snapshotTime = [datetime]::Parse([string]$evidence.timestamp,
+          [System.Globalization.CultureInfo]::InvariantCulture,
+          [System.Globalization.DateTimeStyles]::RoundtripKind)
+      }
     } catch {
       $reason = "Evidence timestamp '$($evidence.timestamp)' could not be parsed: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message $reason -Tag 'Rollback'

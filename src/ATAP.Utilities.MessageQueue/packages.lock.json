@@ -2,21 +2,6 @@
   "version": 2,
   "dependencies": {
     "net10.0": {
-      "Fody": {
-        "type": "Direct",
-        "requested": "[6.9.3, )",
-        "resolved": "6.9.3",
-        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
-      },
-      "MethodBoundaryAspect.Fody": {
-        "type": "Direct",
-        "requested": "[2.0.150, )",
-        "resolved": "2.0.150",
-        "contentHash": "cR7BJGl2420ORLRPO+itrzgveYaiwkmbfgQtVUziUdvmuOBkanz0927t0Kesj08XLrLG1NHXn1I+2+b2XyyEyQ==",
-        "dependencies": {
-          "Fody": "6.7.0"
-        }
-      },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
         "requested": "[8.0.0, )",
@@ -61,7 +46,7 @@
       "atap.utilities.collection.extensions": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "System.Reactive": "[5.0.0, )"
         }
       },
@@ -71,7 +56,7 @@
       "atap.utilities.messagequeue.extensions": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.MessageQueue.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.MessageQueue.Model": "[0.1.0-Alpha, )"
         }
@@ -97,8 +82,8 @@
       "atap.utilities.messagequeue.shim.rabbitmq": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
-          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.MessageQueue.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.MessageQueue.Model": "[0.1.0-Alpha, )",
           "ATAP.Utilities.MessageQueue.StringConstants": "[0.1.0-Alpha, )",
@@ -110,8 +95,8 @@
       "atap.utilities.messagequeue.shim.tpl": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
-          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.MessageQueue.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.MessageQueue.Model": "[0.1.0-Alpha, )",
           "ATAP.Utilities.MessageQueue.StringConstants": "[0.1.0-Alpha, )",
@@ -123,7 +108,7 @@
       "atap.utilities.messagequeue.stringconstants": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[1.0.0, )"
+          "ATAP.Utilities.ETW": "[0.1.3, )"
         }
       },
       "Microsoft.Extensions.Configuration": {
@@ -176,24 +161,7 @@
         "contentHash": "erBZjkQHWL9jpasCE/0qKAryzVBJFxGHVBAvgRN1bzM0q2s1S4oYREEEL0Vb+1kA/6BKb5FjUZMp5VXmy+gzkQ=="
       }
     },
-    "net10.0/linux-x64": {},
-    "net10.0/win-x64": {},
     "net8.0": {
-      "Fody": {
-        "type": "Direct",
-        "requested": "[6.9.3, )",
-        "resolved": "6.9.3",
-        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
-      },
-      "MethodBoundaryAspect.Fody": {
-        "type": "Direct",
-        "requested": "[2.0.150, )",
-        "resolved": "2.0.150",
-        "contentHash": "cR7BJGl2420ORLRPO+itrzgveYaiwkmbfgQtVUziUdvmuOBkanz0927t0Kesj08XLrLG1NHXn1I+2+b2XyyEyQ==",
-        "dependencies": {
-          "Fody": "6.7.0"
-        }
-      },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
         "requested": "[8.0.0, )",
@@ -243,7 +211,7 @@
       "atap.utilities.collection.extensions": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "System.Reactive": "[5.0.0, )"
         }
       },
@@ -253,7 +221,7 @@
       "atap.utilities.messagequeue.extensions": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.MessageQueue.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.MessageQueue.Model": "[0.1.0-Alpha, )"
         }
@@ -279,8 +247,8 @@
       "atap.utilities.messagequeue.shim.rabbitmq": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
-          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.MessageQueue.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.MessageQueue.Model": "[0.1.0-Alpha, )",
           "ATAP.Utilities.MessageQueue.StringConstants": "[0.1.0-Alpha, )",
@@ -292,8 +260,8 @@
       "atap.utilities.messagequeue.shim.tpl": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
-          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.MessageQueue.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.MessageQueue.Model": "[0.1.0-Alpha, )",
           "ATAP.Utilities.MessageQueue.StringConstants": "[0.1.0-Alpha, )",
@@ -306,7 +274,7 @@
       "atap.utilities.messagequeue.stringconstants": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[1.0.0, )"
+          "ATAP.Utilities.ETW": "[0.1.3, )"
         }
       },
       "Microsoft.Extensions.Configuration": {
@@ -366,24 +334,7 @@
         "contentHash": "S+y+QuBJNcqOvoFK+rFcZZuQDlD2E4lImKW9/g3E0l7YT2uo4oin9amAn398eGt/xFBYNNSt5O77Dbc38XGfBw=="
       }
     },
-    "net8.0/linux-x64": {},
-    "net8.0/win-x64": {},
     "net9.0": {
-      "Fody": {
-        "type": "Direct",
-        "requested": "[6.9.3, )",
-        "resolved": "6.9.3",
-        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
-      },
-      "MethodBoundaryAspect.Fody": {
-        "type": "Direct",
-        "requested": "[2.0.150, )",
-        "resolved": "2.0.150",
-        "contentHash": "cR7BJGl2420ORLRPO+itrzgveYaiwkmbfgQtVUziUdvmuOBkanz0927t0Kesj08XLrLG1NHXn1I+2+b2XyyEyQ==",
-        "dependencies": {
-          "Fody": "6.7.0"
-        }
-      },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
         "requested": "[8.0.0, )",
@@ -428,7 +379,7 @@
       "atap.utilities.collection.extensions": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "System.Reactive": "[5.0.0, )"
         }
       },
@@ -438,7 +389,7 @@
       "atap.utilities.messagequeue.extensions": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.MessageQueue.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.MessageQueue.Model": "[0.1.0-Alpha, )"
         }
@@ -464,8 +415,8 @@
       "atap.utilities.messagequeue.shim.rabbitmq": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
-          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.MessageQueue.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.MessageQueue.Model": "[0.1.0-Alpha, )",
           "ATAP.Utilities.MessageQueue.StringConstants": "[0.1.0-Alpha, )",
@@ -477,8 +428,8 @@
       "atap.utilities.messagequeue.shim.tpl": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.Collection.Extensions": "[1.0.0, )",
-          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.Collection.Extensions": "[0.1.1, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "ATAP.Utilities.MessageQueue.Interfaces": "[0.1.0-Alpha, )",
           "ATAP.Utilities.MessageQueue.Model": "[0.1.0-Alpha, )",
           "ATAP.Utilities.MessageQueue.StringConstants": "[0.1.0-Alpha, )",
@@ -490,7 +441,7 @@
       "atap.utilities.messagequeue.stringconstants": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[1.0.0, )"
+          "ATAP.Utilities.ETW": "[0.1.3, )"
         }
       },
       "Microsoft.Extensions.Configuration": {
@@ -542,8 +493,6 @@
         "resolved": "5.0.0",
         "contentHash": "erBZjkQHWL9jpasCE/0qKAryzVBJFxGHVBAvgRN1bzM0q2s1S4oYREEEL0Vb+1kA/6BKb5FjUZMp5VXmy+gzkQ=="
       }
-    },
-    "net9.0/linux-x64": {},
-    "net9.0/win-x64": {}
+    }
   }
 }

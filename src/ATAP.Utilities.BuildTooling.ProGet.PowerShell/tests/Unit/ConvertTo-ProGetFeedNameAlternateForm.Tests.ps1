@@ -214,6 +214,27 @@ Describe 'ProGet feed helpers and settings resolution' -Tag 'Unit' {
       $result.EndpointUri | Should -BeExactly 'https://proget.example.test/nuget/nuget-stable/'
     }
 
+    It 'Distinguishes NuGet and database feed families that share the NuGet transport type' {
+      $global:Settings.ProGetFeeds = [ordered]@{
+        DatabaseExperimental = [PSCustomObject]@{
+          FeedName = 'database-experimental'
+          FeedType = 'nuget'
+          Tier = 'experimental'
+          NuGetV3Uri = 'https://proget.example.test/nuget/database-experimental/v3/index.json'
+        }
+        NuGetExperimental = [PSCustomObject]@{
+          FeedName = 'nuget-experimental'
+          FeedType = 'nuget'
+          Tier = 'experimental'
+          NuGetV3Uri = 'https://proget.example.test/nuget/nuget-experimental/v3/index.json'
+        }
+      }
+
+      (Resolve-ProGetFeedFromSettings -FeedType NuGet -Tier Experimental).FeedName |
+        Should -BeExactly 'nuget-experimental'
+      (Resolve-ProGetFeedFromSettings -FeedType Database -Tier Experimental).FeedName |
+        Should -BeExactly 'database-experimental'
+    }
     It 'Builds the ProGet base URL from scheme, host, and port settings as a fallback' {
       $global:configRootKeys.ProGetAdminUriSchemeConfigRootKey = 'ProGetScheme'
       $global:configRootKeys.ProGetAdminUriHostConfigRootKey = 'ProGetHost'

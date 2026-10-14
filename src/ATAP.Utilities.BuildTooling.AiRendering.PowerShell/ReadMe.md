@@ -17,7 +17,7 @@ composes three sentinel-delimited regions, in this order:
 | Region | Source |
 | --- | --- |
 | `<!-- AI-LOCAL -->` | the repo's `ai-local.md` (legacy `CLAUDE-local.md` fallback) |
-| `<!-- AI-CORE -->` | SharedVSCode `AGENTS-base.md`, verbatim |
+| `<!-- AI-CORE -->` | SharedVSCode `.ai/core/main-instructions.md`, composed in memory by `Get-AICoreInstructionBody` |
 | `<!-- AI-AGENT-CODEX -->` | SharedVSCode `.ai/core/agent-specific/codex.md`, when present |
 
 The Codex region is **appended after** the core, never in place of it. On 2026-07-25 the

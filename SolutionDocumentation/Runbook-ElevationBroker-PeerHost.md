@@ -112,6 +112,20 @@ can ask the broker to drain, but cannot change what the task runs.
 Do not grant this to `Everyone`, `Authenticated Users`, or `Users`; the function refuses
 those identities, matching the broker's own ACL check.
 
+For corpus capture on UTAT022, the requester is the service identity rather than an
+interactive developer. Re-registration replaces the task DACL, so always apply this exact
+grant after `Register-ElevationBrokerTask`:
+
+```powershell
+Grant-ElevationBrokerStartRights `
+  -Principal 'UTAT022\SvcAceOutpost' `
+  -TaskPath '\ATAP-Broker\' `
+  -Confirm:$false
+```
+
+This grants only task read/execute. It does not grant task modification, administrator
+membership, corpus ACL authority, or any permanent privilege to `SvcAceOutpost`.
+
 ## Step 4: Calling code
 
 The build tooling calls the broker from the `build-deploy-module` skill, section 10, instead
@@ -135,6 +149,55 @@ if ($r.status -ne 'succeeded') {
   throw "Elevated install failed [$($r.status)]: $($r.error). Transcript: $($r.transcriptPath)"
 }
 ```
+
+### Activate the corpus-sealing action
+
+Activation order is security-significant. Complete it through an explicitly authorized,
+non-interactive administrative channel; never use `Start-Process -Verb RunAs`, UAC, a
+certificate-store dialog, or any other console prompt. A PowerShell remoting channel must
+select `-ConfigurationName 'PowerShell.7'`. Use the already-installed broker action or a
+separately approved administrative automation path to establish the two trusted module
+versions before replacing the broker trust anchor:
+
+1. Promote and install ProGet module 0.1.22 and SprintLifecycle module 0.1.37 at AllUsers
+   scope, then verify both resolve from `C:\Program Files\PowerShell\Modules` at those exact
+   versions.
+2. Import ProGet 0.1.22 by its absolute manifest path and re-register with `-ForcePayload`
+   so `config.json` gains `seal-gather-call-record-segment`.
+3. Reapply the `UTAT022\SvcAceOutpost` start-rights grant after registration.
+4. From the service identity's normal, non-elevated context, submit a hash-pinned sealing
+   request and require a `succeeded` result plus its transcript before enabling capture.
+
+The administrative activation commands are intentionally non-interactive:
+
+```powershell
+$proGetManifest = 'C:\Program Files\PowerShell\Modules\ATAP.Utilities.BuildTooling.ProGet.PowerShell\0.1.22\ATAP.Utilities.BuildTooling.ProGet.PowerShell.psd1'
+$sprintLifecycleManifest = 'C:\Program Files\PowerShell\Modules\ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell\0.1.37\ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell.psd1'
+
+foreach ($manifest in $proGetManifest, $sprintLifecycleManifest) {
+  if (-not (Test-Path -LiteralPath $manifest -PathType Leaf)) {
+    throw "Required trusted module manifest is missing: $manifest"
+  }
+}
+
+Import-Module -FullyQualifiedName $proGetManifest -Force -ErrorAction Stop
+Register-ElevationBrokerTask `
+  -RequesterPrincipal 'UTAT022\SvcAceOutpost' `
+  -TaskPath '\ATAP-Broker\' `
+  -ForcePayload `
+  -Confirm:$false
+Grant-ElevationBrokerStartRights `
+  -Principal 'UTAT022\SvcAceOutpost' `
+  -TaskPath '\ATAP-Broker\' `
+  -Confirm:$false
+```
+
+The request carries only `StagingFilePath`, `CorpusGatherRecordsStagingPath`,
+`CorpusGatherRecordsPath`, `SprintNumber`, `CaptureIdentity`, `ExpiryIdentity`, and
+`ExpectedSha256`. It cannot choose the module, command, module path, trusted root, or a
+privileged bypass. Broker regexes reject malformed values before dispatch; the trusted
+SprintLifecycle command independently revalidates canonical paths, matching root and
+volume, reparse points, resolved identities, JSONL content, destination, and exact bytes.
 
 ## Step 5: Verify
 

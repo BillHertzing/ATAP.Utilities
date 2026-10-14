@@ -3,4 +3,6 @@
 ## Contents
 
 - [ReadMe](ReadMe.md)
-- [Documentation](Documentation/)
+- [Supported Bitwarden Secrets Manager provider](BitwardenSecretsManager/INDEX.md)
+- [BWS/DPAPI migration and rollback](BitwardenSecretsManager/MigrationRollbackRunbook.md)
+- [Obsolete Bitwarden Password Manager compatibility](Shim/Bitwarden/Index.md)

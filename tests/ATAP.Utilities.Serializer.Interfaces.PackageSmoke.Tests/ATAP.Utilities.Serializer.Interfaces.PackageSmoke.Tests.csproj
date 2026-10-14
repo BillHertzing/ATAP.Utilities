@@ -19,6 +19,11 @@
     <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer\Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
   </ItemGroup>
 
+  <!-- Package-smoke SUT fixture: permit the promoted package version supplied by the caller. -->
+  <PropertyGroup Condition="'$(UsePackageReferenceForSUT)' == 'true'">
+    <CentralPackageVersionOverrideEnabled>true</CentralPackageVersionOverrideEnabled>
+  </PropertyGroup>
+
   <ItemGroup Condition="'$(UsePackageReferenceForSUT)' == 'true'">
     <PackageReference Include="ATAP.Utilities.Serializer.Interfaces" VersionOverride="$(SUTVersion)" />
   </ItemGroup>

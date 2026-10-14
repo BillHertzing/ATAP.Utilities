@@ -3,6 +3,7 @@ namespace ATAP.Utilities.Secrets;
 using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 
+[System.Obsolete(BitwardenPasswordManagerCompatibility.Message, DiagnosticId = BitwardenPasswordManagerCompatibility.DiagnosticId, UrlFormat = BitwardenPasswordManagerCompatibility.UrlFormat)]
 public class BitwardenConfigurationSource : IConfigurationSource
 {
   private readonly BitwardenSecretsOptions _options;

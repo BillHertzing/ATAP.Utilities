@@ -100,6 +100,12 @@ function Set-SprintBoundaryContext {
   .PARAMETER SkipProfileSymlinks
     Skip the machine-wide PowerShell 7 profile-symlink retarget concern. Intended
     only for narrowly scoped repair or diagnostic calls.
+  .PARAMETER LoginScriptPath
+    Invocation-only development override for the retained login scheduled-task pair.
+    Defaults are selected independently of profile root fallback behavior.
+  .PARAMETER SkipLoginScheduledTasks
+    Skip the global login pair concern for internal per-worktree provisioning or
+    isolated diagnostics. A skipped concern supplies no deployed verification.
   .PARAMETER SkipSharedVSCodeSettings
     Skip the machine-global SharedVSCode settings concern (shared-settings
     render and Set-UserSettingsSymlink). Used by
@@ -112,6 +118,15 @@ function Set-SprintBoundaryContext {
   .PARAMETER CheckpointConfirmed
     Confirms the sprint session has been checkpointed before user-global settings
     files are updated.
+  .PARAMETER ServiceAccountGitConfigPath
+    Explicit Git configuration file for the BuildMaster service account. Defaults
+    to C:\Users\SvcBuildmaster\.gitconfig.
+  .PARAMETER ServiceAccountGitTrustRepositoryNames
+    Repository names whose exact sprint worktrees are lifecycle-managed in the
+    service-account safe.directory list. Defaults to Ace and ATAP.Utilities.
+  .PARAMETER SkipServiceAccountGitTrust
+    Skip SC-0321 service-account Git trust processing. Intended only for isolated
+    diagnostics and tests.
   .PARAMETER ProfiledRemotingPolicy
     Controls the local ATAP.PS7.Profiled endpoint concern. Disabled never probes or
     registers it. Auto, the safe default, treats a host with no remoting surface and
@@ -187,11 +202,24 @@ function Set-SprintBoundaryContext {
 
     [switch]$SkipProfileSymlinks,
 
+    [ValidateNotNullOrEmpty()]
+    [string]$LoginScriptPath,
+
+    [switch]$SkipLoginScheduledTasks,
+
     [switch]$SkipSharedVSCodeSettings,
 
     [switch]$AllowUserGlobalWrite,
 
     [switch]$CheckpointConfirmed,
+
+    [ValidateNotNullOrEmpty()]
+    [string]$ServiceAccountGitConfigPath = 'C:\Users\SvcBuildmaster\.gitconfig',
+
+    [ValidateNotNullOrEmpty()]
+    [string[]]$ServiceAccountGitTrustRepositoryNames = @('Ace', 'ATAP.Utilities'),
+
+    [switch]$SkipServiceAccountGitTrust,
 
     [ValidateSet('Disabled', 'Auto', 'Required')]
     [string]$ProfiledRemotingPolicy = 'Auto',
@@ -218,6 +246,13 @@ function Set-SprintBoundaryContext {
       }
     }
 
+    if (-not (Get-Command -Name 'Set-ServiceAccountGitSafeDirectory' -CommandType Function -ErrorAction SilentlyContinue)) {
+      $serviceAccountGitTrustHelperPath = Join-Path $PSScriptRoot 'Set-ServiceAccountGitSafeDirectory.ps1'
+      if (Test-Path -LiteralPath $serviceAccountGitTrustHelperPath) {
+        . $serviceAccountGitTrustHelperPath
+      }
+    }
+
     if (-not $PSBoundParameters.ContainsKey('TemplateRef') -or [string]::IsNullOrWhiteSpace($TemplateRef)) {
       $TemplateRef = Split-Path $SharedVSCodeWorktreePath -Leaf
     }
@@ -225,6 +260,9 @@ function Set-SprintBoundaryContext {
     $concerns = [System.Collections.Generic.List[object]]::new()
     $perWorktree = [System.Collections.Generic.List[object]]::new()
     $errors = [System.Collections.Generic.List[string]]::new()
+    # Preserve invocation input before legacy profile resolution can mutate it.
+    $loginUtilitiesRootWasBound = $PSBoundParameters.ContainsKey('ATAPUtilitiesRoot')
+    $loginUtilitiesRoot = $ATAPUtilitiesRoot
   }
 
   process {
@@ -520,6 +558,39 @@ function Set-SprintBoundaryContext {
     }
 
     # ------------------------------------------------------------------
+    # Service-account Git trust (SC-0321). Only exact Ace and ATAP.Utilities
+    # sprint worktree paths are selected by the helper. Start adds missing
+    # values idempotently; End removes only those exact values.
+    # ------------------------------------------------------------------
+    $serviceAccountGitTrustOk = $true
+    $serviceAccountGitTrustError = $null
+    $serviceAccountGitTrustResult = $null
+    try {
+      if (-not $SkipServiceAccountGitTrust -and $WorktreePaths.Count -gt 0) {
+        $serviceAccountGitTrustResult = Set-ServiceAccountGitSafeDirectory `
+          -Boundary $Boundary `
+          -WorktreePaths $WorktreePaths `
+          -GitConfigPath $ServiceAccountGitConfigPath `
+          -RepositoryNames $ServiceAccountGitTrustRepositoryNames `
+          -Confirm:$false `
+          -WhatIf:$WhatIfPreference
+      }
+    } catch {
+      $serviceAccountGitTrustOk = $false
+      $serviceAccountGitTrustError = "Service-account Git safe.directory lifecycle failed: $($_.Exception.Message)"
+      $errors.Add($serviceAccountGitTrustError)
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $serviceAccountGitTrustError
+    }
+    $concerns.Add([PSCustomObject]@{
+        Concern        = 'ServiceAccountGitSafeDirectory'
+        Action         = ($SkipServiceAccountGitTrust ? 'Skipped' : "Set-ServiceAccountGitSafeDirectory ($Boundary)")
+        StableByDesign = $false
+        Succeeded      = $serviceAccountGitTrustOk
+        Error          = $serviceAccountGitTrustError
+        Result         = $serviceAccountGitTrustResult
+      })
+
+    # ------------------------------------------------------------------
     # Machine-global concern: SharedVSCode settings symlinks (once)
     # ------------------------------------------------------------------
     $settingsOk = $true
@@ -553,6 +624,51 @@ function Set-SprintBoundaryContext {
         StableByDesign = $false
         Succeeded      = $settingsOk
         Error          = $settingsError
+      })
+
+    # ------------------------------------------------------------------
+    # Machine-global concern: retained login scheduled-task pair (once).
+    # Selection belongs to the private helper; profile fallback is never reused.
+    # ------------------------------------------------------------------
+    $loginScheduledTasks = $null
+    $loginScheduledTasksOk = $true
+    $loginScheduledTaskError = $null
+    if (-not $SkipLoginScheduledTasks) {
+      try {
+        if (-not (Get-Command -Name 'Set-SprintLoginScheduledTaskTarget' -ErrorAction SilentlyContinue)) {
+          $loginHelperPath = Join-Path $PSScriptRoot '../private/Set-SprintLoginScheduledTaskTarget.ps1'
+          if (-not (Test-Path -LiteralPath $loginHelperPath -PathType Leaf)) { throw "Required helper not found: $loginHelperPath" }
+          . $loginHelperPath
+        }
+        $loginParameters = @{
+          Boundary = $Boundary
+          GitRoot = $GitRoot
+          WorktreePaths = $WorktreePaths
+          Confirm = $false
+          WhatIf = [bool]$WhatIfPreference
+        }
+        if ($loginUtilitiesRootWasBound) { $loginParameters.ATAPUtilitiesRoot = $loginUtilitiesRoot }
+        if ($PSBoundParameters.ContainsKey('LoginScriptPath')) { $loginParameters.LoginScriptPath = $LoginScriptPath }
+        $loginApproved = $PSCmdlet.ShouldProcess('ATAPLoginScript and Unlock BitWarden', "Maintain retained login scheduled-task pair ($Boundary)")
+        $loginParameters.WhatIf = [bool]($WhatIfPreference -or -not $loginApproved)
+        $loginScheduledTasks = Set-SprintLoginScheduledTaskTarget @loginParameters
+        if ($null -eq $loginScheduledTasks -or -not $loginScheduledTasks.Ok) {
+          throw "Login pair maintenance reported failures: $($loginScheduledTasks.Failures -join '; ')"
+        }
+      } catch {
+        $loginScheduledTasksOk = $false
+        $loginScheduledTaskError = "Login scheduled-task maintenance failed: $($_.Exception.Message)"
+        $errors.Add($loginScheduledTaskError)
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $loginScheduledTaskError
+      }
+    }
+    $concerns.Add([PSCustomObject]@{
+        Concern = 'LoginScheduledTasks'
+        Action = ($SkipLoginScheduledTasks ? 'Skipped' : "Set-SprintLoginScheduledTaskTarget ($Boundary)")
+        StableByDesign = $false
+        Succeeded = $loginScheduledTasksOk
+        Error = $loginScheduledTaskError
+        Result = $loginScheduledTasks
       })
 
     # ------------------------------------------------------------------
@@ -826,6 +942,8 @@ function Set-SprintBoundaryContext {
       Concerns    = $concerns.ToArray()
       PerWorktree = $perWorktree.ToArray()
       Errors      = $errors.ToArray()
+      LoginScheduledTasks = $loginScheduledTasks
+      LoginScheduledTaskError = $loginScheduledTaskError
     }
   }
 }

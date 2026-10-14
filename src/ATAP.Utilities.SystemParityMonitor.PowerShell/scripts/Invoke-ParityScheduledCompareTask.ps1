@@ -1,3 +1,27 @@
+function Read-ParitySharedDotNetToolPolicyConfiguration {
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory = $true)]
+    [string] $Path
+  )
+
+  if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+    throw [IO.FileNotFoundException]::new("Shared .NET tool policy configuration was not found at '$Path'.", $Path)
+  }
+  try {
+    $policy = Get-Content -LiteralPath $Path -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+  } catch {
+    throw [InvalidOperationException]::new(
+      "Shared .NET tool policy configuration at '$Path' is unreadable or malformed. ErrorType=$($_.Exception.GetType().FullName)",
+      $_.Exception
+    )
+  }
+  if ([int]$policy.SchemaVersion -ne 1) {
+    throw "Shared .NET tool policy configuration at '$Path' has unsupported SchemaVersion '$($policy.SchemaVersion)'; expected 1."
+  }
+  return $policy
+}
+
 function Invoke-ParityScheduledCompareTask {
   [CmdletBinding()]
   param(
@@ -14,6 +38,8 @@ function Invoke-ParityScheduledCompareTask {
     [double] $StaleMultiplier = 1.5,
 
     [string] $PackageManagerProfilesPath,
+
+    [string] $SharedDotNetToolPolicyPath,
 
     [string] $ResultDirectory,
 
@@ -51,6 +77,9 @@ function Invoke-ParityScheduledCompareTask {
       $configuration = Read-ParityScheduledConfiguration -Path $PackageManagerProfilesPath
       $comparisonParameters['ExpectedSurfaceMinimumCounts'] = $configuration.ExpectedSurfaceMinimumCounts
     }
+    if (-not [string]::IsNullOrWhiteSpace($SharedDotNetToolPolicyPath)) {
+      $comparisonParameters['SharedDotNetToolPolicy'] = Read-ParitySharedDotNetToolPolicyConfiguration -Path $SharedDotNetToolPolicyPath
+    }
     $comparison = Compare-ParityAudits @comparisonParameters
 
     $failureState = Set-ParityScheduledTaskOutcome -StatePath $LeftStatePath -TaskName 'ParityCompare' -Succeeded $true
@@ -65,7 +94,19 @@ function Invoke-ParityScheduledCompareTask {
     } else {
       0
     }
-    $alertReason = if ($staleSnapshotCount -gt 0 -and $hasSurfaceCoverageFailure) {
+    $hasRequiredChangeEvidenceFailure = if ($comparison.PSObject.Properties['HasRequiredChangeEvidenceFailure']) {
+      [bool]$comparison.HasRequiredChangeEvidenceFailure
+    } else {
+      $false
+    }
+    $requiredChangeEvidenceFailureCount = if ($comparison.PSObject.Properties['RequiredChangeEvidenceFailures']) {
+      @($comparison.RequiredChangeEvidenceFailures).Count
+    } else {
+      0
+    }
+    $alertReason = if ($hasRequiredChangeEvidenceFailure) {
+      'RequiredChangeEvidenceFailure'
+    } elseif ($staleSnapshotCount -gt 0 -and $hasSurfaceCoverageFailure) {
       'StaleAndSurfaceCoverageFailure'
     } elseif ($staleSnapshotCount -gt 0) {
       'StaleSnapshot'
@@ -78,7 +119,7 @@ function Invoke-ParityScheduledCompareTask {
       Write-ParityScheduledTaskEvent `
         -EntryType Warning `
         -EventId 12382 `
-        -Message "ParityCompare requires immediate review for '$($LeftHostName.ToLowerInvariant())' versus '$($RightHostName.ToLowerInvariant())'. Reason=$alertReason; StaleSnapshotCount=$staleSnapshotCount; SurfaceCoverageFailureCount=$surfaceCoverageFailureCount." `
+        -Message "ParityCompare requires immediate review for '$($LeftHostName.ToLowerInvariant())' versus '$($RightHostName.ToLowerInvariant())'. Reason=$alertReason; StaleSnapshotCount=$staleSnapshotCount; SurfaceCoverageFailureCount=$surfaceCoverageFailureCount; RequiredChangeEvidenceFailureCount=$requiredChangeEvidenceFailureCount." `
         -LogName $EventLogName `
         -Source $EventSource
     } else {
@@ -100,6 +141,8 @@ function Invoke-ParityScheduledCompareTask {
       StaleSnapshots = @($comparison.StaleSnapshots)
       HasSurfaceCoverageFailure = $hasSurfaceCoverageFailure
       SurfaceCoverageFailureCount = $surfaceCoverageFailureCount
+      HasRequiredChangeEvidenceFailure = $hasRequiredChangeEvidenceFailure
+      RequiredChangeEvidenceFailureCount = $requiredChangeEvidenceFailureCount
       SecretAccessRequired = $false
       AlertReason = $alertReason
       EventLog = $eventLogResult

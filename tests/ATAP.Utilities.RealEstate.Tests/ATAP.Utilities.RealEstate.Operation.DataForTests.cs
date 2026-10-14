@@ -30,7 +30,7 @@ namespace ATAP.Utilities.RealEstate.Enumerations.Tests
       yield return new OperationTestData[] { new OperationTestData { Operation = Operation.Generic, SerializedOperation = "0" } };
       yield return new OperationTestData[] { new OperationTestData { Operation = Operation.PropertySearch, SerializedOperation = "1" } };
       yield return new OperationTestData[] { new OperationTestData { Operation = Operation.PropertyLastSaleInfo, SerializedOperation = "2" } };
-      yield return new OperationTestData[] { new OperationTestData { Operation = Operation.PropertyCurrentAgent, SerializedOperation = "\"3\"" } };
+      yield return new OperationTestData[] { new OperationTestData { Operation = Operation.PropertyCurrentAgent, SerializedOperation = "3" } };
     }
     public IEnumerator<object[]> GetEnumerator() { return OperationTestData().GetEnumerator(); }
     IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }

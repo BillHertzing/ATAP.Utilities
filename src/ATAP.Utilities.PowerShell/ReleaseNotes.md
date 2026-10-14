@@ -1,5 +1,68 @@
 # Release Notes for ATAP.Utilities.PowerShell
 
+## [0.2.10] — 2026-09-13
+
+### Fixed
+
+- Preserve TCP half-close semantics in the process-private Chromium proxy bridge so
+  completion of the desktop client's request direction does not cancel a still-active
+  streamed response from AceOutpost.
+- Compile the bridge source under a test-only type name in focused Pester coverage, so a
+  profile-preloaded installed module cannot cause source tests to exercise stale deployed
+  bridge code.
+
+## [0.2.9] — 2026-09-13
+
+### Fixed
+
+- Replace Chromium's SPKI certificate-error switch, which Claude Desktop rejects
+  as a debugging or network override, with an exact CurrentUser trusted-root
+  preflight.
+- Require the PEM to be a currently valid self-signed CA and match both the
+  thumbprint and full-certificate SHA-256 digest in `Cert:\CurrentUser\Root`.
+
+## [0.2.8] — 2026-09-13
+
+### Fixed
+
+- Supply Chromium with the interception root's computed SHA-256 SPKI fingerprint
+  so packaged desktop clients can validate AceOutpost-intercepted TLS without a
+  machine-wide root installation or a blanket certificate-error bypass.
+- Reject caller-owned certificate-error switches alongside caller-owned proxy
+  switches; a missing, malformed, or non-RSA interception root fails closed.
+
+## [0.2.7] — 2026-09-13
+
+### Added
+
+- Add an opt-in, process-private Chromium proxy bridge for packaged Claude and
+  Codex desktop applications that do not honor `HTTP_PROXY` or `HTTPS_PROXY`.
+- Supply a credential-free loopback `--proxy-server`, disable QUIC, and keep the
+  bridge alive for exactly the launched desktop process lifetime.
+
+### Security
+
+- Accept bridge clients only when Windows reports their owning PID as the
+  launched desktop process or one of its descendants.
+- Inject `Proxy-Authorization` only on the bridge's private upstream connection
+  to AceOutpost; reject caller-owned proxy switches and incoming authorization
+  headers, and fail closed if PID binding cannot be established.
+
+## [0.2.6] — 2026-09-12
+
+### Added
+
+- Set `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1` only in Claude Code child
+  processes started by `Start-AceOutpostMeteredHarness`. This suppresses the
+  documented updater, telemetry, feedback, and error-reporting traffic while
+  leaving the essential startup probe available to the listener's separately
+  constrained route.
+
+### Security
+
+- Keep the new variable process-local to the launched child; no User-, Machine-,
+  or parent-process environment is modified.
+
 ## [0.1.26] — 2026-07-31
 
 ### Fixed

@@ -1,8 +1,22 @@
 #Requires -Version 7.0
 
 BeforeAll {
+  # Task 15.208: isolate login maintenance from the host Task Scheduler.
+  function Set-SprintLoginScheduledTaskTarget {
+    [CmdletBinding(SupportsShouldProcess)]
+    param([string]$Boundary, [string]$ATAPUtilitiesRoot, [string]$GitRoot,
+      [string]$LoginScriptPath, [string[]]$WorktreePaths, [switch]$CheckOnly)
+    [PSCustomObject]@{ Ok = $true; Boundary = $Boundary; SelectionMode = 'SprintDefault';
+      TargetPath = $LoginScriptPath; TargetHash = 'fixture'; Planned = [bool]$WhatIfPreference;
+      Changed = $false; Tasks = @(); Rollback = @{ Attempted = $false; Succeeded = $true; Failures = @() }; Failures = @() }
+  }
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
+  }
+  function Get-DbaDatabase {
+    [CmdletBinding()]
+    param([string]$SqlInstance, [string]$Database, [switch]$EnableException)
+    throw 'Database absence verification requires an isolated mock.'
   }
 
   $moduleRoot = Join-Path $PSScriptRoot '..\..'
@@ -16,6 +30,9 @@ BeforeAll {
 }
 
 Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
+  BeforeEach {
+    Mock Set-SprintLoginScheduledTaskTarget { [PSCustomObject]@{ Ok = $true; Planned = $false; Changed = $false; Tasks = @(); Failures = @() } }
+  }
   Context 'Test-SprintEndCommandSurface' {
     It 'returns one structured failure for a missing parameter contract' {
       function Test-Task106Command { param([string]$Present) }
@@ -98,7 +115,8 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $text | Should -Match 'pull --ff-only'
       $text | Should -Match 'Test-SprintEndPullOverlap'
       $text | Should -Match 'branch -D'
-      $text | Should -Match 'Remove-SprintDatabases'
+      $text | Should -Match 'Invoke-SprintEndInfrastructureCleanup'
+      $text | Should -Not -Match 'Remove-SprintDatabases'
       $text | Should -Match 'Set-SprintBoundaryContext @boundaryParams'
       $text | Should -Match "ProfiledRemotingPolicy = 'Auto'"
       $text | Should -Match 'Test-SprintEndBoundaryState @boundaryTestParams'
@@ -328,29 +346,56 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
         Agent = 'Codex'
         WorktreeName = Split-Path -Path $worktree -Leaf
         ConversationArchivePath = $archive
+        ConversationArchiveSha256 = 'CONVERSATION-HASH'
         MemorySnapshotCreated = $false
         MemorySkipReason = 'Agent has no on-disk memory store.'
       }
       $entry | ConvertTo-Json -Compress |
         Set-Content -LiteralPath (Join-Path $rosterRoot 'SprintWorkSessionRoster-0010.jsonl')
 
+      $evidence = @([pscustomobject]@{
+          WorktreeName = $entry.WorktreeName
+          CheckpointRecordedAt = $entry.RecordedAt
+          ManifestRecordedAtUtc = $entry.RecordedAt
+          Artifacts = @([pscustomobject]@{
+              Kind = 'Conversation'
+              ArchiveSha256 = 'CONVERSATION-HASH'
+              Replicas = @(
+                [pscustomobject]@{ Kind = 'Primary'; Path = 'C:\CorpusFixture\checkpoint.7z'; Status = 'Present'; VerifiedSha256 = 'CONVERSATION-HASH'; VerifiedAtUtc = $entry.RecordedAt },
+                [pscustomobject]@{ Kind = 'DropboxMirror'; Path = 'C:\CorpusMirrorFixture\checkpoint.7z'; Status = 'CopiedLocally'; VerifiedSha256 = 'CONVERSATION-HASH'; VerifiedAtUtc = $entry.RecordedAt }
+              )
+            })
+        })
       $result = Test-SprintCheckpointCoverage `
-        -PlanningRoot $planning -SprintNumber 10 -WorktreePaths @($worktree)
+        -PlanningRoot $planning -SprintNumber 10 -WorktreePaths @($worktree) `
+        -ExternalDurabilityEvidence $evidence
 
       $result.Ok | Should -BeTrue
       $result.PerWorktree[0].Agent | Should -Be 'Codex'
       $result.PerWorktree[0].ConversationArchiveReachable | Should -BeTrue
       $result.PerWorktree[0].MemoryState | Should -Be 'AgentHasNoMemorySnapshot'
+      $result.PerWorktree[0].ExternalDurabilityState | Should -Be 'Verified'
+      $result.PerWorktree[0].GitDurability | Should -Be 'RosterMetadataOnly'
+      $result.PerWorktree[0].RawArtifactsGitTracked | Should -BeFalse
       ($result | ConvertTo-Json -Depth 6) | Should -Not -Match '\\.codex|\\.claude|\\.gemini'
     }
   }
 
   Context 'Save-SprintEndSessionTail' {
-    It 'stages only canonical checkpoint directories and records the stable commit' {
+    It 'commits only roster metadata when git add succeeds and leaves ignored raw archives outside git' {
       $planning = Join-Path $TestDrive 'stable-planning'
       New-Item -ItemType Directory -Path $planning -Force | Out-Null
       $script:tailNativeCalls = [System.Collections.Generic.List[string]]::new()
-      Mock Save-SprintWorkSession {}
+      Mock Save-SprintWorkSession {
+        [pscustomobject]@{
+          ConversationArchiveCreated = $true
+          ConversationArchiveSha256 = 'CONVERSATION-HASH'
+          ConversationFileCount = 3
+          ConversationArchiveEntryCount = 4
+          MemorySnapshotCreated = $false
+          MemorySkipKind = 'None'
+        }
+      }
       Mock Invoke-SprintEndNativeCommand {
         $argsText = $ArgumentList -join ' '
         [void]$script:tailNativeCalls.Add($argsText)
@@ -380,6 +425,10 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $result.Committed | Should -BeTrue
       $result.CommitHash | Should -Be 'abc123'
       $result.Pushed | Should -BeFalse
+      $result.GitDurability | Should -Be 'RosterMetadataOnly'
+      $result.RawArtifactsGitTracked | Should -BeFalse
+      $result.ExternalDurabilityState | Should -Be 'PendingEvidence'
+      $result.Checkpoint.ConversationFileCount | Should -Be 3
       Should -Invoke Save-SprintWorkSession -Times 1 -ParameterFilter {
         $Agent -eq 'Codex' -and
         $SprintN -eq '0010' -and
@@ -387,8 +436,31 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
         $AllowMainFallback
       }
       ($script:tailNativeCalls -join "`n") |
-        Should -Match 'add -- SprintWorkSessionConversations SprintWorkSessionMemorys SprintWorkSessionRoster'
+        Should -Match 'add -- SprintWorkSessionRoster'
+      ($script:tailNativeCalls -join "`n") |
+        Should -Not -Match 'add -- .*SprintWorkSessionConversations|add -- .*SprintWorkSessionMemorys'
       ($script:tailNativeCalls -join "`n") | Should -Not -Match 'push'
+    }
+
+    It 'rejects a final-tail checkpoint whose sidecar-aware entry count is incomplete' {
+      $planning = Join-Path $TestDrive 'stable-planning-incomplete'
+      New-Item -ItemType Directory -Path $planning -Force | Out-Null
+      Mock Save-SprintWorkSession {
+        [pscustomobject]@{
+          ConversationArchiveCreated = $true
+          ConversationArchiveSha256 = 'CONVERSATION-HASH'
+          ConversationFileCount = 3
+          ConversationArchiveEntryCount = 3
+          MemorySnapshotCreated = $false
+        }
+      }
+      Mock Invoke-SprintEndNativeCommand {
+        [pscustomobject]@{ ExitCode = 0; Output = @('main'); Succeeded = $true }
+      }
+
+      {
+        Save-SprintEndSessionTail -PlanningRoot $planning -SprintNumber 10 -Agent Codex -SessionId 'session-id' -Confirm:$false
+      } | Should -Throw '*complete sidecar-aware checkpoint result*'
     }
   }
 
@@ -515,8 +587,16 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
         [PSCustomObject]@{ AllOk = $true; Failures = @() }
       }
       Mock Remove-SprintDatabases {
-        @([PSCustomObject]@{ database = 'ATAPUtilities'; dropped = $true })
+        foreach ($developer in $DeveloperNames) {
+          foreach ($instance in @("Dev$developer", "Exp$developer")) {
+            foreach ($database in @('ATAPUtilities', 'AceCommander')) {
+              [PSCustomObject]@{ instanceName = $instance; database = $database; instanceReady = $true;
+                dropped = $true; skipped = $false; dryRun = $false; error = $null }
+            }
+          }
+        }
       }
+      Mock Get-DbaDatabase { }
       Mock Clear-BuildMasterSprintVariables {
         [PSCustomObject]@{ variablesCleared = @('App/SprintNumber'); errors = @() }
       }
@@ -807,6 +887,36 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       Should -Invoke Set-SprintBoundaryContext -Times 0
     }
 
+    It 'blocks handoff generation and cleanup when external durability evidence is unavailable' {
+      $planning = Join-Path $TestDrive '_Planning-wt-25-Sprint-0010-work-items'
+      $shared = Join-Path $TestDrive 'SharedVSCode-wt-53-Sprint-0010-work-items'
+      New-Item -ItemType Directory -Path $planning, $shared -Force | Out-Null
+      New-Item -ItemType Directory -Path (Join-Path $planning 'SprintRetrospective') -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $planning 'SprintRetrospective\Notebook-SprintWorkSession-0010-End.md') -Value '# Sprint 0010 End'
+      Mock Test-SprintCheckpointCoverage {
+        [pscustomobject]@{
+          Ok = $false
+          Failures = @('external durability evidence is unavailable')
+          PerWorktree = @([pscustomobject]@{ ExternalDurabilityState = 'Failed' })
+        }
+      }
+      Mock New-SprintEndHandoff { throw 'handoff must not be generated before durability verification' }
+      Mock Invoke-SprintEndInfrastructureCleanup { throw 'cleanup must not run before durability verification' }
+
+      $result = Invoke-SprintEndLifecycle `
+        -GitRoot $TestDrive -PlanningRoot $planning -SharedVSCodeWorktreePath $shared `
+        -WorktreePaths @($planning, $shared) -VerifyCheckpoints -WriteHandoff -CleanupInfrastructure `
+        -ExternalDurabilityEvidence @() -WhatIf
+
+      $result.Ok | Should -BeFalse
+      $result.Failures | Should -Contain 'CheckpointCoverage'
+      $result.Failures | Should -Contain 'ExternalDurabilityRequiredForTeardown'
+      $result.Phases.Handoff | Should -BeNullOrEmpty
+      $result.Phases.InfrastructureCleanup | Should -BeNullOrEmpty
+      Should -Invoke New-SprintEndHandoff -Times 0
+      Should -Invoke Invoke-SprintEndInfrastructureCleanup -Times 0
+    }
+
     It 'adds the Planning worktree to the SprintEnd close plan when omitted by the caller' {
       $planning = Join-Path $TestDrive '_Planning-wt-23-Sprint-0010-work-items'
       $shared = Join-Path $TestDrive 'SharedVSCode-wt-51-Sprint-0010-work-items'
@@ -832,6 +942,7 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
         -WorktreePaths @($shared) `
         -CreatePullRequests `
         -MergePullRequests `
+        -VerifyCheckpoints `
         -WriteHandoff `
         -WhatIf
 
@@ -897,7 +1008,8 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       $handoffSource | Should -Match 'Remove-SprintWorktreeSafely'
       $handoffSource | Should -Not -Match 'worktree remove.*--force'
       $handoffSource | Should -Match 'pull --ff-only origin main'
-      $handoffSource | Should -Match 'Remove-SprintDatabases'
+      $handoffSource | Should -Match 'Invoke-SprintEndInfrastructureCleanup'
+      $handoffSource | Should -Not -Match 'Remove-SprintDatabases'
       $handoffSource | Should -Match 'Set-SprintBoundaryContext'
       $handoffSource | Should -Match 'Remove-Item @handoffRemovalParams'
     }

@@ -1,5 +1,43 @@
 # Release notes
 
+## 0.1.11
+
+- Makes the read-only DAB configuration unit test independent of a globally
+  installed DAB CLI while verifying the exact read-only command contract.
+- Accepts both Windows and Unix line endings in the release-heading contract.
+- Supersedes 0.1.10 after its Development gate exposed host-dependent tests;
+  no shipped runtime function changes are included in this patch.
+
+## 0.1.10
+
+- Limits DAB stale-process cleanup to the exact configured listening port so
+  parallel tier and role instances remain untouched.
+- Makes lifecycle tests independent of profile-provided networking cmdlets and
+  optional Node.js installation on BuildMaster workers.
+- Supersedes 0.1.9, which did not pass the Development promotion gate.
+
+## 0.1.8
+
+- Restricts local package staging to a repository-owned `_generated` tree;
+  promoted-module tests running beneath external BuildMaster artifact roots now
+  fall back to their execution-specific process temp directory.
+
+## 0.1.7
+
+- Adds exact child-process cleanup metadata support for portless MCP servers
+  launched through PowerShell wrappers, without parsing wrapper command text.
+- Preserves port-owner cleanup and direct-command matching while requiring exact
+  argument-token fingerprints for shared runtime executables.
+
+## 0.1.6
+
+- Adds deterministic, secret-free DAB configuration generation for the
+  ContentSummary scalar stored-procedure custom tool.
+- Rejects mismatched tier keys, catalog ports, identity metadata, duplicate
+  reservations, and pre-existing configurations that would widen access.
+- Disables REST, GraphQL, generic MCP DML, raw database entities, and secondary
+  MCP tools for the dedicated ContentSummary configuration.
+
 ## 0.1.3
 
 - Defers the DAB executable lookup until after `-WhatIf` has returned so dry-run

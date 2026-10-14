@@ -13,7 +13,7 @@
     @{ ModuleName = 'ATAP.Utilities.BuildTooling.Secrets.PowerShell'; ModuleVersion = '0.1.0' }
   )
   FunctionsToExport = @(
-    'Approve-BuildMasterStage','Assert-BuildMasterReady','Clear-BuildMasterSprintVariables',
+    'Approve-BuildMasterStage','Assert-BuildMasterReady','Clear-BuildMasterSprintVariables','Compare-BuildMasterPlanRaft',
     'New-BuildMasterApplication','New-BuildMasterRelease','New-BuildMasterScript',
     'Remove-BuildMasterApplication','Remove-BuildMasterApplicationVariable','Remove-BuildMasterRelease','Remove-BuildMasterScript',
     'Set-BuildMasterApplicationVariables','Set-BuildMasterPipelineStageDeploymentStep','Set-BuildMasterSprintVariables','Set-BuildMasterStableVariables',

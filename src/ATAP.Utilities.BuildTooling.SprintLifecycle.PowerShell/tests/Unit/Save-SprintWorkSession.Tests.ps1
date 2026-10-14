@@ -18,7 +18,10 @@ BeforeAll {
     Import-Module PSFramework -ErrorAction SilentlyContinue
   }
 
-  $script:realGitPath = (Get-Command git.exe -CommandType Application -ErrorAction Stop).Source
+  # -CommandType Application returns EVERY git.exe on PATH (this machine has three:
+  # bin\, cmd\ and mingw64in\). Taking .Source off the array yields a space-joined
+  # string that is not an executable, so pin the first match.
+  $script:realGitPath = @(Get-Command git.exe -CommandType Application -ErrorAction Stop)[0].Source
   function global:git {
     param([Parameter(ValueFromRemainingArguments = $true)]$Arguments)
     & $script:realGitPath @Arguments
@@ -50,11 +53,11 @@ BeforeAll {
   $slug = ($script:atapWt.Substring(0, 1).ToLower() + $script:atapWt.Substring(1)) `
     -replace ':', '-' -replace '\\', '-' -replace '_', '-' -replace '\.', '-' -replace '^-', ''
   $script:claudeProjectsRoot = Join-Path $script:gitRoot '.claude-projects'
-  $sessionDir = Join-Path $script:claudeProjectsRoot $slug
-  New-Item -ItemType Directory -Path $sessionDir -Force | Out-Null
-  $jsonlPath = Join-Path $sessionDir 'fake-session.jsonl'
-  Set-Content -LiteralPath $jsonlPath -Value '{"role":"user","content":"test"}' -Encoding UTF8
-  $memoryDir = Join-Path $sessionDir 'memory'
+  $script:sessionDir = Join-Path $script:claudeProjectsRoot $slug
+  New-Item -ItemType Directory -Path $script:sessionDir -Force | Out-Null
+  $script:jsonlPath = Join-Path $script:sessionDir 'fake-session.jsonl'
+  Set-Content -LiteralPath $script:jsonlPath -Value '{"role":"user","content":"test"}' -Encoding UTF8
+  $memoryDir = Join-Path $script:sessionDir 'memory'
   New-Item -ItemType Directory -Path $memoryDir -Force | Out-Null
   Set-Content -LiteralPath (Join-Path $memoryDir 'memory-note.md') -Value '# memory' -Encoding UTF8
 
@@ -80,8 +83,16 @@ BeforeAll {
         New-Item -ItemType Directory -Path (Split-Path -Path $archivePath -Parent) -Force | Out-Null
         Set-Content -LiteralPath $archivePath -Value "mock archive for $sourcePath" -Encoding UTF8
         if (-not $global:MockSevenZipContents.ContainsKey($archivePath)) {
-          $global:MockSevenZipContents[$archivePath] = @([IO.Path]::GetFileName($sourcePath))
+          $sourceRoot = Split-Path -Path $sourcePath -Parent
+          $global:MockSevenZipContents[$archivePath] = @(
+            Get-ChildItem -LiteralPath $sourceRoot -File -Recurse -Force |
+              ForEach-Object { [IO.Path]::GetRelativePath($sourceRoot, $_.FullName) }
+          )
         }
+      }
+      't' {
+        # The add action creates a readable stand-in. Integrity failures are
+        # exercised through the archive-list completeness assertions below.
       }
       'l' {
         $archivePath = $rest[0]
@@ -99,10 +110,21 @@ BeforeAll {
             '2026-07-25 10:08:16 ....A            9           13  ' + $name
           }
         }
+        if ($null -ne $global:MockSevenZipForcedEntries) {
+          Remove-Variable -Name MockSevenZipForcedEntries -Scope Global -ErrorAction SilentlyContinue
+        }
       }
       default { throw "Unexpected 7z action: $action" }
     }
   }
+
+  # SC-0327: the ClaudeCode transcript is now selected by session id, preferring
+  # $env:CLAUDE_CODE_SESSION_ID. Pester runs INSIDE a real agent session, so that
+  # variable leaks in and points at a transcript no fixture here creates. Clear it
+  # for the suite so the legacy-fallback contexts below exercise the fallback, and
+  # let the SC-0327 context set it deliberately.
+  $script:savedClaudeSessionId = $env:CLAUDE_CODE_SESSION_ID
+  $env:CLAUDE_CODE_SESSION_ID = $null
 
   # Re-dot-source after the temp tree is ready.
   . $functionPath
@@ -116,6 +138,7 @@ AfterAll {
     Remove-Item -LiteralPath 'Function:\7z' -ErrorAction SilentlyContinue
   }
   Remove-Variable -Name MockSevenZipContents -Scope Global -ErrorAction SilentlyContinue
+  $env:CLAUDE_CODE_SESSION_ID = $script:savedClaudeSessionId
   if (Test-Path $script:gitRoot) {
     Remove-Item -Recurse -Force $script:gitRoot -ErrorAction SilentlyContinue
   }
@@ -167,15 +190,15 @@ Describe 'Save-SprintWorkSession' {
       Set-Location $script:atapWt
       try {
         $savedSettings = $global:settings
-        $getPValWasAvailable = $false
+        $getPValFunction = Get-Command -Name 'Get-PVal' -CommandType Function -ErrorAction SilentlyContinue
+        $getPValTargetFunction = Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue
         try {
           $global:settings = $null
 
-          if (Test-Path -LiteralPath 'Function:\Get-PVal') {
+          if ($null -ne $getPValFunction) {
             Remove-Item -LiteralPath 'Function:\Get-PVal' -ErrorAction SilentlyContinue
-            $getPValWasAvailable = $true
           }
-          if (Test-Path -LiteralPath 'Function:\Get-ParameterValueFromNeoConfigurationRoot') {
+          if ($null -ne $getPValTargetFunction) {
             Remove-Item -LiteralPath 'Function:\Get-ParameterValueFromNeoConfigurationRoot' -ErrorAction SilentlyContinue
           }
 
@@ -193,10 +216,11 @@ Describe 'Save-SprintWorkSession' {
           $errorMessages | Should -BeNullOrEmpty -Because 'parameter defaults are usable; Get-PVal absence must not cause errors'
         } finally {
           $global:settings = $savedSettings
-          # Re-load Get-PVal if it was available before this test
-          if ($getPValWasAvailable) {
-            $getPValPath = Join-Path $PSScriptRoot '..\..\..\..\ATAP.Utilities.PowerShell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
-            if (Test-Path $getPValPath) { . $getPValPath }
+          if ($null -ne $getPValFunction) {
+            Set-Item -LiteralPath 'Function:\global:Get-PVal' -Value $getPValFunction.ScriptBlock -Force
+          }
+          if ($null -ne $getPValTargetFunction) {
+            Set-Item -LiteralPath 'Function:\global:Get-ParameterValueFromNeoConfigurationRoot' -Value $getPValTargetFunction.ScriptBlock -Force
           }
         }
       } finally {
@@ -251,6 +275,235 @@ Describe 'Save-SprintWorkSession' {
       } finally {
         Set-Location $savedLocation
         Remove-Item -Recurse -Force $customClaudeRoot, $customPlanRoot -ErrorAction SilentlyContinue
+      }
+    }
+  }
+
+  Context 'SC-0327 — the invoking session is the one that gets checkpointed' {
+
+    # The defect: transcript selection was newest-by-mtime inside the project store
+    # derived from the CWD. Twice observed archiving an unrelated session's transcript
+    # and reporting success. Two properties make that heuristic wrong here rather than
+    # merely imprecise: several agents write to one store concurrently, and a session
+    # rooted in one worktree routinely commits and checkpoints in another, so the
+    # invoking session's transcript is frequently not in the searched store at all.
+    #
+    # These cases pin the selection contract and the close variants that would
+    # reintroduce the bug.
+
+    BeforeAll {
+      # Builds a Claude projects root in which any newest-by-mtime rule picks the WRONG
+      # file: the invoking transcript is the OLDEST, and two newer decoys sit beside it.
+      # -CrossStore instead places the invoking transcript under an unrelated third store.
+      function script:New-SessionSelectionFixture {
+        param(
+          [Parameter(Mandatory)][string]$InvokingSessionId,
+          [switch]$CrossStore,
+          [switch]$OmitInvokingTranscript,
+          [switch]$SingleTranscriptOnly
+        )
+
+        $claudeRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('ssws-0327-' + [guid]::NewGuid().ToString('N'))
+        $planRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('ssws-plan-' + [guid]::NewGuid().ToString('N'))
+        New-Item -ItemType Directory -Path $claudeRoot, $planRoot -Force | Out-Null
+
+        $makeSlug = {
+          param([string]$p)
+          ($p.Substring(0, 1).ToLower() + $p.Substring(1)) `
+            -replace ':', '-' -replace '\\', '-' -replace '_', '-' -replace '\.', '-' -replace '^-', ''
+        }
+        $sprintSlug = & $makeSlug $script:atapWt
+        $sprintSessionDir = Join-Path $claudeRoot $sprintSlug
+        New-Item -ItemType Directory -Path $sprintSessionDir -Force | Out-Null
+
+        $memoryDir = Join-Path $sprintSessionDir 'memory'
+        New-Item -ItemType Directory -Path $memoryDir -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $memoryDir 'note.md') -Value '# memory' -Encoding UTF8
+
+        $invokingPath = $null
+        $base = Get-Date '2026-08-14T04:57:00'
+
+        if (-not $OmitInvokingTranscript) {
+          $target = if ($CrossStore) {
+            $otherStore = Join-Path $claudeRoot 'c--Dropbox-whertzing-GitHub-SomeOtherRepo-wt-99'
+            New-Item -ItemType Directory -Path $otherStore -Force | Out-Null
+            $otherStore
+          } else {
+            $sprintSessionDir
+          }
+          $invokingPath = Join-Path $target "$InvokingSessionId.jsonl"
+          Set-Content -LiteralPath $invokingPath -Value '{"role":"user","content":"invoking"}' -Encoding UTF8
+          (Get-Item -LiteralPath $invokingPath).LastWriteTime = $base
+        }
+
+        # Decoys in the CWD store, always NEWER than the invoking transcript.
+        $decoyNames = if ($SingleTranscriptOnly) {
+          @()
+        } else {
+          @('b82d1a05-3f14-4556-98d8-cc90d8dbb085', 'a13db555-8579-422e-a9c4-271499251b3c')
+        }
+        if ($SingleTranscriptOnly -and ($OmitInvokingTranscript -or $CrossStore)) {
+          # The single-transcript cases still need SOMETHING for the fallback to find.
+          $decoyNames = @('b82d1a05-3f14-4556-98d8-cc90d8dbb085')
+        }
+        foreach ($decoy in $decoyNames) {
+          $decoyPath = Join-Path $sprintSessionDir "$decoy.jsonl"
+          Set-Content -LiteralPath $decoyPath -Value '{"role":"user","content":"decoy"}' -Encoding UTF8
+          (Get-Item -LiteralPath $decoyPath).LastWriteTime = $base.AddHours(16)
+        }
+
+        return [pscustomobject]@{
+          ClaudeRoot   = $claudeRoot
+          PlanRoot     = $planRoot
+          SprintStore  = $sprintSessionDir
+          InvokingPath = $invokingPath
+        }
+      }
+
+      function script:Invoke-SessionSelectionCheckpoint {
+        param(
+          [Parameter(Mandatory)]$Fixture,
+          [string]$SessionId,
+          [string]$EnvSessionId
+        )
+
+        $savedLocation = Get-Location
+        Set-Location $script:atapWt
+        $savedEnv = $env:CLAUDE_CODE_SESSION_ID
+        try {
+          $env:CLAUDE_CODE_SESSION_ID = $EnvSessionId
+          $savedSettings = $global:settings
+          try {
+            $global:settings = $null
+            $splat = @{
+              SprintN            = $script:sprintNumber
+              PlanningRoot       = $Fixture.PlanRoot
+              ClaudeProjectsRoot = $Fixture.ClaudeRoot
+              GitHubRoot         = $script:gitRoot
+              Confirm            = $false
+            }
+            if ($SessionId) { $splat.SessionId = $SessionId }
+            Save-SprintWorkSession @splat | Out-Null
+
+            $rosterPath = Join-Path $Fixture.PlanRoot "SprintWorkSessionRoster\SprintWorkSessionRoster-$($script:sprintNumber).jsonl"
+            return Get-Content -LiteralPath $rosterPath | Select-Object -Last 1 | ConvertFrom-Json
+          } finally {
+            $global:settings = $savedSettings
+          }
+        } finally {
+          $env:CLAUDE_CODE_SESSION_ID = $savedEnv
+          Set-Location $savedLocation
+        }
+      }
+    }
+
+    It 'selects the invoking session from the environment, not the newest transcript' {
+      $id = '22b95cb6-ccb6-40de-af6c-f8ceb4b38093'
+      $fixture = script:New-SessionSelectionFixture -InvokingSessionId $id
+      try {
+        $entry = script:Invoke-SessionSelectionCheckpoint -Fixture $fixture -EnvSessionId $id
+
+        $entry.ConversationJsonlPath | Should -Be $fixture.InvokingPath
+        $entry.ConversationSelectionRule | Should -Be 'EnvironmentSessionId'
+        $entry.ConversationSkipKind | Should -BeNullOrEmpty
+        $entry.ConversationArchiveCreated | Should -BeTrue
+        # The exact silent-wrong-file failure this contract exists to prevent.
+        $entry.ConversationJsonlPath | Should -Not -Match 'a13db555|b82d1a05'
+      } finally {
+        Remove-Item -Recurse -Force $fixture.ClaudeRoot, $fixture.PlanRoot -ErrorAction SilentlyContinue
+      }
+    }
+
+    It 'prefers an explicit -SessionId over the environment variable' {
+      $wanted = '22b95cb6-ccb6-40de-af6c-f8ceb4b38093'
+      $fixture = script:New-SessionSelectionFixture -InvokingSessionId $wanted
+      try {
+        $entry = script:Invoke-SessionSelectionCheckpoint -Fixture $fixture `
+          -SessionId $wanted -EnvSessionId 'a13db555-8579-422e-a9c4-271499251b3c'
+
+        $entry.ConversationJsonlPath | Should -Be $fixture.InvokingPath
+        $entry.ConversationSelectionRule | Should -Be 'ExplicitSessionId'
+      } finally {
+        Remove-Item -Recurse -Force $fixture.ClaudeRoot, $fixture.PlanRoot -ErrorAction SilentlyContinue
+      }
+    }
+
+    It 'finds the transcript when the session is rooted in a DIFFERENT project store' {
+      # The normal shape of cross-repository work here: a session rooted in one
+      # worktree commits and checkpoints in another, so its transcript is not in the
+      # store derived from the CWD at all.
+      $id = '1e1c610f-7197-4cb4-8ed1-54d2295fa985'
+      $fixture = script:New-SessionSelectionFixture -InvokingSessionId $id -CrossStore
+      try {
+        $entry = script:Invoke-SessionSelectionCheckpoint -Fixture $fixture -EnvSessionId $id
+
+        $entry.ConversationJsonlPath | Should -Be $fixture.InvokingPath
+        $entry.ConversationSelectionRule | Should -Be 'SessionIdCrossStore'
+        $entry.ConversationArchiveCreated | Should -BeTrue
+      } finally {
+        Remove-Item -Recurse -Force $fixture.ClaudeRoot, $fixture.PlanRoot -ErrorAction SilentlyContinue
+      }
+    }
+
+    It 'reports a NotFound skip rather than archiving a stranger when the session transcript is absent' {
+      $id = 'deadbeef-0000-4000-8000-000000000000'
+      $fixture = script:New-SessionSelectionFixture -InvokingSessionId $id -OmitInvokingTranscript
+      try {
+        $entry = script:Invoke-SessionSelectionCheckpoint -Fixture $fixture -EnvSessionId $id
+
+        $entry.ConversationSkipKind | Should -Be 'NotFound'
+        $entry.ConversationSkipReason | Should -Match "$id"
+        $entry.ConversationArchiveCreated | Should -BeFalse
+        $entry.ConversationJsonlPath | Should -BeNullOrEmpty
+        # The roster row is still written, and memory is still captured: a missing
+        # transcript must be a reported skip, not a silent success and not a crash.
+        $entry.MemorySnapshotCreated | Should -BeTrue
+      } finally {
+        Remove-Item -Recurse -Force $fixture.ClaudeRoot, $fixture.PlanRoot -ErrorAction SilentlyContinue
+      }
+    }
+
+    It 'flags the newest-file fallback as Ambiguous when no session id is available' {
+      $fixture = script:New-SessionSelectionFixture -InvokingSessionId 'unused-0000-4000-8000-000000000000' -OmitInvokingTranscript
+      try {
+        $entry = script:Invoke-SessionSelectionCheckpoint -Fixture $fixture -EnvSessionId ''
+
+        $entry.ConversationSelectionRule | Should -Be 'NewestInProjectStore'
+        $entry.ConversationSkipKind | Should -Be 'Ambiguous'
+        $entry.ConversationSkipReason | Should -Match 'newest modification time'
+        # It still archives -- the fallback is retained for runtimes that expose no
+        # session id -- but the row can no longer be read as an assertion about WHICH
+        # session was captured.
+        $entry.ConversationArchiveCreated | Should -BeTrue
+      } finally {
+        Remove-Item -Recurse -Force $fixture.ClaudeRoot, $fixture.PlanRoot -ErrorAction SilentlyContinue
+      }
+    }
+
+    It 'does not flag Ambiguous when the store holds exactly one transcript' {
+      $id = '22b95cb6-ccb6-40de-af6c-f8ceb4b38093'
+      $fixture = script:New-SessionSelectionFixture -InvokingSessionId $id -SingleTranscriptOnly
+      try {
+        $entry = script:Invoke-SessionSelectionCheckpoint -Fixture $fixture -EnvSessionId ''
+
+        $entry.ConversationSelectionRule | Should -Be 'NewestInProjectStore'
+        $entry.ConversationSkipKind | Should -BeNullOrEmpty
+        $entry.ConversationArchiveCreated | Should -BeTrue
+      } finally {
+        Remove-Item -Recurse -Force $fixture.ClaudeRoot, $fixture.PlanRoot -ErrorAction SilentlyContinue
+      }
+    }
+
+    It 'records the session id as the AgentSessionKey, not just the project slug' {
+      # A slug names a STORE, and a store holds many sessions, so a roster row keyed
+      # only by slug cannot answer which session it covers.
+      $id = '22b95cb6-ccb6-40de-af6c-f8ceb4b38093'
+      $fixture = script:New-SessionSelectionFixture -InvokingSessionId $id
+      try {
+        $entry = script:Invoke-SessionSelectionCheckpoint -Fixture $fixture -EnvSessionId $id
+        $entry.AgentSessionKey | Should -Be $id
+      } finally {
+        Remove-Item -Recurse -Force $fixture.ClaudeRoot, $fixture.PlanRoot -ErrorAction SilentlyContinue
       }
     }
   }
@@ -347,7 +600,8 @@ Describe 'Save-SprintWorkSession' {
         $entry.MemorySnapshotCreated | Should -BeTrue -Because 'the store exists at the stable key and must be found'
         $entry.MemoryFileCount | Should -Be 1
         $entry.MemorySourcePath | Should -BeExactly $fixture.StableMemoryDir
-        Test-Path -LiteralPath (Join-Path $entry.MemorySnapshotPath 'stable-memory.md') | Should -BeTrue
+        Test-Path -LiteralPath $entry.MemorySnapshotPath -PathType Leaf | Should -BeTrue
+        $entry.MemoryArchiveSha256 | Should -Match '^[0-9A-F]{64}$'
         # The roster must record which key the memory actually came from.
         $entry.MemorySourceKey | Should -Match 'ATAP-Utilities$' -Because 'the stable key, not the -wt- sprint key, supplied the memory'
       } finally {
@@ -362,8 +616,8 @@ Describe 'Save-SprintWorkSession' {
 
         $entry.MemorySnapshotCreated | Should -BeTrue
         $entry.MemorySourcePath | Should -BeExactly $fixture.SprintMemoryDir -Because 'a live sprint store must never be shadowed by a staler stable one'
-        Test-Path -LiteralPath (Join-Path $entry.MemorySnapshotPath 'sprint-memory.md') | Should -BeTrue
-        Test-Path -LiteralPath (Join-Path $entry.MemorySnapshotPath 'stable-memory.md') | Should -BeFalse
+        Test-Path -LiteralPath $entry.MemorySnapshotPath -PathType Leaf | Should -BeTrue
+        $entry.MemoryFileCount | Should -Be 1
         $entry.MemorySourceKey | Should -Match '-wt-100-'
       } finally {
         Remove-Item -Recurse -Force $fixture.ClaudeRoot, $fixture.PlanRoot -ErrorAction SilentlyContinue
@@ -559,7 +813,7 @@ Describe 'Save-SprintWorkSession' {
           $entry = Get-Content -LiteralPath $rosterPath | Select-Object -Last 1 | ConvertFrom-Json
           $entry.MemorySourcePath | Should -BeExactly $actualMemoryDir
           $entry.MemorySnapshotCreated | Should -BeTrue
-          Test-Path -LiteralPath (Join-Path $entry.MemorySnapshotPath 'case-memory.md') | Should -BeTrue
+          Test-Path -LiteralPath $entry.MemorySnapshotPath -PathType Leaf | Should -BeTrue
         } finally {
           $global:settings = $savedSettings
         }
@@ -626,6 +880,65 @@ Describe 'Save-SprintWorkSession' {
 
           $ev | ForEach-Object { $errorMessages += $_.Exception.Message }
           $errorMessages | Should -BeNullOrEmpty -Because 'GitHubRoot contains a matching _Planning worktree'
+        } finally {
+          $global:settings = $savedSettings
+        }
+      } finally {
+        Set-Location $savedLocation
+      }
+    }
+
+    It 'auto-resolves a SINGLE matching _Planning worktree under Set-StrictMode -Version Latest' {
+      # Regression: with exactly one match, `Sort-Object FullName -Unique` emits a bare
+      # DirectoryInfo rather than an array, so the resolver's `.Count` test threw
+      # "The property 'Count' cannot be found on this object." A real /checkpoint died
+      # here. Two-or-more and zero matches both build arrays, which is why it survived.
+      # The function inherits strict mode from its caller, so the mode must be set here —
+      # the sibling test above exercises the same single-match path WITHOUT strict mode
+      # and therefore cannot catch this.
+      $savedLocation = Get-Location
+      Set-Location $script:atapWt
+      try {
+        $savedSettings = $global:settings
+        try {
+          $global:settings = $null
+
+          # Guard the fixture precondition this regression depends on: the search roots
+          # ($GitHubRoot and the parent of cwd, both $script:gitRoot here) must yield
+          # exactly ONE matching planning worktree.
+          @(Get-ChildItem $script:gitRoot -Directory |
+              Where-Object { $_.Name -match "^_Planning-wt-\d+-sprint-$($script:sprintNumber)(-|$)" }).Count |
+            Should -Be 1 -Because 'this test is only meaningful for the single-match case'
+
+          # Part 1 — the resolver itself, under strict mode. -WhatIf is deliberate: the
+          # resolver runs before any ShouldProcess-gated archiving, so this reaches the
+          # regressed line without entering the archive path. (The suite's global:7z
+          # stand-in reads $global:MockSevenZipForcedEntries unconditionally, so a full
+          # strict-mode checkpoint would trip the stand-in rather than the function.)
+          # Do not pass -PlanningRoot; the auto-resolver must pick the single match.
+          {
+            Set-StrictMode -Version Latest
+            Save-SprintWorkSession `
+              -SprintN $script:sprintNumber `
+              -ClaudeProjectsRoot $script:claudeProjectsRoot `
+              -GitHubRoot $script:gitRoot `
+              -WhatIf
+          } | Should -Not -Throw -Because 'one match must not collapse to a scalar before .Count'
+
+          # Part 2 — the single match is actually SELECTED, not merely non-throwing.
+          # A real (non-WhatIf) run puts the roster under the auto-resolved root.
+          $rosterDir = Join-Path $script:planningWt 'SprintWorkSessionRoster'
+          $rosterPath = Join-Path $rosterDir "SprintWorkSessionRoster-$($script:sprintNumber).jsonl"
+          Remove-Item -LiteralPath $rosterPath -Force -ErrorAction SilentlyContinue
+
+          Save-SprintWorkSession `
+            -SprintN $script:sprintNumber `
+            -ClaudeProjectsRoot $script:claudeProjectsRoot `
+            -GitHubRoot $script:gitRoot `
+            -Confirm:$false
+
+          Test-Path -LiteralPath $rosterPath |
+            Should -BeTrue -Because 'the auto-resolved planning root is where artifacts land'
         } finally {
           $global:settings = $savedSettings
         }
@@ -729,7 +1042,7 @@ Describe 'Save-SprintWorkSession' {
       $err = script:Invoke-CheckpointWithArchiveEntries -ArchiveEntries @()
 
       $err | Should -Not -BeNullOrEmpty
-      $err.Exception.Message | Should -Match 'contains no files'
+      $err.Exception.Message | Should -Match 'expected entry'
     }
 
     It 'fails loudly when the archive exists but omits the rollout JSONL' {
@@ -738,11 +1051,11 @@ Describe 'Save-SprintWorkSession' {
       $err = script:Invoke-CheckpointWithArchiveEntries -ArchiveEntries @('some-other-file.txt')
 
       $err | Should -Not -BeNullOrEmpty
-      $err.Exception.Message | Should -Match "rollout file 'fake-session\.jsonl' is absent"
+      $err.Exception.Message | Should -Match "expected entry 'fake-session\.jsonl'"
     }
 
     It 'succeeds and records the archive when the rollout JSONL is present' {
-      $err = script:Invoke-CheckpointWithArchiveEntries -ArchiveEntries @('fake-session.jsonl')
+      $err = script:Invoke-CheckpointWithArchiveEntries -ArchiveEntries @('fake-session.jsonl', '.checkpoint-manifest.json')
       $err | Should -BeNullOrEmpty
 
       $rosterPath = Join-Path $script:planningWt "SprintWorkSessionRoster\SprintWorkSessionRoster-$($script:sprintNumber).jsonl"
@@ -754,7 +1067,7 @@ Describe 'Save-SprintWorkSession' {
       # Guards the assertion against 7-Zip's real bare-listing shape: the original
       # proposed patch counted entries with '^\s*\d+\s+\S+', which never matches a line
       # beginning with an ISO date, so every checkpoint would have thrown.
-      $err = script:Invoke-CheckpointWithArchiveEntries -ArchiveEntries @('fake-session.jsonl')
+      $err = script:Invoke-CheckpointWithArchiveEntries -ArchiveEntries @('fake-session.jsonl', '.checkpoint-manifest.json')
       $err | Should -BeNullOrEmpty
     }
 
@@ -829,9 +1142,10 @@ Describe 'Save-SprintWorkSession' {
           $entry.MemoryFileCount | Should -BeGreaterThan 0
           $entry.ConversationDbPath | Should -Match ([regex]::Escape("$convId.db"))
 
-          # Memory snapshot must contain the brain artifacts but NOT .system_generated.
-          Test-Path -LiteralPath (Join-Path $entry.MemorySnapshotPath 'note.md') | Should -BeTrue
-          Test-Path -LiteralPath (Join-Path $entry.MemorySnapshotPath '.system_generated') | Should -BeFalse
+          # The two brain artifacts are archived; .system_generated is excluded.
+          $entry.MemoryFileCount | Should -Be 2
+          Test-Path -LiteralPath $entry.MemorySnapshotPath -PathType Leaf | Should -BeTrue
+          $entry.MemoryArchiveSha256 | Should -Match '^[0-9A-F]{64}$'
         } finally {
           $global:settings = $savedSettings
         }
@@ -1197,6 +1511,221 @@ Describe 'Save-SprintWorkSession' {
         Set-Location $savedLocation
         Remove-Item -Recurse -Force $secondRepoRoot, $secondSessionDir -ErrorAction SilentlyContinue
       }
+    }
+  }
+
+  Context 'Task 15.191.b — complete self-verifying checkpoint bundles' {
+
+    BeforeEach {
+      $script:sidecarRoot = Join-Path $script:sessionDir 'fake-session'
+      Remove-Item -LiteralPath $script:sidecarRoot -Recurse -Force -ErrorAction SilentlyContinue
+      Remove-Item -LiteralPath (Join-Path $script:sessionDir 'fake-session-copy') -Recurse -Force -ErrorAction SilentlyContinue
+      Remove-Item -LiteralPath (Join-Path $script:planningWt 'SprintWorkSessionConversations') -Recurse -Force -ErrorAction SilentlyContinue
+      Remove-Item -LiteralPath (Join-Path $script:planningWt 'SprintWorkSessionMemorys') -Recurse -Force -ErrorAction SilentlyContinue
+      Remove-Item -LiteralPath (Join-Path $script:planningWt 'SprintWorkSessionRoster') -Recurse -Force -ErrorAction SilentlyContinue
+      Set-Content -LiteralPath $script:jsonlPath -Value '{"role":"user","content":"test"}' -Encoding UTF8
+      $global:MockSevenZipContents = @{}
+    }
+
+    BeforeAll {
+      function Invoke-SidecarCheckpoint {
+        $savedLocation = Get-Location
+        $savedSettings = $global:settings
+        Set-Location $script:atapWt
+        try {
+          $global:settings = $null
+          $parameters = @{
+            Agent              = 'ClaudeCode'
+            SessionId          = 'fake-session'
+            SprintN            = $script:sprintNumber
+            PlanningRoot       = $script:planningWt
+            ClaudeProjectsRoot = $script:claudeProjectsRoot
+            GitHubRoot         = $script:gitRoot
+            Confirm            = $false
+          }
+          Save-SprintWorkSession @parameters
+        } finally {
+          $global:settings = $savedSettings
+          Set-Location $savedLocation
+        }
+      }
+    }
+
+    It 'archives the main transcript, every exact sibling subagent transcript, and each referenced tool result' {
+      $subagentsRoot = Join-Path $script:sidecarRoot 'subagents'
+      $toolResultsRoot = Join-Path $script:sidecarRoot 'tool-results'
+      New-Item -ItemType Directory -Path $subagentsRoot, $toolResultsRoot -Force | Out-Null
+      # A genuine overflow reference is the harness-written persistedOutputPath
+      # field, nested inside toolUseResult exactly as Claude Code records it.
+      $mainRecord = [pscustomobject]@{
+        role           = 'assistant'
+        toolUseResult  = [pscustomobject]@{
+          persistedOutputPath = (Join-Path $toolResultsRoot 'overflow-main.txt')
+          persistedOutputSize = 149677
+        }
+      }
+      $mainRecord | ConvertTo-Json -Compress -Depth 5 | Set-Content -LiteralPath $script:jsonlPath -Encoding UTF8
+      $subagentPath = Join-Path $subagentsRoot 'agent-a1.jsonl'
+      $subagentRecord = [pscustomobject]@{
+        role          = 'assistant'
+        toolUseResult = [pscustomobject]@{
+          persistedOutputPath = (Join-Path $toolResultsRoot 'overflow-agent.txt')
+          persistedOutputSize = 98304
+        }
+      }
+      $subagentRecord | ConvertTo-Json -Compress -Depth 5 | Set-Content -LiteralPath $subagentPath -Encoding UTF8
+      Set-Content -LiteralPath (Join-Path $toolResultsRoot 'overflow-main.txt') -Value 'main overflow' -Encoding UTF8
+      Set-Content -LiteralPath (Join-Path $toolResultsRoot 'overflow-agent.txt') -Value 'agent overflow' -Encoding UTF8
+
+      $expectedBytes = @(
+        $script:jsonlPath
+        $subagentPath
+        (Join-Path $toolResultsRoot 'overflow-main.txt')
+        (Join-Path $toolResultsRoot 'overflow-agent.txt')
+      ) | Get-Item | Measure-Object -Property Length -Sum | Select-Object -ExpandProperty Sum
+      $entry = Invoke-SidecarCheckpoint
+
+      $entry.ConversationArchiveCreated | Should -BeTrue
+      $entry.ConversationFileCount | Should -Be 4
+      $entry.ConversationArchiveEntryCount | Should -Be 5
+      $entry.ConversationByteCount | Should -Be $expectedBytes
+      $entry.ConversationArchiveSha256 | Should -Match '^[0-9A-F]{64}$'
+      $entry.MemoryArchiveSha256 | Should -Match '^[0-9A-F]{64}$'
+    }
+
+    It 'captures a concurrently open sibling subagent transcript through a shared-read handle' {
+      $subagentsRoot = Join-Path $script:sidecarRoot 'subagents'
+      New-Item -ItemType Directory -Path $subagentsRoot -Force | Out-Null
+      $subagentPath = Join-Path $subagentsRoot 'agent-concurrent.jsonl'
+      Set-Content -LiteralPath $subagentPath -Value '{"role":"assistant","content":"active"}' -Encoding UTF8
+      $stream = [IO.File]::Open($subagentPath, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::ReadWrite)
+      try {
+        $entry = Invoke-SidecarCheckpoint
+      } finally {
+        $stream.Dispose()
+      }
+
+      $entry.ConversationArchiveCreated | Should -BeTrue
+      $entry.ConversationFileCount | Should -Be 2
+      $expectedBytes = (Get-Item -LiteralPath $script:jsonlPath).Length + (Get-Item -LiteralPath $subagentPath).Length
+      $entry.ConversationByteCount | Should -Be $expectedBytes
+    }
+
+    It 'rejects a truncated sibling transcript and publishes no final archive' {
+      $subagentsRoot = Join-Path $script:sidecarRoot 'subagents'
+      New-Item -ItemType Directory -Path $subagentsRoot -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $subagentsRoot 'agent-truncated.jsonl') -Value '{"role":' -Encoding UTF8
+
+      { Invoke-SidecarCheckpoint } | Should -Throw -ExpectedMessage '*Incomplete or invalid JSONL*'
+      @(Get-ChildItem -LiteralPath (Join-Path $script:planningWt 'SprintWorkSessionConversations') -Filter '*.7z' -File -ErrorAction SilentlyContinue).Count | Should -Be 0
+    }
+
+    It 'rejects a renamed referenced tool result as a dangling reference' {
+      $toolResultsRoot = Join-Path $script:sidecarRoot 'tool-results'
+      New-Item -ItemType Directory -Path $toolResultsRoot -Force | Out-Null
+      [pscustomobject]@{
+        role          = 'assistant'
+        toolUseResult = [pscustomobject]@{
+          persistedOutputPath = (Join-Path $toolResultsRoot 'original.txt')
+          persistedOutputSize = 4096
+        }
+      } | ConvertTo-Json -Compress -Depth 5 | Set-Content -LiteralPath $script:jsonlPath -Encoding UTF8
+      Set-Content -LiteralPath (Join-Path $toolResultsRoot 'renamed.txt') -Value 'renamed' -Encoding UTF8
+
+      { Invoke-SidecarCheckpoint } | Should -Throw -ExpectedMessage '*Dangling overflow tool-result reference*original.txt*'
+    }
+
+    It 'ignores a tool-results path that appears only as transcript text' {
+      # SC-0328: running this module's own Pester suite writes the dangling-reference
+      # failure message -- naming a synthetic fixture's original.txt -- into the
+      # session transcript. Transcripts are append-only, so a text match made every
+      # later checkpoint for that session fail closed on a file that never existed.
+      $toolResultsRoot = Join-Path $script:sidecarRoot 'tool-results'
+      New-Item -ItemType Directory -Path $toolResultsRoot -Force | Out-Null
+      $quotedFailure = "Dangling overflow tool-result reference 'original.txt'; expected exact file 'C:\fixture\ssws-test-1\fake-session\tool-results\original.txt'."
+      @(
+        ([pscustomobject]@{ role = 'assistant'; content = $quotedFailure }),
+        # The literal field name quoted inside a string value must not count either.
+        ([pscustomobject]@{ role = 'user'; content = 'the harness writes {"persistedOutputPath":"C:\fixture\tool-results\quoted.txt"} for overflow' }),
+        ([pscustomobject]@{ role = 'user'; toolUse = [pscustomobject]@{ command = "grep -n 'tool-results[\\/]ghost.txt' transcript.jsonl" } })
+      ) | ForEach-Object { $_ | ConvertTo-Json -Compress -Depth 5 } |
+        Set-Content -LiteralPath $script:jsonlPath -Encoding UTF8
+
+      $entry = Invoke-SidecarCheckpoint
+
+      $entry.ConversationArchiveCreated | Should -BeTrue
+      $entry.ConversationFileCount | Should -Be 1 -Because 'no overflow sidecar is genuinely referenced'
+    }
+
+    It 'ignores a subagent persistedOutputPath that belongs to another session' {
+      # A replayed or fixture transcript can carry a structurally valid reference
+      # into a tool-results directory this checkpoint has no claim on.
+      $subagentsRoot = Join-Path $script:sidecarRoot 'subagents'
+      $toolResultsRoot = Join-Path $script:sidecarRoot 'tool-results'
+      New-Item -ItemType Directory -Path $subagentsRoot, $toolResultsRoot -Force | Out-Null
+      [pscustomobject]@{
+        role          = 'assistant'
+        toolUseResult = [pscustomobject]@{
+          persistedOutputPath = (Join-Path $script:sessionDir 'other-session\tool-results\foreign.txt')
+          persistedOutputSize = 2048
+        }
+      } | ConvertTo-Json -Compress -Depth 5 |
+        Set-Content -LiteralPath (Join-Path $subagentsRoot 'agent-foreign.jsonl') -Encoding UTF8
+
+      $entry = Invoke-SidecarCheckpoint
+
+      $entry.ConversationArchiveCreated | Should -BeTrue
+      $entry.ConversationFileCount | Should -Be 2 -Because 'only the two transcripts belong to this bundle'
+    }
+
+    It 'still rejects a dangling reference carried by a subagent transcript' {
+      $subagentsRoot = Join-Path $script:sidecarRoot 'subagents'
+      $toolResultsRoot = Join-Path $script:sidecarRoot 'tool-results'
+      New-Item -ItemType Directory -Path $subagentsRoot, $toolResultsRoot -Force | Out-Null
+      [pscustomobject]@{
+        role          = 'assistant'
+        toolUseResult = [pscustomobject]@{
+          persistedOutputPath = (Join-Path $toolResultsRoot 'agent-missing.txt')
+          persistedOutputSize = 512
+        }
+      } | ConvertTo-Json -Compress -Depth 5 |
+        Set-Content -LiteralPath (Join-Path $subagentsRoot 'agent-dangling.jsonl') -Encoding UTF8
+
+      { Invoke-SidecarCheckpoint } | Should -Throw -ExpectedMessage '*Dangling overflow tool-result reference*agent-missing.txt*'
+    }
+
+    It 'ignores absent and close-variant sidecar directories instead of guessing' {
+      $closeVariantRoot = Join-Path $script:sessionDir 'fake-session-copy\subagents'
+      $singularRoot = Join-Path $script:sidecarRoot 'subagent'
+      New-Item -ItemType Directory -Path $closeVariantRoot, $singularRoot -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $closeVariantRoot 'agent-wrong.jsonl') -Value '{"role":' -Encoding UTF8
+      Set-Content -LiteralPath (Join-Path $singularRoot 'agent-wrong.jsonl') -Value '{"role":' -Encoding UTF8
+
+      $entry = Invoke-SidecarCheckpoint
+
+      $entry.ConversationArchiveCreated | Should -BeTrue
+      $entry.ConversationFileCount | Should -Be 1
+    }
+
+    It 'makes a failed dangling-reference retry idempotent once the exact sidecar arrives' {
+      $toolResultsRoot = Join-Path $script:sidecarRoot 'tool-results'
+      New-Item -ItemType Directory -Path $toolResultsRoot -Force | Out-Null
+      [pscustomobject]@{
+        role          = 'assistant'
+        toolUseResult = [pscustomobject]@{
+          persistedOutputPath = (Join-Path $toolResultsRoot 'retry.txt')
+          persistedOutputSize = 1024
+        }
+      } | ConvertTo-Json -Compress -Depth 5 | Set-Content -LiteralPath $script:jsonlPath -Encoding UTF8
+
+      { Invoke-SidecarCheckpoint } | Should -Throw
+      Set-Content -LiteralPath (Join-Path $toolResultsRoot 'retry.txt') -Value 'arrived' -Encoding UTF8
+      $entry = Invoke-SidecarCheckpoint
+
+      $entry.ConversationArchiveCreated | Should -BeTrue
+      $entry.ConversationFileCount | Should -Be 2
+      @(Get-ChildItem -LiteralPath (Join-Path $script:planningWt 'SprintWorkSessionConversations') -Filter '*.pending' -File -ErrorAction SilentlyContinue).Count | Should -Be 0
+      @(Get-ChildItem -LiteralPath (Join-Path $script:planningWt 'SprintWorkSessionConversations') -Filter '*.7z' -File -ErrorAction SilentlyContinue).Count | Should -Be 1
     }
   }
 }

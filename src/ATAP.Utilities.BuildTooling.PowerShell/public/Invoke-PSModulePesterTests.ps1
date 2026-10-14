@@ -6,7 +6,7 @@ Runs Pester tests for a PowerShell module with tier-appropriate tag filters.
 Tier-aware wrapper around Invoke-Pester used by the 5-Tier module build
 pipeline. At tier Sprint, tests are skipped entirely and GatePass = $true.
 At tiers Alpha and above, the tag include/exclude lists follow section 5.2
-of the 5-Tier Implementation Plan. Pester 5+ is required. JUnit XML test
+of the 5-Tier Implementation Plan. Pester 5 is required. JUnit XML test
 results and JaCoCo code coverage are emitted to the supplied paths.
 
 .PARAMETER ModuleRoot
@@ -760,17 +760,17 @@ function Invoke-PSModulePesterTests {
         }
       }
 
-      # Ensure Pester 5+ is available.
+      # Pester 6 removes APIs used by the reviewed test suite. Select the supported major explicitly.
       $pester = Get-Module -ListAvailable -Name Pester |
-        Where-Object { $_.Version -ge [version]'5.0.0' } |
+        Where-Object { $_.Version -ge [version]'5.0.0' -and $_.Version -lt [version]'6.0.0' } |
         Sort-Object Version -Descending |
         Select-Object -First 1
       if (-not $pester) {
-        $msg = 'Pester 5 or newer is not installed. Install it with: Install-Module Pester -MinimumVersion 5.0.0 -Scope CurrentUser -Force'
+        $msg = 'Pester 5 is not installed. Install it with: Install-Module Pester -MinimumVersion 5.0.0 -MaximumVersion 5.999.999 -Scope CurrentUser -Force'
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
         throw $msg
       }
-      Import-Module Pester -MinimumVersion 5.0.0 -ErrorAction Stop
+      Import-Module -Name $pester.Path -RequiredVersion $pester.Version -DisableNameChecking -ErrorAction Stop
 
       # Create output folders.
       foreach ($p in @($OutputPath, $CoverageOutputPath)) {

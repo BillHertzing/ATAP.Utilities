@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "1.0.0",
+  "repository": "ATAP.Utilities",
+  "applications": [
+    {
+      "projectPath": "samples/ATAP.Console.CodeAnalysis/ATAP.Console.CodeAnalysis.csproj",
+      "classification": "NonshippingSample",
+      "shipping": false,
+      "componentOf": null,
+      "qualityTier": "Production"
+    },
+    {
+      "projectPath": "samples/ATAP.Console.Console01/ATAP.Console.Console01.csproj",
+      "classification": "NonshippingSample",
+      "shipping": false,
+      "componentOf": null,
+      "qualityTier": "Production"
+    },
+    {
+      "projectPath": "samples/ATAP.Console.Console02/ATAP.Console.Console02.csproj",
+      "classification": "NonshippingSample",
+      "shipping": false,
+      "componentOf": null,
+      "qualityTier": "Production"
+    },
+    {
+      "projectPath": "samples/ATAP.Console.Console03/ATAP.Console.Console03.csproj",
+      "classification": "NonshippingSample",
+      "shipping": false,
+      "componentOf": null,
+      "qualityTier": "Production"
+    },
+    {
+      "projectPath": "samples/ATAP.Console.HelloWorld/ATAP.Console.HelloWorld.csproj",
+      "classification": "NonshippingSample",
+      "shipping": false,
+      "componentOf": null,
+      "qualityTier": "Production"
+    },
+    {
+      "projectPath": "samples/ATAP.Console.ManimDemo/Model/ATAP.Console.ManimDemo.Model.csproj",
+      "classification": "NonshippingSample",
+      "shipping": false,
+      "componentOf": null,
+      "qualityTier": "Production"
+    },
+    {
+      "projectPath": "samples/ATAP.Console.PluginDemo/Model/ATAP.Console.PluginDemo.Model.csproj",
+      "classification": "NonshippingSample",
+      "shipping": false,
+      "componentOf": null,
+      "qualityTier": "Production"
+    },
+    {
+      "projectPath": "samples/ATAP.Service.Service01/ATAP.Service.Service01.csproj",
+      "classification": "NonshippingSample",
+      "shipping": false,
+      "componentOf": null,
+      "qualityTier": "Production"
+    },
+    {
+      "projectPath": "samples/ATAP.Service.Service02/ATAP.Service.Service02.csproj",
+      "classification": "NonshippingSample",
+      "shipping": false,
+      "componentOf": null,
+      "qualityTier": "Production"
+    },
+    {
+      "projectPath": "tests/ATAP.Utilities.Secrets.BitwardenSecretsManager.UnitTests/BwsProcessTestDouble/BwsProcessTestDouble.csproj",
+      "classification": "TestFixtureExecutable",
+      "shipping": false,
+      "componentOf": null,
+      "qualityTier": "Production"
+    }
+  ]
+}

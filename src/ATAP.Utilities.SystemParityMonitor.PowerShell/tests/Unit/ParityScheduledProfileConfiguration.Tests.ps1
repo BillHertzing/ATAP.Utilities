@@ -12,6 +12,7 @@ Describe 'SystemParityMonitor scheduled package-manager profile configuration' -
         [string] $StatePath,
         [string] $HostName,
         [object[]] $PackageManagerProfiles = @(),
+        [object] $SharedDotNetToolPolicy,
         [hashtable] $ExpectedSurfaceMinimumCounts
       )
     }
@@ -47,6 +48,7 @@ Describe 'SystemParityMonitor scheduled package-manager profile configuration' -
     $script:scheduledTaskRegistrations = @()
     $script:s4uRegistrations = @()
     $script:capturedProfiles = $null
+    $script:capturedSharedDotNetToolPolicy = $null
 
     Mock -CommandName Get-Command -ParameterFilter { $Name -eq 'pwsh' } -MockWith {
       [pscustomobject]@{ Source = 'C:\Program Files\PowerShell\7\pwsh.exe' }
@@ -110,11 +112,19 @@ Describe 'SystemParityMonitor scheduled package-manager profile configuration' -
         $global:configRootKeys = @{
           SystemParityMonitorConfigRootKey = 'SystemParityMonitor'
           SystemParityMonitorPackageManagerProfilesConfigRootKey = 'PackageManagerProfiles'
+          SystemParityMonitorSharedDotNetToolPolicyConfigRootKey = 'SharedDotNetToolPolicy'
           SystemParityMonitorExpectedSurfaceMinimumCountsConfigRootKey = 'ExpectedSurfaceMinimumCounts'
         }
         $global:settings = @{
           SystemParityMonitor = @{
             PackageManagerProfiles = @([pscustomobject]@{ Identity = 'ATAP\Developer'; PipPath = 'C:\pip' })
+            SharedDotNetToolPolicy = [pscustomobject]@{
+              SchemaVersion = 1
+              SharedPath = 'C:\ProgramData\dotnet\tools'
+              Tools = @([pscustomobject]@{ PackageId = 'dotnet-trace'; CommandName = 'dotnet-trace.exe'; ExpectedVersion = '10.0.731102' })
+              Consumers = @([pscustomobject]@{ LogicalIdentity = 'ParityAudit'; ActualIdentity = 'UTAT022\SvcParityAudit'; EvidenceMode = 'CurrentProcess' })
+              RequiredChanges = @([pscustomobject]@{ LogicalChangeId = 'fixture'; EntryId = 'fixture-entry'; JournalHostName = 'utat022'; AckHostName = 'utat01'; Category = 'Packages'; Item = 'dotnet-trace/shared'; MinimumAckStatus = 'Verified' })
+            }
             ExpectedSurfaceMinimumCounts = @{ SQL = 2; PackageManager = 1 }
           }
         }
@@ -132,6 +142,10 @@ Describe 'SystemParityMonitor scheduled package-manager profile configuration' -
         $script:s4uRegistrations | Should -HaveCount 2
         $script:s4uRegistrations[0].Arguments | Should -Match '-PackageManagerProfilesPath'
         $script:s4uRegistrations[1].Arguments | Should -Match '-PackageManagerProfilesPath'
+        $script:s4uRegistrations[0].Arguments | Should -Match '-SharedDotNetToolPolicyPath'
+        $script:s4uRegistrations[1].Arguments | Should -Match '-SharedDotNetToolPolicyPath'
+        Test-Path -LiteralPath (Join-Path $statePath 'Configuration\SharedDotNetTools.v1.json') |
+          Should -BeTrue
       } finally {
         $global:settings = $savedSettings
         $global:configRootKeys = $savedKeys
@@ -265,14 +279,40 @@ Describe 'SystemParityMonitor scheduled package-manager profile configuration' -
   Context 'scheduled audit wrapper validation and pass-through' {
     BeforeEach {
       Mock -CommandName Invoke-ParityAudit -MockWith {
-        param($StatePath, $HostName, $PackageManagerProfiles, $ExpectedSurfaceMinimumCounts)
+        param($StatePath, $HostName, $PackageManagerProfiles, $SharedDotNetToolPolicy, $ExpectedSurfaceMinimumCounts)
         $script:capturedProfiles = @($PackageManagerProfiles | Where-Object { $null -ne $_ })
+        $script:capturedSharedDotNetToolPolicy = $SharedDotNetToolPolicy
         $script:capturedMinimumCounts = $ExpectedSurfaceMinimumCounts
         [pscustomobject]@{
           SnapshotPath = Join-Path $StatePath 'snapshot.json'
           CapturedAtUtc = '2026-08-09T00:00:00Z'
         }
       }
+    }
+
+    It 'passes the separate shared-tool policy without merging it into user profiles' {
+      $configurationPath = Join-Path $statePath 'Configuration\PackageManagerProfiles.v1.json'
+      $sharedPolicyPath = Join-Path $statePath 'Configuration\SharedDotNetTools.v1.json'
+      Write-TestPackageManagerProfileConfiguration -Path $configurationPath -SchemaVersion 1 -Profiles @()
+      [pscustomobject]@{
+        SchemaVersion = 1
+        SharedPath = 'C:\ProgramData\dotnet\tools'
+        Tools = @([pscustomobject]@{ PackageId = 'dotnet-trace'; CommandName = 'dotnet-trace.exe'; ExpectedVersion = '10.0.731102' })
+        Consumers = @([pscustomobject]@{ LogicalIdentity = 'ParityAudit'; ActualIdentity = 'UTAT022\SvcParityAudit'; EvidenceMode = 'CurrentProcess' })
+        RequiredChanges = @([pscustomobject]@{ LogicalChangeId = 'fixture'; EntryId = 'fixture-entry'; JournalHostName = 'utat022'; AckHostName = 'utat01'; Category = 'Packages'; Item = 'dotnet-trace/shared'; MinimumAckStatus = 'Verified' })
+      } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $sharedPolicyPath -Encoding utf8
+
+      $parameters = @{
+        StatePath = $statePath
+        HostName = 'utat022'
+        ResultDirectory = $resultPath
+        PackageManagerProfilesPath = $configurationPath
+        SharedDotNetToolPolicyPath = $sharedPolicyPath
+      }
+      Invoke-ParityScheduledAuditTask @parameters
+
+      $script:capturedProfiles | Should -HaveCount 0
+      $script:capturedSharedDotNetToolPolicy.SharedPath | Should -Be 'C:\ProgramData\dotnet\tools'
     }
 
     It 'passes valid profiles unchanged when the config path contains spaces' {

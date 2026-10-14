@@ -1,54 +1,97 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "releaseVersion": "1.4.0",
   "sourceTag": "v1.4.0",
   "sourceCommit": "8f4b2c1d3e5fa9c4b1f2e3d4a5b6c7d8e9f0a1b2",
   "sourceBranch": "release/1.4.0",
   "buildUtc": "2026-05-06T14:32:11Z",
   "buildAgent": "unit-test",
-  "appPackageId": "AceCommander",
-  "appPackageVersion": "1.4.0",
+  "applicationProvenance": {
+    "productId": "AceCommander",
+    "root": {
+      "id": "AceCommander.Server",
+      "version": "1.4.0",
+      "qualityTier": "Production",
+      "projectPath": "src/AceCommander.Server/AceCommander.Server.csproj"
+    },
+    "components": [
+      {
+        "id": "AceCommander.Client",
+        "version": "1.4.0",
+        "qualityTier": "Production",
+        "projectPath": "src/AceCommander.Client/AceCommander.Client.csproj"
+      }
+    ],
+    "artifactKind": "HostedWebApplication",
+    "configuration": "Release",
+    "targetFramework": "net10.0",
+    "runtimeIdentifier": null,
+    "publishSettings": {
+      "selfContained": false,
+      "publishSingleFile": false,
+      "publishTrimmed": false,
+      "useAppHost": false
+    }
+  },
   "includedLibraryPackages": [
-    { "id": "ATAP.Utilities.Philote", "version": "0.1.0-Beta.42" }
+    {
+      "id": "ATAP.Utilities.Philote",
+      "version": "0.1.0-Beta.42"
+    }
   ],
   "includedPowerShellModules": [
-    { "id": "ATAP.Utilities.FileIO.PowerShell", "version": "0.1.0-Beta.17" }
+    {
+      "id": "ATAP.Utilities.FileIO.PowerShell",
+      "version": "0.1.0-Beta.17"
+    }
   ],
-  "databasePackageIncluded": true,
-  "dbChangeUnit": "AceCommander-db-1.4.0",
-  "flywayTargetVersion": "1.4.2",
-  "migrationFiles": [
-    "db/flyway/V1.4.0__baseline_schema.sql"
-  ],
-  "seedFiles": [
-    "db/seed/S1_4_0_roles.csv"
-  ],
-  "seedLoaderScripts": [
-    "db/seed/S1_4_0_roles_load.sql"
+  "databasePackageReference": {
+    "id": "AceCommander.Database",
+    "compatibleVersionRange": "[1.4.0,1.5.0)",
+    "pinnedVersion": "1.4.2",
+    "lifecycleCeiling": "database-qa"
+  },
+  "payloadFiles": [
+    {
+      "path": "app/config/appsettings.template.json",
+      "checksumSha256": "a36e5a489457b7c6493529e120b63a121a97e7a7a40cfde5ae2412a61ec287fa",
+      "sizeBytes": 78
+    },
+    {
+      "path": "docs/RELEASE_NOTES.md",
+      "checksumSha256": "126103a7def8325510cf17628c1cb8ad942fd108ff1e4441f6819484bd482de8",
+      "sizeBytes": 60
+    },
+    {
+      "path": "installer/Install-Application.ps1",
+      "checksumSha256": "1171424c47cb623292629990dc38231556d8cb1c190d310e2d8a4b7cafba3ba6",
+      "sizeBytes": 56
+    },
+    {
+      "path": "tests/unit-results.trx",
+      "checksumSha256": "7473f8e2c2c6ba3b82fe03f3302adf015df2c1437c9c4a4114ef3d4e12b6e8db",
+      "sizeBytes": 28
+    }
   ],
   "installerScripts": [
     "installer/Install-Application.ps1"
   ],
   "testEvidence": [
-    { "kind": "unit", "path": "tests/unit-results.trx", "checksumSha256": "1111111111111111111111111111111111111111111111111111111111111111" }
+    {
+      "kind": "unit",
+      "path": "tests/unit-results.trx",
+      "checksumSha256": "7473f8e2c2c6ba3b82fe03f3302adf015df2c1437c9c4a4114ef3d4e12b6e8db"
+    }
   ],
-  "checksums": {
-    "app/bin/AceCommander.dll": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    "db/flyway/V1.4.0__baseline_schema.sql": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-    "db/seed/S1_4_0_roles.csv": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-    "db/seed/S1_4_0_roles_load.sql": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
-    "installer/Install-Application.ps1": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-    "tests/unit-results.trx": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-    "docs/RELEASE_NOTES.md": "sha256:1212121212121212121212121212121212121212121212121212121212121212"
-  },
   "compatibility": {
-    "minDbVersion": "1.4.0",
-    "maxDbVersion": "1.4.2",
-    "supportedOs": [ "Windows 10 1809+", "Windows 11", "Windows Server 2019+" ],
-    "requiredDotnet": "10.0"
+    "osFamilies": [
+      "windows"
+    ],
+    "runtimeIdentifiers": [],
+    "dotnetRuntimeVersion": "10.0"
   },
   "rollback": {
     "supported": false,
-    "notes": "Fixture rollback notes."
+    "notes": "Archive-only fixture; deployment recovery is separately gated."
   }
 }

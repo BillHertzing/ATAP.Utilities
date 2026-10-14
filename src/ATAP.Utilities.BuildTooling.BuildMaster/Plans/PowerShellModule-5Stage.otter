@@ -70,7 +70,7 @@ set $BuildMasterExecutionId = $ExecutionId;
 Exec
 (
     FileName: pwsh,
-    Arguments: >>-NoProfile -File "$InvokePowerShellModuleStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -ModuleName "$ModuleName" -PackageName "$PackageName" -ModulePath "$ModulePath" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName" -CodeSigningCertificateThumbprint "$CodeSigningCertificateThumbprint" -TimestampServerUri "$TimestampServerUri">>,
+    Arguments: >>-File "$InvokePowerShellModuleStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -ModuleName "$ModuleName" -PackageName "$PackageName" -ModulePath "$ModulePath" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName" -CodeSigningCertificateThumbprint "$CodeSigningCertificateThumbprint" -TimestampServerUri "$TimestampServerUri">>,
     WorkingDirectory: $SourcePath,
     SuccessExitCode: 0
 );

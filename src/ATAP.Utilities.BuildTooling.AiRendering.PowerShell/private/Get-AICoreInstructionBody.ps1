@@ -20,10 +20,12 @@ function Get-AICoreInstructionBody {
     format (SourceId / Source / SourceSha256 / Materialization) that must stay in lockstep
     with the drift checks, and it would drift the moment either side changed.
 
-    Carrier shapes, both verified byte-identical to the corresponding legacy base file:
+    Carrier shapes, both verified byte-identical to the corresponding legacy base file.
+    Each comes from its manifest target's 'composedMaterialization' (Task 15.72), not from
+    an assumption made here:
       AGENTS - title line, generated-wrapper header, canonical body.
-      CLAUDE - canonical body verbatim (the record's ClaudeCode target is materialization
-               'copy', so the renderer returns the source unchanged).
+      CLAUDE - canonical body verbatim ('copy', so the renderer returns the source
+               unchanged).
 
     The legacy base file remains supported as a FALLBACK only, for a worktree that has no
     .ai tree (older sprints, fixtures, a downstream repo rendered from a pinned bundle).
@@ -118,17 +120,35 @@ function Get-AICoreInstructionBody {
       throw "Canonical core instructions '$canonicalRelative' not found at '$canonicalFullPath'."
     }
 
-    # Match the carrier to its manifest target so materialization comes from the manifest
-    # rather than being assumed here. The target PATH is set to the concrete carrier file
-    # (AGENTS.md / CLAUDE.md) rather than the -base.md name: New-AIAdapterContent treats
-    # both identically for AGENTS, and this is the file actually being produced.
-    $targetBaseName = "$Carrier-base.md"
-    $manifestTarget = @($record.targets | Where-Object { [string]$_.path -eq $targetBaseName })
+    # Match the carrier to its manifest target so the body shape comes from the manifest
+    # rather than being assumed here.
+    #
+    # Task 15.72: the lookup key is the carrier file itself ('CLAUDE.md' / 'AGENTS.md').
+    # Task 14.60 stopped READING <Carrier>-base.md but still looked its manifest target up
+    # BY NAME to fetch a materialization, which kept two retired filenames load-bearing:
+    # deleting the targets threw here and broke both combiners, so the manifest could not
+    # be cleaned up without breaking composition.
+    #
+    # The targets are now 'composer-owner' -- the value that tells Render-AIAdapters this
+    # combiner owns the write. That displaced the 'copy' / 'generated-wrapper' value that
+    # used to carry the BODY SHAPE, so the shape moved to its own field rather than being
+    # hard-coded per carrier here. Hard-coding it would put a second copy of the
+    # provenance-header format in this module, which is the duplication this function
+    # avoids by dot-sourcing the renderer's own New-AIAdapterContent.
+    $targetCarrierName = "$Carrier.md"
+    $manifestTarget = @($record.targets | Where-Object { [string]$_.path -eq $targetCarrierName })
     if ($manifestTarget.Count -ne 1) {
-      throw ("Expected exactly one '$targetBaseName' target on '$recordId'; found " +
+      throw ("Expected exactly one '$targetCarrierName' target on '$recordId'; found " +
         "$($manifestTarget.Count). The $Carrier carrier cannot be composed from canonical.")
     }
-    $materialization = [string]$manifestTarget[0].materialization
+
+    $composedProperty = $manifestTarget[0].PSObject.Properties['composedMaterialization']
+    if (-not $composedProperty -or [string]::IsNullOrWhiteSpace([string]$composedProperty.Value)) {
+      throw ("Target '$targetCarrierName' on '$recordId' declares no 'composedMaterialization'. " +
+        "A composer-owned carrier must state the body shape it expects ('copy' or " +
+        "'generated-wrapper'); without it the emitted bytes would be a guess.")
+    }
+    $materialization = [string]$composedProperty.Value
 
     $sourceContent = Get-Content -LiteralPath $canonicalFullPath -Raw -ErrorAction Stop
     $sourceHash = Get-AIAdapterFileHash -Path $canonicalFullPath -NormalizeNewlines

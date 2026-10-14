@@ -138,17 +138,32 @@ function Resolve-ProGetFeedFromSettings {
 
   foreach ($feedKey in $feedCollection.Keys) {
     $feed = $feedCollection[$feedKey]
+    $feedName = [string](Get-ProGetFeedSettingProperty -Feed $feed -Name 'FeedName')
     $entryFeedType = [string](Get-ProGetFeedSettingProperty -Feed $feed -Name 'FeedType')
     $entryTier = [string](Get-ProGetFeedSettingProperty -Feed $feed -Name 'Tier')
 
-    if ((Resolve-ProGetFeedTypeName -FeedType $entryFeedType) -ne $canonicalFeedType) {
+    # Database packages use NuGet protocol metadata, so host settings correctly
+    # describe their transport FeedType as "nuget". Distinguish the logical
+    # feed family by its canonical name before falling back to transport type;
+    # otherwise hashtable enumeration can nondeterministically return a
+    # database feed for an ordinary NuGet request (or make database resolution
+    # impossible).
+    $logicalFeedType = switch -Regex ($feedName) {
+      '^nuget-'                     { 'nuget'; break }
+      '^database-'                  { 'database'; break }
+      '^powershellget-'             { 'powershellget'; break }
+      '^chocolatey-'                { 'chocolatey'; break }
+      '^(releasebundle|universal)-' { 'universal'; break }
+      default                       { Resolve-ProGetFeedTypeName -FeedType $entryFeedType }
+    }
+
+    if ($logicalFeedType -ne $canonicalFeedType) {
       continue
     }
     if ((Resolve-ProGetFeedTierName -Tier $entryTier) -ne $canonicalTier) {
       continue
     }
 
-    $feedName = [string](Get-ProGetFeedSettingProperty -Feed $feed -Name 'FeedName')
     $uri = Get-ProGetFeedSettingProperty -Feed $feed -Name 'Uri'
     $nugetV3Uri = [string](Get-ProGetFeedSettingProperty -Feed $feed -Name 'NuGetV3Uri')
     $endpointUri = if (-not [string]::IsNullOrWhiteSpace($nugetV3Uri)) {

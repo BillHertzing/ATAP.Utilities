@@ -1,0 +1,137 @@
+@startuml
+title RPRRSBSI-V4 Decision-Gated Layered Delivery
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 10
+skinparam activity {
+  BackgroundColor #F0F4FF
+  BorderColor #3366CC
+  DiamondBackgroundColor #FFF4CC
+  DiamondBorderColor #9A6A00
+}
+skinparam note {
+  BackgroundColor #FFF9E6
+  BorderColor #9A6A00
+}
+
+start
+:Task 15.140.b\nreconciled documentation only;
+note right
+  Normative: C-01..C-15, D-1..D-8
+  Pending: D-3 edges 1..8,
+  C-16..C-27, FU-4, FU-6
+end note
+
+:Layer 0\ncharacterize V3 baseline;
+if (V3 fixture and eleven-table\ncontract verified?) then (yes)
+  :Layer 1\nidentities, catalogs, generic root;
+  note right
+    C-01/D-1:
+    canonical lowercase dashed GUID interfaces;
+    native database value comparison
+
+    C-21 blocks Tag EntityType seeds
+  end note
+else (no)
+  :STOP\nrepair characterization;
+  stop
+endif
+
+:Layer 2\nRuleVariant occurrences and overlays;
+note right
+  D-2: Ordinal DESC; duplicates rejected
+  D-4: same RuleId + Override;
+  never copy Rule
+end note
+if (Overlay and precedence\nnegative gates pass?) then (yes)
+  :Layer 3\ntyped I/O and deterministic executor;
+  note right
+    Classified material changes => new identity
+    Default/display-only => retain identity history
+    D-3 edges 1..8 remain blocked
+  end note
+else (no)
+  :STOP\nrepair Layer 2;
+  stop
+endif
+
+if (Any D-3 edge required?) then (yes)
+  :HITL-PENDING\nrule the exact D-3 edge;
+  stop
+else (no)
+  :Layer 4 ruled slice\nC-08..C-15 Tags contracts;
+endif
+
+note right
+  C-16 actor/provenance/approval
+  C-17 authorization invariant
+  C-18 ordering/Ordinal
+  C-19 traversal/weights
+  C-20 tenant/store/localization
+  C-21 assignment EntityTypes
+  C-22 relation endpoint reconciliation
+  C-23 localization
+  C-24 legacy taxonomy
+  C-25 live schema inventory
+  C-26 code collation
+  C-27 confidence/relevance
+  FU-4 SQL Server platform
+  FU-6 successor semantics
+end note
+
+if (Layer 4 physical slice needs\na pending field or behavior?) then (yes)
+  :HITL-PENDING\nclose each named C/FU gate;
+  stop
+else (no)
+  :Verify C-08..C-15\nlogical acceptance;
+endif
+
+:Layer 5\nMechanized Engineering starter;
+note right
+  Reuse C-01/D-1, D-2, D-3, D-4 gates
+  Emit validated plan and STOP
+  No purchase, provisioning, or execution
+end note
+
+if (Plan is schema-valid, explained,\nand non-effecting?) then (yes)
+  :Layers 6..8 directional only;
+else (no)
+  :STOP\nrepair Layer 5;
+  stop
+endif
+
+note right
+  Layer 6 waits for C-16, C-20, C-21
+  and session/compound rulings
+  Layer 7 waits for C-16 and lifecycle rulings
+  Layer 8 waits for C-17, C-20, FU-4,
+  Layers 6/7 closure, and Production HITL
+end note
+
+:Task 15.140.c only\nforward-only implementation;
+if (Exact increment decisions closed\nand disposable gates pass?) then (yes)
+  :Freeze immutable increment and hashes;
+else (no)
+  :STOP\nno migration/live action;
+  stop
+endif
+
+if (Named HITL approves this exact\nlive increment?) then (yes)
+  :Apply approved migration through Flyway\nto expwhertzing and capture deploy evidence;
+  note right
+    Never edit, reuse, renumber,
+    or relabel an applied migration.
+    Repair with a new forward-only migration.
+  end note
+else (no)
+  :STOP\nno live database change;
+  stop
+endif
+
+if (Promote to a higher tier?) then (yes)
+  :Named HITL for this promotion\nof the same immutable bytes;
+else (no)
+  :Increment complete;
+endif
+
+stop
+@enduml

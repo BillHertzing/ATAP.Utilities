@@ -14,6 +14,16 @@
 #   _Planning sprint worktree    -> sprint-board regeneration and cross-repo evidence writes
 #   %LOCALAPPDATA%\PSResourceGet -> PSResourceGet repository store during package packing
 #   <repo>\.git                  -> index.lock writes from linked sprint worktrees
+#
+# This list must stay a UNION of the user-global list, never a subset. Verified against
+# codex-cli 0.147.0 on 2026-08-20: for a trusted project the project layer REPLACES
+# writable_roots wholesale - TOML/serde arrays do not concatenate, so any root present
+# only in global.config.overlay.toml is silently dropped whenever this file is loaded.
+# Carrying only _Planning here reintroduced the exact Task 14.60.a.04 regression at
+# project scope: from ATAP.Utilities-wt-137, the SharedVSCode, ATAP.IAC, and Ace sprint
+# worktrees were unwritable. All five sprint tokens are therefore listed, in the same
+# order as the global overlay, and are omitted together at SprintEnd
+# (-OmitSprintWorktrees) so the round trip stays idempotent.
 [sandbox_workspace_write]
 writable_roots = [
   "C:\\Users\\whertzing\\AppData\\Local\\PSResourceGet",

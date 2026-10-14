@@ -75,6 +75,24 @@ Describe 'V4-E08 plan shape: DatabaseChangePackage-5Stage.otter is a thin runner
         $script:PlanText | Should -Match '-ProductionDatabaseDBConnectionStringSecretName\s+"\$ProductionDatabaseDBConnectionStringSecretName"'
     }
 
+    It 'plan passes the explicit deployment-principal audit policy without credentials' {
+        foreach ($name in @(
+            'ExperimentalDatabaseDeploymentSqlInstance',
+            'DevelopmentDatabaseDeploymentSqlInstance',
+            'IntegrationDatabaseDeploymentSqlInstance',
+            'QADatabaseDeploymentSqlInstance',
+            'ProductionDatabaseDeploymentSqlInstance',
+            'DatabaseDeploymentExpectedHostName',
+            'DatabaseDeploymentServiceAccount',
+            'DatabaseDeploymentExpectedAccountSid',
+            'DatabaseDeploymentAllowedInstanceNames',
+            'DatabaseDeploymentApprovedDatabaseNames'
+        )) {
+            $script:PlanText | Should -Match ('-{0}\s+"\${0}"' -f $name)
+        }
+        $script:PlanText | Should -Not -Match '-DatabaseDeploymentSqlInstance\s'
+    }
+
     It 'plan references the runner script via $BuildMasterPlanScriptDir + Invoke-DatabasePackageBuildMasterStage.ps1' {
         $script:PlanText | Should -Match 'set\s+\$BuildMasterPlanScriptDir\s*=\s*\$PathCombine'
         $script:PlanText | Should -Match 'Invoke-DatabasePackageBuildMasterStage\.ps1'
@@ -225,9 +243,9 @@ Describe 'Task 9.10 runner contract: per-tier apply + rehearsal-before-promotion
         $rehearsalIdx | Should -BeLessThan $promoteIdx
     }
 
-    It 'runner blocks promotion when the rehearsal fails (throws on non-Success)' {
+    It 'runner blocks the stage action when the rehearsal fails (throws on non-Success)' {
         $script:RunnerText | Should -Match 'rehearsal FAILED'
-        $script:RunnerText | Should -Match 'promotion blocked'
+        $script:RunnerText | Should -Match 'stage action blocked'
     }
 
     It 'runner applies the package to the tier database via Invoke-Flyway migrate' {
@@ -235,22 +253,55 @@ Describe 'Task 9.10 runner contract: per-tier apply + rehearsal-before-promotion
         $script:RunnerText | Should -Match 'Invoke-Flyway @flywayParameters'
     }
 
-    It 'publishes Experimental to ProGet before applying the exact package to ExpDeveloper' {
+    It 'publishes and rehearses Experimental before applying the exact package to ExpDeveloper' {
         $publishIdx = $script:RunnerText.IndexOf('$publishResult = Publish-DatabaseChangePackageToProGet')
-        $applyIdx   = $script:RunnerText.IndexOf('Invoke-DatabasePackageStageApply `', $publishIdx)
+        $rehearsalIdx = $script:RunnerText.IndexOf('$rehearsalResult = Invoke-DatabasePackageTierRehearsal `', $publishIdx)
+        $applyIdx   = $script:RunnerText.IndexOf('Invoke-DatabasePackageStageApply `', $rehearsalIdx)
         $publishIdx | Should -BeGreaterThan 0
-        $applyIdx   | Should -BeGreaterThan $publishIdx
+        $rehearsalIdx | Should -BeGreaterThan $publishIdx
+        $applyIdx   | Should -BeGreaterThan $rehearsalIdx
+    }
+
+    It 'runner fails closed through a read-only principal audit before any package action' {
+        $script:RunnerText | Should -Match 'function\s+Assert-DatabasePackageDeploymentPrincipal'
+        $script:RunnerText | Should -Match 'Get-SqlServiceLoginGrantTarget'
+        $script:RunnerText | Should -Not -Match 'Set-SqlDatabasePackageDeploymentPrincipal'
+        $auditIdx = $script:RunnerText.IndexOf('$principalAudit = Assert-DatabasePackageDeploymentPrincipal')
+        $stageActionIdx = $script:RunnerText.IndexOf("if (`$Stage -eq 'Experimental')", $auditIdx)
+        $auditIdx | Should -BeGreaterThan 0
+        $stageActionIdx | Should -BeGreaterThan $auditIdx
     }
 
     It 'reuses the captured immutable Experimental package after publish succeeds but apply fails' {
         $resumeIdx = $script:RunnerText.IndexOf("Resume exact published package '")
+        $retryRehearsalIdx = $script:RunnerText.IndexOf('$rehearsalResult = Invoke-DatabasePackageTierRehearsal `', $resumeIdx)
+        $retryApplyIdx = $script:RunnerText.IndexOf('Invoke-DatabasePackageStageApply `', $retryRehearsalIdx)
         $buildIdx = $script:RunnerText.IndexOf('$nupkgPath = New-DatabaseChangePackage')
 
         $resumeIdx | Should -BeGreaterThan 0
+        $retryRehearsalIdx | Should -BeGreaterThan $resumeIdx
+        $retryApplyIdx | Should -BeGreaterThan $retryRehearsalIdx
+        $retryRehearsalIdx | Should -BeLessThan $buildIdx
         $buildIdx | Should -BeGreaterThan $resumeIdx
         $script:RunnerText | Should -Match 'Experimental retry package drift'
         $script:RunnerText | Should -Match 'build and publish skipped'
         $script:RunnerText | Should -Match 'Get-FileHash\s+-LiteralPath\s+\$capturedNupkgPath\s+-Algorithm\s+SHA256'
+    }
+
+    It 'fails closed on Experimental -SkipRehearsal before build or publish' {
+        $guardIdx = $script:RunnerText.IndexOf("if (`$Stage -eq 'Experimental' -and `$SkipRehearsal)")
+        $buildIdx = $script:RunnerText.IndexOf('$nupkgPath = New-DatabaseChangePackage')
+        $publishIdx = $script:RunnerText.IndexOf('$publishResult = Publish-DatabaseChangePackageToProGet')
+
+        $guardIdx | Should -BeGreaterThan 0
+        $guardIdx | Should -BeLessThan $buildIdx
+        $guardIdx | Should -BeLessThan $publishIdx
+        $script:RunnerText | Should -Match "cannot build, publish, rehearse, apply, or complete package '.+' while -SkipRehearsal is supplied"
+    }
+
+    It 'passes the exact Experimental package and configured target to both rehearsal paths' {
+        $script:RunnerText | Should -Match '(?s)Rehearsing exact captured package.+?-NupkgPath\s+\$capturedNupkgPath.+?-Application\s+\$DatabaseApplication.+?-Tier\s+\$Stage.+?-BuildId\s+\$BuildMasterBuildId.+?-ConnectionStringSecretName\s+\$tierConnectionSecretName'
+        $script:RunnerText | Should -Match '(?s)Rehearsing exact published package.+?-NupkgPath\s+\$nupkgPath.+?-Application\s+\$DatabaseApplication.+?-Tier\s+\$Stage.+?-BuildId\s+\$BuildMasterBuildId.+?-ConnectionStringSecretName\s+\$tierConnectionSecretName'
     }
 
     It 'promotes each later ProGet tier before applying the exact package to its database' {
@@ -455,6 +506,93 @@ Describe 'Task 9.10 behavior: per-tier apply + rehearsal helpers' {
         }
     }
 
+    Context 'Resolve-DatabaseTierDeploymentSqlInstance' {
+        It '<Tier> selects <Expected>' -ForEach @(
+            @{ Tier = 'Experimental'; Expected = 'UTAT022\Expwhertzing' }
+            @{ Tier = 'Development';  Expected = 'UTAT022\Devwhertzing' }
+            @{ Tier = 'Integration';  Expected = 'UTAT022\Integration' }
+            @{ Tier = 'QA';           Expected = 'UTAT022\QA' }
+            @{ Tier = 'Production';   Expected = 'UTAT022\Production' }
+        ) {
+            (Resolve-DatabaseTierDeploymentSqlInstance -Tier $Tier `
+                -ExperimentalSqlInstance 'UTAT022\Expwhertzing' `
+                -DevelopmentSqlInstance 'UTAT022\Devwhertzing' `
+                -IntegrationSqlInstance 'UTAT022\Integration' `
+                -QASqlInstance 'UTAT022\QA' `
+                -ProductionSqlInstance 'UTAT022\Production') | Should -BeExactly $Expected
+        }
+
+        It 'returns empty when the selected stage variable is not configured' {
+            (Resolve-DatabaseTierDeploymentSqlInstance -Tier 'QA' `
+                -IntegrationSqlInstance 'UTAT022\Integration') | Should -BeExactly ''
+        }
+    }
+
+    Context 'Assert-DatabasePackageDeploymentPrincipal' {
+        BeforeEach {
+            function global:Get-SqlServiceLoginGrantTarget {
+                param([Parameter(ValueFromRemainingArguments)]$a)
+                $null = $a
+                [PSCustomObject]@{
+                    DatabaseName = 'ATAPUtilities'
+                    Include = $true
+                    IsCompliant = $true
+                    ExclusionReason = $null
+                    DriftReason = $null
+                }
+            }
+        }
+
+        AfterEach {
+            Remove-Item Function:\Get-SqlServiceLoginGrantTarget -ErrorAction SilentlyContinue
+        }
+
+        It 'returns the one compliant explicitly admitted package target' {
+            $result = Assert-DatabasePackageDeploymentPrincipal `
+                -SqlInstance 'UTAT022\Integration' -ExpectedHostName 'UTAT022' `
+                -ServiceAccount 'UTAT022\SvcBuildMaster' `
+                -ExpectedAccountSid 'S-1-5-21-1-2-3-1001' `
+                -AllowedInstanceName @('Integration') `
+                -ApprovedDatabaseName @('ATAPUtilities') `
+                -DatabaseApplication 'ATAPUtilities'
+            $result.IsCompliant | Should -BeTrue
+        }
+
+        It 'rejects a package target absent from the explicit admission list before querying SQL' {
+            { Assert-DatabasePackageDeploymentPrincipal `
+                -SqlInstance 'UTAT022\Integration' -ExpectedHostName 'UTAT022' `
+                -ServiceAccount 'UTAT022\SvcBuildMaster' `
+                -ExpectedAccountSid 'S-1-5-21-1-2-3-1001' `
+                -AllowedInstanceName @('Integration') `
+                -ApprovedDatabaseName @('SomeOtherDatabase') `
+                -DatabaseApplication 'ATAPUtilities' } |
+                Should -Throw '*not explicitly admitted*'
+        }
+
+        It 'blocks deployment when the database role audit reports drift' {
+            Remove-Item Function:\Get-SqlServiceLoginGrantTarget -ErrorAction SilentlyContinue
+            function global:Get-SqlServiceLoginGrantTarget {
+                param([Parameter(ValueFromRemainingArguments)]$a)
+                $null = $a
+                [PSCustomObject]@{
+                    DatabaseName = 'ATAPUtilities'
+                    Include = $true
+                    IsCompliant = $false
+                    ExclusionReason = $null
+                    DriftReason = 'MissingDbOwnerMembership'
+                }
+            }
+            { Assert-DatabasePackageDeploymentPrincipal `
+                -SqlInstance 'UTAT022\Integration' -ExpectedHostName 'UTAT022' `
+                -ServiceAccount 'UTAT022\SvcBuildMaster' `
+                -ExpectedAccountSid 'S-1-5-21-1-2-3-1001' `
+                -AllowedInstanceName @('Integration') `
+                -ApprovedDatabaseName @('ATAPUtilities') `
+                -DatabaseApplication 'ATAPUtilities' } |
+                Should -Throw '*audit FAILED*MissingDbOwnerMembership*'
+        }
+    }
+
     Context 'Invoke-DatabasePackageStageApply policy' {
         It 'fails closed when no connection secret is configured' {
             { Invoke-DatabasePackageStageApply -ContextDirectory $script:TempDir `
@@ -499,7 +637,7 @@ Describe 'Task 9.10 behavior: per-tier apply + rehearsal helpers' {
     }
 
     Context 'Invoke-DatabasePackageTierRehearsal enforcement' {
-        It 'throws (blocks promotion) when the rehearsal reports Success=$false' {
+        It 'throws (blocks Experimental apply or later promotion) when rehearsal reports Success=$false' {
             function global:Invoke-DatabasePackageRehearsal {
                 param([Parameter(ValueFromRemainingArguments)]$a)
                 $null = $a
@@ -520,6 +658,7 @@ Describe 'Task 9.10 behavior: per-tier apply + rehearsal helpers' {
             $r = Invoke-DatabasePackageTierRehearsal -NupkgPath $script:FakeNupkg `
                 -Application 'ATAPUtilities' -Tier 'Development' -BuildId '123' `
                 -ConnectionStringSecretName 'dbConnectionString-x'
+            @($r).Count | Should -Be 1
             $r.Success | Should -BeTrue
             Remove-Item Function:\Invoke-DatabasePackageRehearsal -ErrorAction SilentlyContinue
         }

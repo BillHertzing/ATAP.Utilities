@@ -23,10 +23,12 @@ function New-GeneratedFileContent {
   }
 
   $source = Get-Content -Path $SourcePath -Raw -Encoding UTF8
-  # If the source is already a generated derivative, strip the old header so
-  # repeated regeneration replaces metadata instead of stacking header blocks.
+  # Strip every consecutive generated header one anchored block at a time so
+  # repeated regeneration replaces metadata without altering payload bytes.
   $existingHeaderPattern = '(?s)\A# ===================================================================\r?\n# GENERATED FILE - DO NOT EDIT DIRECTLY\r?\n# Source: .*?\r?\n(?:# Generated: .*?\r?\n)?# Regenerate using Set-DownstreamSharedVSCodeContext\r?\n# ===================================================================\r?\n(?:\r?\n)?'
-  $source = [regex]::Replace($source, $existingHeaderPattern, '', 1)
+  while ([regex]::IsMatch($source, $existingHeaderPattern)) {
+    $source = [regex]::Replace($source, $existingHeaderPattern, '', 1)
+  }
   $sourceLabel = 'SharedVSCode/' + [IO.Path]::GetFileName($SourcePath)
 
   $header = @(

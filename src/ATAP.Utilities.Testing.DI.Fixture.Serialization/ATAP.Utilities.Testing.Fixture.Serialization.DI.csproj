@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
     <!-- Assembly, File, and Package Information for this assembly-->
     <!-- Build and revision are created based on date-->
@@ -61,12 +60,14 @@
   <!-- ATAP Utility Packages For the Testing Fixture hierarchy -->
   <ItemGroup>
     <ProjectReference Include="..\..\src\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Testing.DI\ATAP.Utilities.Testing.DI.csproj" />
   </ItemGroup>
 
   <!-- ATAP Utility Packages For the Serializer -->
   <ItemGroup>
     <ProjectReference Include="../ATAP.Utilities.Serializer\Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
     <ProjectReference Include="../ATAP.Utilities.Serializer\Model\ATAP.Utilities.Serializer.Model.csproj" />
+    <ProjectReference Include="../ATAP.Utilities.Serializer\Shim\SystemTextJson\ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj" />
     <ProjectReference Include="../ATAP.Utilities.Serializer\StringConstants/ATAP.Utilities.Serializer.StringConstants.csproj" />
   </ItemGroup>
 

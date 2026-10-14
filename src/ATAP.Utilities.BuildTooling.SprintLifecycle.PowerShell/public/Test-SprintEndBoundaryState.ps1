@@ -74,6 +74,14 @@ function Test-SprintEndBoundaryState {
   `StaleReferences`. Previously `SprintHistory\` and `_generated\` files were
   skipped entirely during the scan; they are now scanned and reported as
   `HistoricalEvidence` instead of being silently excluded.
+  Planning InformationForTheFuture JSON and OrganizationalModel SeedData JSON
+  are retained planning inputs, not deployed configuration. Known generated
+  NuGet asset/dgspec and SourceLink JSON beneath obj are reported as historical
+  build metadata. Other obj files are not exempted. Explicit adapter,
+  MCP, settings, and workspace identities within these newly recognized paths
+  remain live. Text is limited to 512 characters; TextTruncated and
+  MatchedReferenceTokens retain an explicit indication and all distinct matched
+  sprint-reference markers even when the marker lies beyond the excerpt.
   AI assisted using Powershell.instructions.md as guidelines.
   #>
   [CmdletBinding()]
@@ -158,6 +166,9 @@ function Test-SprintEndBoundaryState {
     $alwaysSkipPathPattern = '[\\/]\.git[\\/]'
     $historicalEvidencePathPattern = '(?i)[\\/](?:_generated|SprintHistory|SprintRetrospective|Archived|Samples?)[\\/]'
     $committedTaskEvidencePathPattern = '(?i)[\\/]SolutionDocumentation[\\/][^\\/]*-Task-\d+(?:\.\d+)*\.(?:before|after)\.summary\.json$'
+    $planningInputPathPattern = '(?i)[\\/]_Planning(?:-wt-\d+-Sprint-\d{4}-work-items)?[\\/](?:InformationForTheFuture[\\/]|Research[\\/]OrganizationalModel[\\/]SeedData[\\/]).*\.json$'
+    $generatedBuildMetadataPathPattern = '(?i)[\\/]obj[\\/](?:[^\\/]+[\\/])*(?:project\.assets\.json|[^\\/]+\.csproj\.nuget\.dgspec\.json|[^\\/]+\.sourcelink\.json)$'
+    $activeConfigurationPathPattern = '(?i)(?:[\\/](?:\.mcp\.json|settings\.json|settings\.jsonc)$|[\\/](?:\.codex|\.claude|\.vscode)[\\/]|\.code-workspace$)'
     foreach ($searchRoot in $SearchRoots) {
       if (-not (Test-Path -LiteralPath $searchRoot -PathType Container)) { continue }
       foreach ($extension in $extensions) {
@@ -165,7 +176,11 @@ function Test-SprintEndBoundaryState {
           if ($file.FullName -match $alwaysSkipPathPattern) { continue }
           $classification = if (
             $file.FullName -match $historicalEvidencePathPattern -or
-            $file.FullName -match $committedTaskEvidencePathPattern
+            $file.FullName -match $committedTaskEvidencePathPattern -or (
+              ($file.FullName -match $planningInputPathPattern -or
+                $file.FullName -match $generatedBuildMetadataPathPattern) -and
+              $file.FullName -notmatch $activeConfigurationPathPattern
+            )
           ) {
             'HistoricalEvidence'
           } else {
@@ -174,10 +189,15 @@ function Test-SprintEndBoundaryState {
           $referenceMatches = Select-String -LiteralPath $file.FullName `
             -Pattern '-wt-\d+-Sprint-\d{4}-work-items' -AllMatches -ErrorAction SilentlyContinue
           foreach ($match in $referenceMatches) {
+            $lineText = $match.Line.Trim()
+            $textTruncated = $lineText.Length -gt 512
+            $referenceTokens = @($match.Matches | ForEach-Object { $_.Value } | Select-Object -Unique)
             [void]$staleReferences.Add([PSCustomObject]@{
                 Path = $file.FullName
                 LineNumber = $match.LineNumber
-                Text = $match.Line.Trim()
+                Text = if ($textTruncated) { $lineText.Substring(0, 512) } else { $lineText }
+                TextTruncated = $textTruncated
+                MatchedReferenceTokens = $referenceTokens
                 Classification = $classification
               })
           }

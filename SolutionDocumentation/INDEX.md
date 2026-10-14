@@ -23,17 +23,17 @@ carry the per-file detail.
 | Core PowerShell Utilities             | `src\ATAP.Utilities.PowerShell\ReadMe.md`      | Added 2026-07-07 (Task 12.46.g, user-approved): the base cross-cutting utilities/profile-helpers module plus `src\ATAP.Utilities.FileIO.PowerShell` (file/path/Dropbox/drive-mapping helpers)                                                                                                                                                                                                                            |
 | Domain & Personal Utilities           | `Domain-and-Personal-Utilities.md`             | Added 2026-07-07 (Task 12.46.g, user-approved): FinancialAPI, Hydrus, Neo4j, Speech, VennDiagramGenerator, VoiceRecognition modules (see the START-HERE page's module table)                                                                                                                                                                                                                                             |
 | AI Agents & Adapters (pointer area)   | SharedVSCode `SolutionDocumentation/INDEX.md`  | Sprint-Lifecycle-Agent-Workflow, Agent-Permission-Model, CLAUDE-md-Across-Repositories, Junction-vs-File-Sync-Alternatives, Using-Agent-Swarms (all in SharedVSCode)                                                                                                                                                                                                                                                     |
-| AceCommander (parked)                 | `AceCommander-architecture-overview.md`        | AceCommander-Modernization-Plan, SQLCipher-License-Decision — eventual home AceCommander SolutionDocumentation (SC-0245)                                                                                                                                                                                                                                                                                                 |
-
 Files indexed into areas 2026-07-06 (previously missing from this INDEX):
-`AceCommander-Modernization-Plan.md`, `AceCommander-architecture-overview.md`,
 `Backup-ProGet-BuildMaster-ApplicationData.md`, `Backup-SqlServer-ProGet-BuildMaster.md`,
 `BranchModel-Future-Work.md`, `BuildTooling-MSBuild-Internals.md`,
 `Cobian-Reflector-Backup-Automation.md`, `IAC-Windows-Scripts-Migration.md`,
 `NewOrganizationSetup.md`, `Package-Pinning-Ownership-Decision.md`,
 `ProGet-Install-Runbook.md`, `Runbook-BuildMasterConfiguration.md`,
-`SQLCipher-License-Decision.md`, `TraceETW-Configuration.md` (C# Build & Packaging area),
+`TraceETW-Configuration.md` (C# Build & Packaging area),
 `VersionJsonAsCeiling-Runbook.md`.
+
+The three AceCommander documents formerly parked here were relocated to the Ace
+repository's SolutionDocumentation/ directory by Sprint 0015 Task 15.4 / SC-0245.
 
 ---
 
@@ -265,6 +265,12 @@ _Teach / Tell how to create software._
   `Build\Invoke-RepoHealthGate.ps1` RepoHealth gate for shared MSBuild property
   checks that must run after restore and before pack/publish, and the stable
   Visual Studio Build Tools 2026/MSBuild/NuGet deterministic pack prerequisite.
+  Since Sprint 0015 Stream P it also carries the Ace and ATAP.Utilities
+  convergence ledger: a proposed target build architecture pending operator
+  ratification, acceptance matrices for the proposed shared invariants, the
+  verified divergence baseline, and 13 unresolved decisions. Treat older
+  examples later in that document as historical where they conflict with the
+  ledger.
 - [C# Packages — Test Process](CSharp-Packages-Test-Process.md) —
   C# package testing process and expected test artifacts, including the
   repo-wide `tests\RepoHealth` Pester gate that is intentionally outside

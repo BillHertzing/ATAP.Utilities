@@ -216,6 +216,33 @@ This ensures the generated `.psd1` remains in sync with actual code-level alias 
 
 - Version bumped to 0.1.10 in Sprint 11 for the Initialize-BitwardenSession module move.
 
+## AceOutpost metered launch adapters
+
+[Start-AceOutpostMeteredHarness.ps1](public/Start-AceOutpostMeteredHarness.ps1) is the
+metered launch CORE; [Invoke-AceOutpostMeteredPrompt.ps1](public/Invoke-AceOutpostMeteredPrompt.ps1)
+is its terminal adapter. A child marker overwrites the inherited marker and records
+its parent marker. The launch and prompt contracts are covered by
+[Start-AceOutpostMeteredHarness.Tests.ps1](tests/Unit/Start-AceOutpostMeteredHarness.Tests.ps1)
+and [Invoke-AceOutpostMeteredPrompt.Tests.ps1](tests/Unit/Invoke-AceOutpostMeteredPrompt.Tests.ps1).
+For Claude Code, the prompt adapter automatically supplies invocation-scoped Node CA
+settings derived from the same public PEM path the core preflights, rejects conflicting
+caller `--settings` options, and keeps TLS verification enabled. `version.json` records
+module version `0.2.9`. Claude Code children also receive the documented
+`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1` aggregate switch only in their child
+process environment; it is never written to the parent, User, or Machine environment.
+Packaged Chromium desktop clients can opt into the process-private bridge: the harness
+passes a credential-free loopback endpoint through Chromium's command line, accepts
+connections only from the launched PID tree, injects proxy authorization only on the
+private hop to AceOutpost, and disables QUIC so traffic cannot bypass the TCP proxy.
+Because Claude Desktop rejects Chromium's process-scoped SPKI override, desktop launch
+also requires the currently valid self-signed PEM to match the exact thumbprint and
+full-certificate SHA-256 digest installed in the current user's Trusted Root store.
+General certificate-error suppression remains prohibited.
+The bridge contract is covered by
+[AceOutpostDesktopProxyBridge.Tests.ps1](tests/Unit/AceOutpostDesktopProxyBridge.Tests.ps1).
+Release and deployment evidence is written beneath
+`_generated/Sprint0015/Task15.190/`.
+
 ## Profiled remoting endpoint functions
 
 `public/Register-ProfiledRemotingEndpoint.ps1` and

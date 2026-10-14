@@ -45,6 +45,9 @@ function Invoke-BWSReadOnlyBootstrapWorker {
     if (-not (Get-Command -Name 'Initialize-BWSAccessToken' -ErrorAction SilentlyContinue)) {
       . (Join-Path $PSScriptRoot '..\public\Initialize-BWSAccessToken.ps1')
     }
+    if (-not (Get-Command -Name 'Initialize-BWSApplicationAccessToken' -ErrorAction SilentlyContinue)) {
+      . (Join-Path $PSScriptRoot '..\public\Initialize-BWSApplicationAccessToken.ps1')
+    }
   }
 
   process {
@@ -55,7 +58,9 @@ function Invoke-BWSReadOnlyBootstrapWorker {
     if ($CredentialDirectory -ne $canonicalCredentialDirectory) {
       throw 'Worker CredentialDirectory is not the canonical account path.'
     }
-    $tokenFileName = '{0}_{1}_BWS_CommonCIForBitwardenReadOnly_AccessToken.xml' -f $env:COMPUTERNAME, $expectedIdentity.SamAccountName
+    # Must agree with the orchestrator's probe path, hence the shared helper rather than a
+    # second copy of the format string.
+    $tokenFileName = Get-BWSReadOnlyBootstrapTokenFileName -Identity $expectedIdentity
     $tokenPath = Join-Path $CredentialDirectory $tokenFileName
     if ((Test-Path -LiteralPath $tokenPath -PathType Leaf) -and -not $Force) {
       throw 'Worker found an existing unverified ReadOnly token file without Force authorization.'
@@ -102,23 +107,39 @@ function Invoke-BWSReadOnlyBootstrapWorker {
       $plaintextToken = $null
 
       Remove-Item -LiteralPath $EnvelopePath -Force -ErrorAction Stop
-      $initializeParameters = @{
-        AccessToken        = $secureToken
-        CredentialDirectory = $CredentialDirectory
-        TokenPurpose       = 'ReadOnly'
-        Confirm            = $false
+      # Slot selection is a property of the resolved identity. The three legacy CI accounts have a
+      # null ApplicationId and keep the PSCredential CLIXML slot verbatim; an application identity
+      # writes the AtapBwsDpapiEnvelope slot that the .NET BwsDpapiEnvelopeReader consumes.
+      if ([string]::IsNullOrWhiteSpace($expectedIdentity.ApplicationId)) {
+        $initializeParameters = @{
+          AccessToken        = $secureToken
+          CredentialDirectory = $CredentialDirectory
+          TokenPurpose       = 'ReadOnly'
+          Confirm            = $false
+        }
+        $writeResult = Initialize-BWSAccessToken @initializeParameters
+      } else {
+        $applicationParameters = @{
+          AccessToken        = $secureToken
+          ApplicationId      = $expectedIdentity.ApplicationId
+          VaultGroupingId    = $expectedIdentity.ProjectName
+          CredentialDirectory = $CredentialDirectory
+          Force              = [bool]$Force
+          Confirm            = $false
+        }
+        $writeResult = Initialize-BWSApplicationAccessToken @applicationParameters
       }
-      $writeResult = Initialize-BWSAccessToken @initializeParameters
       if (-not $writeResult.Success) {
         throw 'ReadOnly DPAPI token write did not report success.'
       }
 
       [PSCustomObject]@{
-        Status       = 'Provisioned'
-        AccountName  = $expectedIdentity.AccountName
-        ProjectName  = $expectedIdentity.ProjectName
-        TokenPurpose = $expectedIdentity.TokenPurpose
-        TokenPath    = $writeResult.Path
+        Status        = 'Provisioned'
+        AccountName   = $expectedIdentity.AccountName
+        ProjectName   = $expectedIdentity.ProjectName
+        ApplicationId = $expectedIdentity.ApplicationId
+        TokenPurpose  = $expectedIdentity.TokenPurpose
+        TokenPath     = $writeResult.Path
       }
     } catch {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message 'BWS ReadOnly bootstrap worker failed closed.' -Tag 'bws-bootstrap'

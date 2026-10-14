@@ -20,7 +20,6 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <LangVersion>latest</LangVersion>
     <AppConfig>VoiceAttack.exe.config</AppConfig>
     <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>

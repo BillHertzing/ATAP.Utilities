@@ -960,6 +960,35 @@ is assigned as the per-stage deployment step for the
 `Development`, `Integration`, `QA`, `Production` — runs the same plan; the
 runner branches internally on `$PipelineStageName` (passed as `-Stage`).
 
+**Pipelines are global, raft-stored and JSON-committed (Task 15.196.r, SC-0444,
+operator decision 2026-09-17).** Do not create or edit a pipeline in the BuildMaster
+UI. The pipeline definition lives beside its plan as
+`src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/<Name>.pipeline.json` and is
+published as the type-8 raft item `<Name>` in the default raft (`Raft_Id` 1) by:
+
+```powershell
+Sync-BuildMasterPlans -Path .\src\ATAP.Utilities.BuildTooling.BuildMaster\Plans -IncludePipelines `
+  -BuildMasterBaseUrl 'https://<host>:50017' -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.<host>'
+Compare-BuildMasterPlanRaft -Path .\src\ATAP.Utilities.BuildTooling.BuildMaster\Plans -IncludePipelines `
+  -BuildMasterBaseUrl 'https://<host>:50017' -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.<host>'
+```
+
+Rules the sync enforces (fail closed): the file name before `.pipeline.json` must equal
+the JSON `Name`; the JSON must parse and declare at least one stage; an application-scoped
+upload (`-ApplicationId`/`-ApplicationName`) is refused for pipelines. Every stage target
+references the plan as `global::<plan>.otter` and names its `EnvironmentName`. Releases
+must be created with the `global::` prefix (`-PipelineName 'global::DatabaseChangePackage-5Stage'`);
+a release bound to a pipeline name that does not exist in the raft is created successfully
+and then fails on deploy with HTTP 500 `Object reference not set` (Task 15.196.p defect D7).
+
+History: until 2026-09-17 `DatabaseChangePackage-5Stage` existed on utat022 only as an
+application-scoped pipeline created in the UI under `ATAPUtilitiesDatabase`, so
+`Sync-BuildMasterPlans` carried the plan to utat01 but never the pipeline. That
+application-scoped copy is left in place for releases 0.1.0–0.1.13; new releases use the
+global one. The five committed families are `PowerShellModule-5Stage`, `CSharpPackage-5Stage`,
+`DatabaseChangePackage-5Stage`, `ReleaseBundle-6Stage` (five stages wired; `Distribution`
+deferred by the plan header) and `AceCommander-ApplicationRelease-5Stage`.
+
 ### Secrets and audit notes
 
 - Do **not** add any database connection string, SQL credential, or ProGet

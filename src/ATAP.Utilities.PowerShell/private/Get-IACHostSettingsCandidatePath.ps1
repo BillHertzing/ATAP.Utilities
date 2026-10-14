@@ -112,6 +112,11 @@ function Get-IACHostSettingsCandidatePath {
       # on $Matches from a Where-Object filter, which holds the last successful match and not
       # necessarily the row being projected.
       foreach ($root in $roots) {
+        # A root on a drive letter this host does not have (utat022's D: seen from utat01) makes
+        # Get-ChildItem fail at parameter binding, which -ErrorAction cannot suppress. Skip the
+        # enumeration entirely when the directory is not there; the stable-checkout candidate
+        # below is still emitted for it.
+        if (-not [System.IO.Directory]::Exists($root)) { continue }
         $newestSprintWorktree =
           Get-ChildItem -LiteralPath $root -Directory -ErrorAction SilentlyContinue |
             ForEach-Object {
@@ -132,7 +137,8 @@ function Get-IACHostSettingsCandidatePath {
 
       # Then the stable checkout under each root.
       foreach ($root in $roots) {
-        & $addCandidate (Join-Path $root 'ATAP.IAC')
+        # Provider-free combine: Join-Path throws 'Cannot find drive' for a drive absent on this host.
+        & $addCandidate ([System.IO.Path]::Combine($root, 'ATAP.IAC'))
       }
 
       & $addCandidate $ProgramFilesResourcePath

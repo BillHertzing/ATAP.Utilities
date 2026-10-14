@@ -26,6 +26,7 @@ Export-ModuleMember -Function @(
   'Resolve-FeatureSlug'
   'Resolve-PSModuleMetadata'
   'Start-DabMcpServer'
+  'Stop-ZombieMcpServerProcess'
   'Test-DabInstallation'
   'Test-DabMcpConfiguration'
 ) -Cmdlet @() -Variable @() -Alias @()

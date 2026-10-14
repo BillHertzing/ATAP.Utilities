@@ -9,11 +9,31 @@ BeforeAll {
   # The canonical path needs a real .ai tree (manifest + renderer + canonical source).
   # Rather than reproduce one, point at the live SharedVSCode worktree when it is present;
   # every canonical-path test skips cleanly when it is not (CI without the sibling repo).
+  #
+  # Task 15.72: this list used to name a sprint worktree literally
+  # ('SharedVSCode-wt-62-Sprint-0014-work-items'). A pinned sprint path silently rots at
+  # every sprint boundary -- and it rots in the WORST direction, because the stale worktree
+  # still parses, so the suite reports failures against a manifest nobody is changing any
+  # more instead of skipping. Discover the newest sprint worktree instead, newest first.
   $script:SharedLive = @(
-    'C:\Dropbox\whertzing\GitHub\SharedVSCode-wt-62-Sprint-0014-work-items'
+    @(Get-ChildItem -Path 'C:\Dropbox\whertzing\GitHub' -Directory -Filter 'SharedVSCode-wt-*' -ErrorAction SilentlyContinue |
+      Sort-Object Name -Descending | ForEach-Object { $_.FullName })
     'C:\Dropbox\whertzing\GitHub\SharedVSCode'
   ) | Where-Object { Test-Path -LiteralPath (Join-Path $_ '.ai/tools/Render-AIAdapters.ps1') -PathType Leaf } |
     Select-Object -First 1
+
+  # A worktree that predates Task 15.72 still targets <Carrier>-base.md and cannot satisfy
+  # the carrier lookup. Detect that and skip, rather than reporting it as a code failure.
+  $script:SharedLiveHasCarrierTargets = $false
+  if ($script:SharedLive) {
+    $manifestPath = Join-Path $script:SharedLive '.ai/manifests/instruction-map.json'
+    if (Test-Path -LiteralPath $manifestPath -PathType Leaf) {
+      $record = (Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json -Depth 100).records |
+        Where-Object { $_.id -eq 'ai.core.main-instructions.v1' } | Select-Object -First 1
+      $script:SharedLiveHasCarrierTargets = [bool](
+        $record -and @($record.targets | Where-Object { $_.path -in @('CLAUDE.md', 'AGENTS.md') }).Count -eq 2)
+    }
+  }
 }
 
 AfterAll {
@@ -27,44 +47,47 @@ Describe 'Get-AICoreInstructionBody [private]' -Tag 'Unit' {
       if (-not $script:SharedLive) {
         Set-ItResult -Skipped -Because 'no SharedVSCode worktree with a .ai tree is available'
       }
+      elseif (-not $script:SharedLiveHasCarrierTargets) {
+        Set-ItResult -Skipped -Because 'the available SharedVSCode worktree predates Task 15.72 and still targets <Carrier>-base.md'
+      }
     }
 
-    It 'composes the AGENTS core from canonical, not from AGENTS-base.md' {
+    It 'composes the AGENTS core from canonical, not from a base file' {
       $result = Get-AICoreInstructionBody -SharedVSCodeRoot $script:SharedLive -Carrier AGENTS
       $result.Origin | Should -Be 'canonical'
       $result.SourcePath | Should -BeLike '*main-instructions.md'
       $result.RecordId | Should -Be 'ai.core.main-instructions.v1'
     }
 
-    It 'emits AGENTS bytes identical to the legacy rendered base' {
-      # The whole point of Task 14.60: dropping the intermediate file must not change one
-      # byte of what the agents actually read.
-      $legacy = Join-Path $script:SharedLive 'AGENTS-base.md'
-      if (-not (Test-Path -LiteralPath $legacy -PathType Leaf)) {
-        Set-ItResult -Skipped -Because 'the legacy AGENTS-base.md is no longer materialized'
-        return
+    It 'resolves each carrier by its own manifest target, not by a base filename' {
+      # Task 15.72. The lookup key is the carrier file itself. The retired <Carrier>-base.md
+      # targets must not be required, and must not be silently reintroduced: a record that
+      # regrows one would leave two targets claiming to describe the same carrier.
+      $manifestPath = Join-Path $script:SharedLive '.ai/manifests/instruction-map.json'
+      $record = (Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json -Depth 100).records |
+        Where-Object { $_.id -eq 'ai.core.main-instructions.v1' } | Select-Object -First 1
+      @($record.targets | Where-Object { $_.path -like '*-base.md' }) | Should -BeNullOrEmpty
+      foreach ($target in $record.targets) {
+        $target.materialization | Should -Be 'composer-owner'
+        $target.composedMaterialization | Should -BeIn @('copy', 'generated-wrapper')
       }
-      $generated = (Get-AICoreInstructionBody -SharedVSCodeRoot $script:SharedLive -Carrier AGENTS).Content
-      $generated.TrimEnd() | Should -Be ((Get-Content -LiteralPath $legacy -Raw).TrimEnd())
-    }
-
-    It 'emits CLAUDE bytes identical to the legacy base' {
-      $legacy = Join-Path $script:SharedLive 'CLAUDE-base.md'
-      if (-not (Test-Path -LiteralPath $legacy -PathType Leaf)) {
-        Set-ItResult -Skipped -Because 'the legacy CLAUDE-base.md is no longer materialized'
-        return
-      }
-      $generated = (Get-AICoreInstructionBody -SharedVSCodeRoot $script:SharedLive -Carrier CLAUDE).Content
-      $generated.TrimEnd() | Should -Be ((Get-Content -LiteralPath $legacy -Raw).TrimEnd())
     }
 
     It 'gives AGENTS the generated-wrapper header and CLAUDE the verbatim body' {
+      # This is the byte-shape contract the retired base files used to pin. Byte-identity
+      # against those files was verified at the Task 15.72 cut-over, before they were
+      # deleted; it cannot be re-asserted here because the comparands no longer exist.
       $agents = (Get-AICoreInstructionBody -SharedVSCodeRoot $script:SharedLive -Carrier AGENTS).Content
       $claude = (Get-AICoreInstructionBody -SharedVSCodeRoot $script:SharedLive -Carrier CLAUDE).Content
-      # AGENTS carries provenance; CLAUDE's manifest target is materialization 'copy'.
+      # AGENTS carries provenance; CLAUDE's composedMaterialization is 'copy'.
       $agents | Should -BeLike '*Generated by SharedVSCode .ai/tools/Render-AIAdapters.ps1.*'
       $agents | Should -BeLike '*SourceId: ai.core.main-instructions.v1*'
       $claude | Should -Not -BeLike '*Generated by SharedVSCode*'
+
+      # The core body itself must be identical between carriers; only the wrapper differs.
+      $canonical = Get-Content -LiteralPath (Join-Path $script:SharedLive '.ai/core/main-instructions.md') -Raw
+      $claude.TrimEnd() | Should -Be $canonical.TrimEnd()
+      $agents | Should -BeLike ('*' + $canonical.Trim().Split("`n")[0].Trim() + '*')
     }
 
     It 'reports the canonical source hash' {
@@ -108,6 +131,32 @@ Describe 'Get-AICoreInstructionBody [private]' -Tag 'Unit' {
 
     It 'rejects an unknown carrier' {
       { Get-AICoreInstructionBody -SharedVSCodeRoot $script:root -Carrier GEMINI } | Should -Throw
+    }
+
+    It 'refuses a composer-owned carrier target that declares no body shape' {
+      # Task 15.72. 'composer-owner' says who writes the file, not what bytes to emit.
+      # Defaulting the shape would be a guess -- guessing 'copy' strips the provenance
+      # header off AGENTS.md, guessing 'generated-wrapper' staples one onto CLAUDE.md, and
+      # either way the render still reports success. Fail closed and name the missing field.
+      if (-not $script:SharedLive) {
+        Set-ItResult -Skipped -Because 'no SharedVSCode worktree with a .ai tree is available'
+        return
+      }
+
+      # Clone the live .ai tree, then strip composedMaterialization from the AGENTS target.
+      $fixture = Join-Path $script:root 'shared'
+      New-Item -ItemType Directory -Path (Join-Path $fixture '.ai') -Force | Out-Null
+      Copy-Item -Path (Join-Path $script:SharedLive '.ai/*') -Destination (Join-Path $fixture '.ai') -Recurse -Force
+
+      $manifestPath = Join-Path $fixture '.ai/manifests/instruction-map.json'
+      $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json -Depth 100
+      $record = $manifest.records | Where-Object { $_.id -eq 'ai.core.main-instructions.v1' } | Select-Object -First 1
+      $target = $record.targets | Where-Object { $_.path -eq 'AGENTS.md' } | Select-Object -First 1
+      $target.PSObject.Properties.Remove('composedMaterialization')
+      $manifest | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $manifestPath -Encoding UTF8
+
+      { Get-AICoreInstructionBody -SharedVSCodeRoot $fixture -Carrier AGENTS } |
+        Should -Throw -ExpectedMessage "*declares no 'composedMaterialization'*"
     }
   }
 }

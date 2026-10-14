@@ -99,6 +99,61 @@
         "caller who could set it could redirect or suppress the audit trail for their own",
         "elevated action. Neither is something the requester has any business choosing."
       ]
+    },
+    {
+      "id": "seal-gather-call-record-segment",
+      "description": "Seal one hash-pinned JSONL gather record through the privileged corpus boundary (Task 15.191).",
+      "commandType": "module",
+      "moduleName": "ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell",
+      "commandName": "Complete-GatherCallRecordSegment",
+      "minimumModuleVersion": "0.1.37",
+      "trustedModuleRoots": [
+        "C:\\Program Files\\PowerShell\\Modules"
+      ],
+      "allowedParameters": [
+        {
+          "name": "StagingFilePath",
+          "required": true,
+          "pattern": "^[CD]:\\\\ATAPArtifacts\\\\CorpusGatherRecordsStaging(?:\\\\(?!\\.{1,2}(?:\\\\|$))[^\\\\/:*?\"<>|]+)+\\.jsonl$",
+          "_comment": "Defense in depth only. The command must canonicalize this path, reject reparse traversal, require a .jsonl leaf, and prove that it is beneath the supplied matching staging root."
+        },
+        {
+          "name": "CorpusGatherRecordsStagingPath",
+          "required": true,
+          "pattern": "^[CD]:\\\\ATAPArtifacts\\\\CorpusGatherRecordsStaging$"
+        },
+        {
+          "name": "CorpusGatherRecordsPath",
+          "required": true,
+          "pattern": "^[CD]:\\\\ATAPArtifacts\\\\CorpusGatherRecords$"
+        },
+        {
+          "name": "SprintNumber",
+          "required": true,
+          "pattern": "^\\d{4}$"
+        },
+        {
+          "name": "CaptureIdentity",
+          "required": true,
+          "pattern": "^[A-Za-z0-9._-]{1,64}\\\\[A-Za-z0-9._$-]{1,64}$"
+        },
+        {
+          "name": "ExpiryIdentity",
+          "required": true,
+          "pattern": "^[A-Za-z0-9._-]{1,64}\\\\[A-Za-z0-9._$-]{1,64}$"
+        },
+        {
+          "name": "ExpectedSha256",
+          "required": true,
+          "pattern": "^[0-9A-Fa-f]{64}$",
+          "_comment": "Pins the exact staged bytes authorized by the requester. The command must recompute and compare this hash before applying ACLs or moving the file."
+        }
+      ],
+      "_securityBoundary": [
+        "All seven request values are scalar strings and are positively allowlisted.",
+        "The request cannot select a command, module path, trusted root, or privileged bypass switch.",
+        "Regex validation is defense in depth; Complete-GatherCallRecordSegment revalidates canonical roots, matching volume and staging ancestry, reparse points, identities, JSONL content, destination, and exact hash."
+      ]
     }
   ]
 }

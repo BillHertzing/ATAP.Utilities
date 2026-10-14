@@ -71,7 +71,7 @@ preserved evidence and must not be copied into active package roots.
   — preserved AceCommander legacy-scope inventory.
 - `SolutionDocumentation/ADR-Philote-Temporal-Validity-CSharp-Contract.md` —
   migration evidence, adapter decision, and legacy-rejection requirements.
-- `SolutionDocumentation/AceCommander-Modernization-Plan.md` — unrelated
+- Ace `SolutionDocumentation/AceCommander-Modernization-Plan.md` — unrelated
   historical roadmap phrase.
 - `SolutionDocumentation/CS0246-Errors-TypeNotFound.md` — historical compiler
   incident names for files that were removed by PTV-180.

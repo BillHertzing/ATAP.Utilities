@@ -1,0 +1,23 @@
+{
+  "solution": {
+    "path": "ATAP.Utilities.sln",
+    "projects": [
+      "src\\ATAP.Utilities.Configuration\\ATAP.Utilities.Configuration.csproj",
+      "src\\ATAP.Utilities.Configuration\\Extensions\\ATAP.Utilities.Configuration.Extensions.csproj",
+      "src\\ATAP.Utilities.Configuration\\Secrets\\ATAP.Utilities.Configuration.Secrets.csproj",
+      "src\\ATAP.Utilities.Configuration\\Secrets\\Shims\\ATAP.Utilities.Configuration.Secrets.Shims.csproj",
+      "src\\ATAP.Utilities.Configuration\\Secrets\\Shims\\Interfaces\\ATAP.Utilities.Configuration.Secrets.Shims.Interfaces.csproj",
+      "src\\ATAP.Utilities.ETW\\ATAP.Utilities.ETW.csproj",
+      "src\\ATAP.Utilities.Plugin\\Interfaces\\ATAP.Utilities.Plugin.Interfaces.csproj",
+      "src\\ATAP.Utilities.RRSBS.Contracts\\ATAP.Utilities.RRSBS.Contracts.csproj",
+      "src\\ATAP.Utilities.RRSBS.Domain\\ATAP.Utilities.RRSBS.Domain.csproj",
+      "src\\ATAP.Utilities.Secrets\\ATAP.Utilities.Secrets.csproj",
+      "src\\ATAP.Utilities.Secrets\\BitwardenSecretsManager\\ATAP.Utilities.Secrets.BitwardenSecretsManager.csproj",
+      "src\\ATAP.Utilities.Secrets\\BitwardenSecretsManager\\Windows\\ATAP.Utilities.Secrets.BitwardenSecretsManager.Windows.csproj",
+      "src\\ATAP.Utilities.Secrets\\Enumerations\\ATAP.Utilities.Secrets.Enumerations.csproj",
+      "src\\ATAP.Utilities.Secrets\\Interfaces\\ATAP.Utilities.Secrets.Interfaces.csproj",
+      "src\\ATAP.Utilities.Secrets\\Model\\ATAP.Utilities.Secrets.Model.csproj",
+      "src\\ATAP.Utilities.Secrets\\StringConstants\\ATAP.Utilities.Secrets.StringConstants.csproj"
+    ]
+  }
+}

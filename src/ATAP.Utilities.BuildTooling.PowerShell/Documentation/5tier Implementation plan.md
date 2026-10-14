@@ -193,9 +193,14 @@ through `Get-SecretATAP` immediately before the request:
 ```powershell
 Publish-PSModuleToProGetFeed `
   -Tier $tier `
-  -NupkgPath $Nupkg `
-  -ProGetApiKeySecretName 'ProGet.BuildMaster.API.Key'
+  -NupkgPath $Nupkg
 ```
+
+`-ProGetApiKeySecretName` is intentionally omitted: the cmdlet defaults it to the
+base name `ProGet.BuildMaster.API.Key` and, because the caller left it unbound,
+resolves it to the host-suffixed vault name through
+`Resolve-HostSuffixedSecretName` (SC-0288). Binding the bare base name explicitly
+is honoured verbatim and fails closed.
 
 Resolution fails closed when the configured secret provider is unavailable or
 returns an empty value. Environment-variable and administrator-key fallbacks

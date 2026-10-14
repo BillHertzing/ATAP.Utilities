@@ -2,21 +2,6 @@
   "version": 2,
   "dependencies": {
     "net10.0": {
-      "Fody": {
-        "type": "Direct",
-        "requested": "[6.9.3, )",
-        "resolved": "6.9.3",
-        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
-      },
-      "MethodBoundaryAspect.Fody": {
-        "type": "Direct",
-        "requested": "[2.0.150, )",
-        "resolved": "2.0.150",
-        "contentHash": "cR7BJGl2420ORLRPO+itrzgveYaiwkmbfgQtVUziUdvmuOBkanz0927t0Kesj08XLrLG1NHXn1I+2+b2XyyEyQ==",
-        "dependencies": {
-          "Fody": "6.7.0"
-        }
-      },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
         "requested": "[8.0.0, )",
@@ -49,35 +34,18 @@
       "atap.utilities.stronglytypedid.jsonconverter.shim.systemtextjson": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )"
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[0.1.1, )"
         }
       },
       "atap.utilities.stronglytypedid.models": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )"
         }
       }
     },
-    "net10.0/linux-x64": {},
-    "net10.0/win-x64": {},
     "net8.0": {
-      "Fody": {
-        "type": "Direct",
-        "requested": "[6.9.3, )",
-        "resolved": "6.9.3",
-        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
-      },
-      "MethodBoundaryAspect.Fody": {
-        "type": "Direct",
-        "requested": "[2.0.150, )",
-        "resolved": "2.0.150",
-        "contentHash": "cR7BJGl2420ORLRPO+itrzgveYaiwkmbfgQtVUziUdvmuOBkanz0927t0Kesj08XLrLG1NHXn1I+2+b2XyyEyQ==",
-        "dependencies": {
-          "Fody": "6.7.0"
-        }
-      },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
         "requested": "[8.0.0, )",
@@ -110,35 +78,18 @@
       "atap.utilities.stronglytypedid.jsonconverter.shim.systemtextjson": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )"
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[0.1.1, )"
         }
       },
       "atap.utilities.stronglytypedid.models": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )"
         }
       }
     },
-    "net8.0/linux-x64": {},
-    "net8.0/win-x64": {},
     "net9.0": {
-      "Fody": {
-        "type": "Direct",
-        "requested": "[6.9.3, )",
-        "resolved": "6.9.3",
-        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
-      },
-      "MethodBoundaryAspect.Fody": {
-        "type": "Direct",
-        "requested": "[2.0.150, )",
-        "resolved": "2.0.150",
-        "contentHash": "cR7BJGl2420ORLRPO+itrzgveYaiwkmbfgQtVUziUdvmuOBkanz0927t0Kesj08XLrLG1NHXn1I+2+b2XyyEyQ==",
-        "dependencies": {
-          "Fody": "6.7.0"
-        }
-      },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
         "requested": "[8.0.0, )",
@@ -171,18 +122,16 @@
       "atap.utilities.stronglytypedid.jsonconverter.shim.systemtextjson": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )",
-          "ATAP.Utilities.StronglyTypedId.Models": "[1.0.0, )"
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )",
+          "ATAP.Utilities.StronglyTypedId.Models": "[0.1.1, )"
         }
       },
       "atap.utilities.stronglytypedid.models": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.StronglyTypedId.Interfaces": "[1.0.0, )"
+          "ATAP.Utilities.StronglyTypedId.Interfaces": "[0.1.1, )"
         }
       }
-    },
-    "net9.0/linux-x64": {},
-    "net9.0/win-x64": {}
+    }
   }
 }

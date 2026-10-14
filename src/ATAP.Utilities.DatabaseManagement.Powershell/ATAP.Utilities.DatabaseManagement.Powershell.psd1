@@ -12,7 +12,7 @@
     RootModule           = 'ATAP.Utilities.DatabaseManagement.Powershell.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '0.1.10'
+    ModuleVersion        = '0.1.24'
 
     # Supported PSEditions
     CompatiblePSEditions = 'Desktop', 'Core'
@@ -73,11 +73,14 @@
     'Expand-DatabaseChangePackage',
     'Export-InstantiationManifestation',
     'Get-DatabaseCredentialsKey', 'Get-DatabasePackageManifest',
+    'Get-SqlServiceLoginGrantTarget',
     'Get-InstalledDatabaseInformation', 'Get-InstantiationSourceModuleInventory',
     'Get-InstantiationVersionRuleGraph',
     'Initialize-SqlServiceLogin', 'Install-SqlServerInstance',
     'Invoke-DatabasePackageRehearsal', 'Invoke-Flyway', 'Invoke-FlywayRehearsal',
-    'Invoke-SqlServerBackup', 'New-CobianAppJobs', 'New-CobianSqlJobs',
+    'Invoke-SqlServerBackup', 'Protect-SqlServerBackupArtifact', 'Restore-SqlServerBackupArtifact',
+    'Publish-SqlServerBackupArtifact', 'Install-ProductionDatabaseBackupScheduledTasks',
+    'Test-DatabaseBackupHealth', 'New-CobianAppJobs', 'New-CobianSqlJobs',
     'New-ConnectionStringBuilderFromDbaTools', 'New-DatabaseChangePackage',
     'New-DatabasePreMigrationSnapshot', 'New-DeveloperScratchDb',
     'New-FeatureSharedDb', 'Remove-DeveloperScratchDb',
@@ -86,6 +89,8 @@
     'Test-DatabaseChangePackage',
     'Test-DatabasePackageManifest', 'Test-DatabaseRollbackReadiness',
     'Test-DatabaseSeedIdempotency',
+    'Set-SqlDatabaseRoleMembership',
+    'Set-SqlDatabasePackageDeploymentPrincipal',
     'Test-FlywayMigrationSafety', 'Get-FlywaySchemaVersion'
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
@@ -147,5 +152,3 @@
     # DefaultCommandPrefix = ''
 
 }
-
-

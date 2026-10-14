@@ -1,0 +1,34 @@
+@startuml
+title V4-2 AceCommander Initial Visualization Queries
+skinparam defaultFontName Segoe UI
+left to right direction
+
+actor User
+component "Raw ContentSummary view" as Raw
+component "Tag universe + Any/All selector" as Selector
+component "Token timeline" as Timeline
+component "Authorization and query service" as Service
+database "Ace ContentSummary projection" as Summary
+database "ATAPUtilities Tag as-of reader" as Tags
+database "Ace AISupervisor telemetry" as Telemetry
+
+User --> Raw
+User --> Selector
+User --> Timeline
+Raw --> Service
+Selector --> Service
+Timeline --> Service
+Service --> Summary
+Service --> Tags
+Service --> Telemetry
+
+note bottom of Service
+  Authorization occurs before filtering,
+  counting, grouping, or pagination.
+end note
+
+note bottom of Timeline
+  UTC buckets; harness/model/effort filters.
+  Missing counts remain visibly missing.
+end note
+@enduml

@@ -1,30 +1,17 @@
 # lock-file-guard.yml
 #
 # Purpose: Verify that production-scope packages.lock.json files are up to date
-#          with the current package references. Runs on push and pull_request
-#          to main.
+#          while keeping all restore outputs outside the checkout.
 #
-# Requires a self-hosted Windows runner:
-#   - ProGet feeds are on localhost:50000 (not reachable from github-hosted runners)
-#   - The runner machine must have ProGet running and all ATAP.Utilities packages
-#     present in the appropriate ProGet feed for the branch being built.
+# Requires a self-hosted Windows runner with:
+#   - ProGet feeds available to the runner
+#   - ATAP_ARTIFACTS_ROOT configured as a repository Actions variable
+#   - The .NET 10 SDK
 #
-# How it works:
-#   dotnet restore ATAP.Utilities.Production.slnf --locked-mode exits non-zero
-#   when any resolved package version differs from the version pinned in a
-#   production-scope packages.lock.json. This catches:
-#     - New transitive dependencies added without regenerating lock files
-#     - Version bumps in Directory.Packages.props that were not propagated
-#     - Manual edits to packages.lock.json that are inconsistent with .csproj refs
-#
-# To regenerate lock files after a legitimate version change:
-#   dotnet restore ATAP.Utilities.Production.slnf --force-evaluate
-#   git add **/packages.lock.json
-#   git commit -m "chore: regenerate NuGet lock files"
-#
-# Intentionally excluded from this guard:
-#   - samples/** projects. They are demo/scaffold projects and are not included
-#     in ATAP.Utilities.Production.slnf.
+# This workflow deliberately uses --force-evaluate together with --locked-mode.
+# The first option prevents a stale no-op restore; the second fails if the lock
+# graph no longer matches the project graph. The final git diff is the second,
+# independent lock-file guard.
 
 on:
   push:
@@ -47,7 +34,11 @@ name: NuGet Lock-File Guard
 jobs:
   verify-lock-files:
     name: Verify packages.lock.json files are current
-    runs-on: [self-hosted, Windows] # Requires ProGet on localhost:50000
+    runs-on: [self-hosted, Windows]
+    env:
+      ATAP_ARTIFACTS_ROOT: ${{ vars.ATAP_ARTIFACTS_ROOT }}
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -57,14 +48,94 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
-      - name: Verify production lock files are current (locked-mode restore)
-        # --locked-mode fails if any resolved package version differs from the
-        # pinned version in packages.lock.json.
-        # Use --force-evaluate to regenerate lock files when versions legitimately change.
+      - name: Resolve isolated artifacts path
+        shell: pwsh
         run: |
-          dotnet restore ATAP.Utilities.Production.slnf --locked-mode
+          $ErrorActionPreference = 'Stop'
+          if ([string]::IsNullOrWhiteSpace($env:ATAP_ARTIFACTS_ROOT)) {
+            throw 'ATAP_ARTIFACTS_ROOT must be configured as a repository Actions variable.'
+          }
+
+          $artifactsRoot = [IO.Path]::GetFullPath($env:ATAP_ARTIFACTS_ROOT).TrimEnd([IO.Path]::DirectorySeparatorChar)
+          $workspace = [IO.Path]::GetFullPath($env:GITHUB_WORKSPACE).TrimEnd([IO.Path]::DirectorySeparatorChar)
+          if ($artifactsRoot -match '(?i)(^|[\\/])(Dropbox|OneDrive)([\\/]|$)') {
+            throw 'ATAP_ARTIFACTS_ROOT must not be located under Dropbox or OneDrive.'
+          }
+          if ($artifactsRoot.Equals($workspace, [StringComparison]::OrdinalIgnoreCase) -or
+              $artifactsRoot.StartsWith($workspace + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+            throw 'ATAP_ARTIFACTS_ROOT must be outside the checked-out worktree.'
+          }
+
+          $workspaceBytes = [Text.Encoding]::UTF8.GetBytes($workspace.ToUpperInvariant())
+          $worktreeId = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($workspaceBytes)).Substring(0, 16).ToLowerInvariant()
+          $executionId = "$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT-$env:GITHUB_JOB"
+          $artifactsPath = [IO.Path]::GetFullPath((Join-Path $artifactsRoot 'dotnet' 'ATAP.Utilities' $worktreeId $executionId))
+          $expectedPrefix = [IO.Path]::GetFullPath((Join-Path $artifactsRoot 'dotnet' 'ATAP.Utilities' $worktreeId)).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
+          if (-not $artifactsPath.StartsWith($expectedPrefix, [StringComparison]::OrdinalIgnoreCase)) {
+            throw 'Resolved artifacts path escaped its repository/worktree boundary.'
+          }
+
+          $owner = "ATAP.Utilities|$worktreeId|$executionId"
+          New-Item -ItemType Directory -Path $artifactsPath -Force | Out-Null
+          $markerPath = Join-Path $artifactsPath '.atap-artifacts-owner'
+          if (Test-Path -LiteralPath $markerPath) {
+            $existingOwner = (Get-Content -LiteralPath $markerPath -Raw).Trim()
+            if ($existingOwner -cne $owner) {
+              throw "Artifacts path is already owned by '$existingOwner'."
+            }
+          } else {
+            [IO.File]::WriteAllText($markerPath, $owner, [Text.UTF8Encoding]::new($false))
+          }
+
+          @(
+            "ATAP_ARTIFACTS_ROOT=$artifactsRoot"
+            "ATAP_ARTIFACTS_WORKTREE_ID=$worktreeId"
+            "ATAP_ARTIFACTS_EXECUTION_ID=$executionId"
+            "ATAP_ARTIFACTS_PATH=$artifactsPath"
+            "ATAP_ARTIFACTS_OWNER=$owner"
+          ) | Add-Content -LiteralPath $env:GITHUB_ENV
+
+      - name: Verify production lock files are current
+        shell: pwsh
+        run: |
+          dotnet restore ATAP.Utilities.Production.slnf --force-evaluate --locked-mode --artifacts-path $env:ATAP_ARTIFACTS_PATH `
+            -p:ATAPArtifactsRoot=$env:ATAP_ARTIFACTS_ROOT `
+            -p:ATAPArtifactsWorktreeId=$env:ATAP_ARTIFACTS_WORKTREE_ID `
+            -p:ATAPArtifactsExecutionId=$env:ATAP_ARTIFACTS_EXECUTION_ID
+          if ($LASTEXITCODE -ne 0) {
+            throw "Locked restore failed with exit code $LASTEXITCODE."
+          }
           git diff --exit-code -- '**/packages.lock.json' ':(exclude)samples/**'
-        env:
-          # Suppress interactive prompts; fail fast on any package resolution mismatch
-          DOTNET_NOLOGO: true
-          DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+      - name: Remove owned artifacts
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ([string]::IsNullOrWhiteSpace($env:ATAP_ARTIFACTS_PATH)) {
+            [Console]::Out.WriteLine('No artifacts path was resolved; cleanup skipped.')
+            exit 0
+          }
+
+          $artifactsRoot = [IO.Path]::GetFullPath($env:ATAP_ARTIFACTS_ROOT).TrimEnd([IO.Path]::DirectorySeparatorChar)
+          $workspace = [IO.Path]::GetFullPath($env:GITHUB_WORKSPACE).TrimEnd([IO.Path]::DirectorySeparatorChar)
+          $artifactsPath = [IO.Path]::GetFullPath($env:ATAP_ARTIFACTS_PATH).TrimEnd([IO.Path]::DirectorySeparatorChar)
+          $expectedPath = [IO.Path]::GetFullPath((Join-Path $artifactsRoot 'dotnet' 'ATAP.Utilities' $env:ATAP_ARTIFACTS_WORKTREE_ID $env:ATAP_ARTIFACTS_EXECUTION_ID)).TrimEnd([IO.Path]::DirectorySeparatorChar)
+          if (-not $artifactsPath.Equals($expectedPath, [StringComparison]::OrdinalIgnoreCase)) {
+            throw 'Cleanup refused because the artifacts path is not the exact expected path.'
+          }
+          if ($artifactsPath.Equals($artifactsRoot, [StringComparison]::OrdinalIgnoreCase) -or
+              $artifactsPath.Equals($workspace, [StringComparison]::OrdinalIgnoreCase) -or
+              $artifactsPath.StartsWith($workspace + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+            throw 'Cleanup refused because the path crosses a protected boundary.'
+          }
+
+          $markerPath = Join-Path $artifactsPath '.atap-artifacts-owner'
+          if (-not (Test-Path -LiteralPath $markerPath -PathType Leaf)) {
+            throw 'Cleanup refused because the ownership marker is missing.'
+          }
+          $actualOwner = (Get-Content -LiteralPath $markerPath -Raw).Trim()
+          if ($actualOwner -cne $env:ATAP_ARTIFACTS_OWNER) {
+            throw 'Cleanup refused because the ownership marker does not match this run.'
+          }
+          Remove-Item -LiteralPath $artifactsPath -Recurse -Force

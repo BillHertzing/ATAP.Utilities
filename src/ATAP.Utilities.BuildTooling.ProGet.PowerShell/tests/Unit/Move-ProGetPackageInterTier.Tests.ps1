@@ -1,7 +1,7 @@
 #Requires -Version 7.0
 # Pester 5+ unit tests for Move-ProGetPackageInterTier.
-# All ProGet REST calls are mocked. Validates tier ordering, legacy alias
-# normalization (testing->qa, production->stable), and 5-tier auto-routing.
+# All ProGet REST calls are mocked. Validates tier ordering, testing->qa legacy
+# normalization, production-name retirement, and 5-tier auto-routing.
 # AI assisted using Powershell.instructions.md as guidelines
 
 BeforeAll {
@@ -86,7 +86,7 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit', 'PromotedModuleHostSensitive
     }
   }
 
-  Context 'Legacy tier name normalization' {
+  Context 'Legacy tier handling' {
 
     It "Normalizes 'testing' -> 'qa' tier and routes to nuget-stable" {
       $result = Move-ProGetPackageInterTier `
@@ -97,14 +97,23 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit', 'PromotedModuleHostSensitive
       $result.DestinationFeed | Should -Be 'nuget-stable'
     }
 
-    It "Normalizes 'production' -> 'stable' tier and throws (already at top)" {
+    It 'Rejects retired nuget-production source feed before any REST call' {
       { Move-ProGetPackageInterTier `
           -Name 'Test.Package' -Version '1.0.0' `
           -FromFeed 'nuget-production' `
           -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key'
-      } | Should -Throw -ExpectedMessage '*highest tier*'
+      } | Should -Throw -ExpectedMessage "*retired*Use 'nuget-stable'*"
+      Assert-MockCalled Invoke-RestMethod -Times 0 -Exactly -Scope It
     }
-  }
+
+    It 'Rejects retired nuget-production explicit destination before any REST call' {
+      { Move-ProGetPackageInterTier `
+          -Name 'Test.Package' -Version '1.0.0' `
+          -FromFeed 'nuget-qa' -ToFeed 'nuget-production' `
+          -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key'
+      } | Should -Throw -ExpectedMessage "*retired*Use 'nuget-stable'*"
+      Assert-MockCalled Invoke-RestMethod -Times 0 -Exactly -Scope It
+    }  }
 
   Context 'Push feed as source is tolerated (strip -push and treat as pull)' {
 
@@ -215,8 +224,12 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit', 'PromotedModuleHostSensitive
   Context 'No-profile BuildMaster promotion host' {
 
     It 'uses explicit inputs when the global settings variable is absent' {
-      $savedSettings = Get-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
-      $savedBaseUrl = Get-Variable -Name ProGetBaseUrl -Scope Global -ErrorAction SilentlyContinue
+      $savedSettingsVariable = Get-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
+      $savedBaseUrlVariable = Get-Variable -Name ProGetBaseUrl -Scope Global -ErrorAction SilentlyContinue
+      $settingsExisted = $null -ne $savedSettingsVariable
+      $baseUrlExisted = $null -ne $savedBaseUrlVariable
+      $savedSettingsValue = if ($settingsExisted) { $savedSettingsVariable.Value } else { $null }
+      $savedBaseUrlValue = if ($baseUrlExisted) { $savedBaseUrlVariable.Value } else { $null }
       try {
         Remove-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
         Remove-Variable -Name ProGetBaseUrl -Scope Global -ErrorAction SilentlyContinue
@@ -229,14 +242,26 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit', 'PromotedModuleHostSensitive
         $result.DestinationFeed | Should -Be 'powershellget-integration'
         $script:getPValCallCount | Should -Be 0
       } finally {
-        if ($null -ne $savedSettings) { Set-Variable -Name settings -Scope Global -Value $savedSettings.Value }
-        if ($null -ne $savedBaseUrl) { Set-Variable -Name ProGetBaseUrl -Scope Global -Value $savedBaseUrl.Value }
+        if ($settingsExisted) {
+          Set-Variable -Name settings -Scope Global -Value $savedSettingsValue
+        } else {
+          Remove-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
+        }
+        if ($baseUrlExisted) {
+          Set-Variable -Name ProGetBaseUrl -Scope Global -Value $savedBaseUrlValue
+        } else {
+          Remove-Variable -Name ProGetBaseUrl -Scope Global -ErrorAction SilentlyContinue
+        }
       }
     }
 
     It 'uses explicit inputs when global settings exists but lacks promotion keys' {
-      $savedSettings = Get-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
-      $savedBaseUrl = Get-Variable -Name ProGetBaseUrl -Scope Global -ErrorAction SilentlyContinue
+      $savedSettingsVariable = Get-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
+      $savedBaseUrlVariable = Get-Variable -Name ProGetBaseUrl -Scope Global -ErrorAction SilentlyContinue
+      $settingsExisted = $null -ne $savedSettingsVariable
+      $baseUrlExisted = $null -ne $savedBaseUrlVariable
+      $savedSettingsValue = if ($settingsExisted) { $savedSettingsVariable.Value } else { $null }
+      $savedBaseUrlValue = if ($baseUrlExisted) { $savedBaseUrlVariable.Value } else { $null }
       try {
         Set-Variable -Name settings -Scope Global -Value @{ Unrelated = 'value' }
         Remove-Variable -Name ProGetBaseUrl -Scope Global -ErrorAction SilentlyContinue
@@ -249,12 +274,16 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit', 'PromotedModuleHostSensitive
         $result.DestinationFeed | Should -Be 'powershellget-integration'
         $script:getPValCallCount | Should -Be 0
       } finally {
-        if ($null -ne $savedSettings) {
-          Set-Variable -Name settings -Scope Global -Value $savedSettings.Value
+        if ($settingsExisted) {
+          Set-Variable -Name settings -Scope Global -Value $savedSettingsValue
         } else {
           Remove-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
         }
-        if ($null -ne $savedBaseUrl) { Set-Variable -Name ProGetBaseUrl -Scope Global -Value $savedBaseUrl.Value }
+        if ($baseUrlExisted) {
+          Set-Variable -Name ProGetBaseUrl -Scope Global -Value $savedBaseUrlValue
+        } else {
+          Remove-Variable -Name ProGetBaseUrl -Scope Global -ErrorAction SilentlyContinue
+        }
       }
     }
   }

@@ -29,8 +29,17 @@ function Invoke-SprintEndLifecycle {
   .PARAMETER BuiltModule
   Modules built during the sprint, each with Name and Version properties.
 
+  .PARAMETER LoginScriptPath
+  Invocation-only login script override. The target must survive removal of all
+  selected worktrees; an explicitly supplied empty value is invalid.
+
   .PARAMETER ApplyBoundary
   Applies the SprintEnd AIAdapter/template boundary reset.
+
+  .PARAMETER SkipSharedVSCodeSettings
+  Defers the shared settings render and symlink retarget during the boundary
+  pass, for a premerge close. Stable settings must be reasserted after merge;
+  this switch does not skip the final stable boundary verification.
 
   .PARAMETER ProfiledRemotingPolicy
   Controls the profiled-remoting boundary concern. Auto is the safe default;
@@ -62,7 +71,18 @@ function Invoke-SprintEndLifecycle {
   Copies dotted sprint task artifacts into SprintHistory.
 
   .PARAMETER VerifyCheckpoints
-  Verifies every selected worktree has a reachable canonical Planning checkpoint.
+  Verifies every selected worktree has a reachable canonical Planning checkpoint
+  plus externally durable, hash-verified corpus evidence.
+
+  .PARAMETER ExternalDurabilityEvidence
+  Snapshot evidence forwarded to Test-SprintCheckpointCoverage. The lifecycle
+  never calls the live corpus or manifest itself.
+
+  .PARAMETER RequiredExternalReplicaKind
+  External replica kinds required before any teardown-producing phase proceeds.
+
+  .PARAMETER ExternalDurabilityOverride
+  Named operator exception forwarded to checkpoint coverage.
 
   .PARAMETER WriteHandoff
   Generates HANDOFF.SprintNNNN.md.
@@ -72,6 +92,11 @@ function Invoke-SprintEndLifecycle {
 
   .PARAMETER CleanupInfrastructure
   Drops sprint databases, clears BuildMaster variables, and reasserts stable boundary.
+
+  .PARAMETER DatabaseCleanupTargets
+  Reviewed exact database targets (InstanceName and Databases) forwarded to the
+  infrastructure cleanup and generated handoff. Omission retains helper defaults;
+  an explicitly supplied empty list is forwarded for fail-closed validation.
 
   .PARAMETER TestFreshShell
   Includes profile-enabled fresh-shell verification in the final boundary audit.
@@ -111,8 +136,14 @@ function Invoke-SprintEndLifecycle {
     [Parameter()]
     [object[]]$BuiltModule = @(),
 
+    [ValidateNotNullOrEmpty()]
+    [string]$LoginScriptPath,
+
     [Parameter()]
     [switch]$ApplyBoundary,
+
+    [Parameter()]
+    [switch]$SkipSharedVSCodeSettings,
 
     [Parameter()]
     [ValidateSet('Disabled', 'Auto', 'Required')]
@@ -142,6 +173,16 @@ function Invoke-SprintEndLifecycle {
     [switch]$VerifyCheckpoints,
 
     [Parameter()]
+    [object[]]$ExternalDurabilityEvidence = @(),
+
+    [Parameter()]
+    [ValidateNotNullOrEmpty()]
+    [string[]]$RequiredExternalReplicaKind = @('Primary', 'DropboxMirror'),
+
+    [Parameter()]
+    [object]$ExternalDurabilityOverride,
+
+    [Parameter()]
     [switch]$WriteHandoff,
 
     [Parameter()]
@@ -149,6 +190,10 @@ function Invoke-SprintEndLifecycle {
 
     [Parameter()]
     [switch]$CleanupInfrastructure,
+
+    [Parameter()]
+    [AllowEmptyCollection()]
+    [object[]]$DatabaseCleanupTargets,
 
     [Parameter()]
     [switch]$TestFreshShell,
@@ -244,10 +289,17 @@ function Invoke-SprintEndLifecycle {
     if (-not $phases.WorktreeState.Ok) { [void]$failures.Add('WorktreeState') }
 
     if ($VerifyCheckpoints -and $phases.Context.Ok) {
-      $phases.CheckpointCoverage = Test-SprintCheckpointCoverage `
-        -PlanningRoot $planningRootFull `
-        -SprintNumber ([int]$phases.Context.ClosedSprintNumber) `
-        -WorktreePaths $worktreeFullPaths
+      $coverageParameters = @{
+        PlanningRoot               = $planningRootFull
+        SprintNumber               = [int]$phases.Context.ClosedSprintNumber
+        WorktreePaths              = $worktreeFullPaths
+        ExternalDurabilityEvidence = $ExternalDurabilityEvidence
+        RequiredExternalReplicaKind = $RequiredExternalReplicaKind
+      }
+      if ($PSBoundParameters.ContainsKey('ExternalDurabilityOverride')) {
+        $coverageParameters.ExternalDurabilityOverride = $ExternalDurabilityOverride
+      }
+      $phases.CheckpointCoverage = Test-SprintCheckpointCoverage @coverageParameters
       if (-not $phases.CheckpointCoverage.Ok) {
         [void]$failures.Add('CheckpointCoverage')
       }
@@ -262,6 +314,9 @@ function Invoke-SprintEndLifecycle {
     )
     if ($ApplyBoundary -and -not $checkpointConfirmed) {
       [void]$failures.Add('CheckpointCoverageRequiredForBoundary')
+    }
+    if (($WriteHandoff -or $CleanupInfrastructure) -and -not $checkpointConfirmed) {
+      [void]$failures.Add('ExternalDurabilityRequiredForTeardown')
     }
 
     $phases.RetrospectiveNotebook = [PSCustomObject]@{ Ok = $true; Message = 'Notebook check skipped.' }
@@ -281,6 +336,7 @@ function Invoke-SprintEndLifecycle {
     if ($failures.Count -eq 0 -and $ApplyBoundary) {
       $boundaryParameters = @{
         Boundary                    = 'End'
+        GitRoot                     = $gitRootFull
         SharedVSCodeWorktreePath    = [IO.Path]::GetFullPath($SharedVSCodeWorktreePath)
         WorktreePaths               = $worktreeFullPaths
         ProfiledRemotingPolicy      = $ProfiledRemotingPolicy
@@ -289,6 +345,10 @@ function Invoke-SprintEndLifecycle {
         Confirm                     = $false
       }
       if ($WhatIfPreference) { $boundaryParameters.WhatIf = $true }
+      if ($PSBoundParameters.ContainsKey('SkipSharedVSCodeSettings')) {
+        $boundaryParameters.SkipSharedVSCodeSettings = [bool]$SkipSharedVSCodeSettings
+      }
+      if ($PSBoundParameters.ContainsKey('LoginScriptPath')) { $boundaryParameters.LoginScriptPath = $LoginScriptPath }
       $phases.BoundaryReset = Set-SprintBoundaryContext @boundaryParameters
       if (@($phases.BoundaryReset.Errors).Count -gt 0) { [void]$failures.Add('BoundaryReset') }
 
@@ -318,6 +378,36 @@ function Invoke-SprintEndLifecycle {
     } else {
       $phases.BoundaryReset = $null
       $phases.TemplateRef = @()
+    }
+
+    # Teardown without a boundary application still requires a read-only pair
+    # audit before any handoff or infrastructure cleanup can proceed. The final
+    # audit alone is too late to protect a target in a removed worktree.
+    $phases.LoginScheduledTasksPreCleanup = $null
+    if ($failures.Count -eq 0 -and -not $ApplyBoundary -and ($CleanupInfrastructure -or $WriteHandoff -or $CreatePullRequests -or $MergePullRequests)) {
+      try {
+        if (-not (Get-Command -Name 'Set-SprintLoginScheduledTaskTarget' -ErrorAction SilentlyContinue)) {
+          $loginHelperPath = Join-Path $PSScriptRoot '../private/Set-SprintLoginScheduledTaskTarget.ps1'
+          if (-not (Test-Path -LiteralPath $loginHelperPath -PathType Leaf)) { throw "Required helper not found: $loginHelperPath" }
+          . $loginHelperPath
+        }
+        $loginAuditParameters = @{
+          Boundary = 'End'
+          GitRoot = $gitRootFull
+          WorktreePaths = $worktreeFullPaths
+          CheckOnly = $true
+          Confirm = $false
+        }
+        if ($PSBoundParameters.ContainsKey('LoginScriptPath')) { $loginAuditParameters.LoginScriptPath = $LoginScriptPath }
+        $phases.LoginScheduledTasksPreCleanup = Set-SprintLoginScheduledTaskTarget @loginAuditParameters
+        if ($null -eq $phases.LoginScheduledTasksPreCleanup -or -not $phases.LoginScheduledTasksPreCleanup.Ok) {
+          [void]$failures.Add('LoginScheduledTasksPreCleanup')
+        }
+      } catch {
+        $phases.LoginScheduledTasksPreCleanup = [PSCustomObject]@{ Ok = $false; Failures = @($_.Exception.Message) }
+        [void]$failures.Add('LoginScheduledTasksPreCleanup')
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Login pair pre-cleanup audit failed: $($_.Exception.Message)"
+      }
     }
 
     # Task 14.11. A live merge runs only after the operator authorization is
@@ -397,6 +487,9 @@ function Invoke-SprintEndLifecycle {
         Confirm       = $false
       }
       if ($WhatIfPreference) { $handoffParameters.WhatIf = $true }
+      if ($PSBoundParameters.ContainsKey('DatabaseCleanupTargets')) {
+        $handoffParameters.DatabaseCleanupTargets = $DatabaseCleanupTargets
+      }
       try {
         $phases.Handoff = New-SprintEndHandoff @handoffParameters
       } catch {
@@ -414,11 +507,16 @@ function Invoke-SprintEndLifecycle {
     if ($failures.Count -eq 0 -and $CleanupInfrastructure) {
       $cleanupParameters = @{
         GitRoot = $gitRootFull
+        WorktreePaths = $worktreeFullPaths
         ProfiledRemotingPolicy = $ProfiledRemotingPolicy
         Apply   = $true
         Confirm = $false
       }
       if ($WhatIfPreference) { $cleanupParameters.WhatIf = $true }
+      if ($PSBoundParameters.ContainsKey('DatabaseCleanupTargets')) {
+        $cleanupParameters.DatabaseCleanupTargets = $DatabaseCleanupTargets
+      }
+      if ($PSBoundParameters.ContainsKey('LoginScriptPath')) { $cleanupParameters.LoginScriptPath = $LoginScriptPath }
       $phases.InfrastructureCleanup = Invoke-SprintEndInfrastructureCleanup @cleanupParameters
       if (-not $phases.InfrastructureCleanup.Ok) { [void]$failures.Add('InfrastructureCleanup') }
     } else {
@@ -426,10 +524,14 @@ function Invoke-SprintEndLifecycle {
     }
 
     if (-not $WhatIfPreference -and ($ApplyBoundary -or $CleanupInfrastructure)) {
-      $phases.FinalBoundary = Test-SprintEndBoundaryState `
-        -GitRoot $gitRootFull `
-        -SearchRoots $worktreeFullPaths `
-        -TestFreshShell:$TestFreshShell
+      $finalBoundaryParameters = @{
+        GitRoot = $gitRootFull
+        SearchRoots = $worktreeFullPaths
+        WorktreePaths = $worktreeFullPaths
+        TestFreshShell = [bool]$TestFreshShell
+      }
+      if ($PSBoundParameters.ContainsKey('LoginScriptPath')) { $finalBoundaryParameters.LoginScriptPath = $LoginScriptPath }
+      $phases.FinalBoundary = Test-SprintEndBoundaryState @finalBoundaryParameters
       if (-not $phases.FinalBoundary.Ok) { [void]$failures.Add('FinalBoundary') }
     } else {
       $phases.FinalBoundary = [PSCustomObject]@{

@@ -61,8 +61,9 @@ function Register-ProfiledRemotingEndpoint {
 
   .PARAMETER RemotePowerShellExecutablePath
     Absolute PowerShell 7 executable path on a remote target. The detached
-    registration must run under pwsh, rather than the unnamed default WinRM
-    endpoint (which is commonly Windows PowerShell 5.1).
+    registration must run under pwsh. Bootstrap and result-poll connections
+    require the PowerShell.7 WinRM endpoint; an unavailable endpoint requires
+    a separately approved local elevated repair route.
 
   .PARAMETER ThrowOnFailure
     Throw when registration did not succeed.
@@ -237,8 +238,9 @@ function Register-ProfiledRemotingEndpoint {
         # no one left to start it back up. Launch the restart in a detached process
         # instead so it survives this session's connection dying. Use the actual
         # running host executable, not $PSHOME\pwsh.exe -- a session opened without
-        # -ConfigurationName connects to the DEFAULT WinRM endpoint (Windows
-        # PowerShell 5.1), where $PSHOME is WindowsPowerShell\v1.0 and has no pwsh.exe.
+        # -ConfigurationName would connect to the default WinRM endpoint. This
+        # path uses PowerShell.7 explicitly, and the current host executable
+        # avoids guessing a PowerShell installation path.
         $currentHostExe = (Get-Process -Id $PID).Path
         Start-Process -FilePath $currentHostExe `
           -ArgumentList '-NoLogo', '-Command', 'Start-Sleep -Seconds 2; Restart-Service -Name WinRM -Force' `
@@ -335,7 +337,7 @@ function Register-ProfiledRemotingEndpoint {
       $session = $null
       try {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling Invoke-Command on $ComputerName" -Tag 'InvokeCommandCall'
-        $session = New-PSSession -ComputerName $ComputerName -Credential $Credential -ErrorAction Stop
+        $session = New-PSSession -ComputerName $ComputerName -Credential $Credential -ConfigurationName 'PowerShell.7' -ErrorAction Stop
 
         Invoke-Command -Session $session -ScriptBlock {
           param($StagingPath, $PwshPath, $PsscContent, $ConfigurationName)
@@ -375,9 +377,8 @@ try {
             param($ScriptPath, $ScriptText, $ResultPath, $PwshPath)
             Remove-Item -LiteralPath $ResultPath -Force -ErrorAction SilentlyContinue
             Set-Content -LiteralPath $ScriptPath -Value $ScriptText -Encoding UTF8 -Force
-            # The bootstrap session deliberately uses the default endpoint so this
-            # recovery path remains available if the PS7 endpoint is broken. Never
-            # inherit that host executable: it is normally powershell.exe 5.1.
+            # The bootstrap session is bound to PowerShell.7. Keep the detached
+            # executable explicit so registration uses the reviewed pwsh path.
             Start-Process -FilePath $PwshPath `
               -ArgumentList '-NoLogo', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $ScriptPath `
               -WindowStyle Hidden
@@ -394,7 +395,7 @@ try {
           while ((Get-Date) -lt $deadline) {
             Start-Sleep -Seconds 2
             try {
-              $raw = Invoke-Command -ComputerName $ComputerName -Credential $Credential -ScriptBlock {
+              $raw = Invoke-Command -ComputerName $ComputerName -Credential $Credential -ConfigurationName 'PowerShell.7' -ScriptBlock {
                 param($ResultPath)
                 if (Test-Path -LiteralPath $ResultPath -PathType Leaf) {
                   Get-Content -LiteralPath $ResultPath -Raw
@@ -418,7 +419,10 @@ try {
         }
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from Invoke-Command on $ComputerName" -Tag 'InvokeCommandCall'
       } catch {
-        $outcome = [PSCustomObject]@{ Action = 'RemoteConnectionFailed'; Error = $_.Exception.Message }
+        $outcome = [PSCustomObject]@{
+          Action = 'RemoteConnectionFailed'
+          Error = "Remote PowerShell.7 registration on '$ComputerName' failed. Do not fall back to the default WinRM endpoint. If PowerShell.7 is unavailable, repair or register it locally through a separately approved elevated PowerShell 7 route. Detail: $($_.Exception.Message)"
+        }
       } finally {
         if ($session) { Remove-PSSession -Session $session -ErrorAction SilentlyContinue }
       }

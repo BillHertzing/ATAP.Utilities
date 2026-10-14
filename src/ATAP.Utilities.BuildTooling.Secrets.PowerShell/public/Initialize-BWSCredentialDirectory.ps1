@@ -69,6 +69,26 @@ function Initialize-BWSCredentialDirectory {
       throw 'Unable to derive a SAM account name for the BWS credential directory.'
     }
 
+    # NTAccount does not expand the PowerShell-specific `.\` local-account shorthand.
+    # Resolve it explicitly, then use SIDs for ACL construction so ACE creation is not
+    # dependent on localized or renameable account display names.
+    $accountForTranslation = if ($AccountName.StartsWith('.\', [System.StringComparison]::Ordinal)) {
+      [System.Security.Principal.NTAccount]::new($env:COMPUTERNAME, $samName)
+    }
+    else {
+      [System.Security.Principal.NTAccount]::new($AccountName)
+    }
+    try {
+      $accountSid = $accountForTranslation.Translate([System.Security.Principal.SecurityIdentifier])
+    }
+    catch {
+      throw "Unable to resolve BWS credential-directory account '$AccountName' to a Windows SID. $($_.Exception.Message)"
+    }
+    $localSystemSid = [System.Security.Principal.SecurityIdentifier]::new(
+      [System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
+    $administratorsSid = [System.Security.Principal.SecurityIdentifier]::new(
+      [System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
+
     if ([string]::IsNullOrWhiteSpace($CredentialDirectory)) {
       $CredentialDirectory = Join-Path $CredentialRoot $samName
     }
@@ -89,9 +109,9 @@ function Initialize-BWSCredentialDirectory {
         $fullControl = [System.Security.AccessControl.FileSystemRights]::FullControl
 
         $rules = @(
-          [System.Security.AccessControl.FileSystemAccessRule]::new($AccountName, $fullControl, $inheritFlags, $propFlags, $allowType),
-          [System.Security.AccessControl.FileSystemAccessRule]::new('SYSTEM', $fullControl, $inheritFlags, $propFlags, $allowType),
-          [System.Security.AccessControl.FileSystemAccessRule]::new('Administrators', $fullControl, $inheritFlags, $propFlags, $allowType)
+          [System.Security.AccessControl.FileSystemAccessRule]::new($accountSid, $fullControl, $inheritFlags, $propFlags, $allowType),
+          [System.Security.AccessControl.FileSystemAccessRule]::new($localSystemSid, $fullControl, $inheritFlags, $propFlags, $allowType),
+          [System.Security.AccessControl.FileSystemAccessRule]::new($administratorsSid, $fullControl, $inheritFlags, $propFlags, $allowType)
         )
 
         foreach ($rule in $rules) {

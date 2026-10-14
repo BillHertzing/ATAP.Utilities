@@ -33,18 +33,46 @@ Function Get-AllFilesChangedByCommit {
     # $VerbosePreference = 'SilentlyContinue' # Continue SilentlyContinue
     Write-PSFMessage -Level Debug -Message 'Entering Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
     Write-PSFMessage -Level Debug -Message "currentRepositoryPath is $currentRepositoryPath" -Tag 'Trace'
-    if (${pwd} -ne $currentRepositoryPath) {
-      Set-Location -Path $currentRepositoryPath
+    $resolvedRepositoryPath = (Resolve-Path -LiteralPath $currentRepositoryPath -ErrorAction Stop).Path
+
+    # Freeze history extraction on real staged or unstaged content deltas. Git diff
+    # compares normalized content, avoiding EOL-only false positives. Untracked paths
+    # are not part of either diff and therefore remain an explicit, separate policy.
+    git -C $resolvedRepositoryPath diff --cached --quiet --
+    $stagedDiffExitCode = $LASTEXITCODE
+    if ($stagedDiffExitCode -gt 1) {
+      throw "git diff --cached --quiet failed (exit code $stagedDiffExitCode)"
     }
-    # write a warning message to the user
-    $status = git status --porcelain
-    if ($null -ne $status) {
+
+    git -C $resolvedRepositoryPath diff --quiet --
+    $unstagedDiffExitCode = $LASTEXITCODE
+    if ($unstagedDiffExitCode -gt 1) {
+      throw "git diff --quiet failed (exit code $unstagedDiffExitCode)"
+    }
+
+    [array]$untrackedPaths = @(git -C $resolvedRepositoryPath ls-files --others --exclude-standard)
+    if ($LASTEXITCODE -ne 0) {
+      throw "git ls-files --others --exclude-standard failed (exit code $LASTEXITCODE)"
+    }
+
+    if ($stagedDiffExitCode -eq 1 -or $unstagedDiffExitCode -eq 1 -or $untrackedPaths.Count -gt 0) {
+      [array]$stagedChanges = if ($stagedDiffExitCode -eq 1) {
+        @(git -C $resolvedRepositoryPath diff --cached --name-status --)
+      } else { @() }
+      [array]$unstagedChanges = if ($unstagedDiffExitCode -eq 1) {
+        @(git -C $resolvedRepositoryPath diff --name-status --)
+      } else { @() }
       $message = @"
-The directory tree has changes since the last commit. This function will abort.
-${$status - join Environment.NewLine}
+The directory tree has content changes since the last commit. This function will abort.
+Staged: $($stagedChanges -join '; ')
+Unstaged: $($unstagedChanges -join '; ')
+Untracked: $($untrackedPaths -join '; ')
 "@
       Write-PSFMessage -Level Error -Message $message -Tag ''
       throw $message
+    }
+    if (${pwd} -ne $resolvedRepositoryPath) {
+      Set-Location -Path $resolvedRepositoryPath
     }
     # record the current Branch and HEAD commit
     $initialBranch = git branch --show-current

@@ -7,7 +7,7 @@ BeforeAll {
   $functionPath = Join-Path $PSScriptRoot '../public/Invoke-PSModulePesterTests.ps1'
   . $functionPath
 
-  Import-Module Pester -MinimumVersion 5.0.0 -ErrorAction Stop
+  Import-Module Pester -MinimumVersion 5.0.0 -MaximumVersion 5.999.999 -DisableNameChecking -ErrorAction Stop
 
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }

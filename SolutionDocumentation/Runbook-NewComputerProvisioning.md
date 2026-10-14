@@ -336,7 +336,7 @@ and what it must never do.
 - **Execute:** § 4.1–4.6 — profile source from the ATAP.IAC template via HostSettings;
   `Set-UserScopeProfile` for developer and service-account classes (never a symlink, never a
   hand copy); PSGallery modules at `-Scope AllUsers` from an elevated shell; `nbgv` to
-  `C:\ProgramData\dotnet\tools`; `bws` to `C:\Program Files\Bitwarden\bws` with the install
+  `C:\ProgramData\dotnet\tools`; `bws` to `C:\Program Files\Bitwarden` with the install
   dir appended to the **Machine** `PATH`.
 - **Exit:** in a **brand-new** shell (not a child of the install session, which inherits a
   stale environment block), both of these resolve for `nbgv` and `bws`:
@@ -401,10 +401,11 @@ and what it must never do.
 ### A7 — Build and test validation
 
 - **Entry:** Gate 2.
-- **Execute:** § 11.1–11.3 — stable-branch restore/build/test for ATAP.Utilities and
-  AceCommander, Pester suites with profiles enabled, packaging and feed round-trip. On a
-  sprint branch pass `-p:PackageLifeCycleStage=Sprint` consistently across split and combined
-  flows and preserve the `ATAP5TIER001` guard; omit the override on `main`.
+- **Execute:** § 11.1–11.3 — restore/build/test for ATAP.Utilities and AceCommander,
+  Pester suites with profiles enabled, packaging and feed round-trip. Let committed
+  `version.json` metadata supply the lifecycle stage consistently across split and combined
+  flows. Preserve `ATAP5TIER001`: stable/empty lifecycle is valid on `main`, `release/*`, and
+  numbered Sprint worktree branches; other branch kinds require a prerelease label.
 - **Exit:** all green, with the command output retained in `_generated/`.
 
 ### A8 — Backups and parity baseline

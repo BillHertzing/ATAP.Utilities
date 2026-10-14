@@ -259,4 +259,18 @@ Describe 'Start-BuildMasterPackagePipeline' -Tag 'Unit', 'PromotedModuleHostSens
     $script:releaseCall['ReleaseNumber'] | Should -Be '0.1.0-ATAP.Utilities.PowerShell'
     $result.ReleaseNumber | Should -Be '0.1.0-ATAP.Utilities.PowerShell'
   }
+
+  It 'keeps overlength package release numbers bounded, deterministic, and collision resistant' {
+    $nonWindowsCandidate = '0.1.2-ATAP.Utilities.Secrets.BitwardenSecretsManager'
+    $windowsCandidate = '0.1.2-ATAP.Utilities.Secrets.BitwardenSecretsManager.Windows'
+
+    $nonWindows = ConvertTo-BuildMasterBoundedReleaseNumber -Candidate $nonWindowsCandidate
+    $windows = ConvertTo-BuildMasterBoundedReleaseNumber -Candidate $windowsCandidate
+
+    $nonWindows.Length | Should -Be 50
+    $windows.Length | Should -Be 50
+    $nonWindows | Should -Not -Be $windows
+    (ConvertTo-BuildMasterBoundedReleaseNumber -Candidate $nonWindowsCandidate) | Should -BeExactly $nonWindows
+    (ConvertTo-BuildMasterBoundedReleaseNumber -Candidate $windowsCandidate) | Should -BeExactly $windows
+  }
 }

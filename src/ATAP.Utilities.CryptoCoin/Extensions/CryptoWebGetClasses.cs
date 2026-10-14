@@ -1,96 +1,132 @@
 using System;
+using System.Net;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
-using ATAP.Utilities.Http;
 using Newtonsoft.Json;
 using Polly;
-using Polly.Wrap;
 using Polly.Timeout;
 
 namespace ATAP.Utilities.CryptoCoin
 {
-    // Attribution for the Policies to https://stackoverflow.com/questions/49412806/pollys-policy-timeoutasync-does-not-work-with-policywrap-in-an-async-context
-public static class Policies
-{
- 
-    public static RetryASync<HttpResponseMessage> RetryPolicy
+  public interface ICryptoCoinHttpClient
+  {
+    Task<HttpResponseMessage> GetAsync(Uri requestUri, CancellationToken cancellationToken = default);
+  }
+
+  public sealed class CryptoCoinHttpClient : ICryptoCoinHttpClient
+  {
+    private static readonly HttpClient SharedHttpClient = new(new SocketsHttpHandler
     {
-        get
-        {
-            return Policy.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
-                    .Or<TimeoutRejectedException>()
-                    .RetryAsync(3, onRetryAsync: (delegateResult, i) =>
-                    {
-                        Console.WriteLine("Retry delegate fired for time No. " + i);
-                        return Task.CompletedTask;
-                    });
-        }
-    }
-    public static FallbackPolicy<HttpResponseMessage> FallbackPolicy
+      PooledConnectionLifetime = TimeSpan.FromMinutes(15),
+    });
+
+    private readonly HttpClient httpClient;
+    private readonly IAsyncPolicy<HttpResponseMessage> resiliencePolicy;
+
+    public CryptoCoinHttpClient()
+      : this(SharedHttpClient, maxRetryAttempts: 3, timeout: TimeSpan.FromSeconds(30))
     {
-        get
-        {
-            return Policy.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
-                    .Or<TimeoutRejectedException>()
-                    .FallbackAsync(new HttpResponseMessage(HttpStatusCode.InternalServerError), onFallbackAsync: (delegateResult, context) =>
-                    {
-                        Console.WriteLine("Fallback delegate fired");
-                        return Task.CompletedTask;
-                    });
-        }
-    }
-       public static AsyncTimeoutPolicy<HttpResponseMessage> TimeoutPolicy
-    {
-        get
-        {
-            return Policy.TimeoutAsync<HttpResponseMessage>(1, onTimeoutAsync: (context, timeSpan, task) =>
-            {
-                Console.WriteLine("Timeout delegate fired after " + timeSpan.TotalMilliseconds);
-                return Task.CompletedTask;
-            });
-        }
     }
 
-    public static PolicyWrap<HttpResponseMessage> PolicyWrap
+    public CryptoCoinHttpClient(HttpClient httpClient, int maxRetryAttempts = 3, TimeSpan? timeout = null)
     {
-        get
+      this.httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+      if (maxRetryAttempts < 0)
+      {
+        throw new ArgumentOutOfRangeException(nameof(maxRetryAttempts));
+      }
+
+      var requestTimeout = timeout ?? TimeSpan.FromSeconds(30);
+      if (requestTimeout <= TimeSpan.Zero)
+      {
+        throw new ArgumentOutOfRangeException(nameof(timeout));
+      }
+
+      var retryPolicy = Policy<HttpResponseMessage>
+        .Handle<HttpRequestException>()
+        .Or<TimeoutRejectedException>()
+        .OrResult(response => response.StatusCode == HttpStatusCode.RequestTimeout || (int)response.StatusCode >= 500)
+        .WaitAndRetryAsync(maxRetryAttempts, retryAttempt => TimeSpan.FromMilliseconds(100 * retryAttempt));
+      var timeoutPolicy = Policy.TimeoutAsync<HttpResponseMessage>(requestTimeout);
+      resiliencePolicy = Policy.WrapAsync(timeoutPolicy, retryPolicy);
+    }
+
+    public Task<HttpResponseMessage> GetAsync(Uri requestUri, CancellationToken cancellationToken = default)
+    {
+      ArgumentNullException.ThrowIfNull(requestUri);
+      if (!requestUri.IsAbsoluteUri)
+      {
+        throw new ArgumentException("The request URI must be absolute.", nameof(requestUri));
+      }
+
+      return resiliencePolicy.ExecuteAsync(
+        async token =>
         {
-            return Policy.WrapAsync(FallbackPolicy, RetryPolicy, TimeoutPolicy);
-        }
+          using var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
+          return await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false);
+        },
+        cancellationToken);
     }
-}
-  public class ChainInfo : WebGet<chain_so_api_v2_get_info_Data> {
-        public ChainInfo() : base(Policy.TimeoutAsync(new TimeSpan(0, 0, 30),
-                                              TimeoutStrategy.Optimistic),
-                            HttpRequestMessageBuilder.CreateNew()
-                                                                 .AddMethod(HttpMethod.Get)
-                                                                 .AddRequestUri(new Uri("https://chain.so//api/v2/get_info/"))
-                                                                 // .AddHeaders(ToDo);
-                                                                 .Build()
-        ) {
-        }
+  }
 
-        public ChainInfo(Policy policy) : base(policy,
-                                               HttpRequestMessageBuilder.CreateNew()
-                                                                 .AddMethod(HttpMethod.Get)
-                                                                 .AddRequestUri(new Uri("https://chain.so//api/v2/get_info/"))
-                                                                 // .AddHeaders(ToDo);
-                                                                 .Build()) {
-        }
+  public class ChainInfo
+  {
+    private static readonly Uri ChainInfoBaseUri = new("https://chain.so/api/v2/get_info/");
+    private readonly ICryptoCoinHttpClient httpClient;
 
-        public override async Task<chain_so_api_v2_get_info_Data> AsyncFetch(string coin) {
-            UriBuilder uriBuilder = new UriBuilder(HttpRequestMessage.RequestUri);
-            uriBuilder.Path += coin;
-            HttpRequestMessage.RequestUri = uriBuilder.Uri;
-            //var httpResponseMessage = await SingletonHttpClient.PostAsync(Policy, HttpRequestMessage);
-            var httpResponseMessage = await Policies.PolicyWrap.Execute(ct => SingletonHttpClient.AsyncFetch(HttpRequestMessage.RequestUri , HttpRequestMessage));
-            var data = await httpResponseMessage.Content.ReadAsStringAsync();
-            return string.IsNullOrEmpty(data) ?
-                            default(chain_so_api_v2_get_info_Data) :
-                            JsonConvert.DeserializeObject<chain_so_api_v2_get_info_Data>(data);
-        }
+    public ChainInfo()
+      : this(new CryptoCoinHttpClient())
+    {
     }
 
+    public ChainInfo(ICryptoCoinHttpClient httpClient)
+    {
+      this.httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+    }
+
+    public async Task<chain_so_api_v2_get_info_Data> AsyncFetch(string coin, CancellationToken cancellationToken = default)
+    {
+      if (string.IsNullOrWhiteSpace(coin))
+      {
+        throw new ArgumentException("A coin symbol is required.", nameof(coin));
+      }
+
+      var requestUri = new Uri(ChainInfoBaseUri, Uri.EscapeDataString(coin));
+      using var response = await httpClient.GetAsync(requestUri, cancellationToken).ConfigureAwait(false);
+      response.EnsureSuccessStatusCode();
+      var data = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+      return string.IsNullOrEmpty(data)
+        ? default
+        : JsonConvert.DeserializeObject<chain_so_api_v2_get_info>(data)?.data;
+    }
+  }
+
+  public class TickerInfo
+  {
+    private static readonly Uri TickerUri = new("https://blockchain.info/ticker");
+    private readonly ICryptoCoinHttpClient httpClient;
+
+    public TickerInfo()
+      : this(new CryptoCoinHttpClient())
+    {
+    }
+
+    public TickerInfo(ICryptoCoinHttpClient httpClient)
+    {
+      this.httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+    }
+
+    public async Task<blockChainInfo_ticker> AsyncFetch(CancellationToken cancellationToken = default)
+    {
+      using var response = await httpClient.GetAsync(TickerUri, cancellationToken).ConfigureAwait(false);
+      response.EnsureSuccessStatusCode();
+      var data = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+      return string.IsNullOrEmpty(data)
+        ? default
+        : JsonConvert.DeserializeObject<blockChainInfo_ticker>(data);
+    }
+  }
     //https://chain.so//api/v2/get_info/BTC
     public class chain_so_api_v2_get_info {
         public chain_so_api_v2_get_info_Data data { get; set; }
@@ -122,37 +158,6 @@ public static class Policies
         public int unconfirmed_txs { get; set; }
 
         public string url { get; set; }
-    }
-
-    public class TickerInfo : WebGet<blockChainInfo_ticker> {
-        public TickerInfo() : base(Policy.TimeoutAsync(new TimeSpan(0, 0, 30),
-                                              TimeoutStrategy.Optimistic),
-            HttpRequestMessageBuilder.CreateNew()
-                                                                 .AddMethod(HttpMethod.Get)
-                                                                 .AddRequestUri(new Uri("https://blockchain.info/ticker"))
-                                                                 // .AddHeaders(ToDo);
-                                                                 .Build()
-                                  ) {
-        }
-
-        public TickerInfo(Policy policy) : base(policy,
-            HttpRequestMessageBuilder.CreateNew()
-                                                                 .AddMethod(HttpMethod.Get)
-                                                                 .AddRequestUri(new Uri("https://blockchain.info/ticker"))
-                                                                 // .AddHeaders(ToDo);
-                                                                 .Build()
-                                  ) {
-        }
-
-        public new async Task<blockChainInfo_ticker> AsyncFetch() {
-            UriBuilder uriBuilder = new UriBuilder(HttpRequestMessage.RequestUri);
-            HttpRequestMessage.RequestUri = uriBuilder.Uri;
-            var httpResponseMessage = await SingletonHttpClient.AsyncFetch(Policy, HttpRequestMessage);
-            var data = await httpResponseMessage.Content.ReadAsStringAsync();
-            return string.IsNullOrEmpty(data) ?
-                            default(blockChainInfo_ticker) :
-                            JsonConvert.DeserializeObject<blockChainInfo_ticker>(data);
-        }
     }
 
     //https://blockchain.info/ticker

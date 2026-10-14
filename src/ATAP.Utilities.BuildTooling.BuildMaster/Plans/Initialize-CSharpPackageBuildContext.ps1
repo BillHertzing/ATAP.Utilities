@@ -15,7 +15,11 @@
   Path to the ATAP.Utilities.BuildTooling.PowerShell module manifest or folder.
 
 .PARAMETER SourcePath
-  Working copy / repository root. _generated/buildmaster lives beneath this.
+  Working copy / repository root.
+
+.PARAMETER ArtifactsPath
+  Canonical external execution path. BuildMaster run state is isolated beneath
+  this path rather than beneath SourcePath.
 
 .PARAMETER BuildMasterBuildId
   The BuildMaster build identifier (e.g. $BuildMasterId(build) in OtterScript).
@@ -52,6 +56,7 @@
   pwsh -File Initialize-CSharpPackageBuildContext.ps1 `
     -BuildToolingModulePath C:\src\repo\src\ATAP.Utilities.BuildTooling.PowerShell `
     -SourcePath C:\src\repo `
+    -ArtifactsPath C:\ATAPArtifacts\dotnet\ATAP.Utilities\wt137\build-12345 `
     -BuildMasterBuildId 12345 `
     -ApplicationName MyApp `
     -ProjectPath C:\src\repo\src\MyApp `
@@ -74,6 +79,10 @@ param(
   [Parameter(Mandatory)]
   [ValidateNotNullOrEmpty()]
   [string]$SourcePath,
+
+  [Parameter(Mandatory)]
+  [ValidateNotNullOrEmpty()]
+  [string]$ArtifactsPath,
 
   [Parameter(Mandatory)]
   [ValidateNotNullOrEmpty()]
@@ -126,6 +135,7 @@ function Initialize-CSharpPackageBuildContext {
   param(
     [Parameter(Mandatory)][string]$BuildToolingModulePath,
     [Parameter(Mandatory)][string]$SourcePath,
+    [Parameter(Mandatory)][string]$ArtifactsPath,
     [Parameter(Mandatory)][string]$BuildMasterBuildId,
     [AllowEmptyString()][string]$BuildNumber = '',
     [AllowEmptyString()][string]$ExecutionId = '',
@@ -158,7 +168,11 @@ function Initialize-CSharpPackageBuildContext {
 
   PROCESS {
     try {
-      $contextDirectory = Initialize-BuildMasterRunContextDirectory -SourcePath $SourcePath -BuildMasterBuildId $BuildMasterBuildId -RetentionDays $RetentionDays
+      $resolvedArtifactsPath = [System.IO.Path]::GetFullPath($ArtifactsPath)
+      if (-not [System.IO.Path]::IsPathRooted($resolvedArtifactsPath) -or $resolvedArtifactsPath -match '(?i)[\\/]Dropbox[\\/]') {
+        throw "ArtifactsPath '$ArtifactsPath' must be an absolute external path outside Dropbox."
+      }
+      $contextDirectory = Initialize-BuildMasterRunContextDirectory -SourcePath $resolvedArtifactsPath -BuildMasterBuildId $BuildMasterBuildId -RetentionDays $RetentionDays
       $context = Get-BuildContext -Application $ApplicationName -ProjectPath $ProjectPath -Branch $Branch -Stage $Stage
       $allowDecisions = Get-BuildMasterAllowDecisions -CeilingTier $context.CeilingTier
       $existingContext = Read-BuildMasterRunContextJson -ContextDirectory $contextDirectory
@@ -219,7 +233,7 @@ function Initialize-CSharpPackageBuildContext {
         -PrereleaseLabel $capturedPrereleaseLabel `
         -AllowDecisions $allowDecisions `
         -StateFiles $stateFiles `
-        -AdditionalData @{ PipelineKind = 'CSharpPackage'; PackageName = $PackageName } `
+        -AdditionalData @{ PipelineKind = 'CSharpPackage'; PackageName = $PackageName; ArtifactsPath = $resolvedArtifactsPath } `
         -RetentionDays $RetentionDays
 
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message ("BuildMaster run context initialized: BuildId={0}; BuildNumber={1}; ExecutionId={2}; ContextDirectory={3}; CurrentTier={4}; CeilingTier={5}; ResolvedVersion={6}" -f $BuildMasterBuildId, $BuildNumber, $ExecutionId, $contextDirectory, $context.CurrentTier, $context.CeilingTier, $capturedResolvedVersion)
@@ -243,6 +257,7 @@ function Initialize-CSharpPackageBuildContext {
 Initialize-CSharpPackageBuildContext `
   -BuildToolingModulePath $BuildToolingModulePath `
   -SourcePath $SourcePath `
+  -ArtifactsPath $ArtifactsPath `
   -BuildMasterBuildId $BuildMasterBuildId `
   -BuildNumber $BuildNumber `
   -ExecutionId $ExecutionId `

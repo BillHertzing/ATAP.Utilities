@@ -1,34 +1,81 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "releaseVersion": "1.4.1",
   "sourceTag": "v1.4.1",
-  "sourceCommit": "2222222222222222222222222222222222222222",
+  "sourceCommit": "8f4b2c1d3e5fa9c4b1f2e3d4a5b6c7d8e9f0a1b2",
   "sourceBranch": "release/1.4.1",
   "buildUtc": "2026-05-07T14:32:11Z",
-  "buildAgent": "utat022",
-  "appPackageId": "AceCommander",
-  "appPackageVersion": "1.4.1",
+  "buildAgent": "unit-test",
+  "applicationProvenance": {
+    "productId": "AceCommander",
+    "root": {
+      "id": "AceCommander.Server",
+      "version": "1.4.1",
+      "qualityTier": "Production",
+      "projectPath": "src/AceCommander.Server/AceCommander.Server.csproj"
+    },
+    "components": [
+      {
+        "id": "AceCommander.Client",
+        "version": "1.4.2",
+        "qualityTier": "Production",
+        "projectPath": "src/AceCommander.Client/AceCommander.Client.csproj"
+      }
+    ],
+    "artifactKind": "HostedWebApplication",
+    "configuration": "Release",
+    "targetFramework": "net10.0",
+    "runtimeIdentifier": null,
+    "publishSettings": {
+      "selfContained": false,
+      "publishSingleFile": false,
+      "publishTrimmed": false,
+      "useAppHost": false
+    }
+  },
   "includedLibraryPackages": [
-    { "id": "ATAP.Utilities.Philote", "version": "0.1.0-Beta.42" },
-    { "id": "ATAP.Utilities.ETW", "version": "0.1.0-Beta.43" },
-    { "id": "ATAP.Utilities.NewLibrary", "version": "1.0.0" }
+    {
+      "id": "ATAP.Utilities.Philote",
+      "version": "0.1.0-Beta.43"
+    },
+    {
+      "id": "ATAP.Utilities.NewLibrary",
+      "version": "1.0.0"
+    }
   ],
   "includedPowerShellModules": [
-    { "id": "ATAP.Utilities.FileIO.PowerShell", "version": "0.1.0-Beta.17" }
+    {
+      "id": "ATAP.Utilities.FileIO.PowerShell",
+      "version": "0.1.0-Beta.17"
+    }
   ],
-  "databasePackageIncluded": true,
-  "dbChangeUnit": "AceCommander-db-1.4.1",
-  "flywayTargetVersion": "1.4.2",
-  "migrationFiles": [
-    "db/flyway/V1.4.0__baseline_schema.sql",
-    "db/flyway/V1.4.2__new_feature_tables.sql",
-    "db/flyway/R__views_and_procs.sql"
-  ],
-  "seedFiles": [
-    "db/seed/S1_4_1_roles.csv"
-  ],
-  "seedLoaderScripts": [
-    "db/seed/S1_4_1_roles_load.sql"
+  "databasePackageReference": {
+    "id": "AceCommander.Database",
+    "compatibleVersionRange": "[1.4.0,1.6.0)",
+    "pinnedVersion": "1.4.3",
+    "lifecycleCeiling": "database-stable"
+  },
+  "payloadFiles": [
+    {
+      "path": "app/config/appsettings.template.json",
+      "checksumSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "sizeBytes": 79
+    },
+    {
+      "path": "app/new.txt",
+      "checksumSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "sizeBytes": 10
+    },
+    {
+      "path": "installer/Install-Application.ps1",
+      "checksumSha256": "1171424c47cb623292629990dc38231556d8cb1c190d310e2d8a4b7cafba3ba6",
+      "sizeBytes": 56
+    },
+    {
+      "path": "tests/unit-results.trx",
+      "checksumSha256": "7473f8e2c2c6ba3b82fe03f3302adf015df2c1437c9c4a4114ef3d4e12b6e8db",
+      "sizeBytes": 28
+    }
   ],
   "installerScripts": [
     "installer/Install-Application.ps1"
@@ -37,24 +84,18 @@
     {
       "kind": "unit",
       "path": "tests/unit-results.trx",
-      "checksumSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      "checksumSha256": "7473f8e2c2c6ba3b82fe03f3302adf015df2c1437c9c4a4114ef3d4e12b6e8db"
     }
   ],
-  "checksums": {
-    "app/bin/AceCommander.dll": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
-    "db/flyway/V1.4.0__baseline_schema.sql": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    "db/flyway/V1.4.2__new_feature_tables.sql": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
-  },
   "compatibility": {
-    "minDbVersion": "1.4.0",
-    "maxDbVersion": "1.4.2",
-    "supportedOs": [
-      "Windows 11"
+    "osFamilies": [
+      "windows"
     ],
-    "requiredDotnet": "10.0"
+    "runtimeIdentifiers": [],
+    "dotnetRuntimeVersion": "10.0"
   },
   "rollback": {
     "supported": false,
-    "notes": "Forward-only fixture release."
+    "notes": "Archive-only fixture; deployment recovery is separately gated."
   }
 }

@@ -2,21 +2,6 @@
   "version": 2,
   "dependencies": {
     "net10.0": {
-      "Fody": {
-        "type": "Direct",
-        "requested": "[6.9.3, )",
-        "resolved": "6.9.3",
-        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
-      },
-      "MethodBoundaryAspect.Fody": {
-        "type": "Direct",
-        "requested": "[2.0.150, )",
-        "resolved": "2.0.150",
-        "contentHash": "cR7BJGl2420ORLRPO+itrzgveYaiwkmbfgQtVUziUdvmuOBkanz0927t0Kesj08XLrLG1NHXn1I+2+b2XyyEyQ==",
-        "dependencies": {
-          "Fody": "6.7.0"
-        }
-      },
       "Microsoft.Extensions.Configuration": {
         "type": "Direct",
         "requested": "[9.0.0, )",
@@ -87,7 +72,7 @@
       "atap.utilities.collection.extensions": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "System.Reactive": "[5.0.0, )"
         }
       },
@@ -108,7 +93,7 @@
       "atap.utilities.messagequeue.stringconstants": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[1.0.0, )"
+          "ATAP.Utilities.ETW": "[0.1.3, )"
         }
       },
       "Microsoft.Extensions.Configuration.Abstractions": {
@@ -127,24 +112,7 @@
         "contentHash": "erBZjkQHWL9jpasCE/0qKAryzVBJFxGHVBAvgRN1bzM0q2s1S4oYREEEL0Vb+1kA/6BKb5FjUZMp5VXmy+gzkQ=="
       }
     },
-    "net10.0/linux-x64": {},
-    "net10.0/win-x64": {},
     "net8.0": {
-      "Fody": {
-        "type": "Direct",
-        "requested": "[6.9.3, )",
-        "resolved": "6.9.3",
-        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
-      },
-      "MethodBoundaryAspect.Fody": {
-        "type": "Direct",
-        "requested": "[2.0.150, )",
-        "resolved": "2.0.150",
-        "contentHash": "cR7BJGl2420ORLRPO+itrzgveYaiwkmbfgQtVUziUdvmuOBkanz0927t0Kesj08XLrLG1NHXn1I+2+b2XyyEyQ==",
-        "dependencies": {
-          "Fody": "6.7.0"
-        }
-      },
       "Microsoft.Extensions.Configuration": {
         "type": "Direct",
         "requested": "[9.0.0, )",
@@ -215,7 +183,7 @@
       "atap.utilities.collection.extensions": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "System.Reactive": "[5.0.0, )"
         }
       },
@@ -236,7 +204,7 @@
       "atap.utilities.messagequeue.stringconstants": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[1.0.0, )"
+          "ATAP.Utilities.ETW": "[0.1.3, )"
         }
       },
       "Microsoft.Extensions.Configuration.Abstractions": {
@@ -255,24 +223,7 @@
         "contentHash": "erBZjkQHWL9jpasCE/0qKAryzVBJFxGHVBAvgRN1bzM0q2s1S4oYREEEL0Vb+1kA/6BKb5FjUZMp5VXmy+gzkQ=="
       }
     },
-    "net8.0/linux-x64": {},
-    "net8.0/win-x64": {},
     "net9.0": {
-      "Fody": {
-        "type": "Direct",
-        "requested": "[6.9.3, )",
-        "resolved": "6.9.3",
-        "contentHash": "1CUGgFdyECDKgi5HaUBhdv6k+VG9Iy4OCforGfHyar3xQXAJypZkzymgKtWj/4SPd6nSG0Qi7NH71qHrDSZLaA=="
-      },
-      "MethodBoundaryAspect.Fody": {
-        "type": "Direct",
-        "requested": "[2.0.150, )",
-        "resolved": "2.0.150",
-        "contentHash": "cR7BJGl2420ORLRPO+itrzgveYaiwkmbfgQtVUziUdvmuOBkanz0927t0Kesj08XLrLG1NHXn1I+2+b2XyyEyQ==",
-        "dependencies": {
-          "Fody": "6.7.0"
-        }
-      },
       "Microsoft.Extensions.Configuration": {
         "type": "Direct",
         "requested": "[9.0.0, )",
@@ -343,7 +294,7 @@
       "atap.utilities.collection.extensions": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[1.0.0, )",
+          "ATAP.Utilities.ETW": "[0.1.3, )",
           "System.Reactive": "[5.0.0, )"
         }
       },
@@ -364,7 +315,7 @@
       "atap.utilities.messagequeue.stringconstants": {
         "type": "Project",
         "dependencies": {
-          "ATAP.Utilities.ETW": "[1.0.0, )"
+          "ATAP.Utilities.ETW": "[0.1.3, )"
         }
       },
       "Microsoft.Extensions.Configuration.Abstractions": {
@@ -382,8 +333,6 @@
         "resolved": "5.0.0",
         "contentHash": "erBZjkQHWL9jpasCE/0qKAryzVBJFxGHVBAvgRN1bzM0q2s1S4oYREEEL0Vb+1kA/6BKb5FjUZMp5VXmy+gzkQ=="
       }
-    },
-    "net9.0/linux-x64": {},
-    "net9.0/win-x64": {}
+    }
   }
 }

@@ -74,15 +74,49 @@ Describe 'New-GeneratedFileContent [private]' {
     $result | Should -Not -Match ([regex]::Escape('C:\Old\source.txt'))
   }
 
-  It 'returns identical bytes for repeated generation of unchanged content' {
+  It 'Replaces four consecutive mixed legacy and current headers while preserving the payload exactly' {
+    $sourceFile = Join-Path $script:tempDir 'four-generated-headers.txt'
+    $headerWithTimestamp = @(
+      '# ==================================================================='
+      '# GENERATED FILE - DO NOT EDIT DIRECTLY'
+      '# Source: C:\Old\source.txt'
+      '# Generated: 2026-04-13T18:46:45Z'
+      '# Regenerate using Set-DownstreamSharedVSCodeContext'
+      '# ==================================================================='
+    ) -join "`r`n"
+    $headerWithoutTimestamp = @(
+      '# ==================================================================='
+      '# GENERATED FILE - DO NOT EDIT DIRECTLY'
+      '# Source: SharedVSCode/source.txt'
+      '# Regenerate using Set-DownstreamSharedVSCodeContext'
+      '# ==================================================================='
+    ) -join "`n"
+    $payload = "`tfirst payload line`r`nsecond payload line`n"
+    $source = $headerWithoutTimestamp + "`n" +
+      $headerWithTimestamp + "`r`n" +
+      $headerWithoutTimestamp + "`n`n" +
+      $headerWithTimestamp + "`r`n" +
+      $payload
+    Set-Content -Path $sourceFile -Value $source -Encoding UTF8 -NoNewline
+
+    $result = New-GeneratedFileContent -SourcePath $sourceFile
+
+    ([regex]::Matches($result, 'GENERATED FILE - DO NOT EDIT DIRECTLY')).Count | Should -Be 1
+    $result.EndsWith($payload, [System.StringComparison]::Ordinal) | Should -BeTrue
+    $result | Should -Not -Match '# Generated:'
+    $result | Should -Not -Match ([regex]::Escape('C:\Old\source.txt'))
+  }
+
+  It 'returns identical content when its generated result is generated again' {
     $sourceFile = Join-Path $script:tempDir '.gitattributes'
-    Set-Content -Path $sourceFile -Value '*.ps1 text eol=crlf' -Encoding UTF8
+    Set-Content -Path $sourceFile -Value '*.ps1 text eol=crlf' -Encoding UTF8 -NoNewline
 
     $first = New-GeneratedFileContent -SourcePath $sourceFile
-    Start-Sleep -Milliseconds 20
+    Set-Content -Path $sourceFile -Value $first -Encoding UTF8 -NoNewline
     $second = New-GeneratedFileContent -SourcePath $sourceFile
 
     $second | Should -BeExactly $first
+    ([regex]::Matches($second, 'GENERATED FILE - DO NOT EDIT DIRECTLY')).Count | Should -Be 1
   }
 
   It 'Throws when the source file does not exist' {

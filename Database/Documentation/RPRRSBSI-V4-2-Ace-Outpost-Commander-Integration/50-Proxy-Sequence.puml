@@ -1,0 +1,25 @@
+@startuml
+title V4-2 AISupervisor Proxy Exchange
+actor "AI harness" as Harness
+participant "Harness adapter" as Adapter
+participant "AISupervisor proxy" as Proxy
+participant "Provider" as Provider
+database "Durable telemetry repository" as Store
+
+Harness -> Adapter : request + session/model/effort
+Adapter -> Proxy : begin exchange
+Proxy -> Proxy : classify and redact headers
+Proxy -> Store : persist request metadata
+Proxy -> Provider : forward request
+Provider --> Proxy : stream/response + usage
+Proxy -> Proxy : normalize usage and safe headers
+Proxy -> Store : close exchange + metrics
+Proxy --> Adapter : response
+Adapter --> Harness : response
+
+note over Proxy,Store
+  Initial body capture is disabled.
+  Secret header values never enter storage.
+  Missing usage remains null, not zero.
+end note
+@enduml

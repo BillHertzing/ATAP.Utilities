@@ -6,6 +6,15 @@
 # stale @('.claude', '.github', '.vscode') JunctionFolderNames default regressing.
 # See _generated/Task-12.2-investigation-findings.md.
 BeforeAll {
+  # Task 15.208: isolate login maintenance from the host Task Scheduler.
+  function global:Set-SprintLoginScheduledTaskTarget {
+    [CmdletBinding(SupportsShouldProcess)]
+    param([string]$Boundary, [string]$ATAPUtilitiesRoot, [string]$GitRoot,
+      [string]$LoginScriptPath, [string[]]$WorktreePaths, [switch]$CheckOnly)
+    [PSCustomObject]@{ Ok = $true; Boundary = $Boundary; SelectionMode = 'SprintDefault';
+      TargetPath = $LoginScriptPath; TargetHash = 'fixture'; Planned = [bool]$WhatIfPreference;
+      Changed = $false; Tasks = @(); Rollback = @{ Attempted = $false; Succeeded = $true; Failures = @() }; Failures = @() }
+  }
   Remove-Module 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell' -Force -ErrorAction SilentlyContinue
   $script:priorModuleAutoLoad = $global:PSModuleAutoLoadingPreference
   $global:PSModuleAutoLoadingPreference = 'None'
@@ -15,6 +24,7 @@ BeforeAll {
   }
 
   $script:stubbedFunctionNames = @(
+    'Set-SprintLoginScheduledTaskTarget'
     'Assert-GitAvailable',
     'Confirm-WorktreeGitPointerOwnership',
     'gh',
@@ -170,6 +180,7 @@ AfterAll {
 
 Describe 'New-SprintStage2 junction scan scope (SC-0236)' -Tag 'Unit', 'PromotedModuleHostSensitive' {
   BeforeEach {
+    Mock Set-SprintLoginScheduledTaskTarget { [PSCustomObject]@{ Ok = $true; Planned = [bool]$WhatIfPreference; Changed = $false; Tasks = @(); Failures = @() } }
     $global:stage2JunctionCalls = [System.Collections.Generic.List[object]]::new()
     $global:stage2CallOrder = [System.Collections.Generic.List[string]]::new()
     $global:stage2AdapterLifecycleCalls = [System.Collections.Generic.List[object]]::new()

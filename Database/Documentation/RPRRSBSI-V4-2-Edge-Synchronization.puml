@@ -1,0 +1,38 @@
+@startuml
+title RPRRSBSI V4-2 Outpost Projection and Synchronization
+skinparam defaultFontName Segoe UI
+skinparam shadowing false
+left to right direction
+
+node "AceOutpost" {
+  database "Local projection" as Local
+  queue "Scheduled work" as Work
+  queue "Durable outbound envelopes" as Outbox
+  component "Sync engine" as Sync
+}
+cloud "Intermittent network" as Network
+node "Ace central service" {
+  component "Versioned sync API" as Api
+  database "Ace schema" as Ace
+}
+
+Work --> Local : atomic checkpoint
+Local --> Outbox : stable operation + hash
+Outbox --> Sync : pending until ack
+Sync --> Network
+Network --> Api
+Api --> Ace : idempotent commit
+Ace --> Api : durable result
+Api --> Sync : acknowledgment
+Sync --> Local : record ack
+
+note bottom of Outbox
+  Retry is idempotent.
+  Absence is not deletion.
+end note
+
+note bottom of Local
+  Selective projection, not full replica.
+  Sensitive/non-sensitive boundary is enforceable.
+end note
+@enduml

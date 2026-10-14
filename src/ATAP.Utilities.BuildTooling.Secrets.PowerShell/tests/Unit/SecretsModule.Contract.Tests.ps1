@@ -7,7 +7,8 @@ Describe 'BuildTooling Secrets child module contract' {
     $script:expectedFunctions = @(
       'Get-BWSAccessToken', 'Get-DbConnectionStringSecretDescriptor', 'Get-SecretATAP',
       'Get-SecretATAPBitwarden', 'Get-SecretATAPBitwardenSecretsManager',
-      'Initialize-BWSAccessToken', 'Initialize-BWSCredentialDirectory',
+      'Initialize-BWSAccessToken', 'Initialize-BWSApplicationAccessToken',
+      'Initialize-BWSCredentialDirectory',
       'Invoke-BWSReadOnlyTokenBootstrap', 'New-BWSReadOnlyBootstrapEnvelope',
       'New-SprintBitwardenSecrets', 'Remove-SprintBitwardenSecrets'
     )

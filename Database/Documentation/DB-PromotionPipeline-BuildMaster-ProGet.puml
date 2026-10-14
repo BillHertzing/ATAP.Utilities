@@ -34,7 +34,7 @@ database    "ProGet Feed:\nnuget-experimental"  as pgExp   #E3F2FD
 database    "ProGet Feed:\nnuget-development"   as pgDev   #E8F5E9
 database    "ProGet Feed:\nnuget-integration"   as pgInt   #FFF9C4
 database    "ProGet Feed:\nnuget-qa"            as pgQA    #FCE4EC
-database    "ProGet Feed:\nnuget-production"    as pgProd  #F3E5F5
+database    "ProGet Feed:\nnuget-stable"    as pgProd  #F3E5F5
 collections "SQL Server\n(Experimental DB)"     as dbExp   #E3F2FD
 collections "SQL Server\n(Development DB)"      as dbDev   #E8F5E9
 collections "SQL Server\n(Integration DB)"      as dbInt   #FFF9C4
@@ -125,7 +125,7 @@ note over stageProd
 end note
 
 stageProd -> pgQA      : 1. Download package from\n   nuget-qa
-stageProd -> pgProd    : 2. Move-ProGetPackage\n   → nuget-production\n   (strip pre-release suffix\n    if not already stable)
+stageProd -> pgProd    : 2. Move-ProGetPackage\n   → nuget-stable\n   (strip pre-release suffix\n    if not already stable)
 stageProd -> stageProd : 3. Maintenance window opens
 stageProd -> dbProd    : 4. Flyway migrate\n   (target: Production DB\n    — cleanDisabled=true enforced)
 stageProd -> stageProd : 5. Post-deploy smoke test

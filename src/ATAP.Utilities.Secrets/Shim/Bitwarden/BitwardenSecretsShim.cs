@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
+[System.Obsolete(BitwardenPasswordManagerCompatibility.Message, DiagnosticId = BitwardenPasswordManagerCompatibility.DiagnosticId, UrlFormat = BitwardenPasswordManagerCompatibility.UrlFormat)]
 public sealed class BitwardenSecretsShim : SecretsConfigurableAbstract
 {
   private const string PasswordFieldName = "password";
@@ -63,7 +64,7 @@ public sealed class BitwardenSecretsShim : SecretsConfigurableAbstract
     // In agent-spawned shells, process-scope BW_SESSION may be empty; fall back to user scope.
     var sessionKey = Environment.GetEnvironmentVariable(_options.SessionEnvVarName)
         ?? Environment.GetEnvironmentVariable(_options.SessionEnvVarName, EnvironmentVariableTarget.User)
-        ?? throw new InvalidOperationException(StringConstants.ExceptionBwSessionNotSet);
+        ?? throw new InvalidOperationException(BitwardenPasswordManagerCompatibility.SessionMissing);
 
     using var process = new Process
     {

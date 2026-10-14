@@ -1,0 +1,55 @@
+@startuml
+title RPRRSBSI V4-2 AISupervisor Telemetry
+skinparam linetype ortho
+skinparam defaultFontName Segoe UI
+
+package "Ace AISupervisor expert system" {
+  entity AISupervisorExchange {
+    * ExchangeId : uniqueidentifier
+    --
+    UserId : uniqueidentifier
+    OrganizationId : uniqueidentifier
+    HarnessName : varchar
+    HarnessVersion : varchar?
+    ModelName : varchar
+    ModelVersion : varchar?
+    Effort : varchar?
+    ConversationId : varchar?
+    RequestTokens : bigint?
+    ResponseTokens : bigint?
+    StartedAtUtc : datetime2
+    CompletedAtUtc : datetime2?
+  }
+  entity AISupervisorHeader {
+    * HeaderId : uniqueidentifier
+    --
+    ExchangeId : uniqueidentifier
+    Direction : code
+    HeaderName : varchar
+    Disposition : code
+    SafeValueOrHash : nvarchar?
+  }
+  entity AISupervisorMetric {
+    * MetricId : uniqueidentifier
+    --
+    ExchangeId : uniqueidentifier
+    Direction : code
+    MetricCode : controlled code
+    MetricValue : decimal
+    UnitCode : controlled code
+  }
+}
+
+AISupervisorExchange ||--o{ AISupervisorHeader
+AISupervisorExchange ||--o{ AISupervisorMetric
+
+note bottom of AISupervisorHeader
+  Authorization, cookie, credential,
+  and secret values are never persisted.
+end note
+
+note bottom of AISupervisorMetric
+  Thinking/reasoning and cache metrics are nullable,
+  provider-reported, and governed by controlled codes.
+end note
+@enduml

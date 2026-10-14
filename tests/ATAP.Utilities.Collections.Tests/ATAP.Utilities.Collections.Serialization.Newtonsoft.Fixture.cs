@@ -1,28 +1,32 @@
-
-using System;
-using Newtonsoft.Json;
-using Xunit.Abstractions;
+using System.Linq;
+using System.Text.Json;
+using ATAP.Utilities.StronglyTypedId;
+using ATAP.Utilities.StronglyTypedId.JsonConverter.Shim.SystemTextJson;
+using Xunit;
 
 namespace ATAP.Utilities.Collection.Tests {
-  // The SerializationFixtureSystemTextJson can only be setup one time, before all tests are run
-  //  because JsonSerializerSettings cannot be modified after any Serialization/Deserialization operations have been performed
-  public class SerializationFixtureNewtonsoft {
-    public JsonSerializerSettings JsonSerializerSettings { get; set; }
-    public SerializationFixtureNewtonsoft() {
-      JsonSerializerSettings = new JsonSerializerSettings();
-      // Add Converters
-      JsonSerializerSettings.Converters.Add(new ATAP.Utilities.Collections.JsonConverterNewtonsoft.StronglyTypedIdNewtonsoftConverter());
-    }
+  public sealed class SerializationFixtureWithClonedOptions {
+    public JsonSerializerOptions JsonSerializerOptions { get; } = new(Startup.CreateSerializerOptions());
   }
 
-  public partial class StronglyTypedIDSerializationNewtonsoftUnitTests001 {
-    protected SerializationFixtureNewtonsoft SerializationFixture { get; }
-    protected ITestOutputHelper TestOutput { get; }
+  [Trait("Category", "Unit")]
+  public sealed class SerializationOptionsCloneUnitTests : IClassFixture<SerializationFixtureWithClonedOptions> {
+    private readonly SerializationFixtureWithClonedOptions fixture;
 
-    public StronglyTypedIDSerializationNewtonsoftUnitTests001(ITestOutputHelper testOutput, SerializationFixtureNewtonsoft serializationFixture) {
-      SerializationFixture = serializationFixture;
-      TestOutput = testOutput;
-      // ToDo: Ensure the System.StringComparison.CurrentCulture is configured properly to match the test data, for String.StartsWith used in the tests
+    public SerializationOptionsCloneUnitTests(SerializationFixtureWithClonedOptions fixture) {
+      this.fixture = fixture;
+    }
+
+    [Fact]
+    public void ClonedOptions_RetainStronglyTypedIdConverterAndBehavior() {
+      Assert.Contains(fixture.JsonSerializerOptions.Converters, converter => converter is StronglyTypedIdJsonConverterFactory);
+      var value = new GuidStronglyTypedId(System.Guid.Empty);
+
+      var json = JsonSerializer.Serialize(value, fixture.JsonSerializerOptions);
+      var roundTrip = JsonSerializer.Deserialize<GuidStronglyTypedId>(json, fixture.JsonSerializerOptions);
+
+      Assert.Equal("\"00000000-0000-0000-0000-000000000000\"", json);
+      Assert.Equal(value, roundTrip);
     }
   }
 }

@@ -1,32 +1,22 @@
-//using ATAP.Utilities.Logging.Logging;
 using Xunit;
-using ATAP.Utilities.Testing;
 
 namespace ATAP.Utilities.Logging.Tests {
+  [Trait("Category", "Unit")]
+  public class LoggingUnitTests001 {
+    [Fact]
+    public void GetLogger_SameCategory_ReturnsCachedLogger() {
+      var first = LogProvider.GetLogger("ATAP.Utilities.Logging.Tests.Cached");
+      var second = LogProvider.GetLogger("ATAP.Utilities.Logging.Tests.Cached");
 
-
-    [Trait("Category", "Unit")]
-    public class LoggingUnitTests001 : IClassFixture<DiFixture> {
-        DiFixture diFixture;
-
-        public LoggingUnitTests001(DiFixture diFixture) {
-      fixture = fixture;
-        }
-
-
-    // [Fact]
-    // void ValidateFatalLogLevel() {
-      // // ToDo - rewrite this to validate logging, without knowing what the logging configuration is
-
-      // //var log = LogProvider.For<ValidateFatalLogLevel>();
-      // //log.Fatal("Sample fatal error message");
-      // //log.Trace("Sample trace message");
-      // //log.Debug("Sample debug message");
-      // //log.Info("Sample informational message");
-      // //log.Warn("Sample warning message");
-      // //log.Error("Sample error message");
-
-      // Assert.Equal(1, 1);
-    // }
+      Assert.Same(first, second);
     }
+
+    [Fact]
+    public void GetLogger_DifferentCategories_ReturnsDifferentLoggers() {
+      var first = LogProvider.GetLogger("ATAP.Utilities.Logging.Tests.First");
+      var second = LogProvider.GetLogger("ATAP.Utilities.Logging.Tests.Second");
+
+      Assert.NotSame(first, second);
+    }
+  }
 }

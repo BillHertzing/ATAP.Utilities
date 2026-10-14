@@ -23,3 +23,14 @@ The package gate runs before initial publication, before every `powershellget-*`
 inside `Install-ATAPModuleAllUsers` after SHA-256 validation but before expansion or writes under
 the AllUsers module root. Signing certificates and private keys are never accepted as file paths
 or package content. Promotion verification requires an absolute HTTPS ProGet base URI.
+
+## Installed-module synchronization
+
+`Sync-ProGetPowerShellModules` compares installed module versions with either a configured
+PowerShellGet promotion tier or an explicitly named registered repository and feed URI. It does
+not register a repository or change repository trust. Use `-WhatIf` to preview changes. For
+AllUsers deployment, prefer the hash-pinned `-UseValidatedInstaller` mode and supply a SHA-256
+pin for each module being changed.
+
+See [Sync-ProGetPowerShellModules](Documentation/Sync-ProGetPowerShellModules.md) for the
+operator contract, generic host/feed examples, and safety boundaries.

@@ -8,6 +8,7 @@ using System.Reflection;
 using ATAP.Utilities.DateTime.Interfaces;
 using ATAP.Utilities.CryptoCoin.Enumerations;
 using ATAP.Utilities.CryptoCoin.Models;
+using ATAP.Utilities.ETW;
 
 namespace ATAP.Utilities.CryptoCoin.Extensions
 {
@@ -54,6 +55,7 @@ namespace ATAP.Utilities.CryptoCoin.Extensions
     {
       return new CryptoCoinNetworkInfo(avgBlockTime, blockRewardPerBlock, coin, hashRate);
     }
+    [ETWLog]
     public static CryptoCoinNetworkInfoBuilder CreateNew()
     {
       return new CryptoCoinNetworkInfoBuilder();

@@ -6,11 +6,12 @@ using ATAP.Utilities.RealEstate.Enumerations;
 using ATAP.Utilities.Enumeration;
 using System.Collections.Generic;
 using ATAP.Utilities.Testing;
+using System.Text.Json;
 
 namespace ATAP.Utilities.RealEstate.Enumerations.Tests
 {
   [Trait("Category", "Unit")]
-  public class Fixture : DiFixture
+  public class Fixture
   {
     // The correct answer to the test OperationEnumerationCountIsAsExpected
     public int NumberOfOperationEnumerations { get; }
@@ -38,16 +39,15 @@ namespace ATAP.Utilities.RealEstate.Enumerations.Tests
     [MemberData(nameof(OperationTestDataGenerator.OperationTestData), MemberType = typeof(OperationTestDataGenerator))]
     public void OperationEnumerationDeserializeFromJSON(OperationTestData inRealEstateTestData)
     {
-      var realEstate = Fixture.Serializer.Deserialize<Operation>(inRealEstateTestData.SerializedOperation);
-      realEstate.Should().BeOfType(typeof(Operation));
-      Fixture.Serializer.Deserialize<Operation>(inRealEstateTestData.SerializedOperation).Should().Be(inRealEstateTestData.Operation);
+      var realEstate = JsonSerializer.Deserialize<Operation>(inRealEstateTestData.SerializedOperation);
+      realEstate.Should().Be(inRealEstateTestData.Operation);
     }
 
     [Theory]
     [MemberData(nameof(OperationTestDataGenerator.OperationTestData), MemberType = typeof(OperationTestDataGenerator))]
     public void OperationEnumerationSerializeToJSON(OperationTestData inRealEstateTestData)
     {
-      string str = Fixture.Serializer.Serialize(inRealEstateTestData.SerializedOperation);
+      string str = JsonSerializer.Serialize(inRealEstateTestData.Operation);
       str.Should().Be(inRealEstateTestData.SerializedOperation);
     }
 

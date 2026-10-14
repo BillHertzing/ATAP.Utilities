@@ -1,0 +1,54 @@
+@startuml
+title RPRRSBSI-V4 Rule Overlay Resolution
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 11
+skinparam activity {
+  BackgroundColor #F0F4FF
+  BorderColor #3366CC
+  DiamondBackgroundColor #FFF2CC
+  DiamondBorderColor #B8860B
+}
+start
+:Choose BuildSet and as-of UTC instant;
+:Select active BuildSetRuleSetOccurrence rows;
+:Reject duplicate Ordinal values within the BuildSet;
+:Order RuleSets by BuildSetRuleSetOccurrence.Ordinal DESC;
+note right
+  D-2 RATIFIED:
+  higher ordinal wins;
+  duplicate ordinals are invalid.
+end note
+:Select active RuleSetRuleOccurrence rows
+within each RuleSet;
+:Reject duplicate occurrence ordinals within each RuleSet;
+:Group occurrences by the same basic RuleId
+while retaining precedence and provenance;
+repeat
+  :Take highest-precedence occurrence
+for the next basic RuleId group;
+  if (Membership role?) then (Suppress)
+    :Mark RuleId suppressed;
+  elseif (Override)
+    :Require a lower-precedence candidate
+for the same RuleId;
+    :Select the Override occurrence's RuleVariant
+which references that same RuleId;
+  else (Add)
+    :Require no lower-precedence collision
+for the same RuleId;
+    :Select the Add occurrence's RuleVariant;
+  endif
+  :Record every lower-precedence candidate
+as suppressed or shadowed provenance;
+repeat while (More RuleId groups?) is (yes)
+->no;
+:Validate calculation dependency graph;
+:Emit deterministic effective rule set
+and resolution provenance;
+stop
+note right
+  D-4 RATIFIED:
+  Override selects a RuleVariant of the same RuleId.
+  The basic Rule is never copied for an overlay.
+end note
+@enduml

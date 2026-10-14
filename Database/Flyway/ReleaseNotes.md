@@ -1,5 +1,143 @@
 # ATAPUtilities.Database release notes
 
+## 0.1.17
+
+Status: source corrected after the 0.1.16 Experimental rehearsal failed;
+approved for a new canonical utat01 five-tier BuildMaster release.
+
+- Replaces bracketed `LIKE` expressions in V00150's fail-closed procedure
+  guards and postconditions with literal `CHARINDEX` checks. In T-SQL `LIKE`,
+  `[CacheTokens]` is a character class rather than a literal identifier.
+- Leaves immutable packages 0.1.15 and 0.1.16 quarantined in
+  `database-experimental`; both failed disposable rehearsals and neither was
+  applied to a permanent database or promoted to a higher feed.
+
+## 0.1.16
+
+Status: immutable package published to `database-experimental`; disposable
+rehearsal failed before permanent apply, and no higher promotion occurred.
+
+- Retains the V00150 contract introduced by 0.1.15, but compiles the replacement
+  token-count check constraint only after SQL Server has added `CacheTokens`.
+- Leaves the immutable 0.1.15 package quarantined in `database-experimental`;
+  it failed in a disposable rehearsal and was not applied to any permanent
+  database or promoted to a higher feed.
+
+## 0.1.15
+
+Status: immutable package published to `database-experimental`; disposable
+rehearsal failed before permanent apply, and no higher promotion occurred.
+
+- Retains immutable V00010 through V00140 migration bytes.
+- Adds V00150 with nullable, non-negative `CacheTokens` usage alongside
+  `RequestTokens` and `ResponseTokens` in the Ace AISupervisor telemetry
+  capture and timeline contracts.
+- Preserves the existing request/response availability classification so
+  callers that do not yet supply cache usage remain compatible.
+- Defers proxy response parsing and automatic CacheTokens population until
+  after DPOM; this release establishes the additive database contract only.
+
+## 0.1.13
+
+Status: source and disposable-database verified; unbuilt, unpublished, and not
+applied to any permanent database.
+
+- Retains immutable V00010 through V00130 migration bytes.
+- Adds V00140 to replace the V00130 schema-wide runtime-role denial with exact
+  object denials on `Tag`, `TagAlias`, and `ContentSummary`.
+- Preserves query confinement while allowing separately granted startup access
+  to `AceOutpostContentSummaryPrototype` to remain effective.
+- Accepts an already-recovered database state and remains environment-neutral.
+## 0.1.12
+
+Status: source and disposable-database verified; unbuilt, unpublished, and not
+applied to any permanent database.
+
+- Retains immutable V00010 through V00120 migration bytes.
+- Adds V00130 with an exact code-or-alias resolver and the
+  `ATAPContentSummaryRuntimeQuery` least-privilege database role.
+- Grants only the three runtime query procedures plus `EXECUTE` and `REFERENCES`
+  on their three table types; direct `ATAPUtilities` schema reads remain denied.
+- Leaves database-user creation and role membership to environment deployment.
+
+## 0.1.11
+
+Status: source and disposable-database verified; unbuilt, unpublished, and not
+applied to any permanent database.
+
+- Retains immutable V00010 through V00110 migration bytes.
+- Adds V00120 with catalogued operational identities, a distinct immutable
+  prompt RuleVariant, idempotent serializable Repository/root provisioning,
+  and canonical Windows-root equivalence.
+- Adds controlled ContentSummaryVersion Tag assignment and database-principal
+  authorization, plus append-close root correction and retirement procedures.
+- Grants an execute-only provisioner role without creating users, logins,
+  memberships, or direct table access.
+- Excludes live database application, package publication, promotion, and
+  service deployment.
+
+## 0.1.7
+
+Status: source and disposable-database verified; unbuilt, unpublished, and not
+applied to any permanent database.
+
+- Retains the immutable V00010 through V00070 migration bytes.
+- Adds V00080 with typed Rule input/output identities, temporal display and
+  default history, owner-bound RuleVariants, controlled Add/Override/Suppress
+  occurrences, and ordered BuildSet composition.
+- Adds deterministic as-of resolution that validates overlay graphs and returns
+  selected, suppressed, and shadowed candidates with occurrence provenance.
+- Rejects cross-owner variants, duplicate ordinals, missing override/suppression
+  baselines, Add collisions, and in-place semantic definition mutations.
+- Excludes live or permanent database application, package publication,
+  promotion, installation, and deployment.
+
+## 0.1.6
+
+Status: source and disposable-database verified; unbuilt, unpublished, and not applied
+to any permanent database.
+
+- Retains the immutable V00010 through V00060 migration bytes.
+- Adds V00070 with the bounded Ace-owned AISupervisor persistence contract:
+  append-only exchange, sanitized-prompt, Tag-occurrence, physical-attempt,
+  provider-usage, controlled-metric catalog, and metric records.
+- Adds procedure-only capture and AceCommander timeline-read roles. The token
+  query preserves missing counts as `NULL` and reports completeness explicitly.
+- Excludes raw prompts, response/tool bodies, credentials, header values, the
+  D2-EXC troubleshooting store, Windows identities, and role memberships.
+- Does not authorize package publication, permanent-database application,
+  proxy/listener activation, provider traffic, or service grants.
+
+## 0.1.5
+
+Status: source and disposable-database verified; unbuilt, unpublished, and not
+applied to any permanent database.
+
+- Retains the immutable V00010, V00030, V00040, and V00050 migration bytes.
+- Adds V00060 with the bounded `Ace` gather-content submission contract:
+  four append-only tables, one ordered Tag table type, exact-once capture and
+  direct-current-Tag query procedures, and procedure-only database roles.
+- Keeps `ATAPUtilities.Tag*` read-only and excludes Prompt, proxy/metering,
+  Windows users, and role memberships.
+- Fresh and V00050-upgrade disposable-database tests passed under Task 15.185.b.
+- Does not authorize package publication, permanent-database application,
+  service grants, or promotion beyond source verification.
+## 0.1.4
+
+Status: released through BuildMaster to Experimental only at
+`utat022\EXPWHERTZING\ATAPUtilities`; Development and higher remain unpromoted.
+
+- Retains the immutable V00010 core schema and V00030 historical
+  AceOutpostContentSummaryPrototype migration.
+- Adds V00040 to enforce the same-identity validity-period key required by the
+  tag-root relationships.
+- Adds V00050 to create the read-only `ATAPUtilities.Tag*` root and its governed
+  authorization, lifecycle, relationship, and as-of-resolution contracts.
+- Freezes the exact four-migration and eleven-seed-file source boundary in the
+  tracked package content allowlist.
+- Does not authorize promotion or deployment to Development, Integration, QA,
+  or Production.
+
 ## 0.1.0
 
 Status: source accepted at PTV-G4; unpublished and uninstalled.

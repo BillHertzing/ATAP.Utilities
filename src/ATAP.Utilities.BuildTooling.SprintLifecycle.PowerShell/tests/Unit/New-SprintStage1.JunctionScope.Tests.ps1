@@ -7,6 +7,23 @@
 # unfiltered in the new sprint worktree. See
 # _generated/Task-12.2-investigation-findings.md.
 BeforeAll {
+  # Resolve boundary helpers as fixture functions before Get-Command can autoload
+  # the aggregate module and replace the junction/render fakes on the first call.
+  function global:Set-UserSettingsSymlink { throw 'Stage1 must skip machine-global settings.' }
+  function global:Set-AIAgentMemoryJunction {
+    param([string]$WorktreePath, [string]$AIAgentMemoryRoot)
+    [pscustomobject]@{ Success = $true; Skipped = $true; SkipReason = 'Isolated fixture'; MemoryRoot = $null }
+  }
+  function global:Set-ServiceAccountGitSafeDirectory {
+    [CmdletBinding(SupportsShouldProcess)]
+    param([string]$Boundary, [string[]]$WorktreePaths, [string]$GitConfigPath, [string[]]$RepositoryNames)
+    [pscustomobject]@{ Ok = $true; Changed = $false; Failures = @() }
+  }
+  function global:Sync-SprintBoundaryPrimaryRoleMarker {
+    [CmdletBinding(SupportsShouldProcess)]
+    param([string]$Boundary, [string]$GitRoot, [string]$SharedStatePath)
+    [pscustomobject]@{ Action = 'IsolatedFixture'; Ok = $true }
+  }
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
   }
@@ -81,6 +98,10 @@ AfterAll {
     'Initialize-DownstreamSprintFromSharedVSCode'
     'Invoke-SprintAIAdapterLifecycle'
     'Get-SprintHistoryReconstruction'
+    'Set-UserSettingsSymlink'
+    'Set-AIAgentMemoryJunction'
+    'Set-ServiceAccountGitSafeDirectory'
+    'Sync-SprintBoundaryPrimaryRoleMarker'
   ) | ForEach-Object {
     Remove-Item -Path "Function:\$_" -Force -ErrorAction SilentlyContinue
   }

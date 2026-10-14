@@ -21,39 +21,35 @@
 Describe 'Get-FlywaySchemaVersion' {
 
   BeforeAll {
-    # Build a minimal mock SqlConnection that returns 3 fake schema history rows
-    $mockReader = [PSCustomObject]@{
-      _rows  = @(
-        @{ InstalledRank = 3; Version = '1.3'; Description = 'AddIndex'; Type = 'SQL'; Script = 'V1.3__AddIndex.sql'; Checksum = 12345; InstalledBy = 'dbo'; InstalledOn = [datetime]'2026-01-03'; ExecutionTime = 45; Success = $true },
-        @{ InstalledRank = 2; Version = '1.2'; Description = 'AddTable'; Type = 'SQL'; Script = 'V1.2__AddTable.sql'; Checksum = 67890; InstalledBy = 'dbo'; InstalledOn = [datetime]'2026-01-02'; ExecutionTime = 120; Success = $true },
-        @{ InstalledRank = 1; Version = '1.1'; Description = 'Init'; Type = 'SQL'; Script = 'V1.1__Init.sql'; Checksum = 11111; InstalledBy = 'dbo'; InstalledOn = [datetime]'2026-01-01'; ExecutionTime = 200; Success = $true }
-      )
-      _index = -1
+    $moduleRoot = Split-Path -Parent $PSScriptRoot
+    if (-not (Get-Module -Name ATAP.Utilities.DatabaseManagement.Powershell)) {
+      Import-Module (Join-Path $moduleRoot 'ATAP.Utilities.DatabaseManagement.Powershell.psd1') -ErrorAction Stop
     }
-    Add-Member -InputObject $mockReader -MemberType ScriptMethod -Name 'Read' -Value {
-      $this._index++
-      return $this._index -lt $this._rows.Count
+    # DataTableReader provides the real named indexer used by the production reader.
+    $table = [System.Data.DataTable]::new()
+    foreach ($column in @(
+      @{ Name = 'InstalledRank'; Type = [int] },
+      @{ Name = 'Version'; Type = [string] },
+      @{ Name = 'Description'; Type = [string] },
+      @{ Name = 'Type'; Type = [string] },
+      @{ Name = 'Script'; Type = [string] },
+      @{ Name = 'Checksum'; Type = [int] },
+      @{ Name = 'InstalledBy'; Type = [string] },
+      @{ Name = 'InstalledOn'; Type = [datetime] },
+      @{ Name = 'ExecutionTime'; Type = [int] },
+      @{ Name = 'Success'; Type = [bool] }
+    )) { $null = $table.Columns.Add($column.Name, $column.Type) }
+    $null = $table.Rows.Add(3, '1.3', 'AddIndex', 'SQL', 'V1.3__AddIndex.sql', 12345, 'dbo', [datetime]'2026-01-03', 45, $true)
+    $null = $table.Rows.Add(2, '1.2', 'AddTable', 'SQL', 'V1.2__AddTable.sql', 67890, 'dbo', [datetime]'2026-01-02', 120, $true)
+    $null = $table.Rows.Add(1, '1.1', 'Init', 'SQL', 'V1.1__Init.sql', 11111, 'dbo', [datetime]'2026-01-01', 200, $true)
+    $mockCmd = [PSCustomObject]@{ CommandText = ''; Table = $table }
+    Add-Member -InputObject $mockCmd -MemberType ScriptMethod -Name ExecuteReader -Value { return ,$this.Table.CreateDataReader() }
+    Add-Member -InputObject $mockCmd -MemberType ScriptMethod -Name Dispose -Value {}
+    $script:mockSqlConnection = [PSCustomObject]@{ Command = $mockCmd }
+    Add-Member -InputObject $script:mockSqlConnection -MemberType ScriptMethod -Name CreateCommand -Value { return $this.Command }
+    Mock -CommandName Resolve-DatabaseSqlConnection -ModuleName ATAP.Utilities.DatabaseManagement.Powershell -MockWith {
+      [PSCustomObject]@{ Connection = $script:mockSqlConnection; IsCallerOwned = $true }
     }
-    Add-Member -InputObject $mockReader -MemberType ScriptMethod -Name 'get_FieldCount' -Value { return 10 }
-    Add-Member -InputObject $mockReader -MemberType ScriptMethod -Name 'GetValue' -Value {
-      param([int]$i) $null   # not used in current impl; uses named indexer
-    }
-    Add-Member -InputObject $mockReader -MemberType ScriptMethod -Name 'Dispose' -Value {}
-    Add-Member -InputObject $mockReader -MemberType ScriptProperty -Name 'Item' -Value {
-      param([string]$name)
-      $this._rows[$this._index][$name]
-    }
-
-    $mockCmd = [PSCustomObject]@{ CommandText = '' }
-    Add-Member -InputObject $mockCmd -MemberType ScriptMethod -Name 'ExecuteReader' -Value { return $mockReader }
-    Add-Member -InputObject $mockCmd -MemberType ScriptMethod -Name 'Dispose' -Value {}
-
-    $script:mockSqlConnection = [PSCustomObject]@{}
-    Add-Member -InputObject $script:mockSqlConnection -MemberType ScriptMethod -Name 'CreateCommand' -Value { return $mockCmd }
-
-    # Stub Resolve-DatabaseSqlConnection to return the mock connection
-    Mock -CommandName 'Resolve-DatabaseSqlConnection' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' `
-      -MockWith { return $script:mockSqlConnection }
   }
 
   It 'Returns 3 rows with expected shape when querying schema history' {

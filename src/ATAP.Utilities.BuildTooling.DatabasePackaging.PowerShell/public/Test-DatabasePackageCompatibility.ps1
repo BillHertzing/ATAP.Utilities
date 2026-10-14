@@ -67,23 +67,47 @@
 #>
 
 function Test-DatabasePackageCompatibility {
-  [CmdletBinding()]
+  [CmdletBinding(DefaultParameterSetName = 'Legacy', SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
   [OutputType([PSCustomObject])]
   param(
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory = $true, ParameterSetName = 'Legacy')]
+    [Parameter(Mandatory = $true, ParameterSetName = 'ReleaseBundleV2')]
     [ValidateNotNullOrEmpty()]
     [string]$DatabasePackageManifestPath,
 
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory = $true, ParameterSetName = 'Legacy')]
     [ValidateNotNullOrEmpty()]
-    [string]$AppPackageVersion
+    [string]$AppPackageVersion,
+
+    [Parameter(Mandatory = $true, ParameterSetName = 'ReleaseBundleV2')]
+    [ValidateNotNullOrEmpty()]
+    [string]$ReleaseBundleManifestPath,
+
+    [Parameter(Mandatory = $true, ParameterSetName = 'ReleaseBundleV2')]
+    [ValidateNotNullOrEmpty()]
+    [string]$DatabasePackageId,
+
+    [Parameter(Mandatory = $true, ParameterSetName = 'ReleaseBundleV2')]
+    [ValidateNotNullOrEmpty()]
+    [string]$DatabasePackageVersion,
+
+    [Parameter(Mandatory = $true, ParameterSetName = 'ReleaseBundleV2')]
+    [ValidateSet('database-experimental', 'database-development', 'database-integration', 'database-qa', 'database-stable')]
+    [string]$DatabasePackageLifecycleTier
   )
 
   begin {
     $fn = 'Test-DatabasePackageCompatibility'
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
-      -Message "Entering ${fn} (Manifest='$DatabasePackageManifestPath'; AppVersion='$AppPackageVersion')" -Tag 'Trace'
+      -Message "Entering ${fn} (ParameterSet='$($PSCmdlet.ParameterSetName)'; Manifest='$DatabasePackageManifestPath')" -Tag 'Trace'
+
+    $failV2 = {
+      param([Parameter(Mandatory = $true)][string]$Reason)
+      $message = "ATAPBUILD015: $Reason"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $message
+      throw $message
+    }
 
     # Accept either the manifest file path or the expanded-package folder
     # containing the manifest.
@@ -92,16 +116,31 @@ function Test-DatabasePackageCompatibility {
       $resolvedManifestPath = Join-Path -Path $DatabasePackageManifestPath -ChildPath 'db-release-unit-manifest.json'
     }
     if (-not (Test-Path -LiteralPath $resolvedManifestPath -PathType Leaf)) {
+      if ($PSCmdlet.ParameterSetName -eq 'ReleaseBundleV2') {
+        & $failV2 "Database package is absent; manifest not found at '$resolvedManifestPath'."
+      }
       $msg = "${fn}: manifest not found at '$resolvedManifestPath'."
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
       throw $msg
     }
 
-    $appVersionParsed = $null
-    if (-not [System.Management.Automation.SemanticVersion]::TryParse($AppPackageVersion, [ref]$appVersionParsed)) {
-      $msg = "${fn}: AppPackageVersion '$AppPackageVersion' is not a valid SemVer."
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
-      throw $msg
+    if ($PSCmdlet.ParameterSetName -eq 'ReleaseBundleV2') {
+      if (-not (Test-Path -LiteralPath $ReleaseBundleManifestPath -PathType Leaf)) {
+        & $failV2 "ReleaseBundle v2 manifest not found at '$ReleaseBundleManifestPath'."
+      }
+      $semVerPattern = '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$'
+      $databaseVersionParsed = $null
+      if ($DatabasePackageVersion -cnotmatch $semVerPattern -or
+          -not [System.Management.Automation.SemanticVersion]::TryParse($DatabasePackageVersion, [ref]$databaseVersionParsed)) {
+        & $failV2 "DatabasePackageVersion '$DatabasePackageVersion' is not valid canonical SemVer."
+      }
+    } else {
+      $appVersionParsed = $null
+      if (-not [System.Management.Automation.SemanticVersion]::TryParse($AppPackageVersion, [ref]$appVersionParsed)) {
+        $msg = "${fn}: AppPackageVersion '$AppPackageVersion' is not a valid SemVer."
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
+        throw $msg
+      }
     }
   }
 
@@ -174,6 +213,15 @@ function Test-DatabasePackageCompatibility {
         [Parameter(Mandatory)][System.Management.Automation.SemanticVersion]$Candidate
       )
 
+      $exactMatch = [regex]::Match($Range.Trim(), '^\[\s*([^,\s\]]+)\s*\]$')
+      if ($exactMatch.Success) {
+        $exact = $null
+        if (-not [System.Management.Automation.SemanticVersion]::TryParse($exactMatch.Groups[1].Value, [ref]$exact)) {
+          throw "Malformed NuGet-style version range: '$Range'."
+        }
+        return (Compare-DatabasePackageSemVer -Left $Candidate -Right $exact) -eq 0
+      }
+
       $rangeMatch = [regex]::Match($Range.Trim(), '^([\[\(])\s*([^,\s\]\)]*)\s*,\s*([^,\s\]\)]*)\s*([\]\)])$')
       if (-not $rangeMatch.Success) {
         throw "Malformed NuGet-style version range: '$Range'."
@@ -223,6 +271,81 @@ function Test-DatabasePackageCompatibility {
         return (Test-DatabasePackageNuGetRange -Range $trimmed -Candidate $Candidate)
       }
       return (Test-DatabasePackageNpmRange -Range $trimmed -Candidate $Candidate)
+    }
+
+    if ($PSCmdlet.ParameterSetName -eq 'ReleaseBundleV2') {
+      try {
+        $releaseBundle = Get-Content -LiteralPath $ReleaseBundleManifestPath -Raw | ConvertFrom-Json -ErrorAction Stop
+        $databaseManifest = Get-Content -LiteralPath $resolvedManifestPath -Raw | ConvertFrom-Json -ErrorAction Stop
+      } catch {
+        & $failV2 "Offline manifest parsing failed. $($_.Exception.Message)"
+      }
+      if (($releaseBundle.schemaVersion -isnot [int] -and $releaseBundle.schemaVersion -isnot [long]) -or
+          [long]$releaseBundle.schemaVersion -ne 2) {
+        & $failV2 'Ordinary compatibility validation requires numeric ReleaseBundle manifest schemaVersion 2.'
+      }
+      if ($null -eq $databaseManifest -or
+          ($databaseManifest.schemaVersion -isnot [int] -and $databaseManifest.schemaVersion -isnot [long]) -or
+          [long]$databaseManifest.schemaVersion -ne 2) {
+        & $failV2 'Database package manifest must be schemaVersion 2.'
+      }
+      $reference = $releaseBundle.databasePackageReference
+      if ($null -eq $reference) {
+        & $failV2 'ReleaseBundle v2 databasePackageReference is absent.'
+      }
+      foreach ($field in @('id', 'compatibleVersionRange', 'pinnedVersion', 'lifecycleCeiling')) {
+        if ($reference.PSObject.Properties.Name -notcontains $field -or [string]::IsNullOrWhiteSpace([string]$reference.$field)) {
+          & $failV2 "ReleaseBundle v2 databasePackageReference.$field is missing."
+        }
+      }
+      if ([string]$reference.id -cne $DatabasePackageId) {
+        & $failV2 "Database package ID mismatch: expected '$($reference.id)', found '$DatabasePackageId'."
+      }
+      $pinParsed = $null
+      if ([string]$reference.pinnedVersion -cnotmatch $semVerPattern -or
+          -not [System.Management.Automation.SemanticVersion]::TryParse([string]$reference.pinnedVersion, [ref]$pinParsed)) {
+        & $failV2 "Pinned database package version '$($reference.pinnedVersion)' is not valid canonical SemVer."
+      }
+      if ([string]$reference.pinnedVersion -cne $DatabasePackageVersion) {
+        & $failV2 "Database package pin mismatch: expected '$($reference.pinnedVersion)', found '$DatabasePackageVersion'."
+      }
+      try {
+        $rangeAdmits = Test-DatabasePackageRangeAdmits -Range ([string]$reference.compatibleVersionRange) -Candidate $databaseVersionParsed
+      } catch {
+        & $failV2 "Database compatibility range is malformed. $($_.Exception.Message)"
+      }
+      if (-not $rangeAdmits) {
+        & $failV2 "Database package version '$DatabasePackageVersion' is outside compatible range '$($reference.compatibleVersionRange)'."
+      }
+      $tierOrder = [System.Collections.Generic.Dictionary[string, int]]::new([System.StringComparer]::Ordinal)
+      $tierOrder.Add('database-experimental', 0)
+      $tierOrder.Add('database-development', 1)
+      $tierOrder.Add('database-integration', 2)
+      $tierOrder.Add('database-qa', 3)
+      $tierOrder.Add('database-stable', 4)
+      $ceiling = [string]$reference.lifecycleCeiling
+      if (-not $tierOrder.ContainsKey($DatabasePackageLifecycleTier)) {
+        & $failV2 "Database lifecycle tier '$DatabasePackageLifecycleTier' is not canonical."
+      }
+      if (-not $tierOrder.ContainsKey($ceiling)) {
+        & $failV2 "Database lifecycle ceiling '$ceiling' is not recognized."
+      }
+      if ($tierOrder[$DatabasePackageLifecycleTier] -gt $tierOrder[$ceiling]) {
+        & $failV2 "Database package lifecycle tier '$DatabasePackageLifecycleTier' exceeds ceiling '$ceiling'."
+      }
+      return [PSCustomObject]@{
+        IsCompatible = $true
+        Mode = 'ReleaseBundleV2'
+        DiagnosticCode = $null
+        DatabasePackageId = $DatabasePackageId
+        DatabasePackageVersion = $DatabasePackageVersion
+        DatabasePackageLifecycleTier = $DatabasePackageLifecycleTier
+        CompatibleVersionRange = [string]$reference.compatibleVersionRange
+        PinnedVersion = [string]$reference.pinnedVersion
+        LifecycleCeiling = $ceiling
+        DatabasePackageManifestPath = $resolvedManifestPath
+        ReleaseBundleManifestPath = $ReleaseBundleManifestPath
+      }
     }
 
     $manifest = Get-Content -LiteralPath $resolvedManifestPath -Raw | ConvertFrom-Json -ErrorAction Stop

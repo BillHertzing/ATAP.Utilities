@@ -310,8 +310,22 @@ Plans/
 ├── PowerShellModule-5Stage.otter               # PowerShell module pipeline
 ├── ReleaseBundle-6Stage.otter                  # Release Bundle pipeline (5 tiers + Distribution)
 ├── Invoke-DatabasePackageBuildMasterStage.ps1  # database pipeline stage runner
-└── DatabaseChangePackage-5Stage.otter          # database change-unit pipeline
+├── DatabaseChangePackage-5Stage.otter          # database change-unit pipeline
+├── PowerShellModule-5Stage.pipeline.json       # pipeline definitions (type-8 raft items),
+├── CSharpPackage-5Stage.pipeline.json          #   one per family, named exactly as the
+├── DatabaseChangePackage-5Stage.pipeline.json  #   pipeline; every stage targets
+├── ReleaseBundle-6Stage.pipeline.json          #   global::<plan>.otter
+└── AceCommander-ApplicationRelease-5Stage.pipeline.json
 ```
+
+**Pipelines are global, raft-stored and committed as JSON** (Task 15.196.r / SC-0444,
+2026-09-17). `Sync-BuildMasterPlans -IncludePipelines` publishes each
+`<Name>.pipeline.json` as the type-8 raft item `<Name>` and
+`Compare-BuildMasterPlanRaft -IncludePipelines` reports drift for plans and pipelines
+alike. Never create or edit a pipeline in the BuildMaster UI: a UI-created pipeline is
+application-scoped, invisible to the raft API, and therefore never reaches the peer host
+(that is how `DatabaseChangePackage-5Stage` was executable on utat022 and absent on
+utat01 until Task 15.196.p). Releases reference pipelines with the `global::` prefix.
 
 A typical OtterScript stage now looks like:
 

@@ -1,0 +1,53 @@
+@startuml
+title RPRRSBSI V4-2 ContentSummary Narrow Data Contract
+skinparam linetype ortho
+skinparam defaultFontName Segoe UI
+
+package "ATAPUtilities reference" {
+  entity Tag {
+    * TagId : uniqueidentifier
+  }
+  entity TagState {
+    * TagStateId : uniqueidentifier
+    --
+    TagId : uniqueidentifier
+    ValidFromUtc : datetime2
+    ValidToUtc : datetime2?
+  }
+}
+
+package "Ace mutable working plane" {
+  entity ContentSummaryIngestion {
+    * ContentSummaryIngestionId : uniqueidentifier
+    --
+    UserId : uniqueidentifier
+    OrganizationId : uniqueidentifier
+    IdempotencyKey : varchar
+    PayloadHash : binary
+  }
+  entity ContentSummaryItem {
+    * ContentSummaryItemId : uniqueidentifier
+    --
+    ContentSummaryIngestionId : uniqueidentifier
+    SummaryTextOrLocator : classified
+    ContentHash : binary
+  }
+  entity ContentSummaryItemTag {
+    * ContentSummaryItemId : uniqueidentifier
+    * TagId : uniqueidentifier
+    --
+    AssignedAsOfUtc : datetime2
+    AssignmentOrigin : controlled code
+  }
+}
+
+ContentSummaryIngestion ||--o{ ContentSummaryItem
+ContentSummaryItem ||--o{ ContentSummaryItemTag
+Tag ||--o{ ContentSummaryItemTag : durable endpoint
+Tag ||--o{ TagState : resolve as-of
+
+note bottom of ContentSummaryItemTag
+  Authorization precedes Tag matching.
+  Any/All query mode is explicit.
+end note
+@enduml

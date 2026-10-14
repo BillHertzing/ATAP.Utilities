@@ -1,5 +1,44 @@
 # Release notes
 
+## 0.1.24
+
+- Add `Sync-ProGetPowerShellModules` for validated synchronization of exact module versions
+  between registered ProGet feeds, including explicit repository/feed targeting for
+  disconnected-primary preparation and settings-based tier resolution when explicit targets
+  are omitted.
+- Reissue the 0.1.23 resource-packaging repair. The immutable 0.1.23 package included the
+  broker resources but failed its Development import gate before the synchronization cmdlet
+  had been converted from a standalone script into a valid module function.
+
+## 0.1.23
+
+- Package the module's `Resources` directory through the shared module build pipeline.
+  ProGet 0.1.22 contained the corpus-sealing broker contract in source but omitted the
+  broker payload, task XML, and trust-anchor config template from its immutable nupkg,
+  preventing a trusted installed module from activating the action.
+- Strengthen the shared package-staging contract test to pin every supported static payload
+  directory and recursive copy behavior.
+
+## 0.1.22
+
+- Add the tightly allowlisted `seal-gather-call-record-segment` elevation-broker action.
+  It loads `Complete-GatherCallRecordSegment` only from
+  `ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell` 0.1.37 or later beneath the
+  administrator-writable `C:\Program Files\PowerShell\Modules` root.
+- Restrict sealing requests to seven required scalar strings: canonical C: or D: corpus
+  paths, a four-digit sprint, bounded SAM identities, and an exact SHA-256 pin. The
+  SprintLifecycle command remains responsible for semantic canonicalization, reparse,
+  ancestry, identity, JSONL, destination, volume, and hash checks.
+- Fail a broker request when a module command returns Boolean `Ok = false`, with bounded
+  `Failure.Code` and `Failure.Message` detail. Preserve the existing `ExitStatus` result
+  contract and reject non-Boolean `Ok` values.
+
+## 0.1.21
+
+- Carry the fixed shared .NET tool policy path into every approved parity audit
+  and comparison dispatcher, and fail closed when the materialized policy is
+  missing before a live scheduled-task action is repointed.
+
 ## 0.1.19
 
 - **Breaking for callers that relied on the old default.** The broker task's default folder is

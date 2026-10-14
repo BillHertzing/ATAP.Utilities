@@ -1,4 +1,13 @@
 BeforeAll {
+  # Task 15.208: isolate login maintenance from the host Task Scheduler.
+  function global:Set-SprintLoginScheduledTaskTarget {
+    [CmdletBinding(SupportsShouldProcess)]
+    param([string]$Boundary, [string]$ATAPUtilitiesRoot, [string]$GitRoot,
+      [string]$LoginScriptPath, [string[]]$WorktreePaths, [switch]$CheckOnly)
+    [PSCustomObject]@{ Ok = $true; Boundary = $Boundary; SelectionMode = 'SprintDefault';
+      TargetPath = $LoginScriptPath; TargetHash = 'fixture'; Planned = [bool]$WhatIfPreference;
+      Changed = $false; Tasks = @(); Rollback = @{ Attempted = $false; Succeeded = $true; Failures = @() }; Failures = @() }
+  }
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
   }
@@ -8,6 +17,7 @@ BeforeAll {
   # recorded; the stubs also throw, since none of them may run during DryRun.
   $global:dryRunExternalCalls = [System.Collections.Generic.List[string]]::new()
   $script:dryRunStubbedFunctionNames = @(
+    'Set-SprintLoginScheduledTaskTarget'
     'Assert-GitAvailable'
     'gh'
     'git'
@@ -169,6 +179,7 @@ AfterAll {
 
 Describe 'New-SprintStage dry-run support' -Tag 'Unit', 'PromotedModuleHostSensitive' {
   BeforeEach {
+    Mock Set-SprintLoginScheduledTaskTarget { [PSCustomObject]@{ Ok = $true; Planned = [bool]$WhatIfPreference; Changed = $false; Tasks = @(); Failures = @() } }
     $global:dryRunExternalCalls.Clear()
     $script:tempGitRoot = Join-Path ([System.IO.Path]::GetTempPath()) "sprint_dryrun_$([guid]::NewGuid().ToString('N'))"
     New-Item -ItemType Directory -Path $script:tempGitRoot -Force | Out-Null

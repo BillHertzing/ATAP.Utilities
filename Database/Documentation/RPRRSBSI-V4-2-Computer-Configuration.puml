@@ -1,0 +1,98 @@
+@startuml
+title RPRRSBSI-V4 Mechanized Engineering: Topology-Neutral Plan Boundary
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam component {
+  BackgroundColor #F0F4FF
+  BorderColor #3366CC
+}
+left to right direction
+
+package "ATAP immutable reference plane" #EAF4EA {
+  database "Reference definitions\nregistered identities" as ATAPDefinitions
+  component "Baseline RuleSets\nand RuleVariants" as ATAPRules
+  database "Reference components\nand as-of facts" as ATAPFacts
+}
+
+package "ACE overlay and session plane" #FFF4E5 {
+  component "Same-RuleId RuleVariants\nOverride occurrences" as ACEOverlays
+  component "BuildSet occurrences\nhigher Ordinal wins" as ACEBuildSet
+  component "Edit session and\nnormalized inputs" as ACESession
+}
+
+component "Topology-neutral union contract\nsource authority + durable identity\nState/Variant + as-of + precedence" as Union #E8EAF6
+component "Effective-definition resolver\nOrdinal DESC; duplicate invalid" as Resolver #E8EAF6
+
+package "Deterministic, non-effecting calculation" #EEF6EE {
+  component "GUID boundary validation\nlowercase dashed D" as GuidValidation
+  component "Material-change identity gate\nclassified cases only" as IdentityGate
+  component Compatibility
+  component "Cost / power / thermal" as Quantitative
+  component "Memory / workload" as Workload
+  component "Schema and explanation\nvalidation" as Validation
+}
+
+artifact "Validated database-change /\nconfiguration plan" as Plan #DDEBFF
+
+package "Deferred external effects" #FDECEC {
+  component Purchasing
+  component Provisioning
+  component "Ansible / execution" as Execution
+  component "Live database change" as LiveDatabase
+}
+
+ATAPDefinitions --> ATAPRules
+ATAPDefinitions --> Union
+ATAPRules --> Union
+ATAPFacts --> Union
+ACEOverlays --> Union
+ACEBuildSet --> Union
+ACESession --> GuidValidation
+Union --> Resolver : resolve once after union
+GuidValidation --> IdentityGate
+IdentityGate --> Resolver
+Resolver --> Compatibility
+Resolver --> Quantitative
+Resolver --> Workload
+ACESession --> Compatibility
+ACESession --> Quantitative
+ACESession --> Workload
+Compatibility --> Validation
+Quantitative --> Validation
+Workload --> Validation
+Validation --> Plan : emit and stop
+
+Plan ..> Purchasing : deferred; no authority
+Plan ..> Provisioning : deferred; no authority
+Plan ..> Execution : deferred; no authority
+Plan ..> LiveDatabase : deferred; separate HITL gate
+
+note top of Union
+  No cross-database foreign key.
+  Physical location does not set precedence.
+end note
+
+note bottom of Resolver
+  Override candidates reuse the same RuleId.
+  A copied Rule is invalid.
+end note
+
+note bottom of IdentityGate
+  Classified material changes require
+  a new registered semantic identity.
+  Eight D-3 edge cases remain HITL-PENDING.
+end note
+
+note bottom of Plan
+  Validated means schema and calculation checks passed.
+  It does not mean approved for purchasing,
+  provisioning, execution, or deployment.
+end note
+
+note top of Plan
+  V4-2 priority: Mechanized Engineering is a later
+  consumer. It does not widen the initial Outpost
+  Tags/ContentSummary and AISupervisor service.
+end note
+@enduml

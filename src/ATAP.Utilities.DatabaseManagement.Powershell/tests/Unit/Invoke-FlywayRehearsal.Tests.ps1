@@ -2,6 +2,9 @@
 # Pester 5+ tests for Invoke-FlywayRehearsal (Stream J5).
 
 BeforeAll {
+  $script:createdResolveDatabaseSqlConnectionStub = $false
+  $script:createdInvokeDatabaseSqlNonQueryStub = $false
+  $script:createdInvokeFlywayStub = $false
   $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
   . (Join-Path $publicDir 'Invoke-FlywayRehearsal.ps1')
 
@@ -85,7 +88,7 @@ Describe 'Invoke-FlywayRehearsal' -Tag 'Unit' {
     Mock Invoke-Flyway { [PSCustomObject]@{ Success = $true; FlywayCommand = 'migrate' } }
   }
 
-  It 'uses the default <App>-rehearsal-<BuildId> database name' {
+  It 'uses the default application-rehearsal-build database name' {
     $result = Invoke-FlywayRehearsal -Application 'AceCommander' -BuildId '4271' -SqlInstance 'test-sql'
 
     $result.RehearsalDb | Should -Be 'AceCommander-rehearsal-4271'

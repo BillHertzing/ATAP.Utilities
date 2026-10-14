@@ -1,11 +1,21 @@
 # ProGet administration SecretName boundary
 
 The ProGet administration cmdlets accept the name of an API-key secret, never
-an API-key value. The canonical parameter and default are:
+an API-key value. The canonical parameter and its **default** are:
 
 ```powershell
--ProGetApiKeySecretName 'ProGet.Admin.API.Key'
+[string]$ProGetApiKeySecretName = 'ProGet.Admin.API.Key'
 ```
+
+`ProGet.Admin.API.Key` is the suffixless **base** name, correct as a parameter
+default and nowhere else. Vault entries are host-suffixed
+(`<BaseName>.<service-host>`), and each cmdlet applies
+`Resolve-HostSuffixedSecretName` in its BEGIN block *only when the caller did not
+bind the parameter* (SC-0288). **Call these cmdlets without
+`-ProGetApiKeySecretName`**: binding the bare base name is honoured verbatim,
+defeats that resolution, and fails closed with "No Bitwarden Secrets Manager
+secret found with key ...". See
+[SecretName-HostSuffix-Convention.md](../../../SolutionDocumentation/SecretName-HostSuffix-Convention.md).
 
 This contract applies to:
 

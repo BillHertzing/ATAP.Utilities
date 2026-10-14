@@ -48,6 +48,19 @@ function Invoke-SprintEndRehearsal {
   .PARAMETER BuiltModule
     Modules built during the sprint, passed through to the lifecycle preflight.
 
+  .PARAMETER ExternalDurabilityEvidence
+    Checkpoint external-durability snapshot evidence, forwarded unchanged to
+    every lifecycle pass (SE-0015-01). Without it the rehearsed checkpoint
+    coverage fails closed, exactly as a live close would.
+
+  .PARAMETER RequiredExternalReplicaKind
+    External replica kinds required before a teardown-producing phase may
+    proceed. Forwarded unchanged to every lifecycle pass.
+
+  .PARAMETER ExternalDurabilityOverride
+    Named operator exception forwarded unchanged to every lifecycle pass. Only
+    forwarded when supplied.
+
   .PARAMETER Scenario
     Which rehearsal scenarios to run. Defaults to all four.
 
@@ -98,6 +111,16 @@ function Invoke-SprintEndRehearsal {
 
     [Parameter()]
     [object[]]$BuiltModule = @(),
+
+    [Parameter()]
+    [object[]]$ExternalDurabilityEvidence = @(),
+
+    [Parameter()]
+    [ValidateNotNullOrEmpty()]
+    [string[]]$RequiredExternalReplicaKind = @('Primary', 'DropboxMirror'),
+
+    [Parameter()]
+    [object]$ExternalDurabilityOverride,
 
     [Parameter()]
     [ValidateSet('DryRun', 'StableBoundary', 'CrashResume', 'FullClose')]
@@ -193,8 +216,18 @@ function Invoke-SprintEndRehearsal {
       WriteHandoff             = $true
       CleanupInfrastructure    = $true
       TestFreshShell           = $true
+      ExternalDurabilityEvidence  = $ExternalDurabilityEvidence
+      RequiredExternalReplicaKind = $RequiredExternalReplicaKind
       WhatIf                   = $true
     }
+    # SE-0015-01: forward the override only when supplied, mirroring the
+    # lifecycle's own ContainsKey handling so an absent override stays absent.
+    if ($PSBoundParameters.ContainsKey('ExternalDurabilityOverride')) {
+      $lifecycleParameters.ExternalDurabilityOverride = $ExternalDurabilityOverride
+    }
+    $checkpointDurabilityFailureNames = @(
+      'CheckpointCoverage', 'CheckpointCoverageRequiredForBoundary', 'ExternalDurabilityRequiredForTeardown'
+    )
 
     # ---------------- Scenario: StableBoundary ----------------
     if ($Scenario -contains 'StableBoundary') {
@@ -220,6 +253,14 @@ function Invoke-SprintEndRehearsal {
     $firstPass = $null
     if ($Scenario -contains 'DryRun' -or $Scenario -contains 'CrashResume' -or $Scenario -contains 'FullClose') {
       $firstPass = Invoke-SprintEndLifecycle @lifecycleParameters
+    }
+
+    # SE-0015-01: checkpoint durability gates the live close, so a rehearsal
+    # whose lifecycle pass cannot confirm it must not report a clean close.
+    if ($firstPass) {
+      foreach ($durabilityFailure in @($firstPass.Failures | Where-Object { $_ -in $checkpointDurabilityFailureNames })) {
+        [void]$failures.Add([string]$durabilityFailure)
+      }
     }
 
     if ($Scenario -contains 'DryRun') {

@@ -47,6 +47,11 @@ collector surface whose value begins with AuditError, or whose item ends in
 /AuditError, is reported as a coverage failure even when the category minimum is
 satisfied.
 
+.PARAMETER SharedDotNetToolPolicy
+Optional shared-tool policy whose RequiredChanges records bind exact journal
+entries to peer acknowledgements. Missing, mismatched, or insufficient
+acknowledgement evidence is reported independently of ordinary surface drift.
+
 .OUTPUTS
 PSCustomObject.
 
@@ -80,6 +85,8 @@ reported as undeclared drift for human escalation.
     [TimeSpan] $ExpectedCadence,
 
     [double] $StaleMultiplier = 1.5,
+
+    [object] $SharedDotNetToolPolicy,
 
     [hashtable] $ExpectedSurfaceMinimumCounts = @{
       OS = 1
@@ -135,6 +142,15 @@ reported as undeclared drift for human escalation.
       $journalEntries = @(
         Read-ParityJsonLines -Path (Get-ParityJournalPath -StatePath $LeftStatePath -HostName $LeftHostName)
         Read-ParityJsonLines -Path (Get-ParityJournalPath -StatePath $RightStatePath -HostName $RightHostName)
+      )
+      $requiredChangeEvidenceFailures = @(
+        if ($null -ne $SharedDotNetToolPolicy) {
+          $requiredChanges = @($SharedDotNetToolPolicy.RequiredChanges | Where-Object { $null -ne $_ })
+          if ($requiredChanges.Count -eq 0) {
+            throw 'Shared .NET tool policy must contain at least one RequiredChanges record for peer reconciliation.'
+          }
+          Get-ParityRequiredChangeEvidenceFindings -RequiredChanges $requiredChanges -LeftStatePath $LeftStatePath -RightStatePath $RightStatePath -LeftHostName $LeftHostName -RightHostName $RightHostName
+        }
       )
 
       $leftMap = Get-ParitySurfaceMap -Surfaces @($leftSnapshot.Surfaces)
@@ -267,6 +283,7 @@ reported as undeclared drift for human escalation.
         "- WhitelistedDriftCount: $($accepted.Count)",
         "- StaleSnapshotCount: $($staleSnapshots.Count)",
         "- SurfaceCoverageFailureCount: $($coverageFailures.Count)",
+        "- RequiredChangeEvidenceFailureCount: $($requiredChangeEvidenceFailures.Count)",
         "- ConflictedCopyCount: $(@($conflictedCopies).Count)",
         '',
         '## Snapshot Freshness',
@@ -296,6 +313,19 @@ reported as undeclared drift for human escalation.
             "$($failure.HostName)/$($failure.Category)"
           }
           $reportLines += "- $failurePath`: $($failure.Classification); ActualCount=$($failure.ActualCount); ExpectedMinimumCount=$($failure.ExpectedMinimumCount)"
+        }
+      }
+
+      $reportLines += @(
+        '',
+        '## Required Change Evidence Failures',
+        ''
+      )
+      if ($requiredChangeEvidenceFailures.Count -eq 0) {
+        $reportLines += '- None'
+      } else {
+        foreach ($failure in $requiredChangeEvidenceFailures) {
+          $reportLines += "- $($failure.LogicalChangeId): $($failure.Classification); Host=$($failure.HostName); EntryId=$($failure.EntryId); Expected='$($failure.Expected)'; Actual='$($failure.Actual)'"
         }
       }
 
@@ -359,6 +389,8 @@ reported as undeclared drift for human escalation.
         StaleThreshold = $staleThreshold
         SurfaceCoverageFailures = @($coverageFailures)
         HasSurfaceCoverageFailure = $coverageFailures.Count -gt 0
+        RequiredChangeEvidenceFailures = @($requiredChangeEvidenceFailures)
+        HasRequiredChangeEvidenceFailure = $requiredChangeEvidenceFailures.Count -gt 0
         ConflictedCopies = @($conflictedCopies)
       }
     } catch {

@@ -66,6 +66,11 @@ function Get-DeployedReleaseManifest {
             throw "Release manifest at '$resolvedPath' is malformed JSON: $($_.Exception.Message)"
         }
 
+        if (($manifest.schemaVersion -isnot [int] -and $manifest.schemaVersion -isnot [long]) -or
+            [long]$manifest.schemaVersion -ne 2) {
+            throw "ATAPBUILD014: Release manifest at '$resolvedPath' must use numeric schemaVersion 2; ordinary v1 is rejected."
+        }
+
         $moduleRoot = Split-Path -Parent $PSScriptRoot
         $srcRoot = Split-Path -Parent $moduleRoot
         $repoRoot = Split-Path -Parent $srcRoot

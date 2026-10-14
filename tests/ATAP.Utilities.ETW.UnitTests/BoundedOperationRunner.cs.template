@@ -1,0 +1,90 @@
+using System.Collections.Concurrent;
+using System.Diagnostics.Tracing;
+using System.Reflection;
+using System.Runtime.Loader;
+using System.Text.Json;
+
+if (args.Length != 8) throw new ArgumentException("The bounded runner requires exactly eight harness-generated arguments.");
+
+string assemblyPath = args[0];
+string declaringType = args[1];
+string methodName = args[2];
+string[] parameterTypeNames = JsonSerializer.Deserialize<string[]>(Convert.FromBase64String(args[3])) ?? throw new InvalidOperationException("Missing parameter types.");
+JsonElement[] argumentValues = JsonSerializer.Deserialize<JsonElement[]>(Convert.FromBase64String(args[4])) ?? throw new InvalidOperationException("Missing arguments.");
+string expectedTerminal = args[5];
+string resultPath = args[6];
+string mode = args[7];
+if (mode is not ("Lifecycle" or "Trace")) throw new ArgumentException("The bounded runner mode is invalid.");
+
+AssemblyLoadContext.Default.Resolving += (_, requested) => {
+  foreach (string directory in new[] { Path.GetDirectoryName(assemblyPath)!, AppContext.BaseDirectory }.Distinct(StringComparer.OrdinalIgnoreCase)) {
+    string candidate = Path.Combine(directory, requested.Name + ".dll");
+    if (File.Exists(candidate)) return AssemblyLoadContext.Default.LoadFromAssemblyPath(candidate);
+  }
+  return null;
+};
+
+Assembly assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(assemblyPath);
+Type type = assembly.GetType(declaringType, throwOnError: true)!;
+Type[] parameterTypes = parameterTypeNames.Select(name => Type.GetType(name, throwOnError: false) ?? assembly.GetType(name, throwOnError: false) ?? throw new InvalidOperationException($"Unsupported parameter type: {name}")).ToArray();
+MethodInfo method = type.GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static, binder: null, parameterTypes, modifiers: null) ?? throw new MissingMethodException(declaringType, methodName);
+object?[] values = parameterTypes.Select((parameterType, index) => ConvertArgument(argumentValues[index], parameterType)).ToArray();
+
+int disabledCount = 0;
+if (mode == "Lifecycle") {
+  using var disabled = new ProviderListener(false);
+  Execute(method, values, expectedTerminal);
+  disabledCount = disabled.Events.Count;
+}
+
+using var enabled = new ProviderListener(true);
+Execute(method, values, expectedTerminal);
+var result = new {
+  disabledEventCount = disabledCount,
+  enabledEvents = enabled.Events.Select(value => new { eventId = value.EventId, payload = value.Payload }).ToArray()
+};
+Directory.CreateDirectory(Path.GetDirectoryName(resultPath)!);
+File.WriteAllText(resultPath, JsonSerializer.Serialize(result));
+
+static object? ConvertArgument(JsonElement value, Type targetType) {
+  if (value.ValueKind == JsonValueKind.Null) return null;
+  if (targetType == typeof(string)) return value.GetString();
+  if (targetType == typeof(bool)) return value.GetBoolean();
+  if (targetType == typeof(int)) return value.GetInt32();
+  if (targetType == typeof(long)) return value.GetInt64();
+  if (targetType == typeof(decimal)) return value.GetDecimal();
+  if (targetType == typeof(double)) return value.GetDouble();
+  if (targetType == typeof(Guid)) return value.GetGuid();
+  if (targetType.IsEnum) return Enum.Parse(targetType, value.GetString()!, ignoreCase: false);
+  throw new InvalidOperationException($"Unsupported scalar target type: {targetType.FullName}");
+}
+
+static void Execute(MethodInfo method, object?[] values, string expectedTerminal) {
+  try {
+    _ = method.Invoke(null, values);
+    if (expectedTerminal != "Success") throw new InvalidOperationException("Expected operation did not throw its declared terminal exception.");
+  }
+  catch (TargetInvocationException exception) when (exception.InnerException is not null) {
+    Exception actual = exception.InnerException;
+    if (expectedTerminal == "Fault" && actual is not OperationCanceledException) return;
+    if (expectedTerminal == "Cancelled" && actual is OperationCanceledException) return;
+    throw new InvalidOperationException($"Unexpected operation terminal: {actual.GetType().FullName}", actual);
+  }
+}
+
+sealed class ProviderListener : EventListener {
+  private const string ProviderName = "ATAP-Utilities-ETWProvider";
+  private readonly bool enabled;
+  public ProviderListener(bool enabled) {
+    this.enabled = enabled;
+    foreach (EventSource source in EventSource.GetSources()) Enable(source);
+  }
+  public ConcurrentQueue<CapturedEvent> Events { get; } = new();
+  protected override void OnEventSourceCreated(EventSource eventSource) => Enable(eventSource);
+  protected override void OnEventWritten(EventWrittenEventArgs eventData) => Events.Enqueue(new CapturedEvent(eventData.EventId, string.Join("|", eventData.Payload?.Select(value => value?.ToString() ?? string.Empty) ?? [])));
+  private void Enable(EventSource source) {
+    if (enabled && string.Equals(source.Name, ProviderName, StringComparison.Ordinal)) EnableEvents(source, EventLevel.LogAlways, EventKeywords.All);
+  }
+}
+
+sealed record CapturedEvent(int EventId, string Payload);

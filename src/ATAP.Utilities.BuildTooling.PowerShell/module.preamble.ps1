@@ -2,8 +2,12 @@
 # PesterScaffolding exports command metadata that references PesterConfiguration.
 # Load Pester before reflecting that child so a fresh consumer shell can construct
 # compatibility proxies without relying on a prior test-session import.
-if (-not ('PesterConfiguration' -as [type])) {
-    Import-Module -Name Pester -ErrorAction Stop
+$pesterConfigurationType = 'PesterConfiguration' -as [type]
+if ($pesterConfigurationType -and $pesterConfigurationType.Assembly.GetName().Version.Major -ne 5) {
+    throw 'BuildTooling requires Pester 5. Start a fresh profiled PowerShell process before importing this module.'
+}
+if (-not $pesterConfigurationType) {
+    Import-Module -Name Pester -MinimumVersion 5.0.0 -MaximumVersion 5.999.999 -DisableNameChecking -ErrorAction Stop
 }
 
 $childModuleNames = @(

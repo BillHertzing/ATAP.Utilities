@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using ATAP.Utilities.ETW;
 
 namespace ATAP.Utilities.RRSBS.Contracts;
 
@@ -53,6 +54,7 @@ public static class RrsbsContractSerializer
         return JsonSerializer.Serialize(envelope, RrsbsJsonContext.Default.RrsbsPayloadEnvelope);
     }
 
+    [ETWLog]
     public static RuleContractV1_1 DeserializeRule(string json)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(json);

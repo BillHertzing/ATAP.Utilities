@@ -12,9 +12,9 @@ Entity Framework Core abstractions, Flyway migration helpers
 
 | Source File    | Last Modified            |
 | -------------- | ------------------------ |
-| main-instructions.md | 2026-08-09 18:26:31 |
-| ai-local.md | 2026-08-01 13:56:58 |
-| CLAUDE.md (combined) | 2026-08-09 18:33:12 |
+| main-instructions.md | 2026-09-11 10:02:31 |
+| ai-local.md | 2026-08-13 12:27:38 |
+| CLAUDE.md (combined) | 2026-09-14 12:46:04 |
 
 ---
 
@@ -59,7 +59,7 @@ which exists for the duration of a work sprint. Sprint worktrees' root paths mat
 | Repository     | Root Path                                  | Role                                                                 |
 | -------------- | ------------------------------------------ | -------------------------------------------------------------------- |
 | \_Planning     | C:/Dropbox/whertzing/github/\_Planning     | Planning information for this shared workspace                       |
-| AceCommander   | C:/Dropbox/whertzing/github/AceCommander   | Multi-tenant .NET server, Blazor WASM UI, ETW streaming              |
+| Ace            | C:/Dropbox/whertzing/github/Ace            | Multi-tenant .NET server, Blazor WASM UI, ETW streaming              |
 |                |                                            | on Windows platfor, Also Android and iOS apps                        |
 | ATAP.Utilities | C:/Dropbox/whertzing/github/ATAP.Utilities | Reusable C# library, schema framework, DB/API utilities              |
 | SharedVSCode   | C:/Dropbox/whertzing/github/SharedVSCode   | Shared VS Code config, source of AiAgent configuration surfaces      |
@@ -82,14 +82,14 @@ Sprint (`${SPRINT_WORKTREE_PATH_*}`) placeholders — the active sprint branch w
 - `${SPRINT_WORKTREE_PATH_ATAP_UTILITIES}` — ATAP.Utilities sprint worktree path.
 - `${SPRINT_WORKTREE_PATH_ATAP_IAC}` — ATAP.IAC (Infrastructure-as-Code) sprint worktree path.
 - `${SPRINT_WORKTREE_PATH_ATAP_PLANNING}` — _Planning sprint worktree path.
-- `${SPRINT_WORKTREE_PATH_ACECOMMANDER}` — AceCommander sprint worktree path.
+- `${SPRINT_WORKTREE_PATH_ACE}` — Ace repository sprint worktree path.
 - `${SPRINT_WORKTREE_PATH_EPHEMERAL}` — Abstract sprint worktree path (used in examples not tied to a specific repository).
 
 Stable (`${STABLE_WORKTREE_PATH_*}`) placeholders — the permanent stable-branch worktree for a
 repo (the closed-state path used after a sprint ends). The same five repository suffixes apply:
 `${STABLE_WORKTREE_PATH_SHAREDVSCODE}`, `${STABLE_WORKTREE_PATH_ATAP_UTILITIES}`,
 `${STABLE_WORKTREE_PATH_ATAP_IAC}`, `${STABLE_WORKTREE_PATH_ATAP_PLANNING}`, and
-`${STABLE_WORKTREE_PATH_ACECOMMANDER}`.
+`${STABLE_WORKTREE_PATH_ACE}`.
 
 These placeholders are not real paths; tools and AI agents should recognize them as variables
 that represent stable or ephemeral sprint branch worktrees, rather than hard-coded directories.
@@ -202,6 +202,7 @@ merge.
 - **UI framework:** Blazor WASM with Syncfusion components and Material Design theming
 - **Database migrations:** Flyway — never hand-edit applied migration files
 - **Build/test:** Use and invoke `dotnet` CLI commands. In the future, a /build folder with a CI pipeline will be added
+- **C# compilation artifacts:** Every C# compilation that uses `--artifacts-path` MUST use a path beginning with `D:\ATAPArtifacts\` on host `utat022` and `C:\ATAPArtifacts\` on host `utat01` ONLY. Unknown hosts MUST fail closed and require a separately approved host mapping; do not guess a root. These are the authoritative artifact roots going forward; do not introduce or reuse other artifact-root locations for new compilations. Older locations are historical and are scheduled for removal before the end of the current sprint.
 - **Git:** Never commit directly to `main` or to a stable branch worktree for ordinary sprint work.
   Make changes in the most recent sprint branch worktree for the repo unless the user explicitly
   asks for stable-branch maintenance. Create an issue, a feature branch, and a worktree using the

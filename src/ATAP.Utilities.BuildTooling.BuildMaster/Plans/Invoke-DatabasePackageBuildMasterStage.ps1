@@ -13,7 +13,8 @@
   the canonical Database/<App>/ source folder, then calls
   New-DatabaseChangePackage to produce the .nupkg and
   Publish-DatabaseChangePackageToProGet to push it to the
-  database-experimental feed.
+  database-experimental feed. It then rehearses that exact immutable package
+  against a backup/restore clone before applying it to Experimental.
 
   For Development/Integration/QA/Production it promotes the captured immutable
   version from the previous tier's feed to the destination feed via
@@ -82,10 +83,29 @@
   accepted as a parameter and never echoed; Invoke-FlywayRehearsal /
   Invoke-Flyway resolve it from Bitwarden by name.
 
+.PARAMETER ExperimentalDatabaseDeploymentSqlInstance
+.PARAMETER DevelopmentDatabaseDeploymentSqlInstance
+.PARAMETER IntegrationDatabaseDeploymentSqlInstance
+.PARAMETER QADatabaseDeploymentSqlInstance
+.PARAMETER ProductionDatabaseDeploymentSqlInstance
+.PARAMETER DatabaseDeploymentExpectedHostName
+.PARAMETER DatabaseDeploymentServiceAccount
+.PARAMETER DatabaseDeploymentExpectedAccountSid
+.PARAMETER DatabaseDeploymentAllowedInstanceNames
+.PARAMETER DatabaseDeploymentApprovedDatabaseNames
+  Fail-closed deployment-principal audit policy. The five SQL-instance values
+  are explicit Server\Instance targets selected by the current pipeline stage.
+  The account and SID identify
+  the local BuildMaster service identity. Allowed instances and approved
+  package-target databases are semicolon-delimited exact names. The runner
+  audits the current target before any package publish, promotion, or apply;
+  it does not grant permissions.
+
 .PARAMETER SkipRehearsal
   Bypasses the rehearsal-before-promotion gate even when a tier connection
   secret name is supplied. Intended for disaster recovery and audited manual
-  promotions only; logged as a warning.
+  promotions only; logged as a warning. Experimental rejects this switch
+  because its exact-package rehearsal is mandatory before apply.
 
 .PARAMETER SkipApply
   Retained for caller compatibility but rejected by the stage preflight.
@@ -94,8 +114,8 @@
 
 .OUTPUTS
   None. Side effects: New-DatabaseChangePackage, ProGet publish/promote,
-  per-tier Flyway rehearsal (before promotion) and apply/migrate (after
-  promotion/publish) against the tier database, run-context JSON / state
+  exact-package Flyway rehearsal before Experimental apply and before each
+  later-tier promotion, apply/migrate against the tier database, run-context JSON / state
   files / completion markers under
   _generated/buildmaster/<BuildMasterBuildId>.
 
@@ -190,6 +210,36 @@ param(
 
   [AllowEmptyString()]
   [string]$ProductionDatabaseDBConnectionStringSecretName = '',
+
+  [AllowEmptyString()]
+  [string]$ExperimentalDatabaseDeploymentSqlInstance = '',
+
+  [AllowEmptyString()]
+  [string]$DevelopmentDatabaseDeploymentSqlInstance = '',
+
+  [AllowEmptyString()]
+  [string]$IntegrationDatabaseDeploymentSqlInstance = '',
+
+  [AllowEmptyString()]
+  [string]$QADatabaseDeploymentSqlInstance = '',
+
+  [AllowEmptyString()]
+  [string]$ProductionDatabaseDeploymentSqlInstance = '',
+
+  [AllowEmptyString()]
+  [string]$DatabaseDeploymentExpectedHostName = '',
+
+  [AllowEmptyString()]
+  [string]$DatabaseDeploymentServiceAccount = '',
+
+  [AllowEmptyString()]
+  [string]$DatabaseDeploymentExpectedAccountSid = '',
+
+  [AllowEmptyString()]
+  [string]$DatabaseDeploymentAllowedInstanceNames = '',
+
+  [AllowEmptyString()]
+  [string]$DatabaseDeploymentApprovedDatabaseNames = '',
 
   [switch]$SkipRehearsal,
 
@@ -543,16 +593,97 @@ function Get-DatabasePackageApplyMarkerPath {
   }
 }
 
+function Resolve-DatabaseTierDeploymentSqlInstance {
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory)]
+    [ValidateSet('Experimental', 'Development', 'Integration', 'QA', 'Production')]
+    [string]$Tier,
+
+    [AllowEmptyString()][string]$ExperimentalSqlInstance = '',
+    [AllowEmptyString()][string]$DevelopmentSqlInstance = '',
+    [AllowEmptyString()][string]$IntegrationSqlInstance = '',
+    [AllowEmptyString()][string]$QASqlInstance = '',
+    [AllowEmptyString()][string]$ProductionSqlInstance = ''
+  )
+
+  switch ($Tier) {
+    'Experimental' { return $ExperimentalSqlInstance }
+    'Development'  { return $DevelopmentSqlInstance }
+    'Integration'  { return $IntegrationSqlInstance }
+    'QA'           { return $QASqlInstance }
+    'Production'   { return $ProductionSqlInstance }
+  }
+}
+
+function Assert-DatabasePackageDeploymentPrincipal {
+  <#
+  .SYNOPSIS
+    Fails closed unless the BuildMaster identity has the approved database role.
+  .DESCRIPTION
+    Audits one explicit tier instance and the current package-target database.
+    The audit is read-only and deliberately does not repair permissions during
+    a deployment. Remediation is an independently authorized operator action.
+  #>
+  [CmdletBinding()]
+  [OutputType([PSCustomObject])]
+  param(
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$SqlInstance,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ExpectedHostName,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ServiceAccount,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ExpectedAccountSid,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string[]]$AllowedInstanceName,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string[]]$ApprovedDatabaseName,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$DatabaseApplication
+  )
+
+  BEGIN {
+    $fn = 'Assert-DatabasePackageDeploymentPrincipal'
+    $mn = 'ATAP.Utilities.BuildTooling.BuildMaster'
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
+      -Message "Auditing BuildMaster database deployment principal for '$SqlInstance/$DatabaseApplication'."
+  }
+
+  PROCESS {
+    if ($DatabaseApplication -notin $ApprovedDatabaseName) {
+      throw "Database package target '$DatabaseApplication' is not explicitly admitted by DatabaseDeploymentApprovedDatabaseNames."
+    }
+
+    $auditRows = @(Get-SqlServiceLoginGrantTarget `
+        -SqlInstance $SqlInstance `
+        -ExpectedHostName $ExpectedHostName `
+        -ServiceAccount $ServiceAccount `
+        -ExpectedAccountSid $ExpectedAccountSid `
+        -AllowedInstanceName $AllowedInstanceName `
+        -ApprovedDatabaseName $ApprovedDatabaseName)
+    $targetRows = @($auditRows | Where-Object { $_.DatabaseName -ceq $DatabaseApplication })
+    if ($targetRows.Count -ne 1) {
+      throw "BuildMaster deployment-principal audit returned $($targetRows.Count) rows for approved target '$DatabaseApplication' on '$SqlInstance'; expected exactly one."
+    }
+
+    $target = $targetRows[0]
+    if (-not [bool]$target.Include -or -not [bool]$target.IsCompliant) {
+      $detail = @($target.ExclusionReason, $target.DriftReason) |
+        Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) }
+      throw "BuildMaster deployment-principal audit FAILED for '$DatabaseApplication' on '$SqlInstance': $($detail -join '; '). Package publication, promotion, and apply are blocked."
+    }
+
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+      -Message "BuildMaster deployment-principal audit PASSED for '$DatabaseApplication' on '$SqlInstance'."
+    return $target
+  }
+}
+
 function Invoke-DatabasePackageTierRehearsal {
   <#
   .SYNOPSIS
     Runs the package-aware Flyway rehearsal that must pass before a database
-    package is promoted into a tier.
+    package is applied to Experimental or promoted into a later tier.
   .DESCRIPTION
     Wraps Invoke-DatabasePackageRehearsal so the BuildMaster stage runner can
-    enforce rehearsal-before-promotion in code. Throws when the rehearsal does
-    not report Success, so the caller aborts before calling
-    Promote-DatabaseChangePackage.
+    enforce exact-package rehearsal in code. Throws when the rehearsal does
+    not report Success, so the caller aborts before Experimental apply or
+    later-tier promotion.
   .OUTPUTS
     [PSCustomObject] the rehearsal result (Success/PackagePath/...).
   .NOTES
@@ -591,13 +722,20 @@ function Invoke-DatabasePackageTierRehearsal {
     }
 
     if ($PSCmdlet.ShouldProcess("$Application ($Tier)", 'Invoke-DatabasePackageRehearsal')) {
-      $result = Invoke-DatabasePackageRehearsal @rehearsalParameters
-      if ($null -eq $result -or -not [bool]$result.Success) {
+      $rehearsalOutput = @(Invoke-DatabasePackageRehearsal @rehearsalParameters)
+      $structuredResults = @($rehearsalOutput | Where-Object {
+          $null -ne $_ -and $_.PSObject.Properties.Name -contains 'Success'
+        })
+      if ($structuredResults.Count -ne 1) {
+        throw "Exact-package Flyway rehearsal returned $($structuredResults.Count) structured results from $($rehearsalOutput.Count) output records for '$Application' tier '$Tier'; expected exactly one."
+      }
+      $result = $structuredResults[0]
+      if (-not [bool]$result.Success) {
         $summary = if ($null -ne $result) { $result.ValidateOutput } else { '<no result>' }
-        throw "Pre-promotion Flyway rehearsal FAILED for '$Application' tier '$Tier'; promotion blocked. Detail: $summary"
+        throw "Exact-package Flyway rehearsal FAILED for '$Application' tier '$Tier'; stage action blocked. Detail: $summary"
       }
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-        -Message "Pre-promotion rehearsal PASSED for '$Application' tier '$Tier'."
+        -Message "Exact-package rehearsal PASSED for '$Application' tier '$Tier'." | Out-Null
       return $result
     }
   }
@@ -941,6 +1079,7 @@ function Invoke-DatabasePackageBuildMasterStage {
       'Expand-DatabaseChangePackage'   = 'Expand-DatabaseChangePackage.ps1'
       'Get-DatabasePackageManifest'    = 'Get-DatabasePackageManifest.ps1'
       'Resolve-DatabaseSqlConnection'  = 'Resolve-DatabaseSqlConnection.ps1'
+      'Get-SqlServiceLoginGrantTarget' = 'Get-SqlServiceLoginGrantTarget.ps1'
       'Get-FlywaySchemaVersion'        = 'Get-FlywaySchemaVersion.ps1'
       'New-DatabasePreMigrationSnapshot' = 'New-DatabasePreMigrationSnapshot.ps1'
       'Invoke-FlywayRehearsal'         = 'Invoke-FlywayRehearsal.ps1'
@@ -1038,6 +1177,53 @@ function Invoke-DatabasePackageBuildMasterStage {
     if ($SkipApply) {
       throw "Database stage '$Stage' cannot publish, promote, or complete package '$databasePackageId' while -SkipApply is supplied."
     }
+    if ($Stage -eq 'Experimental' -and $SkipRehearsal) {
+      throw "Database stage 'Experimental' cannot build, publish, rehearse, apply, or complete package '$databasePackageId' while -SkipRehearsal is supplied."
+    }
+
+    $databaseDeploymentSqlInstance = Resolve-DatabaseTierDeploymentSqlInstance -Tier $Stage `
+      -ExperimentalSqlInstance $ExperimentalDatabaseDeploymentSqlInstance `
+      -DevelopmentSqlInstance $DevelopmentDatabaseDeploymentSqlInstance `
+      -IntegrationSqlInstance $IntegrationDatabaseDeploymentSqlInstance `
+      -QASqlInstance $QADatabaseDeploymentSqlInstance `
+      -ProductionSqlInstance $ProductionDatabaseDeploymentSqlInstance
+
+    $principalPolicyValues = [ordered]@{
+      DatabaseDeploymentSqlInstance        = $databaseDeploymentSqlInstance
+      DatabaseDeploymentExpectedHostName   = $DatabaseDeploymentExpectedHostName
+      DatabaseDeploymentServiceAccount     = $DatabaseDeploymentServiceAccount
+      DatabaseDeploymentExpectedAccountSid = $DatabaseDeploymentExpectedAccountSid
+      DatabaseDeploymentAllowedInstanceNames = $DatabaseDeploymentAllowedInstanceNames
+      DatabaseDeploymentApprovedDatabaseNames = $DatabaseDeploymentApprovedDatabaseNames
+    }
+    $missingPrincipalPolicyValues = @($principalPolicyValues.GetEnumerator() |
+        Where-Object { [string]::IsNullOrWhiteSpace([string]$_.Value) } |
+        ForEach-Object { $_.Key })
+    if ($missingPrincipalPolicyValues.Count -gt 0) {
+      throw "Database stage '$Stage' cannot publish, promote, or apply because the BuildMaster deployment-principal audit policy is incomplete: $($missingPrincipalPolicyValues -join ', ')."
+    }
+
+    $allowedInstanceNames = @($DatabaseDeploymentAllowedInstanceNames -split ';' |
+        ForEach-Object { $_.Trim() } |
+        Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    $approvedDatabaseNames = @($DatabaseDeploymentApprovedDatabaseNames -split ';' |
+        ForEach-Object { $_.Trim() } |
+        Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    if ($allowedInstanceNames.Count -ne @($allowedInstanceNames | Select-Object -Unique).Count) {
+      throw 'DatabaseDeploymentAllowedInstanceNames contains duplicate instance names.'
+    }
+    if ($approvedDatabaseNames.Count -ne @($approvedDatabaseNames | Select-Object -Unique).Count) {
+      throw 'DatabaseDeploymentApprovedDatabaseNames contains duplicate database names.'
+    }
+
+    $principalAudit = Assert-DatabasePackageDeploymentPrincipal `
+      -SqlInstance $databaseDeploymentSqlInstance `
+      -ExpectedHostName $DatabaseDeploymentExpectedHostName `
+      -ServiceAccount $DatabaseDeploymentServiceAccount `
+      -ExpectedAccountSid $DatabaseDeploymentExpectedAccountSid `
+      -AllowedInstanceName $allowedInstanceNames `
+      -ApprovedDatabaseName $approvedDatabaseNames `
+      -DatabaseApplication $DatabaseApplication
 
     $stateFiles = [ordered]@{
       CeilingTier       = Join-Path -Path $contextDirectory -ChildPath "$databasePackageId.ceiling-tier.tmp"
@@ -1084,6 +1270,8 @@ function Invoke-DatabasePackageBuildMasterStage {
         DatabaseStream      = $DatabaseStream
         DatabasePackageId   = $databasePackageId
         ExcludedMigrations  = $excludedMigrations
+        DeploymentPrincipalAuditPassed = [bool]$principalAudit.IsCompliant
+        DeploymentPrincipalSqlInstance = $databaseDeploymentSqlInstance
       } | Out-Null
 
     if (Test-DatabasePackageStageCompleted -ContextDirectory $contextDirectory -DatabasePackageId $databasePackageId -Tier $Stage) {
@@ -1118,6 +1306,18 @@ function Invoke-DatabasePackageBuildMasterStage {
         $capturedPackageHash = (Get-FileHash -LiteralPath $capturedNupkgPath -Algorithm SHA256).Hash
         Add-DatabasePackagePublishTrace -Path $tracePath `
           -Message "Resume exact published package '$capturedNupkgPath' (SHA256=$capturedPackageHash); build and publish skipped."
+
+        Add-DatabasePackagePublishTrace -Path $tracePath `
+          -Message "Rehearsing exact captured package '$capturedNupkgPath' before Experimental apply."
+        $rehearsalResult = Invoke-DatabasePackageTierRehearsal `
+          -NupkgPath $capturedNupkgPath `
+          -Application $DatabaseApplication `
+          -Tier $Stage `
+          -BuildId $BuildMasterBuildId `
+          -ConnectionStringSecretName $tierConnectionSecretName `
+          -LogPath $tracePath
+        Add-DatabasePackagePublishTrace -Path $tracePath `
+          -Message "Experimental exact-package rehearsal passed (elapsed=$($rehearsalResult.ElapsedSeconds)s); apply may proceed."
 
         Invoke-DatabasePackageStageApply `
           -ContextDirectory $contextDirectory `
@@ -1199,6 +1399,18 @@ function Invoke-DatabasePackageBuildMasterStage {
           NupkgPath           = $nupkgPath
           PackageVersion      = $resolvedVersion
         } | Out-Null
+
+      Add-DatabasePackagePublishTrace -Path $tracePath `
+        -Message "Rehearsing exact published package '$nupkgPath' before Experimental apply."
+      $rehearsalResult = Invoke-DatabasePackageTierRehearsal `
+        -NupkgPath $nupkgPath `
+        -Application $DatabaseApplication `
+        -Tier $Stage `
+        -BuildId $BuildMasterBuildId `
+        -ConnectionStringSecretName $tierConnectionSecretName `
+        -LogPath $tracePath
+      Add-DatabasePackagePublishTrace -Path $tracePath `
+        -Message "Experimental exact-package rehearsal passed (elapsed=$($rehearsalResult.ElapsedSeconds)s); apply may proceed."
 
       # Apply the freshly built package to the Experimental tier database
       # (Database-Change-Unit-and-Flyway-Promotion.md section 5: "Apply migrations

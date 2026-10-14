@@ -37,6 +37,13 @@ The end state is:
   item, old/new state, peer host, and a peer action; do not include any secret
   value. After the peer applies its corresponding action, acknowledge it from
   that peer with `Confirm-ParityChangeApplied`.
+- **Certificate installation and removal defaults to non-interactive automation:** Use an
+  approved PowerShell/API or elevation-broker method whenever the host must operate
+  unattended. An explicitly authorized, operator-attended developer-host procedure may use
+  the Windows certificate wizard only when the broker has no registered certificate
+  installer and the procedure pins the exact store, thumbprint, and full DER SHA-256 digest.
+  Never generalize that exception to an unattended service workflow. Verify state before and
+  after every operation and fail closed when the required elevation path is unavailable.
 - Use PowerShell 7 (`pwsh`) for all commands in this document.
 - The historical phrase `SQL Server Community Edition` appears in older notes, but for a
   developer workstation that needs SQL Server Agent you should install SQL Server 2022
@@ -145,7 +152,7 @@ features this runbook does not require. Do **not** substitute the built-in Windo
 Memory Diagnostic — it is far weaker and misses marginal faults.
 
 1. Download the **MemTest86 Free Edition — Image for creating bootable USB Drive**
-   from `https://www.memtest86.com/download.htm` on a *known-good* machine.
+   from `https://www.memtest86.com/download.htm` on a _known-good_ machine.
 2. Extract the ZIP. It contains `imageUSB.exe` and the `memtest86-usb.img` image.
 3. Insert a USB stick of 1 GB or larger. **Its contents are destroyed.**
 4. Run `imageUSB.exe` elevated, select the USB drive, choose
@@ -189,10 +196,10 @@ An enabled EXPO/XMP profile is a factory overclock, not a JEDEC-guaranteed speed
 is a common source of exactly the mixed-bugcheck pattern described in 0.1. Test in
 the order below and record which configuration passed:
 
-| Order | Firmware setting | Interpretation of a failure |
-| --- | --- | --- |
-| 1 | EXPO/XMP **enabled** (rated speed) | The profile is unstable on this silicon; continue to test 2. |
-| 2 | EXPO/XMP **disabled** (JEDEC, e.g. DDR5-4800) | The DIMMs themselves are faulty; RMA them. |
+| Order | Firmware setting                              | Interpretation of a failure                                  |
+| ----- | --------------------------------------------- | ------------------------------------------------------------ |
+| 1     | EXPO/XMP **enabled** (rated speed)            | The profile is unstable on this silicon; continue to test 2. |
+| 2     | EXPO/XMP **disabled** (JEDEC, e.g. DDR5-4800) | The DIMMs themselves are faulty; RMA them.                   |
 
 If the host passes at JEDEC but fails at the rated profile, either run it at JEDEC
 permanently or step the profile down (for example 6000 → 5600) and re-validate with a
@@ -368,6 +375,27 @@ dotnet --list-sdks
 bw --version
 ```
 
+### 2.0.a Enable long paths for Windows and for Git (required)
+
+Some ref names in the shared Dropbox-hosted repositories exceed 260 characters (for
+example `refs/codex/turn-diffs/checkpoints/<sha256>/<sha256>/<ms>/<guid>`). Without long-path
+support `git fsck` reports them as `Filename too long` / `invalid sha1 pointer 0000…`, and
+NBGV history reads can fail. utat01 hit this on 2026-09-16 (Task 15.187); utat022 already had
+both settings. Run in an elevated PowerShell 7 console:
+
+```powershell
+# Windows: allow Win32 paths longer than MAX_PATH for manifest-aware processes.
+New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' `
+  -Name LongPathsEnabled -PropertyType DWord -Value 1 -Force
+
+# Git: every repository, every user on this machine.
+git config --system core.longpaths true
+
+# Verify
+(Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem').LongPathsEnabled   # 1
+git config --system --get core.longpaths                                                    # true
+```
+
 ### 2.0 Register the PowerShell 7 remoting endpoint before any remote connection
 
 After PowerShell 7 is installed, use an elevated **local console** PowerShell 7
@@ -402,7 +430,7 @@ back to the unnamed Windows PowerShell endpoint:
 
 ```powershell
 Invoke-Command -ComputerName '<host>' -ConfigurationName 'PowerShell.7' -ScriptBlock {
-  [pscustomobject]@{
+  [PSCustomobject]@{
     ComputerName = $env:COMPUTERNAME
     UserName = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
     PSVersion = $PSVersionTable.PSVersion.ToString()
@@ -592,11 +620,11 @@ if ($LASTEXITCODE -notin 0, 3010) {
 ```
 
 Verify the stable installation and the exact pack task that MSBuild will load.
-Do not add the `vswhere -prerelease` switch.
+Do not add the `vSWhere -prerelease` switch.
 
 ```powershell
-$vswhere = 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe'
-$installPath = & $vswhere -latest `
+$vSWhere = 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vSWhere.exe'
+$installPath = & $vSWhere -latest `
   -products Microsoft.VisualStudio.Product.BuildTools `
   -requires Microsoft.VisualStudio.Workload.MSBuildTools `
   -requires Microsoft.VisualStudio.Component.NuGet.BuildTools `
@@ -612,7 +640,29 @@ $packTask = Join-Path $dotnetRoot "sdk\$sdkVersion\Sdks\Microsoft.NET.Sdk\tools\
 [Reflection.AssemblyName]::GetAssemblyName($packTask).Version
 ```
 
-The repository pins stable SDK 10.0.400 with `allowPrerelease=false`. BuildMaster
+The repositories pin stable SDK **10.0.401** with `allowPrerelease=false` (both Ace and
+ATAP.Utilities `global.json`; raised from 10.0.400 on 2026-09-17 so that both hosts run the
+same SDK). **The exact pinned SDK must be installed even when a newer patch is present.**
+`global.json` says `rollForward: latestPatch`, so `dotnet` itself would compile with any
+later patch, but each repository's `Build/Test-ToolchainBaseline.ps1` (run from
+`Directory.Build.targets` on every publish) requires the pinned version to appear in
+`dotnet --list-sdks` and fails the build with `ATAPTOOLCHAIN003: Pinned SDK not installed`
+otherwise — that gate is what makes the build deterministic across hosts. UTAT01 had
+10.0.401 only while the pin still said 10.0.400 and failed the first BuildMaster-driven
+AceOutpost build this way (Task 15.196.q defect D11, 2026-09-17); the pin was moved
+rather than a second SDK installed. When a host lacks the pinned SDK, install it
+machine-wide from an elevated PowerShell 7 session and verify it is listed:
+
+```powershell
+$pinnedSdk = (Get-Content -LiteralPath 'C:\Dropbox\whertzing\GitHub\Ace\global.json' -Raw | ConvertFrom-Json).sdk.version
+winget install --id Microsoft.DotNet.SDK.10 --version $pinnedSdk --exact --scope machine --accept-package-agreements --accept-source-agreements
+if (-not ((dotnet --list-sdks) -match "^$([regex]::Escape($pinnedSdk)) ")) { throw "Pinned SDK $pinnedSdk is not installed." }
+```
+
+If winget does not carry that exact build, use the official install script with
+`-Version $pinnedSdk -InstallDir 'C:\Program Files\dotnet'` so the SDK lands in the
+machine root that the BuildMaster service identity resolves. Record the install in the
+parity journal. BuildMaster
 uses `dotnet build`, but production pack uses Visual Studio MSBuild `/t:Pack`
 with `Deterministic=true` and `DeterministicTimestamp` derived from the Git
 `HEAD` commit epoch. Do not substitute `dotnet pack`: an older SDK feature band
@@ -623,6 +673,71 @@ isolated roots and require identical `.nupkg` SHA-256 hashes. Record every
 installation or upgrade in the local parity journal, including Visual Studio,
 MSBuild, SDK, and NuGet Pack versions; require the peer host to install the same
 stable components and repeat the two-pack gate. Never journal credentials.
+
+### 2.3.3 Trust the exact AceOutpost interception root
+
+AceOutpost runs before an interactive user logs on, and a developer host can serve more than
+one authorized developer. Install the public interception root in
+`Cert:\LocalMachine\Root`, not a developer's physical `CurrentUser\Root` store. The service
+can start without this trust entry; the machine-wide root is required so each authorized
+Codex or Claude client on the host can validate certificates issued by the local interception
+CA. Install only the public certificate. The trusted-root copy must not contain a private key.
+
+Prefer an exact certificate-install action registered in the elevation broker. The default
+broker configuration historically registered module installation and parity-task actions but
+no certificate action. Never submit an arbitrary script path or broaden the broker allowlist
+from an unelevated request. If no reviewed certificate action is registered, an operator at
+the developer host may use this explicit manual fallback after approving the Local Machine
+scope.
+
+1. Obtain the reviewed DER `.cer` copied from the active AceOutpost state. For the Task 15.190
+   deployment it is
+   `C:\Users\whertzing\AppData\Local\ATAP\AceOutpostMeteredHarness\AceOutpost-Interception-Root.cer`.
+2. Open it with the Windows certificate viewer rather than relying on the `.cer` file
+   association:
+
+   ```powershell
+   $certificatePath = 'C:\Users\whertzing\AppData\Local\ATAP\AceOutpostMeteredHarness\AceOutpost-Interception-Root.cer'
+   Start-Process -FilePath "$env:SystemRoot\System32\rundll32.exe" `
+     -ArgumentList @('cryptext.dll,CryptExtOpenCER', $certificatePath)
+   ```
+
+3. Select **Install Certificate**, **Local Machine**, **Place all certificates in the
+   following store**, and **Trusted Root Certification Authorities**. Approve the UAC and
+   protected-root security prompts only after checking the displayed certificate identity.
+4. Verify the physical Local Machine store immediately. Do not infer a physical Current User
+   installation from `Cert:\CurrentUser\Root`; Windows can surface a machine root through that
+   logical view.
+
+   ```powershell
+   $expectedThumbprint = '1E9AB6112B86E61262D81FF0B14769130B0098E0'
+   $expectedSha256 = 'E79600C08637741806154A7D0C52CB91187E8AF91DD0D7C6051ADC1146B591FB'
+   $matches = @(Get-ChildItem -LiteralPath 'Cert:\LocalMachine\Root' |
+       Where-Object Thumbprint -eq $expectedThumbprint)
+   if ($matches.Count -ne 1) {
+     throw "Expected exactly one Local Machine interception root; found $($matches.Count)."
+   }
+   $actualSha256 = [Convert]::ToHexString(
+     [Security.Cryptography.SHA256]::HashData($matches[0].RawData))
+   if ($actualSha256 -ne $expectedSha256 -or $matches[0].HasPrivateKey) {
+     throw 'The installed interception root does not match the pinned public certificate.'
+   }
+   ```
+
+   The values above identify the Task 15.190 root issued 2026-09-02 and expiring 2028-09-01.
+   After a controlled CA rotation, replace them with the new deployment's separately reviewed
+   thumbprint and DER SHA-256; never select a root by subject name alone.
+5. When the metered-shortcut installer adopts a certificate installed by this attended
+   procedure, use its explicit `-AdoptExistingTrustedRoot` switch. Without that switch, an
+   already-present certificate remains classified as pre-existing and rollback must preserve
+   it. The saved state must record `TrustedRootStorePath=Cert:\LocalMachine\Root`, the exact
+   thumbprint and DER SHA-256, and `TrustedRootInstalledByInstaller=true` before rollback is
+   considered working.
+
+Rollback must remove only the certificate whose physical store, thumbprint, and full DER
+SHA-256 all match the saved ownership record. A missing field or mismatched digest is a hard
+stop. Local Machine removal requires an attended UAC approval until a reviewed broker action
+for this exact operation is deployed.
 
 ### 2.4 Install Python (for Manim or Copilot code execution)
 
@@ -832,48 +947,229 @@ Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 
 ### 4.4 Install NBGV (Nerdbank.GitVersioning) machine-wide
 
-BuildMaster runs as a service account (`SvcBuildMaster` on `utat022`) and
-shells out to the `nbgv` CLI through `Get-BuildContext` during the
-Experimental stage. If `nbgv` is installed only as a per-user dotnet tool
-(for example, at `C:\Users\<dev>\.dotnet\tools\nbgv.exe`), the service
-account cannot see it — even when `pwsh` is launched without `-NoProfile` —
-and BuildMaster fails with:
+The approved shared NBGV baseline is **3.10.85** at
+`C:\ProgramData\dotnet\tools\nbgv.exe` on both `utat022` and `utat01`.
+The directory is local to each host and shared by its developer and CI identities.
+BuildMaster consumes NBGV through `Get-BuildContext`; a developer-only installation
+is not sufficient for that service account.
 
-```text
-The 'nbgv' CLI was not found on PATH
-```
-
-Install `nbgv` to a **machine-wide** dotnet tool location so every local
-account (developer logins and service accounts) can resolve it. The
-convention used by the ATAP profile is `C:\ProgramData\dotnet\tools`.
+Follow the directory ownership, parity journal, isolated NuGet configuration and
+real-identity verification gates in section 4.4.1 before installation. Once the
+approved shared directory and source configuration exist:
 
 ```powershell
-# Elevated PowerShell 7
 $machineToolPath = 'C:\ProgramData\dotnet\tools'
-New-Item -ItemType Directory -Path $machineToolPath -Force | Out-Null
-
-dotnet tool install --tool-path $machineToolPath nbgv
-
-# Verify
+Get-Command Get-RepositoryRoot -ErrorAction Stop | Out-Null
+$toolConfig = Join-Path (Get-RepositoryRoot) '_generated/Sprint0015/Task15.167/nuget.dotnet-trace.config'
+if (-not (Test-Path -LiteralPath $toolConfig)) { throw 'Approved tool-source configuration is missing.' }
+if (-not (Test-Path -LiteralPath $machineToolPath)) { throw 'Complete approved shared-directory provisioning first.' }
+$env:DOTNET_GENERATE_ASPNET_CERTIFICATE = 'false'
+dotnet tool install --tool-path $machineToolPath nbgv --version 3.10.85 --configfile $toolConfig
+if ($LASTEXITCODE -ne 0) { throw 'Shared NBGV installation failed.' }
 & (Join-Path $machineToolPath 'nbgv.exe') --version
+if ($LASTEXITCODE -ne 0) { throw 'Shared NBGV verification failed.' }
 ```
 
-`AllUsersAllHostsV7CoreProfile.ps1` (installed at
-`$PSHome\profile.ps1` in step 4.1) prepends `C:\ProgramData\dotnet\tools`
-to the process-scope `PATH` for every PowerShell 7 session — including the
-non-interactive session BuildMaster spawns under `SvcBuildMaster`. After
-opening a new `pwsh` window, both of these must succeed:
+For an existing installation, use `dotnet tool update --tool-path $machineToolPath
+nbgv --version 3.10.85 --configfile $toolConfig` instead of the install command;
+check the native exit code. Any later version needs its own approved pin.
+
+The all-users PowerShell 7 profile adds the shared path when it exists. Verify
+`Get-Command nbgv` in fresh developer and CI sessions, and compare `nbgv get-version
+-f json` on a representative versioned project before and after migration.
+
+Task 15.167's approved migration retains the old UTAT022 NBGV 3.9.50 package and
+ACL evidence for rollback, installs shared 3.10.85, proves developer/BuildMaster
+consumption, then uninstalls **only** NBGV from `C:\Program Files\dotnet-tools`.
+Preserve that directory and unrelated packages/PATH entries. UTAT01 retains its
+existing shared NBGV 3.10.85 while its directory ACL is corrected. Journal each
+mutation before executing it; a matching version string alone does not prove
+that CI resolved the intended executable.
+
+### 4.4.1 Provision dotnet-trace for developers and CI
+
+Use the administrator-managed `C:\ProgramData\dotnet\tools` location for
+`dotnet-trace`. The approved Sprint 0015 pin is **10.0.731102**; installation or
+upgrade requires named Task 15.167.c HITL approval for the host, exact version,
+directory permissions, and affected identities. The operator approved the two-host rollout, including NBGV migration, on 2026-09-03. Approval alone is not evidence of installation. NuGet lists a .NET 8 target; verify a
+compatible runtime and the selected package framework on each host before use.
+See the [Microsoft package listing](https://www.nuget.org/packages/dotnet-trace)
+and [.NET tool installation contract](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-tool-install).
+
+**Preflight and ownership.** Inventory both `utat022` and `utat01`, plus any newly
+registered parity peer. Record the current Windows identity, architecture, SDKs,
+runtimes, resolved executable, tool-store versions, directory owner/ACLs, and
+Machine/User/Process PATH. Read `.store` package/version directories during a
+strictly read-only audit: even `dotnet tool list` can initialize a previously
+unused SDK and create a development HTTPS certificate. Do not inspect or copy
+secret-bearing environment variables. Save evidence under the current repository's
+`_generated/Sprint0015/Task15.167/` directory.
+
+The pre-deployment 2026-09-03 inventory found no `dotnet-trace` on either host. UTAT022 lacks the
+shared directory; its existing NBGV is under `C:\Program Files\dotnet-tools`.
+UTAT01 already has the shared directory and NBGV, but its inherited Users ACL
+permits creation/writes and needs an approved permissions correction. Preserve
+NBGV, other tools, and unrelated PATH entries. Evidence: repository-root `_generated/Sprint0015/Task15.167/inventory.local.json` and `inventory.utat01.json`; these are inventory results, not CI execution proof.
+A missing directory or correctable
+ACL is not a technical reason to choose the per-user fallback.
+
+**Shared path and profile contract.** Administrators and SYSTEM manage the shared
+directory; approved developer/service consumers need read, execute, and traverse
+access to the executable and its `.store` payload. Ordinary consumers must not be
+able to replace binaries or create new shims there. Before changing an existing
+ACL, retain its security descriptor, review explicit and inherited entries, and
+approve the exact correction including its effect on existing tools. Secure a new
+directory before installing. Do not merely copy the executable out of `.store`.
+
+The canonical ATAP.IAC `Windows/ProfileTemplates/AllUsersAllHostsV7CoreProfile.ps1`
+prepends this directory to process PATH **only when it exists**. Open a fresh,
+profiled PowerShell 7 process after provisioning. A service process does not
+necessarily load PowerShell profiles or inherit a newly changed Machine PATH:
+CI should invoke the absolute executable path, or explicitly include the shared
+path in its approved job environment. Restart/recycle a service only within an
+approved maintenance window. A PATH entry alone does not prove executable access.
+Microsoft describes [custom tool locations and invocation](https://learn.microsoft.com/en-us/dotnet/core/tools/global-tools).
+
+**Journal before every host mutation.** In an elevated, profiled PowerShell 7
+session on the approved target, require the deployed parity cmdlet and append an
+entry before directory creation, ACL/PATH changes, installation, update, or
+rollback. Set the actual old state and peer for each operation; the following
+example declares a new UTAT022 installation only. Retain each returned entry ID.
+Do not run this example during a read-only inventory.
 
 ```powershell
-pwsh -NoProfile -Command "Get-Command nbgv -ErrorAction SilentlyContinue"   # machine PATH only
-pwsh -Command            "Get-Command nbgv -ErrorAction SilentlyContinue"   # machine PATH + profile
+Get-Command Add-ParityChangeEntry -ErrorAction Stop | Out-Null
+if ($env:COMPUTERNAME -ine 'UTAT022') { throw 'This declaration targets UTAT022 only.' }
+$change = Add-ParityChangeEntry -Category Packages -Item 'dotnet-trace/shared' `
+  -OldValue 'Absent' -NewValue '10.0.731102; C:\ProgramData\dotnet\tools' `
+  -PeerHostName 'utat01' -PeerActionKind InstallPackage `
+  -PeerAction 'After named approval, install the same pin in the shared path; verify each required identity; acknowledge this entry.' `
+  -Reason 'Task 15.167.c approved diagnostic-tool provisioning'
 ```
 
-Upgrade later with:
+**Pinned installation or update.** Use one reviewed NuGet configuration with only
+the approved source. Save this credential-free example as
+`_generated/Sprint0015/Task15.167/nuget.dotnet-trace.config` in the active repository.
+It prevents the repository's package-source hierarchy from silently changing tool
+provenance. If policy requires an approved proxy, replace the source only after
+recording that disposition; never embed credentials.
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <clear />
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+  </packageSources>
+</configuration>
+```
+
+Run exactly one operation after the journal and directory/ACL gates above. These
+commands intentionally retain an exact version. For a later upgrade, obtain
+approval for its new pin and capture the previous version before changing it.
 
 ```powershell
-dotnet tool update --tool-path 'C:\ProgramData\dotnet\tools' nbgv
+$machineToolPath = 'C:\ProgramData\dotnet\tools'
+$traceVersion = '10.0.731102'
+Get-Command Get-RepositoryRoot -ErrorAction Stop | Out-Null
+$evidenceRoot = Join-Path (Get-RepositoryRoot) '_generated/Sprint0015/Task15.167'
+$toolConfig = Join-Path $evidenceRoot 'nuget.dotnet-trace.config'
+if (-not (Test-Path -LiteralPath $toolConfig)) { throw 'Approved tool-source configuration is missing.' }
+if (-not (Test-Path -LiteralPath $machineToolPath)) { throw 'Complete approved directory provisioning first.' }
+# Suppress SDK development-certificate generation in this provisioning process.
+$env:DOTNET_GENERATE_ASPNET_CERTIFICATE = 'false'
+
+# New installation only:
+dotnet tool install --tool-path $machineToolPath dotnet-trace --version $traceVersion --configfile $toolConfig
+if ($LASTEXITCODE -ne 0) { throw 'dotnet-trace installation failed.' }
 ```
+
+For an existing installation, use this command instead of the install command:
+
+```powershell
+dotnet tool update --tool-path $machineToolPath dotnet-trace --version $traceVersion --configfile $toolConfig
+if ($LASTEXITCODE -ne 0) { throw 'dotnet-trace update failed.' }
+```
+
+**Verify under the real consuming identities.** On both hosts include `whertzing`
+and the actual `SvcBuildMaster` service principal. On UTAT01 also include
+`JenkinsAgentSrvAacct` (the Jenkins service was stopped at inventory time; retain
+an explicit pending disposition until it is verified or formally retired).
+Include `SvcParityAudit` as the inventory reader. Discover additional CI principals
+from current service/task configuration; do not assume a fixed roster covers
+future hosts. Run the probe in the existing approved job/session for each identity,
+not by relabeling an administrator's result. Do not create credential stores or
+new privileged scheduled tasks to obtain a result. All remoting must select
+`-ConfigurationName 'PowerShell.7'`.
+
+```powershell
+$expectedPath = 'C:\ProgramData\dotnet\tools\dotnet-trace.exe'
+$expectedVersion = '10.0.731102'
+[Security.Principal.WindowsIdentity]::GetCurrent().Name
+$resolved = Get-Command dotnet-trace -ErrorAction Stop
+if ($resolved.CommandType -ne 'Application' -or $resolved.Source -ine $expectedPath) {
+  throw 'dotnet-trace is absent from PATH or shadowed by another command.'
+}
+$versionOutput = (& $expectedPath --version | Out-String).Trim()
+if ($LASTEXITCODE -ne 0) { throw 'dotnet-trace cannot run under this identity.' }
+if ($versionOutput -notmatch ('^' + [regex]::Escape($expectedVersion) + '(?:\s|\+|$)')) {
+  throw "Unexpected dotnet-trace version: $versionOutput"
+}
+& $expectedPath --help
+if ($LASTEXITCODE -ne 0) { throw 'dotnet-trace help failed.' }
+Get-FileHash -LiteralPath $expectedPath -Algorithm SHA256
+```
+
+For a CI job using an explicit executable path, verify that path and record its
+PATH disposition separately; a working explicit path must not hide a broken
+profile/PATH acceptance check. Retain the identity, path, exact package version,
+`--version` output, exit codes, executable/payload hashes, and timestamp. Tool
+startup does not establish permission to attach to another account's process.
+Any later trace collection needs a chosen target and an explicit `--output` under
+`_generated/`; see the [dotnet-trace command reference](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/dotnet-trace).
+
+**Rollback or removal.** Stop new diagnostic jobs through the approved maintenance
+procedure and declare a new parity entry before each rollback mutation. To undo a
+first install, uninstall only this package; preserve the shared directory, `.store`
+entries for other tools, and shared PATH used by NBGV. For an upgrade, reinstall the
+previous exact approved version from its retained source after uninstalling the
+new version. Validate access/version again for every consumer. Restore only the
+specific ACL/PATH changes made by this operation, from pre-change evidence.
+
+```powershell
+dotnet tool uninstall --tool-path 'C:\ProgramData\dotnet\tools' dotnet-trace
+if ($LASTEXITCODE -ne 0) { throw 'dotnet-trace removal failed.' }
+# Upgrade rollback only: set this to the exact version recorded before the upgrade.
+# $previousVersion must be populated from the retained pre-change evidence.
+# dotnet tool install --tool-path $machineToolPath dotnet-trace --version $previousVersion --configfile $toolConfig
+```
+
+The [update](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-tool-update)
+and [uninstall](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-tool-uninstall)
+commands must use the original installation scope. Do not remove every .NET tool
+or delete the shared directory as a shortcut.
+
+**Fallback and parity closeout.** A `whertzing`-scoped fallback is permitted only
+with a documented technical failure of the shared installation and explicit
+approval. Under that user's own identity use
+`dotnet tool install --global dotnet-trace --version 10.0.731102 --configfile $toolConfig`;
+updates use `tool update --global` with the same pin and configuration, and removal
+uses `tool uninstall --global dotnet-trace`. CI must receive a separate approved
+installation/access disposition; pointing CI at a developer's home is not shared
+provisioning. Mark CI unavailable until real-identity execution succeeds.
+
+Task 15.100.i owns parity integration: retain existing per-user inventory and add
+explicit shared-tool records for each host/identity. The current IAC
+`PackageManagerProfiles[].NuGetToolPath` entries target only the developer's home;
+a clean current comparison cannot prove shared-tool parity. Absent, inaccessible,
+wrong-version, shadowed, and user-only states must remain actionable differences.
+Use a narrowly scoped logical identity/allowlist entry, never an ignore rule that
+suppresses missing tools or version skew. Each peer needs a rollout owner,
+approval/scheduled window or explicit pending disposition, pre/post evidence, and
+an acknowledgement through `Confirm-ParityChangeApplied -PeerHostName <source>
+-EntryId <recorded-id> -Status Verified` only after its action actually passes.
+Task 15.167.c remains open while required identity checks, peer dispositions, or
+fresh parity evidence are missing.
 
 ### 4.5 Register the Bitwarden login script at startup
 
@@ -923,7 +1219,7 @@ $bwsVersion = '2.1.0'
 $bwsAsset   = "bws-x86_64-pc-windows-msvc-$bwsVersion.zip"
 $bwsUrl     = "https://github.com/bitwarden/sdk-sm/releases/download/bws-v$bwsVersion/$bwsAsset"
 
-$installDir = 'C:\Program Files\Bitwarden\bws'
+$installDir = 'C:\Program Files\Bitwarden'
 New-Item -ItemType Directory -Path $installDir -Force | Out-Null
 
 $zipPath = Join-Path $env:TEMP $bwsAsset
@@ -943,7 +1239,7 @@ launched with `-NoProfile`, which is why it is used here instead of the profile 
 injection used for `nbgv`:
 
 ```powershell
-$installDir = 'C:\Program Files\Bitwarden\bws'
+$installDir = 'C:\Program Files\Bitwarden'
 $machinePath = [Environment]::GetEnvironmentVariable('Path', 'Machine')
 $entries = $machinePath -split ';' | Where-Object { $_ }
 if ($entries -notcontains $installDir) {
@@ -954,6 +1250,24 @@ if ($entries -notcontains $installDir) {
   Write-Host "$installDir already on Machine PATH."
 }
 ```
+
+> **Migrating from the older `C:\Program Files\Bitwarden\bws` layout.** Earlier revisions
+> of this step installed into a `bws` subfolder. A machine provisioned against those
+> revisions carries a stale `C:\Program Files\Bitwarden\bws` entry on the Machine `PATH`
+> that points at a directory this step no longer creates, so `bws` resolves for nobody —
+> including `SvcBuildMaster`, whose BuildMaster deployments then fail at
+> `Get-SecretATAP` with "Bitwarden Secrets Manager CLI (bws) was not found on PATH".
+> Run the install block above, then remove the stale entry from an **elevated** session:
+>
+> ```powershell
+> $stale = 'C:\Program Files\Bitwarden\bws'
+> $entries = [Environment]::GetEnvironmentVariable('Path', 'Machine') -split ';' |
+>   Where-Object { $_ -and $_ -ne $stale }
+> [Environment]::SetEnvironmentVariable('Path', ($entries -join ';'), 'Machine')
+> ```
+>
+> Restart `INEDOBMSVC` and `INEDOPROGETSVC` afterwards so the services pick up the
+> corrected `PATH`.
 
 A Machine `PATH` change is composed into a process's environment only at process
 creation, and a child process inherits its **parent's** in-memory environment block —
@@ -981,7 +1295,7 @@ $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' +
 Windows **services** and scheduled tasks likewise inherit the new `PATH` only after a
 service restart (or a reboot).
 
-Both must print a path under `C:\Program Files\Bitwarden\bws` and the version. The
+Both must print a path under `C:\Program Files\Bitwarden` and the version. The
 `-NoProfile` line is the important one: it proves the binary is visible to the
 `-NoProfile` service-account contexts described in Step 9.4.10, independent of any
 PowerShell profile.
@@ -1024,7 +1338,7 @@ Get-Content $out
 Remove-Item $out -ErrorAction SilentlyContinue
 ```
 
-Expected — the resolved path under `C:\Program Files\Bitwarden\bws` and the `bws`
+Expected — the resolved path under `C:\Program Files\Bitwarden` and the `bws`
 version, printed from the service account's own `-NoProfile` context.
 
 > **Upgrading.** Bump `$bwsVersion` and re-run the download/extract block; the PATH and
@@ -1057,12 +1371,12 @@ with the exact Java executable selected by the gate.
 Create these Bitwarden items in the `ComputerLogins` collection before installing any
 third-party service. Each item must contain a username and password field.
 
-| Bitwarden item name                | Local Windows account | Used by                                         |
-| ---------------------------------- | --------------------- | ----------------------------------------------- |
-| `SvcSQLServer.<COMPUTERNAME>`      | `SvcSQLServer`        | SQL Server Database Engine and SQL Server Agent |
-| `SvcProGet.<COMPUTERNAME>`         | `SvcProGet`           | ProGet service                                  |
-| `SvcBuildMaster.<COMPUTERNAME>`    | `SvcBuildMaster`      | BuildMaster service                             |
-| `SvcAnsibleAdmin.<COMPUTERNAME>`   | `SvcAnsibleAdmin`     | Elevation broker, if it runs on this host       |
+| Bitwarden item name              | Local Windows account | Used by                                         |
+| -------------------------------- | --------------------- | ----------------------------------------------- |
+| `SvcSQLServer.<COMPUTERNAME>`    | `SvcSQLServer`        | SQL Server Database Engine and SQL Server Agent |
+| `SvcProGet.<COMPUTERNAME>`       | `SvcProGet`           | ProGet service                                  |
+| `SvcBuildMaster.<COMPUTERNAME>`  | `SvcBuildMaster`      | BuildMaster service                             |
+| `SvcAnsibleAdmin.<COMPUTERNAME>` | `SvcAnsibleAdmin`     | Elevation broker, if it runs on this host       |
 
 > **Corrected 2026-08-12 against the live vault.** These names previously carried a
 > `.Login.` middle field. **No such field exists.** Enumerating all 66 Bitwarden Secrets
@@ -1151,13 +1465,13 @@ Install or verify these permanent instances:
 All SQL Server named instances use TCP with fixed, high-range ports; do not use
 dynamic ports. This is the intended configuration on every host:
 
-| Instance | TCP port |
-| --- | ---: |
-| `Production` | 50020 |
-| `QA` | 50025 |
-| `Integration` | 50030 |
-| `DevWhertzing` | 50035 |
-| `ExpWhertzing` | 50040 |
+| Instance       | TCP port |
+| -------------- | -------: |
+| `Production`   |    50020 |
+| `QA`           |    50025 |
+| `Integration`  |    50030 |
+| `DevWhertzing` |    50035 |
+| `ExpWhertzing` |    50040 |
 
 Use the database-management helper:
 
@@ -1246,6 +1560,52 @@ sqlcmd -S 'localhost\QA' -E -Q 'SELECT @@SERVERNAME' -C
 sqlcmd -S 'localhost\Integration' -E -Q 'SELECT @@SERVERNAME' -C
 ```
 
+### 6.5.1 Provision the database-package staging root (required on every host with Ace or ATAPUtilities databases)
+
+The Flyway database-package pipeline (`Invoke-DatabasePackageBuildMasterStage`,
+`New-DatabasePreMigrationSnapshot`, `Invoke-DatabasePackageRehearsal`) expands
+packages, writes pre-migration snapshots, and performs clone-rehearsal
+backup/restore under one shared staging root:
+
+```text
+C:\ProgramData\ATAP\DatabasePackageStaging
+```
+
+The stage runner fails closed when the directory is missing
+(`BuildMaster database-package staging root is not provisioned`), so this step
+is a hard prerequisite for Step 8 and Step 9 on any host whose SQL Server
+instances hold `AceCommander` or `ATAPUtilities` databases. It was originally
+provisioned by hand on UTAT022 only; its absence on UTAT01 surfaced as Task
+15.196.p defect D6 (2026-09-17).
+
+Three identities touch the directory: the BuildMaster service (`SvcBuildMaster`)
+writes expanded packages and snapshot metadata; the SQL Server Database Engine
+service (`SvcSQLServer`, every ATAP instance) writes and reads `.bak` files
+during `BACKUP`/`RESTORE`; the interactive developer only needs read access to
+hash backups independently. Run from an elevated PowerShell 7 shell:
+
+```powershell
+$stagingRoot = 'C:\ProgramData\ATAP\DatabasePackageStaging'
+$hostName = $env:COMPUTERNAME
+New-Item -ItemType Directory -Path $stagingRoot -Force | Out-Null
+icacls $stagingRoot /inheritance:r /grant:r `
+  'BUILTIN\Administrators:(OI)(CI)F' `
+  'NT AUTHORITY\SYSTEM:(OI)(CI)F' `
+  "$hostName\SvcBuildMaster:(OI)(CI)M" `
+  "$hostName\SvcSQLServer:(OI)(CI)M" `
+  "$hostName\$env:USERNAME:(OI)(CI)RX"
+
+# Verify: the three grants are present and nothing is inherited.
+(Get-Acl $stagingRoot).Access |
+  Select-Object IdentityReference, FileSystemRights, IsInherited |
+  Format-Table -AutoSize
+```
+
+No `INEDOBMSVC` restart is needed; the runner resolves the path per stage. Do not
+override the location through `ATAP_DATABASE_PACKAGE_STAGING_ROOT` unless the
+host's SQL topology row documents a different volume — both SQL Server and
+BuildMaster must see the same physical path.
+
 ### 6.6 Cap `max server memory` on every instance
 
 SQL Server ships with `max server memory (MB)` set to `2147483647`, which means
@@ -1256,14 +1616,14 @@ after creating it.**
 
 The standing allocation for a 32 GB host:
 
-| Instance | Cap (MB) | Rationale |
-| --- | --- | --- |
-| `Production` | 7936 | Hosts the ProGet and BuildMaster databases; the only instance under sustained real load. |
-| `QA` | 1792 | Promotion target; intermittent load. |
-| `Integration` | 1024 | Integration runs only. |
-| `Dev<user>` | 768 | Per-developer scratch. |
-| `Exp<user>` | 768 | Per-developer experimental. |
-| **Total** | **12288** | 12 GB of 32 GB, leaving headroom for the OS, builds, and agent processes. |
+| Instance      | Cap (MB)  | Rationale                                                                                |
+| ------------- | --------- | ---------------------------------------------------------------------------------------- |
+| `Production`  | 7936      | Hosts the ProGet and BuildMaster databases; the only instance under sustained real load. |
+| `QA`          | 1792      | Promotion target; intermittent load.                                                     |
+| `Integration` | 1024      | Integration runs only.                                                                   |
+| `Dev<user>`   | 768       | Per-developer scratch.                                                                   |
+| `Exp<user>`   | 768       | Per-developer experimental.                                                              |
+| **Total**     | **12288** | 12 GB of 32 GB, leaving headroom for the OS, builds, and agent processes.                |
 
 Scale proportionally on hosts with different physical memory, keeping the total at
 roughly one third of RAM and leaving `Production` the clear majority.
@@ -1305,7 +1665,7 @@ SELECT MaxMB  = (SELECT CONVERT(bigint, value_in_use) FROM sys.configurations WH
        UsedMB = (SELECT physical_memory_in_use_kb / 1024 FROM sys.dm_os_process_memory)
 '@
   $r = $cmd.ExecuteReader()
-  while ($r.Read()) { [pscustomobject] @{ Instance = $instance; MaxMB = $r['MaxMB']; UsedMB = $r['UsedMB'] } }
+  while ($r.Read()) { [PSCustomobject] @{ Instance = $instance; MaxMB = $r['MaxMB']; UsedMB = $r['UsedMB'] } }
   $c.Close()
 }
 $rows | Format-Table -AutoSize
@@ -1407,13 +1767,13 @@ Get-Service -Name 'MSSQL$*' |
       $cmd.CommandText = "SELECT CONVERT(bigint, value_in_use) FROM sys.configurations WHERE name = 'max server memory (MB)'"
       $maxMb = $cmd.ExecuteScalar()
       $c.Close()
-      [pscustomobject] @{
+      [PSCustomobject] @{
         Instance = $instance
         MaxMB    = $maxMb
         Status   = if ($maxMb -eq 2147483647) { 'UNCAPPED - fix' } else { 'ok' }
       }
     } catch {
-      [pscustomobject] @{ Instance = $instance; MaxMB = 'unreachable'; Status = $_.Exception.Message }
+      [PSCustomobject] @{ Instance = $instance; MaxMB = 'unreachable'; Status = $_.Exception.Message }
     }
   } | Format-Table -AutoSize
 ```
@@ -1511,22 +1871,27 @@ Initialize-SqlServiceLogin `
 ### 9.2.1 Grant SvcBuildMaster database-package deployment rights
 
 The preceding BuildMaster product-database grant is not sufficient for database
-package deployment. The BuildMaster service identity also performs tier rehearsal,
-pre-migration backup, and Flyway DDL/DML apply operations. Grant the local
-`SvcBuildMaster` identity `db_owner` on the `ATAPUtilities` database in every
-authorized tier instance.
+package deployment. The BuildMaster service identity performs Flyway DDL/DML in
+each package target and pre-migration backup in permanent tiers. Grant the local
+`SvcBuildMaster` identity `db_owner` only on databases explicitly admitted as
+package targets. The initial allow-list contains `ATAPUtilities` and no other user
+database. Rehearsal database create/restore/drop is a separate server-level
+lifecycle and is not authorized by this grant.
 
 The logical Experimental tier targets `Exp<DeveloperName>`. Never create or grant
 against a generic permanent `Experimental` instance.
 
 Run this idempotent procedure in an elevated, profile-loaded PowerShell session
-after the five databases exist:
+after the five target databases exist and the host's named Task 15.185.i packet
+has frozen its SID, inventory, `-WhatIf` output, recovery, and peer acknowledgement:
 
 ```powershell
-Import-Module ATAP.Utilities.PowerShell
+Import-Module ATAP.Utilities.DatabaseManagement.Powershell
 
 $developerName = $env:USERNAME
-$serviceAccount = "$env:COMPUTERNAME\SvcBuildMaster"
+$hostName = $env:COMPUTERNAME.ToUpperInvariant()
+$serviceAccount = "$hostName\SvcBuildMaster"
+$expectedSid = (Get-LocalUser -Name 'SvcBuildMaster' -ErrorAction Stop).SID.Value
 $databaseTierInstances = @(
   "Exp$developerName"
   "Dev$developerName"
@@ -1536,57 +1901,94 @@ $databaseTierInstances = @(
 )
 
 foreach ($instanceName in $databaseTierInstances) {
-  Initialize-SqlServiceLogin `
-    -SqlInstance "localhost\$instanceName" `
-    -DatabaseName 'ATAPUtilities' `
-    -ServiceAccount $serviceAccount `
-    -Encrypt Optional `
-    -TrustServerCertificate
+  $parameters = @{
+    SqlInstance = "localhost\$instanceName"
+    ExpectedHostName = $hostName
+    ServiceAccount = $serviceAccount
+    ExpectedAccountSid = $expectedSid
+    AllowedInstanceName = $databaseTierInstances
+    ApprovedDatabaseName = @('ATAPUtilities')
+    Encrypt = 'Optional'
+    TrustServerCertificate = $true
+  }
+  Set-SqlDatabasePackageDeploymentPrincipal @parameters -Ensure Present -WhatIf
+  # After the named packet is explicitly authorized:
+  Set-SqlDatabasePackageDeploymentPrincipal @parameters -Ensure Present -Confirm:$false
 }
 ```
 
-Verify the server login, database user, and `db_owner` membership independently:
+Run `-AuditOnly` after apply and persist only the secret-safe result. Every included
+row must be compliant, and every other user database must report `NotApproved`:
 
 ```powershell
-$principalLiteral = $serviceAccount.Replace("'", "''")
-$verificationQuery = @"
-DECLARE @principal sysname = N'$principalLiteral';
-SELECT
-  CAST(SERVERPROPERTY('MachineName') AS nvarchar(128)) AS MachineName,
-  CAST(SERVERPROPERTY('InstanceName') AS nvarchar(128)) AS InstanceName,
-  DB_NAME() AS DatabaseName,
-  @principal AS AccountName,
-  IIF(SUSER_ID(@principal) IS NULL, 0, 1) AS ServerLoginExists,
-  IIF(USER_ID(@principal) IS NULL, 0, 1) AS DatabaseUserExists,
-  ISNULL(IS_ROLEMEMBER(N'db_owner', @principal), 0) AS IsDbOwner;
-"@
-
 $grantAudit = foreach ($instanceName in $databaseTierInstances) {
-  Invoke-Sqlcmd `
-    -ServerInstance "localhost\$instanceName" `
-    -Database 'ATAPUtilities' `
-    -Query $verificationQuery `
-    -TrustServerCertificate
+  $parameters.SqlInstance = "localhost\$instanceName"
+  Set-SqlDatabasePackageDeploymentPrincipal @parameters -AuditOnly
 }
-
-$grantAudit |
-  Select-Object MachineName, InstanceName, DatabaseName, AccountName,
-    ServerLoginExists, DatabaseUserExists, IsDbOwner
-
-if ($grantAudit.Where({
-      $_.ServerLoginExists -ne 1 -or
-      $_.DatabaseUserExists -ne 1 -or
-      $_.IsDbOwner -ne 1
-    }).Count -gt 0) {
-  throw 'SvcBuildMaster ATAPUtilities database permission verification failed.'
+if (@($grantAudit | Where-Object Include | Where-Object { -not $_.IsCompliant }).Count -gt 0) {
+  throw 'SvcBuildMaster package-target permission verification failed.'
 }
 ```
 
 Record this machine-state grant with `Add-ParityChangeEntry`. The peer action must
 repeat the same idempotent procedure using the peer-local
 `<PeerHost>\SvcBuildMaster` identity, then acknowledge the entry only after the
-independent query passes on all five authorized tier databases. Do not copy or
-restore an application or Inedo database to establish parity.
+independent audit passes on all five explicitly admitted tier databases. Adding a
+future database requires a reviewed allow-list change followed by reconciliation;
+it never inherits this grant merely by existing. Do not copy or restore an
+application or Inedo database to establish parity.
+
+### 9.2.2 Grant SvcBuildMaster the server-level rehearsal roles (required on every BuildMaster + database host)
+
+The §9.2.1 database-scoped grant lets the pipeline apply a package to an
+admitted database. It does **not** cover the clone-rehearsal lifecycle that every
+`DatabaseChangePackage-5Stage` stage runs first: restore a copy-only backup of the
+current tier database as `<Database>-rehearsal-<BuildId>-<Stage>`, migrate it, and
+drop it. That needs server-level rights on **each** tier instance. The approved SQL
+contract (Task 14.74 SQL drift decisions, 2026-08-12) is, for the local
+`SvcBuildMaster` login on every ATAP instance:
+
+| Right | Why |
+| --- | --- |
+| `CONNECT SQL` | login (granted by §9.2.1) |
+| `dbcreator` server role | `RESTORE DATABASE` as a new name, `DROP DATABASE` of the rehearsal clone |
+| `bulkadmin` server role | `BULK INSERT` of seed CSVs during rehearsal and apply |
+| `db_owner` on admitted databases only | Flyway DDL/DML in the real target (§9.2.1) |
+
+Without `dbcreator` the Experimental stage publishes the package to ProGet and then
+fails with `CREATE DATABASE permission denied in database 'master'` (UTAT01,
+Task 15.196.p defect D8, BuildMaster execution 224). Run from a profile-loaded
+PowerShell 7 session as a `sysadmin` principal, once per host, after §9.2.1:
+
+```powershell
+$login = "$($env:COMPUTERNAME.ToUpperInvariant())\SvcBuildMaster"
+$developerName = $env:USERNAME
+$secretNames = @(
+  "dbConnectionString.ATAPUtilities.$($env:COMPUTERNAME.ToLowerInvariant()).Exp.$developerName"
+  "dbConnectionString.ATAPUtilities.localhost.Dev.$developerName"
+  'dbConnectionString.ATAPUtilities.localhost.Integration'
+  'dbConnectionString.ATAPUtilities.localhost.QA'
+  'dbConnectionString.ATAPUtilities.localhost.Production'
+)
+$grant = @"
+IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = N'$login') THROW 60700, N'SvcBuildMaster login missing - run 9.2.1 first', 1;
+IF NOT EXISTS (SELECT 1 FROM sys.server_role_members m JOIN sys.server_principals r ON r.principal_id = m.role_principal_id JOIN sys.server_principals p ON p.principal_id = m.member_principal_id WHERE r.name = 'dbcreator' AND p.name = N'$login')
+  ALTER SERVER ROLE [dbcreator] ADD MEMBER [$login];
+IF NOT EXISTS (SELECT 1 FROM sys.server_role_members m JOIN sys.server_principals r ON r.principal_id = m.role_principal_id JOIN sys.server_principals p ON p.principal_id = m.member_principal_id WHERE r.name = 'bulkadmin' AND p.name = N'$login')
+  ALTER SERVER ROLE [bulkadmin] ADD MEMBER [$login];
+SELECT @@SERVERNAME AS Instance,
+  STUFF((SELECT ',' + r.name FROM sys.server_role_members m JOIN sys.server_principals r ON r.principal_id = m.role_principal_id JOIN sys.server_principals p ON p.principal_id = m.member_principal_id WHERE p.name = N'$login' FOR XML PATH('')),1,1,'') AS ServerRoles;
+"@
+foreach ($secretName in $secretNames) {
+  $cs = Get-SecretATAP -SecretName $secretName
+  try { Invoke-Sqlcmd -ConnectionString $cs -Query $grant } finally { $cs = $null }
+}
+```
+
+Every row must report `dbcreator,bulkadmin`. Do **not** add `sysadmin`,
+`securityadmin`, or `serveradmin`; the rehearsal never needs them. Record the
+change with `Add-ParityChangeEntry` and repeat on the peer host with its own
+`<PeerHost>\SvcBuildMaster` login.
 
 ### 9.3 Reconfigure the Windows services to use the dedicated accounts
 
@@ -1814,6 +2216,74 @@ the raft is assigned in this UI location:
 In that dialog, choose the intended raft in the **Raft** dropdown and save the
 application settings.
 
+### 9.7.1 Issue the host's PowerShell code-signing certificate
+
+BuildMaster signs PowerShell modules (`Set-PSModuleFileSignature`, selected by the application
+variable `CodeSigningCertificateThumbprint`) with a **per-host, non-exportable** machine key. The
+key never leaves the host, so a new host cannot receive a PFX from an existing one; it issues its
+own leaf from the ATAP Foundation root CA. utat022 (2026-08-03, `3B5E16C0…`) and utat01
+(2026-09-16, `D4C19B22…`) were both issued with exactly this command, documented in
+`src/ATAP.Utilities.Security.PKI.PowerShell/Documentation/PKIForNewOrg.md`:
+
+```powershell
+# Elevated, on the host that will sign. Requires the synced PKI tree, OpenSSL, certreq, and the
+# installed ATAP.Utilities.Security.PKI.PowerShell module. Resolves only the root passphrase SecretName.
+$organizationName = 'ATAP Foundation'
+$organizationToken = $organizationName -replace ' ', ''
+$pkiRoot = Join-Path 'C:\Dropbox\Security\PKI' $organizationName
+
+New-PkiWindowsCodeSigningCertificate `
+  -OrganizationName $organizationName `
+  -CARootPath (Join-Path $pkiRoot 'RootCA') `
+  -CodeSigningRootPath (Join-Path $pkiRoot 'CodeSigning') `
+  -CAPassphraseSecretName "PKI.RootCA.Passphrase.$organizationToken" `
+  -PrivateKeyReader 'SvcBuildMaster' `
+  -TrustedPublisherComputerName 'utat022', 'utat01'
+```
+
+What it does: RSA-3072 machine key (`Exportable=FALSE`, KeySpec Signature) via `certreq`, CA
+signature (825 days), `certreq -accept` into `Cert:\LocalMachine\My`, read ACL on the key for
+`PrivateKeyReader` only, canonical `CodeSigning\public\CodeSigning.crt` replaced with the prior one
+archived under `CodeSigning\archive\<thumbprint>`, and the public certificate installed in
+`LocalMachine\TrustedPublisher` on every listed host. Run it from the signing host, not over a
+WinRM hop: the TrustedPublisher step remotes to the other hosts and a second hop has no credential.
+
+Then, on this host's BuildMaster:
+
+```powershell
+Set-BuildMasterApplicationVariables -ApplicationName 'ATAP.Utilities-PowerShell' `
+  -Variables @{ CodeSigningCertificateThumbprint = '<new SHA-1 thumbprint>' } `
+  -BuildMasterBaseUrl 'https://<host>:50017' -BuildMasterAdminApiKeySecretName 'BuildMaster.Admin.API.Key.<host>'
+```
+
+Verify: sign a scratch module with `Set-PSModuleFileSignature -CertificateThumbprint <new>` and
+confirm `Get-AuthenticodeSignature` reports `Valid` on **every** host (copy the file byte-exact;
+re-encoding it produces `HashMismatch`).
+
+Known failure on a Dropbox-synced PKI tree (seen 2026-09-16): OpenSSL can fail its final
+`serial.new -> serial` rename with "Invalid argument" while Dropbox holds the file. The certificate
+is already signed at that point (`RootCA\database\newcerts\<serial>.pem` and the issued
+`CodeSigning\public\CodeSigning-windows-signature-<stamp>.crt` exist) and the key is pending in
+`Cert:\LocalMachine\REQUEST`. Recover by finishing the three renames by copy (`index.txt`,
+`serial`, `index.txt.attr`; keep `.old` copies), `certreq -accept <issued .crt>`, then rerun the
+command with `-ResumeInstalledThumbprint <thumbprint>` to complete the ACL, canonical and
+TrustedPublisher steps. Never run CA operations on two hosts at once.
+
+Consumers that **pin** a signer thumbprint are approval boundaries, not configuration, and are not
+updated by this step. A new host's signer must be admitted there by an explicit decision before that
+host can produce release bundles:
+
+- `Ace/AceOutpost.Windows/Deployment/Install-AceOutpostRelease.ps1` (`-ExpectedSignerThumbprint`
+  ValidateSet, plus `-ExpectedRollbackSignerThumbprint` for a mixed-signer rollback),
+  `New-AceOutpostReleaseBundle.ps1` (`Assert-AceOutpostBundlePolicy` release signer list) and
+  `Ace/AceCommander/Deployment/Install-AceCommanderRelease.ps1` (owned-assembly signer list) — the
+  utat022 (`3B5E…`) and utat01 (`D4C1…`) leaves were admitted 2026-09-16 (Ace `2861256`); each
+  release is still bound to exactly one of them.
+- `ATAP.Utilities/src/ATAP.Utilities.BuildTooling.BuildMaster/Plans/CSharpPackageAuthenticodeSigning.ps1`
+  binds C# Authenticode private-key use to a **per-task approval record** (task id, source commit,
+  package set, certificate, custodian, executor host). Signing C# packages from a new host needs a
+  new approval task there, not a thumbprint edit.
+
 ### 9.8 Register the ProGet `powershellget-stable` feed and install ATAP modules
 
 ProGet is now running with the `powershellget-stable` NuGetV2 feed provisioned. This
@@ -2034,11 +2504,11 @@ An administrator must complete this checklist on each participating host:
    supply the run-as credential during registration; Task Scheduler uses it to
    authorize registration while preserving S4U/no stored password in the task.
 10. Run the peer audit, primary audit, and primary comparison in that order; require
-   successful task-result JSON, fresh snapshots, a drift report, and no secret values
-   in evidence.
+    successful task-result JSON, fresh snapshots, a drift report, and no secret values
+    in evidence.
 11. Do not start the clean-month clock until SQL and package collection is trustworthy
-   on both hosts. Then run Daily for one verified clean month before re-registering as
-   BiWeekly; the earlier blind period does not count.
+    on both hosts. Then run Daily for one verified clean month before re-registering as
+    BiWeekly; the earlier blind period does not count.
 
 The required but not-yet-granted least-privilege baseline is: Chocolatey machine-path
 read/execute; SQL `VIEW ANY DEFINITION` and `VIEW SERVER STATE`; an `msdb` user in
@@ -2133,7 +2603,7 @@ Run this on every host that runs or calls BuildMaster/ProGet, including `utat022
 
 BuildMaster and ProGet already bind **all** IPv4 and IPv6 addresses — their
 `Urls="http://*:PORT/"` configuration is correct and must not be changed. The failure this
-step catches is a *host networking* problem: if the machine advertises global IPv6
+step catches is a _host networking_ problem: if the machine advertises global IPv6
 addresses that are not actually routable, clients resolving the hostname try those first
 and hang, producing 30-second timeouts that look like a broken service.
 
@@ -2243,10 +2713,10 @@ Two junctions are needed per repository, because Claude Code and the checkpoint 
 resolve different slugs:
 
 - **Main-repo slug** — Claude Code derives it from `git rev-parse --git-common-dir`, so for
-  a worktree it resolves to the *main* repository. This is where Claude Code reads and
+  a worktree it resolves to the _main_ repository. This is where Claude Code reads and
   writes memory, which is why memory is shared across all worktrees of a repo.
 - **Sprint-worktree slug** — `Save-SprintWorkSession` derives its path from the transcript
-  slug, which *is* the worktree. This is where `/checkpoint` looks for memory to archive.
+  slug, which _is_ the worktree. This is where `/checkpoint` looks for memory to archive.
 
 ```powershell
 # Directory junctions do NOT require elevation.
@@ -2321,7 +2791,7 @@ Prerequisites: the `SvcAnsibleAdmin` account and its Bitwarden secret from Step 
 ProGet feeds from Step 9.
 
 **Bootstrap order matters.** The broker is what installs modules AllUsers, so it must be
-provisioned *before* the module-install machinery works. Run the provisioning function from
+provisioned _before_ the module-install machinery works. Run the provisioning function from
 the **git clone**, not from an installed module:
 
 ```powershell
@@ -2343,13 +2813,17 @@ Register-ElevationBrokerTask -Verbose
   when `Everyone`, `Authenticated Users`, or `Users` can write there, since that would let
   any local account reach an administrator context;
 - exports any existing task registration before replacing it;
-- registers the `\ATAP\ATAP-ElevatedInstallBroker` scheduled task to run as
+- registers the `\ATAP-Broker\ATAP-ElevatedInstallBroker` scheduled task to run as
   `SvcAnsibleAdmin` with highest privileges, reading the password through `Get-SecretATAP`.
 
-Then grant the developer account the right to start the task on demand:
+Then grant the requester the right to start the task on demand. Corpus capture on UTAT022
+uses the non-administrator service identity explicitly:
 
 ```powershell
-Grant-ElevationBrokerStartRights -Verbose
+Grant-ElevationBrokerStartRights `
+  -Principal 'UTAT022\SvcAceOutpost' `
+  -TaskPath '\ATAP-Broker\' `
+  -Confirm:$false
 ```
 
 This step is **required**, not optional. The task has no repeating timer: it is started on
@@ -2363,7 +2837,7 @@ would succeed through the `Administrators` ACE and prove nothing:
 ```powershell
 $s = New-Object -ComObject Schedule.Service
 $s.Connect()
-$t = $s.GetFolder('\ATAP').GetTask('ATAP-ElevatedInstallBroker')
+$t = $s.GetFolder('\ATAP-Broker').GetTask('ATAP-ElevatedInstallBroker')
 $t.Run($null)
 Start-Sleep -Seconds 5
 "result=$($t.LastTaskResult) lastrun=$($t.LastRunTime)"
@@ -2371,6 +2845,46 @@ Start-Sleep -Seconds 5
 
 Expect `result=0` and a current timestamp. Access denied means the grant did not target the
 account that actually runs the build tooling.
+
+### Step 9a.1: Activate hash-pinned corpus sealing
+
+Do this only after ProGet module 0.1.22 and SprintLifecycle module 0.1.37 are installed at
+AllUsers scope and verified under `C:\Program Files\PowerShell\Modules`. Use an approved
+non-interactive administrative channel. Never depend on UAC, `Start-Process -Verb RunAs`,
+certificate-store UI, or any console prompt; an operator may not be present. PowerShell
+remoting must explicitly select `-ConfigurationName 'PowerShell.7'`.
+
+Import the exact installed ProGet 0.1.22 manifest, then replace the admin-owned broker
+payload/config and restore the service start grant in this order:
+
+```powershell
+$proGetManifest = 'C:\Program Files\PowerShell\Modules\ATAP.Utilities.BuildTooling.ProGet.PowerShell\0.1.22\ATAP.Utilities.BuildTooling.ProGet.PowerShell.psd1'
+$sprintLifecycleManifest = 'C:\Program Files\PowerShell\Modules\ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell\0.1.37\ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell.psd1'
+
+foreach ($manifest in $proGetManifest, $sprintLifecycleManifest) {
+  if (-not (Test-Path -LiteralPath $manifest -PathType Leaf)) {
+    throw "Required trusted module manifest is missing: $manifest"
+  }
+}
+
+Import-Module -FullyQualifiedName $proGetManifest -Force -ErrorAction Stop
+Register-ElevationBrokerTask `
+  -RequesterPrincipal 'UTAT022\SvcAceOutpost' `
+  -TaskPath '\ATAP-Broker\' `
+  -ForcePayload `
+  -Confirm:$false
+Grant-ElevationBrokerStartRights `
+  -Principal 'UTAT022\SvcAceOutpost' `
+  -TaskPath '\ATAP-Broker\' `
+  -Confirm:$false
+```
+
+Registration overwrites the trust anchor only because `-ForcePayload` is explicit, and it
+also replaces the task DACL. Therefore the `SvcAceOutpost` start-rights grant must always
+follow registration. The grant is task read/execute only; it does not make the service an
+administrator or give it direct corpus ACL authority. Validate one request from the normal,
+non-elevated service context and require both a `succeeded` result and its broker transcript
+before enabling unattended capture.
 
 Notes and gotchas:
 
@@ -2461,9 +2975,10 @@ Minimum checks:
 3. ProGet is reachable.
 4. BuildMaster is reachable.
 
-On a Sprint branch, pass `-p:PackageLifeCycleStage=Sprint` consistently to split and
-combined restore/build/test flows. Preserve the `ATAP5TIER001` guard. Omit the override on
-`main`, where the stable/empty lifecycle label is valid.
+Let committed `version.json` metadata supply `PackageLifeCycleStage` consistently to split and
+combined restore/build/test flows. Preserve the `ATAP5TIER001` guard: stable/empty lifecycle is
+valid on `main`, `release/*`, and numbered Sprint worktree branches, while other branch kinds
+must carry an explicit prerelease label.
 
 Example reachability checks:
 
@@ -2716,14 +3231,14 @@ scene-only sprints. Only Manim-upgrade sprints require a fresh venv in the sprin
 **Items holding an absolute path to `manim.exe`/`python.exe`** that must track the active
 worktree (updated when a Manim-affecting sprint starts, reverted when it ends):
 
-| Item                                                       | Storage location                                               | Scene-only sprint                             | Manim-upgrade sprint                |
-| ---------------------------------------------------------- | -------------------------------------------------------------- | --------------------------------------------- | ----------------------------------- |
-| `manim.exe` path in `IOptions<ManimVideoGeneratorOptions>` | `DefaultSettings` config override or `MANIM_EXE_PATH` env var  | **No change** — reuse main worktree venv path | Update to sprint worktree venv path |
-| VS Code **Manim Sideview: Default Manim Path**             | VS Code user settings (or workspace override)                  | **No change**                                 | Update to sprint worktree venv path |
-| VS Code **Python: Select Interpreter**                     | Workspace settings or command palette selection                | **No change**                                 | Update to sprint worktree venv      |
-| `scenes/` content (`.py` files)                            | Tracked in git on the sprint branch                            | Normal git workflow                           | Normal git workflow                 |
-| `requirements.txt`                                         | Tracked in git on the sprint branch                            | Normal git workflow                           | Update, then `pip install -r requirements.txt` |
-| `media/` rendered output                                   | **Tracked in git** on the sprint branch                        | Committed and merged into main with the PR    | Committed and merged into main with the PR |
+| Item                                                       | Storage location                                              | Scene-only sprint                             | Manim-upgrade sprint                           |
+| ---------------------------------------------------------- | ------------------------------------------------------------- | --------------------------------------------- | ---------------------------------------------- |
+| `manim.exe` path in `IOptions<ManimVideoGeneratorOptions>` | `DefaultSettings` config override or `MANIM_EXE_PATH` env var | **No change** — reuse main worktree venv path | Update to sprint worktree venv path            |
+| VS Code **Manim Sideview: Default Manim Path**             | VS Code user settings (or workspace override)                 | **No change**                                 | Update to sprint worktree venv path            |
+| VS Code **Python: Select Interpreter**                     | Workspace settings or command palette selection               | **No change**                                 | Update to sprint worktree venv                 |
+| `scenes/` content (`.py` files)                            | Tracked in git on the sprint branch                           | Normal git workflow                           | Normal git workflow                            |
+| `requirements.txt`                                         | Tracked in git on the sprint branch                           | Normal git workflow                           | Update, then `pip install -r requirements.txt` |
+| `media/` rendered output                                   | **Tracked in git** on the sprint branch                       | Committed and merged into main with the PR    | Committed and merged into main with the PR     |
 
 **Recommended pattern — `MANIM_EXE_PATH` environment variable.** For scene-only sprints this
 variable never changes. For Manim-upgrade sprints, storing the path in a **User-scope**
@@ -3009,14 +3524,14 @@ the SQL/ProGet/BuildMaster pipeline and can be skipped without affecting builds.
 
 ### H.0 Decision: which path?
 
-| | **Path A — CPU-only** | **Path B — GPU-accelerated** |
-| --- | --- | --- |
-| **Requires** | Any x64 CPU | NVIDIA GPU (e.g. RTX 3080) + recent driver (CUDA 12.x class) |
-| **Packages** | `torch` (cpu build), `onnxruntime` | CUDA `torch` (`+cuXXX`), `onnxruntime-gpu` |
-| **First compress** | Multi-minute cold model load | Seconds (after one-time model download) |
-| **Steady-state compress** | CPU-bound (slow on large payloads) | GPU-accelerated |
-| **Proxy wrap overhead** | ~550ms+/request (observed on CPU) | Lower |
-| **Use when** | No NVIDIA GPU present | NVIDIA GPU present — **preferred** |
+|                           | **Path A — CPU-only**              | **Path B — GPU-accelerated**                                 |
+| ------------------------- | ---------------------------------- | ------------------------------------------------------------ |
+| **Requires**              | Any x64 CPU                        | NVIDIA GPU (e.g. RTX 3080) + recent driver (CUDA 12.x class) |
+| **Packages**              | `torch` (cpu build), `onnxruntime` | CUDA `torch` (`+cuXXX`), `onnxruntime-gpu`                   |
+| **First compress**        | Multi-minute cold model load       | Seconds (after one-time model download)                      |
+| **Steady-state compress** | CPU-bound (slow on large payloads) | GPU-accelerated                                              |
+| **Proxy wrap overhead**   | ~550ms+/request (observed on CPU)  | Lower                                                        |
+| **Use when**              | No NVIDIA GPU present              | NVIDIA GPU present — **preferred**                           |
 
 Verify GPU presence before choosing:
 
@@ -3115,6 +3630,7 @@ touches the GPU until swapped.
 ```
 
 Path B is correct when:
+
 - `torch.cuda.is_available()` prints **`True`** and names your GPU, **and**
 - `onnxruntime.get_available_providers()` includes **`CUDAExecutionProvider`**.
 
@@ -3130,7 +3646,7 @@ compression ran **24.8 minutes without completing**). It looks like a CPU/GPU/mo
 problem but is not.
 
 **Root cause:** Headroom's Rust extension `headroom._core.detect_content_type` (the magika
-content-type detector that the compression pipeline calls *first*, before any model) uses
+content-type detector that the compression pipeline calls _first_, before any model) uses
 the Rust `ort` crate, which by default tries to **locate/download its own onnxruntime**.
 On this environment that probe blocks forever — the process sits at 0% CPU, 1 thread, no
 completed network connection. It hangs on **every** input, even an 11-character string.
@@ -3272,7 +3788,7 @@ if (-not (netstat -ano 2>$null | Select-String ":8787.*LISTENING")) {
 Headroom can fully auto-wrap **CLI processes** because the wrapper controls their launch
 environment. Desktop apps and VS Code extensions are different: they usually run in their
 own host process and often ignore `OPENAI_BASE_URL` / `ANTHROPIC_BASE_URL`. For those,
-Headroom works only when the app/extension exposes a custom base URL, BYOK provider, or
+Headroom works only when the app/extension exposes a custom base URL, "Bring Your Own Key (BYOK)" provider, or
 compatible local-proxy setting.
 
 Recommended baseline:
@@ -3322,18 +3838,18 @@ intentionally enabled.
 
 Desktop app / VS Code extension handling:
 
-| Client surface | Headroom approach |
-| --- | --- |
-| Claude Code CLI | Fully auto-wrap with `headroom wrap claude ...`. |
-| Codex CLI | Fully auto-wrap with `headroom wrap codex ...`; ensure `C:\Users\whertzing\AppData\Local\OpenAI\Codex\bin` is on `PATH`. |
-| GitHub Copilot CLI | Fully auto-wrap with `headroom wrap copilot ...`; requires the `copilot` CLI on `PATH` and a model/provider supported by Copilot CLI BYOK mode. |
-| Codex desktop app | Prefer MCP tools only. Do **not** keep a global Headroom provider/base URL override in `C:\Users\whertzing\.codex\config.toml`; it can make the app show only conversations created under `model_provider = headroom`. Use the wrapped Codex CLI for guaranteed proxy routing. |
-| Claude desktop app | Only route through Headroom if the app exposes a custom Anthropic base URL or inherits `ANTHROPIC_BASE_URL`; otherwise use Claude Code CLI for guaranteed routing. |
-| VS Code launched from shell | Launch from a shell that has `OPENAI_BASE_URL`, `ANTHROPIC_BASE_URL`, and `HEADROOM_TELEMETRY=off`: `code <workspace>`. This only helps extensions that actually inherit and honor those variables. |
-| GitHub Copilot VS Code extension | Do **not** assume it is wrapped. The first-party extension may use GitHub-hosted Copilot endpoints and may ignore OpenAI/Anthropic base URL variables. Use Copilot CLI through `headroom wrap copilot` for guaranteed Headroom routing, or configure BYOK/custom-model base URL only if the installed extension version exposes that setting. |
-| Cline VS Code extension | Run `headroom wrap cline --no-proxy`, then configure Cline's API Base URL in VS Code settings to `http://127.0.0.1:8787/v1` for OpenAI-compatible mode or the matching Anthropic-compatible URL if using Anthropic mode. |
-| Continue VS Code / JetBrains extension | Run `headroom wrap continue --no-proxy`, then set each model's `apiBase` in `.continue/config.json` / `.continue/config.yaml` to the Headroom proxy URL. |
-| Cursor app | Run `headroom wrap cursor --no-proxy`, then set Cursor's OpenAI override base URL to `http://127.0.0.1:8787/v1`. |
+| Client surface                         | Headroom approach                                                                                                                                                                                                                                                                                                                             |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Claude Code CLI                        | Fully auto-wrap with `headroom wrap claude ...`.                                                                                                                                                                                                                                                                                              |
+| Codex CLI                              | Fully auto-wrap with `headroom wrap codex ...`; ensure `C:\Users\whertzing\AppData\Local\OpenAI\Codex\bin` is on `PATH`.                                                                                                                                                                                                                      |
+| GitHub Copilot CLI                     | Fully auto-wrap with `headroom wrap copilot ...`; requires the `copilot` CLI on `PATH` and a model/provider supported by Copilot CLI BYOK mode.                                                                                                                                                                                               |
+| Codex desktop app                      | Prefer MCP tools only. Do **not** keep a global Headroom provider/base URL override in `C:\Users\whertzing\.codex\config.toml`; it can make the app show only conversations created under `model_provider = headroom`. Use the wrapped Codex CLI for guaranteed proxy routing.                                                                |
+| Claude desktop app                     | Only route through Headroom if the app exposes a custom Anthropic base URL or inherits `ANTHROPIC_BASE_URL`; otherwise use Claude Code CLI for guaranteed routing.                                                                                                                                                                            |
+| VS Code launched from shell            | Launch from a shell that has `OPENAI_BASE_URL`, `ANTHROPIC_BASE_URL`, and `HEADROOM_TELEMETRY=off`: `code <workspace>`. This only helps extensions that actually inherit and honor those variables.                                                                                                                                           |
+| GitHub Copilot VS Code extension       | Do **not** assume it is wrapped. The first-party extension may use GitHub-hosted Copilot endpoints and may ignore OpenAI/Anthropic base URL variables. Use Copilot CLI through `headroom wrap copilot` for guaranteed Headroom routing, or configure BYOK/custom-model base URL only if the installed extension version exposes that setting. |
+| Cline VS Code extension                | Run `headroom wrap cline --no-proxy`, then configure Cline's API Base URL in VS Code settings to `http://127.0.0.1:8787/v1` for OpenAI-compatible mode or the matching Anthropic-compatible URL if using Anthropic mode.                                                                                                                      |
+| Continue VS Code / JetBrains extension | Run `headroom wrap continue --no-proxy`, then set each model's `apiBase` in `.continue/config.json` / `.continue/config.yaml` to the Headroom proxy URL.                                                                                                                                                                                      |
+| Cursor app                             | Run `headroom wrap cursor --no-proxy`, then set Cursor's OpenAI override base URL to `http://127.0.0.1:8787/v1`.                                                                                                                                                                                                                              |
 
 For app/extension surfaces, the acceptance test is not "the app launched" - it is "the proxy
 saw traffic":
@@ -3392,17 +3908,17 @@ provider override that does not partition or hide existing conversation history.
 
 ### H.9 Troubleshooting
 
-| Symptom | Cause / Fix |
-| --- | --- |
-| MCP server shows "failed to connect" | Registered as bare `headroom` (PATH-dependent). Re-add with the absolute `...\.venvs\headroom\Scripts\headroom.exe` path. |
+| Symptom                                                    | Cause / Fix                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| MCP server shows "failed to connect"                       | Registered as bare `headroom` (PATH-dependent). Re-add with the absolute `...\.venvs\headroom\Scripts\headroom.exe` path.                                                                                                                                                                                                                                                                                                                   |
 | Codex desktop shows `No Chats` after `headroom wrap codex` | Check `C:\Users\whertzing\.codex\config.toml` for a global `model_provider = "headroom"` / `openai_base_url = "http://127.0.0.1:8787/v1"` override. Back up the file, remove only that override, keep `[mcp_servers.headroom]`, then fully restart Codex. Confirm history still exists with Python's built-in `sqlite3` module by querying `C:\Users\whertzing\.codex\state_5.sqlite` and grouping `threads` by `model_provider` and `cwd`. |
-| `headroom wrap codex` reports telemetry enabled | Set `[Environment]::SetEnvironmentVariable('HEADROOM_TELEMETRY', 'off', 'User')`, open a fresh shell, and relaunch. |
-| `headroom wrap codex` says `codex` not found | Add `C:\Users\whertzing\AppData\Local\OpenAI\Codex\bin` to user `PATH`, open a fresh shell, and verify `Get-Command codex`. |
-| App or VS Code extension shows no proxy traffic | It is not inheriting or honoring the proxy base URL. Configure the extension's custom base URL/BYOK setting if available; otherwise use the wrapped CLI. |
-| First compression hangs for minutes | CPU model cold-load (Path A). Expected once per process; switch to **Path B** for GPU. |
-| `headroom_retrieve` returns nothing | Local/proxy retention window expired — reacquire the original content. |
-| `pip` cert errors during install | Add `--use-feature=truststore` (Windows cert store). |
-| Cargo `CRYPT_E_NO_REVOCATION_CHECK` | Set `CARGO_HTTP_CHECK_REVOKE=false` before the install (see §H.3). |
-| `link.exe` / `cl.exe` not found | Load `VsDevCmd.bat` (§H.3) so the MSVC toolchain is on PATH. |
-| Path B still CPU-only | CUDA `torch` / `onnxruntime-gpu` mismatch with driver CUDA level; reinstall the matching `cuXXX` wheel. |
-| Proxy window flashes / steals focus | Use the `cscript` VBScript wrapper (§H.5), not a `cmd`/`pwsh` task action. |
+| `headroom wrap codex` reports telemetry enabled            | Set `[Environment]::SetEnvironmentVariable('HEADROOM_TELEMETRY', 'off', 'User')`, open a fresh shell, and relaunch.                                                                                                                                                                                                                                                                                                                         |
+| `headroom wrap codex` says `codex` not found               | Add `C:\Users\whertzing\AppData\Local\OpenAI\Codex\bin` to user `PATH`, open a fresh shell, and verify `Get-Command codex`.                                                                                                                                                                                                                                                                                                                 |
+| App or VS Code extension shows no proxy traffic            | It is not inheriting or honoring the proxy base URL. Configure the extension's custom base URL/BYOK setting if available; otherwise use the wrapped CLI.                                                                                                                                                                                                                                                                                    |
+| First compression hangs for minutes                        | CPU model cold-load (Path A). Expected once per process; switch to **Path B** for GPU.                                                                                                                                                                                                                                                                                                                                                      |
+| `headroom_retrieve` returns nothing                        | Local/proxy retention window expired — reacquire the original content.                                                                                                                                                                                                                                                                                                                                                                      |
+| `pip` cert errors during install                           | Add `--use-feature=truststore` (Windows cert store).                                                                                                                                                                                                                                                                                                                                                                                        |
+| Cargo `CRYPT_E_NO_REVOCATION_CHECK`                        | Set `CARGO_HTTP_CHECK_REVOKE=false` before the install (see §H.3).                                                                                                                                                                                                                                                                                                                                                                          |
+| `link.exe` / `cl.exe` not found                            | Load `VsDevCmd.bat` (§H.3) so the MSVC toolchain is on PATH.                                                                                                                                                                                                                                                                                                                                                                                |
+| Path B still CPU-only                                      | CUDA `torch` / `onnxruntime-gpu` mismatch with driver CUDA level; reinstall the matching `cuXXX` wheel.                                                                                                                                                                                                                                                                                                                                     |
+| Proxy window flashes / steals focus                        | Use the `cscript` VBScript wrapper (§H.5), not a `cmd`/`pwsh` task action.                                                                                                                                                                                                                                                                                                                                                                  |

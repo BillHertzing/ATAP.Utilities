@@ -129,7 +129,7 @@ the promotion ceiling for one immutable pipeline run, not the current stage.
 | Development          | `nuget-development`                     | `Alpha`              | `0.1.0-Alpha.1`       | `integration`            |
 | Integration          | `nuget-integration`                     | `Beta`               | `0.1.0-Beta.2`        | `integration` (promoted) |
 | QA                   | `nuget-qa`                              | `QA`                 | `0.1.0-QA.1`          | `qa`                     |
-| Production (=Stable) | `nuget-stable`                          | _(none)_             | `0.1.0`               | `main`                   |
+| Production (=Stable) | `nuget-stable`                          | _(none)_             | `0.1.0`               | `main`, `release/*`, or numbered Sprint worktree branch |
 
 - The five NuGet feeds are **permanent** topology — `nuget-experimental`,
   `nuget-development`, `nuget-integration`, `nuget-qa`, `nuget-stable` — and are
@@ -142,9 +142,11 @@ the promotion ceiling for one immutable pipeline run, not the current stage.
   is feed-side history, "Production" is pipeline-side canonical. A package
   with no prerelease label (`0.1.0` exactly) is a Production / Stable
   release. NuGet treats any `-*` suffix as prerelease.
-- The `Sprint` label lives on the developer's sprint worktree branch. Packages
-  pushed from there land only in `nuget-experimental` and are skipped
-  by higher stages because their `CeilingTier` is Experimental.
+- The `Sprint` label normally lives on the developer's sprint worktree branch. Packages
+  carrying that label land only in `nuget-experimental` and are skipped by higher stages
+  because their `CeilingTier` is Experimental. A Sprint worktree may deliberately raise
+  the ceiling, including to an empty Production/Stable label, when the package is approved
+  for the corresponding immutable promotion run; branch location does not reduce that ceiling.
 
 > **Ceiling semantics** — the `version.json` label is the promotion ceiling for
 > one immutable pipeline run. For the complete label-to-tier mapping and the
@@ -235,17 +237,19 @@ changed `version.json` itself or reaches the root. In practice:
 
 ### 4.5 Placement rules
 
-**Policy (V4-D07): per-project `version.json` is authoritative.** Every shipping
-project owns a `version.json` adjacent to its `.csproj`, which **resets the height
-origin** to that project's directory and is the only file consulted for that
-project's promotion ceiling. `Get-BuildContext` invokes `nbgv` from the project
-directory and throws if no project-adjacent `version.json` exists, so a parent or
-repo-root file is never silently used for a built artifact. The authoritative
+**Policy (V4-D07): the nearest project-family `version.json` is authoritative.** A
+shipping project either owns a `version.json` adjacent to its `.csproj` or
+intentionally inherits the nearest ancestor authority inside the same repository.
+`Get-BuildContext` records that bounded authority path and invokes `nbgv` from the
+project directory, preserving NBGV path-filter and height semantics while rejecting
+accidental inheritance from outside the repository. The authoritative
 placement table for C#, PowerShell, database, and AceCommander ceilings lives in
 [`VersionJsonAsCeiling.md`](VersionJsonAsCeiling.md) ("Placement Policy").
 
-- **Project-adjacent `version.json`** (next to `.csproj`): the required form for
-  every shipping project.
+- **Project-adjacent `version.json`** (next to `.csproj`): use when the project has
+  an independent version and height origin.
+- **Project-family ancestor `version.json`**: use when sibling packages intentionally
+  share one version and height authority, as in Loader, Philote, and StronglyTypedId.
 - **Repo-root `version.json`**: permitted only as a transitional NBGV default for
   not-yet-migrated projects; it is never the authority for a project that ships a
   package. ATAP.Utilities carries no root file (all ~170 projects are per-project).

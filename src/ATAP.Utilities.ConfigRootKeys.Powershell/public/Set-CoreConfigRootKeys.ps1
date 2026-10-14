@@ -65,6 +65,15 @@ function Set-CoreConfigRootKeys {
           'FastTempBasePathConfigRootKey'                                                                = 'FAST_TEMP_BASE_PATH'
           'BigTempBasePathConfigRootKey'                                                                 = 'BIG_TEMP_BASE_PATH'
           'SecureTempBasePathConfigRootKey'                                                              = 'SECURE_TEMP_BASE_PATH'
+          # Host-wide artifact storage and the conversation/gather corpus roots derived from it.
+          'ArtifactsPathConfigRootKey'                                                                   = 'ArtifactsPath'
+          'CorpusAIConversationPathConfigRootKey'                                                        = 'CorpusAIConversationPath'
+          'CorpusGatherRecordsPathConfigRootKey'                                                         = 'CorpusGatherRecordsPath'
+          'CorpusGatherRecordsStagingPathConfigRootKey'                                                  = 'CorpusGatherRecordsStagingPath'
+          'ConversationCorpusReconciliationIntervalConfigRootKey'                                       = 'ConversationCorpusReconciliationInterval'
+          'ConversationCorpusScrubIntervalConfigRootKey'                                                = 'ConversationCorpusScrubInterval'
+          'CorpusCaptureIdentityConfigRootKey'                                                           = 'CorpusCaptureIdentity'
+          'CorpusExpiryIdentityConfigRootKey'                                                            = 'CorpusExpiryIdentity'
           'ChocolateyPackagesConfigRootKey'                                                              = 'ChocolateyPackages'
           # Ditto Clipboard Manager Settings
           'DittoDBPathConfigRootKey'                                                                     = 'DittoDBPath'
@@ -255,6 +264,14 @@ function Set-CoreConfigRootKeys {
           # Locations for things that are needed in case of disaster
           'DisasterRecoveryPathConfigRootKey'                                                            = 'DisasterRecoveryPath'
           'DisasterRecoveryBackupPathConfigRootKey'                                                      = 'DisasterRecoveryBackupPath'
+          # Database backup staging and publication roots (Task 15.192).
+          # LocalDBsRootPath is the instance-local root; per-instance staging is
+          # <LocalDBsRootPath>/<INSTANCE>/Backup/<Database>/ and SQL writes only there.
+          # DatabaseBackupPublicationRoot is the off-host publication root; the verified
+          # post-success publisher moves completed artifacts to
+          # <DatabaseBackupPublicationRoot>/<lowercase-hostname>/<Database>/.
+          'LocalDBsRootPathConfigRootKey'                                                                = 'LocalDBsRootPath'
+          'DatabaseBackupPublicationRootConfigRootKey'                                                   = 'DatabaseBackupPublicationRoot'
           # Container (Machine, VM, Docker) Roles
           'DeveloperComputerRoleConfigRootKey'                                                           = 'DeveloperComputer'
           'DocumentationComputerRoleConfigRootKey'                                                       = 'DocumentationComputer'

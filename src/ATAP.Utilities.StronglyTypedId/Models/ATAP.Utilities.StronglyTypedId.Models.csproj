@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
   </PropertyGroup>
 

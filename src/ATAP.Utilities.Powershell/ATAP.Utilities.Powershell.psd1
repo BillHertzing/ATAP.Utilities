@@ -86,7 +86,7 @@
     'Get-ScheduledTasks', 'Get-SIDfromAccountName',
     'Get-TopologicalSort', 'Get-UniqueFileBaseNames',
     'Get-ViewOfProfiles', 'Import-EnvFile',
-    'Initialize-BitwardenSession', 'Invoke-DocumentationInventory',
+    'Initialize-BitwardenSession', 'Invoke-AceOutpostMeteredPrompt', 'Invoke-DocumentationInventory',
     'Invoke-ProvisionInedoServiceAccounts',
     'Invoke-SetInedoServiceLogonAccounts',
     'Invoke-StartupTaskRegistrationTest', 'Invoke-Webserver',
@@ -94,11 +94,12 @@
     'PracticeKeyboardSkills', 'Register-ProfiledRemotingEndpoint',
     'Register-StartupScheduledTask',
     'Resolve-ParameterValueToList', 'Search-Registry',
-    'Search-WindowsIndexs', 'Set-EnvVarsFromBitWarden',
+    'Search-WindowsIndexs', 'Set-AceOutpostProxyEnvironment', 'Set-EnvVarsFromBitWarden',
     'Set-GroupEnvironmentVariables', 'Set-InedoServicesDependency',
     'Set-PerceivedTypeInRegistryForPreviewPane',
     'Set-RepositoryPackageSources', 'Set-ScreenReaderOff',
     'Set-ServiceLogonAccount',
+    'Start-AceOutpostMeteredHarness',
     'Test-ProfiledRemotingEndpoint', 'Test-StartupScheduledTaskPresence', 'Test-WinRM',
     'Unregister-ProfiledRemotingEndpoint', 'Unregister-StartupScheduledTask', 'Watch-ETWEvents'
 

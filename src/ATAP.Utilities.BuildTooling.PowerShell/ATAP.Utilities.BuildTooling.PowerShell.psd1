@@ -129,6 +129,7 @@
     'Move-ProGetPackageInterTier', 'Move-ProGetPackageIntraTier',
     'New-BuildMasterApplication', 'New-BuildMasterRelease', 'New-BuildToolingChildModule', 'New-BWSReadOnlyBootstrapEnvelope',
     'New-BuildMasterScript', 'New-BundleProjectFiles',
+    'New-CommanderReleaseBundle',
     'New-DocFilesIfNotPresent', 'New-DocFolderIfNotPresent',
     'New-GitHubIssue', 'New-HostSettingsForPackageRepositoryFeeds',
     'New-MarkdownChangeTrackingReport',

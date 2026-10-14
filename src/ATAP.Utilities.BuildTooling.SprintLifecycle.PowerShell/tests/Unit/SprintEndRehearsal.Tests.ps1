@@ -289,6 +289,105 @@ Describe 'SprintEnd close rehearsal' -Tag 'Unit' {
     }
   }
 
+  Context 'Checkpoint external-durability inputs (SE-0015-01)' {
+    BeforeEach {
+      $script:durabilityEvidence = @([PSCustomObject]@{ ReplicaKind = 'Primary'; Sha256 = 'fixture' }, [PSCustomObject]@{ ReplicaKind = 'DropboxMirror'; Sha256 = 'fixture' })
+      $script:durabilityOverride = [PSCustomObject]@{ Name = 'OperatorException'; Reason = 'fixture' }
+      # Coverage only confirms when snapshot evidence reaches it, so the
+      # rehearsal can pass only if it forwarded the evidence.
+      Mock Test-SprintCheckpointCoverage {
+        $hasEvidence = @($ExternalDurabilityEvidence).Count -gt 0
+        [PSCustomObject]@{ Ok = $hasEvidence; Failures = @(if (-not $hasEvidence) { 'ExternalDurabilityEvidenceMissing' }) }
+      }
+    }
+
+    It 'forwards all three inputs unchanged, with -WhatIf, to every lifecycle pass' {
+      $script:lifecycleCalls = [System.Collections.Generic.List[hashtable]]::new()
+      Mock Invoke-SprintEndLifecycle {
+        $script:lifecycleCalls.Add(@{} + $PesterBoundParameters)
+        [PSCustomObject]@{
+          Ok = $true; DryRun = $true
+          Phases = [PSCustomObject]@{
+            ClosePlan = @([PSCustomObject]@{ WorktreePath = $script:shared })
+            FinalBoundary = [PSCustomObject]@{ Skipped = $true }
+          }
+          Failures = @(); DatabaseCleanupMode = 'SprintDatabasesOnly'
+          BitwardenSecretsRemoved = $false; SqlInstancesRetained = $true
+          SyntheticTaskCompleted = $false; StableWorktreeWritesPlanned = @()
+          OperatorPromptsRequired = @()
+        }
+      }
+
+      $result = Invoke-SprintEndRehearsal @script:rehearsalParameters -SkipEvidence `
+        -ExternalDurabilityEvidence $script:durabilityEvidence `
+        -RequiredExternalReplicaKind @('Primary') `
+        -ExternalDurabilityOverride $script:durabilityOverride
+
+      $result.Ok | Should -BeTrue
+      # DryRun and CrashResume each drive one lifecycle pass.
+      $script:lifecycleCalls.Count | Should -Be 2
+      foreach ($call in $script:lifecycleCalls) {
+        $call.WhatIf | Should -BeTrue
+        $call.VerifyCheckpoints | Should -BeTrue
+        @($call.ExternalDurabilityEvidence).Count | Should -Be 2
+        [object]::ReferenceEquals($call.ExternalDurabilityEvidence[0], $script:durabilityEvidence[0]) | Should -BeTrue
+        @($call.RequiredExternalReplicaKind) | Should -Be @('Primary')
+        [object]::ReferenceEquals($call.ExternalDurabilityOverride, $script:durabilityOverride) | Should -BeTrue
+      }
+    }
+
+    It 'does not invent an override when none is supplied' {
+      $script:lifecycleCalls = [System.Collections.Generic.List[hashtable]]::new()
+      Mock Invoke-SprintEndLifecycle {
+        $script:lifecycleCalls.Add(@{} + $PesterBoundParameters)
+        [PSCustomObject]@{
+          Ok = $true; DryRun = $true
+          Phases = [PSCustomObject]@{ ClosePlan = @(); FinalBoundary = [PSCustomObject]@{ Skipped = $true } }
+          Failures = @(); DatabaseCleanupMode = 'SprintDatabasesOnly'
+          BitwardenSecretsRemoved = $false; SqlInstancesRetained = $true
+          SyntheticTaskCompleted = $false; StableWorktreeWritesPlanned = @()
+          OperatorPromptsRequired = @()
+        }
+      }
+
+      $null = Invoke-SprintEndRehearsal @script:rehearsalParameters -SkipEvidence -ExternalDurabilityEvidence $script:durabilityEvidence
+
+      $script:lifecycleCalls.Count | Should -Be 2
+      foreach ($call in $script:lifecycleCalls) {
+        $call.ContainsKey('ExternalDurabilityOverride') | Should -BeFalse
+        @($call.RequiredExternalReplicaKind) | Should -Be @('Primary', 'DropboxMirror')
+      }
+    }
+
+    It 'passes CheckpointCoverage end to end when valid evidence is supplied' {
+      $result = Invoke-SprintEndRehearsal @script:rehearsalParameters -SkipEvidence -ExternalDurabilityEvidence $script:durabilityEvidence
+
+      $result.Ok | Should -BeTrue
+      $result.Failures | Should -Not -Contain 'CheckpointCoverage'
+      $result.Failures | Should -Not -Contain 'CheckpointCoverageRequiredForBoundary'
+      $result.Failures | Should -Not -Contain 'ExternalDurabilityRequiredForTeardown'
+      $dryRun = @($result.Scenarios | Where-Object Scenario -eq 'DryRun')[0]
+      $dryRun.Result.Phases.CheckpointCoverage.Ok | Should -BeTrue
+      Should -Invoke Test-SprintCheckpointCoverage -Times 2 -Exactly -ParameterFilter { @($ExternalDurabilityEvidence).Count -eq 2 }
+      Should -Invoke Test-SprintEndBoundaryState -Times 0
+    }
+
+    It 'fails closed when no durability evidence is supplied' {
+      $result = Invoke-SprintEndRehearsal @script:rehearsalParameters -SkipEvidence
+
+      $result.Ok | Should -BeFalse
+      $result.Failures | Should -Contain 'CheckpointCoverage'
+      $result.Failures | Should -Contain 'CheckpointCoverageRequiredForBoundary'
+      $result.Failures | Should -Contain 'ExternalDurabilityRequiredForTeardown'
+      Should -Invoke Test-SprintEndBoundaryState -Times 0
+    }
+
+    It 'still fails closed and throws under ThrowOnFailure when evidence is missing' {
+      { Invoke-SprintEndRehearsal @script:rehearsalParameters -SkipEvidence -ThrowOnFailure } |
+        Should -Throw '*CheckpointCoverage*'
+    }
+  }
+
   Context 'Evidence' {
     It 'writes rehearsal evidence under a repository _generated folder by default' {
       $result = Invoke-SprintEndRehearsal @script:rehearsalParameters

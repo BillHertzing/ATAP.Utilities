@@ -1,5 +1,23 @@
 # Release notes
 
+## 0.1.44
+
+- `Remove-SprintWorktreeSafely` records exact registration and recovery evidence,
+  native results, and residual effects in a versioned receipt outside the target.
+  Successful Git deregistration advances to residual handling without retrying
+  removal against an absent registration.
+- Explicit recovery can import the reviewed 0.1.43 failure contract with pinned
+  module provenance, saved pre-removal registration, and reachable recovery refs.
+  Current root/editor gates and exact repository/path checks remain required.
+- Approved junctions require exact relative paths and target matches and are unlinked
+  nonrecursively. Nested junctions require a selected residual directory root.
+  Explicitly selected residual directory trees must contain zero
+  files and only supported ordinary or cloud-directory entries. Unknown or changed
+  entries block cleanup.
+- Selected nested worktree registrations carry their owning repository, exact
+  path, HEAD, recovery ref, and administrative-slot provenance. Cleanup preserves
+  unrelated registrations and uses no global prune.
+
 ## 0.1.38
 
 - Task 15.191.c keeps privileged disposable ACL application and exact-SDDL restore
@@ -249,6 +267,7 @@
   accounts are ignored and no broad local-account enumeration is introduced.
 - Added regression coverage proving `SvcBuildMaster`, `SvcProGet`, and `SvcSQLServer` are
   discovered with the required secret policy when configuration discovery omits them.
+
 ## 0.1.10
 
 - `Set-SprintBoundaryContext -Boundary Start` now provisions the durable AI agent memory

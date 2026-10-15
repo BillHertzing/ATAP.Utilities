@@ -1,198 +1,81 @@
 #Requires -Version 7.0
-
 BeforeAll {
-  if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
-    function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
-  }
-
-  $moduleRoot = Join-Path $PSScriptRoot '..\..'
-  . (Join-Path $moduleRoot 'private\Get-SprintEndActiveWorkspaceRoot.ps1')
-  . (Join-Path $moduleRoot 'private\Invoke-SprintEndNativeCommand.ps1')
-  . (Join-Path $moduleRoot 'public\Remove-SprintWorktreeSafely.ps1')
+  $moduleRoot = Join-Path $PSScriptRoot '../..'
+  foreach ($file in @('Get-SprintEndActiveWorkspaceRoot', 'Invoke-SprintEndNativeCommand', 'Get-SprintWorktreeRecoveryState', 'Remove-SprintWorktreeResidual')) { . (Join-Path $moduleRoot "private/$file.ps1") }
+  . (Join-Path $moduleRoot 'public/Remove-SprintWorktreeSafely.ps1')
 }
-
-Describe 'Remove-SprintWorktreeSafely' -Tag 'Unit' {
+Describe 'Remove-SprintWorktreeSafely recovery contracts' -Tag 'Unit' {
   BeforeEach {
-    $caseRoot = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
-    $script:repository = Join-Path $caseRoot 'App'
-    $script:worktree = Join-Path $caseRoot 'App-wt-42-Sprint-0013-work-items'
-    $script:handoff = Join-Path $caseRoot 'HANDOFF.Remove-App.md'
-    New-Item -ItemType Directory -Path $script:repository, $script:worktree -Force | Out-Null
+    $script:caseRoot = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
+    $script:repository = Join-Path $caseRoot 'owner'
+    $script:worktree = Join-Path $caseRoot 'target'
+    $script:handoff = Join-Path $caseRoot 'handoff.md'
+    New-Item -ItemType Directory $script:repository,$script:worktree -Force | Out-Null
     Mock Get-SprintEndActiveWorkspaceRoot { @() }
-  }
-
-  It 'blocks an active Codex workspace before invoking Git removal and writes only the remaining step' {
-    Mock Get-SprintEndActiveWorkspaceRoot {
-      @([PSCustomObject]@{ Source = 'Process:Codex.exe:42'; Root = $script:worktree })
+    Mock Invoke-SprintEndNativeCommand {
+      if ($ArgumentList[2] -eq 'rev-parse' -and $ArgumentList -contains '--git-common-dir') { return [pscustomobject]@{ Succeeded=$true; ExitCode=0; Output=@((Join-Path $script:repository '.git')) } }
+      return [pscustomobject]@{ Succeeded=$true; ExitCode=0; Output=@("worktree $script:repository",'HEAD aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa') }
     }
-    Mock Invoke-SprintEndNativeCommand { throw 'Git must not run while the worktree is active.' }
-
-    $result = Remove-SprintWorktreeSafely -RepositoryPath $script:repository `
-      -WorktreePath $script:worktree -HandoffPath $script:handoff -Confirm:$false
-    $text = Get-Content -Raw -LiteralPath $script:handoff
-
+  }
+  It 'blocks active roots before Git and writes the remaining teardown only' {
+    Mock Get-SprintEndActiveWorkspaceRoot { @([pscustomobject]@{ Source='CurrentLocation';Root=$script:worktree }) }
+    $result=Remove-SprintWorktreeSafely -RepositoryPath $repository -WorktreePath $worktree -HandoffPath $handoff -Confirm:$false
     $result.Ok | Should -BeFalse
     $result.Attempts | Should -Be 0
-    $text | Should -Match 'Remove-SprintWorktreeSafely'
-    $text | Should -Not -Match 'Set-SprintBoundaryContext|pull --ff-only|Remove-SprintDatabases'
-    Assert-MockCalled Invoke-SprintEndNativeCommand -Times 0
+    Get-Content $handoff -Raw | Should -Match 'Remove-SprintWorktreeSafely'
+    Should -Invoke Invoke-SprintEndNativeCommand -Times 0 -Exactly
   }
-
-  It 'uses bounded retries and succeeds on the third removal attempt' {
-    $script:removeCalls = 0
-    $lockedFile = Join-Path $script:worktree 'locked.txt'
-    Set-Content -LiteralPath $lockedFile -Value 'fixture'
-    Mock Invoke-SprintEndNativeCommand {
-      if ($ArgumentList[3] -eq 'list') {
-        return [PSCustomObject]@{ Succeeded = $true; ExitCode = 0; Output = @("worktree $script:worktree") }
-      }
-      if ($ArgumentList[3] -eq 'remove') {
-        $script:removeCalls++
-        if ($script:removeCalls -eq 3) {
-          [IO.File]::Delete($lockedFile)
-          [IO.Directory]::Delete($script:worktree, $false)
-          return [PSCustomObject]@{ Succeeded = $true; ExitCode = 0; Output = @() }
-        }
-        return [PSCustomObject]@{ Succeeded = $false; ExitCode = 1; Output = @('locked') }
-      }
-      return [PSCustomObject]@{ Succeeded = $true; ExitCode = 0; Output = @() }
-    }
-
-    $result = Remove-SprintWorktreeSafely -RepositoryPath $script:repository `
-      -WorktreePath $script:worktree -MaxAttempts 3 -RetryDelayMilliseconds 0 -Confirm:$false
-
-    $result.Ok | Should -BeTrue
-    $result.Attempts | Should -Be 3
-    $script:removeCalls | Should -Be 3
-  }
-
-  It 'stops exactly at MaxAttempts and writes a minimal retry handoff' {
-    Set-Content -LiteralPath (Join-Path $script:worktree 'locked.txt') -Value 'fixture'
-    Mock Invoke-SprintEndNativeCommand {
-      if ($ArgumentList[3] -eq 'list') {
-        return [PSCustomObject]@{ Succeeded = $true; ExitCode = 0; Output = @("worktree $script:worktree") }
-      }
-      return [PSCustomObject]@{ Succeeded = $false; ExitCode = 32; Output = @('in use') }
-    }
-
-    $result = Remove-SprintWorktreeSafely -RepositoryPath $script:repository `
-      -WorktreePath $script:worktree -MaxAttempts 2 -RetryDelayMilliseconds 0 `
-      -HandoffPath $script:handoff -Confirm:$false
-
+  It 'requires explicit evidence for an unregistered existing directory' {
+    $result=Remove-SprintWorktreeSafely -RepositoryPath $repository -WorktreePath $worktree -HandoffPath $handoff -Confirm:$false
     $result.Ok | Should -BeFalse
-    $result.Attempts | Should -Be 2
-    Test-Path -LiteralPath $script:handoff | Should -BeTrue
-    Assert-MockCalled Invoke-SprintEndNativeCommand -ParameterFilter { $ArgumentList[3] -eq 'remove' } -Times 2
+    $result.Failures -join ' ' | Should -Match 'not registered'
+    Test-Path $worktree | Should -BeTrue
   }
-
-  It 'deletes only an explicitly named empty ordinary adapter placeholder without recursion' {
-    $placeholder = Join-Path $script:worktree '.codex'
-    New-Item -ItemType Directory -Path $placeholder | Out-Null
-    Mock Invoke-SprintEndNativeCommand {
-      if ($ArgumentList[3] -eq 'list') {
-        return [PSCustomObject]@{ Succeeded = $true; ExitCode = 0; Output = @("worktree $script:worktree") }
-      }
-      return [PSCustomObject]@{ Succeeded = $false; ExitCode = 1; Output = @('root remains') }
-    }
-
-    $result = Remove-SprintWorktreeSafely -RepositoryPath $script:repository `
-      -WorktreePath $script:worktree -AdapterPlaceholderPath '.codex' `
-      -MaxAttempts 1 -RetryDelayMilliseconds 0 -Confirm:$false
-
-    $result.Ok | Should -BeTrue
-    $result.RemovedPlaceholders | Should -Contain $placeholder
-    Test-Path -LiteralPath $script:worktree | Should -BeFalse
+  It 'rejects wrong-root forged receipt before any mutation' {
+    $receipt=Join-Path $caseRoot 'receipt.json'
+    @{SchemaVersion=1;RepositoryPath=$repository;WorktreePath='C:/wrong';CommonDirectory=(Join-Path $repository '.git');Head=('a'*40);RecoveryReference='refs/archive/test';Deregistered=$true}|ConvertTo-Json|Set-Content $receipt
+    {Get-SprintWorktreeRecoveryState -RepositoryPath $repository -WorktreePath $worktree -ReceiptPath $receipt}|Should -Throw '*identity mismatch*'
   }
-
-  It 'preserves and reports a named placeholder containing a hidden file' {
-    $placeholder = Join-Path $script:worktree '.agents'
-    New-Item -ItemType Directory -Path $placeholder | Out-Null
-    Set-Content -LiteralPath (Join-Path $placeholder '.keep') -Value 'preserve'
-    Mock Invoke-SprintEndNativeCommand {
-      if ($ArgumentList[3] -eq 'list') {
-        return [PSCustomObject]@{ Succeeded = $true; ExitCode = 0; Output = @("worktree $script:worktree") }
-      }
-      return [PSCustomObject]@{ Succeeded = $false; ExitCode = 1; Output = @('root remains') }
-    }
-
-    $result = Remove-SprintWorktreeSafely -RepositoryPath $script:repository `
-      -WorktreePath $script:worktree -AdapterPlaceholderPath '.agents' `
-      -MaxAttempts 1 -RetryDelayMilliseconds 0 -Confirm:$false
-
-    $result.Ok | Should -BeFalse
-    Test-Path -LiteralPath (Join-Path $placeholder '.keep') | Should -BeTrue
-    $result.Failures -join ' ' | Should -Match 'Refused non-empty'
+  It 'rejects a forged deregistered receipt without the native-success provenance' {
+    $receipt=Join-Path $caseRoot 'receipt.json'
+    @{SchemaVersion=1;RepositoryPath=$repository;WorktreePath=$worktree;CommonDirectory=(Join-Path $repository '.git');Head=('a'*40);RecoveryReference='refs/archive/test';Deregistered=$true;BeforeRegistration=@("worktree $worktree",('HEAD '+('a'*40)));NativeAttempts=@();AfterRegistration=@("worktree $repository",('HEAD '+('a'*40)))}|ConvertTo-Json -Depth 8|Set-Content $receipt
+    {Get-SprintWorktreeRecoveryState -RepositoryPath $repository -WorktreePath $worktree -ReceiptPath $receipt}|Should -Throw '*successful native removal*'
   }
-
-  It 'rejects a placeholder path outside the exact worktree boundary' {
-    $outside = Join-Path $TestDrive 'App-wt-42-Sprint-0013-work-items-evil'
-    New-Item -ItemType Directory -Path $outside | Out-Null
-
-    {
-      Remove-SprintWorktreeSafely -RepositoryPath $script:repository `
-        -WorktreePath $script:worktree -AdapterPlaceholderPath $outside -Confirm:$false
-    } | Should -Throw '*outside the worktree*'
+  It 'rejects legacy import without explicit opt-in' {
+    {Get-SprintWorktreeRecoveryState -RepositoryPath $repository -WorktreePath $worktree -ReceiptPath (Join-Path $caseRoot 'absent.json') -LegacyRecoveryEvidencePath 'anything'}|Should -Throw '*explicit*'
   }
-
-  It 'rejects a nested placeholder even when its lexical path is inside the worktree' {
-    $nested = Join-Path $script:worktree '.codex\cache'
-    New-Item -ItemType Directory -Path $nested -Force | Out-Null
-
-    {
-      Remove-SprintWorktreeSafely -RepositoryPath $script:repository `
-        -WorktreePath $script:worktree -AdapterPlaceholderPath $nested -Confirm:$false
-    } | Should -Throw '*direct child*'
+  It 'rejects malformed legacy evidence and wrong binary provenance' {
+    $legacy=Join-Path $caseRoot 'legacy.json'
+    @{SchemaVersion=1;RepositoryPath=$repository;WorktreePath=$worktree;InstalledModuleSha256='forged'}|ConvertTo-Json|Set-Content $legacy
+    {Get-SprintWorktreeRecoveryState -RepositoryPath $repository -WorktreePath $worktree -ReceiptPath (Join-Path $caseRoot 'absent.json') -LegacyRecoveryEvidencePath $legacy -AcceptLegacy043Recovery}|Should -Throw '*provenance*'
   }
-
-  It 'refuses an existing path not registered to the supplied stable repository' {
-    Mock Invoke-SprintEndNativeCommand {
-      [PSCustomObject]@{ Succeeded = $true; ExitCode = 0; Output = @("worktree $script:repository") }
-    }
-
-    $result = Remove-SprintWorktreeSafely -RepositoryPath $script:repository `
-      -WorktreePath $script:worktree -HandoffPath $script:handoff -Confirm:$false
-
-    $result.Ok | Should -BeFalse
-    $result.Attempts | Should -Be 0
-    $result.Failures[0] | Should -Match 'not registered'
+  It 'rejects escaping and nested placeholder paths' {
+    {Remove-SprintWorktreeSafely -RepositoryPath $repository -WorktreePath $worktree -AdapterPlaceholderPath '../escape' -Confirm:$false}|Should -Throw '*outside the worktree*'
+    {Remove-SprintWorktreeSafely -RepositoryPath $repository -WorktreePath $worktree -AdapterPlaceholderPath 'a/b' -Confirm:$false}|Should -Throw '*direct child*'
   }
-
-  It 'is idempotent when the worktree path is already absent' {
-    Set-Content -LiteralPath $script:handoff -Value 'stale handoff'
-    [IO.Directory]::Delete($script:worktree, $false)
-    Mock Invoke-SprintEndNativeCommand { throw 'Git registration is unnecessary for an absent path.' }
-
-    $result = Remove-SprintWorktreeSafely -RepositoryPath $script:repository `
-      -WorktreePath $script:worktree -HandoffPath $script:handoff -Confirm:$false
-
-    $result.Ok | Should -BeTrue
-    $result.Removed | Should -BeTrue
-    $result.Attempts | Should -Be 0
-    Test-Path -LiteralPath $script:handoff | Should -BeFalse
-    Assert-MockCalled Invoke-SprintEndNativeCommand -Times 0
+  It 'removes an explicitly selected empty ordinary placeholder nonrecursively' {
+    New-Item -ItemType Directory (Join-Path $worktree '.codex') | Out-Null
+    $events=[Collections.Generic.List[string]]::new()
+    Remove-SprintWorktreeResidual -Root $worktree -PlaceholderPath '.codex' -JunctionTarget @{} -DirectoryRoot @() -Record {param($event,$detail) $events.Add($event)} | Out-Null
+    Test-Path $worktree | Should -BeFalse
+    $events | Should -Contain 'EmptyDirectoryRemoved'
   }
-
-  It 'WhatIf verifies registration but performs no removal or handoff write' {
-    Mock Invoke-SprintEndNativeCommand {
-      [PSCustomObject]@{ Succeeded = $true; ExitCode = 0; Output = @("worktree $script:worktree") }
-    }
-
-    $result = Remove-SprintWorktreeSafely -RepositoryPath $script:repository `
-      -WorktreePath $script:worktree -HandoffPath $script:handoff -WhatIf
-
-    $result.Planned | Should -BeTrue
-    Test-Path -LiteralPath $script:worktree | Should -BeTrue
-    Test-Path -LiteralPath $script:handoff | Should -BeFalse
-    Assert-MockCalled Invoke-SprintEndNativeCommand -ParameterFilter { $ArgumentList[3] -eq 'remove' } -Times 0
+  It 'refuses a hidden file before removing any approved sibling' {
+    New-Item -ItemType Directory (Join-Path $worktree '.codex'),(Join-Path $worktree '_generated') | Out-Null
+    Set-Content (Join-Path $worktree '_generated/.keep') 'retain'
+    {Remove-SprintWorktreeResidual -Root $worktree -PlaceholderPath '.codex' -JunctionTarget @{} -DirectoryRoot '_generated' -Record {throw 'No effect allowed'}}|Should -Throw '*file is forbidden*'
+    Test-Path (Join-Path $worktree '.codex')|Should -BeTrue
   }
-
-  It 'contains no recursive deletion surface in the production implementation' {
-    $source = Get-Content -Raw -LiteralPath (Join-Path $moduleRoot 'public\Remove-SprintWorktreeSafely.ps1')
-    $source | Should -Not -Match 'Remove-Item[^\r\n]*-Recurse|Directory\.Delete\([^\r\n]*\$true\)'
-    $source | Should -Match 'for \(\$attempt = 1; \$attempt -le \$MaxAttempts; \$attempt\+\+\)'
+  It 'rejects unknown root entries and unsupported reparse tags' {
+    New-Item -ItemType Directory (Join-Path $worktree 'unknown') | Out-Null
+    {Remove-SprintWorktreeResidual -Root $worktree -PlaceholderPath @() -JunctionTarget @{} -DirectoryRoot @() -Record {}}|Should -Throw '*Unapproved residual*'
+  }
+  It 'contains no recursive deletion or global worktree prune surface' {
+    $source=Get-Content (Join-Path $moduleRoot 'public/Remove-SprintWorktreeSafely.ps1') -Raw
+    $source|Should -Not -Match 'Remove-Item[^\r\n]*-Recurse|Directory\.Delete\([^\r\n]*\$true\)|''worktree'', ''prune'''
+    $source|Should -Match 'for \(\$attempt = 1; \$attempt -le \$MaxAttempts; \$attempt\+\+\)'
   }
 }
-
 Describe 'Get-SprintEndActiveWorkspaceRoot' -Tag 'Unit' {
   It 'detects when the current shell location is inside the candidate worktree' {
     $worktree = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))

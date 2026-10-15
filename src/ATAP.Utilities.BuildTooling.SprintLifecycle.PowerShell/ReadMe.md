@@ -2,8 +2,8 @@
 
 Sprint lifecycle commands for SprintStart, SprintEnd, worktree teardown, checkpoint archival, and sprint-boundary validation.
 
-Version 0.1.39 is the current release and is the version a name-only
-`Import-Module` resolves to from the AllUsers path on UTAT022. Version 0.1.34 was
+Version 0.1.39 was verified as the release that a name-only
+`Import-Module` resolved to from the AllUsers path on UTAT022. Version 0.1.34 was
 the first release to export `Write-GatherCallRecord`. Version 0.1.14 remains the accepted **two-host** deploy state for
 service-profile discovery — the claims in the rest of this paragraph were verified at 0.1.14 on both
 UTAT01 and UTAT022 and have not been re-verified on UTAT022 since. Service-profile fallback discovery is bounded to `SvcBuildMaster`, `SvcProGet`, and `SvcSQLServer`; an authenticated service identity manages only its own profile, while an operator session may deploy the approved set. Focused discovery tests pass 8/8, isolated SprintEnd lifecycle tests pass 25/25, and all six host/account targets are idempotent at the canonical profile hash.
@@ -13,6 +13,46 @@ Codex/VS Code roots, retries are bounded, and an incomplete teardown leaves a mi
 retry handoff instead of recursively deleting the worktree.
 
 The parent `ATAP.Utilities.BuildTooling.PowerShell` module retains the legacy command surface by requiring this child module.
+
+## Receipt-backed worktree cleanup
+
+Version 0.1.44 introduces the controls below to `Remove-SprintWorktreeSafely`.
+Verify the exact installed version, provenance, and release acceptance before
+live cleanup.
+
+- Keep the removal receipt for normal cleanup and recovery. `ReceiptPath` defaults
+  to `_generated/SprintWorktreeRemoval/<worktree-leaf>.json` under the owning
+  repository. The durable receipt records native removal attempts so recovery
+  after Git deregistration does not retry Git removal against a missing entry.
+- Supply `OwningRepositoryPath` with the complete owner set. Approve junctions
+  through `ApprovedJunctionTarget`, a map from relative paths to exact absolute
+  targets. Nested paths must be beneath a selected `ResidualDirectoryRoot`.
+  Cleanup requires the observed target to match the approved target and never
+  traverses it.
+- Use `ResidualDirectoryRoot` only for explicitly selected direct-child directory
+  names. Residual trees must be ordinary directories or have the exact native
+  cloud tag `0x9000e01a`, verified through `fsutil`; file attributes alone do not
+  establish eligibility. Trees must contain zero files before removal.
+  Filesystem removals are nonrecursive.
+- Use `SelectedNestedWorktree` for specifically selected prunable nested slots,
+  with `RepositoryPath`, `WorktreePath`, `Head`, `RecoveryReference`, and
+  `AdministrativePath` recorded for each. Cleanup does not run a global prune.
+- Recovery from a 0.1.43 failure requires both `AcceptLegacy043Recovery` and
+  `LegacyRecoveryEvidencePath`. The legacy evidence uses schema version 1 and
+  records `RepositoryPath`, `WorktreePath`, `Head`, `RecoveryReference`,
+  `BeforeSnapshotPath`, `FailedReceiptPath`, `InstalledModulePath`, and
+  `InstalledModuleSha256`; the installed module evidence must be pinned to
+  0.1.43.
+
+Cleanup fails closed when required ownership, receipt, recovery, junction, or
+zero-file evidence cannot be verified. An approval does not authorize deletion
+of files discovered in a residual directory; preserve the failure evidence and
+resolve the reported condition before retrying.
+
+Every resume repeats the active-root check. Legacy recovery JSON is
+operator-reviewed evidence without a cryptographic authenticity claim; recovery
+also verifies the owning common Git directory, the preserved commit reference,
+and the independent absence of the current worktree registration.
 
 ## Login scheduled-task lifecycle
 

@@ -216,7 +216,9 @@ function Remove-SprintDatabases {
               -Message "Database '$db' not found on instance '$instanceName' — skipping (already dropped?)."
             $entry.skipped = $true
           } else {
-            Remove-DbaDatabase -SqlInstance $sqlInstance -Database $db -Confirm:$false
+            # dbatools status objects must not escape the typed result contract.
+            Remove-DbaDatabase -SqlInstance $sqlInstance -Database $db -Confirm:$false `
+              -EnableException -ErrorAction Stop | Out-Null
             $entry.dropped = $true
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
               -Message "Database dropped: instance=$instanceName db=$db"

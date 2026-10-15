@@ -194,9 +194,18 @@ Describe 'Safe worktree recovery Windows filesystem integration' -Tag 'Integrati
     New-Item -ItemType Directory $stable|Out-Null
     Set-Content (Join-Path $stable 'retain.txt') 'retain'
     New-Item -ItemType Junction -Path (Join-Path $f.WorktreePath '.vscode') -Target $stable|Out-Null
-    # Isolated dynamic module binds genuine installed .43 code without replacing .44.
-    $legacyModule=New-Module -Name ('LegacyRemoverTest'+[guid]::NewGuid().ToString('N')) -ScriptBlock {param($source) . $source} -ArgumentList $module43
-    $legacyCommand=& $legacyModule {Get-Command Remove-SprintWorktreeSafely}
+    # Bind the exact installed export: an unqualified Get-Command inside a dynamic
+    # module can resolve an already imported newer version instead of the fixture.
+    $legacyPrefix='Legacy043Fixture'+[guid]::NewGuid().ToString('N')
+    $legacyModule=Import-Module -Name ([IO.Path]::ChangeExtension($module43,'.psd1')) -Prefix $legacyPrefix -Scope Local -PassThru
+    $legacyCommand=$legacyModule.ExportedFunctions[('Remove-'+$legacyPrefix+'SprintWorktreeSafely')]
+    $legacyCommand|Should -BeOfType ([Management.Automation.FunctionInfo])
+    [string]$legacyModule.Version|Should -Be '0.1.43'
+    $legacyCommand.ModuleName|Should -Be 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell'
+    [IO.Path]::GetFullPath($legacyCommand.Module.Path)|Should -Be ([IO.Path]::GetFullPath($module43))
+    [IO.Path]::GetFullPath($legacyCommand.ScriptBlock.File)|Should -Be ([IO.Path]::GetFullPath($module43))
+    $legacyCommand.Parameters.ContainsKey('ReceiptPath')|Should -BeFalse
+    [ordered]@{ModuleName=$legacyCommand.ModuleName;ModuleVersion=[string]$legacyCommand.Module.Version;ModulePath=$legacyCommand.Module.Path;ScriptBlockFile=$legacyCommand.ScriptBlock.File;ParameterNames=@($legacyCommand.Parameters.Keys|Sort-Object);InstalledModuleSha256=$hash;HasReceiptPath=$legacyCommand.Parameters.ContainsKey('ReceiptPath')}|ConvertTo-Json -Depth 8|Set-Content (Join-Path (Split-Path $f.RepositoryPath) 'legacy-command-provenance.json')
     $old=& $legacyCommand -RepositoryPath $f.RepositoryPath -WorktreePath $f.WorktreePath -HandoffPath (Join-Path (Split-Path $f.RepositoryPath) 'old-handoff.md') -MaxAttempts 3 -RetryDelayMilliseconds 0 -Confirm:$false
     $old.Ok|Should -BeFalse
     $old.Failures -join ' '|Should -Match 'Attempt 2 failed with Git exit code 128'

@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.1.45
+
+- Isolate the authentic installed 0.1.43 recovery fixture with a uniquely prefixed
+  import and exact exported-command provenance checks. An already loaded promoted
+  remover cannot substitute for the legacy command under test.
+- Retain the 0.1.44 remover behavior. The immutable 0.1.44 release stopped at its
+  Integration test gate and was not installed; 0.1.45 is its release replacement.
+
 ## 0.1.44
 
 - `Remove-SprintWorktreeSafely` records exact registration and recovery evidence,

@@ -29,6 +29,10 @@ function New-SprintEndHandoff {
   Optional exact cleanup records containing InstanceName and Databases. Omit to
   retain the cleanup command's default targeting; an explicit empty value is invalid.
 
+  .PARAMETER HostDisposition
+      Explicit operator-approved host and identity disposition. Allows only the declared
+      personal BW_SESSION scopes and login-task mode; omission retains strict defaults.
+
   .OUTPUTS
   FileInfo for the generated handoff, or a planned result under WhatIf.
 
@@ -64,10 +68,31 @@ function New-SprintEndHandoff {
     [Parameter()]
     [AllowNull()]
     [AllowEmptyCollection()]
-    [object[]]$DatabaseCleanupTargets
+    [object[]]$DatabaseCleanupTargets,
+
+    [Parameter()]
+    [AllowNull()]
+    [object]$HostDisposition
   )
 
   begin {
+    # An invocation-scoped operator disposition is validated before effects.
+    # No policy preserves the existing strict task/environment contract.
+    $hostDispositionParameters = @{}
+    $hostDispositionContext = $null
+    if ($PSBoundParameters.ContainsKey('HostDisposition')) {
+      if (-not (Get-Command -Name 'Resolve-SprintEndHostDisposition' -ErrorAction SilentlyContinue) -or
+          -not (Get-Command -Name 'Test-SprintEndEnvironmentVariablePresent' -ErrorAction SilentlyContinue)) {
+        $hostDispositionHelper = Join-Path $PSScriptRoot '../private/Resolve-SprintEndHostDisposition.ps1'
+        if (-not (Test-Path -LiteralPath $hostDispositionHelper -PathType Leaf)) { throw 'Required host disposition helper is unavailable.' }
+        . $hostDispositionHelper
+      }
+      if ($PSBoundParameters.ContainsKey('HostDisposition')) {
+        $hostDispositionContext = Resolve-SprintEndHostDisposition -HostDisposition $HostDisposition
+        $hostDispositionParameters.HostDisposition = $hostDispositionContext.Metadata
+      }
+    }
+
     $fn = 'New-SprintEndHandoff'
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
@@ -155,6 +180,14 @@ function New-SprintEndHandoff {
     $lines.Add("Import-Module ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell -Force")
     $lines.Add('')
 
+    $lines.Add('$hostDispositionParameters = @{}')
+    if ($hostDispositionParameters.ContainsKey('HostDisposition')) {
+      $dispositionJson = $hostDispositionParameters.HostDisposition | ConvertTo-Json -Depth 10 -Compress
+      $dispositionLiteral = ConvertTo-SprintEndHandoffSingleQuotedLiteral -Value $dispositionJson
+      $lines.Add("`$hostDispositionParameters.HostDisposition = ConvertFrom-Json -InputObject $dispositionLiteral")
+    }
+    $lines.Add('')
+
     # CP06-D01/D02 (Sprint 0012 close incident, Task 13.20.a): the boundary
     # reset must run BEFORE any worktree is removed, and must carry the actual
     # sprint WorktreePaths captured by this function's own -WorktreePaths
@@ -183,7 +216,7 @@ function New-SprintEndHandoff {
     $lines.Add('  )')
     $lines.Add('  Confirm = $false')
     $lines.Add('}')
-    $lines.Add('$boundaryResetResult = Set-SprintBoundaryContext @boundaryParams')
+    $lines.Add('$boundaryResetResult = Set-SprintBoundaryContext @boundaryParams @hostDispositionParameters')
     $lines.Add('if (@($boundaryResetResult.Errors).Count -gt 0) {')
     $lines.Add('  throw "Boundary reset reported errors before worktree removal: $($boundaryResetResult.Errors -join ''; '')"')
     $lines.Add('}')
@@ -227,7 +260,7 @@ function New-SprintEndHandoff {
       $lines.Add('  )')
     }
     $lines.Add('}')
-    $lines.Add('$cleanupResult = Invoke-SprintEndInfrastructureCleanup @cleanupParams')
+    $lines.Add('$cleanupResult = Invoke-SprintEndInfrastructureCleanup @cleanupParams @hostDispositionParameters')
     $lines.Add('if ($null -eq $cleanupResult -or -not $cleanupResult.Ok -or -not $cleanupResult.Applied -or @($cleanupResult.Failures).Count -gt 0) {')
     $lines.Add('  throw "Infrastructure cleanup did not meet acceptance; retain this handoff. Failures: $($cleanupResult.Failures -join ''; '')"')
     $lines.Add('}')
@@ -236,7 +269,7 @@ function New-SprintEndHandoff {
     $lines.Add('  TestFreshShell = $true')
     $lines.Add('  ThrowOnFailure = $true')
     $lines.Add('}')
-    $lines.Add('Test-SprintEndBoundaryState @boundaryTestParams')
+    $lines.Add('Test-SprintEndBoundaryState @boundaryTestParams @hostDispositionParameters')
     $lines.Add('')
     $lines.Add('# Remove this handoff only after every command above succeeds.')
     $lines.Add('$handoffRemovalParams = @{')
@@ -266,6 +299,7 @@ function New-SprintEndHandoff {
     }
 
     return [PSCustomObject]@{
+      HostDisposition = $hostDispositionParameters['HostDisposition']
       Path             = $outputPathFull
       Changed          = $changed
       SprintNumber     = $SprintNumber

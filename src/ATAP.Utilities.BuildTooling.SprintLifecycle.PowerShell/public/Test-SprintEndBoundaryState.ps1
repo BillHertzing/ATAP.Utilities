@@ -56,6 +56,9 @@ function Test-SprintEndBoundaryState {
   .PARAMETER ThrowOnFailure
   Throws when the boundary audit is not clean.
 
+  .PARAMETER HostDisposition
+    Explicit nonsecret host/identity-bound login and personal-vault disposition.
+    Omission retains strict defaults; malformed or mismatched declarations fail.
   .OUTPUTS
   PSCustomObject containing stale references, profile results, and env findings.
 
@@ -134,10 +137,29 @@ function Test-SprintEndBoundaryState {
     [switch]$RequireServiceAccountFreshShell,
 
     [Parameter()]
-    [switch]$ThrowOnFailure
+    [switch]$ThrowOnFailure,
+
+    [Parameter()]
+    [AllowNull()]
+    [object]$HostDisposition
   )
 
   begin {
+    # An invocation-scoped operator disposition is validated before effects.
+    # No policy preserves the existing strict task/environment contract.
+    $hostDispositionParameters = @{}
+    $hostDispositionContext = $null
+    if (-not (Get-Command -Name 'Resolve-SprintEndHostDisposition' -ErrorAction SilentlyContinue) -or
+        -not (Get-Command -Name 'Test-SprintEndEnvironmentVariablePresent' -ErrorAction SilentlyContinue)) {
+      $hostDispositionHelper = Join-Path $PSScriptRoot '../private/Resolve-SprintEndHostDisposition.ps1'
+      if (-not (Test-Path -LiteralPath $hostDispositionHelper -PathType Leaf)) { throw 'Required host disposition helper is unavailable.' }
+      . $hostDispositionHelper
+    }
+    if ($PSBoundParameters.ContainsKey('HostDisposition')) {
+      $hostDispositionContext = Resolve-SprintEndHostDisposition -HostDisposition $HostDisposition
+      $hostDispositionParameters.HostDisposition = $hostDispositionContext.Metadata
+    }
+
     $fn = 'Test-SprintEndBoundaryState'
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
@@ -336,10 +358,14 @@ function Test-SprintEndBoundaryState {
       }
     }
     $environmentFindings = [System.Collections.Generic.List[object]]::new()
+    $allowedPersonalVaultEnvironmentVariables = [System.Collections.Generic.List[object]]::new()
     foreach ($scope in 'Process', 'User', 'Machine') {
       foreach ($name in $ProhibitedEnvironmentVariableNames) {
-        $value = [Environment]::GetEnvironmentVariable($name, $scope)
-        if (-not [string]::IsNullOrWhiteSpace($value)) {
+        if (Test-SprintEndEnvironmentVariablePresent -Name $name -Scope $scope) {
+          if ($name -eq 'BW_SESSION' -and $null -ne $hostDispositionContext -and $hostDispositionContext.PersonalVaultSessionScopes -contains $scope) {
+            [void]$allowedPersonalVaultEnvironmentVariables.Add([PSCustomObject]@{ Name=$name; Scope=$scope; Present=$true; DispositionId=$hostDispositionContext.DispositionId })
+            continue
+          }
           [void]$environmentFindings.Add([PSCustomObject]@{
               Name = $name
               Scope = $scope
@@ -393,7 +419,7 @@ function Test-SprintEndBoundaryState {
         Confirm = $false
       }
       if ($PSBoundParameters.ContainsKey('LoginScriptPath')) { $loginAuditParameters.LoginScriptPath = $LoginScriptPath }
-      $loginScheduledTasks = Set-SprintLoginScheduledTaskTarget @loginAuditParameters
+      $loginScheduledTasks = Set-SprintLoginScheduledTaskTarget @loginAuditParameters @hostDispositionParameters
       if ($null -eq $loginScheduledTasks -or -not $loginScheduledTasks.Ok) {
         throw "Login pair audit reported failures: $($loginScheduledTasks.Failures -join '; ')"
       }
@@ -415,6 +441,8 @@ function Test-SprintEndBoundaryState {
       MissingProfiles              = $missingProfiles
       ManagedProfileFailures       = @($managedProfileFailures)
       SecretEnvironmentVariables   = $environmentFindings.ToArray()
+      AllowedPersonalVaultEnvironmentVariables = $allowedPersonalVaultEnvironmentVariables.ToArray()
+      HostDisposition = $hostDispositionParameters['HostDisposition']
       FreshShell                   = $freshShell
       LoginScheduledTasks          = $loginScheduledTasks
       LoginScheduledTaskError      = $loginScheduledTaskError

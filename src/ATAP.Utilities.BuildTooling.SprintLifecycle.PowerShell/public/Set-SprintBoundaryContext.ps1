@@ -137,6 +137,10 @@ function Set-SprintBoundaryContext {
     Optional explicit Dropbox-synchronized ParityState folder for the canonical
     PrimaryRole.json marker. Defaults to the ATAP\ParityState folder beside the
     GitHub folder under the Dropbox account root.
+  .PARAMETER HostDisposition
+      Explicit operator-approved host and identity disposition. Allows only the declared
+      personal BW_SESSION scopes and login-task mode; omission retains strict defaults.
+
   .OUTPUTS
     PSCustomObject with Boundary, DryRun, a per-concern Concerns array, a
     PerWorktree breakdown, and an aggregate Errors array.
@@ -227,10 +231,42 @@ function Set-SprintBoundaryContext {
     [string]$PrimaryRoleSharedStatePath,
 
     [Alias('SkipAISettingsLifecycle')]
-    [switch]$SkipAIAdapterLifecycle
+    [switch]$SkipAIAdapterLifecycle,
+
+    [Parameter()]
+    [AllowNull()]
+    [object]$HostDisposition
   )
 
   begin {
+    # An invocation-scoped operator disposition is validated before effects.
+    # No policy preserves the existing strict task/environment contract.
+    $hostDispositionParameters = @{}
+    $hostDispositionContext = $null
+    if ($PSBoundParameters.ContainsKey('HostDisposition')) {
+      if (-not (Get-Command -Name 'Resolve-SprintEndHostDisposition' -ErrorAction SilentlyContinue) -or
+          -not (Get-Command -Name 'Test-SprintEndEnvironmentVariablePresent' -ErrorAction SilentlyContinue)) {
+        $hostDispositionHelper = Join-Path $PSScriptRoot '../private/Resolve-SprintEndHostDisposition.ps1'
+        if (-not (Test-Path -LiteralPath $hostDispositionHelper -PathType Leaf)) { throw 'Required host disposition helper is unavailable.' }
+        . $hostDispositionHelper
+      }
+      if ($PSBoundParameters.ContainsKey('HostDisposition')) {
+        $hostDispositionContext = Resolve-SprintEndHostDisposition -HostDisposition $HostDisposition
+        $hostDispositionParameters.HostDisposition = $hostDispositionContext.Metadata
+      }
+    }
+    if ($null -ne $hostDispositionContext -and $hostDispositionContext.LoginTaskMode -eq 'ExpectedAbsent') {
+      if ($Boundary -eq 'Start') {
+        throw 'ExpectedAbsent is an End-boundary disposition; future SprintStart requires its own reviewed login contract.'
+      }
+      if (-not $hostDispositionContext.IsElevated) {
+        throw 'ExpectedAbsent requires an elevated host-local task inventory before boundary changes.'
+      }
+      if ($PSBoundParameters.ContainsKey('LoginScriptPath')) {
+        throw 'ExpectedAbsent does not permit a LoginScriptPath override.'
+      }
+    }
+
     $fn = $MyInvocation.MyCommand.Name
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn (Boundary=$Boundary)"
@@ -651,7 +687,7 @@ function Set-SprintBoundaryContext {
         if ($PSBoundParameters.ContainsKey('LoginScriptPath')) { $loginParameters.LoginScriptPath = $LoginScriptPath }
         $loginApproved = $PSCmdlet.ShouldProcess('ATAPLoginScript and Unlock BitWarden', "Maintain retained login scheduled-task pair ($Boundary)")
         $loginParameters.WhatIf = [bool]($WhatIfPreference -or -not $loginApproved)
-        $loginScheduledTasks = Set-SprintLoginScheduledTaskTarget @loginParameters
+        $loginScheduledTasks = Set-SprintLoginScheduledTaskTarget @loginParameters @hostDispositionParameters
         if ($null -eq $loginScheduledTasks -or -not $loginScheduledTasks.Ok) {
           throw "Login pair maintenance reported failures: $($loginScheduledTasks.Failures -join '; ')"
         }
@@ -937,6 +973,7 @@ function Set-SprintBoundaryContext {
   end {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving function $fn ($($errors.Count) error(s))"
     [PSCustomObject]@{
+      HostDisposition = $hostDispositionParameters['HostDisposition']
       Boundary    = $Boundary
       DryRun      = [bool]$WhatIfPreference
       Concerns    = $concerns.ToArray()

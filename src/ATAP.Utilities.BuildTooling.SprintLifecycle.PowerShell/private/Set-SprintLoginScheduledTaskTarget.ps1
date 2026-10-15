@@ -8,6 +8,8 @@ function Set-SprintLoginScheduledTaskTarget {
     read back. A failed pair update restores every attempted action array in reverse
     order, including an update that changed state before throwing. No task is started.
     CheckOnly compares the current pair to the selected target without repairing it.
+    An explicit host disposition may instead require elevated verification that both
+    task names are absent. This mode performs no task or login-script maintenance.
   .NOTES
     Private lifecycle helper. Live task maintenance requires operator authorization.
     The explicit development target is invocation-only and must retain LoginScript.ps1
@@ -21,18 +23,32 @@ function Set-SprintLoginScheduledTaskTarget {
     [AllowEmptyString()][string] $GitRoot,
     [AllowNull()][AllowEmptyString()][string] $LoginScriptPath,
     [string[]] $WorktreePaths = @(),
-    [switch] $CheckOnly
+    [switch] $CheckOnly,
+    [AllowNull()][object] $HostDisposition
   )
 
   begin {
     $fn = 'Set-SprintLoginScheduledTaskTarget'
     $mn = 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell'
     $explicitOverride = $PSBoundParameters.ContainsKey('LoginScriptPath')
+    $resolvedHostDisposition = $null
+    if ($PSBoundParameters.ContainsKey('HostDisposition')) {
+      if (-not (Get-Command -Name Resolve-SprintEndHostDisposition -ErrorAction SilentlyContinue)) {
+        $resolverPath = Join-Path $PSScriptRoot 'Resolve-SprintEndHostDisposition.ps1'
+        if (-not (Test-Path -LiteralPath $resolverPath -PathType Leaf)) {
+          throw 'Required helper Resolve-SprintEndHostDisposition is unavailable.'
+        }
+        . $resolverPath
+      }
+      Get-Command -Name Resolve-SprintEndHostDisposition -ErrorAction Stop | Out-Null
+      $resolvedHostDisposition = Resolve-SprintEndHostDisposition -HostDisposition $HostDisposition
+    }
     $result = [PSCustomObject]@{
       Ok = $false; Boundary = $Boundary
       SelectionMode = $(if ($explicitOverride) { 'ExplicitDevelopmentOverride' } elseif ($Boundary -eq 'Start') { 'SprintDefault' } else { 'StableDefault' })
       TargetPath = $null; TargetHash = $null; Planned = $false; Changed = $false
       Tasks = @(); Rollback = [PSCustomObject]@{ Attempted = $false; Succeeded = $false; Failures = @() }; Failures = @()
+      HostDisposition = $(if ($null -ne $resolvedHostDisposition) { $resolvedHostDisposition.Metadata } else { $null })
     }
     $snapshots = [Collections.Generic.List[object]]::new()
     $attempted = [Collections.Generic.List[object]]::new()
@@ -241,6 +257,34 @@ function Set-SprintLoginScheduledTaskTarget {
     try {
       Get-Command -Name Write-PSFMessage -ErrorAction Stop | Out-Null
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Validating login task pair for boundary $Boundary."
+      if ($null -ne $resolvedHostDisposition -and $resolvedHostDisposition.LoginTaskMode -eq 'ExpectedAbsent') {
+        $result.SelectionMode = 'ExpectedAbsent'
+        if ($explicitOverride) { throw 'LoginScriptPath cannot be supplied with ExpectedAbsent login-task mode.' }
+        if ($Boundary -ne 'End') { throw 'ExpectedAbsent login-task mode is supported only at the End boundary.' }
+        if ($resolvedHostDisposition.IsElevated -ne $true) {
+          throw 'ExpectedAbsent login-task verification requires an elevated full-visibility inventory.'
+        }
+        Get-Command -Name Get-ScheduledTask -ErrorAction Stop | Out-Null
+        # No name/path filter: enumerate every task folder. A failed inventory is
+        # a failure, never evidence of absence. Elevation rejects ACL-filtered zeroes.
+        $inventory = @(Get-ScheduledTask -ErrorAction Stop)
+        $result.Tasks = @('ATAPLoginScript', 'Unlock BitWarden') | ForEach-Object {
+          $taskName = $_
+          $matches = @($inventory | Where-Object { $_.TaskName -ieq $taskName })
+          [PSCustomObject]@{
+            TaskName = $taskName; TaskPath = $null; BeforeBinding = $null; AfterBinding = $null
+            Outcome = $(if ($matches.Count -eq 0) { 'ExpectedAbsent' } else { 'Failed' })
+            PreservedPropertiesVerified = $false; ObservedCount = $matches.Count
+          }
+        }
+        foreach ($entry in $result.Tasks) {
+          if ($entry.ObservedCount -ne 0) {
+            $result.Failures += "Expected task '$($entry.TaskName)' absent across all folders; found $($entry.ObservedCount)."
+          }
+        }
+        $result.Ok = $result.Failures.Count -eq 0
+        return $result
+      }
       foreach ($command in @('Get-ScheduledTask', 'Export-ScheduledTask', 'Set-ScheduledTask')) {
         Get-Command -Name $command -ErrorAction Stop | Out-Null
       }

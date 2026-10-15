@@ -110,6 +110,10 @@ function Test-SprintInfrastructureHealth {
 .PARAMETER ThrowOnFailure
     If supplied, throw a terminating error when AllOk is $false.
 
+.PARAMETER HostDisposition
+    Explicit operator-approved host and identity disposition. Allows only the declared
+    personal BW_SESSION scopes and login-task mode; omission retains strict defaults.
+
 .OUTPUTS
     [PSCustomObject] with AllOk [bool], Checks [PSCustomObject], Failures [string[]],
     Timestamp [DateTime].
@@ -143,13 +147,32 @@ function Test-SprintInfrastructureHealth {
     [int]$ReachabilityTimeoutSeconds = 5,
 
     [Parameter()]
-    [switch]$ThrowOnFailure
+    [switch]$ThrowOnFailure,
+
+    [Parameter()]
+    [AllowNull()]
+    [object]$HostDisposition
   )
 
   begin {
     # SC-0288 / Task 13.66.b: the SecretName host suffix is derived from the service placement
     # host, never hard-coded. Resolution order is the authoritative host setting,
     # then the placement map; an unknown placement host fails closed.
+    # An invocation-scoped operator disposition is validated before effects.
+    # No policy preserves the existing strict task/environment contract.
+    $hostDispositionParameters = @{}
+    $hostDispositionContext = $null
+    if (-not (Get-Command -Name 'Resolve-SprintEndHostDisposition' -ErrorAction SilentlyContinue) -or
+        -not (Get-Command -Name 'Test-SprintEndEnvironmentVariablePresent' -ErrorAction SilentlyContinue)) {
+      $hostDispositionHelper = Join-Path $PSScriptRoot '../private/Resolve-SprintEndHostDisposition.ps1'
+      if (-not (Test-Path -LiteralPath $hostDispositionHelper -PathType Leaf)) { throw 'Required host disposition helper is unavailable.' }
+      . $hostDispositionHelper
+    }
+    if ($PSBoundParameters.ContainsKey('HostDisposition')) {
+      $hostDispositionContext = Resolve-SprintEndHostDisposition -HostDisposition $HostDisposition
+      $hostDispositionParameters.HostDisposition = $hostDispositionContext.Metadata
+    }
+
     if (-not $PSBoundParameters.ContainsKey('BuildMasterAdminApiKeySecretName')) {
       if (-not (Get-Command -Name 'Resolve-HostSuffixedSecretName' -ErrorAction SilentlyContinue)) {
         . (Join-Path $PSScriptRoot '..' '..' 'ATAP.Utilities.BuildTooling.Common.PowerShell' 'public' 'Resolve-HostSuffixedSecretName.ps1')
@@ -249,10 +272,14 @@ function Test-SprintInfrastructureHealth {
       'BW_SESSION'
     )
     $presentSecretEnvironmentVariables = [System.Collections.Generic.List[object]]::new()
+    $allowedPersonalVaultEnvironmentVariables = [System.Collections.Generic.List[object]]::new()
     foreach ($scope in @('Process', 'User', 'Machine')) {
       foreach ($varName in $prohibitedSecretEnvironmentVariables) {
-        $value = [System.Environment]::GetEnvironmentVariable($varName, $scope)
-        if (-not [string]::IsNullOrWhiteSpace($value)) {
+        if (Test-SprintEndEnvironmentVariablePresent -Name $varName -Scope $scope) {
+          if ($varName -eq 'BW_SESSION' -and $null -ne $hostDispositionContext -and $hostDispositionContext.PersonalVaultSessionScopes -contains $scope) {
+            [void]$allowedPersonalVaultEnvironmentVariables.Add([PSCustomObject]@{ Name=$varName; Scope=$scope; Present=$true; DispositionId=$hostDispositionContext.DispositionId })
+            continue
+          }
           [void]$presentSecretEnvironmentVariables.Add([PSCustomObject]@{
               Name  = $varName
               Scope = $scope
@@ -271,6 +298,7 @@ function Test-SprintInfrastructureHealth {
       Ok      = $secretEnvironmentOk
       Detail  = $secretEnvironmentDetail
       Present = $presentSecretEnvironmentVariables.ToArray()
+      AllowedPersonalVaultEnvironmentVariables = $allowedPersonalVaultEnvironmentVariables.ToArray()
     }
     if (-not $secretEnvironmentOk) { [void]$failures.Add('SecretEnvironmentVariables') }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug `
@@ -548,6 +576,7 @@ function Test-SprintInfrastructureHealth {
 
     # ── Assemble result ───────────────────────────────────────────────────────
     $result = [PSCustomObject]@{
+      HostDisposition = $hostDispositionParameters['HostDisposition']
       AllOk     = ($failures.Count -eq 0)
       Checks    = [PSCustomObject]$checks
       Failures  = $failures.ToArray()

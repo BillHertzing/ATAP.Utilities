@@ -489,3 +489,194 @@ Describe 'Set-SprintLoginScheduledTaskTarget private pair updater' {
     $script:taskStore[1].Description | Should -Be 'concurrent actor'
   }
 }
+
+Describe 'Set-SprintLoginScheduledTaskTarget explicit absent-task disposition' {
+  BeforeAll {
+    # A local resolver seam isolates scheduler behavior from machine/identity
+    # validation; the resolver has its own runtime-context contract suite.
+    function Resolve-SprintEndHostDisposition {
+      [CmdletBinding()]
+      param([AllowNull()][object] $HostDisposition)
+      throw 'Unmocked host-disposition resolution.'
+    }
+  }
+
+  BeforeEach {
+    $script:absencePolicy = [PSCustomObject]@{
+      IsExplicit = $true; DispositionId = 'test-approved-absence'
+      HostName = 'TESTHOST'; Identity = 'TESTHOST\whertzing'; IsElevated = $true
+      LoginTaskMode = 'ExpectedAbsent'; PersonalVaultSessionScopes = @('User', 'Process')
+      Metadata = [PSCustomObject]@{ DispositionId = 'test-approved-absence'; HostName = 'TESTHOST'; Identity = 'TESTHOST\whertzing'; LoginTaskMode = 'ExpectedAbsent'; PersonalVaultSessionScopes = @('User', 'Process') }
+    }
+    Mock Resolve-SprintEndHostDisposition { $script:absencePolicy }
+    Mock Write-PSFMessage { }
+    Mock Get-ScheduledTask { }
+    Mock Export-ScheduledTask { throw 'Absence must not export tasks.' }
+    Mock Set-ScheduledTask { throw 'Absence must not write tasks.' }
+    Mock Get-FileHash { throw 'Absence must not hash a login script.' }
+  }
+
+  It 'verifies absence without a script root, target hash, exports or writes' {
+    $result = Set-SprintLoginScheduledTaskTarget -Boundary End -HostDisposition @{ Test = 'input' }
+    $result.Ok | Should -BeTrue
+    $result.SelectionMode | Should -Be 'ExpectedAbsent'
+    $result.HostDisposition.DispositionId | Should -Be 'test-approved-absence'
+    $result.Tasks.TaskName | Should -Be @('ATAPLoginScript', 'Unlock BitWarden')
+    $result.Tasks.Outcome | Should -Be @('ExpectedAbsent', 'ExpectedAbsent')
+    $result.Tasks.ObservedCount | Should -Be @(0, 0)
+    $result.TargetPath | Should -BeNullOrEmpty
+    $result.TargetHash | Should -BeNullOrEmpty
+    $result.Changed | Should -BeFalse
+    $result.Planned | Should -BeFalse
+    $result.Rollback.Attempted | Should -BeFalse
+    Should -Invoke Get-ScheduledTask -Times 1 -Exactly
+    Should -Invoke Export-ScheduledTask -Times 0 -Exactly
+    Should -Invoke Set-ScheduledTask -Times 0 -Exactly
+    Should -Invoke Get-FileHash -Times 0 -Exactly
+  }
+
+  It 'does not require Export-ScheduledTask or Set-ScheduledTask commands for absence' {
+    Mock Get-Command { throw 'Unavailable maintenance command.' } -ParameterFilter { $Name -in @('Export-ScheduledTask', 'Set-ScheduledTask') }
+    $result = Set-SprintLoginScheduledTaskTarget -Boundary End -HostDisposition @{}
+    $result.Ok | Should -BeTrue
+    Should -Invoke Get-Command -Times 0 -Exactly -ParameterFilter { $Name -in @('Export-ScheduledTask', 'Set-ScheduledTask') }
+  }
+
+  It 'keeps CheckOnly and WhatIf absence checks actual rather than planned' {
+    $result = Set-SprintLoginScheduledTaskTarget -Boundary End -HostDisposition @{} -CheckOnly -WhatIf
+    $result.Ok | Should -BeTrue
+    $result.Planned | Should -BeFalse
+    $result.Changed | Should -BeFalse
+    Should -Invoke Get-ScheduledTask -Times 1 -Exactly
+    Should -Invoke Set-ScheduledTask -Times 0 -Exactly
+  }
+
+  It 'rejects an unelevated or unsupported visibility context before inventory' -ForEach @(
+    @{ Elevated = $false }, @{ Elevated = $null }
+  ) {
+    $script:absencePolicy.IsElevated = $Elevated
+    $result = Set-SprintLoginScheduledTaskTarget -Boundary End -HostDisposition @{}
+    $result.Ok | Should -BeFalse
+    $result.Failures -join ' ' | Should -Match 'elevated full-visibility'
+    Should -Invoke Get-ScheduledTask -Times 0 -Exactly
+    Should -Invoke Set-ScheduledTask -Times 0 -Exactly
+  }
+
+  It 'fails a throwing or partially emitted full inventory without inferring absence' -ForEach @(
+    @{ Partial = $false }, @{ Partial = $true }
+  ) {
+    $script:emitPartial = $Partial
+    Mock Get-ScheduledTask {
+      if ($script:emitPartial) { [PSCustomObject]@{ TaskName = 'Other'; TaskPath = '\Other\' } }
+      throw 'Inventory visibility denied.'
+    }
+    $result = Set-SprintLoginScheduledTaskTarget -Boundary End -HostDisposition @{}
+    $result.Ok | Should -BeFalse
+    $result.Failures -join ' ' | Should -Match 'Inventory visibility denied'
+    $result.Tasks | Should -BeNullOrEmpty
+    Should -Invoke Set-ScheduledTask -Times 0 -Exactly
+  }
+
+  It 'rejects present partial or duplicate task names in any folder using case-insensitive exact names' -ForEach @(
+    @{ Names = @('ataploginscript'); Counts = @(1, 0) },
+    @{ Names = @('UNLOCK BITWARDEN'); Counts = @(0, 1) },
+    @{ Names = @('ATAPLoginScript', 'Unlock BitWarden'); Counts = @(1, 1) },
+    @{ Names = @('ATAPLoginScript', 'ataploginscript'); Counts = @(2, 0) },
+    @{ Names = @('Unlock BitWarden', 'unlock bitwarden'); Counts = @(0, 2) }
+  ) {
+    $script:observedNames = $Names
+    Mock Get-ScheduledTask {
+      for ($i = 0; $i -lt $script:observedNames.Count; $i++) {
+        [PSCustomObject]@{ TaskName = $script:observedNames[$i]; TaskPath = "\Folder$i\" }
+      }
+    }
+    $result = Set-SprintLoginScheduledTaskTarget -Boundary End -HostDisposition @{}
+    $result.Ok | Should -BeFalse
+    $result.Tasks.ObservedCount | Should -Be $Counts
+    $result.Failures -join ' ' | Should -Match 'absent across all folders'
+    $result.Changed | Should -BeFalse
+    Should -Invoke Export-ScheduledTask -Times 0 -Exactly
+    Should -Invoke Set-ScheduledTask -Times 0 -Exactly
+  }
+
+  It 'does not confuse neighboring names with the two exact names' {
+    Mock Get-ScheduledTask {
+      [PSCustomObject]@{ TaskName = 'ATAPLoginScript-old'; TaskPath = '\' }
+      [PSCustomObject]@{ TaskName = 'Unlock BitWarden Backup'; TaskPath = '\' }
+    }
+    (Set-SprintLoginScheduledTaskTarget -Boundary End -HostDisposition @{}).Ok | Should -BeTrue
+  }
+
+  It 'rejects an explicit login-script override even when empty' -ForEach @(
+    @{ Override = 'C:\missing\LoginScript.ps1' }, @{ Override = '' }, @{ Override = $null }
+  ) {
+    $result = Set-SprintLoginScheduledTaskTarget -Boundary End -HostDisposition @{} -LoginScriptPath $Override
+    $result.Ok | Should -BeFalse
+    $result.Failures -join ' ' | Should -Match 'LoginScriptPath cannot'
+    Should -Invoke Get-ScheduledTask -Times 0 -Exactly
+    Should -Invoke Get-FileHash -Times 0 -Exactly
+    Should -Invoke Set-ScheduledTask -Times 0 -Exactly
+  }
+
+  It 'does not enable ExpectedAbsent at SprintStart' {
+    $result = Set-SprintLoginScheduledTaskTarget -Boundary Start -HostDisposition @{}
+    $result.Ok | Should -BeFalse
+    $result.Failures -join ' ' | Should -Match 'only at the End'
+    Should -Invoke Get-ScheduledTask -Times 0 -Exactly
+    Should -Invoke Set-ScheduledTask -Times 0 -Exactly
+  }
+
+  It 'does not invoke disposition resolution when the caller omits it' {
+    # Missing default script is the original retained-pair failure, not absence.
+    $result = Set-SprintLoginScheduledTaskTarget -Boundary End -GitRoot 'C:\absent-fixture'
+    $result.Ok | Should -BeFalse
+    $result.SelectionMode | Should -Be 'StableDefault'
+    $result.HostDisposition | Should -BeNullOrEmpty
+    Should -Invoke Resolve-SprintEndHostDisposition -Times 0 -Exactly
+    Should -Invoke Set-ScheduledTask -Times 0 -Exactly
+  }
+
+  It 'forwards explicit null to validation and fails before inventory or writes' {
+    Mock Resolve-SprintEndHostDisposition { throw 'Explicit null disposition is invalid.' }
+    { Set-SprintLoginScheduledTaskTarget -Boundary End -HostDisposition $null } | Should -Throw '*Explicit null disposition*'
+    Should -Invoke Resolve-SprintEndHostDisposition -Times 1 -Exactly -ParameterFilter { $null -eq $HostDisposition }
+    Should -Invoke Get-ScheduledTask -Times 0 -Exactly
+    Should -Invoke Set-ScheduledTask -Times 0 -Exactly
+  }
+
+  It 'rejects malformed disposition before inventory or writes' {
+    Mock Resolve-SprintEndHostDisposition { throw 'Malformed disposition.' }
+    { Set-SprintLoginScheduledTaskTarget -Boundary End -HostDisposition 'bad' } | Should -Throw '*Malformed disposition*'
+    Should -Invoke Get-ScheduledTask -Times 0 -Exactly
+    Should -Invoke Set-ScheduledTask -Times 0 -Exactly
+  }
+
+  It 'autoloads the actual sibling resolver in an isolated source invocation' {
+    $source = Join-Path $PSScriptRoot '..' '..' 'private' 'Set-SprintLoginScheduledTaskTarget.ps1'
+    $runtime = [PowerShell]::Create()
+    try {
+      $null = $runtime.AddScript({
+          param($SourcePath)
+          function Write-PSFMessage { param($FunctionName, $ModuleName, $Level, $Message) }
+          function Get-ScheduledTask { throw 'No live scheduler access is allowed.' }
+          function Set-ScheduledTask { throw 'No live scheduler writes are allowed.' }
+          . $SourcePath
+          try {
+            Set-SprintLoginScheduledTaskTarget -Boundary End -HostDisposition $null
+            throw 'Expected actual sibling validation to fail.'
+          } catch {
+            $_.Exception.Message
+          }
+        }).AddArgument($source)
+      $messages = @($runtime.Invoke())
+      # The initial silent Get-Command miss is expected before source autoload.
+      @($runtime.Streams.Error | Where-Object { $_.Exception.Message -match 'No live scheduler' }).Count | Should -Be 0
+      $messages.Count | Should -Be 1
+      $messages[0] | Should -Be 'HostDisposition must be a non-null six-field object.'
+    } finally {
+      $runtime.Dispose()
+    }
+    Should -Invoke Get-ScheduledTask -Times 0 -Exactly
+    Should -Invoke Set-ScheduledTask -Times 0 -Exactly
+  }
+}

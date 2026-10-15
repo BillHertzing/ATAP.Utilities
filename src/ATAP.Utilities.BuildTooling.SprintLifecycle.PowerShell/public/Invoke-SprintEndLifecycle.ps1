@@ -104,6 +104,10 @@ function Invoke-SprintEndLifecycle {
   .PARAMETER ThrowOnFailure
   Throws when any required phase fails.
 
+  .PARAMETER HostDisposition
+      Explicit operator-approved host and identity disposition. Allows only the declared
+      personal BW_SESSION scopes and login-task mode; omission retains strict defaults.
+
   .OUTPUTS
   PSCustomObject containing compact phase results.
 
@@ -199,10 +203,31 @@ function Invoke-SprintEndLifecycle {
     [switch]$TestFreshShell,
 
     [Parameter()]
-    [switch]$ThrowOnFailure
+    [switch]$ThrowOnFailure,
+
+    [Parameter()]
+    [AllowNull()]
+    [object]$HostDisposition
   )
 
   begin {
+    # An invocation-scoped operator disposition is validated before effects.
+    # No policy preserves the existing strict task/environment contract.
+    $hostDispositionParameters = @{}
+    $hostDispositionContext = $null
+    if ($PSBoundParameters.ContainsKey('HostDisposition')) {
+      if (-not (Get-Command -Name 'Resolve-SprintEndHostDisposition' -ErrorAction SilentlyContinue) -or
+          -not (Get-Command -Name 'Test-SprintEndEnvironmentVariablePresent' -ErrorAction SilentlyContinue)) {
+        $hostDispositionHelper = Join-Path $PSScriptRoot '../private/Resolve-SprintEndHostDisposition.ps1'
+        if (-not (Test-Path -LiteralPath $hostDispositionHelper -PathType Leaf)) { throw 'Required host disposition helper is unavailable.' }
+        . $hostDispositionHelper
+      }
+      if ($PSBoundParameters.ContainsKey('HostDisposition')) {
+        $hostDispositionContext = Resolve-SprintEndHostDisposition -HostDisposition $HostDisposition
+        $hostDispositionParameters.HostDisposition = $hostDispositionContext.Metadata
+      }
+    }
+
     $fn = 'Invoke-SprintEndLifecycle'
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
@@ -349,7 +374,7 @@ function Invoke-SprintEndLifecycle {
         $boundaryParameters.SkipSharedVSCodeSettings = [bool]$SkipSharedVSCodeSettings
       }
       if ($PSBoundParameters.ContainsKey('LoginScriptPath')) { $boundaryParameters.LoginScriptPath = $LoginScriptPath }
-      $phases.BoundaryReset = Set-SprintBoundaryContext @boundaryParameters
+      $phases.BoundaryReset = Set-SprintBoundaryContext @boundaryParameters @hostDispositionParameters
       if (@($phases.BoundaryReset.Errors).Count -gt 0) { [void]$failures.Add('BoundaryReset') }
 
       $templateResults = [System.Collections.Generic.List[object]]::new()
@@ -399,7 +424,7 @@ function Invoke-SprintEndLifecycle {
           Confirm = $false
         }
         if ($PSBoundParameters.ContainsKey('LoginScriptPath')) { $loginAuditParameters.LoginScriptPath = $LoginScriptPath }
-        $phases.LoginScheduledTasksPreCleanup = Set-SprintLoginScheduledTaskTarget @loginAuditParameters
+        $phases.LoginScheduledTasksPreCleanup = Set-SprintLoginScheduledTaskTarget @loginAuditParameters @hostDispositionParameters
         if ($null -eq $phases.LoginScheduledTasksPreCleanup -or -not $phases.LoginScheduledTasksPreCleanup.Ok) {
           [void]$failures.Add('LoginScheduledTasksPreCleanup')
         }
@@ -491,7 +516,7 @@ function Invoke-SprintEndLifecycle {
         $handoffParameters.DatabaseCleanupTargets = $DatabaseCleanupTargets
       }
       try {
-        $phases.Handoff = New-SprintEndHandoff @handoffParameters
+        $phases.Handoff = New-SprintEndHandoff @handoffParameters @hostDispositionParameters
       } catch {
         $phases.Handoff = [PSCustomObject]@{
           Ok = $false
@@ -517,7 +542,7 @@ function Invoke-SprintEndLifecycle {
         $cleanupParameters.DatabaseCleanupTargets = $DatabaseCleanupTargets
       }
       if ($PSBoundParameters.ContainsKey('LoginScriptPath')) { $cleanupParameters.LoginScriptPath = $LoginScriptPath }
-      $phases.InfrastructureCleanup = Invoke-SprintEndInfrastructureCleanup @cleanupParameters
+      $phases.InfrastructureCleanup = Invoke-SprintEndInfrastructureCleanup @cleanupParameters @hostDispositionParameters
       if (-not $phases.InfrastructureCleanup.Ok) { [void]$failures.Add('InfrastructureCleanup') }
     } else {
       $phases.InfrastructureCleanup = $null
@@ -531,7 +556,7 @@ function Invoke-SprintEndLifecycle {
         TestFreshShell = [bool]$TestFreshShell
       }
       if ($PSBoundParameters.ContainsKey('LoginScriptPath')) { $finalBoundaryParameters.LoginScriptPath = $LoginScriptPath }
-      $phases.FinalBoundary = Test-SprintEndBoundaryState @finalBoundaryParameters
+      $phases.FinalBoundary = Test-SprintEndBoundaryState @finalBoundaryParameters @hostDispositionParameters
       if (-not $phases.FinalBoundary.Ok) { [void]$failures.Add('FinalBoundary') }
     } else {
       $phases.FinalBoundary = [PSCustomObject]@{
@@ -546,6 +571,7 @@ function Invoke-SprintEndLifecycle {
 
     $uniqueFailures = @($failures | Select-Object -Unique)
     $result = [PSCustomObject]@{
+      HostDisposition = $hostDispositionParameters['HostDisposition']
       Ok                         = ($uniqueFailures.Count -eq 0)
       DryRun                     = [bool]$WhatIfPreference
       ClosedSprintNumber         = $phases.Context.ClosedSprintNumber

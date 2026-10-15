@@ -35,6 +35,10 @@ function Invoke-SprintEndInfrastructureCleanup {
   .PARAMETER ProfiledRemotingPolicy
   Policy passed to the stable boundary reassertion. Defaults to Auto.
 
+  .PARAMETER HostDisposition
+      Explicit operator-approved host and identity disposition. Allows only the declared
+      personal BW_SESSION scopes and login-task mode; omission retains strict defaults.
+
   .OUTPUTS
   PSCustomObject with health, database, BuildMaster, and boundary results.
 
@@ -73,10 +77,31 @@ function Invoke-SprintEndInfrastructureCleanup {
 
     [Parameter()]
     [ValidateSet('Disabled', 'Auto', 'Required')]
-    [string]$ProfiledRemotingPolicy = 'Auto'
+    [string]$ProfiledRemotingPolicy = 'Auto',
+
+    [Parameter()]
+    [AllowNull()]
+    [object]$HostDisposition
   )
 
   begin {
+    # An invocation-scoped operator disposition is validated before effects.
+    # No policy preserves the existing strict task/environment contract.
+    $hostDispositionParameters = @{}
+    $hostDispositionContext = $null
+    if ($PSBoundParameters.ContainsKey('HostDisposition')) {
+      if (-not (Get-Command -Name 'Resolve-SprintEndHostDisposition' -ErrorAction SilentlyContinue) -or
+          -not (Get-Command -Name 'Test-SprintEndEnvironmentVariablePresent' -ErrorAction SilentlyContinue)) {
+        $hostDispositionHelper = Join-Path $PSScriptRoot '../private/Resolve-SprintEndHostDisposition.ps1'
+        if (-not (Test-Path -LiteralPath $hostDispositionHelper -PathType Leaf)) { throw 'Required host disposition helper is unavailable.' }
+        . $hostDispositionHelper
+      }
+      if ($PSBoundParameters.ContainsKey('HostDisposition')) {
+        $hostDispositionContext = Resolve-SprintEndHostDisposition -HostDisposition $HostDisposition
+        $hostDispositionParameters.HostDisposition = $hostDispositionContext.Metadata
+      }
+    }
+
     $fn = 'Invoke-SprintEndInfrastructureCleanup'
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     $exactDatabaseCleanup = $PSBoundParameters.ContainsKey('DatabaseCleanupTargets')
@@ -151,7 +176,7 @@ function Invoke-SprintEndInfrastructureCleanup {
       } else {
         $loginParameters.CheckOnly = $true
       }
-      $loginScheduledTasks = Set-SprintLoginScheduledTaskTarget @loginParameters
+      $loginScheduledTasks = Set-SprintLoginScheduledTaskTarget @loginParameters @hostDispositionParameters
       if ($null -eq $loginScheduledTasks -or -not $loginScheduledTasks.Ok) {
         [void]$failures.Add('LoginScheduledTasks')
       }
@@ -160,6 +185,7 @@ function Invoke-SprintEndInfrastructureCleanup {
     }
     if ($failures.Count -gt 0) {
       return [PSCustomObject]@{
+        HostDisposition = $hostDispositionParameters['HostDisposition']
         Ok = $false; Applied = $false; Planned = [bool]($Apply -and $WhatIfPreference)
         Health = $null; DatabaseResults = $databaseResults; DatabaseCleanupMode = $databaseCleanupMode
         DatabaseTargetSelectionMode = $databaseTargetSelectionMode; DatabaseCleanupTargets = $validatedDatabaseTargets
@@ -182,7 +208,7 @@ function Invoke-SprintEndInfrastructureCleanup {
       }
       $health = & {
         $WhatIfPreference = $false
-        Test-SprintInfrastructureHealth `
+        Test-SprintInfrastructureHealth @hostDispositionParameters `
           -BuildMasterAdminApiKeySecretName $BuildMasterAdminApiKeySecretName
       }
     } finally {
@@ -259,7 +285,7 @@ function Invoke-SprintEndInfrastructureCleanup {
       $stableSharedVSCode = Join-Path ([IO.Path]::GetFullPath($GitRoot)) 'SharedVSCode'
       if ($failures.Count -eq 0 -and $PSCmdlet.ShouldProcess($stableSharedVSCode, 'Reassert stable SprintEnd boundary')) {
         try {
-          $boundaryResult = Set-SprintBoundaryContext `
+          $boundaryResult = Set-SprintBoundaryContext @hostDispositionParameters `
             -Boundary End `
             -SharedVSCodeWorktreePath $stableSharedVSCode `
             -GitRoot $GitRoot `
@@ -281,6 +307,7 @@ function Invoke-SprintEndInfrastructureCleanup {
     $cleanupOk = ($health.AllOk -and $failures.Count -eq 0 -and
       (-not $Apply -or $WhatIfPreference -or ($null -ne $buildMasterResult -and $null -ne $boundaryResult)))
     return [PSCustomObject]@{
+      HostDisposition = $hostDispositionParameters['HostDisposition']
       Ok                         = $cleanupOk
       Applied                    = [bool]($Apply -and -not $WhatIfPreference -and $cleanupOk)
       Planned                    = [bool]($Apply -and $WhatIfPreference)

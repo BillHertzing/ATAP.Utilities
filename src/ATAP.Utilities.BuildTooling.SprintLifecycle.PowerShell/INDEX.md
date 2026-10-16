@@ -20,3 +20,8 @@ handoff; UTAT01 remains separately scoped under Task16.64.
 Version 0.1.48 bounds retries of transient atomic receipt-replacement failures
 without repeating worktree removal. Persistent denial preserves the prior receipt
 and fails closed after six attempts; no permission or attribute changes are made.
+
+Version 0.1.49 adds `private/Complete-SprintWorktreeNativeRemoval.ps1` for the
+exact captured Git255 empty administrative-slot deletion failure. Recovery
+retains the failed native result, validates identity before each nonrecursive
+delete, and requires recorded completion on resume. Unknown failures remain blocked.

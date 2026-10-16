@@ -56,7 +56,7 @@ function Remove-SprintWorktreeSafely {
     $fn = 'Remove-SprintWorktreeSafely'
     $mn = 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
-    foreach ($helper in @('Get-SprintEndActiveWorkspaceRoot', 'Invoke-SprintEndNativeCommand', 'Get-SprintWorktreeRecoveryState', 'Remove-SprintWorktreeResidual', 'Remove-SprintWorktreeRecoveryMetadata')) {
+    foreach ($helper in @('Get-SprintEndActiveWorkspaceRoot', 'Invoke-SprintEndNativeCommand', 'Get-SprintWorktreeRecoveryState', 'Remove-SprintWorktreeResidual', 'Remove-SprintWorktreeRecoveryMetadata', 'Complete-SprintWorktreeNativeRemoval')) {
       if (-not (Get-Command $helper -ErrorAction SilentlyContinue)) { . (Join-Path $PSScriptRoot "..\private\$helper.ps1") }
     }
   }
@@ -295,7 +295,8 @@ function Remove-SprintWorktreeSafely {
           for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
             if (@(Get-SprintEndActiveWorkspaceRoot -WorktreePath $worktreeFull).Count) { throw 'Active workspace appeared before native removal.' }
             $attempts++
-            & $record 'BeforeNativeRemoval' @{ Attempt = $attempts }
+            $nativeSnapshot = Complete-SprintWorktreeNativeRemoval -Phase Capture -State $state -RepositoryPath $repositoryFull -WorktreePath $worktreeFull
+            & $record 'BeforeNativeRemoval' @{ Attempt = $attempts; MetadataSnapshot=$nativeSnapshot }
             $native = Invoke-RemovalGit $repositoryFull @('worktree', 'remove', $worktreeFull, '--force')
             $state.NativeAttempts += @{ Attempt = $attempts; Result = $native }
             & $record 'NativeResult' $native
@@ -304,7 +305,11 @@ function Remove-SprintWorktreeSafely {
             $stillRegistered = @($after.Output | Where-Object { $_ -like 'worktree *' -and (Get-RemovalPath $_.Substring(9)) -ieq $worktreeFull }).Count -gt 0
             $state.AfterRegistration = @($after.Output)
             if (-not $stillRegistered) {
-              if (-not $native.Succeeded) { throw "Git failed with exit code $($native.ExitCode) despite deregistration; explicit review required." }
+              if (-not $native.Succeeded) {
+                $recoveredNative = Complete-SprintWorktreeNativeRemoval -Phase Recover -State $state -RepositoryPath $repositoryFull -WorktreePath $worktreeFull -Snapshot $nativeSnapshot -NativeResult $native -Record $record
+                if (-not $recoveredNative) { throw "Git failed with exit code $($native.ExitCode) despite deregistration; explicit review required." }
+                $state.NativeAttempts[-1].MetadataCleanup = $nativeSnapshot
+              }
               $state.Deregistered = $true
               & $record 'Deregistered' $worktreeFull
               break

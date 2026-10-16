@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.1.49
+
+- Recover only the exact Git255 permission-denied result for an empty worktree
+  administrative slot captured before native removal. Revalidate the owning
+  repository, slot creation identity, absent registration/pointer and preserved
+  HEAD before each nonrecursive deletion; retain the original failed Git result.
+- Bound empty-slot deletion to six attempts for Windows errors 5/32/33. Never
+  repeat deregistered Git removal, prune unrelated slots or accept unknown errors.
+- Require captured identity and cleanup-completion evidence when resuming these
+  receipts. Changed contents, links, recovery refs or recreated pointers fail closed.
+- Retain the settings-pointer and atomic receipt-replacement repairs from 0.1.48.
+
 ## 0.1.48
 
 - Retry only atomic worktree-recovery receipt replacement after transient Windows

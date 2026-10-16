@@ -12,9 +12,9 @@ Entity Framework Core abstractions, Flyway migration helpers
 
 | Source File    | Last Modified            |
 | -------------- | ------------------------ |
-| main-instructions.md | 2026-09-11 10:02:31 |
-| ai-local.md | 2026-08-13 12:27:38 |
-| CLAUDE.md (combined) | 2026-09-14 12:46:04 |
+| main-instructions.md | 2026-10-15 22:30:28 |
+| ai-local.md | 2026-10-15 22:40:26 |
+| CLAUDE.md (combined) | 2026-10-16 10:25:01 |
 
 ---
 
@@ -491,7 +491,10 @@ When asked to create or modify a Rule, Rule Set, or Build Set:
 13. **Checkpoint cadence (R-30):** During long or multi-repo sessions, run `/checkpoint`
     at completed task boundaries, before risky context switches or broad refactors, and
     always before closing the session. Do not leave an entire sprint's worth of work
-    uncheckpointed.
+    uncheckpointed. For Codex Desktop, identify the current **root** task/session ID and
+    pass it explicitly as `Save-SprintWorkSession -SessionId`; never select a transcript
+    by newest modification time or pass a subagent rollout ID. If the root ID cannot be
+    established and verified, stop the checkpoint rather than archiving a guessed session.
 14. **Pre-pull overlap check (R-31):** Before pulling `main` in a repo with local
     changes, compare local modified paths to `main..origin/main` changed paths. Block
     automatic pull when paths overlap and ask for human direction.

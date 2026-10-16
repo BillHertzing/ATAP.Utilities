@@ -428,6 +428,17 @@ function Test-SprintEndBoundaryState {
       [void]$failures.Add('LoginScheduledTasks')
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $loginScheduledTaskError
     }
+    $settingsLink = $null
+    try {
+      if (-not (Get-Command -Name 'Set-UserSettingsSymlink' -ErrorAction SilentlyContinue)) {
+        . (Join-Path $PSScriptRoot '../private/Set-UserSettingsSymlink.ps1')
+      }
+      $settingsLink = Set-UserSettingsSymlink -SharedVSCodeWorktreePath (Join-Path $gitRootFull 'SharedVSCode') -CheckOnly -WorktreePaths $WorktreePaths -Confirm:$false
+      if ($null -eq $settingsLink -or -not $settingsLink.Ok) { throw 'Settings stable target/readability audit failed.' }
+    } catch {
+      $settingsLink = [PSCustomObject]@{ Ok = $false; Error = $_.Exception.Message }
+      [void]$failures.Add('SettingsLink')
+    }
     if ($liveStaleReferences.Count -gt 0) { [void]$failures.Add('StaleSprintReferences') }
     if ($environmentFindings.Count -gt 0) { [void]$failures.Add('SecretEnvironmentVariables') }
     if (-not $freshShell.Ok) { [void]$failures.Add('FreshShellProfile') }
@@ -444,6 +455,7 @@ function Test-SprintEndBoundaryState {
       AllowedPersonalVaultEnvironmentVariables = $allowedPersonalVaultEnvironmentVariables.ToArray()
       HostDisposition = $hostDispositionParameters['HostDisposition']
       FreshShell                   = $freshShell
+      SettingsLink                 = $settingsLink
       LoginScheduledTasks          = $loginScheduledTasks
       LoginScheduledTaskError      = $loginScheduledTaskError
       Failures                     = $failures.ToArray()

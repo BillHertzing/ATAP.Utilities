@@ -405,6 +405,21 @@ function Invoke-SprintEndLifecycle {
       $phases.TemplateRef = @()
     }
 
+    # Independently audit settings before any close effect, even when settings
+    # or boundary application was skipped. A post-cleanup audit is too late.
+    $phases.SettingsPreCleanup = $null
+    if ($failures.Count -eq 0 -and ($CleanupInfrastructure -or $WriteHandoff -or $CreatePullRequests -or $MergePullRequests)) {
+      try {
+        if (-not (Get-Command -Name 'Set-UserSettingsSymlink' -ErrorAction SilentlyContinue)) {
+          . (Join-Path $PSScriptRoot '../private/Set-UserSettingsSymlink.ps1')
+        }
+        $phases.SettingsPreCleanup = Set-UserSettingsSymlink -SharedVSCodeWorktreePath (Join-Path $gitRootFull 'SharedVSCode') -CheckOnly -WorktreePaths $worktreeFullPaths -Confirm:$false
+        if ($null -eq $phases.SettingsPreCleanup -or -not $phases.SettingsPreCleanup.Ok) { throw 'Settings must target readable stable SharedVSCode before closing sprint worktrees.' }
+      } catch {
+        $phases.SettingsPreCleanup = [PSCustomObject]@{ Ok = $false; Error = $_.Exception.Message }
+        [void]$failures.Add('SettingsPreCleanup')
+      }
+    }
     # Teardown without a boundary application still requires a read-only pair
     # audit before any handoff or infrastructure cleanup can proceed. The final
     # audit alone is too late to protect a target in a removed worktree.

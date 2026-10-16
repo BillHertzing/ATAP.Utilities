@@ -710,7 +710,8 @@ function New-SprintStage2 {
 
     try {
       if ($PSCmdlet.ShouldProcess($svWorktreePath, 'Retarget VS Code UserSettings.jsonc symlink')) {
-        Set-UserSettingsSymlink -SharedVSCodeWorktreePath $svWorktreePath
+        $settingsResult = Set-UserSettingsSymlink -SharedVSCodeWorktreePath $svWorktreePath -Confirm:$false
+        if ($null -eq $settingsResult -or -not $settingsResult.Ok) { throw 'Settings helper did not verify the exact readable destination.' }
         $userSettingsLinked = $true
       }
     } catch {

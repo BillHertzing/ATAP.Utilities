@@ -44,7 +44,7 @@ Describe 'Set-SprintBoundaryContext [public]' {
     Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-WorktreeJunctions { [PSCustomObject]@{ Success = $true; Errors = @() } }
     Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Initialize-DownstreamSprintFromSharedVSCode { }
     Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Reset-DownstreamToSharedVSCodeMain { }
-    Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-UserSettingsSymlink { }
+    Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-UserSettingsSymlink { [PSCustomObject]@{ Ok = $true; Planned = $false; Changed = $false } }
     Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-ClaudeSettingsSymlink { }
     Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Invoke-SprintAIAdapterLifecycle {
       [PSCustomObject]@{ DriftClean = $true; Results = @(); ChangedCount = 0; Idempotent = $true; UserGlobalIntentLedgerPath = 'intent.json' }

@@ -1,6 +1,13 @@
 #Requires -Version 7.0
 
 BeforeAll {
+  # Settings behavior is covered by SettingsLinkLifecycle.Sprint0016.Tests.ps1;
+  # keep this suite isolated from the host settings entry.
+  function Set-UserSettingsSymlink {
+    [CmdletBinding(SupportsShouldProcess)]
+    param([string]$SharedVSCodeWorktreePath, [switch]$CheckOnly, [string[]]$WorktreePaths)
+    [PSCustomObject]@{ Ok = $true; Planned = $false; Changed = $false }
+  }
   # Task 15.208: isolate login maintenance from the host Task Scheduler.
   function Set-SprintLoginScheduledTaskTarget {
     [CmdletBinding(SupportsShouldProcess)]

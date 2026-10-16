@@ -631,34 +631,45 @@ function Set-SprintBoundaryContext {
     # ------------------------------------------------------------------
     $settingsOk = $true
     $settingsError = $null
-    try {
-      if (-not $SkipSharedVSCodeSettings -and $PSCmdlet.ShouldProcess($SharedVSCodeWorktreePath, "Retarget SharedVSCode settings symlinks ($Boundary)")) {
-        $sharedSettingsRenderParameters = @{
-          Boundary = 'Start'
-          TargetRoot = $SharedVSCodeWorktreePath
-          SharedVSCodeWorktreePath = $SharedVSCodeWorktreePath
-          Confirm = $false
-          WhatIf = $WhatIfPreference
-          AllowUserGlobalWrite = $AllowUserGlobalWrite
-          CheckpointConfirmed = $CheckpointConfirmed
+    $settingsResult = $null
+    $settingsRoot = if ($Boundary -eq 'End') { Join-Path $GitRoot 'SharedVSCode' } else { $SharedVSCodeWorktreePath }
+    if (-not $SkipSharedVSCodeSettings) {
+      # Adapter failure must remain visible without preventing settings recovery.
+      try {
+        if ($PSCmdlet.ShouldProcess($settingsRoot, "Render SharedVSCode adapters ($Boundary)")) {
+          $sharedSettingsRenderParameters = @{
+            Boundary = 'Start'; TargetRoot = $settingsRoot; SharedVSCodeWorktreePath = $settingsRoot
+            Confirm = $false; WhatIf = $WhatIfPreference; AllowUserGlobalWrite = $AllowUserGlobalWrite
+            CheckpointConfirmed = $CheckpointConfirmed
+          }
+          if ($Boundary -eq 'End') { $sharedSettingsRenderParameters.OmitSprintWorktrees = $true }
+          Invoke-SprintAIAdapterLifecycle @sharedSettingsRenderParameters | Out-Null
         }
-        if ($Boundary -eq 'End') {
-          $sharedSettingsRenderParameters.OmitSprintWorktrees = $true
-        }
-        Invoke-SprintAIAdapterLifecycle @sharedSettingsRenderParameters | Out-Null
-        Set-UserSettingsSymlink -SharedVSCodeWorktreePath $SharedVSCodeWorktreePath
+      } catch {
+        $settingsOk = $false
+        $settingsError = "Settings adapter lifecycle failed: $($_.Exception.Message)"
+        $errors.Add($settingsError)
       }
-    } catch {
-      $settingsOk = $false
-      $settingsError = "Settings symlink retarget failed: $($_.Exception.Message)"
-      $errors.Add($settingsError)
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $settingsError
+      try {
+        if ($PSCmdlet.ShouldProcess($settingsRoot, "Retarget SharedVSCode settings symlink ($Boundary)")) {
+          $settingsResult = Set-UserSettingsSymlink -SharedVSCodeWorktreePath $settingsRoot -Confirm:$false -WhatIf:$WhatIfPreference
+          if ($null -eq $settingsResult -or (-not $settingsResult.Ok -and -not ($WhatIfPreference -and $settingsResult.Planned))) {
+            throw 'Settings helper did not verify the exact readable destination.'
+          }
+        }
+      } catch {
+        $settingsOk = $false
+        $settingsError = "Settings symlink retarget failed: $($_.Exception.Message)"
+        $errors.Add($settingsError)
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $settingsError
+      }
     }
     $concerns.Add([PSCustomObject]@{
         Concern        = 'SharedVSCodeSettings'
         Action         = ($SkipSharedVSCodeSettings ? 'Skipped' : 'Invoke-SprintAIAdapterLifecycle (authoritative shared and user-global adapter lifecycle) + Set-UserSettingsSymlink')
         StableByDesign = $false
         Succeeded      = $settingsOk
+        Result         = $settingsResult
         Error          = $settingsError
       })
 

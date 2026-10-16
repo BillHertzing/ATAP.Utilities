@@ -619,3 +619,4 @@ inside a disposable temp copy because repository rules ignore compiled binaries.
 | [Test-GitHubMCP.ps1](tools/Test-GitHubMCP.ps1)   | Test the GitHub MCP server connection                                      |
 
 - Version bumped to 0.1.13 in Sprint 11
+- Task 16.11 source: facade and child settings helpers share identical transaction/readback behavior, including recovery metadata and target/readability verdicts. Source validation: 236 passed, 0 failed; packaging and both-host acceptance remain in Task 16.12.

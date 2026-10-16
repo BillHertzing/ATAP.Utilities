@@ -19,7 +19,13 @@ BeforeAll {
   function Set-WorktreeJunctions { param($SourceRepoPath, $WorktreePath, $DevSourceRepoPath, $DevSourceRepoFolderNames, $SourceRepoFolderNames) }
   function Initialize-DownstreamSprintFromSharedVSCode { param($WorktreePath, $SharedVSCodeRepoName, $TemplateRef, $Profile, $SharedHooksSubPath, $CommitTemplateRelativePath) }
   function Reset-DownstreamToSharedVSCodeMain { param($WorktreePath, $SharedVSCodeRepoName, $SharedHooksSubPath, $CommitTemplateRelativePath) }
-  function Set-UserSettingsSymlink { param($SharedVSCodeWorktreePath) }
+  # Settings behavior is covered by SettingsLinkLifecycle.Sprint0016.Tests.ps1;
+  # keep this suite isolated from the host settings entry.
+  function Set-UserSettingsSymlink {
+    [CmdletBinding(SupportsShouldProcess)]
+    param([string]$SharedVSCodeWorktreePath, [switch]$CheckOnly, [string[]]$WorktreePaths)
+    [PSCustomObject]@{ Ok = $true; Planned = $false; Changed = $false }
+  }
   # Exercise the production Stage2 selection/call block with adversarial
   # repoResults that the normal repo-discovery deduplication cannot produce.
   $tokens = $null; $parseErrors = $null

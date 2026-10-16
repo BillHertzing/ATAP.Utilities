@@ -7,6 +7,12 @@
 # deterministically from its inputs, and keep its authority boundary explicit.
 
 BeforeAll {
+  # Task 16.12: unrelated unit tests must never inspect workstation settings.
+  function Set-UserSettingsSymlink {
+    [CmdletBinding(SupportsShouldProcess)]
+    param([string]$SharedVSCodeWorktreePath, [switch]$CheckOnly, [string[]]$WorktreePaths)
+    throw 'Unmocked settings audit'
+  }
   # Task 15.208: isolate login maintenance from the host Task Scheduler.
   function Set-SprintLoginScheduledTaskTarget {
     [CmdletBinding(SupportsShouldProcess)]
@@ -28,6 +34,8 @@ BeforeAll {
     . $publicFunction.FullName
   }
 
+  function Assert-LockFilesClean { throw 'Unmocked lock-file runner' }
+
   function script:Get-Concern {
     param($Plan, [string]$Name)
     @($Plan.Concerns | Where-Object Concern -eq $Name) | Select-Object -First 1
@@ -36,6 +44,10 @@ BeforeAll {
 
 Describe 'SprintEnd approval plan' -Tag 'Unit' {
   BeforeEach {
+    Mock Set-UserSettingsSymlink {
+      if (-not $CheckOnly) { throw 'Only a settings audit is permitted in this fixture' }
+      [PSCustomObject]@{ Ok = $true }
+    }
     Mock Set-SprintLoginScheduledTaskTarget { [PSCustomObject]@{ Ok = $true; Planned = $false; Changed = $false; Tasks = @(); Failures = @() } }
   }
   Context 'Every concern documents its cause and stays deterministic' {
@@ -243,6 +255,10 @@ Describe 'SprintEnd approval plan' -Tag 'Unit' {
 
   Context 'Invoke-SprintEndLifecycle approval integration' {
     BeforeEach {
+      Mock Set-UserSettingsSymlink {
+        if (-not $CheckOnly) { throw 'Only a settings audit is permitted in this fixture' }
+        [PSCustomObject]@{ Ok = $true }
+      }
       $script:gitRoot = Join-Path $TestDrive 'GitHub'
       $script:planning = Join-Path $script:gitRoot '_Planning-wt-33-Sprint-0014-work-items'
       $script:shared = Join-Path $script:gitRoot 'SharedVSCode-wt-62-Sprint-0014-work-items'

@@ -1,5 +1,16 @@
 # Release notes
 
+## 0.1.47
+
+- Retain the transactional settings-pointer fix prepared in 0.1.46: Start selects
+  the actual Shared sprint root; End selects readable stable settings and checks
+  them independently before cleanup. The immutable 0.1.46 attempt failed its
+  Development unit-test gate and was not installed.
+- Isolate settings audits in four unrelated SprintEnd unit fixtures, and make
+  lock-file-runner discovery deterministic. Test doubles refuse settings mutation;
+  real settings-helper and lifecycle gate regressions remain active.
+- Task 16.12 targets UTAT022 only; UTAT01 acceptance remains Task 16.64.
+
 ## 0.1.45
 
 - Isolate the authentic installed 0.1.43 recovery fixture with a uniquely prefixed

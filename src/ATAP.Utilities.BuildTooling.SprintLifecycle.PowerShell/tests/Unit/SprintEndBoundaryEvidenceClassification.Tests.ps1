@@ -1,6 +1,12 @@
 #Requires -Version 7.0
 
 BeforeAll {
+  # Task 16.12: unrelated unit tests must never inspect workstation settings.
+  function Set-UserSettingsSymlink {
+    [CmdletBinding(SupportsShouldProcess)]
+    param([string]$SharedVSCodeWorktreePath, [switch]$CheckOnly, [string[]]$WorktreePaths)
+    throw 'Unmocked settings audit'
+  }
   function Set-SprintLoginScheduledTaskTarget {
     [CmdletBinding(SupportsShouldProcess)]
     param([string]$Boundary, [string]$GitRoot, [string[]]$WorktreePaths, [switch]$CheckOnly)
@@ -12,6 +18,10 @@ BeforeAll {
 
 Describe 'SprintEnd planning evidence classification and bounded receipts' -Tag 'Unit' {
   BeforeEach {
+    Mock Set-UserSettingsSymlink {
+      if (-not $CheckOnly) { throw 'Only a settings audit is permitted in this fixture' }
+      [PSCustomObject]@{ Ok = $true }
+    }
     Mock Write-PSFMessage {}
     Mock Set-SprintLoginScheduledTaskTarget { [PSCustomObject]@{ Ok = $true; Failures = @() } }
     $script:logicalPaths = @()

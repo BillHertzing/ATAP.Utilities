@@ -240,3 +240,8 @@ in `Tasks.Sprint0015.ProceduralDetails.html`.
 ## Functional area
 
 PowerShell Build & Packaging - START HERE: `SolutionDocumentation/PowerShell-Modules-Build-Process.md`.
+
+Task 16.12 release replacement 0.1.47 isolates the settings audit in unrelated
+SprintEnd unit fixtures and retains the real fail-closed settings regressions.
+UTAT022 installed acceptance is recorded in the Planning Task16.12 deployment
+handoff; UTAT01 remains separately scoped under Task16.64.

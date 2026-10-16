@@ -245,3 +245,7 @@ Task 16.12 release replacement 0.1.47 isolates the settings audit in unrelated
 SprintEnd unit fixtures and retains the real fail-closed settings regressions.
 UTAT022 installed acceptance is recorded in the Planning Task16.12 deployment
 handoff; UTAT01 remains separately scoped under Task16.64.
+
+Version 0.1.48 bounds retries of transient atomic receipt-replacement failures
+without repeating worktree removal. Persistent denial preserves the prior receipt
+and fails closed after six attempts; no permission or attribute changes are made.

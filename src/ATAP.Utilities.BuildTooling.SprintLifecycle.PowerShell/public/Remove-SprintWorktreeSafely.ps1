@@ -142,7 +142,24 @@ function Remove-SprintWorktreeSafely {
       $temporary = $receiptFull + '.' + [guid]::NewGuid().ToString('N') + '.tmp'
       try {
         [IO.File]::WriteAllText($temporary, ($state | ConvertTo-Json -Depth 35), [Text.UTF8Encoding]::new($false))
-        [IO.File]::Move($temporary, $receiptFull, $true)
+        # Cloud/indexer readers can briefly deny delete-sharing on an existing
+        # receipt. Retry only this same atomic replacement, never a Git effect.
+        for ($receiptAttempt = 1; $receiptAttempt -le 6; $receiptAttempt++) {
+          try {
+            [IO.File]::Move($temporary, $receiptFull, $true)
+            break
+          } catch {
+            $receiptError = $_.Exception
+            while ($null -ne $receiptError.InnerException) { $receiptError = $receiptError.InnerException }
+            $nativeError = $receiptError.HResult -band 0xffff
+            $retryable = ($receiptError -is [IO.IOException] -or $receiptError -is [UnauthorizedAccessException]) -and
+              $nativeError -in @(5, 32, 33)
+            if (-not $retryable -or $receiptAttempt -eq 6) { throw }
+            $receiptDelay = 50 * [int][math]::Pow(2, $receiptAttempt - 1)
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Receipt replacement transient error $nativeError; attempt $receiptAttempt of 6; retry in $receiptDelay ms."
+            Start-Sleep -Milliseconds $receiptDelay
+          }
+        }
       } finally { if ([IO.File]::Exists($temporary)) { [IO.File]::Delete($temporary) } }
     }
     $record = {

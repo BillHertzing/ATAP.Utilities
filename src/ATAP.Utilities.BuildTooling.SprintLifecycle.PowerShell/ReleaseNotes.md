@@ -1,5 +1,16 @@
 # Release notes
 
+## 0.1.48
+
+- Retry only atomic worktree-recovery receipt replacement after transient Windows
+  access-denied, sharing-violation or lock-violation errors. Six attempts use bounded
+  50/100/200/400/800 ms delays; persistent or other failures still stop cleanup.
+- Keep the same serialized receipt and temporary file through retries. Never
+  repeat Git removal, delete an existing receipt, change access permissions, or
+  clear file attributes to force replacement.
+- Retain the 0.1.47 settings-fixture repair. Its immutable release passed
+  Development but stopped at Integration on a transient receipt rename denial.
+
 ## 0.1.47
 
 - Retain the transactional settings-pointer fix prepared in 0.1.46: Start selects

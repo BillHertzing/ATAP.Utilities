@@ -127,6 +127,19 @@ function Set-SprintBoundaryContext {
   .PARAMETER SkipServiceAccountGitTrust
     Skip SC-0321 service-account Git trust processing. Intended only for isolated
     diagnostics and tests.
+  .PARAMETER InteractiveUserGitConfigPath
+    Explicit global Git configuration file for the interactive user running the
+    boundary (Task 16.55). When omitted it is resolved from GIT_CONFIG_GLOBAL
+    (process, then User scope), then the origin reported by
+    git config --global --show-origin, then $HOME\.gitconfig. This is the same
+    configuration Test-SprintInfrastructureHealth reads for GitSafeDirectory.
+  .PARAMETER InteractiveUserGitTrustRepositoryNames
+    Repository names whose exact sprint worktrees are lifecycle-managed in the
+    interactive user's safe.directory list. Defaults to all five participating
+    repositories.
+  .PARAMETER SkipInteractiveUserGitTrust
+    Skip Task 16.55 interactive-user Git trust processing. Intended only for
+    isolated diagnostics and tests.
   .PARAMETER ProfiledRemotingPolicy
     Controls the local ATAP.PS7.Profiled endpoint concern. Disabled never probes or
     registers it. Auto, the safe default, treats a host with no remoting surface and
@@ -224,6 +237,13 @@ function Set-SprintBoundaryContext {
     [string[]]$ServiceAccountGitTrustRepositoryNames = @('Ace', 'ATAP.Utilities'),
 
     [switch]$SkipServiceAccountGitTrust,
+
+    [string]$InteractiveUserGitConfigPath,
+
+    [ValidateNotNullOrEmpty()]
+    [string[]]$InteractiveUserGitTrustRepositoryNames = @('Ace', 'ATAP.Utilities', 'ATAP.IAC', 'SharedVSCode', '_Planning'),
+
+    [switch]$SkipInteractiveUserGitTrust,
 
     [ValidateSet('Disabled', 'Auto', 'Required')]
     [string]$ProfiledRemotingPolicy = 'Auto',
@@ -624,6 +644,78 @@ function Set-SprintBoundaryContext {
         Succeeded      = $serviceAccountGitTrustOk
         Error          = $serviceAccountGitTrustError
         Result         = $serviceAccountGitTrustResult
+      })
+
+    # ------------------------------------------------------------------
+    # Interactive-user Git trust (Task 16.55). Test-SprintInfrastructureHealth
+    # checks the current user's global safe.directory list, which the
+    # service-account concern above never touches. The same exact-path helper
+    # targets the user's resolved global configuration. Start passes only
+    # existing Git checkouts; End removes exact values even when the
+    # checkout is already gone. No wildcard values are ever written.
+    # ------------------------------------------------------------------
+    $interactiveGitTrustOk = $true
+    $interactiveGitTrustError = $null
+    $interactiveGitTrustResult = $null
+    $interactiveGitConfigPath = $InteractiveUserGitConfigPath
+    $interactiveGitTrustExcluded = [System.Collections.Generic.List[string]]::new()
+    try {
+      if (-not $SkipInteractiveUserGitTrust -and $WorktreePaths.Count -gt 0) {
+        if ([string]::IsNullOrWhiteSpace($interactiveGitConfigPath)) {
+          $interactiveGitConfigPath = $env:GIT_CONFIG_GLOBAL
+        }
+        if ([string]::IsNullOrWhiteSpace($interactiveGitConfigPath)) {
+          $interactiveGitConfigPath = [System.Environment]::GetEnvironmentVariable('GIT_CONFIG_GLOBAL', 'User')
+        }
+        if ([string]::IsNullOrWhiteSpace($interactiveGitConfigPath)) {
+          $originLine = @(& git config --global --show-origin --list 2>$null | Select-Object -First 1)
+          if ($LASTEXITCODE -eq 0 -and $originLine.Count -gt 0 -and $originLine[0] -match '^file:(?<origin>[^\t]+)\t') {
+            $origin = $Matches['origin'].Trim()
+            if ($origin.StartsWith('"') -and $origin.EndsWith('"')) {
+              $origin = $origin.Substring(1, $origin.Length - 2).Replace('\\', '\')
+            }
+            $interactiveGitConfigPath = $origin
+          }
+        }
+        if ([string]::IsNullOrWhiteSpace($interactiveGitConfigPath)) {
+          $interactiveGitConfigPath = Join-Path $HOME '.gitconfig'
+        }
+
+        $interactiveGitTrustPaths = [System.Collections.Generic.List[string]]::new()
+        foreach ($candidatePath in @($WorktreePaths)) {
+          if ([string]::IsNullOrWhiteSpace($candidatePath)) { continue }
+          if ($Boundary -eq 'Start' -and -not (Test-Path -LiteralPath (Join-Path $candidatePath '.git'))) {
+            [void]$interactiveGitTrustExcluded.Add($candidatePath)
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Interactive-user Git trust skipped '$candidatePath': no Git checkout at that path"
+            continue
+          }
+          [void]$interactiveGitTrustPaths.Add($candidatePath)
+        }
+
+        if ($interactiveGitTrustPaths.Count -gt 0) {
+          $interactiveGitTrustResult = Set-ServiceAccountGitSafeDirectory `
+            -Boundary $Boundary `
+            -WorktreePaths $interactiveGitTrustPaths.ToArray() `
+            -GitConfigPath $interactiveGitConfigPath `
+            -RepositoryNames $InteractiveUserGitTrustRepositoryNames `
+            -Confirm:$false `
+            -WhatIf:$WhatIfPreference
+        }
+      }
+    } catch {
+      $interactiveGitTrustOk = $false
+      $interactiveGitTrustError = "Interactive-user Git safe.directory lifecycle failed: $($_.Exception.Message)"
+      $errors.Add($interactiveGitTrustError)
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $interactiveGitTrustError
+    }
+    $concerns.Add([PSCustomObject]@{
+        Concern        = 'InteractiveUserGitSafeDirectory'
+        Action         = ($SkipInteractiveUserGitTrust ? 'Skipped' : "Set-ServiceAccountGitSafeDirectory ($Boundary) -> $interactiveGitConfigPath")
+        StableByDesign = $false
+        Succeeded      = $interactiveGitTrustOk
+        Error          = $interactiveGitTrustError
+        Result         = $interactiveGitTrustResult
+        ExcludedPaths  = $interactiveGitTrustExcluded.ToArray()
       })
 
     # ------------------------------------------------------------------

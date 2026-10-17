@@ -764,4 +764,110 @@ Describe 'Set-SprintBoundaryContext [public]' {
       @($result.Errors | Where-Object { $_ -match 'Service-account Git safe.directory' }).Count | Should -Be 0
     }
   }
+
+  Context 'Task 16.55 interactive-user Git trust lifecycle' {
+    BeforeAll {
+      $script:gitCheckout = Join-Path $script:gitRoot '_Planning-wt-40-Sprint-0016-work-items'
+      New-Item -ItemType Directory -Path $script:gitCheckout -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $script:gitCheckout '.git') -Value 'gitdir: C:/fake/.git/worktrees/x' -Encoding utf8NoBOM
+      $script:userConfig = Join-Path $script:gitRoot 'user.gitconfig'
+      $script:boundaryArgs = @{
+        GitRoot                  = $script:gitRoot
+        SkipSharedVSCodeSettings = $true
+        SkipProfileSymlinks      = $true
+        SkipAIAdapterLifecycle   = $true
+        ProfiledRemotingPolicy   = 'Disabled'
+      }
+    }
+
+    It 'Start delegates an existing checkout to the user global config with all five repositories' {
+      $result = Set-SprintBoundaryContext -Boundary Start @script:boundaryArgs `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -WorktreePaths @($script:gitCheckout) `
+        -InteractiveUserGitConfigPath $script:userConfig
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell `
+        Set-ServiceAccountGitSafeDirectory -Times 1 -Exactly -Scope It `
+        -ParameterFilter {
+          $Boundary -eq 'Start' -and
+          $GitConfigPath -eq $script:userConfig -and
+          $WorktreePaths.Count -eq 1 -and $WorktreePaths[0] -eq $script:gitCheckout -and
+          (@('Ace', 'ATAP.Utilities', 'ATAP.IAC', 'SharedVSCode', '_Planning') | Where-Object { $RepositoryNames -notcontains $_ }).Count -eq 0
+        }
+      $concern = $result.Concerns | Where-Object Concern -EQ 'InteractiveUserGitSafeDirectory'
+      $concern.Succeeded | Should -BeTrue
+      @($concern.ExcludedPaths).Count | Should -Be 0
+    }
+
+    It 'Start excludes a path that is not a Git checkout and makes no user-config call' {
+      $result = Set-SprintBoundaryContext -Boundary Start @script:boundaryArgs `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -WorktreePaths @($script:worktree) `
+        -InteractiveUserGitConfigPath $script:userConfig
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell `
+        Set-ServiceAccountGitSafeDirectory -Times 0 -Exactly -Scope It `
+        -ParameterFilter { $GitConfigPath -eq $script:userConfig }
+      $concern = $result.Concerns | Where-Object Concern -EQ 'InteractiveUserGitSafeDirectory'
+      $concern.Succeeded | Should -BeTrue
+      $concern.ExcludedPaths | Should -Be @($script:worktree)
+    }
+
+    It 'End removes exact values even when the outgoing checkout is gone' {
+      $goneCheckout = Join-Path $script:gitRoot 'Ace-wt-9-Sprint-0016-work-items'
+      $null = Set-SprintBoundaryContext -Boundary End @script:boundaryArgs `
+        -SharedVSCodeWorktreePath $script:svStable `
+        -WorktreePaths @($goneCheckout) `
+        -InteractiveUserGitConfigPath $script:userConfig
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell `
+        Set-ServiceAccountGitSafeDirectory -Times 1 -Exactly -Scope It `
+        -ParameterFilter { $Boundary -eq 'End' -and $GitConfigPath -eq $script:userConfig -and $WorktreePaths[0] -eq $goneCheckout }
+    }
+
+    It 'Resolves GIT_CONFIG_GLOBAL when no explicit path is supplied' {
+      $previous = $env:GIT_CONFIG_GLOBAL
+      try {
+        $env:GIT_CONFIG_GLOBAL = $script:userConfig
+        $null = Set-SprintBoundaryContext -Boundary Start @script:boundaryArgs `
+          -SharedVSCodeWorktreePath $script:svSprint `
+          -WorktreePaths @($script:gitCheckout)
+      } finally {
+        $env:GIT_CONFIG_GLOBAL = $previous
+      }
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell `
+        Set-ServiceAccountGitSafeDirectory -Times 1 -Exactly -Scope It `
+        -ParameterFilter { $GitConfigPath -eq $script:userConfig }
+    }
+
+    It 'SkipInteractiveUserGitTrust makes no user-config call and reports Skipped' {
+      $result = Set-SprintBoundaryContext -Boundary Start @script:boundaryArgs `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -WorktreePaths @($script:gitCheckout) `
+        -InteractiveUserGitConfigPath $script:userConfig `
+        -SkipInteractiveUserGitTrust
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell `
+        Set-ServiceAccountGitSafeDirectory -Times 0 -Exactly -Scope It `
+        -ParameterFilter { $GitConfigPath -eq $script:userConfig }
+      ($result.Concerns | Where-Object Concern -EQ 'InteractiveUserGitSafeDirectory').Action | Should -Be 'Skipped'
+    }
+
+    It 'A helper failure is reported on the concern without hiding other concerns' {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-ServiceAccountGitSafeDirectory {
+        throw 'simulated user-config failure'
+      } -ParameterFilter { $GitConfigPath -eq $script:userConfig }
+
+      $result = Set-SprintBoundaryContext -Boundary Start @script:boundaryArgs `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -WorktreePaths @($script:gitCheckout) `
+        -InteractiveUserGitConfigPath $script:userConfig
+
+      $concern = $result.Concerns | Where-Object Concern -EQ 'InteractiveUserGitSafeDirectory'
+      $concern.Succeeded | Should -BeFalse
+      @($result.Errors | Where-Object { $_ -match 'Interactive-user Git safe.directory lifecycle failed: simulated' }).Count | Should -Be 1
+      ($result.Concerns | Where-Object Concern -EQ 'ServiceAccountGitSafeDirectory').Succeeded | Should -BeTrue
+    }
+  }
 }

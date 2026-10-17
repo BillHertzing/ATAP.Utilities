@@ -37,8 +37,26 @@ param(
   [string]$DatabaseEvidenceSha256,
   [string]$ExperimentalFeed,
   [string]$EvidenceRoot,
+  [string]$WorktreeId,
   [string]$ExpectedHostName
 )
+
+function Get-ApplicationBuildSprintNumber {
+  <#
+  .SYNOPSIS
+    Returns the four-digit sprint number from a sprint worktree folder name, or throws.
+  .DESCRIPTION
+    Task 16.78: source of the EvidenceRoot and WorktreeId defaults, replacing the hard-coded prior-sprint literals.
+    Only <Repo>-wt-<n>-Sprint-<NNNN>[-...] leaf names match; anything else must be passed explicitly.
+  #>
+  [CmdletBinding()]
+  [OutputType([string])]
+  param([Parameter(Mandatory)][string]$Path, [Parameter(Mandatory)][string]$ParameterName)
+  $leaf = Split-Path -Leaf ([IO.Path]::GetFullPath($Path).TrimEnd([char[]]@([char]'\', [char]'/')))
+  $match = [regex]::Match($leaf, '-wt-[0-9]+-Sprint-(?<sprint>[0-9]{4})(?:-|\z)')
+  if (-not $match.Success) { throw "Cannot derive $ParameterName from '$leaf' (not a sprint worktree); pass -$ParameterName explicitly." }
+  $match.Groups['sprint'].Value
+}
 
 function Invoke-ApplicationBuildMasterStage {
   <#
@@ -68,6 +86,12 @@ function Invoke-ApplicationBuildMasterStage {
     Git tag that peels exactly to the Ace worktree HEAD, e.g. AceOutpost/v0.1.3+abcdef1.
   .PARAMETER CodeSigningCertificateThumbprint
     Signer leaf from the BuildMaster application variable; refused unless admitted for this host.
+  .PARAMETER EvidenceRoot
+    Stage evidence root under _generated. Empty derives <ATAP.Utilities worktree>\_generated\SprintNNNN\ApplicationBuild\<ProductId>
+    from the sprint number in the ATAP.Utilities worktree folder name; a non-sprint checkout must pass it explicitly.
+  .PARAMETER WorktreeId
+    Artifact-tree worktree segment handed to the deterministic publisher. Empty derives sprintNNNN-ace from the
+    sprint number in the Ace worktree folder name; a non-sprint checkout must pass it explicitly.
   .OUTPUTS
     PSCustomObject describing the signed publish, the bundle, the feed state and the context path.
   .EXAMPLE
@@ -108,6 +132,7 @@ function Invoke-ApplicationBuildMasterStage {
     [Parameter(Mandatory)][AllowEmptyString()][string]$DatabaseEvidenceSha256,
     [string]$ExperimentalFeed = 'releasebundle-experimental',
     [AllowEmptyString()][string]$EvidenceRoot = '',
+    [AllowEmptyString()][ValidatePattern('\A(?:[a-z0-9][a-z0-9-]{0,62})?\z')][string]$WorktreeId = '',
     [AllowEmptyString()][string]$ExpectedHostName = ''
   )
 
@@ -162,10 +187,16 @@ function Invoke-ApplicationBuildMasterStage {
       throw "Timestamp authority '$($tsa.AbsoluteUri)' is not the pinned authority '$((Get-ApplicationReleaseTimestampServerUri).AbsoluteUri)'."
     }
 
+    # Task 16.78: no sprint literals. Defaults derive from the sprint worktree folder names
+    # (<Repo>-wt-<n>-Sprint-<NNNN>-...); any other checkout must pass the value explicitly.
     if ([string]::IsNullOrWhiteSpace($EvidenceRoot)) {
-      $EvidenceRoot = Join-Path $buildToolingRoot "_generated\Sprint0015\Task15.196\q\$ProductId"
+      $evidenceSprint = Get-ApplicationBuildSprintNumber -Path $buildToolingRoot -ParameterName 'EvidenceRoot'
+      $EvidenceRoot = Join-Path $buildToolingRoot "_generated\Sprint$evidenceSprint\ApplicationBuild\$ProductId"
     }
     if ($EvidenceRoot -notmatch '[\\/]_generated[\\/]') { throw "EvidenceRoot '$EvidenceRoot' must be under a _generated folder (SC-0033)." }
+    if ([string]::IsNullOrWhiteSpace($WorktreeId)) {
+      $WorktreeId = 'sprint' + (Get-ApplicationBuildSprintNumber -Path $SourcePath -ParameterName 'WorktreeId') + '-ace'
+    }
     $buildEvidence = Join-Path $EvidenceRoot $BuildMasterBuildId
 
     function Invoke-ApplicationStageProcess {
@@ -217,7 +248,7 @@ function Invoke-ApplicationBuildMasterStage {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Publishing '$ProductId' from '$SourcePath' (execution '$publishExecutionId')."
     $publish = Invoke-ApplicationStageProcess -FilePath 'pwsh' -WorkingDirectory $SourcePath -ArgumentList @(
       '-NoLogo', '-NonInteractive', '-File', $publishScript,
-      '-ProductRecord', $publishRecord, '-ExecutionId', $publishExecutionId, '-ArtifactsRoot', $ArtifactsRoot, '-WorktreeId', 'sprint0015-ace')
+      '-ProductRecord', $publishRecord, '-ExecutionId', $publishExecutionId, '-ArtifactsRoot', $ArtifactsRoot, '-WorktreeId', $WorktreeId)
     Set-Content -LiteralPath (Join-Path $buildEvidence 'publish.stdout.txt') -Value $publish.StdOut
     Set-Content -LiteralPath (Join-Path $buildEvidence 'publish.stderr.txt') -Value $publish.StdErr
     if ($publish.ExitCode -ne 0) { throw "Deterministic publish failed (exit $($publish.ExitCode)): $($publish.StdErr)" }
@@ -324,7 +355,45 @@ function Invoke-ApplicationBuildMasterStage {
         if ((Get-FileHash -LiteralPath $verifyPath -Algorithm SHA256).Hash.ToLowerInvariant() -cne $bundleSha) { throw 'Bytes downloaded from the feed do not equal the uploaded bundle.' }
         Remove-Item -LiteralPath $verifyPath -Force
       }
+      # Task 16.78: bind the referenced database package bytes into the context. The release
+      # stage re-downloads them at every tier and requires the same hash; the approval
+      # boundary may additionally pin it (AceCommander 0.1.6).
+      $databasePackageLower = $DatabasePackageId.ToLowerInvariant()
+      $databasePackageUrl = "$baseUrl/nuget/$DatabasePackageLifecycleCeiling/v3/flatcontainer/$databasePackageLower/$DatabasePackagePinnedVersion/$databasePackageLower.$DatabasePackagePinnedVersion.nupkg"
+      $databasePackagePath = Join-Path $buildEvidence 'database-reference.nupkg'
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling $databasePackageUrl" -Tag 'RestCall'
+      Invoke-WebRequest -Uri $databasePackageUrl -Headers $headers -OutFile $databasePackagePath -MaximumRedirection 0 -ErrorAction Stop | Out-Null
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from $databasePackageUrl" -Tag 'RestCall'
+      $databaseReference.nupkgSha256 = (Get-FileHash -LiteralPath $databasePackagePath -Algorithm SHA256).Hash.ToLowerInvariant()
+      $databaseReference.feed = $DatabasePackageLifecycleCeiling
     } finally { $apiKey = $null; $headers = $null }
+
+    # Task 16.78: the release stage verifies every tier with a hash-bound bundle verifier and
+    # manifest schema. Reuse the bundler's own snapshot when its context carries one
+    # (New-CommanderReleaseBundle); otherwise snapshot the committed primitives here.
+    $bundleContext = $null
+    if ($bundle.PSObject.Properties['ContextPath'] -and $bundle.ContextPath -and (Test-Path -LiteralPath ([string]$bundle.ContextPath) -PathType Leaf)) {
+      $bundleContext = Get-Content -LiteralPath ([string]$bundle.ContextPath) -Raw | ConvertFrom-Json -Depth 12
+    }
+    if ($bundleContext -and $bundleContext.PSObject.Properties['tooling'] -and $bundleContext.PSObject.Properties['bundleVerifier'] -and $bundleContext.PSObject.Properties['manifestSchema']) {
+      $tooling = @($bundleContext.tooling | ForEach-Object { [ordered]@{ path = [string]$_.path; sha256 = ([string]$_.sha256).ToLowerInvariant() } })
+      $bundleVerifier = [string]$bundleContext.bundleVerifier
+      $manifestSchema = [string]$bundleContext.manifestSchema
+    } else {
+      $toolingSnapshot = Join-Path $buildEvidence 'tooling'
+      [IO.Directory]::CreateDirectory($toolingSnapshot) | Out-Null
+      $tooling = @(foreach ($relative in @('src/ATAP.Utilities.BuildTooling.PowerShell/public/New-ReleaseBundle.ps1', 'SolutionDocumentation/schemas/manifest.schema.json')) {
+          if (@(& git -C $buildToolingRoot status --porcelain -- $relative).Count) { throw "Release verification tooling must be committed: $relative" }
+          $target = Join-Path $toolingSnapshot (Split-Path -Leaf $relative)
+          Copy-Item -LiteralPath (Join-Path $buildToolingRoot $relative) -Destination $target -Force
+          [ordered]@{ path = $target; sha256 = (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant(); sourcePath = $relative }
+        })
+      $bundleVerifier = [string]$tooling[0].path
+      $manifestSchema = [string]$tooling[1].path
+    }
+    foreach ($item in $tooling) {
+      if ((Get-FileHash -LiteralPath $item.path -Algorithm SHA256).Hash -ine $item.sha256) { throw "Release verification tooling hash mismatch: $($item.path)" }
+    }
 
     # 6. Nonsecret release context + stage evidence for the promotion adapter.
     $context = [ordered]@{
@@ -336,6 +405,7 @@ function Invoke-ApplicationBuildMasterStage {
       proGetBaseUrl = $baseUrl; experimentalFeed = $ExperimentalFeed; feedVersion = $feedVersion; feedState = $feedState
       databasePackageReference = $databaseReference; ceilingTier = 'Production'
       installerRelativePath = $contract.InstallerRelativePath; evidenceRoot = $EvidenceRoot
+      tooling = $tooling; bundleVerifier = $bundleVerifier; manifestSchema = $manifestSchema; worktreeId = $WorktreeId
       buildMaster = @{ applicationName = $ApplicationName; buildId = $BuildMasterBuildId; buildNumber = $BuildNumber; executionId = $ExecutionId; host = $env:COMPUTERNAME }
       builtUtc = [DateTime]::UtcNow.ToString('o')
     }

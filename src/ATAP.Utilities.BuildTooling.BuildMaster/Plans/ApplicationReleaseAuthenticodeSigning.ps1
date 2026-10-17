@@ -177,6 +177,33 @@ function Get-ApplicationReleaseSignedFileContract {
   return @($files)
 }
 
+function Get-ApplicationReleaseDatabaseAdmission {
+  <#
+  .SYNOPSIS
+    Returns the referenced-database pin admitted for one product's release promotion, or throws.
+  .DESCRIPTION
+    Task 16.78: Invoke-ApplicationReleaseStage.ps1 reads the database pin from here instead of
+    literals. A null CompatibleVersionRange or LifecycleCeiling is not compared (AceCommander's
+    historical promotion compared only id and pinned version). A null NupkgSha256 means the
+    hash comes from the hash-approved release context, which the build runner records from the
+    feed bytes at build time; a non-null value additionally pins it. The Feed is the NuGet feed
+    the release stage re-downloads the package from at every tier.
+  #>
+  [CmdletBinding()]
+  [OutputType([pscustomobject])]
+  param([Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ProductId)
+
+  $admissions = @(
+    [pscustomobject]@{ ProductId = 'AceOutpost'; Id = 'ATAPUtilities.Database'; PinnedVersion = '0.1.17'; CompatibleVersionRange = '[0.1.17,0.1.18)'; LifecycleCeiling = 'database-stable'; Feed = 'database-stable'; NupkgSha256 = $null }
+    [pscustomobject]@{ ProductId = 'AceCommander'; Id = 'ATAPUtilities.Database'; PinnedVersion = '0.1.6'; CompatibleVersionRange = $null; LifecycleCeiling = $null; Feed = 'database-stable'; NupkgSha256 = 'E9CA804EFF2A25735CB3AC22B08D1F6A790C5E241BA54F3437FE82D9F41ACCCA' }
+  )
+  $match = @($admissions | Where-Object { $_.ProductId -ceq $ProductId })
+  if ($match.Count -ne 1) {
+    throw "Product '$ProductId' has no admitted release database pin. Admitted: $(($admissions | ForEach-Object ProductId) -join ', ')."
+  }
+  return $match[0]
+}
+
 function Get-ApplicationReleaseAuthenticodeReleaseContract {
   <#
   .SYNOPSIS

@@ -38,7 +38,10 @@ function New-GeneratedFileContent {
     '# Regenerate using Set-DownstreamSharedVSCodeContext'
     '# ==================================================================='
     ''
-  ) -join [Environment]::NewLine
+  ) -join "`n"
+  # Task 16.85: the header is LF. [Environment]::NewLine made it CRLF on Windows, so every
+  # downstream file mixed a CRLF header with the LF payload (Task 16.61). The payload is
+  # returned byte-for-byte; the writer owns the target's newline policy.
 
   return $header + $source
 }

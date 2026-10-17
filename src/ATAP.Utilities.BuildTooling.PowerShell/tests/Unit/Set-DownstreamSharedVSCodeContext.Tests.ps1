@@ -113,6 +113,83 @@ Describe 'Set-DownstreamSharedVSCodeContext [public]' {
     $gaContent | Should -Match 'MOCKED HEADER'
   }
 
+  Context 'LF-only, BOM-free, idempotent output (Task 16.85)' {
+    BeforeAll {
+      $script:expectedFor = {
+        param([string]$SourceName, [string]$SourceText)
+        (@(
+            '# ==================================================================='
+            '# GENERATED FILE - DO NOT EDIT DIRECTLY'
+            "# Source: SharedVSCode/$SourceName"
+            '# Regenerate using Set-DownstreamSharedVSCodeContext'
+            '# ==================================================================='
+            ''
+          ) -join "`n") + $SourceText + "`n"
+      }
+      $script:invokeContext = {
+        Set-DownstreamSharedVSCodeContext `
+          -WorkspaceFiles @($script:wsFile) `
+          -GitRoot $script:fakeGitRoot `
+          -SharedVSCodeRepoName 'SharedVSCode'
+      }
+    }
+
+    BeforeEach {
+      # LF sources shaped like the real SharedVSCode files (trailing LF, no BOM).
+      $script:attrSource = "* text=auto eol=lf`n*.cmd text eol=crlf`n"
+      $script:configSource = "[alias]`n`tst = status`n"
+      [IO.File]::WriteAllText((Join-Path $script:fakeShared '.gitattributes'), $script:attrSource, [Text.UTF8Encoding]::new($false))
+      [IO.File]::WriteAllText((Join-Path $script:fakeShared '.gitconfig'), $script:configSource, [Text.UTF8Encoding]::new($false))
+      Remove-Item (Join-Path $script:fakeRepoRoot '.gitattributes'), (Join-Path $script:fakeRepoRoot '.gitconfig.shared') -ErrorAction SilentlyContinue
+    }
+
+    It 'writes both files LF-only with no BOM, byte-equal to the committed downstream form' {
+      & $script:invokeContext
+
+      foreach ($case in @(
+          @{ Target = '.gitattributes'; Name = '.gitattributes'; Source = $script:attrSource }
+          @{ Target = '.gitconfig.shared'; Name = '.gitconfig'; Source = $script:configSource })) {
+        $bytes = [IO.File]::ReadAllBytes((Join-Path $script:fakeRepoRoot $case.Target))
+        $bytes | Should -Not -Contain ([byte]13)
+        ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) | Should -BeFalse
+        [Text.Encoding]::UTF8.GetString($bytes) | Should -BeExactly (& $script:expectedFor $case.Name $case.Source)
+      }
+    }
+
+    It 'normalizes a CRLF source to LF' {
+      [IO.File]::WriteAllText((Join-Path $script:fakeShared '.gitattributes'), ($script:attrSource -replace "`n", "`r`n"), [Text.UTF8Encoding]::new($false))
+
+      & $script:invokeContext
+
+      $text = [IO.File]::ReadAllText((Join-Path $script:fakeRepoRoot '.gitattributes'))
+      $text | Should -Not -Match "`r"
+      $text | Should -BeExactly (& $script:expectedFor '.gitattributes' $script:attrSource)
+    }
+
+    It 'does not rewrite unchanged files on a second run' {
+      & $script:invokeContext
+      $paths = @((Join-Path $script:fakeRepoRoot '.gitattributes'), (Join-Path $script:fakeRepoRoot '.gitconfig.shared'))
+      $marker = [datetime]::new(2001, 1, 1, 0, 0, 0, [DateTimeKind]::Utc)
+      foreach ($p in $paths) { [IO.File]::SetLastWriteTimeUtc($p, $marker) }
+      $before = $paths | ForEach-Object { (Get-FileHash -LiteralPath $_).Hash }
+
+      & $script:invokeContext
+
+      foreach ($p in $paths) { [IO.File]::GetLastWriteTimeUtc($p) | Should -Be $marker }
+      ($paths | ForEach-Object { (Get-FileHash -LiteralPath $_).Hash }) | Should -Be $before
+    }
+
+    It 'repairs an existing mixed-EOL file left by the previous writer' {
+      $mixed = (& $script:expectedFor '.gitattributes' $script:attrSource) -replace '^((?:[^\n]*\n){5})', { $_.Groups[1].Value -replace "`n", "`r`n" }
+      [IO.File]::WriteAllText((Join-Path $script:fakeRepoRoot '.gitattributes'), $mixed, [Text.UTF8Encoding]::new($false))
+
+      & $script:invokeContext
+
+      [IO.File]::ReadAllText((Join-Path $script:fakeRepoRoot '.gitattributes')) |
+        Should -BeExactly (& $script:expectedFor '.gitattributes' $script:attrSource)
+    }
+  }
+
   It 'Targets the repository that owns the workspace file rather than the caller location' {
     Set-DownstreamSharedVSCodeContext `
       -WorkspaceFiles @($script:wsFile) `

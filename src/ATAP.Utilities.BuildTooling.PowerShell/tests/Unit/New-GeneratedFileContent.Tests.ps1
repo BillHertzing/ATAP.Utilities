@@ -119,6 +119,20 @@ Describe 'New-GeneratedFileContent [private]' {
     ([regex]::Matches($second, 'GENERATED FILE - DO NOT EDIT DIRECTLY')).Count | Should -Be 1
   }
 
+  It 'emits an LF-only header and leaves the payload bytes untouched (Task 16.85)' {
+    $sourceFile = Join-Path $script:tempDir 'lf-header.txt'
+    $payload = "* text=auto eol=lf`n*.cmd text eol=crlf`n"
+    Set-Content -Path $sourceFile -Value $payload -Encoding UTF8 -NoNewline
+
+    $result = New-GeneratedFileContent -SourcePath $sourceFile
+    $header = $result.Substring(0, $result.Length - $payload.Length)
+
+    $header | Should -Not -Match "`r"
+    $header.Split("`n").Count | Should -Be 6
+    $result.EndsWith($payload, [System.StringComparison]::Ordinal) | Should -BeTrue
+    $result | Should -Not -Match "`r"
+  }
+
   It 'Throws when the source file does not exist' {
     { New-GeneratedFileContent -SourcePath 'C:\nonexistent\file.txt' } |
       Should -Throw '*not found*'

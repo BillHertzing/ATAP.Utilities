@@ -18,7 +18,8 @@ BeforeAll {
 
 Describe 'Invoke-GeneratedFolderRemediation [public]' {
   BeforeEach {
-    $script:gitRoot = Join-Path ([IO.Path]::GetTempPath()) "gen_remediation_$([guid]::NewGuid().ToString('N'))"
+    $fixtureRoot = [IO.Path]::GetFullPath("$PSScriptRoot/../../../../_generated/Sprint0016/Task16.84/CodexHardening/fixtures")
+    $script:gitRoot = Join-Path $fixtureRoot ([guid]::NewGuid().ToString('N').Substring(0, 8))
     $script:stable = Join-Path $script:gitRoot 'Repo'
     $script:sprint = Join-Path $script:gitRoot 'Repo-wt-7-Sprint-0016-work-items'
     $script:archive = Join-Path $script:gitRoot 'archive'
@@ -106,9 +107,23 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
     Test-Path (Join-Path $script:sprint '_generated/legacy-tracked.txt') | Should -BeTrue
   }
 
-  It 'requires an archive root, or -NoArchive, before deleting' {
+  It 'requires an archive root before stable deletion without NoArchive' {
     { Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName 'Repo' `
         -Scope StableWorktree -Execute -Confirm:$false } | Should -Throw '*ArchiveRoot*'
+  }
+
+  It 'rejects stable deletion with NoArchive and retains every original byte' {
+    $before = @(Get-ChildItem -LiteralPath (Join-Path $script:stable '_generated') -Recurse -File -Force |
+        Get-FileHash -Algorithm SHA256 | Sort-Object Path | Select-Object Path, Hash)
+    $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo `
+      -Scope StableWorktree -Execute -NoArchive -Confirm:$false
+    $r.Stable[0].Action | Should -Be Failed
+    $r.Stable[0].DeletedFiles | Should -Be 0
+    $r.Stable[0].Archive | Should -BeNullOrEmpty
+    $r.Errors -join ' ' | Should -Match 'NoArchive is not allowed'
+    $after = @(Get-ChildItem -LiteralPath (Join-Path $script:stable '_generated') -Recurse -File -Force |
+        Get-FileHash -Algorithm SHA256 | Sort-Object Path | Select-Object Path, Hash)
+    ($after | ConvertTo-Json -Compress) | Should -Be ($before | ConvertTo-Json -Compress)
   }
 
   It 'refuses an archive root inside a _generated folder under GitRoot' {
@@ -130,5 +145,71 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
       -Scope StableWorktree -Execute -NoArchive -Confirm:$false
     $r.Stable[0].Action | Should -BeLike 'Skipped*'
     Test-Path (Join-Path $script:stable '_generated/AIAdapterBackups/backup.json') | Should -BeTrue
+  }
+
+  It 'retains every original when the archive cannot be created' {
+    New-TestFile $script:gitRoot 'blocked-archive' 'not a directory'
+    $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo `
+      -Scope StableWorktree -Execute -ArchiveRoot (Join-Path $script:gitRoot 'blocked-archive') -Confirm:$false
+    $r.Stable[0].Action | Should -Be Failed
+    $r.Stable[0].DeletedFiles | Should -Be 0
+    Test-Path (Join-Path $script:stable '_generated/AIAdapterBackups/backup.json') | Should -BeTrue
+  }
+
+  It 'retains originals when archive byte verification fails' {
+    Mock Get-FileHash { [pscustomobject]@{ Hash = ('0' * 64) } }
+    $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo `
+      -Scope StableWorktree -Execute -ArchiveRoot $script:archive -Confirm:$false
+    $r.Errors -join ' ' | Should -Match 'Archive hash mismatch'
+    $r.Stable[0].DeletedFiles | Should -Be 0
+    Test-Path (Join-Path $script:stable '_generated/AIAdapterBackups/backup.json') | Should -BeTrue
+  }
+
+  It 'retains originals when a selected source is unavailable at archive time' {
+    Mock Get-Item { throw 'Source unavailable' } -ParameterFilter { $LiteralPath -like '*backup.json' }
+    $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo `
+      -Scope StableWorktree -Execute -ArchiveRoot $script:archive -Confirm:$false
+    $r.Stable[0].Action | Should -Be Failed
+    $r.Stable[0].DeletedFiles | Should -Be 0
+    Test-Path (Join-Path $script:stable '_generated/AIAdapterBackups/backup.json') | Should -BeTrue
+  }
+
+  It 'aborts on native Git inventory failure without deleting untracked files' {
+    Mock git { $global:LASTEXITCODE = 128; 'fatal: inventory unavailable' }
+    { Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo `
+        -Scope StableWorktree -Execute -ArchiveRoot $script:archive -Confirm:$false } | Should -Throw '*Git inventory failed*'
+    Test-Path (Join-Path $script:stable '_generated/AIAdapterBackups/backup.json') | Should -BeTrue
+  }
+
+  It 'rejects a junction before following it or deleting any original' {
+    New-TestFile $script:gitRoot 'outside/keep.txt'
+    $junction = Join-Path $script:stable '_generated/external'
+    New-Item -ItemType Junction -Path $junction -Target (Join-Path $script:gitRoot 'outside') -ErrorAction Stop | Out-Null
+    try {
+      { Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo `
+          -Scope StableWorktree -Execute -ArchiveRoot $script:archive -Confirm:$false } | Should -Throw '*Reparse point*'
+      Test-Path (Join-Path $script:gitRoot 'outside/keep.txt') | Should -BeTrue
+      Test-Path (Join-Path $script:stable '_generated/AIAdapterBackups/backup.json') | Should -BeTrue
+    } finally { Remove-Item -LiteralPath $junction -Force }
+  }
+
+  It 'verifies hidden files and exact archive paths and is idempotent' {
+    New-TestFile $script:stable '_generated/hidden.bin' 'hidden bytes'
+    $hidden = Join-Path $script:stable '_generated/hidden.bin'
+    (Get-Item $hidden).Attributes = [IO.FileAttributes]::Hidden
+    $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo `
+      -Scope StableWorktree -Execute -ArchiveRoot $script:archive -Confirm:$false
+    $r.Errors | Should -BeNullOrEmpty
+    $r.Stable[0].DeletedFiles | Should -Be 2
+    $zip = [IO.Compression.ZipFile]::OpenRead($r.Stable[0].Archive)
+    try {
+      @($zip.Entries.FullName).Count | Should -Be 2
+      $zip.Entries.FullName | Should -Contain '_generated/hidden.bin'
+      $zip.Entries.FullName | Should -Contain '_generated/AIAdapterBackups/backup.json'
+    } finally { $zip.Dispose() }
+    $again = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo -Scope StableWorktree
+    $again.Stable[0].Action | Should -Be NothingToDelete
+    $again.Stable[0].CurrentSprintProtected | Should -Be 1
+    @($again.Stable[0].TrackedDeferred).Count | Should -Be 2
   }
 }

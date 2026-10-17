@@ -6,6 +6,11 @@ function Invoke-GeneratedFolderRemediation {
     current sprint worktrees, and `_generated/` paths in stable-branch history.
 
   .DESCRIPTION
+    These are legacy partial remediation modes, not the complete expanded
+    Task 16.84 solution. They do not implement same-path/identical-byte duplicate
+    selection, complete stable-tree removal, or coordinated stable/sprint history
+    migration. Execution requires a separately reviewed plan and authorization.
+
     Rule R-38 says sprint `_generated/` folders are deleted at sprint end. In
     practice, files reach the stable worktrees anyway (see SC-0470): sprint-close
     commits force-add ignored `_generated/` files, and SprintEnd/AIAdapter steps
@@ -49,8 +54,12 @@ function Invoke-GeneratedFolderRemediation {
 
     Without -Execute the cmdlet only plans. With -Execute, each destructive
     action also goes through ShouldProcess (ConfirmImpact High). Before
-    anything in the StableWorktree or SprintCarryover scope is deleted, it is
-    zipped under -ArchiveRoot, unless -NoArchive is passed.
+    StableWorktree deletion requires a ZIP under -ArchiveRoot, verified by exact
+    entry paths and SHA-256 readback before removal. It rejects -NoArchive when
+    deletion is attempted. The legacy SprintCarryover mode can bypass its archive
+    with -NoArchive and does not provide the stable mode's archive verification.
+    Archive destination junction/resolved-containment checks and concurrent-writer
+    races are unresolved; these partial safeguards do not establish execution readiness.
 
   .PARAMETER SprintNumber
     Current four-digit sprint number, for example '0016'.
@@ -65,12 +74,14 @@ function Invoke-GeneratedFolderRemediation {
   .PARAMETER Execute
     Performs the removals. Without it, the cmdlet only produces the plan.
   .PARAMETER ArchiveRoot
-    Folder that receives a zip archive of everything deleted. It is required
-    with -Execute for the StableWorktree and SprintCarryover scopes unless
-    -NoArchive is passed, and it must not be inside a `_generated` folder that
-    is being remediated.
+    Folder receiving ZIP archives. StableWorktree deletion always requires a
+    verified archive. SprintCarryover requires this folder unless -NoArchive is
+    passed. It must be outside affected `_generated` trees. The current lexical
+    guard does not prove resolved destination containment through junctions.
   .PARAMETER NoArchive
-    Deletes without archiving.
+    Bypasses archiving only in the legacy SprintCarryover mode. StableWorktree
+    reports a failed deletion attempt and retains originals when this switch is
+    used; skipped worktrees and worktrees with no deletion candidates are unchanged.
   .PARAMETER HistoryWorkRoot
     Empty-or-new folder for the bare clones that StableHistory rewrites.
     Required with -Execute for StableHistory.
@@ -83,14 +94,15 @@ function Invoke-GeneratedFolderRemediation {
     [PSCustomObject] report with Stable, Sprint, History, Errors and Mode.
   .EXAMPLE
     Invoke-GeneratedFolderRemediation -SprintNumber '0016' -EvidencePath $plan
-    # Plan only. Nothing is changed.
+    # Legacy partial-mode inventory only; not the expanded Task 16.84 plan.
   .EXAMPLE
     Invoke-GeneratedFolderRemediation -SprintNumber '0016' -Scope StableWorktree, SprintCarryover `
       -Execute -ArchiveRoot 'D:\Temp\GeneratedArchive'
+    # Legacy partial-mode syntax only; not an approved Task 16.84 execution runbook.
   .EXAMPLE
     Invoke-GeneratedFolderRemediation -SprintNumber '0017' -Scope StableHistory -Execute `
       -HistoryWorkRoot 'D:\Temp\GeneratedHistory' -PushRewrittenHistory
-    # Run after sprint end, when no sprint worktrees exist.
+    # Legacy partial-mode syntax only; not a coordinated history migration runbook.
   .NOTES
     Sprint 0016 unplanned remediation task. Durable SprintEnd fix: SC-0470.
     AI assisted using Powershell.instructions.md as guidelines.
@@ -158,6 +170,92 @@ function Invoke-GeneratedFolderRemediation {
         Output   = @($raw | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] } | ForEach-Object { [string]$_ })
         Error    = (@($raw | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] } | ForEach-Object { $_.ToString() }) -join "`n")
       }
+    }
+
+    # Failed stable inventory must never be interpreted as an empty one.
+    $checkedGit = {
+      param([string[]]$ArgumentList)
+      $result = & $invokeGit $ArgumentList
+      if ($result.ExitCode -ne 0) { throw "Git inventory failed: $($result.Error)" }
+      $result
+    }
+
+    # Reject redirecting links in every ancestor. Dropbox cloud placeholders may
+    # carry ReparsePoint without a link target; their bytes must still hash fully.
+    $safeStablePath = {
+      param([string]$Root, [string]$RelativePath)
+      $rootFull = [IO.Path]::GetFullPath($Root).TrimEnd('\', '/')
+      $generatedFull = Join-Path $rootFull '_generated'
+      $full = [IO.Path]::GetFullPath((Join-Path $rootFull $RelativePath))
+      if ($full -ne $generatedFull -and -not $full.StartsWith($generatedFull + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Path escapes _generated: $RelativePath"
+      }
+      $cursor = $full
+      while ($cursor) {
+        $item = Get-Item -LiteralPath $cursor -Force -ErrorAction Stop
+        if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -and $null -ne $item.ResolveLinkTarget($false)) {
+          throw "Reparse point redirects the path: $cursor"
+        }
+        $cursor = Split-Path -Parent $cursor
+      }
+      $full
+    }
+
+    # Walk explicitly to reject junctions before any recursive enumeration.
+    $stableDiskFiles = {
+      param([string]$Root)
+      $generated = Join-Path $Root '_generated'
+      if (-not (Test-Path -LiteralPath $generated)) { return }
+      $null = & $safeStablePath $Root '_generated'
+      $pending = [Collections.Generic.Stack[string]]::new()
+      $pending.Push($generated)
+      $prefix = [IO.Path]::GetFullPath($Root).TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
+      while ($pending.Count) {
+        foreach ($item in Get-ChildItem -LiteralPath $pending.Pop() -Force -ErrorAction Stop) {
+          if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -and $null -ne $item.ResolveLinkTarget($false)) {
+            throw "Reparse point redirects the path: $($item.FullName)"
+          }
+          if ($item.PSIsContainer) { $pending.Push($item.FullName) }
+          else { $item.FullName.Substring($prefix.Length).Replace('\', '/') }
+        }
+      }
+    }
+
+    # Stable-only ZIP readback proves the exact path set and hashes before deletion.
+    $archiveStableFiles = {
+      param([string]$Root, [string[]]$RelativePaths, [string]$Name)
+      if ($NoArchive) { throw 'StableWorktree cleanup requires a verified archive; -NoArchive is not allowed.' }
+      [void](New-Item -ItemType Directory -Path $ArchiveRoot -Force -ErrorAction Stop)
+      $zip = Join-Path $ArchiveRoot "$Name-$stamp-$([guid]::NewGuid().ToString('N')).zip"
+      $hashes = @{}
+      $writer = [IO.Compression.ZipFile]::Open($zip, [IO.Compression.ZipArchiveMode]::Create)
+      try {
+        foreach ($rel in $RelativePaths) {
+          $source = & $safeStablePath $Root $rel
+          $hashes[$rel] = (Get-FileHash -LiteralPath $source -Algorithm SHA256 -ErrorAction Stop).Hash
+          $null = [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($writer, $source, $rel)
+        }
+      } finally { $writer.Dispose() }
+      $reader = [IO.Compression.ZipFile]::OpenRead($zip)
+      try {
+        if ($reader.Entries.Count -ne $RelativePaths.Count) { throw 'Archive entry count mismatch.' }
+        $seen = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+        foreach ($entry in $reader.Entries) {
+          if (-not $hashes.ContainsKey($entry.FullName) -or -not $seen.Add($entry.FullName)) { throw 'Archive path set mismatch.' }
+          $stream = $entry.Open()
+          $sha = [Security.Cryptography.SHA256]::Create()
+          try { $hash = [Convert]::ToHexString($sha.ComputeHash($stream)) }
+          finally { $sha.Dispose(); $stream.Dispose() }
+          if ($hash -ne $hashes[$entry.FullName]) { throw "Archive hash mismatch: $($entry.FullName)" }
+        }
+      } finally { $reader.Dispose() }
+      foreach ($rel in $RelativePaths) {
+        $source = & $safeStablePath $Root $rel
+        if ((Get-FileHash -LiteralPath $source -Algorithm SHA256 -ErrorAction Stop).Hash -ne $hashes[$rel]) {
+          throw "Source changed during archive: $rel"
+        }
+      }
+      [PSCustomObject]@{ Path = $zip; Hashes = $hashes }
     }
 
     # Builds a case-insensitive path set; tolerates $null (empty script-block output unrolls to $null).
@@ -234,7 +332,7 @@ function Invoke-GeneratedFolderRemediation {
         throw "-ArchiveRoot is required with -Execute for the StableWorktree/SprintCarryover scopes (or pass -NoArchive)."
       }
       $ArchiveRoot = [IO.Path]::GetFullPath($ArchiveRoot)
-      if ($ArchiveRoot -match '(?i)[\\/]_generated([\\/]|$)' -and
+      if ([IO.Path]::GetRelativePath([IO.Path]::GetFullPath($GitRoot), $ArchiveRoot) -match '(?i)(^|[\\/])_generated([\\/]|$)' -and
         $ArchiveRoot.StartsWith([IO.Path]::GetFullPath($GitRoot), [StringComparison]::OrdinalIgnoreCase)) {
         throw "-ArchiveRoot '$ArchiveRoot' is inside a _generated folder under GitRoot; it could be deleted by this remediation."
       }
@@ -256,7 +354,8 @@ function Invoke-GeneratedFolderRemediation {
         $errors.Add("[$repo] stable worktree '$stablePath' not found; skipped.")
         continue
       }
-      $branch = (& $invokeGit @('-C', $stablePath, 'branch', '--show-current')).Output | Select-Object -First 1
+      $branchReader = if ($Scope -contains 'StableWorktree') { $checkedGit } else { $invokeGit }
+      $branch = (& $branchReader @('-C', $stablePath, 'branch', '--show-current')).Output | Select-Object -First 1
       $sprintWorktrees = @(Get-ChildItem -LiteralPath $GitRoot -Directory -Filter "$repo-wt-*" -ErrorAction SilentlyContinue)
       $currentSprintWorktrees = @($sprintWorktrees | Where-Object { $_.Name -like "$repo-wt-*-sprint-$SprintNumber-work-items" })
 
@@ -271,9 +370,9 @@ function Invoke-GeneratedFolderRemediation {
           $entry.Action = "Skipped: on branch '$branch', not '$StableBranch'"
           $errors.Add("[$repo] stable worktree is on '$branch'; StableWorktree skipped.")
         } else {
-          $tracked = & $splitNul (& $invokeGit @('-C', $stablePath, 'ls-files', '-z', '--', '_generated')).Output
+          $tracked = & $splitNul (& $checkedGit @('-C', $stablePath, 'ls-files', '-z', '--', '_generated')).Output
           $trackedSet = (& $newSet $tracked)
-          $candidates = @(& $listDiskFiles $stablePath | Where-Object { -not $trackedSet.Contains($_) })
+          $candidates = @(& $stableDiskFiles $stablePath | Where-Object { -not $trackedSet.Contains($_) })
           $protected = @($candidates | Where-Object { $s = & $priorSprintOf $_; $null -ne $s -and $s -ge $currentSprint })
           $protectedSet = (& $newSet $protected)
           $untracked = @($candidates | Where-Object { -not $protectedSet.Contains($_) })
@@ -286,9 +385,14 @@ function Invoke-GeneratedFolderRemediation {
             $entry.Action = 'NothingToDelete'
           } elseif ($Execute -and $PSCmdlet.ShouldProcess("$stablePath\_generated ($($untracked.Count) untracked file(s))", 'Archive and delete')) {
             try {
-              $entry.Archive = & $archiveFiles $stablePath $untracked "$repo-stable-_generated"
+              $archive = & $archiveStableFiles $stablePath $untracked "$repo-stable-_generated"
+              $entry.Archive = $archive.Path
               foreach ($rel in $untracked) {
-                Remove-Item -LiteralPath (Join-Path $stablePath $rel) -Force -ErrorAction Stop
+                $target = & $safeStablePath $stablePath $rel
+                if ((Get-FileHash -LiteralPath $target -Algorithm SHA256 -ErrorAction Stop).Hash -ne $archive.Hashes[$rel]) {
+                  throw "Source changed before deletion: $rel"
+                }
+                Remove-Item -LiteralPath $target -Force -ErrorAction Stop
                 $entry.DeletedFiles++
               }
               & $pruneEmpty $stablePath

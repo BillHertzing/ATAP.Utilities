@@ -1,0 +1,108 @@
+{
+  "Name": "AceOutpost-ApplicationRelease-5Stage",
+  "Description": "AceOutpost-only immutable ReleaseBundle v2 promotion of ApplicationBuild-1Stage bytes to releasebundle-production; no rebuild, database apply, service install or external distribution.",
+  "Stages": [
+    {
+      "Name": "Experimental",
+      "Targets": [
+        {
+          "ScriptId": "global::AceOutpost-ApplicationRelease.otter",
+          "ServerNames": [
+            "localhost"
+          ],
+          "ServerRoleNames": [],
+          "DefaultServerContext": 1
+        }
+      ],
+      "Gate": {
+        "UserApprovals": [],
+        "GroupApprovals": [],
+        "DeploymentWindows": [],
+        "AutomaticApprovals": []
+      },
+      "AllowMultipleActiveBuilds": false
+    },
+    {
+      "Name": "Development",
+      "Targets": [
+        {
+          "ScriptId": "global::AceOutpost-ApplicationRelease.otter",
+          "ServerNames": [
+            "localhost"
+          ],
+          "ServerRoleNames": [],
+          "DefaultServerContext": 1
+        }
+      ],
+      "Gate": {
+        "UserApprovals": [],
+        "GroupApprovals": [],
+        "DeploymentWindows": [],
+        "AutomaticApprovals": []
+      },
+      "AllowMultipleActiveBuilds": false
+    },
+    {
+      "Name": "Integration",
+      "Targets": [
+        {
+          "ScriptId": "global::AceOutpost-ApplicationRelease.otter",
+          "ServerNames": [
+            "localhost"
+          ],
+          "ServerRoleNames": [],
+          "DefaultServerContext": 1
+        }
+      ],
+      "Gate": {
+        "UserApprovals": [],
+        "GroupApprovals": [],
+        "DeploymentWindows": [],
+        "AutomaticApprovals": []
+      },
+      "AllowMultipleActiveBuilds": false
+    },
+    {
+      "Name": "QA",
+      "Targets": [
+        {
+          "ScriptId": "global::AceOutpost-ApplicationRelease.otter",
+          "ServerNames": [
+            "localhost"
+          ],
+          "ServerRoleNames": [],
+          "DefaultServerContext": 1
+        }
+      ],
+      "Gate": {
+        "UserApprovals": [],
+        "GroupApprovals": [],
+        "DeploymentWindows": [],
+        "AutomaticApprovals": []
+      },
+      "AllowMultipleActiveBuilds": false
+    },
+    {
+      "Name": "Production",
+      "Targets": [
+        {
+          "ScriptId": "global::AceOutpost-ApplicationRelease.otter",
+          "ServerNames": [
+            "localhost"
+          ],
+          "ServerRoleNames": [],
+          "DefaultServerContext": 1
+        }
+      ],
+      "Gate": {
+        "UserApprovals": [],
+        "GroupApprovals": [],
+        "DeploymentWindows": [],
+        "AutomaticApprovals": []
+      },
+      "AllowMultipleActiveBuilds": false
+    }
+  ],
+  "TemplateVariables": [],
+  "EventListeners": []
+}

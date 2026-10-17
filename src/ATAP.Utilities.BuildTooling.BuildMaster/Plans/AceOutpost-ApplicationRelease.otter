@@ -1,0 +1,33 @@
+##########################################################################
+# AceOutpost-ApplicationRelease - BuildMaster OtterScript Plan
+#
+# !! EDITING THIS FILE IS NOT ENOUGH - SYNC IT TO THE RAFT !!
+#   BuildMaster executes the copy of this plan stored in its raft, NOT this
+#   file. Committing a change here does nothing until you run:
+#       Sync-BuildMasterPlans -Path <thisFile> -IncludePipelines
+#   The paired stage runner (Invoke-ApplicationReleaseStage.ps1) IS read from disk
+#   at run time, so a commit that changes both leaves the raft passing the OLD
+#   argument list to the NEW parameter block. When the missing argument is a
+#   [Parameter(Mandatory)] one, PowerShell prompts a console that nobody can
+#   answer and the stage HANGS FOREVER with no error. See
+#       SolutionDocumentation/BuildMaster-Plan-Raft-Sync-Requirement.md
+##########################################################################
+# Task 16.79. AceOutpost thin adapter, mirroring AceCommander-ApplicationRelease.otter.
+# The bundle is built, signed and uploaded to releasebundle-experimental by
+# ApplicationBuild-1Stage; this plan only verifies and promotes those immutable bytes
+# Experimental -> Development -> Integration -> QA -> Production. No rebuilding above
+# Experimental, database apply, service install, or Distribution stage.
+#
+# Variables (Release/Application Variables - set in BuildMaster, never secrets):
+#   $ApplicationReleaseRunner           - <ATAP.Utilities worktree>\src\ATAP.Utilities.BuildTooling.BuildMaster\Plans\Invoke-ApplicationReleaseStage.ps1
+#   $ApplicationReleaseContext          - release-context.json written by the ApplicationBuild-1Stage build
+#   $ApplicationReleaseContextSha256    - Operator-approved SHA-256 of that context
+#   $ApplicationReleaseWorkingDirectory - Committed ATAP.Utilities worktree
+set $ReleaseBuildId = $BuildMasterId(build);
+InedoCore::Exec
+(
+    FileName: pwsh,
+    Arguments: >>-NonInteractive -File "$ApplicationReleaseRunner" -ContextPath "$ApplicationReleaseContext" -ExpectedContextSha256 "$ApplicationReleaseContextSha256" -Stage "$PipelineStageName" -BuildId "$ReleaseBuildId">>,
+    WorkingDirectory: $ApplicationReleaseWorkingDirectory,
+    SuccessExitCode: 0
+);

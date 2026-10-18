@@ -1,6 +1,7 @@
 ﻿BeforeAll {
   . (Join-Path $PSScriptRoot '../../private/Get-GeneratedRemediationTreeCensus.ps1')
-  $script:fixtureBase = 'D:/ATAPArtifacts/_generated/GeneratedFolderRemediation/Sprint0016/TreeCensus/' + [guid]::NewGuid().ToString('N')
+  . (Join-Path $PSScriptRoot '../../private/Get-GeneratedRemediationPathMetadata.ps1')
+  $script:fixtureBase = 'D:/ATAPArtifacts/_generated/GeneratedFolderRemediation/Sprint0016/TreeCensus/CloudMetadata/' + [guid]::NewGuid().ToString('N')
   $script:getItemCommand = Get-Command Microsoft.PowerShell.Management\Get-Item
   $script:getChildrenCommand = Get-Command Microsoft.PowerShell.Management\Get-ChildItem
 }
@@ -264,5 +265,244 @@ Describe 'Actual provider ambient-default isolation without mocks' {
       [object]::ReferenceEquals($defaults['Microsoft.PowerShell.Management\Get-Item:Stream'], $value) | Should -BeTrue
       $defaults.Disabled | Should -BeTrue
     } finally { $PSDefaultParameterValues = $savedDefaults }
+  }
+}
+
+Describe 'Native final-component metadata on local synthetic fixtures' {
+  It 'uses the exact ABI and disposes the successful directory handle' {
+    $null = New-Item -ItemType Directory -Path $fixtureBase -Force
+    $r = Get-GeneratedRemediationPathMetadata $fixtureBase
+    $r.Success | Should -BeTrue
+    $r.HandleOpened | Should -BeTrue
+    $r.HandleClosed | Should -BeTrue
+    $r.ReparseTag | Should -Be 0
+    ($r.Attributes -band 16) | Should -Be 16
+    [Runtime.InteropServices.Marshal]::SizeOf([Activator]::CreateInstance([type]'ATAP.GeneratedRemediation.AttributeTagInfoV1')) | Should -Be 8
+    [ATAP.GeneratedRemediation.NativePathMetadataV1]::DesiredAccess | Should -Be 0
+    [ATAP.GeneratedRemediation.NativePathMetadataV1]::ShareMode | Should -Be 7
+    [ATAP.GeneratedRemediation.NativePathMetadataV1]::Disposition | Should -Be 3
+    [ATAP.GeneratedRemediation.NativePathMetadataV1]::Flags | Should -Be 0x02200000
+    [ATAP.GeneratedRemediation.NativePathMetadataV1]::InformationClass | Should -Be 9
+  }
+  It 'reads the actual junction tag instead of its target and closes the handle' {
+    $target = "$fixtureBase/native-target"
+    $link = "$fixtureBase/native-junction"
+    $null = New-Item -ItemType Directory -Path $target -Force
+    $null = New-Item -ItemType Junction -Path $link -Target $target
+    $r = Get-GeneratedRemediationPathMetadata $link
+    $r.Success | Should -BeTrue
+    $r.ReparseTag | Should -Be 2684354563
+    ($r.Attributes -band 1024) | Should -Be 1024
+    $r.HandleClosed | Should -BeTrue
+  }
+  It 'returns missing-path Win32 error without claiming a valid open' {
+    $r = Get-GeneratedRemediationPathMetadata "$fixtureBase/does-not-exist"
+    $r.Success | Should -BeFalse
+    $r.ErrorCode | Should -BeIn @(2,3)
+    $r.HandleOpened | Should -BeFalse
+    $r.HandleClosed | Should -BeTrue
+  }
+  It 'supports local Unicode extended-length directory paths' {
+    $path = "$fixtureBase/" + ('unicode-ü-0123456789/' * 12) + 'end'
+    $null = New-Item -ItemType Directory -Path $path -Force
+    (Get-GeneratedRemediationPathMetadata $path).Success | Should -BeTrue
+  }
+  It 'refuses a changed source hash before native access' {
+    Mock Get-FileHash { [pscustomobject]@{Hash='different'} }
+    { Get-GeneratedRemediationPathMetadata $fixtureBase } | Should -Throw '*Untrusted*'
+  }
+  It 'refuses absent provenance for an already loaded type' {
+    $saved = $script:GeneratedRemediationNativeProvenanceV1
+    try {
+      $script:GeneratedRemediationNativeProvenanceV1 = $null
+      { Get-GeneratedRemediationPathMetadata $fixtureBase } | Should -Throw '*Untrusted*'
+    } finally { $script:GeneratedRemediationNativeProvenanceV1 = $saved }
+  }
+  It 'rejects adapter and loader defaults without evaluating or mutating them' {
+    foreach ($key in @('Add-Type:TypeDefinition','*\Add-Type:ReferencedAssemblies','Get-FileHash:InputStream','gv:Scope','Join-Path:AdditionalChildPath','Get-GeneratedRemediationPathMetadata:Verbose')) {
+      $saved = $PSDefaultParameterValues
+      $script:wasEvaluated=$false
+      $value={ $script:wasEvaluated=$true; throw 'default executed' }
+      $defaults=@{$key=$value;Disabled=$true}
+      try {
+        $PSDefaultParameterValues=$defaults
+        { Get-GeneratedRemediationPathMetadata $fixtureBase } | Should -Throw '*ambient*'
+        $script:wasEvaluated | Should -BeFalse
+        $defaults.Count | Should -Be 2
+        [object]::ReferenceEquals($defaults[$key],$value) | Should -BeTrue
+      } finally { $PSDefaultParameterValues=$saved }
+    }
+  }
+}
+
+Describe 'Opt-in cloud policy with mocked native metadata' {
+  BeforeEach {
+    $script:fixture = $fixtureBase + '/cloud-' + [guid]::NewGuid().ToString('N').Substring(0,8)
+    $null = New-Item -ItemType Directory -Path "$fixture/_generated" -Force
+    $script:cloudAttributes = [uint32]525360
+    $script:cloudTag = [uint32]2415964186
+    $script:providerAttributes = [long]525360
+    $script:providerLink = $null
+    $script:metadataFailure = $false
+    $script:nativeRootReads = 0
+    $script:driftAt = 0
+    Mock Get-GeneratedRemediationPathMetadata {
+      $isRoot = $LiteralPath.Replace('\','/').TrimEnd('/') -eq "$script:fixture/_generated"
+      if ($isRoot) {
+        $script:nativeRootReads++
+        $tag = if ($script:driftAt -gt 0 -and $script:nativeRootReads -ge $script:driftAt) { [uint32]2415960090 } else {$script:cloudTag}
+        [pscustomobject]@{Success=(!$script:metadataFailure);Attributes=$script:cloudAttributes;ReparseTag=$tag;ErrorCode=[int]0;HandleOpened=$true;HandleClosed=$true}
+      } else {
+        # Synthetic local-only metadata; provider command invoked outside census mocks.
+        $item = & $script:getItemCommand -LiteralPath $LiteralPath -Force -ErrorAction Stop
+        [pscustomobject]@{Success=$true;Attributes=[uint32]$item.Attributes;ReparseTag=[uint32]0;ErrorCode=[int]0;HandleOpened=$true;HandleClosed=$true}
+      }
+    }
+    Mock Get-Item {
+      if ($LiteralPath.Replace('\','/').TrimEnd('/') -eq "$script:fixture/_generated") {
+        [pscustomobject]@{Attributes=$script:providerAttributes;PSIsContainer=$true;LinkTarget=$script:providerLink;LinkType=$null;LastWriteTimeUtc=[datetime]::MinValue;CreationTimeUtc=[datetime]::MinValue}
+      } else { & $script:getItemCommand -LiteralPath $LiteralPath -Force -ErrorAction Stop }
+    }
+    Mock Get-ChildItem { & $script:getChildrenCommand -LiteralPath $LiteralPath -Force -Recurse:$false -FollowSymlink:$false -ErrorAction Stop }
+  }
+  It 'requires explicit opt-in and records the exact admitted tag and attributes' {
+    $baseline = Get-GeneratedRemediationTreeCensus $fixture
+    $baseline.StructuralInventoryComplete | Should -BeFalse
+    Should -Invoke Get-GeneratedRemediationPathMetadata -Times 0
+    $r = Get-GeneratedRemediationTreeCensus $fixture -AllowVerifiedCloudDirectoryMetadata
+    $r.StructuralInventoryComplete | Should -BeTrue
+    $r.Observations.Count | Should -Be 2
+    $r.Observations[0].Rows[0].ReparseTag | Should -Be 2415964186
+    $r.Observations[0].Rows[0].Attributes | Should -Be 525360
+    $r.NativePathObservations.Count | Should -BeGreaterThan 1
+    $r.InventoryComplete | Should -BeFalse
+    $r.ReadyForManifest | Should -BeFalse
+    $r.CustodyVerified | Should -BeFalse
+  }
+  It 'holds other cloud variants, surrogate tags, forbidden bits and cloud files before provider access' {
+    foreach ($case in @(
+      @{A=525360;T=2415919130}, @{A=525360;T=2952835098},
+      @{A=(525360 -bor 4096);T=2415964186}, @{A=(525360 -bor 16384);T=2415964186},
+      @{A=(525360 -bor 262144);T=2415964186}, @{A=(525360 -bor 4194304);T=2415964186},
+      @{A=(525360 -bor 1048576);T=2415964186}, @{A=(525360 -bor 2147483648L);T=2415964186},
+      @{A=(525360 -band (-bnot 16));T=2415964186})) {
+      $script:cloudAttributes=[uint32]$case.A; $script:cloudTag=[uint32]$case.T
+      $r = Get-GeneratedRemediationTreeCensus $fixture -AllowVerifiedCloudDirectoryMetadata
+      $r.StructuralInventoryComplete | Should -BeFalse
+      $r.Observations[0].Rows[0].Hold | Should -BeTrue
+    }
+    Should -Invoke Get-Item -Times 0 -ParameterFilter { $LiteralPath.Replace('\','/').TrimEnd('/') -eq "$script:fixture/_generated" }
+    Should -Invoke Get-ChildItem -Times 0 -ParameterFilter { $LiteralPath.Replace('\','/').TrimEnd('/') -eq "$script:fixture/_generated" }
+  }
+  It 'rejects provider mismatch and surfaced links before reading children' {
+    foreach ($case in @('attributes','link')) {
+      $script:providerAttributes=if ($case -eq 'attributes') {16} else {525360}
+      $script:providerLink=if ($case -eq 'link') {'unexpected'} else {$null}
+      $r = Get-GeneratedRemediationTreeCensus $fixture -AllowVerifiedCloudDirectoryMetadata
+      $r.Success | Should -BeFalse
+      $r.Errors[0] | Should -Match 'mismatch|link'
+    }
+    Should -Invoke Get-ChildItem -Times 0 -ParameterFilter { $LiteralPath.Replace('\','/').TrimEnd('/') -eq "$script:fixture/_generated" }
+  }
+  It 'rejects native failures before the provider probes the failed path' {
+    $script:metadataFailure=$true
+    $r = Get-GeneratedRemediationTreeCensus $fixture -AllowVerifiedCloudDirectoryMetadata
+    $r.Success | Should -BeFalse
+    Should -Invoke Get-Item -Times 0 -ParameterFilter { $LiteralPath.Replace('\','/').TrimEnd('/') -eq "$script:fixture/_generated" }
+  }
+  It 'detects tag drift before a directory read and across the second walk' {
+    foreach ($read in @(2,4)) {
+      $script:nativeRootReads=0; $script:driftAt=$read
+      $r=Get-GeneratedRemediationTreeCensus $fixture -AllowVerifiedCloudDirectoryMetadata
+      $r.Success | Should -BeFalse
+      $r.Errors[0] | Should -Match 'drift'
+    }
+  }
+  It 'refuses loader defaults before any acquisition' {
+    $saved=$PSDefaultParameterValues
+    try {
+      $PSDefaultParameterValues=@{'Add-Type:TypeDefinition'={throw 'never run'}}
+      $r=Get-GeneratedRemediationTreeCensus $fixture -AllowVerifiedCloudDirectoryMetadata
+    } finally {$PSDefaultParameterValues=$saved}
+    $r.Success | Should -BeFalse
+    Should -Invoke Get-GeneratedRemediationPathMetadata -Times 0
+    Should -Invoke Get-Item -Times 0
+    Should -Invoke Get-ChildItem -Times 0
+  }
+}
+
+Describe 'Additional fail-closed cloud guard cases' {
+  BeforeEach {
+    $script:fixture = $fixtureBase + '/adversarial-' + [guid]::NewGuid().ToString('N').Substring(0,8)
+    $null=New-Item -ItemType Directory -Path "$fixture/_generated/child" -Force
+    $script:nativeCalls=0
+    Mock Get-Item { & $script:getItemCommand -LiteralPath $LiteralPath -Force -ErrorAction Stop }
+    Mock Get-ChildItem { & $script:getChildrenCommand -LiteralPath $LiteralPath -Force -Recurse:$false -FollowSymlink:$false -ErrorAction Stop }
+    Mock Start-Sleep {}
+  }
+  It 'refuses malformed native success before any provider call' {
+    foreach ($field in @('Success','Attributes','ReparseTag','ErrorCode','HandleOpened','HandleClosed')) {
+      $script:badField=$field
+      Mock Get-GeneratedRemediationPathMetadata {
+        $r=[pscustomobject]@{Success=$true;Attributes=[uint32]16;ReparseTag=[uint32]0;ErrorCode=[int]0;HandleOpened=$true;HandleClosed=$true}
+        $r.($script:badField)='malformed'
+        $r
+      }
+      (Get-GeneratedRemediationTreeCensus $fixture -AllowVerifiedCloudDirectoryMetadata).Success | Should -BeFalse
+    }
+    Should -Invoke Get-Item -Times 0
+    Should -Invoke Get-ChildItem -Times 0
+  }
+  It 'never crosses an unapproved native ancestor' {
+    Mock Get-GeneratedRemediationPathMetadata {
+      [pscustomobject]@{Success=$true;Attributes=[uint32]1040;ReparseTag=[uint32]2684354563;ErrorCode=[int]0;HandleOpened=$true;HandleClosed=$true}
+    }
+    $r=Get-GeneratedRemediationTreeCensus $fixture -AllowVerifiedCloudDirectoryMetadata
+    $r.Success | Should -BeFalse
+    Should -Invoke Get-GeneratedRemediationPathMetadata -Times 1 -Exactly
+    Should -Invoke Get-Item -Times 0
+    Should -Invoke Get-ChildItem -Times 0
+  }
+  It 'retries native access and sharing failures but never calls an incomplete run complete' {
+    foreach ($errorCode in @(5,32,33)) {
+      $script:failureCode=$errorCode; $script:nativeCalls=0
+      Mock Get-GeneratedRemediationPathMetadata {
+        $script:nativeCalls++
+        if ($script:nativeCalls -eq 1) {
+          [pscustomobject]@{Success=$false;Attributes=[uint32]0;ReparseTag=[uint32]0;ErrorCode=[int]$script:failureCode;HandleOpened=$false;HandleClosed=$true}
+        } else {
+          $item=& $script:getItemCommand -LiteralPath $LiteralPath -Force -ErrorAction Stop
+          [pscustomobject]@{Success=$true;Attributes=[uint32]$item.Attributes;ReparseTag=[uint32]0;ErrorCode=[int]0;HandleOpened=$true;HandleClosed=$true}
+        }
+      }
+      $r=Get-GeneratedRemediationTreeCensus $fixture -AllowVerifiedCloudDirectoryMetadata
+      $r.Success | Should -BeTrue
+      $r.StructuralInventoryComplete | Should -BeFalse
+      $r.FailedWalks.Count | Should -Be 1
+    }
+  }
+  It 'retains native query failure after an opened and closed handle without provider access' {
+    Mock Get-GeneratedRemediationPathMetadata {
+      [pscustomobject]@{Success=$false;Attributes=[uint32]0;ReparseTag=[uint32]0;ErrorCode=[int]87;HandleOpened=$true;HandleClosed=$true}
+    }
+    $r=Get-GeneratedRemediationTreeCensus $fixture -AllowVerifiedCloudDirectoryMetadata
+    $r.Success | Should -BeFalse
+    $r.Attempts.Count | Should -Be 1
+    Should -Invoke Get-Item -Times 0
+  }
+  It 'detects native ancestor change after a transient provider error' {
+    $script:changed=$false
+    Mock Get-GeneratedRemediationPathMetadata {
+      $item=& $script:getItemCommand -LiteralPath $LiteralPath -Force -ErrorAction Stop
+      $tag=[uint32]0; $attr=[uint32]$item.Attributes
+      if ($script:changed -and $LiteralPath -eq 'D:\') {$tag=[uint32]2684354563; $attr=[uint32]1040}
+      [pscustomobject]@{Success=$true;Attributes=$attr;ReparseTag=$tag;ErrorCode=[int]0;HandleOpened=$true;HandleClosed=$true}
+    }
+    Mock Get-ChildItem { $script:changed=$true; throw [UnauthorizedAccessException]::new('transient') }
+    $r=Get-GeneratedRemediationTreeCensus $fixture -AllowVerifiedCloudDirectoryMetadata
+    $r.Success | Should -BeFalse
+    $r.Attempts.Count | Should -Be 2
+    $r.Errors[0] | Should -Match 'drift'
+    Should -Invoke Get-ChildItem -Times 1 -Exactly
   }
 }

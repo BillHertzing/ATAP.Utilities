@@ -10,10 +10,10 @@ BeforeAll {
   $script:artifactsExecutionId = 'exec-toolchain'
   $script:artifactsPath = Join-Path $script:artifactsRoot 'dotnet\ATAP.Utilities\wt-toolchain\exec-toolchain'
   $script:previousArtifactEnvironment = @{}
-  foreach ($name in @('ATAP_ARTIFACTS_ROOT', 'ATAP_ARTIFACTS_WORKTREE_ID', 'ATAP_ARTIFACTS_EXECUTION_ID', 'ATAP_ARTIFACTS_PATH')) {
+  foreach ($name in @('ARTIFACTS_PATH', 'ATAP_ARTIFACTS_WORKTREE_ID', 'ATAP_ARTIFACTS_EXECUTION_ID', 'ATAP_ARTIFACTS_PATH')) {
     $script:previousArtifactEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
   }
-  $env:ATAP_ARTIFACTS_ROOT = $script:artifactsRoot
+  $env:ARTIFACTS_PATH = $script:artifactsRoot
   $env:ATAP_ARTIFACTS_WORKTREE_ID = $script:artifactsWorktreeId
   $env:ATAP_ARTIFACTS_EXECUTION_ID = $script:artifactsExecutionId
   $env:ATAP_ARTIFACTS_PATH = $script:artifactsPath

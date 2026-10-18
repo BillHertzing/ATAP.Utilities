@@ -5,13 +5,13 @@ BeforeAll {
   $script:repoRoot = (Resolve-Path -Path (Join-Path $testDirectory '..\..')).Path
   $script:projectPath = Join-Path $script:repoRoot 'src\ATAP.Utilities.RRSBS.Contracts\ATAP.Utilities.RRSBS.Contracts.csproj'
   $script:versionPath = Join-Path $script:repoRoot 'src\ATAP.Utilities.RRSBS.Contracts\version.json'
-  foreach ($name in @('ATAP_ARTIFACTS_ROOT', 'ATAP_ARTIFACTS_WORKTREE_ID', 'ATAP_ARTIFACTS_EXECUTION_ID', 'ATAP_ARTIFACTS_PATH')) {
+  foreach ($name in @('ARTIFACTS_PATH', 'ATAP_ARTIFACTS_WORKTREE_ID', 'ATAP_ARTIFACTS_EXECUTION_ID', 'ATAP_ARTIFACTS_PATH')) {
     if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name, 'Process'))) {
       throw "RepoHealth requires process environment value $name."
     }
   }
   $script:artifactPropertyArguments = @(
-    "-property:ATAPArtifactsRoot=$env:ATAP_ARTIFACTS_ROOT"
+    "-property:ATAPArtifactsRoot=$env:ARTIFACTS_PATH"
     "-property:ATAPArtifactsWorktreeId=$env:ATAP_ARTIFACTS_WORKTREE_ID"
     "-property:ATAPArtifactsExecutionId=$env:ATAP_ARTIFACTS_EXECUTION_ID"
     "-property:ArtifactsPath=$env:ATAP_ARTIFACTS_PATH"

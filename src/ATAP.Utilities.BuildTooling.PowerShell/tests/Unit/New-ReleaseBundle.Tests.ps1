@@ -32,8 +32,8 @@ BeforeAll {
     #
     # This is the Task 15.174.b root cause reaching test fixtures. ATAPBUILD004 guards
     # ArtifactsPath but not fixture roots, so the exclusion is enforced here.
-    $script:fixtureOutputRoot = if ($env:ATAP_ARTIFACTS_ROOT) {
-        [IO.Path]::GetFullPath((Join-Path $env:ATAP_ARTIFACTS_ROOT 'test-fixtures/New-ReleaseBundle'))
+    $script:fixtureOutputRoot = if ($env:ARTIFACTS_PATH) {
+        [IO.Path]::GetFullPath((Join-Path $env:ARTIFACTS_PATH 'test-fixtures/New-ReleaseBundle'))
     } else {
         [IO.Path]::GetFullPath((Join-Path ([IO.Path]::GetTempPath()) 'atap-test-fixtures/New-ReleaseBundle'))
     }

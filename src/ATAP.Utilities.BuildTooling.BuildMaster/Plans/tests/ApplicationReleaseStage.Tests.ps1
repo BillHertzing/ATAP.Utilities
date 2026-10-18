@@ -4,7 +4,7 @@ BeforeAll {
     param([string]$ProductId = 'AceCommander', [string]$Version = '0.1.1')
     # Same Dropbox exclusion as New-ReleaseBundle.Tests.ps1: fixtures written under a
     # Dropbox-synced path can be locked by the indexer between write and reopen.
-    $fixtureBase = if ($env:ATAP_ARTIFACTS_ROOT) { Join-Path $env:ATAP_ARTIFACTS_ROOT 'test-fixtures/ApplicationReleaseStage' }
+    $fixtureBase = if ($env:ARTIFACTS_PATH) { Join-Path $env:ARTIFACTS_PATH 'test-fixtures/ApplicationReleaseStage' }
                    else { Join-Path ([IO.Path]::GetTempPath()) 'atap-test-fixtures/ApplicationReleaseStage' }
     if ($fixtureBase -match '(?i)[\/]Dropbox[\/]') { throw "Fixture root must not be under Dropbox: $fixtureBase" }
     $root = Join-Path $fixtureBase ([guid]::NewGuid().ToString('N'))

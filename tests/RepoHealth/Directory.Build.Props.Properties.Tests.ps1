@@ -40,13 +40,13 @@ BeforeAll {
     QA = 'nuget-qa'
     Production = 'nuget-stable'
   }
-  foreach ($name in @('ATAP_ARTIFACTS_ROOT', 'ATAP_ARTIFACTS_WORKTREE_ID', 'ATAP_ARTIFACTS_EXECUTION_ID', 'ATAP_ARTIFACTS_PATH', 'ATAP_ARTIFACTS_OWNER')) {
+  foreach ($name in @('ARTIFACTS_PATH', 'ATAP_ARTIFACTS_WORKTREE_ID', 'ATAP_ARTIFACTS_EXECUTION_ID', 'ATAP_ARTIFACTS_PATH', 'ATAP_ARTIFACTS_OWNER')) {
     if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name, 'Process'))) {
       throw "RepoHealth requires process environment value $name."
     }
   }
   $script:artifactPropertyArguments = @(
-    "-property:ATAPArtifactsRoot=$env:ATAP_ARTIFACTS_ROOT"
+    "-property:ATAPArtifactsRoot=$env:ARTIFACTS_PATH"
     "-property:ATAPArtifactsWorktreeId=$env:ATAP_ARTIFACTS_WORKTREE_ID"
     "-property:ATAPArtifactsExecutionId=$env:ATAP_ARTIFACTS_EXECUTION_ID"
     "-property:ArtifactsPath=$env:ATAP_ARTIFACTS_PATH"

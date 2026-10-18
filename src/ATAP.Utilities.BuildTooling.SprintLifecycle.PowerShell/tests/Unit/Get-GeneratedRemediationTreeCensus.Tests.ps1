@@ -1,7 +1,7 @@
 ﻿BeforeAll {
   . (Join-Path $PSScriptRoot '../../private/Get-GeneratedRemediationTreeCensus.ps1')
   . (Join-Path $PSScriptRoot '../../private/Get-GeneratedRemediationPathMetadata.ps1')
-  $script:fixtureBase = 'D:/ATAPArtifacts/_generated/GeneratedFolderRemediation/Sprint0016/TreeCensus/CloudMetadata/' + [guid]::NewGuid().ToString('N')
+  $script:fixtureBase = 'D:/ATAPArtifacts/_generated/GeneratedFolderRemediation/Sprint0016/TreeCensus/CloudMetadata/DocumentedTags/' + [guid]::NewGuid().ToString('N')
   $script:getItemCommand = Get-Command Microsoft.PowerShell.Management\Get-Item
   $script:getChildrenCommand = Get-Command Microsoft.PowerShell.Management\Get-ChildItem
 }
@@ -379,9 +379,69 @@ Describe 'Opt-in cloud policy with mocked native metadata' {
     $r.ReadyForManifest | Should -BeFalse
     $r.CustodyVerified | Should -BeFalse
   }
-  It 'holds other cloud variants, surrogate tags, forbidden bits and cloud files before provider access' {
+  # Independent explicit hex cases transcribed from Microsoft winnt.h, rather
+  # than deriving expected tags from the implementation or using its bit mask.
+  It 'admits documented directory tag <TagHex> only after opt-in' -ForEach @(
+    @{TagHex='9000001A'}, @{TagHex='9000101A'}, @{TagHex='9000201A'}, @{TagHex='9000301A'},
+    @{TagHex='9000401A'}, @{TagHex='9000501A'}, @{TagHex='9000601A'}, @{TagHex='9000701A'},
+    @{TagHex='9000801A'}, @{TagHex='9000901A'}, @{TagHex='9000A01A'}, @{TagHex='9000B01A'},
+    @{TagHex='9000C01A'}, @{TagHex='9000D01A'}, @{TagHex='9000E01A'}, @{TagHex='9000F01A'}
+  ) {
+    $script:cloudTag=[Convert]::ToUInt32($TagHex,16)
+    $null=New-Item -ItemType Directory -Path "$fixture/_generated/child"
+    (Get-GeneratedRemediationTreeCensus $fixture).StructuralInventoryComplete | Should -BeFalse
+    Should -Invoke Get-GeneratedRemediationPathMetadata -Times 0
+    Should -Invoke Get-ChildItem -Times 0 -ParameterFilter { $LiteralPath.Replace('\','/').TrimEnd('/') -eq "$script:fixture/_generated" }
+    foreach($attributes in @(1072,525360)) {
+      $script:cloudAttributes=[uint32]$attributes
+      $script:providerAttributes=[long]$attributes
+      $r=Get-GeneratedRemediationTreeCensus $fixture -AllowVerifiedCloudDirectoryMetadata
+      $r.StructuralInventoryComplete | Should -BeTrue
+      $r.Observations[0].Rows[0].ReparseTag | Should -Be ([Convert]::ToUInt32($TagHex,16))
+      $r.Observations[0].Rows.RelativePath | Should -Contain '_generated/child'
+      $r.ReadyForManifest | Should -BeFalse
+      $r.CustodyVerified | Should -BeFalse
+      $r.InventoryComplete | Should -BeFalse
+    }
+  }
+  It 'rejects adjacent reserved wrong-prefix and redirecting tags before provider or child access' {
+    foreach($hex in @('90000019','9000001B','9000E019','9000E01B','9000F019','9000F01B',
+      '9001001A','9000FFFF','9000011A','D000E01A','B000E01A','1000E01A','8000E01A',
+      'A0000003','A000000C','80000021','00000000','FFFFFFFF')) {
+      $script:cloudTag=[Convert]::ToUInt32($hex,16)
+      $r=Get-GeneratedRemediationTreeCensus $fixture -AllowVerifiedCloudDirectoryMetadata
+      $r.StructuralInventoryComplete | Should -BeFalse
+      $r.Observations[0].Rows[0].Kind | Should -Be 'UnsupportedNativeReparsePoint'
+    }
+    Should -Invoke Get-Item -Times 0 -ParameterFilter { $LiteralPath.Replace('\','/').TrimEnd('/') -eq "$script:fixture/_generated" }
+    Should -Invoke Get-ChildItem -Times 0 -ParameterFilter { $LiteralPath.Replace('\','/').TrimEnd('/') -eq "$script:fixture/_generated" }
+  }
+  It 'holds files for every documented cloud tag before provider access' {
+    foreach($hex in @('9000001A','9000101A','9000201A','9000301A','9000401A','9000501A','9000601A','9000701A',
+      '9000801A','9000901A','9000A01A','9000B01A','9000C01A','9000D01A','9000E01A','9000F01A')) {
+      $script:cloudTag=[Convert]::ToUInt32($hex,16)
+      $script:cloudAttributes=[uint32]1056
+      $r=Get-GeneratedRemediationTreeCensus $fixture -AllowVerifiedCloudDirectoryMetadata
+      $r.StructuralInventoryComplete | Should -BeFalse
+      $r.Observations[0].Rows[0].Kind | Should -Be 'UnsupportedNativeReparsePoint'
+    }
+    Should -Invoke Get-Item -Times 0 -ParameterFilter { $LiteralPath.Replace('\','/').TrimEnd('/') -eq "$script:fixture/_generated" }
+    Should -Invoke Get-ChildItem -Times 0 -ParameterFilter { $LiteralPath.Replace('\','/').TrimEnd('/') -eq "$script:fixture/_generated" }
+  }
+  It 'does not expand the attribute mask for the newly admitted E tag' {
+    $script:cloudTag=[Convert]::ToUInt32('9000E01A',16)
+    foreach($bit in @(4096,16384,262144,4194304,1048576,2147483648L,128,256,512,2048)) {
+      $script:cloudAttributes=[uint32](1072 -bor $bit)
+      $r=Get-GeneratedRemediationTreeCensus $fixture -AllowVerifiedCloudDirectoryMetadata
+      $r.StructuralInventoryComplete | Should -BeFalse
+      $r.Observations[0].Rows[0].Hold | Should -BeTrue
+    }
+    Should -Invoke Get-Item -Times 0 -ParameterFilter { $LiteralPath.Replace('\','/').TrimEnd('/') -eq "$script:fixture/_generated" }
+    Should -Invoke Get-ChildItem -Times 0 -ParameterFilter { $LiteralPath.Replace('\','/').TrimEnd('/') -eq "$script:fixture/_generated" }
+  }
+  It 'holds undocumented tags, surrogate tags, forbidden bits and cloud files before provider access' {
     foreach ($case in @(
-      @{A=525360;T=2415919130}, @{A=525360;T=2952835098},
+      @{A=525360;T=2415919131}, @{A=525360;T=2952835098},
       @{A=(525360 -bor 4096);T=2415964186}, @{A=(525360 -bor 16384);T=2415964186},
       @{A=(525360 -bor 262144);T=2415964186}, @{A=(525360 -bor 4194304);T=2415964186},
       @{A=(525360 -bor 1048576);T=2415964186}, @{A=(525360 -bor 2147483648L);T=2415964186},

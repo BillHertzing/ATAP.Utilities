@@ -18,7 +18,8 @@
   .PARAMETER MaxDepth
     Maximum descendant depth; _generated has depth zero. Exceeding it fails.
   .PARAMETER AllowVerifiedCloudDirectoryMetadata
-    Source-mode opt-in for guarded native metadata. Only exact CLOUD_B directories
+    Source-mode opt-in for guarded native metadata. Only the 16 documented CLOUD
+    and CLOUD_1 through CLOUD_F directory tags
     with reviewed attributes may pass. No native timeout is promised; quiet
     producers remain required because final-component no-follow opens can race.
   .OUTPUTS
@@ -67,6 +68,16 @@
       if ($Item -is [IO.FileInfo]) { return 'File' }
       return 'UnsupportedType'
     }
+    # Task16.84 reviewed policy amendment: exact finite directory tag membership,
+    # not a masked family match. Microsoft winnt.h IO_REPARSE_TAG_CLOUD[_1..F]:
+    # https://raw.githubusercontent.com/microsoft/win32metadata/main/generation/WinSDK/RecompiledIdlHeaders/um/winnt.h
+    # Only B/E have live local metadata evidence; other variants are synthetic.
+    [uint32[]]$documentedCloudTags = @(
+      0x9000001AL, 0x9000101AL, 0x9000201AL, 0x9000301AL,
+      0x9000401AL, 0x9000501AL, 0x9000601AL, 0x9000701AL,
+      0x9000801AL, 0x9000901AL, 0x9000A01AL, 0x9000B01AL,
+      0x9000C01AL, 0x9000D01AL, 0x9000E01AL, 0x9000F01AL
+    )
     # Includes ancestors; any later attribute/tag change fails across walks/retries.
     $nativeSeen = [Collections.Generic.Dictionary[string, object]]::new([StringComparer]::OrdinalIgnoreCase)
     function getCensusMetadataItem([string]$Path) {
@@ -100,7 +111,7 @@
       $cloudAllowed = 1 -bor 2 -bor 4 -bor 16 -bor 32 -bor 8192 -bor 0x80000 -bor 1024
       $ordinaryAllowed = 1 -bor 2 -bor 4 -bor 16 -bor 32 -bor 128 -bor 256 -bor 512 -bor 2048 -bor 8192
       if ($reparse) {
-        if (-not $directory -or $tag -ne 2415964186 -or ($tag -band 0x20000000) -or
+        if (-not $directory -or $tag -notin $documentedCloudTags -or ($tag -band 0x20000000) -or
           ($attributes -band (-bnot $cloudAllowed))) { $kind = 'UnsupportedNativeReparsePoint' }
       } elseif ($tag -ne 0 -or ($attributes -band (-bnot $ordinaryAllowed))) { $kind = 'UnsupportedNativeAttributes' }
       # A rejected final component is retained as a hold, without provider access.

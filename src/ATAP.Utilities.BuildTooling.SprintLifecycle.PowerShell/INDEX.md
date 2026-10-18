@@ -25,3 +25,13 @@ Version 0.1.49 adds `private/Complete-SprintWorktreeNativeRemoval.ps1` for the
 exact captured Git255 empty administrative-slot deletion failure. Recovery
 retains the failed native result, validates identity before each nonrecursive
 delete, and requires recorded completion on resume. Unknown failures remain blocked.
+
+Git trust lifecycle support in [Set-SprintBoundaryContext](public/Set-SprintBoundaryContext.ps1)
+records exact trust values introduced by Start under each checkout's
+`_generated/SprintGitTrust/`. [SprintEnd infrastructure cleanup](public/Invoke-SprintEndInfrastructureCleanup.ps1)
+forwards outgoing checkout paths, while the first End boundary consumes ownership
+receipts before teardown. [Receipt-based trust cleanup](private/Set-SprintOwnedGitSafeDirectory.ps1)
+removes only recorded values and preserves pre-existing entries and entries without
+verified ownership. Repeated End calls are safe; cleanup after teardown preserves
+entries when receipts are absent. Coverage is in [SprintEnd Git trust tests](tests/Unit/SprintEndGitSafeDirectory.Sprint0016.Tests.ps1)
+and [boundary context tests](tests/Unit/Set-SprintBoundaryContext.Tests.ps1).

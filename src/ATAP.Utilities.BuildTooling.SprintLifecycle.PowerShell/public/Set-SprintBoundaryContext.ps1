@@ -45,6 +45,11 @@ function Set-SprintBoundaryContext {
 
     Every worker is invoked under the cmdlet's own ShouldProcess, so -WhatIf
     previews the full retarget without mutating anything.
+
+    Git trust is tracked separately for each host, caller, configuration and
+    exact checkout under the checkout's _generated/SprintGitTrust folder. End
+    removes only entries introduced by Start with a valid ownership receipt.
+    Pre-existing values and paths with unavailable evidence are preserved.
   .PARAMETER Boundary
     'Start' retargets the supplied worktrees and the machine settings symlinks to
     the SharedVSCode sprint worktree. 'End' retargets them back to the stable
@@ -293,7 +298,7 @@ function Set-SprintBoundaryContext {
 
     # When the file is dot-sourced from source (no module import), the private
     # settings-symlink helpers are not yet defined. Load them on demand.
-    foreach ($privateHelperName in @('Set-UserSettingsSymlink', 'Set-AIAgentMemoryJunction')) {
+    foreach ($privateHelperName in @('Set-UserSettingsSymlink', 'Set-AIAgentMemoryJunction', 'Set-SprintOwnedGitSafeDirectory')) {
       if (-not (Get-Command -Name $privateHelperName -CommandType Function -ErrorAction SilentlyContinue)) {
         $privateHelperPath = Join-Path $PSScriptRoot '..' 'private' "$privateHelperName.ps1"
         if (Test-Path -LiteralPath $privateHelperPath) {
@@ -332,6 +337,8 @@ function Set-SprintBoundaryContext {
     foreach ($worktreePath in $WorktreePaths) {
       $wtEntry = [ordered]@{
         WorktreePath        = $worktreePath
+        RetargetSkipped     = $false
+        RetargetSkipReason  = $null
         StableRepoPath      = $null
         JunctionsRetargeted  = $false
         ContextRetargeted    = $false
@@ -357,6 +364,14 @@ function Set-SprintBoundaryContext {
       }
 
       if (-not (Test-Path -LiteralPath $worktreePath -PathType Container)) {
+        if ($Boundary -eq 'End') {
+          # Infrastructure cleanup repeats End after worktree teardown. Trust
+          # processing below still sees the exact path, but cannot infer ownership.
+          $wtEntry.RetargetSkipped = $true
+          $wtEntry.RetargetSkipReason = 'WorktreeAlreadyAbsent'
+          $perWorktree.Add([PSCustomObject]$wtEntry)
+          continue
+        }
         $wtEntry.Error = "Worktree path not found: '$worktreePath'"
         $errors.Add($wtEntry.Error)
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $wtEntry.Error
@@ -616,14 +631,14 @@ function Set-SprintBoundaryContext {
     # ------------------------------------------------------------------
     # Service-account Git trust (SC-0321). Only exact Ace and ATAP.Utilities
     # sprint worktree paths are selected by the helper. Start adds missing
-    # values idempotently; End removes only those exact values.
+    # values idempotently; End removes only values with Start ownership receipts.
     # ------------------------------------------------------------------
     $serviceAccountGitTrustOk = $true
     $serviceAccountGitTrustError = $null
     $serviceAccountGitTrustResult = $null
     try {
       if (-not $SkipServiceAccountGitTrust -and $WorktreePaths.Count -gt 0) {
-        $serviceAccountGitTrustResult = Set-ServiceAccountGitSafeDirectory `
+        $serviceAccountGitTrustResult = Set-SprintOwnedGitSafeDirectory `
           -Boundary $Boundary `
           -WorktreePaths $WorktreePaths `
           -GitConfigPath $ServiceAccountGitConfigPath `
@@ -639,7 +654,7 @@ function Set-SprintBoundaryContext {
     }
     $concerns.Add([PSCustomObject]@{
         Concern        = 'ServiceAccountGitSafeDirectory'
-        Action         = ($SkipServiceAccountGitTrust ? 'Skipped' : "Set-ServiceAccountGitSafeDirectory ($Boundary)")
+        Action         = ($SkipServiceAccountGitTrust ? 'Skipped' : "Set-SprintOwnedGitSafeDirectory ($Boundary)")
         StableByDesign = $false
         Succeeded      = $serviceAccountGitTrustOk
         Error          = $serviceAccountGitTrustError
@@ -651,8 +666,8 @@ function Set-SprintBoundaryContext {
     # checks the current user's global safe.directory list, which the
     # service-account concern above never touches. The same exact-path helper
     # targets the user's resolved global configuration. Start passes only
-    # existing Git checkouts; End removes exact values even when the
-    # checkout is already gone. No wildcard values are ever written.
+    # existing Git checkouts; End requires a valid Start ownership receipt.
+    # Missing receipts (including torn-down checkouts) preserve trust.
     # ------------------------------------------------------------------
     $interactiveGitTrustOk = $true
     $interactiveGitTrustError = $null
@@ -693,7 +708,7 @@ function Set-SprintBoundaryContext {
         }
 
         if ($interactiveGitTrustPaths.Count -gt 0) {
-          $interactiveGitTrustResult = Set-ServiceAccountGitSafeDirectory `
+          $interactiveGitTrustResult = Set-SprintOwnedGitSafeDirectory `
             -Boundary $Boundary `
             -WorktreePaths $interactiveGitTrustPaths.ToArray() `
             -GitConfigPath $interactiveGitConfigPath `
@@ -710,7 +725,7 @@ function Set-SprintBoundaryContext {
     }
     $concerns.Add([PSCustomObject]@{
         Concern        = 'InteractiveUserGitSafeDirectory'
-        Action         = ($SkipInteractiveUserGitTrust ? 'Skipped' : "Set-ServiceAccountGitSafeDirectory ($Boundary) -> $interactiveGitConfigPath")
+        Action         = ($SkipInteractiveUserGitTrust ? 'Skipped' : "Set-SprintOwnedGitSafeDirectory ($Boundary) -> $interactiveGitConfigPath")
         StableByDesign = $false
         Succeeded      = $interactiveGitTrustOk
         Error          = $interactiveGitTrustError

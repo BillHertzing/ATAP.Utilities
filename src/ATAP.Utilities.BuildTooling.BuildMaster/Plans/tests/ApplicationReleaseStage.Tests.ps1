@@ -131,6 +131,53 @@ Describe 'Application release fail-closed preparation' {
   }
 }
 
+Describe 'Task 16.88.c ProGet key resolved once per stage with 429 backoff' {
+  BeforeAll {
+    $script:rateLimited = 'bws secret list failed (exit 1). Output: Error: 0: Received error message from server: [429 Too Many Requests] {"object":"error","message":"Slow down! Too many requests. Try again in 1m."}'
+    if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) { function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments)]$Rest) } }
+    if (-not (Get-Command Get-SecretATAP -ErrorAction SilentlyContinue)) { function global:Get-SecretATAP { param($SecretName, $SecretStoreType) } }
+  }
+  BeforeEach {
+    $script:calls = 0
+    $script:waits = [System.Collections.Generic.List[int]]::new()
+    $script:sleep = { param([int]$Seconds) $script:waits.Add($Seconds) }
+  }
+  It 'returns the key from a single call when Bitwarden answers' {
+    Mock Get-SecretATAP { $script:calls++; 'fixture-key' }
+    Resolve-ApplicationReleaseSecret -SecretName 'ProGet.BuildMaster.API.Key.fixture' -Sleep $script:sleep | Should -BeExactly 'fixture-key'
+    $script:calls | Should -Be 1
+    $script:waits.Count | Should -Be 0
+  }
+  It 'waits the hinted interval plus 5 s after a 429, then succeeds: <Hint>' -ForEach @(
+    @{ Hint = 'Try again in 1m.'; Wait = 65 }, @{ Hint = 'Try again in 1s.'; Wait = 6 }, @{ Hint = 'no hint'; Wait = 65 }
+  ) {
+    $script:message = "bws secret list failed (exit 1). Output: [429 Too Many Requests] $Hint"
+    Mock Get-SecretATAP { $script:calls++; if ($script:calls -eq 1) { throw $script:message }; 'fixture-key' }
+    Resolve-ApplicationReleaseSecret -SecretName 'ProGet.BuildMaster.API.Key.fixture' -Sleep $script:sleep | Should -BeExactly 'fixture-key'
+    $script:calls | Should -Be 2
+    @($script:waits) | Should -Be @($Wait)
+  }
+  It 'rethrows a non-429 failure immediately without waiting' {
+    Mock Get-SecretATAP { $script:calls++; throw 'bws secret list failed (exit 1). Output: [504 Gateway Timeout]' }
+    { Resolve-ApplicationReleaseSecret -SecretName 'ProGet.BuildMaster.API.Key.fixture' -Sleep $script:sleep } | Should -Throw '*504*'
+    $script:calls | Should -Be 1
+    $script:waits.Count | Should -Be 0
+  }
+  It 'stops after MaxAttempts consecutive 429s and rethrows' {
+    Mock Get-SecretATAP { $script:calls++; throw $script:rateLimited }
+    { Resolve-ApplicationReleaseSecret -SecretName 'ProGet.BuildMaster.API.Key.fixture' -MaxAttempts 3 -Sleep $script:sleep } | Should -Throw '*429*'
+    $script:calls | Should -Be 3
+    @($script:waits) | Should -Be @(65, 65)
+  }
+  It 'resolves the ProGet key exactly once in the stage script' {
+    $source = Get-Content (Join-Path $PSScriptRoot '../Invoke-ApplicationReleaseStage.ps1') -Raw
+    ([regex]::Matches($source, 'Get-SecretATAP -SecretName')).Count | Should -Be 1
+    ([regex]::Matches($source, 'Resolve-ApplicationReleaseSecret -SecretName \$secretName')).Count | Should -Be 1
+    ([regex]::Matches($source, '\$key = \$proGetKey')).Count | Should -Be 3
+    $source | Should -Match '\$proGetKey = \$null'
+  }
+}
+
 Describe 'Task 16.78 generalized product admission' {
   It 'admits an AceOutpost Production-ceiling context during WhatIf: <Version>' -ForEach @(
     @{ Version = '0.1.16' }, @{ Version = '0.1.16+85df38d1a2' }

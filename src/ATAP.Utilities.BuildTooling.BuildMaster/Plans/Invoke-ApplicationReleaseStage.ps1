@@ -8,6 +8,46 @@ param(
   [string]$BuildId
 )
 
+function Resolve-ApplicationReleaseSecret {
+  <#
+  .SYNOPSIS
+    Resolves one release-stage secret through Get-SecretATAP with bounded Bitwarden 429 backoff.
+  .DESCRIPTION
+    Every UTAT022 account shares one Bitwarden machine-account token, and therefore one rate-limit
+    budget, so a stage resolves its ProGet key once and retries only on HTTP 429 (Task 16.88.c).
+    The wait honours the "Try again in N(s|m)" hint plus a 5-second margin, defaulting to 60 seconds.
+    Any other failure, or the last attempt, rethrows. The secret value is never logged.
+  .PARAMETER SecretName
+    SecretName to resolve.
+  .PARAMETER MaxAttempts
+    Total attempts, including the first.
+  .PARAMETER Sleep
+    Wait implementation; injected by tests.
+  .OUTPUTS
+    The secret value as a string.
+  #>
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory)][string]$SecretName,
+    [ValidateRange(1, 5)][int]$MaxAttempts = 3,
+    [scriptblock]$Sleep = { param([int]$Seconds) Start-Sleep -Seconds $Seconds }
+  )
+  $fn = 'Resolve-ApplicationReleaseSecret'
+  $mn = 'ATAP.Utilities.BuildTooling.BuildMaster'
+  for ($attempt = 1; ; $attempt++) {
+    try {
+      return [string](Get-SecretATAP -SecretName $SecretName -SecretStoreType BitwardenSecretsManager -ErrorAction Stop)
+    } catch {
+      $text = [string]$_.Exception.Message
+      if ($attempt -ge $MaxAttempts -or $text -notmatch '429|Too Many Requests') { throw }
+      $hint = [regex]::Match($text, 'Try again in (?<n>\d+)\s*(?<u>[sm])')
+      $wait = 5 + $(if ($hint.Success) { [int]$hint.Groups['n'].Value * $(if ($hint.Groups['u'].Value -eq 'm') { 60 } else { 1 }) } else { 60 })
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Bitwarden rate limit (429) resolving '$SecretName'; attempt $attempt of $MaxAttempts, waiting $wait s." -Tag 'bws-429'
+      & $Sleep $wait
+    }
+  }
+}
+
 function Invoke-ApplicationReleaseStage {
   <#
   .SYNOPSIS
@@ -117,11 +157,15 @@ function Invoke-ApplicationReleaseStage {
       $serviceHost = [string]$placement['ProGet']
       if (-not $serviceHost -or $uri.Host -ine $serviceHost) { throw 'ProGet placement does not match release context.' }
       $secretName = "ProGet.BuildMaster.API.Key.$serviceHost"
+      # Resolve the ProGet key once per stage: each Get-SecretATAP is a full 'bws secret list'
+      # against the shared machine-account budget, and a stage used to resolve it up to five times.
+      try { $proGetKey = Resolve-ApplicationReleaseSecret -SecretName $secretName }
+      catch { throw "ProGet key resolution failed ($($_.Exception.GetType().Name)); no stage I/O was attempted." }
       function Get-VerifiedReleaseDownload {
         param([string]$Url,[string]$Path,[string]$Hash,[switch]$AllowMissing)
         $key = $null
         try {
-          $key = [string](Get-SecretATAP -SecretName $secretName -SecretStoreType BitwardenSecretsManager -ErrorAction Stop)
+          $key = $proGetKey
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Reading $Url" -Tag RestCall
           Invoke-WebRequest -Uri $Url -Headers @{'X-ApiKey'=$key} -OutFile $Path -MaximumRedirection 0 -TimeoutSec 120 -ErrorAction Stop | Out-Null
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Download completed.' -Tag RestCall
@@ -142,7 +186,7 @@ function Invoke-ApplicationReleaseStage {
         if ($position -eq 0) {
           $key = $null
           try {
-            $key = [string](Get-SecretATAP -SecretName $secretName -SecretStoreType BitwardenSecretsManager -ErrorAction Stop)
+            $key = $proGetKey
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Publishing approved bytes to $feed" -Tag RestCall
             Invoke-RestMethod -Uri "$baseUrl/upack/$feed/upload" -Method Post -InFile $context.bundlePath -ContentType 'application/zip' -Headers @{'X-ApiKey'=$key} -MaximumRedirection 0 -TimeoutSec 180 -ErrorAction Stop | Out-Null
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Publication returned.' -Tag RestCall
@@ -155,7 +199,7 @@ function Invoke-ApplicationReleaseStage {
           # The fixed five-tier ladder above is the authority for this application.
           $key = $null
           try {
-            $key = [string](Get-SecretATAP -SecretName $secretName -SecretStoreType BitwardenSecretsManager -ErrorAction Stop)
+            $key = $proGetKey
             $promotion = @{name=$productId;version=$feedVersion;fromFeed=$sourceFeed;toFeed=$feed;comments="$productId $($context.version) approved stable release; BuildMaster build $BuildId"}
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Promoting approved bytes from $sourceFeed to $feed" -Tag RestCall
             Invoke-RestMethod -Uri "$baseUrl/api/promotions/promote" -Method Post -Body $promotion -ContentType 'application/x-www-form-urlencoded' -Headers @{'X-ApiKey'=$key} -MaximumRedirection 0 -TimeoutSec 60 -ErrorAction Stop | Out-Null
@@ -170,7 +214,7 @@ function Invoke-ApplicationReleaseStage {
       $result = [pscustomobject]@{ success=$true; stage=$Stage; buildId=$BuildId; contextSha256=$ExpectedContextSha256; bundleSha256=$context.bundleSha256; version=$context.version; feedVersion=$feedVersion; feed=$feed; downloadedPath=$downloadPath; verifiedEntryCount=$remoteVerified.VerifiedEntryCount; databaseReferenceVerified=$true; databaseApplied=$false; completedUtc=[DateTime]::UtcNow.ToString('o') }
       $result | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $runRoot ($Stage + '.json')) -Encoding utf8
       $result
-    } finally { Stop-Transcript | Out-Null }
+    } finally { $proGetKey = $null; Stop-Transcript | Out-Null }
   }
   end { }
 }

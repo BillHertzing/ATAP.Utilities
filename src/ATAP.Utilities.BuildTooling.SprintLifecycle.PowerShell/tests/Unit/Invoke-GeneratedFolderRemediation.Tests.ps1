@@ -1,5 +1,25 @@
 BeforeAll {
   . "$PSScriptRoot\..\..\public\Invoke-GeneratedFolderRemediation.ps1"
+  $script:fixtureRoot = [IO.Path]::GetFullPath("$PSScriptRoot/../../../../_generated/Sprint0016/Task16.41/PeerTestAdoption/Fixtures")
+
+  function script:Get-TestCleanupPaths {
+    param([string]$Root, [string]$Stable, [string]$Sprint)
+
+    $separators = [char[]]@([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+    $rootFull = [IO.Path]::GetFullPath($Root).TrimEnd($separators)
+    $stableFull = [IO.Path]::GetFullPath($Stable).TrimEnd($separators)
+    $sprintFull = [IO.Path]::GetFullPath($Sprint).TrimEnd($separators)
+    $basePrefix = $script:fixtureRoot.TrimEnd($separators) + [IO.Path]::DirectorySeparatorChar
+    $rootPrefix = $rootFull + [IO.Path]::DirectorySeparatorChar
+    if (-not $rootFull.StartsWith($basePrefix, [StringComparison]::OrdinalIgnoreCase) -or
+      -not $stableFull.StartsWith($rootPrefix, [StringComparison]::OrdinalIgnoreCase) -or
+      -not $sprintFull.StartsWith($rootPrefix, [StringComparison]::OrdinalIgnoreCase) -or
+      $stableFull -ine (Join-Path $rootFull 'Repo') -or
+      $sprintFull -ine (Join-Path $rootFull 'Repo-wt-7-Sprint-0016-work-items')) {
+      throw 'Fixture cleanup paths escape the owned root or expected children.'
+    }
+    [pscustomobject]@{ Root = $rootFull; Stable = $stableFull; Sprint = $sprintFull }
+  }
 
   function script:New-TestFile {
     param([string]$Root, [string]$Relative, [string]$Content = 'x')
@@ -18,8 +38,7 @@ BeforeAll {
 
 Describe 'Invoke-GeneratedFolderRemediation [public]' {
   BeforeEach {
-    $fixtureRoot = [IO.Path]::GetFullPath("$PSScriptRoot/../../../../_generated/Sprint0016/Task16.84/CodexHardening/fixtures")
-    $script:gitRoot = Join-Path $fixtureRoot ([guid]::NewGuid().ToString('N').Substring(0, 8))
+    $script:gitRoot = Join-Path $script:fixtureRoot ([guid]::NewGuid().ToString('N').Substring(0, 8))
     $script:stable = Join-Path $script:gitRoot 'Repo'
     $script:sprint = Join-Path $script:gitRoot 'Repo-wt-7-Sprint-0016-work-items'
     $script:archive = Join-Path $script:gitRoot 'archive'
@@ -52,8 +71,10 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
 
   AfterEach {
     if ($script:gitRoot -and (Test-Path -LiteralPath $script:gitRoot)) {
-      & git -C $script:stable worktree remove --force $script:sprint 2>$null | Out-Null
-      Remove-Item -LiteralPath $script:gitRoot -Recurse -Force -ErrorAction SilentlyContinue
+      $cleanup = script:Get-TestCleanupPaths -Root $script:gitRoot -Stable $script:stable -Sprint $script:sprint
+      & git -C $cleanup.Stable worktree remove --force $cleanup.Sprint 2>$null | Out-Null
+      $cleanup = script:Get-TestCleanupPaths -Root $script:gitRoot -Stable $script:stable -Sprint $script:sprint
+      Remove-Item -LiteralPath $cleanup.Root -Recurse -Force -ErrorAction SilentlyContinue
     }
   }
 
@@ -166,6 +187,10 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
   }
 
   It 'retains originals when a selected source is unavailable at archive time' {
+    # Pester 6 throws when no filter matches and there is no default mock; pass other calls through.
+    # Invoke the cmdlet object itself; a module-qualified name still resolves to the mock and recurses.
+    $script:realGetItem = Get-Command -Name Get-Item -CommandType Cmdlet
+    Mock Get-Item { & $script:realGetItem @PesterBoundParameters }
     Mock Get-Item { throw 'Source unavailable' } -ParameterFilter { $LiteralPath -like '*backup.json' }
     $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo `
       -Scope StableWorktree -Execute -ArchiveRoot $script:archive -Confirm:$false

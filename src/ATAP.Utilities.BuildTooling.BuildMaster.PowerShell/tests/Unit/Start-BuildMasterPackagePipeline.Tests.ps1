@@ -273,4 +273,76 @@ Describe 'Start-BuildMasterPackagePipeline' -Tag 'Unit', 'PromotedModuleHostSens
     (ConvertTo-BuildMasterBoundedReleaseNumber -Candidate $nonWindowsCandidate) | Should -BeExactly $nonWindows
     (ConvertTo-BuildMasterBoundedReleaseNumber -Candidate $windowsCandidate) | Should -BeExactly $windows
   }
+
+  # SC-0360 boundary coverage: exactly at the limit, one over, well under.
+  It 'leaves a release number of exactly 50 characters unchanged' {
+    $atLimit = '0.1.0-' + ('M' * 44)
+    $atLimit.Length | Should -Be 50
+    ConvertTo-BuildMasterBoundedReleaseNumber -Candidate $atLimit | Should -BeExactly $atLimit
+  }
+
+  It 'bounds a release number of 51 characters to 50 with a 12-hex-character hash suffix' {
+    $overByOne = '0.1.0-' + ('M' * 45)
+    $bounded = ConvertTo-BuildMasterBoundedReleaseNumber -Candidate $overByOne
+    $bounded.Length | Should -Be 50
+    $bounded | Should -Match '^0\.1\.0-M{31}-[0-9a-f]{12}$'
+    # The bounded form differs from the plain 50-character truncation BuildMaster would store.
+    $bounded | Should -Not -Be $overByOne.Substring(0, 50)
+  }
+
+  It 'leaves a release number well under the limit unchanged' {
+    ConvertTo-BuildMasterBoundedReleaseNumber -Candidate '0.1.0-Short' | Should -BeExactly '0.1.0-Short'
+  }
+
+  It 'gives distinct bounded values to two modules whose composed numbers share their first 50 characters' {
+    $sharedPrefix = '0.1.34-ATAP.Utilities.BuildTooling.SprintLifecycle'
+    $sharedPrefix.Length | Should -Be 50
+    $first = ConvertTo-BuildMasterBoundedReleaseNumber -Candidate ($sharedPrefix + '.PowerShell')
+    $second = ConvertTo-BuildMasterBoundedReleaseNumber -Candidate ($sharedPrefix + '.Windows.PowerShell')
+    $first | Should -Not -Be $second
+    $first.Substring(0, 37) | Should -BeExactly $second.Substring(0, 37)
+  }
+
+  It 'returns the bounded ReleaseNumber, the composed value, and uses the bounded value for every BuildMaster call' {
+    $result = Start-BuildMasterPackagePipeline `
+      -Application 'ATAP.Utilities-PowerShell' `
+      -PipelineName 'global::PowerShellModule-5Stage' `
+      -ModuleName 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell' `
+      -ResolvedPackageVersion '0.1.34'
+
+    $composed = '0.1.34-ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell'
+    $result.ComposedReleaseNumber | Should -BeExactly $composed
+    $result.ReleaseNumberWasBounded | Should -BeTrue
+    $result.ReleaseNumber.Length | Should -Be 50
+    $result.ReleaseNumber | Should -BeExactly (ConvertTo-BuildMasterBoundedReleaseNumber -Candidate $composed)
+    $script:releaseCall['ReleaseNumber'] | Should -BeExactly $result.ReleaseNumber
+    $script:buildCall['ReleaseNumber'] | Should -BeExactly $result.ReleaseNumber
+    $script:deploymentCall['ReleaseNumber'] | Should -BeExactly $result.ReleaseNumber
+  }
+
+  It 'reports ReleaseNumberWasBounded false when the composed value fits' {
+    $result = Start-BuildMasterPackagePipeline `
+      -Application 'ATAP.Utilities-PowerShell' `
+      -PipelineName 'global::PowerShellModule-5Stage' `
+      -ModuleName 'ATAP.Utilities.PowerShell' `
+      -ResolvedPackageVersion '0.1.0' `
+      -SkipDeployment
+
+    $result.ReleaseNumberWasBounded | Should -BeFalse
+    $result.ComposedReleaseNumber | Should -BeExactly $result.ReleaseNumber
+  }
+
+  It 'returns the composed and bounded values under -WhatIf without calling BuildMaster' {
+    $result = Start-BuildMasterPackagePipeline `
+      -Application 'ATAP.Utilities-PowerShell' `
+      -PipelineName 'global::PowerShellModule-5Stage' `
+      -ModuleName 'ATAP.Utilities.BuildTooling.Orchestration.PowerShell' `
+      -ResolvedPackageVersion '0.1.0-Alpha001' `
+      -WhatIf
+
+    Should -Invoke New-BuildMasterRelease -Times 0 -Exactly -Scope It
+    $result.ComposedReleaseNumber | Should -BeExactly '0.1.0-Alpha001.ATAP.Utilities.BuildTooling.Orchestration.PowerShell'
+    $result.ReleaseNumberWasBounded | Should -BeTrue
+    $result.ReleaseNumber.Length | Should -Be 50
+  }
 }

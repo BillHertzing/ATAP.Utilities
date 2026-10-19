@@ -125,6 +125,9 @@ function Approve-BuildMasterStage {
     $fn = 'Approve-BuildMasterStage'
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn (Application='$Application' Release='$ReleaseNumber' Build='$BuildNumber' Stage='$Stage')" -Tag 'Trace'
+    if (-not (Get-Command -Name 'Get-BuildMasterReleaseNumberLengthHint' -ErrorAction SilentlyContinue)) {
+      . (Join-Path $PSScriptRoot 'Start-BuildMasterPackagePipeline.ps1')
+    }
 
     $BuildMasterAdminApiKeySecretName = Get-PVal -ParameterName 'BuildMasterAdminApiKeySecretName' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterAdminApiKeySecretName
   }
@@ -246,7 +249,7 @@ function Approve-BuildMasterStage {
         $summary = 'idempotent: stage already approved'
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Stage '$Stage' on build '$BuildNumber' was already approved; treating as success." -Tag 'RestCall'
       } else {
-        $msg = "POST $uri failed: $errMsg"
+        $msg = "POST $uri failed: $errMsg$(Get-BuildMasterReleaseNumberLengthHint -ReleaseNumber $ReleaseNumber)"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg -Tag 'RestCall'
         throw $msg
       }

@@ -137,7 +137,9 @@ function Start-BuildMasterModulePipelineBatch {
 
 .OUTPUTS
     [PSCustomObject] aggregate with `Results`, an ordered array of one
-    [PSCustomObject] per requested module.
+    [PSCustomObject] per requested module. Each result's `ReleaseNumber` is the
+    bounded value sent to BuildMaster; `ComposedReleaseNumber` and
+    `ReleaseNumberWasBounded` record the unbounded value (SC-0360).
 
 .EXAMPLE
     PS> Start-BuildMasterModulePipelineBatch `
@@ -334,6 +336,8 @@ function Start-BuildMasterModulePipelineBatch {
         RequestedTerminalTier = $plan.RequestedTerminalTier
         TerminalTier          = $null
         ReleaseNumber         = $null
+        ComposedReleaseNumber = $null
+        ReleaseNumberWasBounded = $false
         ReleaseName           = $null
         ReleaseId             = $null
         BuildNumber           = $null
@@ -378,6 +382,8 @@ function Start-BuildMasterModulePipelineBatch {
 
         $record.ReleaseNumber = if ($null -ne $pipelineResult) { [string]$pipelineResult.ReleaseNumber } else { $null }
         $record.ReleaseName = if ($null -ne $pipelineResult) { [string]$pipelineResult.ReleaseName } else { $null }
+        $record.ComposedReleaseNumber = if ($null -ne $pipelineResult) { [string]$pipelineResult.ComposedReleaseNumber } else { $null }
+        $record.ReleaseNumberWasBounded = ($null -ne $pipelineResult) -and [bool]$pipelineResult.ReleaseNumberWasBounded
         if ($null -ne $pipelineResult -and $null -ne $pipelineResult.ReleaseResult) {
           $record.ReleaseId = [string]$pipelineResult.ReleaseResult.ReleaseId
         }

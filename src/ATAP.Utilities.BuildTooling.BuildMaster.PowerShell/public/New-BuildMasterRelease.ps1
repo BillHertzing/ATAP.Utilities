@@ -118,6 +118,9 @@ function New-BuildMasterRelease {
     $fn = 'New-BuildMasterRelease'
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn (Application='$Application' ReleaseNumber='$ReleaseNumber' ReleaseName='$ReleaseName' PipelineName='$PipelineName')" -Tag 'Trace'
+    if (-not (Get-Command -Name 'Get-BuildMasterReleaseNumberLengthHint' -ErrorAction SilentlyContinue)) {
+      . (Join-Path $PSScriptRoot 'Start-BuildMasterPackagePipeline.ps1')
+    }
 
     $BuildMasterBaseUrl = Get-PVal -ParameterName 'BuildMasterBaseUrl' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterBaseUrl
     if ([string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) {
@@ -318,14 +321,14 @@ function New-BuildMasterRelease {
         $releaseId = Resolve-BuildMasterReleaseId -Record $record
         if ($null -eq $record -or [string]::IsNullOrWhiteSpace($releaseId)) {
           $lookupSummary = if ($lookupErrors.Count -gt 0) { '; ' + ($lookupErrors -join '; ') } else { '' }
-          $msg = "POST $createUri failed: $errMsg$lookupSummary"
+          $msg = "POST $createUri failed: $errMsg$lookupSummary$(Get-BuildMasterReleaseNumberLengthHint -ReleaseNumber $ReleaseNumber)"
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg -Tag 'RestCall'
           throw $msg
         }
         $summary = 'idempotent: release already exists'
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Returned existing BuildMaster release id '$releaseId' for '$Application'/'$ReleaseNumber'" -Tag 'RestCall'
       } else {
-        $msg = "POST $createUri failed: $errMsg"
+        $msg = "POST $createUri failed: $errMsg$(Get-BuildMasterReleaseNumberLengthHint -ReleaseNumber $ReleaseNumber)"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg -Tag 'RestCall'
         throw $msg
       }

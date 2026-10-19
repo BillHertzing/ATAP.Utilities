@@ -91,6 +91,8 @@ Describe 'Start-BuildMasterModulePipelineBatch' -Tag 'Unit', 'PromotedModuleHost
         Application            = $Application
         PipelineName           = $PipelineName
         ReleaseNumber          = ('{0}.{1}' -f $ResolvedPackageVersion, $ModuleName)
+        ComposedReleaseNumber  = ('{0}.{1}' -f $ResolvedPackageVersion, $ModuleName)
+        ReleaseNumberWasBounded = $false
         ReleaseName            = ('{0} {1}' -f $ModuleName, $ResolvedPackageVersion)
         ModuleName             = $ModuleName
         ResolvedPackageVersion = $ResolvedPackageVersion
@@ -256,16 +258,44 @@ Describe 'Start-BuildMasterModulePipelineBatch' -Tag 'Unit', 'PromotedModuleHost
     $result.PipelineName | Should -Be 'global::PowerShellModule-5Stage'
 
     $record = $result.Results[0]
-    foreach ($field in 'Module', 'Application', 'ProjectPath', 'PackageVersion', 'Ceiling', 'TerminalTier', 'ReleaseNumber', 'BuildNumber', 'ExecutionId', 'Success', 'FailureDetail', 'ResponseSummary') {
+    foreach ($field in 'Module', 'Application', 'ProjectPath', 'PackageVersion', 'Ceiling', 'TerminalTier', 'ReleaseNumber', 'ComposedReleaseNumber', 'ReleaseNumberWasBounded', 'BuildNumber', 'ExecutionId', 'Success', 'FailureDetail', 'ResponseSummary') {
       $record.PSObject.Properties.Name | Should -Contain $field
     }
     $record.Module | Should -Be 'ModuleAlpha'
     $record.Application | Should -Be 'ATAP.Utilities-PowerShell'
     $record.PackageVersion | Should -Be '0.1.0-Alpha005'
     $record.ReleaseNumber | Should -Be '0.1.0-Alpha005.ModuleAlpha'
+    $record.ComposedReleaseNumber | Should -Be '0.1.0-Alpha005.ModuleAlpha'
+    $record.ReleaseNumberWasBounded | Should -BeFalse
     $record.BuildNumber | Should -Be '23'
     $record.ExecutionId | Should -Be 'D-ModuleAlpha'
     $record.Success | Should -BeTrue
+  }
+
+  It 'Carries the stored (bounded) ReleaseNumber and the composed value from the single-module result (SC-0360)' {
+    Mock Start-BuildMasterPackagePipeline {
+      [PSCustomObject]@{
+        Succeeded               = $true
+        ReleaseNumber           = '0.1.0-Alpha005.ModuleAlpha-0123456789ab'
+        ComposedReleaseNumber   = '0.1.0-Alpha005.ModuleAlpha.WithAVeryLongSuffixThatExceedsFifty'
+        ReleaseNumberWasBounded = $true
+        ReleaseName             = 'ModuleAlpha 0.1.0-Alpha005'
+        ReleaseResult           = [PSCustomObject]@{ ReleaseId = 'R' }
+        BuildResult             = [PSCustomObject]@{ BuildId = 'B'; BuildNumber = '23' }
+        DeploymentResult        = [PSCustomObject]@{ DeploymentId = 'D' }
+        ResponseSummary         = 'queued and deployment started'
+      }
+    }
+
+    $result = Start-BuildMasterModulePipelineBatch `
+      -ModuleName 'ModuleAlpha' `
+      -ApplicationByModule @{ 'ModuleAlpha' = 'ATAP.Utilities-PowerShell' } `
+      -Branch 'main'
+
+    $record = $result.Results[0]
+    $record.ReleaseNumber | Should -BeExactly '0.1.0-Alpha005.ModuleAlpha-0123456789ab'
+    $record.ComposedReleaseNumber | Should -BeExactly '0.1.0-Alpha005.ModuleAlpha.WithAVeryLongSuffixThatExceedsFifty'
+    $record.ReleaseNumberWasBounded | Should -BeTrue
   }
 
   It 'Never reports a terminal tier above the resolved ceiling' {

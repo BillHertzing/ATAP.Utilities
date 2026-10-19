@@ -1,12 +1,6 @@
 # Release notes
 
-## 0.1.3
-
-- Treat the optional `private/` function directory as empty when it is absent,
-  so importing the child module remains valid when a strict caller promotes
-  `$ErrorActionPreference` to `Stop`.
-
-## Unreleased
+## 0.1.6
 
 - SC-0360 (Task 16.92.a): `Start-BuildMasterPackagePipeline` and
   `Start-BuildMasterModulePipelineBatch` now also return `ComposedReleaseNumber`
@@ -20,6 +14,15 @@
   non-exported helper `Get-BuildMasterReleaseNumberLengthHint` builds that text.
 - Unit tests for those three commands use `Should -Invoke` in place of the
   `Assert-MockCalled` command that Pester 6 removed.
+
+## 0.1.3
+
+- Treat the optional `private/` function directory as empty when it is absent,
+  so importing the child module remains valid when a strict caller promotes
+  `$ErrorActionPreference` to `Stop`.
+
+## Unreleased
+
 - Document the BuildMaster child as a member of the BuildTooling family. The
   compatibility parent continues to re-export its legacy commands while installed
   consumers are inventoried for a later parent-mode decision (Task 13.73).

@@ -1,6 +1,7 @@
 #Requires -Version 7.0
 
 BeforeAll {
+  . (Join-Path $PSScriptRoot '../../private/Get-SprintGeneratedArtifactState.ps1')
   $moduleRoot = Join-Path $PSScriptRoot '../..'
   foreach ($path in @('private/Invoke-SprintEndNativeCommand.ps1',
       'private/Get-SprintWorktreeClassification.ps1', 'private/Get-SprintEndLockFileApplicability.ps1')) {
@@ -82,6 +83,8 @@ Describe 'Login scheduled-task lifecycle integration' -Tag 'Unit' {
     Mock Test-SprintEndCommandSurface { [PSCustomObject]@{ Ok = $true } }
     Mock Test-SprintPrerequisites { [PSCustomObject]@{ AllOk = $true } }
     Mock Test-SprintEndWorktreeState { [PSCustomObject]@{ Ok = $true } }
+    # Task 16.91.b: lifecycle fixtures are not git repositories; the gate has its own suite.
+    Mock Get-SprintGeneratedArtifactState { [PSCustomObject]@{ Ok = $true; TrackedPaths = @(); CitedPaths = @(); Failures = @() } }
     Mock Test-SprintCheckpointCoverage { [PSCustomObject]@{ Ok = $true } }
     Mock Invoke-SprintEndInfrastructureCleanup { $script:trace.Add('cleanup'); [PSCustomObject]@{ Ok = $true } }
     Mock New-SprintEndHandoff { $script:trace.Add('handoff'); [PSCustomObject]@{ Ok = $true } }

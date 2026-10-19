@@ -92,13 +92,48 @@ Describe 'Test-SprintEndBoundaryState stale-reference scope split' -Tag 'Unit' {
       $result.StaleReferences[0].Classification | Should -Be 'HistoricalEvidence'
     }
 
-    It 'still searches SprintRetrospective WorkspaceArchive, Archived, Samples, and _generated evidence folders without failing the gate' {
+    It 'fails the gate for a stale reference under the search root _generated folder (Task 16.91.d)' {
+      $gitRoot = Join-Path $TestDrive 'generated-variant'
+      $dir = Join-Path $gitRoot '_generated\Evidence'
+      New-Item -ItemType Directory -Path $dir -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $dir 'stale.json') `
+        -Value '{"path":"SharedVSCode-wt-48-Sprint-0010-work-items"}'
+
+      $result = Test-SprintEndBoundaryState `
+        -GitRoot $gitRoot `
+        -SearchRoots @($gitRoot) `
+        -ProfilePaths @() `
+        -ProhibitedEnvironmentVariableNames @()
+
+      $result.Ok | Should -BeFalse
+      $result.Failures | Should -Contain 'GeneratedArtifactReferences'
+      $result.GeneratedArtifactReferences.Count | Should -Be 1
+      $result.StaleReferences[0].Classification | Should -Be 'GeneratedArtifact'
+    }
+
+    It 'does not classify by a _generated folder above the search root' {
+      $gitRoot = Join-Path $TestDrive '_generated\nested-root'
+      $dir = Join-Path $gitRoot 'Archived'
+      New-Item -ItemType Directory -Path $dir -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $dir 'stale.json') `
+        -Value '{"path":"SharedVSCode-wt-48-Sprint-0010-work-items"}'
+
+      $result = Test-SprintEndBoundaryState `
+        -GitRoot $gitRoot `
+        -SearchRoots @($gitRoot) `
+        -ProfilePaths @() `
+        -ProhibitedEnvironmentVariableNames @()
+
+      $result.Failures | Should -Not -Contain 'GeneratedArtifactReferences'
+      $result.HistoricalStaleReferences.Count | Should -Be 1
+    }
+
+    It 'still searches SprintRetrospective WorkspaceArchive, Archived, and Samples evidence folders without failing the gate' {
       $gitRoot = Join-Path $TestDrive 'history-variants'
       $folders = @(
         'SprintRetrospective\WorkspaceArchive',
         'Archived',
-        'Samples',
-        '_generated\Evidence'
+        'Samples'
       )
       foreach ($folder in $folders) {
         $dir = Join-Path $gitRoot $folder

@@ -1,6 +1,7 @@
 #Requires -Version 7.0
 
 BeforeAll {
+  . (Join-Path $PSScriptRoot '../../private/Get-SprintGeneratedArtifactState.ps1')
   # Task 16.12: unrelated unit tests must never inspect workstation settings.
   function Set-UserSettingsSymlink {
     [CmdletBinding(SupportsShouldProcess)]
@@ -83,6 +84,8 @@ Describe 'SprintEnd premerge shared settings deferral' -Tag 'Unit' {
     Mock Test-SprintEndCommandSurface { [PSCustomObject]@{ Ok = $true } }
     Mock Test-SprintPrerequisites { [PSCustomObject]@{ AllOk = $true } }
     Mock Test-SprintEndWorktreeState { [PSCustomObject]@{ Ok = $true } }
+    # Task 16.91.b: lifecycle fixtures are not git repositories; the gate has its own suite.
+    Mock Get-SprintGeneratedArtifactState { [PSCustomObject]@{ Ok = $true; TrackedPaths = @(); CitedPaths = @(); Failures = @() } }
     Mock Test-SprintCheckpointCoverage { [PSCustomObject]@{ Ok = $true } }
     $script:boundaryCalls = @()
     Mock Set-SprintBoundaryContext {

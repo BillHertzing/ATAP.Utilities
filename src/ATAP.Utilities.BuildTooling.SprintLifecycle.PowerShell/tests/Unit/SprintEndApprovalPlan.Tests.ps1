@@ -7,6 +7,7 @@
 # deterministically from its inputs, and keep its authority boundary explicit.
 
 BeforeAll {
+  . (Join-Path $PSScriptRoot '../../private/Get-SprintGeneratedArtifactState.ps1')
   # Task 16.12: unrelated unit tests must never inspect workstation settings.
   function Set-UserSettingsSymlink {
     [CmdletBinding(SupportsShouldProcess)]
@@ -271,6 +272,8 @@ Describe 'SprintEnd approval plan' -Tag 'Unit' {
       Mock Test-SprintEndCommandSurface { [PSCustomObject]@{ Ok = $true; Failures = @() } }
       Mock Test-SprintPrerequisites { [PSCustomObject]@{ AllOk = $true; Failures = @() } }
       Mock Test-SprintEndWorktreeState { [PSCustomObject]@{ Ok = $true; Failures = @() } }
+      # Task 16.91.b: lifecycle fixtures are not git repositories; the gate has its own suite.
+      Mock Get-SprintGeneratedArtifactState { [PSCustomObject]@{ Ok = $true; TrackedPaths = @(); CitedPaths = @(); Failures = @() } }
       Mock Test-SprintCheckpointCoverage { [PSCustomObject]@{ Ok = $true; Failures = @() } }
       Mock Invoke-SprintEndGitHubClose {
         [PSCustomObject]@{ Ok = $true; Repository = (Split-Path -Path $RepoPath -Leaf) }

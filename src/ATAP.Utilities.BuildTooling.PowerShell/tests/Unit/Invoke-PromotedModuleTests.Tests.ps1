@@ -33,7 +33,7 @@ BeforeAll {
         function global:Invoke-PSModulePesterTests {
             param(
                 [string]$ModuleRoot, [string]$Tier, [string]$OutputPath,
-                [string]$CoverageOutputPath, [string[]]$TestPaths,
+                [string]$CoverageOutputPath, [string[]]$TestPaths, [string[]]$AdditionalExcludeTag,
                 [switch]$SkipTestResult,
                 [switch]$SkipCodeCoverage,
                 [string]$PesterOutputVerbosity,

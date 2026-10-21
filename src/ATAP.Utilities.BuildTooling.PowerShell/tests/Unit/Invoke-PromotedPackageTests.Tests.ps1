@@ -4,7 +4,7 @@
 BeforeAll {
     $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
     . (Join-Path $publicDir 'Invoke-PromotedPackageTests.ps1')
-    $script:artifactsRoot = Join-Path ([IO.Path]::GetTempPath()) ('ATAP-F03-consumer-' + [guid]::NewGuid().ToString('N'))
+    $script:artifactsRoot = Join-Path ([IO.Path]::GetPathRoot([Environment]::SystemDirectory)) ('ATAP-Fixture-Only-' + [guid]::NewGuid().ToString('N'))
     $script:artifactsPath = Join-Path $script:artifactsRoot 'dotnet\ATAP.Utilities\wt-promoted\exec-promoted'
     $script:artifactsContext = [pscustomobject]@{
         Root = $script:artifactsRoot

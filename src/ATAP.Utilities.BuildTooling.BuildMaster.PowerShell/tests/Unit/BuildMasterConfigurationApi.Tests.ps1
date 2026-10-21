@@ -34,13 +34,11 @@ BeforeAll {
 
   $script:oldConfigRootKeys = $global:configRootKeys
   $script:oldSettings = $global:settings
-  $script:savedBaseUrl = [Environment]::GetEnvironmentVariable('BUILDMASTER_BASE_URL', 'User')
 }
 
 AfterAll {
   $global:configRootKeys = $script:oldConfigRootKeys
   $global:settings = $script:oldSettings
-  [Environment]::SetEnvironmentVariable('BUILDMASTER_BASE_URL', $script:savedBaseUrl, 'User')
 }
 
 Describe 'BuildMaster configuration API functions' -Tag 'Unit' {

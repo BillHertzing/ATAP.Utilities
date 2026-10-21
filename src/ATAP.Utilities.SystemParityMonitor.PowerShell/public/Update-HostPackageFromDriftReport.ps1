@@ -166,7 +166,7 @@ function Update-HostPackageFromDriftReport {
             return [PSCredential]::new($gu, (ConvertTo-SecureString $gp -AsPlainText -Force))
           }
         } catch {
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Get-SecretATAP resolution skipped/failed for $ComputerName: $($_.Exception.Message)"
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Get-SecretATAP resolution skipped/failed for ${ComputerName}: $($_.Exception.Message)"
         }
       }
       return $null

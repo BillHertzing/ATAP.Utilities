@@ -1,9 +1,7 @@
 Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' -Tag 'Unit', 'ParityCore' {
   BeforeAll {
-    if (-not (Get-Module -Name 'ATAP.Utilities.SystemParityMonitor.PowerShell')) {
-      $modulePath = Join-Path $PSScriptRoot '..\..\ATAP.Utilities.SystemParityMonitor.PowerShell.psd1'
-      Import-Module -Name $modulePath -Force
-    }
+    $modulePath = Join-Path $PSScriptRoot '..\..\ATAP.Utilities.SystemParityMonitor.PowerShell.psd1'
+    Import-Module -Name $modulePath -Force
   }
 
   BeforeEach {
@@ -11,13 +9,32 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' -Tag 'Unit', 'Pa
     $leftState = Join-Path $testRoot 'utat022'
     $rightState = Join-Path $testRoot 'utat01'
     New-Item -ItemType Directory -Path $leftState, $rightState -Force | Out-Null
+
+    # Audit collectors see deterministic local surfaces, never the workstation.
+    $moduleName = 'ATAP.Utilities.SystemParityMonitor.PowerShell'
+    Mock Get-Command -ModuleName $moduleName { $null } -ParameterFilter { $Name -eq 'Write-PSFMessage' }
+    Mock Get-Command -ModuleName $moduleName { [pscustomobject]@{ Name = 'Get-SmbShare' } } -ParameterFilter { $Name -eq 'Get-SmbShare' }
+    Mock Get-CimInstance -ModuleName $moduleName {
+      switch ($ClassName) {
+        'Win32_OperatingSystem' {
+          [pscustomobject]@{ Caption = 'Fixture Windows'; Version = '10.0'; BuildNumber = '19045' }
+        }
+        'Win32_Service' {
+          @('W32Time', 'WinRM', 'sshd') | ForEach-Object {
+            [pscustomobject]@{ Name = $_; State = 'Running' }
+          }
+        }
+        default { throw "Unexpected fixture CIM class: $ClassName" }
+      }
+    }
+    Mock Get-SmbShare -ModuleName $moduleName { [pscustomobject]@{ Name = 'ParityState' } }
+    Mock Get-ItemProperty -ModuleName $moduleName {
+      throw 'Fixture SQL instance registry is unavailable.'
+    } -ParameterFilter { $Path -like 'HKLM:*Microsoft SQL Server*' }
   }
 
-  AfterEach {
-    if (Test-Path -LiteralPath $testRoot) {
-      Remove-Item -LiteralPath $testRoot -Recurse -Force
-    }
-  }
+  # Each test has a unique GUID directory under the run's evidence TEMP root.
+  # Retain these fixtures with the test results; evidence retention owns cleanup.
 
   It 'Add/Get/Confirm round-trips a peer change through JSONL files' {
     $entry = Add-ParityChangeEntry -StatePath $leftState -HostName 'utat022' -PeerHostName 'utat01' -Category 'Packages' -Item 'git' -OldValue '2.45' -NewValue '2.46' -PeerActionKind 'Manual' -PeerAction 'Review git package parity'
@@ -83,6 +100,11 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' -Tag 'Unit', 'Pa
       # The value shape stays three-part: filling the placeholders would perturb the Task 14.73
       # drift baseline and is a separate, deliberate change.
       Should -Invoke -CommandName Get-Service -Times 0 -Exactly
+
+      @($surfaces | Where-Object Item -Like 'Instance/*/AuditError') | Should -HaveCount 2
+      Should -Invoke Get-ItemProperty -Times 2 -Exactly -ParameterFilter {
+        $Path -like 'HKLM:*Microsoft SQL Server*'
+      }
     }
   }
 
@@ -698,6 +720,7 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell scheduled task scripts' 
   BeforeEach {
     $script:scheduledTaskRegistrations = @()
     $script:s4uRegistrations = @()
+    Mock Get-Command { $null } -ParameterFilter { $Name -eq 'Write-PSFMessage' }
 
     Mock -CommandName Get-Command -ParameterFilter { $Name -eq 'pwsh' } -MockWith {
       [pscustomobject]@{ Source = 'C:\Program Files\PowerShell\7\pwsh.exe' }

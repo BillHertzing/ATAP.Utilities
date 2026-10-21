@@ -38,6 +38,14 @@ Describe 'Import-ATAPModuleFromProGet [private]' -Tag 'Unit', 'PromotedModuleHos
     $script:installedVersion = $null
     $script:remoteVersion = [version]'0.2.0'
 
+    Mock Resolve-ProGetFeedFromSettings { [pscustomobject]@{ FeedName = 'powershellget-stable'; Uri = 'https://utat022:50000/nuget/powershellget-stable/' } }
+    Mock Get-Command {
+      if ($Name -eq 'Resolve-ProGetFeedFromSettings') {
+        [pscustomobject]@{ Name = $Name; CommandType = 'Function' }
+      } else {
+        throw "Unexpected command lookup: $Name"
+      }
+    }
     Mock Write-PSFMessage { }
     Mock Get-PSRepository {
       [PSCustomObject]@{

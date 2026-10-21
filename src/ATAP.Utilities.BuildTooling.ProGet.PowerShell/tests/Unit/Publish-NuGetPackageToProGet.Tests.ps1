@@ -3,6 +3,9 @@
 # Invoke-DotnetNuGetPush is mocked; no real `dotnet` process is spawned.
 
 BeforeAll {
+  if (-not (Get-Command Resolve-HostSuffixedSecretName -ErrorAction SilentlyContinue)) {
+    function global:Resolve-HostSuffixedSecretName { param($BaseName, $ServiceName, $SettingName) throw 'Test resolver must be mocked.' }
+  }
     $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
     . (Join-Path $publicDir 'Resolve-ProGetFeedFromSettings.ps1')
 
@@ -63,9 +66,7 @@ BeforeAll {
 
     $script:oldConfigRootKeys = $global:configRootKeys
     $script:oldSettings = $global:Settings
-    $script:savedAdminApiKey = [Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
     $script:secretApiKey = 'super-secret-api-key-XYZ987'
-    [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $script:secretApiKey, 'User')
     function Get-SecretATAP { [CmdletBinding()] param($SecretName, $SecretStoreType) $script:secretApiKey }
 
     $global:configRootKeys = @{
@@ -100,7 +101,6 @@ AfterAll {
     }
     $global:configRootKeys = $script:oldConfigRootKeys
     $global:Settings = $script:oldSettings
-    [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $script:savedAdminApiKey, 'User')
     Remove-Variable -Name 'WritePSFMessageCalls' -Scope Global -ErrorAction SilentlyContinue
     Remove-Item Function:\Write-PSFMessage -ErrorAction SilentlyContinue
 }
@@ -108,6 +108,9 @@ AfterAll {
 Describe 'Publish-NuGetPackageToProGet' -Tag 'Unit' {
 
     BeforeEach {
+
+      Mock Resolve-HostSuffixedSecretName { "$BaseName.fixture" }
+        Mock Get-SecretATAP { $script:secretApiKey }
         $global:WritePSFMessageCalls.Clear()
         Mock Invoke-DotnetNuGetPush {
             [PSCustomObject]@{ ExitCode = 0; StdOut = 'Pushed successfully.' }

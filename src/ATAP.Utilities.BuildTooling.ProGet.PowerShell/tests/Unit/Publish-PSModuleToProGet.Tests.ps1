@@ -3,6 +3,9 @@
 # All external I/O, secret stores, and PSResourceGet cmdlets are mocked.
 
 BeforeAll {
+  if (-not (Get-Command Resolve-HostSuffixedSecretName -ErrorAction SilentlyContinue)) {
+    function global:Resolve-HostSuffixedSecretName { param($BaseName, $ServiceName, $SettingName) throw 'Test resolver must be mocked.' }
+  }
     $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
     . (Join-Path $publicDir 'Resolve-ProGetFeedFromSettings.ps1')
     . (Join-Path $publicDir 'Test-PSModulePackageSignature.ps1')
@@ -30,13 +33,9 @@ BeforeAll {
     $script:oldSettings = $global:Settings
     $script:experimentalApiKeyEnvName = 'PROGET_APIKEY_POWERSHELLGET_EXPERIMENTAL'
     $script:savedExperimentalApiKeyProcess = [Environment]::GetEnvironmentVariable($script:experimentalApiKeyEnvName, 'Process')
-    $script:savedExperimentalApiKeyUser = [Environment]::GetEnvironmentVariable($script:experimentalApiKeyEnvName, 'User')
     $script:savedAdminApiKeyProcess = [Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'Process')
-    $script:savedAdminApiKeyUser = [Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
     [Environment]::SetEnvironmentVariable($script:experimentalApiKeyEnvName, $null, 'Process')
-    [Environment]::SetEnvironmentVariable($script:experimentalApiKeyEnvName, $null, 'User')
     [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $null, 'Process')
-    [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $null, 'User')
     $global:configRootKeys = @{
       # SC-0288 / Task 13.66.b: SecretName host suffixes come from the placement map.
       ServicePlacementMapConfigRootKey = 'ServicePlacementMap'
@@ -63,14 +62,14 @@ AfterAll {
     $global:configRootKeys = $script:oldConfigRootKeys
     $global:Settings = $script:oldSettings
     [Environment]::SetEnvironmentVariable($script:experimentalApiKeyEnvName, $script:savedExperimentalApiKeyProcess, 'Process')
-    [Environment]::SetEnvironmentVariable($script:experimentalApiKeyEnvName, $script:savedExperimentalApiKeyUser, 'User')
     [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $script:savedAdminApiKeyProcess, 'Process')
-    [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $script:savedAdminApiKeyUser, 'User')
 }
 
 Describe 'Publish-PSModuleToProGet' -Tag 'Unit' {
 
     BeforeEach {
+
+      Mock Resolve-HostSuffixedSecretName { "$BaseName.fixture" }
         Mock Test-PSModulePackageSignature { [PSCustomObject]@{ Valid = $true } }
         Mock Get-PSResourceRepository { $null }
         Mock Register-PSResourceRepository { }

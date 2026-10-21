@@ -3,6 +3,13 @@
 # Invoke-RestMethod is mocked; no real HTTP traffic is generated.
 
 BeforeAll {
+    $script:originalProcessUris = @{}
+    foreach ($name in 'PROGET_RELEASEBUNDLE_EXPERIMENTAL_URI', 'PROGET_RELEASEBUNDLE_DEVELOPMENT_URI') {
+        $script:originalProcessUris[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
+    }
+  if (-not (Get-Command Resolve-HostSuffixedSecretName -ErrorAction SilentlyContinue)) {
+    function global:Resolve-HostSuffixedSecretName { param($BaseName, $ServiceName, $SettingName) throw 'Test resolver must be mocked.' }
+  }
     $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
     . (Join-Path $publicDir 'Resolve-ProGetFeedFromSettings.ps1')
     . (Join-Path $publicDir 'Publish-UniversalPackageToProGet.ps1')
@@ -33,9 +40,7 @@ BeforeAll {
 
     $script:oldConfigRootKeys = $global:configRootKeys
     $script:oldSettings = $global:Settings
-    $script:savedAdminApiKey = [Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
     $script:secretApiKey = 'super-secret-universal-key-ABC123'
-    [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $script:secretApiKey, 'User')
     function Get-SecretATAP { [CmdletBinding()] param($SecretName, $SecretStoreType) $script:secretApiKey }
 
     # Empty settings -> the cmdlet should fall back to env var or local default.
@@ -56,10 +61,8 @@ AfterAll {
     }
     $global:configRootKeys = $script:oldConfigRootKeys
     $global:Settings = $script:oldSettings
-    [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $script:savedAdminApiKey, 'User')
     foreach ($v in 'PROGET_RELEASEBUNDLE_EXPERIMENTAL_URI', 'PROGET_RELEASEBUNDLE_DEVELOPMENT_URI') {
-        [Environment]::SetEnvironmentVariable($v, $null, 'User')
-        [Environment]::SetEnvironmentVariable($v, $null, 'Process')
+        [Environment]::SetEnvironmentVariable($v, $script:originalProcessUris[$v], 'Process')
     }
     Remove-Variable -Name 'WritePSFMessageCalls' -Scope Global -ErrorAction SilentlyContinue
     Remove-Item Function:\Write-PSFMessage -ErrorAction SilentlyContinue
@@ -68,7 +71,11 @@ AfterAll {
 Describe 'Publish-UniversalPackageToProGet' -Tag 'Unit', 'PromotedModuleHostSensitive' {
 
     BeforeEach {
+
+      Mock Resolve-HostSuffixedSecretName { "$BaseName.fixture" }
+        Mock Get-SecretATAP { $script:secretApiKey }
         $global:WritePSFMessageCalls.Clear()
+        Mock Resolve-ProGetFeedFromSettings { [pscustomobject]@{ EndpointUri = 'https://utat022:50000/upack/releasebundle-experimental/' } }
         # Default mock: 200 OK, empty body.
         Mock Invoke-RestMethod { @{ status = 'ok' } }
     }
@@ -97,18 +104,20 @@ Describe 'Publish-UniversalPackageToProGet' -Tag 'Unit', 'PromotedModuleHostSens
             $result.FeedName | Should -Be 'releasebundle-experimental'
         }
 
-        It 'Falls back to local default when settings lacks a Universal feed entry' {
+        It 'Uses the configured Universal feed URI' {
             $result = Publish-UniversalPackageToProGet -Path $script:fakeUpack
             $result.FeedUri | Should -Match 'https://utat022:50000/upack/releasebundle-experimental/?$'
         }
 
         It 'Uses env var PROGET_RELEASEBUNDLE_<TIER>_URI when present' {
+            Mock Resolve-ProGetFeedFromSettings { throw 'No configured Universal feed' }
+            $previousDevelopmentUri = [Environment]::GetEnvironmentVariable('PROGET_RELEASEBUNDLE_DEVELOPMENT_URI', 'Process')
             [Environment]::SetEnvironmentVariable('PROGET_RELEASEBUNDLE_DEVELOPMENT_URI', 'https://proget.example.test/upack/releasebundle-development', 'Process')
             try {
                 $result = Publish-UniversalPackageToProGet -Path $script:fakeUpack -Feed 'releasebundle-development' -CeilingTier 'Development'
                 $result.FeedUri | Should -Match 'proget\.example\.test/upack/releasebundle-development/?$'
             } finally {
-                [Environment]::SetEnvironmentVariable('PROGET_RELEASEBUNDLE_DEVELOPMENT_URI', $null, 'Process')
+                [Environment]::SetEnvironmentVariable('PROGET_RELEASEBUNDLE_DEVELOPMENT_URI', $previousDevelopmentUri, 'Process')
             }
         }
 
@@ -181,12 +190,13 @@ Describe 'Publish-UniversalPackageToProGet' -Tag 'Unit', 'PromotedModuleHostSens
 
         It 'Rejects environment fallback when the named secret is unavailable' {
             Mock Get-SecretATAP { throw 'secret unavailable' }
+            $previousApiKey = [Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'Process')
             [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'must-not-be-used', 'Process')
             try {
                 { Publish-UniversalPackageToProGet -Path $script:fakeUpack } |
                     Should -Throw -ExpectedMessage '*ProGet.BuildMaster.API.Key*'
             } finally {
-                [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $null, 'Process')
+                [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $previousApiKey, 'Process')
             }
         }
     }

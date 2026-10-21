@@ -11,6 +11,8 @@ BeforeAll {
   $script:realBackupGetItem = Get-Command Get-Item -CommandType Cmdlet
   . "$PSScriptRoot\..\..\public\Invoke-GeneratedFolderRemediation.ps1"
   . "$PSScriptRoot\..\..\private\Get-GeneratedRemediationByteComparison.ps1"
+  . "$PSScriptRoot\..\..\private\Get-GeneratedRemediationFileSnapshot.ps1"
+  $script:realFileSnapshot = (Get-Command Get-GeneratedRemediationFileSnapshot).ScriptBlock
   $script:fixtureRoot = [IO.Path]::GetFullPath("$PSScriptRoot/../../../../_generated/Sprint0016/Task16.84/CarryoverByteGuardTests-v1/Fixtures")
   $script:realGitCommand = Get-Command 'C:/Program Files/Git/cmd/git.exe' -CommandType Application -ErrorAction Stop
   $ordinaryGit = Get-Command git -ErrorAction Stop
@@ -70,7 +72,13 @@ BeforeAll {
         [ordered]@{
           repositoryIdentity = 'Repo'; root = $root; relativePath = $relative
           bytes = (Get-Item -LiteralPath $path -Force).Length; sha256 = (Get-FileHash -LiteralPath $path).Hash
-          tracked = $true; streams = @(); streamInventoryComplete = $true
+          tracked = $true
+          streams = @(foreach ($stream in (Get-Item -LiteralPath $path -Stream '*' -Force | Where-Object Stream -CNE ':$DATA')) {
+            [ordered]@{ name = $stream.Stream; bytes = $stream.Length
+              sha256 = (Get-FileHash -LiteralPath ($path + ':' + $stream.Stream)).Hash
+              archiveMember = 'streams/' + $stream.Stream; restoreVerified = $true }
+          })
+          streamInventoryComplete = $true
         }
       })
       [ordered]@{ id = "row$i"; kind = 'File'; baselineRowSHA256 = $hash; source = $files[0]; candidate = $files[1]; pathClassification = 'Regular'; protectionReasons = @(); proposedAction = 'Preserve'; approved = $false }
@@ -195,7 +203,7 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
     $sourceHashes = @(foreach ($path in $sourcePaths) { [pscustomobject]@{Path=$path;SHA256=(Get-FileHash -LiteralPath $path).Hash} })
     $gitBefore = @(foreach ($root in @($script:stable,$script:sprint)) {
       $index = (& $script:realGitCommand -C $root rev-parse --path-format=absolute --git-path index)
-      [pscustomobject]@{Root=$root;Head=(& $script:realGitCommand -C $root rev-parse HEAD);IndexPath=$index;IndexSHA256=(Get-FileHash -LiteralPath $index).Hash}
+      [pscustomobject]@{Root=$root;Head=(& $script:realGitCommand -C $root rev-parse HEAD);IndexPath=$index;IndexSHA256=(Get-FileHash -LiteralPath $index).Hash;IndexBytes=[Convert]::ToBase64String([IO.File]::ReadAllBytes($index))}
     })
     $evidence = Join-Path $script:gitRoot 'backup-report.json'
     $expectedBytes = (Get-Item -LiteralPath $script:backupFile -Force).Length + 11
@@ -237,7 +245,12 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
     foreach ($row in $sourceHashes) { (Get-FileHash -LiteralPath $row.Path).Hash | Should -Be $row.SHA256 }
     foreach ($before in $gitBefore) {
       (& $script:realGitCommand -C $before.Root rev-parse HEAD) | Should -Be $before.Head
-      (Get-FileHash -LiteralPath $before.IndexPath).Hash | Should -Be $before.IndexSHA256
+      $indexHashAfter = (Get-FileHash -LiteralPath $before.IndexPath).Hash
+      if($indexHashAfter -cne $before.IndexSHA256 -and $null -ne $script:backupReceiptSink){
+        $script:backupReceiptSink.Add([pscustomobject]@{FailedIndexWitness=$before;AfterSHA256=$indexHashAfter
+          AfterBytes=[Convert]::ToBase64String([IO.File]::ReadAllBytes($before.IndexPath))})
+      }
+      $indexHashAfter | Should -Be $before.IndexSHA256
     }
     foreach ($flag in @('Approved','CustodyVerified','NamedStreamsVerified','ReadyForRemoval')) {
       $r.$flag | Should -BeFalse
@@ -341,6 +354,7 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
     $entry.SelectionManifestBinding.SchemaValid | Should -BeTrue
     $entry.SelectionManifestBinding.RepositoryRootsAndHeadsBound | Should -BeTrue
     $entry.SelectionManifestBinding.SelectedDefaultBytesBound | Should -BeTrue
+    $entry.SelectionManifestBinding.SelectedFileStreamsBound | Should -BeTrue
     $entry.SelectionManifestBinding.SelectedCandidateCount | Should -Be 1
     foreach ($flag in @('Approved','CustodyVerified','NamedStreamsVerified','ReadyForRemoval')) { $entry.SelectionManifestBinding.$flag | Should -BeFalse }
     $entry.CustodyVerified | Should -BeFalse
@@ -350,6 +364,118 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
     @($entry.PreservedFiles.Path) | Should -Contain '_generated/legacy-tracked.txt'
     (Get-FileHash -LiteralPath $options.SelectionManifestPath).Hash | Should -Be $manifestBefore
     Should -Invoke Compress-Archive -Times 0
+  }
+
+
+  It 'binds actual per-side named streams including empty and Unicode data without requiring cross-side ADS equality' {
+    $relative = '_generated/Sprint0015/old-evidence.md'
+    $streamName = [string][char]0x9644 + [char]0x6ce8
+    foreach ($root in @($script:stable,$script:sprint)) {
+      [IO.File]::WriteAllBytes((Join-Path $root $relative)+':empty',[byte[]]@())
+      [IO.File]::WriteAllText((Join-Path $root $relative)+(':'+$streamName),$(if($root -ceq $script:stable){'stable metadata'}else{'sprint metadata'}))
+    }
+    $options = Save-TestSelectionManifest (Get-TestSelectionManifest @($relative,'_generated/legacy-tracked.txt'))
+    $before = @(foreach($root in @($script:stable,$script:sprint)){
+      $index = Invoke-TestGit $root rev-parse --path-format=absolute --git-path index
+      [pscustomobject]@{Root=$root;Head=(Invoke-TestGit $root rev-parse HEAD);Index=$index;SHA256=(Get-FileHash -LiteralPath $index).Hash}
+    })
+    $script:fileSnapshotCalls = [Collections.Generic.List[object]]::new()
+    Mock Get-GeneratedRemediationFileSnapshot {
+      $actual = & $script:realFileSnapshot -RootPath $RootPath -RelativePath $RelativePath
+      $script:fileSnapshotCalls.Add([pscustomobject]@{Root=$RootPath;RelativePath=$RelativePath;InventoryComplete=$actual.InventoryComplete})
+      $actual
+    }
+    $r = Invoke-GeneratedFolderRemediation -SprintNumber 0016 -Scope SprintCarryover -GitRoot $script:gitRoot -RepositoryName Repo @options
+    $script:fileSnapshotCalls.Count | Should -Be 4
+    @($script:fileSnapshotCalls | Where-Object InventoryComplete).Count | Should -Be 0
+    foreach($call in $script:fileSnapshotCalls){
+      $call.Root | Should -BeIn @($script:stable,$script:sprint)
+      $call.RelativePath | Should -BeIn @($relative,'_generated/legacy-tracked.txt')
+    }
+    $binding = $r.Sprint[0].SelectionManifestBinding
+    $binding.SelectedCandidateCount | Should -Be 2
+    $binding.SelectedFileStreamsBound | Should -BeTrue
+    $row = $binding.Rows[0]
+    $row.FileStreamsBound | Should -BeTrue
+    $row.FileStreamEvidence.Count | Should -Be 2
+    foreach($side in $row.FileStreamEvidence){
+      $side.Bound | Should -BeTrue
+      $side.ObservationsVerified | Should -Be 2
+      $side.Binding.RelativePath | Should -BeExactly $relative
+      ($side.ObservedStreams | Where-Object Name -CEQ empty).Bytes | Should -Be 0
+      @($side.ObservedStreams).Count | Should -Be 3
+    }
+    ($row.FileStreamEvidence[0].ObservedStreams | Where-Object Name -CEQ $streamName).SHA256 |
+      Should -Not -Be ($row.FileStreamEvidence[1].ObservedStreams | Where-Object Name -CEQ $streamName).SHA256
+    foreach($side in $binding.Rows[1].FileStreamEvidence){
+      $side.ObservedStreams.Count | Should -Be 1
+      $side.ObservedStreams[0].Name | Should -BeExactly ':$DATA'
+    }
+    foreach($state in $before){
+      (Invoke-TestGit $state.Root rev-parse HEAD) | Should -Be $state.Head
+      (Get-FileHash -LiteralPath $state.Index).Hash | Should -Be $state.SHA256
+    }
+    foreach($flag in @('Approved','CustodyVerified','NamedStreamsVerified','ReadyForRemoval')) { $binding.$flag | Should -BeFalse }
+    if($null -ne $script:backupReceiptSink){$script:backupReceiptSink.Add([pscustomobject]@{
+      ActualFileStreamBinding=$binding;ActualSnapshotCalls=@($script:fileSnapshotCalls);SourceAndGitUnchanged=$true;ActualUnchangedFileSnapshotReader=$true
+    })}
+  }
+
+  It 'preserves same-default files with wrong omitted extra or case-changed named streams and never backs them up' {
+    $relative = '_generated/Sprint0015/old-evidence.md'
+    $null = New-Item -ItemType Directory -Path $script:archive
+    foreach($root in @($script:stable,$script:sprint)){
+      [IO.File]::WriteAllText((Join-Path $root $relative)+':notes','actual metadata')
+    }
+    Mock New-GeneratedRemediationCustodyBundle { throw 'Mismatched file streams must not reach backup.' }
+    foreach($variant in @('sourceHash','candidateLength','omitted','extra','case')){
+      $manifest = Get-TestSelectionManifest
+      switch($variant){
+        sourceHash { $manifest.rows[0].source.streams[0].sha256 = 'B'*64 }
+        candidateLength { $manifest.rows[0].candidate.streams[0].bytes++ }
+        omitted { $manifest.rows[0].source.streams = @() }
+        extra { $manifest.rows[0].candidate.streams += [ordered]@{name='missing';bytes=0;sha256='B'*64;archiveMember='streams/missing';restoreVerified=$true} }
+        case { $manifest.rows[0].candidate.streams[0].name = 'NOTES' }
+      }
+      $options = Save-TestSelectionManifest $manifest
+      $r = Invoke-GeneratedFolderRemediation -SprintNumber 0016 -Scope SprintCarryover -GitRoot $script:gitRoot -RepositoryName Repo @options -CreateBackup -ArchiveRoot $script:archive -Confirm:$false
+      $row = $r.Sprint[0].SelectionManifestBinding.Rows[0]
+      $row.DefaultBytesBound | Should -BeTrue -Because $variant
+      $row.FileStreamsBound | Should -BeFalse -Because $variant
+      $row.Action | Should -Be Preserve
+      $row.Reason | Should -Match 'named.stream'
+      $r.Sprint[0].SelectionManifestBinding.SelectedCandidateCount | Should -Be 0
+      $r.Sprint[0].Backup.Status | Should -Be NoSelection
+      @($r.Sprint[0].InheritedTracked).Count | Should -Be 0
+    }
+    Should -Invoke New-GeneratedRemediationCustodyBundle -Times 0
+    @(Get-ChildItem -LiteralPath $script:archive -Force).Count | Should -Be 0
+  }
+
+  It 'preserves unavailable inconsistent substituted or changed-default snapshots' {
+    $options = Save-TestSelectionManifest (Get-TestSelectionManifest)
+    foreach($variant in @('unavailable','inconsistent','root','relative','path','default')){
+      $script:snapshotVariant = $variant
+      Mock Get-GeneratedRemediationFileSnapshot {
+        $actual = & $script:realFileSnapshot -RootPath $RootPath -RelativePath $RelativePath
+        switch($script:snapshotVariant){
+          unavailable { $actual.Success=$false; $actual.Errors=@('fixture unavailable') }
+          inconsistent { $actual.Consistent=$false }
+          root { $actual.Binding.Root=$script:gitRoot }
+          relative { $actual.Binding.RelativePath='_generated/other.txt' }
+          path { $actual.Binding.Path=Join-Path $script:stable '_generated/other.txt' }
+          default { $actual.Observations[0].Streams[0].SHA256='B'*64 }
+        }
+        $actual
+      }
+      $r = Invoke-GeneratedFolderRemediation -SprintNumber 0016 -Scope SprintCarryover -GitRoot $script:gitRoot -RepositoryName Repo @options
+      $row=$r.Sprint[0].SelectionManifestBinding.Rows[0]
+      $row.DefaultBytesBound | Should -BeTrue -Because $variant
+      $row.FileStreamsBound | Should -BeFalse -Because $variant
+      $row.Action | Should -Be Preserve
+      $row.Reason | Should -Match 'snapshot|observed default'
+      $r.Sprint[0].SelectionManifestBinding.SelectedCandidateCount | Should -Be 0
+    }
   }
 
   It 'requires paired manifest inputs and one explicit SprintCarryover repository scope' {
@@ -426,12 +552,17 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
     Invoke-TestGit $script:sprint add -f _generated/Sprint0015/staged.txt | Out-Null
     $manifest = Get-TestSelectionManifest @('_generated/Sprint0015/old-evidence.md','_generated/legacy-tracked.txt','_generated/Sprint0016/current.md','_generated/Sprint0017/future.md','_generated/Sprint0015/staged.txt')
     $options = Save-TestSelectionManifest $manifest
+    Mock Get-GeneratedRemediationFileSnapshot {
+      if($RelativePath -cne '_generated/Sprint0015/old-evidence.md'){throw 'Protected or WIP row acquired.'}
+      & $script:realFileSnapshot -RootPath $RootPath -RelativePath $RelativePath
+    }
     $r = Invoke-GeneratedFolderRemediation -SprintNumber 0016 -Scope SprintCarryover -GitRoot $script:gitRoot -RepositoryName Repo @options
     @($r.Sprint[0].InheritedTracked).Count | Should -Be 1
     $r.Sprint[0].InheritedTracked[0] | Should -Be '_generated/Sprint0015/old-evidence.md'
     @($r.Sprint[0].SelectionManifestBinding.Rows | Where-Object Action -EQ Preserve).Count | Should -Be 4
     @($r.Sprint[0].SkippedModified) | Should -Contain '_generated/legacy-tracked.txt'
     @($r.Sprint[0].SkippedModified) | Should -Contain '_generated/Sprint0015/staged.txt'
+    Should -Invoke Get-GeneratedRemediationFileSnapshot -Times 2 -Exactly -ParameterFilter { $RelativePath -ceq '_generated/Sprint0015/old-evidence.md' }
   }
 
   It 'holds manifest Plan when the explicit current sprint worktree is absent' {
@@ -442,6 +573,7 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
   }
 
   It 'plans without changing anything by default' {
+    Mock Get-GeneratedRemediationFileSnapshot { throw 'Unmanifested Plan must not acquire file streams.' }
     $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName 'Repo'
 
     $r.Mode | Should -Be 'Plan'
@@ -455,6 +587,7 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
     $r.History[0].Action | Should -Be 'Planned'
     Test-Path (Join-Path $script:stable '_generated/AIAdapterBackups/backup.json') | Should -BeTrue
     Test-Path (Join-Path $script:sprint '_generated/sprint-end-0007/stale.log') | Should -BeTrue
+    Should -Invoke Get-GeneratedRemediationFileSnapshot -Times 0
   }
 
   It 'refuses all worktree execution preserving default and named data directories index and HEAD' {

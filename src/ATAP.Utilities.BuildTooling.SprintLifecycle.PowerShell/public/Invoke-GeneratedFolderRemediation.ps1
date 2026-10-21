@@ -204,6 +204,9 @@ function Invoke-GeneratedFolderRemediation {
     if ($useSelectionManifest -and -not (Get-Command Get-GeneratedRemediationManifestSelection -ErrorAction SilentlyContinue)) {
       . (Join-Path $PSScriptRoot '../private/Get-GeneratedRemediationManifestSelection.ps1')
     }
+    if ($useSelectionManifest -and -not (Get-Command Get-GeneratedRemediationFileSnapshot -ErrorAction SilentlyContinue)) {
+      . (Join-Path $PSScriptRoot '../private/Get-GeneratedRemediationFileSnapshot.ps1')
+    }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
     if ($Scope -contains 'SprintCarryover' -and -not (Get-Command Get-GeneratedRemediationByteComparison -ErrorAction SilentlyContinue)) {
       . (Join-Path $PSScriptRoot '../private/Get-GeneratedRemediationByteComparison.ps1')
@@ -520,9 +523,9 @@ function Invoke-GeneratedFolderRemediation {
           if ($useSelectionManifest) {
             $manifestBinding = [ordered]@{
               Status = 'Held'; Path = $SelectionManifestPath; ExpectedSHA256 = $ExpectedSelectionManifestSHA256; ActualSHA256 = $null
-              SchemaValid = $false; RepositoryRootsAndHeadsBound = $false; SelectedDefaultBytesBound = $false
+              SchemaValid = $false; RepositoryRootsAndHeadsBound = $false; SelectedDefaultBytesBound = $false; SelectedFileStreamsBound = $false
               Rows = @(); Errors = @(); Approved = $false; CustodyVerified = $false; NamedStreamsVerified = $false; ReadyForRemoval = $false
-              Verification = 'Partial snapshot Plan binding only. Supplied ADS, custody, baseline/baselineRow and snapshot index/staged/unstaged/untracked digests are not independently verified; current live WIP protection still applies. Non-atomic; quiet producers required.'
+              Verification = 'Partial snapshot Plan binding: selected file default/named streams are observed against each corresponding record. Supplied archiveMember/restoreVerified, root/directory streams, custody, baseline/baselineRow and snapshot index/staged/unstaged/untracked digests are not independently verified; current live WIP protection still applies. Non-atomic; quiet producers required; no durable identity or ABA proof.'
             }
             $entry.SelectionManifestBinding = $manifestBinding
             try {
@@ -606,17 +609,71 @@ function Invoke-GeneratedFolderRemediation {
               $defaultBytesMatch = $selectedRow.Action -ceq 'EligibleCandidate' -and $null -ne $witness -and $witness.Binding.RelativePath -ceq $selectedRow.RelativePath -and
                 $rawRow.source.bytes -eq $witness.BytesCompared -and $rawRow.candidate.bytes -eq $witness.BytesCompared -and
                 $rawRow.source.sha256 -ieq $witness.StableSHA256 -and $rawRow.candidate.sha256 -ieq $witness.SprintSHA256
-              if ($defaultBytesMatch) { $null = $selectedPaths.Add($selectedRow.RelativePath) }
+              $fileStreamEvidence = @()
+              $fileStreamsMatch = $false
+              $bindingReason = 'Snapshot eligibility, live candidate/protection/WIP or default-byte witness did not match.'
+              if ($defaultBytesMatch) {
+                try {
+                  foreach ($side in @('source', 'candidate')) {
+                    $expectedRoot = if ($side -ceq 'source') { $stablePath } else { $wtPath }
+                    $expectedHash = if ($side -ceq 'source') { $witness.StableSHA256 } else { $witness.SprintSHA256 }
+                    $snapshot = Get-GeneratedRemediationFileSnapshot -RootPath $expectedRoot -RelativePath $selectedRow.RelativePath
+                    $sideEvidence = [pscustomobject]@{
+                      Side = $side; Bound = $false; Binding = $snapshot.Binding
+                      Success = $snapshot.Success; Consistent = $snapshot.Consistent
+                      ObservedStreams = @(); ObservationsVerified = 0; Errors = @($snapshot.Errors)
+                    }
+                    $fileStreamEvidence += $sideEvidence
+                    if ($snapshot.Success -isnot [bool] -or -not $snapshot.Success -or
+                      $snapshot.Consistent -isnot [bool] -or -not $snapshot.Consistent -or @($snapshot.Observations).Count -ne 2) {
+                      throw "$side file snapshot unavailable or inconsistent: $($snapshot.Errors -join '; ')"
+                    }
+                    if ($null -eq $snapshot.Binding -or
+                      $snapshot.Binding.Root -ine [IO.Path]::GetFullPath($expectedRoot).TrimEnd([char[]]'\/') -or
+                      $snapshot.Binding.RelativePath -cne $selectedRow.RelativePath -or
+                      $snapshot.Binding.Path -ine (Join-Path $expectedRoot $selectedRow.RelativePath)) {
+                      throw "$side file snapshot root/path binding differs."
+                    }
+                    foreach ($observation in $snapshot.Observations) {
+                      $defaultStream = @($observation.Streams | Where-Object Name -CEQ ':$DATA')
+                      $namedStreams = @($observation.Streams | Where-Object Name -CNE ':$DATA')
+                      if ($defaultStream.Count -ne 1 -or $defaultStream[0].Bytes -ne $witness.BytesCompared -or
+                        $defaultStream[0].SHA256 -ine $expectedHash) {
+                        throw "$side observed default stream differs from byte witness."
+                      }
+                      if ($namedStreams.Count -ne @($rawRow[$side].streams).Count) {
+                        throw "$side named-stream set differs from manifest."
+                      }
+                      foreach ($expectedStream in $rawRow[$side].streams) {
+                        $observed = @($namedStreams | Where-Object Name -CEQ $expectedStream.name)
+                        if ($observed.Count -ne 1 -or $observed[0].Bytes -ne $expectedStream.bytes -or
+                          $observed[0].SHA256 -ine $expectedStream.sha256) {
+                          throw "$side named stream '$($expectedStream.name)' name/length/hash differs from manifest."
+                        }
+                      }
+                      $sideEvidence.ObservationsVerified++
+                    }
+                    $sideEvidence.ObservedStreams = @($snapshot.Observations[0].Streams)
+                    $sideEvidence.Bound = $true
+                  }
+                  $fileStreamsMatch = $true
+                  $bindingReason = 'Live candidate, default-byte witness and each side file-stream record match.'
+                } catch {
+                  $bindingReason = $_.Exception.Message
+                }
+              }
+              if ($fileStreamsMatch) { $null = $selectedPaths.Add($selectedRow.RelativePath) }
               $manifestBinding.Rows += [pscustomobject]@{
                 Id = $selectedRow.Id; RelativePath = $selectedRow.RelativePath; DefaultBytesBound = [bool]$defaultBytesMatch
-                Action = if ($defaultBytesMatch) { 'EligibleCandidate' } else { 'Preserve' }
-                Reason = if ($defaultBytesMatch) { 'Existing live candidate and manifest default-byte witness match.' } else { 'Snapshot eligibility, live candidate/protection/WIP or default-byte witness did not match.' }
+                FileStreamsBound = $fileStreamsMatch; FileStreamEvidence = $fileStreamEvidence
+                Action = if ($fileStreamsMatch) { 'EligibleCandidate' } else { 'Preserve' }
+                Reason = $bindingReason
                 Approved = $false
               }
             }
             foreach ($relative in @($gitTargets) + $untrackedTargets) {
               if (-not $selectedPaths.Contains($relative)) {
-                $entry.PreservedFiles += [pscustomobject]@{ Path = $relative; Status = 'Preserve'; Reason = 'Not selected by bound manifest default-byte intersection.'; Errors = @() }
+                $entry.PreservedFiles += [pscustomobject]@{ Path = $relative; Status = 'Preserve'; Reason = 'Not selected by bound manifest default-byte/file-stream intersection.'; Errors = @() }
               }
             }
             $entry.InheritedTracked = @($entry.InheritedTracked | Where-Object { $selectedPaths.Contains($_) })
@@ -626,6 +683,7 @@ function Invoke-GeneratedFolderRemediation {
             $untrackedTargets = @($untrackedTargets | Where-Object { $selectedPaths.Contains($_) })
             $manifestBinding.Status = 'BoundPlan'
             $manifestBinding.SelectedDefaultBytesBound = ($selectedPaths.Count -gt 0)
+            $manifestBinding.SelectedFileStreamsBound = ($selectedPaths.Count -gt 0)
             $manifestBinding.SelectedCandidateCount = $selectedPaths.Count
           }
           $entry.DefaultDataWitnesses = @($witnesses.Values | Where-Object { -not $useSelectionManifest -or $selectedPaths.Contains($_.Binding.RelativePath) })
@@ -794,7 +852,7 @@ function Invoke-GeneratedFolderRemediation {
     if (-not [string]::IsNullOrWhiteSpace($EvidencePath)) {
       $dir = Split-Path -Parent $EvidencePath
       if ($dir -and -not (Test-Path -LiteralPath $dir)) { [void](New-Item -ItemType Directory -Path $dir -Force) }
-      $reportDepth = if ($CreateBackup) { 40 } else { 8 }
+      $reportDepth = if ($CreateBackup -or $useSelectionManifest) { 40 } else { 8 }
       $report | ConvertTo-Json -Depth $reportDepth | Set-Content -LiteralPath $EvidencePath -Encoding utf8
     }
     foreach ($e in $errors) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $e }

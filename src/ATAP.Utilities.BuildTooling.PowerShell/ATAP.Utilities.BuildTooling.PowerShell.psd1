@@ -33,7 +33,7 @@
     Description          = 'Powershell scripts used for building the ATAPUtilities'
 
     # Minimum version of the PowerShell engine required by this module
-    PowerShellVersion    = '7.0'
+    PowerShellVersion    = '7.4'
 
     # Name of the PowerShell host required by this module
     # PowerShellHostName = ''
@@ -51,7 +51,8 @@
     # ProcessorArchitecture = ''
 
     # Modules that must be imported into the global environment prior to importing this module
-    RequiredModules      = @(@{ModuleName = 'ATAP.Utilities.Powershell'; ModuleVersion = '0.1.23'; MaximumVersion = '0.999.999'; },
+    RequiredModules      = @(@{ModuleName = 'Pester'; RequiredVersion = '6.2.0'; },
+        @{ModuleName = 'ATAP.Utilities.Powershell'; ModuleVersion = '0.1.23'; MaximumVersion = '0.999.999'; },
         @{ModuleName = 'PSFramework'; ModuleVersion = '1.14.457'; MaximumVersion = '1.999.999'; },
         @{ModuleName = 'powershell-yaml'; ModuleVersion = '0.4.12'; MaximumVersion = '0.999.999'; },
         @{ModuleName = 'ATAP.Utilities.BuildTooling.PesterScaffolding.PowerShell'; ModuleVersion = '0.1.1'; },

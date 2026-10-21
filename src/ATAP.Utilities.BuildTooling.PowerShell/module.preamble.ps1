@@ -3,11 +3,11 @@
 # Load Pester before reflecting that child so a fresh consumer shell can construct
 # compatibility proxies without relying on a prior test-session import.
 $pesterConfigurationType = 'PesterConfiguration' -as [type]
-if ($pesterConfigurationType -and $pesterConfigurationType.Assembly.GetName().Version.Major -ne 5) {
-    throw 'BuildTooling requires Pester 5. Start a fresh profiled PowerShell process before importing this module.'
+if ($pesterConfigurationType -and $pesterConfigurationType.Assembly.GetName().Version -ne [version]'6.2.0.0') {
+    throw 'BuildTooling requires Pester 6.2.0. Start a fresh profiled PowerShell process before importing this module.'
 }
 if (-not $pesterConfigurationType) {
-    Import-Module -Name Pester -MinimumVersion 5.0.0 -MaximumVersion 5.999.999 -DisableNameChecking -ErrorAction Stop
+    Import-Module -Name Pester -RequiredVersion 6.2.0 -DisableNameChecking -ErrorAction Stop
 }
 
 $childModuleNames = @(

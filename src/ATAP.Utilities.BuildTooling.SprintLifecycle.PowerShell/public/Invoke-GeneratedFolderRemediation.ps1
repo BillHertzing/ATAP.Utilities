@@ -81,6 +81,14 @@ function Invoke-GeneratedFolderRemediation {
     StableHistory execution is retired.
   .PARAMETER PushRewrittenHistory
     Retired option; rejected with or without -Execute.
+  .PARAMETER SelectionManifestPath
+    Optional SprintDuplicateSelection v1 JSON snapshot. Requires the expected
+    raw-file SHA256, Scope SprintCarryover only, one RepositoryName and exactly
+    one current sprint worktree. Narrows Plan only; never authorizes execution.
+  .PARAMETER ExpectedSelectionManifestSHA256
+    Expected exact raw-file SHA256. Repository identity, roots, common Git
+    directory, HEADs and selected default bytes are checked against this Plan.
+    Supplied ADS, custody, baseline and snapshot index/WIP digests remain unverified.
   .PARAMETER EvidencePath
     Optional JSON file path for the full report (SC-0033: place it under a
     `_generated/` folder of the current sprint).
@@ -140,7 +148,13 @@ function Invoke-GeneratedFolderRemediation {
     [switch]$PushRewrittenHistory,
 
     [Parameter()]
-    [string]$EvidencePath
+    [string]$EvidencePath,
+
+    [Parameter()]
+    [string]$SelectionManifestPath,
+
+    [Parameter()]
+    [string]$ExpectedSelectionManifestSHA256
   )
 
   begin {
@@ -151,6 +165,15 @@ function Invoke-GeneratedFolderRemediation {
     if ($Execute -and $NoArchive) { throw '-Execute with -NoArchive is unsupported. Use planning and the reviewed archive workflow.' }
     if ($Execute -and $Scope -contains 'StableHistory') { throw 'StableHistory execution is retired, including default or combined scopes. Use read-only history planning and the coordinated operator workflow.' }
     if ($Execute) { throw 'Execution held: complete approved bound file/default-data, named-stream and root/directory custody is not integrated. Use read-only planning.' }
+    $useSelectionManifest = $PSBoundParameters.ContainsKey('SelectionManifestPath') -or $PSBoundParameters.ContainsKey('ExpectedSelectionManifestSHA256')
+    if ($useSelectionManifest -and (
+        [string]::IsNullOrWhiteSpace($SelectionManifestPath) -or $ExpectedSelectionManifestSHA256 -notmatch '^[A-Fa-f0-9]{64}$' -or
+        $Scope.Count -ne 1 -or $Scope[0] -cne 'SprintCarryover' -or $RepositoryName.Count -ne 1)) {
+      throw 'SelectionManifestPath and ExpectedSelectionManifestSHA256 must be paired for one explicit SprintCarryover Plan repository.'
+    }
+    if ($useSelectionManifest -and -not (Get-Command Get-GeneratedRemediationManifestSelection -ErrorAction SilentlyContinue)) {
+      . (Join-Path $PSScriptRoot '../private/Get-GeneratedRemediationManifestSelection.ps1')
+    }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
     if ($Scope -contains 'SprintCarryover' -and -not (Get-Command Get-GeneratedRemediationByteComparison -ErrorAction SilentlyContinue)) {
       . (Join-Path $PSScriptRoot '../private/Get-GeneratedRemediationByteComparison.ps1')
@@ -408,6 +431,14 @@ function Invoke-GeneratedFolderRemediation {
 
       # ---------------- SprintCarryover ----------------
       if ($Scope -contains 'SprintCarryover') {
+        if ($useSelectionManifest -and $currentSprintWorktrees.Count -ne 1) {
+          $errors.Add("[$repo] manifest Plan requires exactly one current sprint worktree.")
+          $sprintResults.Add([pscustomobject]@{
+            Repository = $repo; Path = $null; Action = 'Held'
+            SelectionManifestBinding = [pscustomobject]@{ Status = 'Held'; Errors = @('Exactly one current sprint worktree is required.'); Approved = $false; CustodyVerified = $false; NamedStreamsVerified = $false; ReadyForRemoval = $false }
+          })
+          continue
+        }
         if ($currentSprintWorktrees.Count -eq 0) {
           $sprintResults.Add([PSCustomObject]@{ Repository = $repo; Path = $null; Action = "NoSprint$SprintNumber`Worktree" })
         }
@@ -448,6 +479,48 @@ function Invoke-GeneratedFolderRemediation {
             $sprintResults.Add([PSCustomObject]$entry)
             continue
           }
+          $manifestBinding = $null
+          if ($useSelectionManifest) {
+            $manifestBinding = [ordered]@{
+              Status = 'Held'; Path = $SelectionManifestPath; ExpectedSHA256 = $ExpectedSelectionManifestSHA256; ActualSHA256 = $null
+              SchemaValid = $false; RepositoryRootsAndHeadsBound = $false; SelectedDefaultBytesBound = $false
+              Rows = @(); Errors = @(); Approved = $false; CustodyVerified = $false; NamedStreamsVerified = $false; ReadyForRemoval = $false
+              Verification = 'Partial snapshot Plan binding only. Supplied ADS, custody, baseline/baselineRow and snapshot index/staged/unstaged/untracked digests are not independently verified; current live WIP protection still applies. Non-atomic; quiet producers required.'
+            }
+            $entry.SelectionManifestBinding = $manifestBinding
+            try {
+              $manifestBinding.Path = [IO.Path]::GetFullPath($SelectionManifestPath)
+              $manifestBytes = [IO.File]::ReadAllBytes($manifestBinding.Path)
+              $manifestBinding.ActualSHA256 = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($manifestBytes))
+              if ($manifestBinding.ActualSHA256 -ine $ExpectedSelectionManifestSHA256) { throw 'Raw manifest SHA256 differs.' }
+              $manifestText = [Text.UTF8Encoding]::new($false, $true).GetString($manifestBytes)
+              if ($manifestText.StartsWith([string][char]0xFEFF, [StringComparison]::Ordinal)) { $manifestText = $manifestText.Substring(1) }
+              $manifestSelection = Get-GeneratedRemediationManifestSelection -ManifestJson $manifestText -CurrentSprintNumber $currentSprint
+              if (-not $manifestSelection.Valid) { throw ('Invalid selection manifest: ' + ($manifestSelection.Errors -join '; ')) }
+              $manifestBinding.SchemaValid = $true
+              $manifest = ConvertFrom-Json -InputObject $manifestText -AsHashtable -Depth 64 -ErrorAction Stop
+              $repository = $manifest.repository
+              if ($repository.identity -cne $repo -or
+                [IO.Path]::GetFullPath($repository.commonGitDir).TrimEnd('\', '/') -ine $selectionState.Common.TrimEnd('\', '/') -or
+                [IO.Path]::GetFullPath($repository.stableRoot).TrimEnd('\', '/') -ine [IO.Path]::GetFullPath($stablePath).TrimEnd('\', '/') -or
+                [IO.Path]::GetFullPath($repository.sprintRoot).TrimEnd('\', '/') -ine [IO.Path]::GetFullPath($wtPath).TrimEnd('\', '/')) {
+                throw 'Manifest repository/common Git/root binding differs.'
+              }
+              $stableRecord = @($manifest.worktrees | Where-Object role -CEQ 'Stable')[0]
+              $sprintRecord = @($manifest.worktrees | Where-Object role -CEQ 'Sprint')[0]
+              if (@($selectionState.StableHead).Count -ne 1 -or @($selectionState.SprintHead).Count -ne 1 -or
+                $stableRecord.head -cne $selectionState.StableHead[0] -or $sprintRecord.head -cne $selectionState.SprintHead[0]) {
+                throw 'Manifest Stable/Sprint HEAD binding differs.'
+              }
+              $manifestBinding.RepositoryRootsAndHeadsBound = $true
+            } catch {
+              $manifestBinding.Errors = @($_.Exception.Message)
+              $entry.Action = 'Held'
+              $errors.Add("[$($wt.Name)] manifest Plan held: $($_.Exception.Message)")
+              $sprintResults.Add([pscustomobject]$entry)
+              continue
+            }
+          }
           $mainPaths = & $splitNul $selectionState.MainPaths
           $mainSet = (& $newSet $mainPaths)
           $tracked = & $splitNul $selectionState.Tracked
@@ -486,7 +559,39 @@ function Invoke-GeneratedFolderRemediation {
               & $qualifyCarryoverPath $_
             })
           $entry.PriorSprintNamedUntracked = $untrackedTargets
-          $entry.DefaultDataWitnesses = @($witnesses.Values)
+          if ($useSelectionManifest) {
+            $selectedPaths = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+            $rawRows = @{}
+            foreach ($row in $manifest.rows) { $rawRows[$row.id] = $row }
+            foreach ($selectedRow in $manifestSelection.Rows) {
+              $rawRow = $rawRows[$selectedRow.Id]
+              $witness = $witnesses[$selectedRow.RelativePath]
+              $defaultBytesMatch = $selectedRow.Action -ceq 'EligibleCandidate' -and $null -ne $witness -and $witness.Binding.RelativePath -ceq $selectedRow.RelativePath -and
+                $rawRow.source.bytes -eq $witness.BytesCompared -and $rawRow.candidate.bytes -eq $witness.BytesCompared -and
+                $rawRow.source.sha256 -ieq $witness.StableSHA256 -and $rawRow.candidate.sha256 -ieq $witness.SprintSHA256
+              if ($defaultBytesMatch) { $null = $selectedPaths.Add($selectedRow.RelativePath) }
+              $manifestBinding.Rows += [pscustomobject]@{
+                Id = $selectedRow.Id; RelativePath = $selectedRow.RelativePath; DefaultBytesBound = [bool]$defaultBytesMatch
+                Action = if ($defaultBytesMatch) { 'EligibleCandidate' } else { 'Preserve' }
+                Reason = if ($defaultBytesMatch) { 'Existing live candidate and manifest default-byte witness match.' } else { 'Snapshot eligibility, live candidate/protection/WIP or default-byte witness did not match.' }
+                Approved = $false
+              }
+            }
+            foreach ($relative in @($gitTargets) + $untrackedTargets) {
+              if (-not $selectedPaths.Contains($relative)) {
+                $entry.PreservedFiles += [pscustomobject]@{ Path = $relative; Status = 'Preserve'; Reason = 'Not selected by bound manifest default-byte intersection.'; Errors = @() }
+              }
+            }
+            $entry.InheritedTracked = @($entry.InheritedTracked | Where-Object { $selectedPaths.Contains($_) })
+            $entry.PriorSprintNamedTracked = @($entry.PriorSprintNamedTracked | Where-Object { $selectedPaths.Contains($_) })
+            $entry.PriorSprintNamedUntracked = @($entry.PriorSprintNamedUntracked | Where-Object { $selectedPaths.Contains($_) })
+            $gitTargets = @($gitTargets | Where-Object { $selectedPaths.Contains($_) })
+            $untrackedTargets = @($untrackedTargets | Where-Object { $selectedPaths.Contains($_) })
+            $manifestBinding.Status = 'BoundPlan'
+            $manifestBinding.SelectedDefaultBytesBound = ($selectedPaths.Count -gt 0)
+            $manifestBinding.SelectedCandidateCount = $selectedPaths.Count
+          }
+          $entry.DefaultDataWitnesses = @($witnesses.Values | Where-Object { -not $useSelectionManifest -or $selectedPaths.Contains($_.Binding.RelativePath) })
 
           $total = $gitTargets.Count + $untrackedTargets.Count
           if ($total -eq 0) {

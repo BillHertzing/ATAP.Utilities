@@ -50,6 +50,41 @@ BeforeAll {
     if ($LASTEXITCODE -ne 0) { throw "git $($GitArgs -join ' ') failed: $out" }
     $out
   }
+  function Get-TestSelectionManifest {
+    param([string[]]$RelativePaths = @('_generated/Sprint0015/old-evidence.md'))
+    $hash = 'A' * 64
+    $rows = @(for ($i = 0; $i -lt $RelativePaths.Count; $i++) {
+      $relative = $RelativePaths[$i]
+      $files = @(foreach ($root in @($script:stable, $script:sprint)) {
+        $path = Join-Path $root $relative
+        [ordered]@{
+          repositoryIdentity = 'Repo'; root = $root; relativePath = $relative
+          bytes = (Get-Item -LiteralPath $path -Force).Length; sha256 = (Get-FileHash -LiteralPath $path).Hash
+          tracked = $true; streams = @(); streamInventoryComplete = $true
+        }
+      })
+      [ordered]@{ id = "row$i"; kind = 'File'; baselineRowSHA256 = $hash; source = $files[0]; candidate = $files[1]; pathClassification = 'Regular'; protectionReasons = @(); proposedAction = 'Preserve'; approved = $false }
+    })
+    [ordered]@{
+      schemaVersion = 1; runId = 'public-plan-fixture'; capturedUtc = '2026-10-21T12:00:00Z'; host = 'fixture'
+      operation = 'SprintDuplicateSelection'; approved = $false
+      repository = [ordered]@{ identity = 'Repo'; commonGitDir = (Invoke-TestGit $script:stable rev-parse --path-format=absolute --git-common-dir); stableRoot = $script:stable; sprintRoot = $script:sprint }
+      worktrees = @(foreach ($role in @('Stable', 'Sprint')) {
+        $root = if ($role -eq 'Stable') { $script:stable } else { $script:sprint }
+        [ordered]@{ role = $role; root = $root; head = (Invoke-TestGit $root rev-parse HEAD); indexSHA256 = $hash; stagedSHA256 = $hash; unstagedSHA256 = $hash; untrackedSHA256 = $hash; inventoryComplete = $true }
+      })
+      baseline = [ordered]@{ origin = 'LiveStable'; manifestSHA256 = $hash; custodyReceiptSHA256 = $hash }
+      rows = $rows
+    }
+  }
+
+  function Save-TestSelectionManifest {
+    param($Manifest)
+    $path = Join-Path $script:gitRoot 'selection.json'
+    [IO.File]::WriteAllText($path, ($Manifest | ConvertTo-Json -Depth 20), [Text.UTF8Encoding]::new($false))
+    @{ SelectionManifestPath = $path; ExpectedSelectionManifestSHA256 = (Get-FileHash -LiteralPath $path).Hash }
+  }
+
 }
 
 Describe 'Invoke-GeneratedFolderRemediation [public]' {
@@ -92,6 +127,124 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
       $cleanup = script:Get-TestCleanupPaths -Root $script:gitRoot -Stable $script:stable -Sprint $script:sprint
       Remove-Item -LiteralPath $cleanup.Root -Recurse -Force -ErrorAction SilentlyContinue
     }
+  }
+
+  It 'narrows Plan to the bound manifest intersection without trusting supplied custody or snapshot digests' {
+    $options = Save-TestSelectionManifest (Get-TestSelectionManifest)
+    $raw = [IO.File]::ReadAllText($options.SelectionManifestPath)
+    [IO.File]::WriteAllText($options.SelectionManifestPath, $raw, [Text.UTF8Encoding]::new($true))
+    $options.ExpectedSelectionManifestSHA256 = (Get-FileHash -LiteralPath $options.SelectionManifestPath).Hash
+    $manifestBefore = (Get-FileHash -LiteralPath $options.SelectionManifestPath).Hash
+    Mock Compress-Archive { throw 'No archive permitted in Plan.' }
+    $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -Scope SprintCarryover -GitRoot $script:gitRoot -RepositoryName Repo @options
+    $r.Errors.Count | Should -Be 0
+    $entry = $r.Sprint[0]
+    @($entry.InheritedTracked).Count | Should -Be 1
+    $entry.InheritedTracked[0] | Should -BeExactly '_generated/Sprint0015/old-evidence.md'
+    @($entry.DefaultDataWitnesses).Count | Should -Be 1
+    $entry.SelectionManifestBinding.Status | Should -Be 'BoundPlan'
+    $entry.SelectionManifestBinding.ActualSHA256 | Should -Be $manifestBefore
+    $entry.SelectionManifestBinding.SchemaValid | Should -BeTrue
+    $entry.SelectionManifestBinding.RepositoryRootsAndHeadsBound | Should -BeTrue
+    $entry.SelectionManifestBinding.SelectedDefaultBytesBound | Should -BeTrue
+    $entry.SelectionManifestBinding.SelectedCandidateCount | Should -Be 1
+    foreach ($flag in @('Approved','CustodyVerified','NamedStreamsVerified','ReadyForRemoval')) { $entry.SelectionManifestBinding.$flag | Should -BeFalse }
+    $entry.CustodyVerified | Should -BeFalse
+    $entry.ReadyForRemoval | Should -BeFalse
+    $entry.NamedStreamsVerified | Should -BeFalse
+    $entry.SelectionManifestBinding.Verification | Should -Match 'not independently verified'
+    @($entry.PreservedFiles.Path) | Should -Contain '_generated/legacy-tracked.txt'
+    (Get-FileHash -LiteralPath $options.SelectionManifestPath).Hash | Should -Be $manifestBefore
+    Should -Invoke Compress-Archive -Times 0
+  }
+
+  It 'requires paired manifest inputs and one explicit SprintCarryover repository scope' {
+    $options = Save-TestSelectionManifest (Get-TestSelectionManifest)
+    { Invoke-GeneratedFolderRemediation -SprintNumber 0016 -Scope SprintCarryover -GitRoot $script:gitRoot -RepositoryName Repo -SelectionManifestPath $options.SelectionManifestPath } | Should -Throw '*must be paired*'
+    { Invoke-GeneratedFolderRemediation -SprintNumber 0016 -Scope SprintCarryover -GitRoot $script:gitRoot -RepositoryName Repo -ExpectedSelectionManifestSHA256 $options.ExpectedSelectionManifestSHA256 } | Should -Throw '*must be paired*'
+    { Invoke-GeneratedFolderRemediation -SprintNumber 0016 -GitRoot $script:gitRoot -RepositoryName Repo @options } | Should -Throw '*must be paired*'
+    { Invoke-GeneratedFolderRemediation -SprintNumber 0016 -Scope SprintCarryover -GitRoot $script:gitRoot -RepositoryName Repo,Other @options } | Should -Throw '*must be paired*'
+  }
+
+  It 'keeps execution refusal ahead of manifest option validation and IO' {
+    { Invoke-GeneratedFolderRemediation -SprintNumber 0016 -Scope SprintCarryover -GitRoot $script:gitRoot -RepositoryName Repo -Execute -SelectionManifestPath 'missing.json' } | Should -Throw '*Execution held*'
+    { Invoke-GeneratedFolderRemediation -SprintNumber 0016 -GitRoot $script:gitRoot -RepositoryName Repo -PushRewrittenHistory -SelectionManifestPath 'missing.json' } | Should -Throw '*retired*'
+  }
+
+  It 'holds wrong raw hash or invalid snapshot with no fallback candidates' {
+    $options = Save-TestSelectionManifest (Get-TestSelectionManifest)
+    $options.ExpectedSelectionManifestSHA256 = '0' * 64
+    $r = Invoke-GeneratedFolderRemediation -SprintNumber 0016 -Scope SprintCarryover -GitRoot $script:gitRoot -RepositoryName Repo @options
+    $r.Sprint[0].Action | Should -Be 'Held'
+    $r.Errors -join ';' | Should -Match 'Raw manifest SHA256 differs'
+    @($r.Sprint[0].InheritedTracked).Count | Should -Be 0
+    [IO.File]::WriteAllText($options.SelectionManifestPath, '{}')
+    $options.ExpectedSelectionManifestSHA256 = (Get-FileHash -LiteralPath $options.SelectionManifestPath).Hash
+    $r = Invoke-GeneratedFolderRemediation -SprintNumber 0016 -Scope SprintCarryover -GitRoot $script:gitRoot -RepositoryName Repo @options
+    $r.Sprint[0].Action | Should -Be 'Held'
+    $r.Errors -join ';' | Should -Match 'Invalid selection manifest'
+    @($r.Sprint[0].DefaultDataWitnesses).Count | Should -Be 0
+  }
+
+  It 'holds mismatched repository common Git roots and stale Stable or Sprint HEADs' {
+    foreach ($variant in @('identity','commonGitDir','stableRoot','sprintRoot','StableHead','SprintHead')) {
+      $manifest = Get-TestSelectionManifest
+      switch ($variant) {
+        identity { $manifest.repository.identity = 'Other' }
+        commonGitDir { $manifest.repository.commonGitDir = Join-Path $script:gitRoot 'other.git' }
+        stableRoot { $manifest.repository.stableRoot = Join-Path $script:gitRoot 'Other'; $manifest.worktrees[0].root = $manifest.repository.stableRoot; $manifest.rows[0].source.root = $manifest.repository.stableRoot }
+        sprintRoot { $manifest.repository.sprintRoot = Join-Path $script:gitRoot 'OtherSprint'; $manifest.worktrees[1].root = $manifest.repository.sprintRoot; $manifest.rows[0].candidate.root = $manifest.repository.sprintRoot }
+        StableHead { $manifest.worktrees[0].head = '0' * 40 }
+        SprintHead { $manifest.worktrees[1].head = '0' * 40 }
+      }
+      $options = Save-TestSelectionManifest $manifest
+      $r = Invoke-GeneratedFolderRemediation -SprintNumber 0016 -Scope SprintCarryover -GitRoot $script:gitRoot -RepositoryName Repo @options
+      $r.Sprint[0].Action | Should -Be 'Held' -Because $variant
+      $r.Errors -join ';' | Should -Match 'binding differs'
+      $r.Sprint[0].SelectionManifestBinding.SchemaValid | Should -BeTrue
+      $r.Sprint[0].SelectionManifestBinding.RepositoryRootsAndHeadsBound | Should -BeFalse
+      @($r.Sprint[0].InheritedTracked).Count | Should -Be 0
+    }
+  }
+
+  It 'preserves schema-eligible rows whose supplied default bytes differ from the actual witness' {
+    foreach ($field in @('sha256','bytes')) {
+      $manifest = Get-TestSelectionManifest
+      if ($field -eq 'sha256') { $manifest.rows[0].source.sha256 = 'B' * 64; $manifest.rows[0].candidate.sha256 = 'B' * 64 }
+      else { $manifest.rows[0].source.bytes++; $manifest.rows[0].candidate.bytes++ }
+      $options = Save-TestSelectionManifest $manifest
+      $r = Invoke-GeneratedFolderRemediation -SprintNumber 0016 -Scope SprintCarryover -GitRoot $script:gitRoot -RepositoryName Repo @options
+      $r.Sprint[0].SelectionManifestBinding.Status | Should -Be 'BoundPlan'
+      $r.Sprint[0].SelectionManifestBinding.Rows[0].Action | Should -Be 'Preserve'
+      $r.Sprint[0].SelectionManifestBinding.SelectedDefaultBytesBound | Should -BeFalse
+      @($r.Sprint[0].InheritedTracked).Count | Should -Be 0
+      @($r.Sprint[0].DefaultDataWitnesses).Count | Should -Be 0
+    }
+  }
+
+  It 'keeps current future staged and unstaged paths protected despite matching supplied default records' {
+    foreach ($root in @($script:stable,$script:sprint)) {
+      New-TestFile $root '_generated/legacy-tracked.txt' 'modified default'
+      New-TestFile $root '_generated/Sprint0016/current.md' 'current'
+      New-TestFile $root '_generated/Sprint0017/future.md' 'future'
+      New-TestFile $root '_generated/Sprint0015/staged.txt' 'staged'
+    }
+    Invoke-TestGit $script:sprint add -f _generated/Sprint0015/staged.txt | Out-Null
+    $manifest = Get-TestSelectionManifest @('_generated/Sprint0015/old-evidence.md','_generated/legacy-tracked.txt','_generated/Sprint0016/current.md','_generated/Sprint0017/future.md','_generated/Sprint0015/staged.txt')
+    $options = Save-TestSelectionManifest $manifest
+    $r = Invoke-GeneratedFolderRemediation -SprintNumber 0016 -Scope SprintCarryover -GitRoot $script:gitRoot -RepositoryName Repo @options
+    @($r.Sprint[0].InheritedTracked).Count | Should -Be 1
+    $r.Sprint[0].InheritedTracked[0] | Should -Be '_generated/Sprint0015/old-evidence.md'
+    @($r.Sprint[0].SelectionManifestBinding.Rows | Where-Object Action -EQ Preserve).Count | Should -Be 4
+    @($r.Sprint[0].SkippedModified) | Should -Contain '_generated/legacy-tracked.txt'
+    @($r.Sprint[0].SkippedModified) | Should -Contain '_generated/Sprint0015/staged.txt'
+  }
+
+  It 'holds manifest Plan when the explicit current sprint worktree is absent' {
+    $options = Save-TestSelectionManifest (Get-TestSelectionManifest)
+    $r = Invoke-GeneratedFolderRemediation -SprintNumber 0017 -Scope SprintCarryover -GitRoot $script:gitRoot -RepositoryName Repo @options
+    $r.Sprint[0].Action | Should -Be 'Held'
+    $r.Sprint[0].SelectionManifestBinding.Status | Should -Be 'Held'
   }
 
   It 'plans without changing anything by default' {

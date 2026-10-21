@@ -2,7 +2,11 @@ BeforeAll {
   . "$PSScriptRoot\..\..\public\Invoke-GeneratedFolderRemediation.ps1"
   . "$PSScriptRoot\..\..\private\Get-GeneratedRemediationByteComparison.ps1"
   $script:fixtureRoot = [IO.Path]::GetFullPath("$PSScriptRoot/../../../../_generated/Sprint0016/Task16.84/CarryoverByteGuardTests-v1/Fixtures")
-  $script:realGitCommand = Get-Command git -CommandType Application | Select-Object -First 1
+  $script:realGitCommand = Get-Command 'C:/Program Files/Git/cmd/git.exe' -CommandType Application -ErrorAction Stop
+  $ordinaryGit = Get-Command git -ErrorAction Stop
+  if ($ordinaryGit.CommandType -ne 'Application' -or $ordinaryGit.Path -ine $script:realGitCommand.Path) {
+    throw 'Unmocked public git resolution differs from the preferred Git executable.'
+  }
   $script:realCompressArchive = Get-Command Compress-Archive -CommandType Function, Cmdlet
   $null = New-Item -ItemType Directory -Path $script:fixtureRoot -Force
   $cursor = $script:fixtureRoot
@@ -42,7 +46,7 @@ BeforeAll {
 
   function script:Invoke-TestGit {
     param([string]$Repo, [Parameter(ValueFromRemainingArguments)][string[]]$GitArgs)
-    $out = & git -C $Repo -c user.name=Test -c user.email=test@example.invalid -c core.autocrlf=false @GitArgs 2>&1
+    $out = & $script:realGitCommand -C $Repo -c user.name=Test -c user.email=test@example.invalid -c core.autocrlf=false @GitArgs 2>&1
     if ($LASTEXITCODE -ne 0) { throw "git $($GitArgs -join ' ') failed: $out" }
     $out
   }
@@ -84,7 +88,7 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
   AfterEach {
     if ($script:gitRoot -and (Test-Path -LiteralPath $script:gitRoot)) {
       $cleanup = script:Get-TestCleanupPaths -Root $script:gitRoot -Stable $script:stable -Sprint $script:sprint
-      & git -C $cleanup.Stable worktree remove --force $cleanup.Sprint 2>$null | Out-Null
+      & $script:realGitCommand -C $cleanup.Stable worktree remove --force $cleanup.Sprint 2>$null | Out-Null
       $cleanup = script:Get-TestCleanupPaths -Root $script:gitRoot -Stable $script:stable -Sprint $script:sprint
       Remove-Item -LiteralPath $cleanup.Root -Recurse -Force -ErrorAction SilentlyContinue
     }
@@ -124,10 +128,10 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
     Test-Path (Join-Path $script:sprint '_generated/scratch/no-sprint-name.txt') | Should -BeTrue
     Test-Path (Join-Path $script:sprint '_generated/sprint-end-0007') | Should -BeTrue
 
-    $staged = & git -C $script:sprint diff --cached --name-only
+    $staged = & $script:realGitCommand -C $script:sprint diff --cached --name-only
     $staged | Should -Contain '_generated/legacy-tracked.txt'
     $staged | Should -Contain '_generated/Sprint0015/old-evidence.md'
-    (& git -C $script:sprint log --oneline).Count | Should -Be 2   # nothing committed
+    (& $script:realGitCommand -C $script:sprint log --oneline).Count | Should -Be 2   # nothing committed
 
     @(Get-ChildItem $script:archive -Filter *.zip).Count | Should -Be 2
   }

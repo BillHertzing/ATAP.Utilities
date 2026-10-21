@@ -33,6 +33,8 @@ BeforeAll {
       Observations=@($first,$second)}
   }
   $script:realCensus = (Get-Command Get-GeneratedRemediationTreeCensus).ScriptBlock
+  $script:realFileWriter = (Get-Command New-GeneratedRemediationFileArchive).ScriptBlock
+  $script:realFileRestore = (Get-Command Restore-GeneratedRemediationFileArchive).ScriptBlock
   $script:realDirectoryWriter = (Get-Command New-GeneratedRemediationDirectoryArchive).ScriptBlock
   $script:realDirectoryRestore = (Get-Command Restore-GeneratedRemediationDirectoryArchive).ScriptBlock
   $script:realGetItem = Get-Command Get-Item -CommandType Cmdlet
@@ -72,6 +74,8 @@ Describe 'Finite independent per-entry custody bundle' {
     $r.Status | Should -Be Verified -Because ($r.Errors -join ';')
     $r.EntryProofCoverageComplete | Should -BeTrue
     if($null -ne $script:bundleReceiptSink){$script:bundleReceiptSink.Add($r)}
+    $r.CoverageScope | Should -Be WholeTree
+    @($r.IncludedRelativePaths).Count | Should -Be 5
     $r.ExpectedEntries | Should -Be 5
     $r.VerifiedEntries | Should -Be 5
     $r.PreflightPayloadBytes | Should -Be 15
@@ -98,6 +102,131 @@ Describe 'Finite independent per-entry custody bundle' {
     foreach ($flag in @('Approved','ReadyForRemoval','CustodyVerified','RootStreamsVerified','DirectoryStreamsVerified')) { $r.$flag | Should -BeFalse }
     (Get-FileHash -LiteralPath $file).Hash | Should -Be $before
   }
+  It 'backs up only selected nested files and ancestor streams into the exact recovery tree' {
+    $selectedFile = Join-Path $script:sub 'selected.bin'
+    [IO.File]::WriteAllBytes($selectedFile,[byte[]]@(21,22))
+    [IO.File]::WriteAllBytes($selectedFile+':empty',[byte[]]@())
+    [IO.File]::WriteAllBytes($script:emptyFile+':notes',[byte[]]@(1,2,0,4))
+    [IO.File]::WriteAllBytes($script:emptyFile+':empty',[byte[]]@())
+    foreach ($sprint in @('Sprint0016','Sprint0017')) {
+      $directory = Join-Path $script:generated $sprint
+      $null = New-Item -ItemType Directory -Path $directory
+      [IO.File]::WriteAllBytes((Join-Path $directory 'keep.bin'),[byte[]]::new(100))
+      [IO.File]::WriteAllBytes($directory+':keep',[byte[]]::new(100))
+      $script:fixturePaths += @("_generated/$sprint","_generated/$sprint/keep.bin")
+    }
+    $script:fixturePaths += '_generated/sub/selected.bin'
+    $script:selected = @('_generated/sub/empty.bin','_generated/sub/selected.bin')
+    $script:proofFixturePaths = @('_generated','_generated/sub') + $script:selected
+    $script:streamAcquisitions = [Collections.Generic.List[string]]::new()
+    Mock Get-Item {
+      $path = [IO.Path]::GetFullPath([string]$LiteralPath)
+      if ($path.StartsWith($script:root + '\',[StringComparison]::OrdinalIgnoreCase)) {
+        $script:streamAcquisitions.Add($path)
+        if ($path -cnotin @($script:generated,$script:sub,$script:emptyFile,(Join-Path $script:sub 'selected.bin'))) { throw 'Unselected source stream acquisition.' }
+      }
+      & $script:realGetItem @PesterBoundParameters
+    } -ParameterFilter { $Stream -eq '*' }
+    Mock New-GeneratedRemediationFileArchive {
+      if ($RelativePath -cnotin $script:selected) { throw 'Unselected file writer.' }
+      & $script:realFileWriter @PesterBoundParameters
+    }
+    $arguments.MaxBundlePayloadBytes = 13L
+    $r = New-GeneratedRemediationCustodyBundle @arguments -RelativePaths $script:selected -Confirm:$false
+    $r.Status | Should -Be Verified -Because ($r.Errors -join ';')
+    $r.CoverageScope | Should -Be SelectedFilesAndAncestors
+    ($r.RequestedRelativePaths -join '|') | Should -BeExactly ($script:selected -join '|')
+    @($r.IncludedRelativePaths).Count | Should -Be 4
+    foreach ($relative in $script:proofFixturePaths) { $r.IncludedRelativePaths | Should -Contain $relative }
+    $r.ExpectedEntries | Should -Be 4
+    $r.VerifiedEntries | Should -Be 4
+    $r.PreflightPayloadBytes | Should -Be 13
+    $r.VerifiedPayloadBytes | Should -Be 13
+    $r.SourceStreamVerification.Bytes | Should -Be 13
+    $r.ProofStreamVerification.Bytes | Should -Be 13
+    $r.EntryProofCoverageComplete | Should -BeTrue
+    $r.CoherentTreeRestoreVerified | Should -BeTrue
+    $r.AggregateSourceBytesRechecked | Should -BeTrue
+    $proofGenerated = Join-Path $r.ProofRoot '_generated'
+    $actualPaths = @('_generated') + @(Get-ChildItem -LiteralPath $proofGenerated -Recurse -Force | ForEach-Object {
+      '_generated/' + [IO.Path]::GetRelativePath($proofGenerated,$_.FullName).Replace('\','/')
+    })
+    @($actualPaths).Count | Should -Be 4
+    foreach ($relative in $script:proofFixturePaths) { $actualPaths | Should -Contain $relative }
+    $digests = @(foreach ($entry in $r.Entries) {
+      foreach ($descriptor in $entry.Writer.Manifest.Streams) {
+        $sourcePath = Join-Path $script:root $entry.RelativePath
+        $proofPath = $entry.Restore.ProofPath
+        if ($descriptor.Name -cne ':$DATA') { $sourcePath += ':'+$descriptor.Name; $proofPath += ':'+$descriptor.Name }
+        $sourceHash = (Get-FileHash -LiteralPath $sourcePath).Hash
+        $proofHash = (Get-FileHash -LiteralPath $proofPath).Hash
+        $sourceHash | Should -Be $descriptor.SHA256
+        $proofHash | Should -Be $descriptor.SHA256
+        [pscustomobject]@{RelativePath=$entry.RelativePath;Name=$descriptor.Name;Bytes=$descriptor.Bytes;ManifestSHA256=$descriptor.SHA256;SourceSHA256=$sourceHash;ProofSHA256=$proofHash}
+      }
+    })
+    $digests.Count | Should -Be 8
+    @($script:streamAcquisitions | Select-Object -Unique).Count | Should -Be 4
+    Should -Invoke New-GeneratedRemediationFileArchive -Times 2 -Exactly
+    foreach ($flag in @('Approved','ReadyForRemoval','CustodyVerified','RootStreamsVerified','DirectoryStreamsVerified')) { $r.$flag | Should -BeFalse }
+    $r | Add-Member -NotePropertyName SyntheticSelectionEvidence -NotePropertyValue ([pscustomobject]@{
+      ActualProofPaths=$actualPaths;ActualStreamDigests=$digests
+      SourceStreamAcquisitionPaths=@($script:streamAcquisitions | Select-Object -Unique)
+      FullSourceCensusRows=@($r.InitialCensus.Observations[0].Rows).Count
+      SelectedClosureOnly=$true;UnselectedSourceStreamInventoryOrWriterInvoked=$false
+    })
+    if ($null -ne $script:bundleReceiptSink) { $script:bundleReceiptSink.Add($r) }
+  }
+
+  It 'holds a small invalid absent directory or duplicate file selection before output' {
+    foreach ($selection in @(
+      @{Paths=@()}, @{Paths=@('_generated/../outside')}, @{Paths=@('_generated/missing.bin')},
+      @{Paths=@('_generated/sub')}, @{Paths=@('_generated/file.bin','_generated/file.bin')},
+      @{Paths=@('_generated/file.bin','_generated/FILE.bin')}
+    )) {
+      $r = New-GeneratedRemediationCustodyBundle @arguments -RelativePaths $selection.Paths -Confirm:$false
+      $r.Status | Should -Be Hold
+      $r.BundleCreated | Should -BeFalse
+      Test-Path -LiteralPath $script:bundle | Should -BeFalse
+    }
+  }
+
+  It 'holds selected source content drift after restore and retains partial backup output' {
+    [IO.File]::WriteAllBytes($script:emptyFile+':notes',[byte[]]@(1,2,3,4))
+    $script:proofFixturePaths = @('_generated','_generated/sub','_generated/sub/empty.bin')
+    Mock Restore-GeneratedRemediationFileArchive {
+      $receipt = & $script:realFileRestore @PesterBoundParameters
+      $written = [IO.File]::GetLastWriteTimeUtc($script:emptyFile)
+      $stream = [IO.File]::Open($script:emptyFile+':notes',[IO.FileMode]::Open,[IO.FileAccess]::Write,[IO.FileShare]::None)
+      try { $stream.Write([byte[]]@(9,8,7,6),0,4) } finally { $stream.Dispose() }
+      [IO.File]::SetLastWriteTimeUtc($script:emptyFile,$written)
+      $receipt
+    }
+    $r = New-GeneratedRemediationCustodyBundle @arguments -RelativePaths '_generated/sub/empty.bin' -Confirm:$false
+    $r.Status | Should -Be Hold
+    $r.Errors -join ';' | Should -Match 'Verification stream content drift'
+    $r.BundleCreated | Should -BeTrue
+    $r.CoherentTreeRestoreVerified | Should -BeFalse
+    $r.AggregateSourceBytesRechecked | Should -BeFalse
+    Test-Path -LiteralPath $r.BundlePath | Should -BeTrue
+    Test-Path -LiteralPath $r.ProofRoot | Should -BeTrue
+  }
+
+  It 'holds extra proof coverage outside the selected closure with outputs retained' {
+    $script:proofFixturePaths = @('_generated','_generated/sub','_generated/sub/empty.bin','_generated/extra.bin')
+    Mock Restore-GeneratedRemediationFileArchive {
+      $receipt = & $script:realFileRestore @PesterBoundParameters
+      [IO.File]::WriteAllBytes((Join-Path $ProofRoot '_generated/extra.bin'),[byte[]]@(5))
+      $receipt
+    }
+    $r = New-GeneratedRemediationCustodyBundle @arguments -RelativePaths '_generated/sub/empty.bin' -Confirm:$false
+    $r.Status | Should -Be Hold
+    $r.Errors -join ';' | Should -Match 'recovery tree inventory mismatch'
+    $r.BundleCreated | Should -BeTrue
+    $r.EntryProofCoverageComplete | Should -BeFalse
+    Test-Path -LiteralPath (Join-Path $r.ProofRoot '_generated/extra.bin') | Should -BeTrue
+  }
+
   It 'plans with WhatIf without any bundle writes' {
     $r = New-GeneratedRemediationCustodyBundle @arguments -WhatIf
     $r.Status | Should -Be Skipped

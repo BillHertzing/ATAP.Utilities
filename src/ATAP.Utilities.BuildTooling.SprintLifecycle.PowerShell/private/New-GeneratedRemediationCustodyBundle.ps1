@@ -13,6 +13,12 @@ function New-GeneratedRemediationCustodyBundle {
     No index is persisted: the returned receipt map is the only bundle index.
   .PARAMETER RootPath
     Explicit fixed-local NTFS source boundary containing _generated.
+  .PARAMETER RelativePaths
+    Optional literal canonical _generated descendant file list. Only selected
+    files and their root/ancestor directory streams enter the recovery tree.
+    An explicit empty or invalid selection holds. Omission retains whole-tree mode.
+    Complete source metadata census and structural-drift checks still apply;
+    unselected files and sibling directories are not stream-inventoried or read.
   .PARAMETER BundleRoot
     NEW external directory, with an existing ordinary parent.
   .PARAMETER MaxEntries
@@ -36,7 +42,8 @@ function New-GeneratedRemediationCustodyBundle {
     [ValidateRange(1, 10000)][int]$MaxEntries = 256,
     [ValidateRange(1, 128)][int]$MaxDepth = 32,
     [ValidateRange(0, 1073741824)][long]$MaxBundlePayloadBytes = 268435456,
-    [switch]$AllowVerifiedCloudDirectoryMetadata
+    [switch]$AllowVerifiedCloudDirectoryMetadata,
+    [AllowNull()][AllowEmptyCollection()][string[]]$RelativePaths
   )
   begin {
     $fn = 'New-GeneratedRemediationCustodyBundle'
@@ -50,6 +57,7 @@ function New-GeneratedRemediationCustodyBundle {
         if (-not (Get-Command $dependency -ErrorAction SilentlyContinue)) { throw "Missing required helper: $dependency" }
       }
     }
+    $selectedOnly = $PSBoundParameters.ContainsKey('RelativePaths')
     $byteLimit = 67108864L
     function assertArchiveSegment([string]$Segment) {
       # Conservative filesystem-device refusal, including spaces before an extension.
@@ -246,6 +254,8 @@ function New-GeneratedRemediationCustodyBundle {
   process {
     $result = [pscustomobject]@{
       Status = 'Hold'; Errors = @(); BundlePath = $null; BundleCreated = $false
+      CoverageScope = if ($selectedOnly) { 'SelectedFilesAndAncestors' } else { 'WholeTree' }
+      RequestedRelativePaths = @($RelativePaths); IncludedRelativePaths = @()
       ExpectedEntries = 0; VerifiedEntries = 0; PreflightPayloadBytes = 0L; VerifiedPayloadBytes = 0L
       Entries = @(); InitialCensus = $null; FinalCensus = $null; EntryProofCoverageComplete = $false
       ProofRoot = $null; ProofCensus = $null; SourceStreamVerification = $null; ProofStreamVerification = $null
@@ -262,9 +272,36 @@ function New-GeneratedRemediationCustodyBundle {
       $root = getArchiveLocalPath $RootPath $false $true
       $bundle = getArchiveLocalPath $BundleRoot $true $true
       if (testArchiveOverlap $root $bundle) { throw 'Bundle overlaps source boundary.' }
+      if ($selectedOnly) {
+        if ($null -eq $RelativePaths -or $RelativePaths.Count -eq 0) { throw 'An explicit file selection cannot be empty.' }
+        $requested = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+        foreach ($relative in $RelativePaths) {
+          assertArchiveRelative $relative
+          if (-not $requested.Add($relative)) { throw 'Duplicate or aliased selected file path.' }
+        }
+      }
       $initial = @(Get-GeneratedRemediationTreeCensus -RootPath $root -MaxEntries $MaxEntries -MaxDepth $MaxDepth -AllowVerifiedCloudDirectoryMetadata:$AllowVerifiedCloudDirectoryMetadata)
       if ($initial.Count -ne 1) { throw 'Expected one census envelope.' }
       $work = getBundleRows $initial[0]
+      $sourceWork = $work
+      if ($selectedOnly) {
+        $sourceRows = [Collections.Generic.Dictionary[string, object]]::new([StringComparer]::Ordinal)
+        foreach ($row in $work.Rows) { $sourceRows.Add($row.RelativePath, $row) }
+        $included = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+        foreach ($relative in $RelativePaths) {
+          if (-not $sourceRows.ContainsKey($relative) -or $sourceRows[$relative].Kind -cne 'File') { throw 'Selected path is absent or is not a census file.' }
+          $cursor = $relative
+          while ($true) {
+            $null = $included.Add($cursor)
+            if ($cursor -ceq '_generated') { break }
+            $cursor = $cursor.Substring(0, $cursor.LastIndexOf('/'))
+          }
+        }
+        $rows = @($work.Rows | Where-Object { $included.Contains($_.RelativePath) })
+        $work = [pscustomobject]@{ Rows = $rows; Serialized = (ConvertTo-Json -InputObject $rows -Depth 8 -Compress) }
+        $result.Limitations += 'Coverage is selected files and required ancestor directory streams only; complete source metadata census and conservative full-source structural checks remain. No unselected stream inventory or payload verification.'
+      }
+      $result.IncludedRelativePaths = @($work.Rows.RelativePath)
       $result.InitialCensus = $initial[0]; $result.ExpectedEntries = $work.Rows.Count
       $states = [Collections.Generic.Dictionary[string, object]]::new([StringComparer]::Ordinal)
       foreach ($row in $work.Rows) {
@@ -319,7 +356,7 @@ function New-GeneratedRemediationCustodyBundle {
       if ($final.Count -ne 1) { throw 'Expected one final census envelope.' }
       $result.FinalCensus = $final[0]
       $last = getBundleRows $final[0]
-      if ($last.Serialized -cne $work.Serialized) { throw 'Post-batch structural drift.' }
+      if ($last.Serialized -cne $sourceWork.Serialized) { throw 'Post-batch structural drift.' }
       if ($result.VerifiedEntries -ne $result.ExpectedEntries -or $result.VerifiedPayloadBytes -ne $result.PreflightPayloadBytes) { throw 'Incomplete per-entry coverage.' }
       $proofObservation = @(Get-GeneratedRemediationTreeCensus -RootPath $proof -MaxEntries $MaxEntries -MaxDepth $MaxDepth -AllowVerifiedCloudDirectoryMetadata:$AllowVerifiedCloudDirectoryMetadata)
       if ($proofObservation.Count -ne 1) { throw 'Expected one proof census envelope.' }
@@ -336,7 +373,7 @@ function New-GeneratedRemediationCustodyBundle {
       $sourceAgain = @(Get-GeneratedRemediationTreeCensus -RootPath $root -MaxEntries $MaxEntries -MaxDepth $MaxDepth -AllowVerifiedCloudDirectoryMetadata:$AllowVerifiedCloudDirectoryMetadata)
       $proofAgain = @(Get-GeneratedRemediationTreeCensus -RootPath $proof -MaxEntries $MaxEntries -MaxDepth $MaxDepth -AllowVerifiedCloudDirectoryMetadata:$AllowVerifiedCloudDirectoryMetadata)
       if ($sourceAgain.Count -ne 1 -or $proofAgain.Count -ne 1 -or
-        (getBundleRows $sourceAgain[0]).Serialized -cne $work.Serialized -or
+        (getBundleRows $sourceAgain[0]).Serialized -cne $sourceWork.Serialized -or
         (getBundleRows $proofAgain[0] $proof).Serialized -cne $proofRows.Serialized) { throw 'Final source/proof structural drift.' }
       $result.FinalCensus = $sourceAgain[0]; $result.ProofCensus = $proofAgain[0]
       $result.CoherentTreeRestoreVerified = $true; $result.AggregateSourceBytesRechecked = $true

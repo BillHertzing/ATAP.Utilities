@@ -333,4 +333,37 @@ Describe 'One-file sparse ADS archive and independent proof restore' {
     (Restore-GeneratedRemediationFileArchive -RootPath $root -ArchivePath $archive -ExpectedArchiveSHA256 $hash -ProofRoot $proof -Confirm:$false).Status | Should -Be Hold
     Test-Path -LiteralPath $proof | Should -BeFalse
   }
+
+  It 'composes only a new expected target into an existing proof root and never overwrites it' {
+    $created = New-GeneratedRemediationFileArchive @writerArguments -Confirm:$false
+    $null = New-Item -ItemType Directory -Path (Join-Path $proof '_generated') -Force
+    [IO.File]::WriteAllText((Join-Path $proof 'sentinel'),'keep')
+    $r = Restore-GeneratedRemediationFileArchive -RootPath $root -ArchivePath $archive -ExpectedArchiveSHA256 $created.ArchiveSHA256 -ProofRoot $proof -ComposeIntoProofRoot -ExpectedRelativePath $relative -Confirm:$false
+    $r.Status | Should -Be Verified -Because ($r.Errors -join ';')
+    $r.FileRestoreVerified | Should -BeTrue
+    $r.RestoreMode | Should -Be Composition
+    (Get-FileHash -LiteralPath ($r.ProofPath)).Hash | Should -Be (Get-FileHash -LiteralPath ($source)).Hash
+    $r2 = Restore-GeneratedRemediationFileArchive -RootPath $root -ArchivePath $archive -ExpectedArchiveSHA256 $created.ArchiveSHA256 -ProofRoot $proof -ComposeIntoProofRoot -ExpectedRelativePath $relative -Confirm:$false
+    $r2.Status | Should -Be Hold
+    $r2.FileRestoreVerified | Should -BeFalse
+    (Get-Content -LiteralPath (Join-Path $proof 'sentinel') -Raw) | Should -Be keep
+    (Get-FileHash -LiteralPath ($r.ProofPath)).Hash | Should -Be (Get-FileHash -LiteralPath ($source)).Hash
+    $r.CustodyVerified | Should -BeFalse
+    $r.ReadyForRemoval | Should -BeFalse
+  }
+  It 'checks composition path binding and existing parents before any target write' {
+    $created = New-GeneratedRemediationFileArchive @writerArguments -Confirm:$false
+    $null = New-Item -ItemType Directory -Path (Join-Path $proof '_generated') -Force
+    foreach($expected in @('_generated/other','')){
+      $r = Restore-GeneratedRemediationFileArchive -RootPath $root -ArchivePath $archive -ExpectedArchiveSHA256 $created.ArchiveSHA256 -ProofRoot $proof -ComposeIntoProofRoot -ExpectedRelativePath $expected -Confirm:$false
+      $r.Status | Should -Be Hold
+      $r.ProofCreated | Should -BeFalse
+      Test-Path -LiteralPath (Join-Path $proof $relative) | Should -BeFalse
+    }
+    $withoutParent=Join-Path $run 'without-parent'
+    $null=New-Item -ItemType Directory -Path $withoutParent
+    $r = Restore-GeneratedRemediationFileArchive -RootPath $root -ArchivePath $archive -ExpectedArchiveSHA256 $created.ArchiveSHA256 -ProofRoot $withoutParent -ComposeIntoProofRoot -ExpectedRelativePath $relative -Confirm:$false
+    $r.Status | Should -Be Hold
+    Test-Path -LiteralPath (Join-Path $withoutParent '_generated') | Should -BeFalse
+  }
 }

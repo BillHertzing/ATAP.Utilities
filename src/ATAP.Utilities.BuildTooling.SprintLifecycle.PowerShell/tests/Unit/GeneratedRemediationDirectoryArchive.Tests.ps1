@@ -408,5 +408,38 @@ Describe 'One-directory sparse ADS archive and independent proof restore' {
       (Get-Content -LiteralPath (Join-Path $outside 'sentinel') -Raw) | Should -Be untouched
     } finally { Remove-Item -LiteralPath $link -Force }
   }
+
+  It 'composes only a new expected target into an existing proof root and never overwrites it' {
+    $created = New-GeneratedRemediationDirectoryArchive @writerArguments -Confirm:$false
+    $null = New-Item -ItemType Directory -Path (Join-Path $proof '_generated') -Force
+    [IO.File]::WriteAllText((Join-Path $proof 'sentinel'),'keep')
+    $r = Restore-GeneratedRemediationDirectoryArchive -RootPath $root -ArchivePath $archive -ExpectedArchiveSHA256 $created.ArchiveSHA256 -ProofRoot $proof -ComposeIntoProofRoot -ExpectedRelativePath $relative -Confirm:$false
+    $r.Status | Should -Be Verified -Because ($r.Errors -join ';')
+    $r.DirectoryRestoreVerified | Should -BeTrue
+    $r.RestoreMode | Should -Be Composition
+    (Get-FileHash -LiteralPath ($r.ProofPath + ':notes')).Hash | Should -Be (Get-FileHash -LiteralPath ($source + ':notes')).Hash
+    $r2 = Restore-GeneratedRemediationDirectoryArchive -RootPath $root -ArchivePath $archive -ExpectedArchiveSHA256 $created.ArchiveSHA256 -ProofRoot $proof -ComposeIntoProofRoot -ExpectedRelativePath $relative -Confirm:$false
+    $r2.Status | Should -Be Hold
+    $r2.DirectoryRestoreVerified | Should -BeFalse
+    (Get-Content -LiteralPath (Join-Path $proof 'sentinel') -Raw) | Should -Be keep
+    (Get-FileHash -LiteralPath ($r.ProofPath + ':notes')).Hash | Should -Be (Get-FileHash -LiteralPath ($source + ':notes')).Hash
+    $r.CustodyVerified | Should -BeFalse
+    $r.ReadyForRemoval | Should -BeFalse
+  }
+  It 'checks composition path binding and existing parents before any target write' {
+    $created = New-GeneratedRemediationDirectoryArchive @writerArguments -Confirm:$false
+    $null = New-Item -ItemType Directory -Path (Join-Path $proof '_generated') -Force
+    foreach($expected in @('_generated/other','')){
+      $r = Restore-GeneratedRemediationDirectoryArchive -RootPath $root -ArchivePath $archive -ExpectedArchiveSHA256 $created.ArchiveSHA256 -ProofRoot $proof -ComposeIntoProofRoot -ExpectedRelativePath $expected -Confirm:$false
+      $r.Status | Should -Be Hold
+      $r.ProofCreated | Should -BeFalse
+      Test-Path -LiteralPath (Join-Path $proof $relative) | Should -BeFalse
+    }
+    $withoutParent=Join-Path $run 'without-parent'
+    $null=New-Item -ItemType Directory -Path $withoutParent
+    $r = Restore-GeneratedRemediationDirectoryArchive -RootPath $root -ArchivePath $archive -ExpectedArchiveSHA256 $created.ArchiveSHA256 -ProofRoot $withoutParent -ComposeIntoProofRoot -ExpectedRelativePath $relative -Confirm:$false
+    $r.Status | Should -Be Hold
+    Test-Path -LiteralPath (Join-Path $withoutParent '_generated') | Should -BeFalse
+  }
 }
 

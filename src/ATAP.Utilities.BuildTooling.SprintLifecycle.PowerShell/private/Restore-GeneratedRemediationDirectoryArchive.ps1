@@ -16,7 +16,13 @@ function Restore-GeneratedRemediationDirectoryArchive {
   .PARAMETER ExpectedArchiveSHA256
     Independently supplied 64 hexadecimal digit archive digest.
   .PARAMETER ProofRoot
-    NEW external directory with an existing ordinary parent.
+    NEW external directory by default; composition explicitly reuses an existing
+    ordinary external root without overwriting any target.
+  .PARAMETER ComposeIntoProofRoot
+    Compose only a NEW directory into an existing external proof root. Its parent
+    must already exist. This output option grants no custody approval.
+  .PARAMETER ExpectedRelativePath
+    Mandatory exact canonical manifest path when composing; checked before writes.
   .OUTPUTS
     One-directory observations; all global coverage/readiness flags false.
   #>
@@ -25,7 +31,9 @@ function Restore-GeneratedRemediationDirectoryArchive {
     [Parameter(Mandatory)][string]$RootPath,
     [Parameter(Mandatory)][string]$ArchivePath,
     [Parameter(Mandatory)][string]$ExpectedArchiveSHA256,
-    [Parameter(Mandatory)][string]$ProofRoot
+    [Parameter(Mandatory)][string]$ProofRoot,
+    [switch]$ComposeIntoProofRoot,
+    [string]$ExpectedRelativePath
   )
   begin {
     $fn = 'Restore-GeneratedRemediationDirectoryArchive'
@@ -140,6 +148,7 @@ function Restore-GeneratedRemediationDirectoryArchive {
     $result = [pscustomobject]@{
       Status = 'Hold'; Errors = @(); ArchivePath = $null; ProofPath = $null
       DirectoryArchiveVerified = $false; DirectoryRestoreVerified = $false; ProofCreated = $false
+      RestoreMode = if ($ComposeIntoProofRoot) { 'Composition' } else { 'Independent' }
       NamedStreamCount = 0; Approved = $false; ReadyForRemoval = $false; CustodyVerified = $false
       DirectoryStreamsVerified = $false; RootStreamsVerified = $false
       Limitations = @('One explicit directory named-stream proof only; no children, ACL, identity or whole-tree custody.',
@@ -150,7 +159,7 @@ function Restore-GeneratedRemediationDirectoryArchive {
       if ($ExpectedArchiveSHA256 -cnotmatch '\A[0-9A-Fa-f]{64}\z') { throw 'Invalid expected archive hash.' }
       $root = getArchiveLocalPath $RootPath $false $true
       $archive = getArchiveLocalPath $ArchivePath $false $false
-      $proof = getArchiveLocalPath $ProofRoot $true $true
+      $proof = getArchiveLocalPath $ProofRoot (-not [bool]$ComposeIntoProofRoot) $true
       if ((testArchiveOverlap $root $archive) -or (testArchiveOverlap $root $proof) -or (testArchiveOverlap $archive $proof)) {
         throw 'Archive/proof overlaps source or each other.'
       }
@@ -183,6 +192,10 @@ function Restore-GeneratedRemediationDirectoryArchive {
       if ($boundRoot -ine $root) { throw 'Pinned archive source boundary differs.' }
       $relative = getManifestString ($manifest.GetProperty('RelativePath'))
       assertArchiveRelative $relative
+      if ($ComposeIntoProofRoot) {
+        assertArchiveRelative $ExpectedRelativePath
+        if ($relative -cne $ExpectedRelativePath) { throw 'Composition expected relative path mismatch.' }
+      }
       $array = $manifest.GetProperty('Streams')
       if ($array.ValueKind -ne [System.Text.Json.JsonValueKind]::Array -or $array.GetArrayLength() -gt 64) { throw 'Invalid stream descriptor array.' }
       $names = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
@@ -216,13 +229,18 @@ function Restore-GeneratedRemediationDirectoryArchive {
       $result.NamedStreamCount = $descriptors.Count
       if (-not $PSCmdlet.ShouldProcess($proof, 'Create independent one-directory named-stream proof restore')) { $result.Status = 'Skipped'; return $result }
       # Recheck the new boundary immediately before creation. No overwrite/cleanup.
-      $null = getArchiveLocalPath $proof $true $true
-      $null = New-Item -ItemType Directory -Path $proof -ErrorAction Stop
-      $result.ProofCreated = $true
+      $null = getArchiveLocalPath $proof (-not [bool]$ComposeIntoProofRoot) $true
+      if (-not $ComposeIntoProofRoot) {
+        $null = New-Item -ItemType Directory -Path $proof -ErrorAction Stop
+        $result.ProofCreated = $true
+      }
       $target = Join-Path $proof $relative
-      $null = New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force -ErrorAction Stop
+      if (-not $ComposeIntoProofRoot) {
+        $null = New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force -ErrorAction Stop
+      }
       $null = getArchiveLocalPath $target $true $true
       $null = New-Item -ItemType Directory -Path $target -ErrorAction Stop
+      $result.ProofCreated = $true
       foreach ($descriptor in $descriptors) {
         $outputPath = $target + ':' + $descriptor.Name
         $payloadInput = $zip.GetEntry($descriptor.Entry).Open()

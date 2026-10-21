@@ -16,10 +16,11 @@ BeforeAll {
   }
   function Get-BundleFixtureCensus {
     [CmdletBinding()]
-    param()
+    param([string]$Boundary = $script:root)
     # Synthetic dependency envelope from an explicit fixture list, never a walker.
-    $rows=@(foreach($relative in $script:fixturePaths){
-      $item=& $script:realGetItem -LiteralPath (Join-Path $script:root $relative) -Force
+    $paths = if ($Boundary -cne $script:root -and $null -ne $script:proofFixturePaths) { $script:proofFixturePaths } else { $script:fixturePaths }
+    $rows=@(foreach($relative in $paths){
+      $item=& $script:realGetItem -LiteralPath (Join-Path $Boundary $relative) -Force
       [pscustomobject]@{RelativePath=$relative;Depth=[int]($relative.Split('/').Count-1)
         Kind=if($item.PSIsContainer){'Directory'}else{'File'};ReparseTag=$null
         Attributes=[long]$item.Attributes;LastWriteTicks=[long]$item.LastWriteTimeUtc.Ticks
@@ -28,7 +29,7 @@ BeforeAll {
     $first=[pscustomobject]@{Rows=$rows;Holds=0}
     $second=[Management.Automation.PSSerializer]::Deserialize([Management.Automation.PSSerializer]::Serialize($first))
     [pscustomobject]@{SyntheticCensus=$true;Success=$true;Consistent=$true;StructuralInventoryComplete=$true;RootState='Present'
-      Errors=@();FailedWalks=@();Binding=[pscustomobject]@{Root=$script:root;RelativePath='_generated';MaxEntries=16;MaxDepth=8}
+      Errors=@();FailedWalks=@();Binding=[pscustomobject]@{Root=$Boundary;RelativePath='_generated';MaxEntries=16;MaxDepth=8}
       Observations=@($first,$second)}
   }
   $script:realCensus = (Get-Command Get-GeneratedRemediationTreeCensus).ScriptBlock
@@ -47,6 +48,7 @@ Describe 'Finite independent per-entry custody bundle' {
     $script:file = Join-Path $script:generated 'file.bin'
     $script:emptyFile = Join-Path $script:sub 'empty.bin'
     [IO.File]::WriteAllBytes($script:file,[byte[]]@(0,1,255,17))
+    [IO.File]::SetAttributes($script:file,[IO.FileAttributes]::Hidden)
     [IO.File]::WriteAllBytes($script:emptyFile,[byte[]]@())
     [IO.File]::WriteAllBytes($script:file+':notes',[byte[]]@(8,7,0,6))
     [IO.File]::WriteAllBytes($script:generated+':root-note',[byte[]]@(9,8,7,6))
@@ -55,8 +57,9 @@ Describe 'Finite independent per-entry custody bundle' {
     $script:arguments = @{RootPath=$script:root;BundleRoot=$script:bundle;MaxEntries=16;MaxDepth=8;MaxBundlePayloadBytes=1024L}
     $script:before = (Get-FileHash -LiteralPath $script:file).Hash
     $script:fixturePaths=@('_generated','_generated/empty','_generated/file.bin','_generated/sub','_generated/sub/empty.bin')
+    $script:proofFixturePaths=$null
     $script:census = Get-BundleFixtureCensus
-    Mock Get-GeneratedRemediationTreeCensus { Get-BundleFixtureCensus }
+    Mock Get-GeneratedRemediationTreeCensus { Get-BundleFixtureCensus -Boundary $RootPath }
   }
   AfterEach {
     $resolved = (Resolve-Path -LiteralPath $script:run).ProviderPath
@@ -64,7 +67,7 @@ Describe 'Finite independent per-entry custody bundle' {
       (& $script:realGetItem -LiteralPath $resolved -Force).LinkType) { throw 'Cleanup escaped owned fixture.' }
     Remove-Item -LiteralPath $resolved -Recurse -Force -ErrorAction Stop
   }
-  It 'actually archives and restores every mixed-tree entry with distinct proof roots and false global flags' {
+  It 'actually restores one mixed recovery tree and rechecks source streams with false approval flags' {
     $r = New-GeneratedRemediationCustodyBundle @arguments -Confirm:$false
     $r.Status | Should -Be Verified -Because ($r.Errors -join ';')
     $r.EntryProofCoverageComplete | Should -BeTrue
@@ -73,7 +76,11 @@ Describe 'Finite independent per-entry custody bundle' {
     $r.VerifiedEntries | Should -Be 5
     $r.PreflightPayloadBytes | Should -Be 15
     $r.VerifiedPayloadBytes | Should -Be 15
-    @($r.Entries.ProofRoot | Select-Object -Unique).Count | Should -Be 5
+    @($r.Entries.ProofRoot | Select-Object -Unique).Count | Should -Be 1
+    $r.CoherentTreeRestoreVerified | Should -BeTrue
+    $r.AggregateSourceBytesRechecked | Should -BeTrue
+    $r.SourceStreamVerification.Bytes | Should -Be 15
+    $r.ProofStreamVerification.Bytes | Should -Be 15
     @($r.Entries | Where-Object RelativePath -CEQ '_generated').Count | Should -Be 1
     foreach ($entry in $r.Entries) {
       $entry.Verified | Should -BeTrue
@@ -84,9 +91,11 @@ Describe 'Finite independent per-entry custody bundle' {
       }
     }
     $rootProof = ($r.Entries | Where-Object RelativePath -CEQ '_generated').Restore.ProofPath
-    Test-Path -LiteralPath (Join-Path $rootProof 'file.bin') | Should -BeFalse
-    foreach ($flag in @('Approved','ReadyForRemoval','CustodyVerified','RootStreamsVerified','DirectoryStreamsVerified',
-      'CoherentTreeRestoreVerified','AggregateSourceBytesRechecked')) { $r.$flag | Should -BeFalse }
+    Test-Path -LiteralPath (Join-Path $rootProof 'file.bin') | Should -BeTrue
+    $actual=@('_generated') + @(Get-ChildItem -LiteralPath $rootProof -Recurse -Force | ForEach-Object { '_generated/' + [IO.Path]::GetRelativePath($rootProof,$_.FullName).Replace('\','/') })
+    @($actual).Count | Should -Be 5
+    foreach($path in $script:fixturePaths){$actual | Should -Contain $path}
+    foreach ($flag in @('Approved','ReadyForRemoval','CustodyVerified','RootStreamsVerified','DirectoryStreamsVerified')) { $r.$flag | Should -BeFalse }
     (Get-FileHash -LiteralPath $file).Hash | Should -Be $before
   }
   It 'plans with WhatIf without any bundle writes' {
@@ -166,7 +175,7 @@ Describe 'Finite independent per-entry custody bundle' {
     $r=New-GeneratedRemediationCustodyBundle @arguments -Confirm:$false
     $r.Status | Should -Be Hold
     $r.EntryProofCoverageComplete | Should -BeFalse
-    $r.VerifiedEntries | Should -Be 2
+    $r.VerifiedEntries | Should -Be 3
     Test-Path -LiteralPath $r.Entries[0].Restore.ProofPath | Should -BeTrue
     Test-Path -LiteralPath $bundle | Should -BeTrue
     (Get-FileHash -LiteralPath $file).Hash | Should -Be $before
@@ -193,14 +202,14 @@ Describe 'Finite independent per-entry custody bundle' {
     $r=New-GeneratedRemediationCustodyBundle @arguments -Confirm:$false
     $r.Status | Should -Be Hold
     $r.VerifiedEntries | Should -Be 0
-    Test-Path -LiteralPath (Join-Path $bundle 'proofs/0000/_generated') | Should -BeTrue
+    Test-Path -LiteralPath (Join-Path $bundle 'recovery/_generated') | Should -BeTrue
   }
   It 'refuses a structurally changed final census after retaining all entry proofs' {
     $script:calls=0
     Mock Get-GeneratedRemediationTreeCensus {
       $script:calls++
       if($script:calls -eq 2){$null=New-Item -ItemType Directory -Path (Join-Path $script:generated 'late');$script:fixturePaths+=@('_generated/late')}
-      Get-BundleFixtureCensus
+      Get-BundleFixtureCensus -Boundary $RootPath
     }
     $r=New-GeneratedRemediationCustodyBundle @arguments -Confirm:$false
     $r.Status | Should -Be Hold
@@ -270,20 +279,21 @@ Describe 'Finite independent per-entry custody bundle' {
     Test-Path -LiteralPath $bundle | Should -BeFalse
     if($null -ne $script:bundleReceiptSink){$script:bundleReceiptSink.Add([pscustomobject]@{PlatformPrecondition='Default-census ancestry refused in owned Dropbox fixture';ActualCensus=$actual;Bundle=$r})}
   }
-  It 'does not turn late content-only changes into aggregate or coherent restore claims' {
+  It 'holds a late source content change even when its length and timestamp are restored' {
     $script:calls=0
     Mock Get-GeneratedRemediationTreeCensus {
       $script:calls++
       if($script:calls -eq 2){
         $written=[IO.File]::GetLastWriteTimeUtc($script:file)
-        [IO.File]::WriteAllBytes($script:file,[byte[]]@(9,8,7,6))
+        $writer=[IO.File]::Open($script:file,[IO.FileMode]::Open,[IO.FileAccess]::Write,[IO.FileShare]::None)
+        try { $writer.Write([byte[]]@(9,8,7,6),0,4) } finally { $writer.Dispose() }
         [IO.File]::SetLastWriteTimeUtc($script:file,$written)
       }
-      Get-BundleFixtureCensus
+      Get-BundleFixtureCensus -Boundary $RootPath
     }
     $r=New-GeneratedRemediationCustodyBundle @arguments -Confirm:$false
-    $r.Status | Should -Be Verified -Because ($r.Errors -join ';')
-    $r.EntryProofCoverageComplete | Should -BeTrue
+    $r.Status | Should -Be Hold
+    $r.Errors -join ';' | Should -Match 'content drift'
     $r.AggregateSourceBytesRechecked | Should -BeFalse
     $r.CoherentTreeRestoreVerified | Should -BeFalse
     $r.CustodyVerified | Should -BeFalse
@@ -291,7 +301,6 @@ Describe 'Finite independent per-entry custody bundle' {
     $fileProof=($r.Entries|Where-Object RelativePath -CEQ '_generated/file.bin').Restore.ProofPath
     (Get-FileHash -LiteralPath $fileProof).Hash | Should -Be $before
   }
-
   It 'enforces explicit census entry and depth bounds before writes' {
     Mock Get-GeneratedRemediationTreeCensus {
       $r=Get-BundleFixtureCensus
@@ -306,5 +315,64 @@ Describe 'Finite independent per-entry custody bundle' {
     $arguments.MaxDepth=1
     (New-GeneratedRemediationCustodyBundle @arguments -Confirm:$false).Status | Should -Be Hold
     Test-Path -LiteralPath $bundle | Should -BeFalse
+  }
+
+  It 'holds changed source named content or stream membership after restoration' {
+    $script:calls=0
+    Mock Get-GeneratedRemediationTreeCensus {
+      $script:calls++
+      if($script:calls -eq 2){
+        $written=[IO.File]::GetLastWriteTimeUtc($script:file)
+        [IO.File]::WriteAllBytes($script:file+':notes',[byte[]]@(6,0,7,8))
+        [IO.File]::SetLastWriteTimeUtc($script:file,$written)
+      }
+      Get-BundleFixtureCensus -Boundary $RootPath
+    }
+    $r=New-GeneratedRemediationCustodyBundle @arguments -Confirm:$false
+    $r.Status | Should -Be Hold
+    $r.Errors -join ';' | Should -Match 'content drift'
+    $r.AggregateSourceBytesRechecked | Should -BeFalse
+    $r.CustodyVerified | Should -BeFalse
+  }
+  It 'holds an extra source stream at the final verification' {
+    $script:calls=0
+    Mock Get-GeneratedRemediationTreeCensus {
+      $script:calls++
+      if($script:calls -eq 2){[IO.File]::WriteAllText($script:file+':late','new')}
+      Get-BundleFixtureCensus -Boundary $RootPath
+    }
+    $r=New-GeneratedRemediationCustodyBundle @arguments -Confirm:$false
+    $r.Status | Should -Be Hold
+    $r.AggregateSourceBytesRechecked | Should -BeFalse
+    $r.CustodyVerified | Should -BeFalse
+  }
+  It 'holds modified recovery bytes or extra recovery entries' {
+    Mock Get-GeneratedRemediationTreeCensus {
+      if($RootPath -cne $script:root -and -not $script:proofChanged){
+        $script:proofChanged=$true
+        $path=Join-Path $RootPath '_generated/file.bin'
+        if($script:proofMode -eq 'Bytes'){[IO.File]::WriteAllBytes($path,[byte[]]@(4,3,2,1))}
+        elseif($script:proofMode -eq 'Archive'){
+          $archive=Join-Path $script:bundle 'archives/0000.zip'
+          $writer=[IO.File]::Open($archive,[IO.FileMode]::Open,[IO.FileAccess]::Write,[IO.FileShare]::None)
+          try { $writer.Position=$writer.Length-1; $writer.WriteByte(123) } finally { $writer.Dispose() }
+        }
+        elseif($script:proofMode -eq 'MissingStream'){[IO.File]::Delete((Join-Path $RootPath '_generated/sub')+':empty')}
+        else {
+          [IO.File]::WriteAllText((Join-Path $RootPath '_generated/extra.bin'),'extra')
+          $script:proofFixturePaths=@($script:fixturePaths)+@('_generated/extra.bin')
+        }
+      }
+      Get-BundleFixtureCensus -Boundary $RootPath
+    }
+    foreach($mode in @('Bytes','ExtraEntry','Archive','MissingStream')){
+      $script:proofMode=$mode;$script:proofChanged=$false;$script:proofFixturePaths=$null
+      $script:bundle=Join-Path $run ('bundle-'+$mode);$arguments.BundleRoot=$script:bundle
+      $r=New-GeneratedRemediationCustodyBundle @arguments -Confirm:$false
+      $r.Status | Should -Be Hold -Because $mode
+      $r.CoherentTreeRestoreVerified | Should -BeFalse
+      $r.CustodyVerified | Should -BeFalse
+      Test-Path -LiteralPath $r.ProofRoot | Should -BeTrue
+    }
   }
 }

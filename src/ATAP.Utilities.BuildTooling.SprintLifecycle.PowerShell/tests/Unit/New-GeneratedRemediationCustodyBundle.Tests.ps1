@@ -375,4 +375,22 @@ Describe 'Finite independent per-entry custody bundle' {
       Test-Path -LiteralPath $r.ProofRoot | Should -BeTrue
     }
   }
+
+  It 'forwards the existing census option explicitly as false or true on all five calls' {
+    Mock Get-GeneratedRemediationTreeCensus {
+      Get-BundleFixtureCensus -Boundary $RootPath
+    }
+    $arguments.BundleRoot=Join-Path $run 'default-option'
+    $default=New-GeneratedRemediationCustodyBundle @arguments -Confirm:$false
+    $default.Status | Should -Be Verified -Because ($default.Errors -join ';')
+    Should -Invoke Get-GeneratedRemediationTreeCensus -Times 5 -Exactly -ParameterFilter {
+      $PesterBoundParameters.ContainsKey('AllowVerifiedCloudDirectoryMetadata') -and -not [bool]$AllowVerifiedCloudDirectoryMetadata
+    }
+    $arguments.BundleRoot=Join-Path $run 'enabled-option'
+    $enabled=New-GeneratedRemediationCustodyBundle @arguments -AllowVerifiedCloudDirectoryMetadata -Confirm:$false
+    $enabled.Status | Should -Be Verified -Because ($enabled.Errors -join ';')
+    Should -Invoke Get-GeneratedRemediationTreeCensus -Times 5 -Exactly -ParameterFilter {
+      $PesterBoundParameters.ContainsKey('AllowVerifiedCloudDirectoryMetadata') -and [bool]$AllowVerifiedCloudDirectoryMetadata
+    }
+  }
 }

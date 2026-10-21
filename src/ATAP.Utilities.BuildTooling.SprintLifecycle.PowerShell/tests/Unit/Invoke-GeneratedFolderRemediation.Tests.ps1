@@ -1,4 +1,14 @@
+param([object]$ReceiptSink)
+$script:backupReceiptSink = $ReceiptSink
 BeforeAll {
+  $script:backupReceiptSink = $ReceiptSink
+  foreach ($name in @('Get-GeneratedRemediationTreeCensus','New-GeneratedRemediationFileArchive',
+    'Restore-GeneratedRemediationFileArchive','New-GeneratedRemediationDirectoryArchive',
+    'Restore-GeneratedRemediationDirectoryArchive','New-GeneratedRemediationCustodyBundle')) {
+    . (Join-Path $PSScriptRoot ("../../private/$name.ps1"))
+  }
+  $script:realBackupBundle = (Get-Command New-GeneratedRemediationCustodyBundle).ScriptBlock
+  $script:realBackupGetItem = Get-Command Get-Item -CommandType Cmdlet
   . "$PSScriptRoot\..\..\public\Invoke-GeneratedFolderRemediation.ps1"
   . "$PSScriptRoot\..\..\private\Get-GeneratedRemediationByteComparison.ps1"
   $script:fixtureRoot = [IO.Path]::GetFullPath("$PSScriptRoot/../../../../_generated/Sprint0016/Task16.84/CarryoverByteGuardTests-v1/Fixtures")
@@ -85,6 +95,45 @@ BeforeAll {
     @{ SelectionManifestPath = $path; ExpectedSelectionManifestSHA256 = (Get-FileHash -LiteralPath $path).Hash }
   }
 
+  function Initialize-TestBackupFixture {
+    $null = New-Item -ItemType Directory -Path $script:archive
+    $script:backupFile = Join-Path $script:sprint '_generated/Sprint0015/old-evidence.md'
+    $script:backupGenerated = Join-Path $script:sprint '_generated'
+    $script:backupParent = Join-Path $script:backupGenerated 'Sprint0015'
+    [IO.File]::WriteAllBytes($script:backupFile+':notes',[byte[]]@(1,2,0,4))
+    [IO.File]::WriteAllBytes($script:backupFile+':empty',[byte[]]@())
+    [IO.File]::WriteAllBytes($script:backupGenerated+':root-note',[byte[]]@(9,8,7,6))
+    [IO.File]::WriteAllBytes($script:backupParent+':empty',[byte[]]@())
+    [IO.File]::WriteAllBytes($script:backupParent+':'+[char]0x9644,[byte[]]@(9,0,255))
+    New-TestFile $script:sprint '_generated/Sprint0017/keep.bin' 'future'
+    $script:backupSourcePaths = @('_generated','_generated/Sprint0015','_generated/Sprint0015/old-evidence.md',
+      '_generated/legacy-tracked.txt','_generated/Sprint0016','_generated/Sprint0016/Task16.80',
+      '_generated/Sprint0016/Task16.80/evidence.md','_generated/Sprint0016/tracked-now.md',
+      '_generated/sprint-end-0007','_generated/sprint-end-0007/stale.log',
+      '_generated/SprintEnd0013-StableProjection','_generated/SprintEnd0013-StableProjection/p.json',
+      '_generated/scratch','_generated/scratch/no-sprint-name.txt','_generated/Sprint0017','_generated/Sprint0017/keep.bin')
+    $script:backupProofPaths = @('_generated','_generated/Sprint0015','_generated/Sprint0015/old-evidence.md')
+    Save-TestSelectionManifest (Get-TestSelectionManifest)
+  }
+
+  function Get-TestBackupCensus {
+    param([string]$RootPath,[int]$MaxEntries,[int]$MaxDepth)
+    # Explicit synthetic fixture metadata, never the native census or a replacement walker.
+    $paths = if ($RootPath -ceq $script:sprint) { $script:backupSourcePaths } else { $script:backupProofPaths }
+    $rows = @(foreach ($relative in $paths) {
+      $item = & $script:realBackupGetItem -LiteralPath (Join-Path $RootPath $relative) -Force
+      [pscustomobject]@{RelativePath=$relative;Depth=[int]($relative.Split('/').Count-1)
+        Kind=if($item.PSIsContainer){'Directory'}else{'File'};ReparseTag=$null
+        Attributes=[long]$item.Attributes;CreationTicks=[long]$item.CreationTimeUtc.Ticks;LastWriteTicks=[long]$item.LastWriteTimeUtc.Ticks
+        Length=if($item.PSIsContainer){$null}else{[long]$item.Length};Hold=$false}
+    })
+    $first = [pscustomobject]@{Rows=$rows;Holds=0}
+    $second = [Management.Automation.PSSerializer]::Deserialize([Management.Automation.PSSerializer]::Serialize($first))
+    [pscustomobject]@{SyntheticCensus=$true;Success=$true;Consistent=$true;StructuralInventoryComplete=$true;RootState='Present'
+      Errors=@();FailedWalks=@();Binding=[pscustomobject]@{Root=$RootPath;RelativePath='_generated';MaxEntries=$MaxEntries;MaxDepth=$MaxDepth}
+      Observations=@($first,$second)}
+  }
+
 }
 
 Describe 'Invoke-GeneratedFolderRemediation [public]' {
@@ -127,6 +176,151 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
       $cleanup = script:Get-TestCleanupPaths -Root $script:gitRoot -Stable $script:stable -Sprint $script:sprint
       Remove-Item -LiteralPath $cleanup.Root -Recurse -Force -ErrorAction SilentlyContinue
     }
+  }
+
+  It 'creates an actual selected-file backup and restore from the manifest-bound Plan without source or Git changes' {
+    $options = Initialize-TestBackupFixture
+    Mock Get-GeneratedRemediationTreeCensus { Get-TestBackupCensus -RootPath $RootPath -MaxEntries $MaxEntries -MaxDepth $MaxDepth }
+    $script:backupStreamPaths = [Collections.Generic.List[string]]::new()
+    Mock Get-Item {
+      $path = [IO.Path]::GetFullPath([string]$LiteralPath)
+      if ($path.StartsWith($script:sprint+'\',[StringComparison]::OrdinalIgnoreCase)) {
+        $script:backupStreamPaths.Add($path)
+        if ($path -cnotin @($script:backupGenerated,$script:backupParent,$script:backupFile)) { throw 'Unselected source stream inventory.' }
+      }
+      & $script:realBackupGetItem @PesterBoundParameters
+    } -ParameterFilter { $Stream -eq '*' }
+    $sourcePaths = @($script:backupFile,($script:backupFile+':notes'),($script:backupFile+':empty'),
+      ($script:backupGenerated+':root-note'),($script:backupParent+':empty'),($script:backupParent+':'+[char]0x9644))
+    $sourceHashes = @(foreach ($path in $sourcePaths) { [pscustomobject]@{Path=$path;SHA256=(Get-FileHash -LiteralPath $path).Hash} })
+    $gitBefore = @(foreach ($root in @($script:stable,$script:sprint)) {
+      $index = (& $script:realGitCommand -C $root rev-parse --path-format=absolute --git-path index)
+      [pscustomobject]@{Root=$root;Head=(& $script:realGitCommand -C $root rev-parse HEAD);IndexPath=$index;IndexSHA256=(Get-FileHash -LiteralPath $index).Hash}
+    })
+    $evidence = Join-Path $script:gitRoot 'backup-report.json'
+    $expectedBytes = (Get-Item -LiteralPath $script:backupFile -Force).Length + 11
+    $r = Invoke-GeneratedFolderRemediation -SprintNumber 0016 -Scope SprintCarryover -GitRoot $script:gitRoot -RepositoryName Repo @options -CreateBackup -ArchiveRoot $script:archive -AllowVerifiedCloudDirectoryMetadata -EvidencePath $evidence -Confirm:$false
+    $r.Mode | Should -Be Backup
+    $r.Errors.Count | Should -Be 0
+    $entry = $r.Sprint[0]
+    $entry.Action | Should -Be BackedUp
+    $entry.Backup.Status | Should -Be Verified
+    $bundle = $entry.Backup.Receipt
+    $bundle.BundlePath | Should -BeExactly $entry.Backup.BundleRoot
+    $bundle.RequestedRelativePaths.Count | Should -Be 1
+    $bundle.RequestedRelativePaths[0] | Should -BeExactly '_generated/Sprint0015/old-evidence.md'
+    $bundle.VerifiedEntries | Should -Be 3
+    $bundle.VerifiedPayloadBytes | Should -Be $expectedBytes
+    $bundle.SourceStreamVerification.Bytes | Should -Be $expectedBytes
+    $bundle.ProofStreamVerification.Bytes | Should -Be $expectedBytes
+    $bundle.CoherentTreeRestoreVerified | Should -BeTrue
+    $bundle.AggregateSourceBytesRechecked | Should -BeTrue
+    @($script:backupStreamPaths | Select-Object -Unique).Count | Should -Be 3
+    $actual = @('_generated') + @(Get-ChildItem -LiteralPath (Join-Path $bundle.ProofRoot '_generated') -Recurse -Force | ForEach-Object {
+      '_generated/' + [IO.Path]::GetRelativePath((Join-Path $bundle.ProofRoot '_generated'),$_.FullName).Replace('\','/')
+    })
+    @($actual).Count | Should -Be 3
+    foreach ($relative in $script:backupProofPaths) { $actual | Should -Contain $relative }
+    $digests = @(foreach ($row in $bundle.Entries) {
+      foreach ($descriptor in $row.Writer.Manifest.Streams) {
+        $sourcePath = Join-Path $script:sprint $row.RelativePath
+        $proofPath = $row.Restore.ProofPath
+        if ($descriptor.Name -cne ':$DATA') { $sourcePath += ':'+$descriptor.Name; $proofPath += ':'+$descriptor.Name }
+        $sourceHash = (Get-FileHash -LiteralPath $sourcePath).Hash
+        $proofHash = (Get-FileHash -LiteralPath $proofPath).Hash
+        $sourceHash | Should -Be $descriptor.SHA256
+        $proofHash | Should -Be $descriptor.SHA256
+        [pscustomobject]@{RelativePath=$row.RelativePath;Name=$descriptor.Name;Bytes=$descriptor.Bytes;ManifestSHA256=$descriptor.SHA256;SourceSHA256=$sourceHash;ProofSHA256=$proofHash}
+      }
+    })
+    $digests.Count | Should -Be 6
+    foreach ($row in $sourceHashes) { (Get-FileHash -LiteralPath $row.Path).Hash | Should -Be $row.SHA256 }
+    foreach ($before in $gitBefore) {
+      (& $script:realGitCommand -C $before.Root rev-parse HEAD) | Should -Be $before.Head
+      (Get-FileHash -LiteralPath $before.IndexPath).Hash | Should -Be $before.IndexSHA256
+    }
+    foreach ($flag in @('Approved','CustodyVerified','NamedStreamsVerified','ReadyForRemoval')) {
+      $r.$flag | Should -BeFalse
+      $entry.$flag | Should -BeFalse
+      $entry.Backup.$flag | Should -BeFalse
+    }
+    $entry.GitRemoved | Should -Be 0
+    $entry.DeletedFiles | Should -Be 0
+    Should -Invoke Get-GeneratedRemediationTreeCensus -Times 5 -Exactly -ParameterFilter { $AllowVerifiedCloudDirectoryMetadata }
+    $saved = Get-Content -LiteralPath $evidence -Raw | ConvertFrom-Json -Depth 60
+    $saved.Sprint[0].Backup.Receipt.Entries[0].Writer.Manifest.Streams[0].SHA256 | Should -Match '^[A-F0-9]{64}$'
+    $r | Add-Member -NotePropertyName SyntheticBackupEvidence -NotePropertyValue ([pscustomobject]@{
+      ActualProofPaths=$actual;ActualStreamDigests=$digests;SourceHashesBefore=$sourceHashes;GitBefore=$gitBefore
+      SourceAndGitUnchanged=$true;SourceStreamAcquisitionPaths=@($script:backupStreamPaths | Select-Object -Unique)
+      NoUnselectedStreamInventory=$true;SyntheticCensusUsed=$true;ActualArchiveRestoreIO=$true
+    })
+    if ($null -ne $script:backupReceiptSink) { $script:backupReceiptSink.Add($r) }
+  }
+
+  It 'does not invoke backup for ordinary Plan WhatIf no selected rows or a held manifest' {
+    $options = Initialize-TestBackupFixture
+    Mock New-GeneratedRemediationCustodyBundle { throw 'No bundle invocation expected.' }
+    $plan = Invoke-GeneratedFolderRemediation -SprintNumber 0016 -Scope SprintCarryover -GitRoot $script:gitRoot -RepositoryName Repo @options
+    $plan.Mode | Should -Be Plan
+    $whatIf = Invoke-GeneratedFolderRemediation -SprintNumber 0016 -Scope SprintCarryover -GitRoot $script:gitRoot -RepositoryName Repo @options -CreateBackup -ArchiveRoot $script:archive -WhatIf
+    $whatIf.Sprint[0].Backup.Status | Should -Be Skipped
+    Test-Path -LiteralPath $whatIf.Sprint[0].Backup.BundleRoot | Should -BeFalse
+    $manifest = Get-TestSelectionManifest
+    $manifest.rows = @()
+    $emptyOptions = Save-TestSelectionManifest $manifest
+    $empty = Invoke-GeneratedFolderRemediation -SprintNumber 0016 -Scope SprintCarryover -GitRoot $script:gitRoot -RepositoryName Repo @emptyOptions -CreateBackup -ArchiveRoot $script:archive -Confirm:$false
+    $empty.Sprint[0].Backup.Status | Should -Be NoSelection
+    $empty.Sprint[0].Action | Should -Be NothingToBackUp
+    $emptyOptions.ExpectedSelectionManifestSHA256 = '0'*64
+    $held = Invoke-GeneratedFolderRemediation -SprintNumber 0016 -Scope SprintCarryover -GitRoot $script:gitRoot -RepositoryName Repo @emptyOptions -CreateBackup -ArchiveRoot $script:archive -Confirm:$false
+    $held.Sprint[0].Action | Should -Be Held
+    $held.Sprint[0].Backup.Status | Should -Be Held
+    Should -Invoke New-GeneratedRemediationCustodyBundle -Times 0
+    @(Get-ChildItem -LiteralPath $script:archive -Force).Count | Should -Be 0
+  }
+
+  It 'reports a held backup and retains partial output' {
+    $options = Initialize-TestBackupFixture
+    Mock New-GeneratedRemediationCustodyBundle {
+      $null = New-Item -ItemType Directory -Path $BundleRoot
+      [IO.File]::WriteAllText((Join-Path $BundleRoot 'partial.txt'),'retained')
+      [pscustomobject]@{Status='Hold';BundlePath=$BundleRoot;BundleCreated=$true;Errors=@('simulated archive failure')}
+    }
+    $r = Invoke-GeneratedFolderRemediation -SprintNumber 0016 -Scope SprintCarryover -GitRoot $script:gitRoot -RepositoryName Repo @options -CreateBackup -ArchiveRoot $script:archive -Confirm:$false
+    $r.Sprint[0].Action | Should -Be BackupHeld
+    $r.Sprint[0].Backup.Status | Should -Be Held
+    $r.Sprint[0].Backup.Receipt.Status | Should -Be Hold
+    Get-Content -LiteralPath (Join-Path $r.Sprint[0].Backup.BundlePath 'partial.txt') -Raw | Should -Be retained
+    $r.Errors -join ';' | Should -Match 'simulated archive failure'
+  }
+
+  It 'holds an actual backup receipt whose source binding was substituted' {
+    $options = Initialize-TestBackupFixture
+    Mock Get-GeneratedRemediationTreeCensus { Get-TestBackupCensus -RootPath $RootPath -MaxEntries $MaxEntries -MaxDepth $MaxDepth }
+    Mock New-GeneratedRemediationCustodyBundle {
+      $receipt = & $script:realBackupBundle @PesterBoundParameters
+      $receipt.Status | Should -Be Verified -Because ($receipt.Errors -join ';')
+      $receipt.InitialCensus.Binding.Root = $script:stable
+      $receipt
+    }
+    $r = Invoke-GeneratedFolderRemediation -SprintNumber 0016 -Scope SprintCarryover -GitRoot $script:gitRoot -RepositoryName Repo @options -CreateBackup -ArchiveRoot $script:archive -Confirm:$false
+    $r.Sprint[0].Action | Should -Be BackupHeld
+    $r.Errors -join ';' | Should -Match 'receipt source/path/selection binding differs'
+    Test-Path -LiteralPath $r.Sprint[0].Backup.BundleRoot | Should -BeTrue
+  }
+
+  It 'requires an existing external destination and explicit backup mode options' {
+    $options = Save-TestSelectionManifest (Get-TestSelectionManifest)
+    { Invoke-GeneratedFolderRemediation -SprintNumber 0016 -Scope SprintCarryover -GitRoot $script:gitRoot -RepositoryName Repo -CreateBackup } | Should -Throw '*requires*'
+    { Invoke-GeneratedFolderRemediation -SprintNumber 0016 -Scope SprintCarryover -GitRoot $script:gitRoot -RepositoryName Repo @options -CreateBackup -ArchiveRoot $script:archive } | Should -Throw '*existing ArchiveRoot*'
+    $null = New-Item -ItemType Directory -Path $script:archive
+    { Invoke-GeneratedFolderRemediation -SprintNumber 0016 -Scope SprintCarryover -GitRoot $script:gitRoot -RepositoryName Repo @options -CreateBackup -ArchiveRoot $script:archive -NoArchive } | Should -Throw '*no NoArchive*'
+    { Invoke-GeneratedFolderRemediation -SprintNumber 0016 -Scope SprintCarryover -GitRoot $script:gitRoot -RepositoryName Repo @options -AllowVerifiedCloudDirectoryMetadata:$false } | Should -Throw '*only with*'
+    Mock New-GeneratedRemediationCustodyBundle { throw 'No bundle invocation permitted.' }
+    $inside = Invoke-GeneratedFolderRemediation -SprintNumber 0016 -Scope SprintCarryover -GitRoot $script:gitRoot -RepositoryName Repo @options -CreateBackup -ArchiveRoot (Join-Path $script:sprint '_generated') -Confirm:$false
+    $inside.Sprint[0].Action | Should -Be BackupHeld
+    $inside.Errors -join ';' | Should -Match 'outside stable, sprint and common Git'
+    Should -Invoke New-GeneratedRemediationCustodyBundle -Times 0
   }
 
   It 'narrows Plan to the bound manifest intersection without trusting supplied custody or snapshot digests' {

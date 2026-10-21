@@ -1,10 +1,11 @@
 function Invoke-GeneratedFolderRemediation {
   <#
   .SYNOPSIS
-    Plans Generated folder remediation; all execution is currently held.
+    Plans Generated folder remediation and creates selected-file backups; removal is held.
 
   .DESCRIPTION
-    Supported operation is read-only planning. Every -Execute request is refused
+    Supports read-only planning and explicit selected-file backup/restore verification.
+    Every -Execute request is refused
     because complete approved, bound file/default-data, named-stream and
     root/directory custody is not integrated. Individual entry restores do not
     establish that contract. No caller approval flag or receipt bypass exists.
@@ -54,9 +55,13 @@ function Invoke-GeneratedFolderRemediation {
     Plan retains same-path default-byte comparison, Git/WIP and current/future
     sprint protection. It does not establish complete inventory, ADS equality,
     coherent restore, aggregate source stability or removal readiness.
-    No execution can create archives, temporary files or evidence, prune
+    No -Execute request can create archives, temporary files or evidence, prune
     directories, remove files or change a Git index. -WhatIf with -Execute
     receives the same refusal. History mutation remains retired.
+    -CreateBackup separately backs up only the manifest-bound Plan selection and
+    required ancestor directory streams to a new child of an existing external
+    ArchiveRoot. Ordinary Plan creates no backup. Backup success grants no removal
+    approval and does not verify supplied manifest custody/ADS/index assertions.
 
   .PARAMETER SprintNumber
     Current four-digit sprint number, for example '0016'.
@@ -72,8 +77,9 @@ function Invoke-GeneratedFolderRemediation {
     Always refused until a complete approved custody contract is integrated.
     Without this switch, only planning is supported.
   .PARAMETER ArchiveRoot
-    Retained for call compatibility; supplying an archive path cannot enable
-    execution. Planning does not create an archive.
+    Existing external parent for a fresh backup child with -CreateBackup.
+    Required explicitly in that mode; never created on the caller's behalf.
+    Supplying an archive path alone does not create a backup or enable removal.
   .PARAMETER NoArchive
     Retained for planning compatibility. Any use with -Execute is rejected.
   .PARAMETER HistoryWorkRoot
@@ -89,6 +95,13 @@ function Invoke-GeneratedFolderRemediation {
     Expected exact raw-file SHA256. Repository identity, roots, common Git
     directory, HEADs and selected default bytes are checked against this Plan.
     Supplied ADS, custody, baseline and snapshot index/WIP digests remain unverified.
+  .PARAMETER CreateBackup
+    Backup-only mode for the bound finite SprintCarryover Plan. Requires the
+    paired selection manifest inputs, one repository, existing ArchiveRoot and
+    no NoArchive. Honors ShouldProcess/WhatIf and retains partial output.
+  .PARAMETER AllowVerifiedCloudDirectoryMetadata
+    Existing reviewed census option, forwarded only with explicit CreateBackup.
+    Default false. Supplying it for ordinary Plan is rejected.
   .PARAMETER EvidencePath
     Optional JSON file path for the full report (SC-0033: place it under a
     `_generated/` folder of the current sprint).
@@ -154,7 +167,13 @@ function Invoke-GeneratedFolderRemediation {
     [string]$SelectionManifestPath,
 
     [Parameter()]
-    [string]$ExpectedSelectionManifestSHA256
+    [string]$ExpectedSelectionManifestSHA256,
+
+    [Parameter()]
+    [switch]$CreateBackup,
+
+    [Parameter()]
+    [switch]$AllowVerifiedCloudDirectoryMetadata
   )
 
   begin {
@@ -171,6 +190,17 @@ function Invoke-GeneratedFolderRemediation {
         $Scope.Count -ne 1 -or $Scope[0] -cne 'SprintCarryover' -or $RepositoryName.Count -ne 1)) {
       throw 'SelectionManifestPath and ExpectedSelectionManifestSHA256 must be paired for one explicit SprintCarryover Plan repository.'
     }
+    if ($CreateBackup -and (-not $useSelectionManifest -or $NoArchive -or [string]::IsNullOrWhiteSpace($ArchiveRoot))) {
+      throw '-CreateBackup requires the paired manifest inputs, one SprintCarryover repository, existing ArchiveRoot and no NoArchive.'
+    }
+    if ($PSBoundParameters.ContainsKey('AllowVerifiedCloudDirectoryMetadata') -and -not $CreateBackup) {
+      throw '-AllowVerifiedCloudDirectoryMetadata is supported only with -CreateBackup.'
+    }
+    if ($CreateBackup) {
+      $ArchiveRoot = [IO.Path]::GetFullPath($ArchiveRoot)
+      if ($ArchiveRoot.Length -gt 3) { $ArchiveRoot = $ArchiveRoot.TrimEnd([char[]]'\/') }
+      if (-not (Test-Path -LiteralPath $ArchiveRoot -PathType Container)) { throw '-CreateBackup requires an existing ArchiveRoot directory.' }
+    }
     if ($useSelectionManifest -and -not (Get-Command Get-GeneratedRemediationManifestSelection -ErrorAction SilentlyContinue)) {
       . (Join-Path $PSScriptRoot '../private/Get-GeneratedRemediationManifestSelection.ps1')
     }
@@ -186,7 +216,7 @@ function Invoke-GeneratedFolderRemediation {
     # Runs git and separates stdout lines from stderr text.
     $invokeGit = {
       param([string[]]$ArgumentList)
-      $raw = & git -c core.quotepath=off @ArgumentList 2>&1
+      $raw = & git --no-optional-locks -c core.quotepath=off @ArgumentList 2>&1
       $code = $LASTEXITCODE
       [PSCustomObject]@{
         ExitCode = $code
@@ -451,6 +481,13 @@ function Invoke-GeneratedFolderRemediation {
             PreservedFiles = @(); DefaultDataWitnesses = @()
             ReadyForRemoval = $false; CustodyVerified = $false; NamedStreamsVerified = $false
           }
+          if ($CreateBackup) {
+            $entry.Approved = $false
+            $entry.Backup = [pscustomobject]@{
+              Status = 'Held'; RequestedRelativePaths = @(); BundleRoot = $null; BundlePath = $null; Receipt = $null; Errors = @()
+              Approved = $false; CustodyVerified = $false; NamedStreamsVerified = $false; ReadyForRemoval = $false
+            }
+          }
           # All identity and selection reads are checked; a failed command is not an empty inventory.
           $getCarryoverState = {
             $stableBranchNow = (& $checkedGit @('-C', $stablePath, 'branch', '--show-current')).Output
@@ -594,6 +631,85 @@ function Invoke-GeneratedFolderRemediation {
           $entry.DefaultDataWitnesses = @($witnesses.Values | Where-Object { -not $useSelectionManifest -or $selectedPaths.Contains($_.Binding.RelativePath) })
 
           $total = $gitTargets.Count + $untrackedTargets.Count
+          if ($CreateBackup) {
+            $backupPaths = [string[]]@(@($gitTargets) + $untrackedTargets)
+            $entry.Backup.RequestedRelativePaths = $backupPaths
+            if ($total -eq 0) {
+              $entry.Backup.Status = 'NoSelection'; $entry.Action = 'NothingToBackUp'
+            } else {
+              try {
+                foreach ($protectedRoot in @($stablePath, $wtPath, $selectionState.Common)) {
+                  $protectedBoundary = [IO.Path]::GetFullPath($protectedRoot).TrimEnd([char[]]'\/')
+                  if ($ArchiveRoot -ieq $protectedBoundary -or $ArchiveRoot.StartsWith($protectedBoundary + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+                    throw 'ArchiveRoot must be outside stable, sprint and common Git boundaries.'
+                  }
+                }
+                $backupRoot = Join-Path $ArchiveRoot ('GeneratedBackup-' + [guid]::NewGuid().ToString('N'))
+                $entry.Backup.BundleRoot = $backupRoot
+                if (-not $PSCmdlet.ShouldProcess($backupRoot, "Back up and verify restore of $total selected file(s)")) {
+                  $entry.Backup.Status = 'Skipped'; $entry.Action = 'BackupSkipped'
+                } else {
+                  if (-not (Get-Command New-GeneratedRemediationCustodyBundle -ErrorAction SilentlyContinue)) {
+                    . (Join-Path $PSScriptRoot '../private/New-GeneratedRemediationCustodyBundle.ps1')
+                  }
+                  $backupReceipts = @(New-GeneratedRemediationCustodyBundle -RootPath $wtPath -BundleRoot $backupRoot -RelativePaths $backupPaths -AllowVerifiedCloudDirectoryMetadata:$AllowVerifiedCloudDirectoryMetadata -Confirm:$false -WhatIf:$false)
+                  $entry.Backup.Receipt = $backupReceipts
+                  if ($backupReceipts.Count -ne 1) { throw 'Expected exactly one backup receipt.' }
+                  $backup = $backupReceipts[0]
+                  $entry.Backup.Receipt = $backup
+                  $entry.Backup.BundlePath = $backup.BundlePath
+                  if ($backup.Status -ceq 'Skipped') {
+                    $entry.Backup.Status = 'Skipped'; $entry.Action = 'BackupSkipped'
+                  } elseif ($backup.Status -cne 'Verified') {
+                    throw ('Backup held: ' + ($backup.Errors -join '; '))
+                  } else {
+                    $expectedClosure = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+                    foreach ($relative in $backupPaths) {
+                      $cursor = $relative
+                      while ($true) {
+                        $null = $expectedClosure.Add($cursor)
+                        if ($cursor -ceq '_generated') { break }
+                        $cursor = $cursor.Substring(0, $cursor.LastIndexOf('/'))
+                      }
+                    }
+                    $expectedProof = Join-Path $backupRoot 'recovery'
+                    if ($backup.CoverageScope -cne 'SelectedFilesAndAncestors' -or -not $backup.BundleCreated -or
+                      $backup.BundlePath -cne $backupRoot -or $backup.ProofRoot -cne $expectedProof -or
+                      $backup.InitialCensus.Binding.Root -ine $wtPath -or $backup.FinalCensus.Binding.Root -ine $wtPath -or
+                      $backup.ProofCensus.Binding.Root -ine $expectedProof -or @($backup.Errors).Count -ne 0 -or
+                      $backup.ExpectedEntries -ne $expectedClosure.Count -or $backup.VerifiedEntries -ne $expectedClosure.Count -or
+                      $backup.VerifiedPayloadBytes -ne $backup.PreflightPayloadBytes -or
+                      $backup.SourceStreamVerification.Bytes -ne $backup.VerifiedPayloadBytes -or $backup.ProofStreamVerification.Bytes -ne $backup.VerifiedPayloadBytes -or
+                      @($backup.RequestedRelativePaths).Count -ne $backupPaths.Count -or
+                      @(Compare-Object $backupPaths @($backup.RequestedRelativePaths) -CaseSensitive).Count) { throw 'Backup receipt source/path/selection binding differs.' }
+                    foreach ($coverage in @(
+                      @{ Paths = @($backup.IncludedRelativePaths) },
+                      @{ Paths = @($backup.Entries.RelativePath) },
+                      @{ Paths = @($backup.SourceStreamVerification.Entries.RelativePath) },
+                      @{ Paths = @($backup.ProofStreamVerification.Entries.RelativePath) }
+                    )) {
+                      if ($coverage.Paths.Count -ne $expectedClosure.Count -or
+                        @(Compare-Object @($expectedClosure) $coverage.Paths -CaseSensitive).Count) { throw 'Backup receipt selected coverage differs.' }
+                    }
+                    if (@($backup.Entries | Where-Object { $_.Verified -ne $true }).Count) { throw 'Backup receipt has an unverified entry.' }
+                    foreach ($flag in @('EntryProofCoverageComplete','CoherentTreeRestoreVerified','AggregateSourceBytesRechecked')) {
+                      if ($backup.$flag -isnot [bool] -or -not $backup.$flag) { throw 'Backup receipt selected restore checks are incomplete.' }
+                    }
+                    foreach ($flag in @('Approved','ReadyForRemoval','CustodyVerified','RootStreamsVerified','DirectoryStreamsVerified')) {
+                      if ($backup.$flag -isnot [bool] -or $backup.$flag) { throw 'Backup receipt has unsupported approval flags.' }
+                    }
+                    $entry.Backup.Status = 'Verified'; $entry.Action = 'BackedUp'; $entry.Archive = $backup.BundlePath
+                  }
+                }
+              } catch {
+                $entry.Backup.Status = 'Held'; $entry.Action = 'BackupHeld'
+                $entry.Backup.Errors = @($_.Exception.Message)
+                $errors.Add("[$($wt.Name)] backup held: $($_.Exception.Message)")
+              }
+            }
+            $sprintResults.Add([pscustomobject]$entry)
+            continue
+          }
           if ($total -eq 0) {
             $entry.Action = 'NothingToRemove'
           } elseif ($Execute -and $PSCmdlet.ShouldProcess("$wtPath\_generated ($total prior-sprint file(s))", 'Archive and remove (git rm staged, not committed)')) {
@@ -661,7 +777,7 @@ function Invoke-GeneratedFolderRemediation {
 
     $report = [PSCustomObject]@{
       SprintNumber = $SprintNumber
-      Mode         = if ($Execute) { 'Execute' } else { 'Plan' }
+      Mode         = if ($CreateBackup) { 'Backup' } elseif ($Execute) { 'Execute' } else { 'Plan' }
       Timestamp    = $stamp
       Scope        = $Scope
       Stable       = $stableResults.ToArray()
@@ -670,10 +786,16 @@ function Invoke-GeneratedFolderRemediation {
       Errors       = $errors.ToArray()
     }
 
+    if ($CreateBackup) {
+      foreach ($flag in @('Approved','CustodyVerified','NamedStreamsVerified','ReadyForRemoval')) {
+        $report | Add-Member -NotePropertyName $flag -NotePropertyValue $false
+      }
+    }
     if (-not [string]::IsNullOrWhiteSpace($EvidencePath)) {
       $dir = Split-Path -Parent $EvidencePath
       if ($dir -and -not (Test-Path -LiteralPath $dir)) { [void](New-Item -ItemType Directory -Path $dir -Force) }
-      $report | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $EvidencePath -Encoding utf8
+      $reportDepth = if ($CreateBackup) { 40 } else { 8 }
+      $report | ConvertTo-Json -Depth $reportDepth | Set-Content -LiteralPath $EvidencePath -Encoding utf8
     }
     foreach ($e in $errors) { Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $e }
     $report

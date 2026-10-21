@@ -1,12 +1,24 @@
 BeforeAll {
   . "$PSScriptRoot\..\..\public\Invoke-GeneratedFolderRemediation.ps1"
-  $script:fixtureRoot = [IO.Path]::GetFullPath("$PSScriptRoot/../../../../_generated/Sprint0016/Task16.84/NestedProtectionTests-v1/Fixtures")
+  . "$PSScriptRoot\..\..\private\Get-GeneratedRemediationByteComparison.ps1"
+  $script:fixtureRoot = [IO.Path]::GetFullPath("$PSScriptRoot/../../../../_generated/Sprint0016/Task16.84/CarryoverByteGuardTests-v1/Fixtures")
+  $script:realGitCommand = Get-Command git -CommandType Application | Select-Object -First 1
+  $script:realCompressArchive = Get-Command Compress-Archive -CommandType Function, Cmdlet
+  $null = New-Item -ItemType Directory -Path $script:fixtureRoot -Force
+  $cursor = $script:fixtureRoot
+  while ($cursor) {
+    $item = Get-Item -LiteralPath $cursor -Force
+    if ($item.LinkType -or $item.Target) { throw 'Redirecting fixture ancestor.' }
+    $cursor = Split-Path -Parent $cursor
+  }
 
   function script:Get-TestCleanupPaths {
     param([string]$Root, [string]$Stable, [string]$Sprint)
 
     $separators = [char[]]@([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
     $rootFull = [IO.Path]::GetFullPath($Root).TrimEnd($separators)
+    if ((Resolve-Path -LiteralPath $rootFull).ProviderPath -ine $rootFull -or
+      (Get-Item -LiteralPath $rootFull -Force).LinkType) { throw 'Redirected fixture cleanup root.' }
     $stableFull = [IO.Path]::GetFullPath($Stable).TrimEnd($separators)
     $sprintFull = [IO.Path]::GetFullPath($Sprint).TrimEnd($separators)
     $basePrefix = $script:fixtureRoot.TrimEnd($separators) + [IO.Path]::DirectorySeparatorChar
@@ -86,14 +98,15 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
     $r.Stable[0].CurrentSprintProtected | Should -Be 1
     @($r.Stable[0].TrackedDeferred).Count | Should -Be 2
     @($r.Sprint[0].InheritedTracked).Count | Should -Be 2
-    @($r.Sprint[0].PriorSprintNamedUntracked).Count | Should -Be 2
+    @($r.Sprint[0].PriorSprintNamedUntracked).Count | Should -Be 0
+    @($r.Sprint[0].PreservedFiles).Count | Should -Be 2
     $r.History[0].HistoryPathCount | Should -Be 2
     $r.History[0].Action | Should -Be 'Planned'
     Test-Path (Join-Path $script:stable '_generated/AIAdapterBackups/backup.json') | Should -BeTrue
     Test-Path (Join-Path $script:sprint '_generated/sprint-end-0007/stale.log') | Should -BeTrue
   }
 
-  It 'removes stable debris and prior-sprint carryover, archives it, and protects current-sprint content' {
+  It 'removes stable debris and equal tracked carryover while preserving orphan untracked evidence' {
     $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName 'Repo' `
       -Scope StableWorktree, SprintCarryover -Execute -ArchiveRoot $script:archive -Confirm:$false
 
@@ -105,11 +118,11 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
 
     $r.Sprint[0].Action | Should -Be 'Removed'
     $r.Sprint[0].GitRemoved | Should -Be 2
-    $r.Sprint[0].DeletedFiles | Should -Be 2
+    $r.Sprint[0].DeletedFiles | Should -Be 0
     Test-Path (Join-Path $script:sprint '_generated/Sprint0016/Task16.80/evidence.md') | Should -BeTrue
     Test-Path (Join-Path $script:sprint '_generated/Sprint0016/tracked-now.md') | Should -BeTrue
     Test-Path (Join-Path $script:sprint '_generated/scratch/no-sprint-name.txt') | Should -BeTrue
-    Test-Path (Join-Path $script:sprint '_generated/sprint-end-0007') | Should -BeFalse
+    Test-Path (Join-Path $script:sprint '_generated/sprint-end-0007') | Should -BeTrue
 
     $staged = & git -C $script:sprint diff --cached --name-only
     $staged | Should -Contain '_generated/legacy-tracked.txt'
@@ -185,7 +198,7 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
     $staged = @(Invoke-TestGit $script:sprint diff --cached --name-only)
     foreach ($rel in $protectedSprint) { $staged | Should -Not -Contain $rel }
     $staged | Should -Contain $oldTracked
-    Test-Path -LiteralPath (Join-Path $script:sprint $oldUntracked) | Should -BeFalse
+    Test-Path -LiteralPath (Join-Path $script:sprint $oldUntracked) | Should -BeTrue
     Test-Path -LiteralPath (Join-Path $script:stable $oldUntracked) | Should -BeFalse
     Test-Path -LiteralPath (Join-Path $script:stable $noSprint) | Should -BeFalse
     Test-Path -LiteralPath (Join-Path $script:sprint $noSprint) | Should -BeTrue
@@ -198,6 +211,153 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
 
     $r.Sprint[0].SkippedModified | Should -Contain '_generated/legacy-tracked.txt'
     Test-Path (Join-Path $script:sprint '_generated/legacy-tracked.txt') | Should -BeTrue
+  }
+
+  It 'removes only actual same-path equal candidates and preserves different or missing partners' {
+    $equal = '_generated/Sprint0015/equal.bin'
+    $empty = '_generated/Sprint0015/empty.bin'
+    $different = '_generated/Sprint0015/different.bin'
+    $missing = '_generated/Sprint0015/missing.bin'
+    foreach ($root in @($script:stable, $script:sprint)) {
+      New-TestFile $root $equal 'same bytes'
+      New-TestFile $root $empty ''
+      [IO.File]::WriteAllBytes((Join-Path $root $empty), [byte[]]@())
+      New-TestFile $root $different 'AAAA'
+    }
+    New-TestFile $script:sprint $different 'BBBB'
+    New-TestFile $script:sprint $missing 'same bytes'
+    New-TestFile $script:stable '_generated/Sprint0015/other-name.bin' 'same bytes'
+    New-TestFile $script:sprint '_generated/legacy-tracked.txt' 'different committed bytes'
+    Invoke-TestGit $script:sprint add -f -- _generated/legacy-tracked.txt | Out-Null
+    Invoke-TestGit $script:sprint commit -q -m 'different tracked content' | Out-Null
+    $beforeDifferent = (Get-FileHash -LiteralPath (Join-Path $script:sprint $different)).Hash
+
+    $plan = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo -Scope SprintCarryover
+    $plan.Errors | Should -BeNullOrEmpty
+    $plan.Sprint[0].PriorSprintNamedUntracked | Should -Contain $equal
+    $plan.Sprint[0].PriorSprintNamedUntracked | Should -Contain $empty
+    $plan.Sprint[0].PriorSprintNamedUntracked | Should -Not -Contain $different
+    $plan.Sprint[0].PriorSprintNamedUntracked | Should -Not -Contain $missing
+    ($plan.Sprint[0].PreservedFiles | Where-Object Path -EQ $different).Status | Should -Be Different
+    ($plan.Sprint[0].PreservedFiles | Where-Object Path -EQ $missing).Status | Should -Be Hold
+    $plan.Sprint[0].InheritedTracked | Should -Not -Contain '_generated/legacy-tracked.txt'
+
+    $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo -Scope SprintCarryover -Execute -ArchiveRoot $script:archive -Confirm:$false
+    $r.Errors | Should -BeNullOrEmpty
+    $r.Sprint[0].DeletedFiles | Should -Be 2
+    Test-Path -LiteralPath (Join-Path $script:sprint $equal) | Should -BeFalse
+    Test-Path -LiteralPath (Join-Path $script:sprint $empty) | Should -BeFalse
+    (Get-FileHash -LiteralPath (Join-Path $script:sprint $different)).Hash | Should -Be $beforeDifferent
+    Test-Path -LiteralPath (Join-Path $script:sprint $missing) | Should -BeTrue
+    Test-Path -LiteralPath (Join-Path $script:sprint '_generated/legacy-tracked.txt') | Should -BeTrue
+    $r.Sprint[0].ReadyForRemoval | Should -BeFalse
+    $r.Sprint[0].NamedStreamsVerified | Should -BeFalse
+    $r.Sprint[0].CustodyVerified | Should -BeFalse
+  }
+
+  It 'preserves an equal untracked sprint file after combined stable mode removes its partner' {
+    $rel = '_generated/Sprint0015/combined.bin'
+    foreach ($root in @($script:stable, $script:sprint)) { New-TestFile $root $rel 'equal baseline' }
+    $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo -Scope StableWorktree, SprintCarryover -Execute -ArchiveRoot $script:archive -Confirm:$false
+    $r.Errors | Should -BeNullOrEmpty
+    Test-Path -LiteralPath (Join-Path $script:stable $rel) | Should -BeFalse
+    Test-Path -LiteralPath (Join-Path $script:sprint $rel) | Should -BeTrue
+    ($r.Sprint[0].PreservedFiles | Where-Object Path -EQ $rel).Status | Should -Be Hold
+  }
+
+  It 'preserves staged changes before asking the byte comparator' {
+    New-TestFile $script:sprint '_generated/legacy-tracked.txt' 'staged WIP'
+    Invoke-TestGit $script:sprint add -f -- _generated/legacy-tracked.txt | Out-Null
+    $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo -Scope SprintCarryover -Execute -NoArchive -Confirm:$false
+    $r.Sprint[0].SkippedModified | Should -Contain '_generated/legacy-tracked.txt'
+    (Get-Content -LiteralPath (Join-Path $script:sprint '_generated/legacy-tracked.txt') -Raw).Trim() | Should -Be 'staged WIP'
+    ($r.Sprint[0].DefaultDataWitnesses.Binding.RelativePath) | Should -Not -Contain '_generated/legacy-tracked.txt'
+  }
+
+  It 'holds carryover when stable branch identity differs' {
+    Invoke-TestGit $script:stable checkout -q -b other | Out-Null
+    $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo -Scope SprintCarryover -Execute -NoArchive -Confirm:$false
+    $r.Sprint[0].Action | Should -Be Held
+    $r.Errors -join ' ' | Should -Match 'Stable branch binding'
+    $r.Sprint[0].GitRemoved | Should -Be 0
+  }
+
+  It 'holds an unrelated repository with a matching sprint directory name' {
+    $unrelated = Join-Path $script:gitRoot 'Repo-wt-9-Sprint-0016-work-items'
+    $null = New-Item -ItemType Directory -Path $unrelated
+    Invoke-TestGit $unrelated init -q -b main | Out-Null
+    New-TestFile $unrelated 'seed.txt'
+    Invoke-TestGit $unrelated add seed.txt | Out-Null
+    Invoke-TestGit $unrelated commit -q -m 'unrelated' | Out-Null
+    $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo -Scope SprintCarryover
+    ($r.Sprint | Where-Object Path -EQ $unrelated).Action | Should -Be Held
+    $r.Errors -join ' ' | Should -Match 'common repository binding'
+  }
+
+  It 'does not turn a failed common-repository query into an empty successful plan' {
+    Mock git {
+      if ($args -contains '--git-common-dir') { $global:LASTEXITCODE = 128; return 'identity query failed' }
+      & $script:realGitCommand @args
+    }
+    $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo -Scope SprintCarryover -Execute -NoArchive -Confirm:$false
+    $r.Sprint[0].Action | Should -Be Held
+    $r.Errors -join ' ' | Should -Match 'Git inventory failed'
+    $r.Sprint[0].Archive | Should -BeNullOrEmpty
+    Test-Path -LiteralPath (Join-Path $script:sprint '_generated/legacy-tracked.txt') | Should -BeTrue
+  }
+
+  It 'preserves the entire batch when selected default bytes drift after archiving' {
+    $script:driftRelative = '_generated/Sprint0015/selected.bin'
+    foreach ($root in @($script:stable, $script:sprint)) { New-TestFile $root $script:driftRelative 'AAAA' }
+    Mock Compress-Archive {
+      & $script:realCompressArchive @PesterBoundParameters
+      New-TestFile $script:sprint $script:driftRelative 'BBBB'
+    }
+    $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo -Scope SprintCarryover -Execute -ArchiveRoot $script:archive -Confirm:$false
+    $r.Sprint[0].Action | Should -Be Failed
+    $r.Errors -join ' ' | Should -Match 'byte witness drift'
+    $r.Sprint[0].GitRemoved | Should -Be 0
+    $r.Sprint[0].DeletedFiles | Should -Be 0
+    Test-Path -LiteralPath (Join-Path $script:sprint '_generated/legacy-tracked.txt') | Should -BeTrue
+    Test-Path -LiteralPath (Join-Path $script:sprint $script:driftRelative) | Should -BeTrue
+    @(Invoke-TestGit $script:sprint diff --cached --name-only).Count | Should -Be 0
+  }
+
+  It 'preserves the entire batch when the index changes after archiving' {
+    Mock Compress-Archive {
+      & $script:realCompressArchive @PesterBoundParameters
+      New-TestFile $script:sprint '_generated/Sprint0016/new-stage.txt'
+      Invoke-TestGit $script:sprint add -f -- _generated/Sprint0016/new-stage.txt | Out-Null
+    }
+    $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo -Scope SprintCarryover -Execute -ArchiveRoot $script:archive -Confirm:$false
+    $r.Sprint[0].Action | Should -Be Failed
+    $r.Errors -join ' ' | Should -Match 'selection/index/HEAD drift'
+    $r.Sprint[0].GitRemoved | Should -Be 0
+    Test-Path -LiteralPath (Join-Path $script:sprint '_generated/legacy-tracked.txt') | Should -BeTrue
+  }
+
+  It 'refuses an equal pair whose shared bytes changed after archiving' {
+    $script:driftRelative = '_generated/Sprint0015/both-drift.bin'
+    foreach ($root in @($script:stable, $script:sprint)) { New-TestFile $root $script:driftRelative 'AAAA' }
+    Mock Compress-Archive {
+      & $script:realCompressArchive @PesterBoundParameters
+      foreach ($root in @($script:stable, $script:sprint)) { New-TestFile $root $script:driftRelative 'BBBB' }
+    }
+    $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo -Scope SprintCarryover -Execute -ArchiveRoot $script:archive -Confirm:$false
+    $r.Sprint[0].Action | Should -Be Failed
+    $r.Errors -join ' ' | Should -Match 'byte witness drift'
+    $r.Sprint[0].GitRemoved | Should -Be 0
+    $r.Sprint[0].DeletedFiles | Should -Be 0
+    Test-Path -LiteralPath (Join-Path $script:sprint $script:driftRelative) | Should -BeTrue
+  }
+
+  It 'loads the private helper from source when it is not already available' {
+    Remove-Item Function:\Get-GeneratedRemediationByteComparison -ErrorAction Stop
+    try {
+      $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo -Scope SprintCarryover
+      $r.Errors | Should -BeNullOrEmpty
+      $r.Sprint[0].InheritedTracked | Should -Contain '_generated/legacy-tracked.txt'
+    } finally { . "$PSScriptRoot\..\..\private\Get-GeneratedRemediationByteComparison.ps1" }
   }
 
   It 'requires an archive root before stable deletion without NoArchive' {

@@ -7,9 +7,10 @@ function Invoke-GeneratedFolderRemediation {
 
   .DESCRIPTION
     These are legacy partial remediation modes, not the complete expanded
-    Task 16.84 solution. They do not implement same-path/identical-byte duplicate
-    selection, complete stable-tree removal, or coordinated stable/sprint history
-    migration. Execution requires a separately reviewed plan and authorization.
+    Task 16.84 solution. SprintCarryover now guards legacy candidates with
+    same-path default-byte equality. Complete stable-tree removal, ADS/custody
+    acceptance and coordinated history migration remain separate requirements.
+    Execution requires a separately reviewed plan and authorization.
 
     Rule R-38 says sprint `_generated/` folders are deleted at sprint end. In
     practice, files reach the stable worktrees anyway (see SC-0470): sprint-close
@@ -36,7 +37,16 @@ function Invoke-GeneratedFolderRemediation {
         - PriorSprintNamed: tracked-or-untracked files whose path has a sprint
           segment (Sprint0015, SprintEnd0013, sprint-end-0007, ...) numbered
           below -SprintNumber.
-      Files with uncommitted modifications are skipped and reported.
+      These are candidate classes only. Current/future paths and files with
+      uncommitted modifications are skipped. Each remaining candidate requires
+      an existing identical-relative-path file in the corresponding stable
+      worktree and actual default-data byte equality. Missing, different or held
+      partners are preserved and reported. Git common repository and stable
+      branch are checked before comparison. A stable partner already removed by
+      combined StableWorktree processing is missing, never retrospective proof.
+      Selection/index/HEAD/byte witnesses are rechecked after archiving before
+      removal. This is non-atomic and requires quiet producers; default-data
+      equality establishes neither named-stream equality nor custody/readiness.
 
     StableHistory
       Reports every `_generated/` path and commit reachable from -StableBranch.
@@ -155,6 +165,9 @@ function Invoke-GeneratedFolderRemediation {
     $fn = 'Invoke-GeneratedFolderRemediation'
     $mn = 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
+    if ($Scope -contains 'SprintCarryover' -and -not (Get-Command Get-GeneratedRemediationByteComparison -ErrorAction SilentlyContinue)) {
+      . (Join-Path $PSScriptRoot '../private/Get-GeneratedRemediationByteComparison.ps1')
+    }
 
     $currentSprint = [int]$SprintNumber
     $stamp = (Get-Date).ToUniversalTime().ToString('yyyyMMddTHHmmssZ')
@@ -358,7 +371,7 @@ function Invoke-GeneratedFolderRemediation {
         $errors.Add("[$repo] stable worktree '$stablePath' not found; skipped.")
         continue
       }
-      $branchReader = if ($Scope -contains 'StableWorktree') { $checkedGit } else { $invokeGit }
+      $branchReader = if ($Scope -contains 'StableWorktree' -or $Scope -contains 'SprintCarryover') { $checkedGit } else { $invokeGit }
       $branch = (& $branchReader @('-C', $stablePath, 'branch', '--show-current')).Output | Select-Object -First 1
       $sprintWorktrees = @(Get-ChildItem -LiteralPath $GitRoot -Directory -Filter "$repo-wt-*" -ErrorAction SilentlyContinue)
       $currentSprintWorktrees = @($sprintWorktrees | Where-Object { $_.Name -like "$repo-wt-*-sprint-$SprintNumber-work-items" })
@@ -421,13 +434,54 @@ function Invoke-GeneratedFolderRemediation {
             Repository = $repo; Path = $wtPath; Action = 'Planned'
             InheritedTracked = @(); PriorSprintNamedTracked = @(); PriorSprintNamedUntracked = @()
             SkippedModified = @(); GitRemoved = 0; DeletedFiles = 0; Archive = $null
+            PreservedFiles = @(); DefaultDataWitnesses = @()
+            ReadyForRemoval = $false; CustodyVerified = $false; NamedStreamsVerified = $false
           }
-          $mainPaths = & $splitNul (& $invokeGit @('-C', $wtPath, 'ls-tree', '-r', '-z', '--name-only', $StableBranch, '--', '_generated')).Output
+          # All identity and selection reads are checked; a failed command is not an empty inventory.
+          $getCarryoverState = {
+            $stableBranchNow = (& $checkedGit @('-C', $stablePath, 'branch', '--show-current')).Output
+            if (@($stableBranchNow).Count -ne 1 -or $stableBranchNow[0] -cne $StableBranch) { throw 'Stable branch binding differs.' }
+            $stableCommon = (& $checkedGit @('-C', $stablePath, 'rev-parse', '--path-format=absolute', '--git-common-dir')).Output
+            $sprintCommon = (& $checkedGit @('-C', $wtPath, 'rev-parse', '--path-format=absolute', '--git-common-dir')).Output
+            if (@($stableCommon).Count -ne 1 -or @($sprintCommon).Count -ne 1 -or
+              -not [IO.Path]::IsPathFullyQualified($stableCommon[0]) -or -not [IO.Path]::IsPathFullyQualified($sprintCommon[0]) -or
+              [IO.Path]::GetFullPath($stableCommon[0]).TrimEnd('\', '/') -ine [IO.Path]::GetFullPath($sprintCommon[0]).TrimEnd('\', '/')) {
+              throw 'Stable and sprint common repository binding differs.'
+            }
+            [pscustomobject]@{
+              Common = [IO.Path]::GetFullPath($stableCommon[0])
+              StableHead = (& $checkedGit @('-C', $stablePath, 'rev-parse', '--verify', 'HEAD')).Output
+              SprintHead = (& $checkedGit @('-C', $wtPath, 'rev-parse', '--verify', 'HEAD')).Output
+              MainPaths = (& $checkedGit @('-C', $wtPath, 'ls-tree', '-r', '-z', '--name-only', $StableBranch, '--', '_generated')).Output
+              Index = (& $checkedGit @('-C', $wtPath, 'ls-files', '--stage', '-z', '--', '_generated')).Output
+              Tracked = (& $checkedGit @('-C', $wtPath, 'ls-files', '-z', '--', '_generated')).Output
+              Modified = (& $checkedGit @('-C', $wtPath, 'diff', '--name-only', '-z', 'HEAD', '--', '_generated')).Output
+            }
+          }
+          try { $selectionState = & $getCarryoverState }
+          catch {
+            $entry.Action = 'Held'
+            $errors.Add("[$($wt.Name)] carryover identity/inventory held: $($_.Exception.Message)")
+            $sprintResults.Add([PSCustomObject]$entry)
+            continue
+          }
+          $mainPaths = & $splitNul $selectionState.MainPaths
           $mainSet = (& $newSet $mainPaths)
-          $tracked = & $splitNul (& $invokeGit @('-C', $wtPath, 'ls-files', '-z', '--', '_generated')).Output
+          $tracked = & $splitNul $selectionState.Tracked
           $trackedSet = (& $newSet $tracked)
-          $modified = & $splitNul (& $invokeGit @('-C', $wtPath, 'diff', '--name-only', '-z', 'HEAD', '--', '_generated')).Output
+          $modified = & $splitNul $selectionState.Modified
           $modifiedSet = (& $newSet $modified)
+          $witnesses = @{}
+          $qualifyCarryoverPath = {
+            param([string]$Relative)
+            $proof = Get-GeneratedRemediationByteComparison -StableRoot $stablePath -SprintRoot $wtPath -RepositoryName $repo -RelativePath $Relative
+            if ($proof.Status -ceq 'Equal' -and $proof.DefaultDataEqual -is [bool] -and $proof.DefaultDataEqual) {
+              $witnesses[$Relative] = $proof
+              return $true
+            }
+            $entry.PreservedFiles += [pscustomobject]@{ Path = $Relative; Status = $proof.Status; Reason = $proof.Reason; Errors = $proof.Errors }
+            return $false
+          }
 
           $gitTargets = [System.Collections.Generic.List[string]]::new()
           foreach ($rel in $tracked) {
@@ -438,15 +492,18 @@ function Invoke-GeneratedFolderRemediation {
             $isPriorNamed = ($null -ne $priorSprint -and $priorSprint -lt $currentSprint)
             if (-not ($isInherited -or $isPriorNamed)) { continue }
             if ($modifiedSet.Contains($rel)) { $entry.SkippedModified += $rel; continue }
+            if (-not (& $qualifyCarryoverPath $rel)) { continue }
             if ($isInherited) { $entry.InheritedTracked += $rel } else { $entry.PriorSprintNamedTracked += $rel }
             $gitTargets.Add($rel)
           }
           $untrackedTargets = @(& $listDiskFiles $wtPath | Where-Object {
               if ($trackedSet.Contains($_)) { return $false }
               $priorSprint = & $priorSprintOf $_
-              $null -ne $priorSprint -and $priorSprint -lt $currentSprint
+              if ($null -eq $priorSprint -or $priorSprint -ge $currentSprint) { return $false }
+              & $qualifyCarryoverPath $_
             })
           $entry.PriorSprintNamedUntracked = $untrackedTargets
+          $entry.DefaultDataWitnesses = @($witnesses.Values)
 
           $total = $gitTargets.Count + $untrackedTargets.Count
           if ($total -eq 0) {
@@ -454,6 +511,17 @@ function Invoke-GeneratedFolderRemediation {
           } elseif ($Execute -and $PSCmdlet.ShouldProcess("$wtPath\_generated ($total prior-sprint file(s))", 'Archive and remove (git rm staged, not committed)')) {
             try {
               $entry.Archive = & $archiveFiles $wtPath (@($gitTargets) + $untrackedTargets) "$($wt.Name)-carryover-_generated"
+              $freshState = & $getCarryoverState
+              if (($selectionState | ConvertTo-Json -Depth 5 -Compress) -cne ($freshState | ConvertTo-Json -Depth 5 -Compress)) {
+                throw 'Carryover selection/index/HEAD drift after archive; batch preserved.'
+              }
+              foreach ($rel in @($gitTargets) + $untrackedTargets) {
+                $fresh = Get-GeneratedRemediationByteComparison -StableRoot $stablePath -SprintRoot $wtPath -RepositoryName $repo -RelativePath $rel
+                $original = $witnesses[$rel]
+                if ($fresh.Status -cne 'Equal' -or $fresh.DefaultDataEqual -isnot [bool] -or -not $fresh.DefaultDataEqual -or
+                  $fresh.StableSHA256 -cne $original.StableSHA256 -or $fresh.SprintSHA256 -cne $original.SprintSHA256 -or
+                  $fresh.BytesCompared -ne $original.BytesCompared) { throw "Carryover byte witness drift after archive: $rel; batch preserved." }
+              }
               if ($gitTargets.Count -gt 0) {
                 $specFile = Join-Path ([IO.Path]::GetTempPath()) "GeneratedRemediation-$([guid]::NewGuid().ToString('N')).txt"
                 try {

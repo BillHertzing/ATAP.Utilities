@@ -213,4 +213,159 @@ Describe 'Build-PSModuleManifest' {
       { Build-PSModuleManifest -SourceManifestPath $script:Source -OutputManifestPath $script:Output -ModuleVersion ([version]'1.2.3') -ModuleRoot $wrongRoot -Confirm:$false } | Should -Throw
     }
   }
+
+  Context 'family dependency composition' {
+    BeforeEach {
+      $script:Root = New-TempManifestRoot
+      $script:Source = New-ValidSourceManifest -Root $script:Root -Name 'Composition'
+      $script:Output = Join-Path $script:Root 'out/Composition.psd1'
+      $script:Family = Join-Path $script:Root 'ModuleFamily.psd1'
+      $script:DependencyGuid = [guid]'88888888-1111-2222-3333-444444444444'
+      $script:PreviousModulePath = $env:PSModulePath
+      $modules = Join-Path $script:Root 'modules'
+      foreach ($name in @('Fixture.Internal', 'Fixture.Appended', 'Fixture.External')) {
+        $folder = Join-Path $modules $name
+        New-Item -ItemType Directory -Path $folder -Force | Out-Null
+        New-ModuleManifest -Path (Join-Path $folder "$name.psd1") -ModuleVersion '3.0.0' -Guid $script:DependencyGuid
+      }
+      $env:PSModulePath = $modules + [IO.Path]::PathSeparator + $env:PSModulePath
+      @'
+@{
+  Members = @(
+    @{
+      Name = 'Composition'
+      Dependencies = @('Fixture.Internal', 'Fixture.Appended', 'FIXTURE.INTERNAL')
+      MinimumVersions = @{ 'Fixture.Internal' = '2.0.0'; 'Fixture.Appended' = '1.0.0' }
+    }
+  )
+}
+'@ | Set-Content -LiteralPath $script:Family -Encoding utf8
+      function Set-CompositionDependencies {
+        param([object[]]$Dependencies)
+        New-ModuleManifest -Path $script:Source -ModuleVersion '0.0.1' -RequiredModules $Dependencies
+      }
+      function Invoke-Composition {
+        Build-PSModuleManifest -SourceManifestPath $script:Source -OutputManifestPath $script:Output -ModuleVersion ([version]'1.0.0') -ModuleFamilyPath $script:Family -Confirm:$false | Out-Null
+        (Import-PowerShellDataFile -LiteralPath $script:Output).RequiredModules
+      }
+    }
+    AfterEach {
+      $env:PSModulePath = $script:PreviousModulePath
+      # Keep generated manifests beneath evidence TEMP for independent readback.
+    }
+
+    It 'retains external exact pins first, source order and GUID while updating family floors and appending once' {
+      Set-CompositionDependencies @(
+        @{ ModuleName = 'Pester'; RequiredVersion = '6.2.0' }
+        'Fixture.External'
+        @{ ModuleName = 'fixture.internal'; ModuleVersion = '1.0.0'; GUID = $script:DependencyGuid }
+      )
+      $actual = @(Invoke-Composition)
+      @($actual | ForEach-Object { if ($_ -is [string]) { $_ } else { $_.ModuleName } }) |
+        Should -Be @('Pester', 'Fixture.External', 'fixture.internal', 'Fixture.Appended')
+      $actual[0].RequiredVersion | Should -Be '6.2.0'
+      $actual[1] | Should -Be 'Fixture.External'
+      $actual[2].ModuleVersion | Should -Be '2.0.0'
+      $actual[2].GUID | Should -Be $script:DependencyGuid
+      (Test-ModuleManifest -Path $script:Output -ErrorAction Stop).Version | Should -Be ([version]'1.0.0')
+    }
+
+    It 'keeps a stronger source minimum and maximum constraint' {
+      Set-CompositionDependencies @(@{ ModuleName = 'Fixture.Internal'; ModuleVersion = '3.0.0'; MaximumVersion = '3.*' })
+      $actual = @(Invoke-Composition)
+      $actual[0].ModuleVersion | Should -Be '3.0.0'
+      $actual[0].MaximumVersion | Should -Be '3.*'
+    }
+
+    It 'preserves a compatible exact internal version without adding a conflicting minimum key' {
+      Set-CompositionDependencies @(@{ ModuleName = 'Fixture.Internal'; RequiredVersion = '3.0.0'; GUID = $script:DependencyGuid })
+      $actual = @(Invoke-Composition)
+      $actual[0].RequiredVersion | Should -Be '3.0.0'
+      $actual[0].GUID | Should -Be $script:DependencyGuid
+      $actual[0].ContainsKey('ModuleVersion') | Should -BeFalse
+    }
+
+    It 'rejects an exact source version below the family floor' {
+      Set-CompositionDependencies @(@{ ModuleName = 'Fixture.Internal'; RequiredVersion = '1.0.0' })
+      { Invoke-Composition } | Should -Throw '*RequiredVersion*conflicts*'
+    }
+
+    It 'rejects a maximum below the effective family floor' {
+      Set-CompositionDependencies @(@{ ModuleName = 'Fixture.Internal'; MaximumVersion = '1.*' })
+      { Invoke-Composition } | Should -Throw '*minimum*exceeds MaximumVersion*'
+    }
+
+    It 'merges duplicate source names case-insensitively without losing the stronger minimum' {
+      Set-CompositionDependencies @('Fixture.Internal', @{ ModuleName = 'FIXTURE.INTERNAL'; ModuleVersion = '3.0.0' })
+      $actual = @(Invoke-Composition)
+      $actual.Count | Should -Be 2
+      $actual[0].ModuleName | Should -Be 'Fixture.Internal'
+      $actual[0].ModuleVersion | Should -Be '3.0.0'
+    }
+
+    It 'rejects conflicting exact constraints on duplicate source names' {
+      Set-CompositionDependencies @(@{ ModuleName = 'Fixture.Internal'; RequiredVersion = '3.0.0' }, @{ ModuleName = 'fixture.internal'; RequiredVersion = '2.0.0' })
+      { Invoke-Composition } | Should -Throw '*Conflicting RequiredVersion*'
+    }
+
+    It 'deduplicates unconstrained external strings while preserving a valid string declaration' {
+      Set-CompositionDependencies @('Fixture.External', 'FIXTURE.EXTERNAL')
+      $actual = @(Invoke-Composition)
+      $actual.Count | Should -Be 3
+      $actual[0] | Should -Be 'Fixture.External'
+    }
+
+    It 'intersects duplicate external version bounds without relaxing either declaration' {
+      Set-CompositionDependencies @(
+        @{ ModuleName = 'Fixture.External'; ModuleVersion = '1.0.0'; MaximumVersion = '3.*' }
+        @{ ModuleName = 'FIXTURE.EXTERNAL'; ModuleVersion = '2.0.0'; MaximumVersion = '4.*' }
+      )
+      $actual = @(Invoke-Composition)
+      $actual.Count | Should -Be 3
+      $actual[0].ModuleVersion | Should -Be '2.0.0'
+      $actual[0].MaximumVersion | Should -Be '3.*'
+    }
+
+    It 'rejects conflicting GUID constraints on duplicate source names' {
+      Set-CompositionDependencies @(@{ ModuleName = 'Fixture.Internal'; ModuleVersion = '1.0.0'; GUID = $script:DependencyGuid }, @{ ModuleName = 'fixture.internal'; ModuleVersion = '1.0.0'; GUID = '99999999-1111-2222-3333-444444444444' })
+      { Invoke-Composition } | Should -Throw '*Conflicting GUID*'
+    }
+
+    It 'emits a valid exact specification after intersecting compatible duplicate upper bounds' {
+      Set-CompositionDependencies @(
+        @{ ModuleName = 'Fixture.Internal'; RequiredVersion = '3.0.0'; GUID = $script:DependencyGuid }
+        @{ ModuleName = 'fixture.internal'; ModuleVersion = '2.0.0'; MaximumVersion = '3.*' }
+      )
+      $actual = @(Invoke-Composition)
+      $actual.Count | Should -Be 2
+      $actual[0].RequiredVersion | Should -Be '3.0.0'
+      $actual[0].GUID | Should -Be $script:DependencyGuid
+      $actual[0].ContainsKey('ModuleVersion') | Should -BeFalse
+      $actual[0].ContainsKey('MaximumVersion') | Should -BeFalse
+      { Test-ModuleManifest -Path $script:Output -ErrorAction Stop } | Should -Not -Throw
+    }
+
+    It 'rejects duplicate upper bounds that exclude the exact version' {
+      Set-CompositionDependencies @(
+        @{ ModuleName = 'Fixture.Internal'; RequiredVersion = '3.0.0' }
+        @{ ModuleName = 'fixture.internal'; MaximumVersion = '2.*' }
+      )
+      { Invoke-Composition } | Should -Throw '*RequiredVersion*conflicts*'
+    }
+
+    It 'emits family-only dependencies in metadata order without duplicates' {
+      $actual = @(Invoke-Composition)
+      @($actual.ModuleName) | Should -Be @('Fixture.Internal', 'Fixture.Appended')
+    }
+
+    It 'leaves source dependency constraints and order unchanged without family metadata' {
+      Set-CompositionDependencies @(@{ ModuleName = 'Pester'; RequiredVersion = '6.2.0' }, 'Fixture.External')
+      Build-PSModuleManifest -SourceManifestPath $script:Source -OutputManifestPath $script:Output -ModuleVersion ([version]'1.0.0') -Confirm:$false | Out-Null
+      $actual = (Import-PowerShellDataFile -LiteralPath $script:Output).RequiredModules
+      $actual[0].ModuleName | Should -Be 'Pester'
+      $actual[0].RequiredVersion | Should -Be '6.2.0'
+      $actual[1] | Should -Be 'Fixture.External'
+    }
+  }
+
 }

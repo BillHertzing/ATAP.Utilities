@@ -1,4 +1,4 @@
-#Requires -Module Pester
+#Requires -Module @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 
 # Repository-wide evaluation checks for the ratified Task 15.180 lifecycle and
 # Central Package Management contract. OpenHardwareMonitorLib is deliberately

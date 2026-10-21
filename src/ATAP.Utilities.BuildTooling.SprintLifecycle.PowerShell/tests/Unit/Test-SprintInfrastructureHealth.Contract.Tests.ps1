@@ -1,5 +1,5 @@
 # AI assisted using Powershell.instructions.md as guidelines
-# Pester 5+ tests for Test-SprintInfrastructureHealth
+# Pester 6.2+ tests for Test-SprintInfrastructureHealth
 
 BeforeAll {
   Import-Module PSFramework -ErrorAction SilentlyContinue

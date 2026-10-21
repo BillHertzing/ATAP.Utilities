@@ -12,9 +12,9 @@ Entity Framework Core abstractions, Flyway migration helpers
 
 | Source File    | Last Modified            |
 | -------------- | ------------------------ |
-| main-instructions.md | 2026-10-15 22:30:28 |
+| main-instructions.md | 2026-10-21 16:37:56 |
 | ai-local.md | 2026-10-15 22:40:26 |
-| CLAUDE.md (combined) | 2026-10-16 10:25:01 |
+| CLAUDE.md (combined) | 2026-10-21 16:56:47 |
 
 ---
 
@@ -255,7 +255,7 @@ All agents operate on **Windows** inside **Visual Studio Code**. Use **PowerShel
 - Chain commands with `;` or `|` pipelines — never `&&`
 - Line continuation uses `` ` `` (backtick) — never `\`
 - When running Pester, NEVER use `-NoProfile`. Always allow PowerShell profiles:
-  `pwsh -Command "Invoke-Pester -Path '<path>' -Output Detailed"`
+  `pwsh -Command "Import-Module Pester -RequiredVersion 6.2.0; Invoke-Pester -Path '<path>' -Output Minimal"`
 - For ATAP repository work, do not pass `-NoProfile` unless the task is explicitly auditing no-profile behavior. PowerShell profiles populate `$global:settings`, and BuildTooling resolves host/user configuration through `Get-PVal`; stripping profiles changes configuration resolution and can create misleading failures.
 - **PowerShell 7 inter-host remoting (R-39):** Every PowerShell remoting connection
   between hosts in the ATAP organization must explicitly select the PowerShell 7
@@ -429,12 +429,12 @@ function My-Function { }
 - Follow AAA (Arrange/Act/Assert) pattern
 - `dotnet test tests/<ProjectName>/`
 
-**PowerShell (Pester 5+):**
+**PowerShell (Pester 6.2.0):**
 
 - Tests colocated in module's `tests/` subfolder
 - Use PSFramework for test logging
 - May require Assert module: `Install-Module -Name Assert -Force`
-- `pwsh -Command "Invoke-Pester -Path ./src/<Module>/tests/ -Output Detailed"`
+- `pwsh -Command "Import-Module Pester -RequiredVersion 6.2.0; Invoke-Pester -Path ./src/<Module>/tests/ -Output Minimal"`
 
 ---
 

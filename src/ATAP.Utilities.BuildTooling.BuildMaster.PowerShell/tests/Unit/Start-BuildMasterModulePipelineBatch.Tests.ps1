@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for Start-BuildMasterModulePipelineBatch.
+# Pester 6.2+ tests for Start-BuildMasterModulePipelineBatch.
 # The reused single-module entry points (Get-BuildContext,
 # Start-BuildMasterPackagePipeline, Resolve-BuildMasterPackageProjectPath) are
 # stubbed and mocked so no real BuildMaster, git, or nbgv contact occurs. The

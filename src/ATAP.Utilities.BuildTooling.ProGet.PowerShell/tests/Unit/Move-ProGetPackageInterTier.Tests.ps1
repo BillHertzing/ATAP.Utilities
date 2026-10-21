@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ unit tests for Move-ProGetPackageInterTier.
+# Pester 6.2+ unit tests for Move-ProGetPackageInterTier.
 # All ProGet REST calls are mocked. Validates tier ordering, testing->qa legacy
 # normalization, production-name retirement, and 5-tier auto-routing.
 # AI assisted using Powershell.instructions.md as guidelines

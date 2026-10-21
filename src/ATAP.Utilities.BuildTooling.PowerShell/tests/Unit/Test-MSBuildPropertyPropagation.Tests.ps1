@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-#Requires -Module Pester
+#Requires -Module @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 
 # Focused Task 15.180.e E07 contract tests. These tests evaluate MSBuild
 # properties and invoke only the validation target; they do not restore or build.

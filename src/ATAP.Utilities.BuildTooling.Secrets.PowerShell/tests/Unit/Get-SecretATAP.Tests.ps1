@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for Get-SecretATAP dispatch behavior.
+# Pester 6.2+ tests for Get-SecretATAP dispatch behavior.
 
 BeforeAll {
   $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'

@@ -1,4 +1,4 @@
-#requires -Modules Pester
+#requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 
 <#
   Mocked Pester suite for Invoke-RotateSecretsATAP (Sprint 0012 Task 12.55.d).

@@ -1,4 +1,4 @@
-#Requires -Modules Pester
+#Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 
 # Task 13.88 — AI agent memory junction provisioning at sprint start.
 # These tests create REAL git repos, REAL worktrees, and REAL NTFS junctions under

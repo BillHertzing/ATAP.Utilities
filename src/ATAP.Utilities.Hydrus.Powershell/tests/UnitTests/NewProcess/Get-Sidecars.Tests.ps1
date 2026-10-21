@@ -1,5 +1,5 @@
 # Pester test for an individual Powershell public function in the ATAP.Utilities monorepo
-# expects Pester V5
+# expects Pester 6.2
 
 BeforeAll {
   Import-Module -Name Assert

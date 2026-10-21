@@ -1,10 +1,10 @@
 # tests/Unit/Get-PSModuleVersionFromNBGV.Tests.ps1
 #
-# Pester 5+ unit tests for Get-PSModuleVersionFromNBGV. Because `nbgv` is not
+# Pester 6.2+ unit tests for Get-PSModuleVersionFromNBGV. Because `nbgv` is not
 # guaranteed to be present on the build agent (and because we want to control
 # its output regardless), the external call is mocked with canned strings.
 
-#Requires -Module Pester
+#Requires -Module @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 
 BeforeAll {
   # Dot-source the function under test so we can mock its internal calls

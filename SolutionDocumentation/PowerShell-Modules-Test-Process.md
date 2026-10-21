@@ -1,7 +1,7 @@
 # PowerShell Modules — Test Process
 
 **Scope:** Sprint-0006/0007. How PowerShell modules in the ATAP.Utilities
-repository are tested with Pester 5+, statically analyzed with
+repository are tested with Pester 6.2.0, statically analyzed with
 PSScriptAnalyzer, and gated for code coverage as they move through the
 5-tier promotion model.
 
@@ -33,11 +33,11 @@ test cmdlets.
 
 | Layer                | Tool                  | Required version |
 | -------------------- | --------------------- | ---------------- |
-| Unit + integration   | Pester                | 5.0+             |
+| Unit + integration   | Pester                | 6.2.0             |
 | Static analysis      | PSScriptAnalyzer      | latest           |
 | Coverage format      | JaCoCo XML (default), Cobertura XML supported | n/a |
 | Test result format   | JUnit XML             | n/a              |
-| Assertion helpers    | `Should`, `Assert` (optional) | Pester 5 built-in |
+| Assertion helpers    | `Should`, `Assert` (optional) | Pester 6.2.0 built-in |
 
 PSFramework's `Write-PSFMessage` is used inside test helper code but tests
 themselves do not depend on it.
@@ -45,7 +45,7 @@ themselves do not depend on it.
 Install once on a fresh machine:
 
 ```powershell
-Install-Module Pester           -MinimumVersion 5.0.0 -Scope CurrentUser -Force
+Install-Module Pester           -RequiredVersion 6.2.0 -Scope CurrentUser -Force
 Install-Module PSScriptAnalyzer -Scope CurrentUser -Force
 Install-Module Assert           -Scope CurrentUser -Force   # optional
 ```
@@ -95,7 +95,7 @@ Conventions:
 **Behavior**
 1. **Sprint tier**: skip Pester entirely; return `GatePass = $true` with
    zero counts. The build still succeeds — fast feedback at the Experimental tier.
-2. **Alpha+**: confirm Pester 5+ is installed; throw with install hint
+2. **Alpha+**: confirm Pester 6.2.0 is installed; throw with install hint
    otherwise.
 3. Build a `[PesterConfiguration]` via `New-PSModulePesterConfiguration`
    helper:
@@ -206,7 +206,7 @@ applies here:
   developer's local instance), a real `nbgv` invocation against a real
   `version.json`, real Bitwarden secret retrieval.
 
-Mocking pattern in Pester 5:
+Mocking pattern in Pester 6.2.0:
 
 ```powershell
 Describe 'Publish-PSModuleToProGetFeed' -Tag 'Unit' {
@@ -339,10 +339,10 @@ bundle (see [PowerShell-Modules-Build-Process.md](PowerShell-Modules-Build-Proce
 
 ---
 
-## 9. Writing a Pester 5 test — canonical pattern
+## 9. Writing a Pester 6.2.0 test — canonical pattern
 
 ```powershell
-#Requires -Modules @{ ModuleName='Pester'; ModuleVersion='5.0.0' }
+#Requires -Modules @{ ModuleName='Pester'; ModuleVersion='6.2.0' }
 
 BeforeAll {
     $script:moduleRoot = Split-Path -Parent (Split-Path -Parent $PSCommandPath)
@@ -422,10 +422,10 @@ if (-not ($pester.GatePass -and $pssa.GatePass -and $cov.GatePass)) { throw "Tie
 
 | Error                                                                               | Cause                                                          | Fix                                                              |
 | ----------------------------------------------------------------------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------- |
-| `Pester 5 or newer is not installed`                                                | Stale Pester 3/4 from Windows PowerShell                       | `Install-Module Pester -MinimumVersion 5.0.0 -Scope CurrentUser -Force` |
+| `Pester 6.2.0 or newer is not installed`                                                | Stale Pester 3/4 from Windows PowerShell                       | `Install-Module Pester -RequiredVersion 6.2.0 -Scope CurrentUser -Force` |
 | `Mock not invoked` failures inside module-internal cmdlets                          | Forgot `-ModuleName` on `Mock`                                  | Always pass `-ModuleName ATAP.Utilities.BuildTooling.PowerShell` |
 | PSScriptAnalyzer chokes on user-profile rule-set                                   | Profile sets `$PSDefaultParameterValues['*:Settings']`         | The cmdlet now neutralizes this; if you see it again, file a bug |
-| `<counter type="LINE">` missing from JaCoCo                                         | Pester 5 emitted an empty coverage report (no covered files)   | Confirm `CodeCoverage.Path` includes `public/` / `private/`      |
+| `<counter type="LINE">` missing from JaCoCo                                         | Pester 6.2.0 emitted an empty coverage report (no covered files)   | Confirm `CodeCoverage.Path` includes `public/` / `private/`      |
 | Pester runs but produces no JUnit XML                                               | `TestResult.Enabled = $false` (default in some Pester versions) | The driver sets this to `$true`; check Pester version             |
 | Tests pass locally, fail in CI with "Cannot find variable `$global:settings`"      | CI shell ran with `-NoProfile`                                  | Drop `-NoProfile`; load the user profile per CLAUDE.md           |
 | `Test-CodeCoverageGate` reports 0%                                                 | Coverage XML covered no executable statements                  | Confirm the test file `Import-Module`s the module (not just dot-sources files) |

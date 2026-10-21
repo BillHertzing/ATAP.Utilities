@@ -1,5 +1,5 @@
 ﻿#Requires -Version 7.0
-# Pester 5+ tests for Get-BuildContext (Stream H, task H1).
+# Pester 6.2+ tests for Get-BuildContext (Stream H, task H1).
 # All external calls (git, nbgv) and filesystem probes are mocked.
 
 BeforeAll {

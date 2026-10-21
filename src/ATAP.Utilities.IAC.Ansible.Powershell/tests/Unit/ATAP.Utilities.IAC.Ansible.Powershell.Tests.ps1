@@ -1,4 +1,4 @@
-# expects Pester V5
+# expects Pester 6.2
 
 using namespace ATAP.IAC.Ansible
 

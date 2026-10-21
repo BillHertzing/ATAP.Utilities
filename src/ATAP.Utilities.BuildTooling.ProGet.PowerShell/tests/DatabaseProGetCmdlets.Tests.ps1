@@ -1,7 +1,7 @@
 #Requires -Version 7.0
 <#
 .SYNOPSIS
-    Pester 5 tests for Publish-DatabaseChangePackageToProGet and
+    Pester 6.2+ tests for Publish-DatabaseChangePackageToProGet and
     Promote-DatabaseChangePackage.
 
 .NOTES

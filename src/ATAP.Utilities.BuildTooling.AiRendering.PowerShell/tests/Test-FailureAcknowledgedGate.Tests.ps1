@@ -1,5 +1,5 @@
 # AI assisted using Powershell.instructions.md as guidelines
-# Pester 5+ tests for Test-FailureAcknowledgedGate
+# Pester 6.2+ tests for Test-FailureAcknowledgedGate
 
 BeforeAll {
     $functionName = 'Test-FailureAcknowledgedGate'

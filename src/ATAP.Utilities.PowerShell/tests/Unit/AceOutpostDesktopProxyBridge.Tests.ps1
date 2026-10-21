@@ -1,4 +1,4 @@
-#Requires -Module Pester
+#Requires -Module @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 
 BeforeAll {
   $typeFile = Join-Path $PSScriptRoot '..\..\lib\AceOutpostDesktopProxyBridge.types.ps1'

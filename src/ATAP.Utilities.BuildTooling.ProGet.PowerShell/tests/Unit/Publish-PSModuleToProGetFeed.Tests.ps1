@@ -1,5 +1,5 @@
 # Requires -Version 7.0
-# Pester 5+ tests for Publish-PSModuleToProGetFeed (task T-19).
+# Pester 6.2+ tests for Publish-PSModuleToProGetFeed (task T-19).
 # All external I/O, secret stores, and PSResourceGet cmdlets are mocked.
 
 BeforeAll {

@@ -1,5 +1,5 @@
 ﻿#Requires -Version 7.0
-# Pester 5+ tests for Resolve-FeatureSlug (Stream H, task H2).
+# Pester 6.2+ tests for Resolve-FeatureSlug (Stream H, task H2).
 # Pure function; no external dependencies need to be mocked.
 
 BeforeAll {

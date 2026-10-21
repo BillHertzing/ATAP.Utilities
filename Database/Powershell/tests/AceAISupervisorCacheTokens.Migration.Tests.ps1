@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-#Requires -Module Pester
+#Requires -Module @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 
 Describe 'V00150 Ace AISupervisor CacheTokens static contract' {
   BeforeAll {

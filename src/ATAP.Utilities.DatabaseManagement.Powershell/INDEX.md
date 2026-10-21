@@ -139,7 +139,7 @@ Scripts superseded by newer cmdlets; retained for reference.
 
 | File                                                             | Purpose                                                                                   |
 | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| [tests/PesterConfiguration.psd1](tests/PesterConfiguration.psd1) | Pester 5 configuration for this module's test suite                                       |
+| [tests/PesterConfiguration.psd1](tests/PesterConfiguration.psd1) | Pester 6.2.0 configuration for this module's test suite                                       |
 | [tests/Unit](tests/Unit)                                         | Unit tests for naming, lifecycle cmdlets, and Flyway rehearsal behavior                   |
 | [tests/Unit/SqlServerBackupPublication.Tests.ps1](tests/Unit/SqlServerBackupPublication.Tests.ps1) | 42 publisher tests covering safe local copy/hash publication and verified metadata; handoff evidence is under [`Task-15.192.f.publisher`](../../_generated/Sprint0015/Recovery20260911/Task-15.192.f.publisher). |
 | [tests/Unit/ATAP.Utilities.DatabaseManagement.Powershell.ExportConsistency.Tests.ps1](tests/Unit/ATAP.Utilities.DatabaseManagement.Powershell.ExportConsistency.Tests.ps1) | 4 export-consistency tests for the module manifest and publisher export surface. |

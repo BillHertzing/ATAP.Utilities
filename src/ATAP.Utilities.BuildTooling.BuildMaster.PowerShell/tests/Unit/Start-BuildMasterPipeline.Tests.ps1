@@ -1,5 +1,5 @@
 ﻿#Requires -Version 7.0
-# Pester 5+ tests for Start-BuildMasterPipeline (Stream H, task H4).
+# Pester 6.2+ tests for Start-BuildMasterPipeline (Stream H, task H4).
 # Mocks Invoke-RestMethod; no real network or BuildMaster contact.
 
 BeforeAll {

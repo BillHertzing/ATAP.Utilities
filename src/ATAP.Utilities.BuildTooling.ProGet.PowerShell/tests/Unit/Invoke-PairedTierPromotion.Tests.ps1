@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for Invoke-PairedTierPromotion (Stream DB, Task 9.13).
+# Pester 6.2+ tests for Invoke-PairedTierPromotion (Stream DB, Task 9.13).
 # The promotion + validation delegates (Promote-ProGetPackage,
 # Promote-DatabaseChangePackage, Invoke-PromotedModuleTests,
 # Get-AgentTextFromDatabase) are stubbed and mocked; no external calls happen.

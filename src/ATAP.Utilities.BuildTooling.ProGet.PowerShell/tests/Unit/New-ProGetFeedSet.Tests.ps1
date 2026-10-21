@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for New-ProGetFeedSet.
+# Pester 6.2+ tests for New-ProGetFeedSet.
 # Invoke-RestMethod is mocked; no real ProGet traffic is generated.
 
 BeforeAll {

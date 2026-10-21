@@ -103,7 +103,7 @@ for the exact command and renderer prerequisites.
 
 | File                                              | Description                                                                                                                          |
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `ATAP.Utilities.IAC.Ansible.Powershell.Tests.ps1` | Pester V5 general module test file; installs Assert module (`Install-Module -Name Assert -Force`); uses `namespace ATAP.IAC.Ansible` |
+| `ATAP.Utilities.IAC.Ansible.Powershell.Tests.ps1` | Pester 6.2.0 general module test file; installs Assert module (`Install-Module -Name Assert -Force`); uses `namespace ATAP.IAC.Ansible` |
 
 ---
 

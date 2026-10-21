@@ -10,7 +10,7 @@
 #   2. public/ contains no Type-PSLSA.ps1 and no file with top-level Add-Type.
 #   3. Importing the module from source loads the PS_LSA type.
 
-#Requires -Module Pester
+#Requires -Module @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 
 BeforeAll {
   $script:moduleRoot   = Join-Path $PSScriptRoot '..\..' | Resolve-Path

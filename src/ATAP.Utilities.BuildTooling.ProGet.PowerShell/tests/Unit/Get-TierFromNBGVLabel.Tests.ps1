@@ -1,9 +1,9 @@
 # Pester tests for Get-TierFromNBGVLabel.
 #
-# Pester 5+ unit tests for Get-TierFromNBGVLabel. Pure in-memory logic — no
+# Pester 6.2+ unit tests for Get-TierFromNBGVLabel. Pure in-memory logic — no
 # external dependencies to mock.
 
-#Requires -Module Pester
+#Requires -Module @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 
 BeforeAll {
   $script:publicDir = Join-Path $PSScriptRoot '..\..\public' | Resolve-Path

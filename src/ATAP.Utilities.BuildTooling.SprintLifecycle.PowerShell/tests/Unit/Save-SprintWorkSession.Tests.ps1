@@ -1,5 +1,5 @@
 # AI assisted using Powershell.instructions.md as guidelines
-# Pester 5+ tests for Save-SprintWorkSession — V4-H05 hardening
+# Pester 6.2+ tests for Save-SprintWorkSession — V4-H05 hardening
 # Verifies that direct import without full dependency stack (no global:settings,
 # no Get-PVal) does NOT emit noisy non-terminating errors when defaults are usable.
 

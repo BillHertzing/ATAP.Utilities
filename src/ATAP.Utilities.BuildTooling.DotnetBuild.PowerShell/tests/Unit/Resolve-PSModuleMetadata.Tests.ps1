@@ -1,4 +1,4 @@
-# Pester 5+ unit tests for Resolve-PSModuleMetadata (T-10).
+# Pester 6.2+ unit tests for Resolve-PSModuleMetadata (T-10).
 #
 # NOTE: The NTFS-junction reachability case described in the T-10 spec is
 # covered manually (it requires elevated rights and a real junction) and is

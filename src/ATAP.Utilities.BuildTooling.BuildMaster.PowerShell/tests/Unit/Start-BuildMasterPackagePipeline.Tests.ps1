@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for Start-BuildMasterPackagePipeline.
+# Pester 6.2+ tests for Start-BuildMasterPackagePipeline.
 # Mocks the BuildMaster API wrapper cmdlets; no real network contact.
 
 BeforeAll {

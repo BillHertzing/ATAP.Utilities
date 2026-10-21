@@ -16,7 +16,7 @@ rather than hard-coding strings.
 | `ATAP.Utilities.ConfigRootKeys.PowerShell.psm1` | Module entry point (dot-sources `public/` scripts)                                  |
 | `ReadMe.md`                                   | Module overview                                                                     |
 | `version.json`                                | NBGV version configuration                                                          |
-| `tests/Unit/`                                 | Pester 5 tests: orchestration, in-module sibling resolution, and the no-top-level-code / eponymous-function structural rules |
+| `tests/Unit/`                                 | Pester 6.2.0 tests: orchestration, in-module sibling resolution, and the no-top-level-code / eponymous-function structural rules |
 
 The module entry point makes its `private/` directory optional. This preserves
 normal profile-time imports while the module has only public functions (Task 12.63).

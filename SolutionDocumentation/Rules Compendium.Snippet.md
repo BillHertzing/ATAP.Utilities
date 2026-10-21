@@ -610,7 +610,7 @@ Rules are complete, instantiable snippets composed from primitives. Each Rule re
 
 **Philote ID:** `"f7a8b9c0-1d2e-3f4a-5b6c-7d8e9f0a1b2c"`
 
-**Description:** Comprehensive Pester 5+ test script with optional external data file loading (PS1, YAML, JSON).
+**Description:** Comprehensive Pester 6.2.0 test script with optional external data file loading (PS1, YAML, JSON).
 
 **Language:** PowerShell (Pester)
 

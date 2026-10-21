@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for Start-BuildMasterDeployment.
+# Pester 6.2+ tests for Start-BuildMasterDeployment.
 # Mocks Invoke-RestMethod; no real BuildMaster contact.
 
 BeforeAll {

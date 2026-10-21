@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for New-BuildMasterRelease (Stream H, task H3).
+# Pester 6.2+ tests for New-BuildMasterRelease (Stream H, task H3).
 # Mocks Invoke-RestMethod; no real network or BuildMaster contact.
 
 BeforeAll {

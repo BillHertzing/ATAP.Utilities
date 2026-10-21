@@ -45,7 +45,7 @@ Not exported. Each exists to keep a secret value out of a place it must never re
 
 ## Tests
 
-`tests/Unit/` — Pester 5. All `bw`/`bws`/vault calls and `Read-Host` are mocked; no test ever
+`tests/Unit/` — Pester 6.2.0. All `bw`/`bws`/vault calls and `Read-Host` are mocked; no test ever
 rotates a real secret, prompts, or writes a DPAPI file.
 
 | File | Covers |

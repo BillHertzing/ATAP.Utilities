@@ -1,4 +1,4 @@
-#Requires -Module Pester
+#Requires -Module @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 
 Describe 'ATAP.Utilities.Security.Powershell umbrella contract' -Tag 'Unit' {
   BeforeAll {

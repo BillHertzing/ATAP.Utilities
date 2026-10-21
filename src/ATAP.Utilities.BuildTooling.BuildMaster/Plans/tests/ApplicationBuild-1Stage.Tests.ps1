@@ -1,4 +1,4 @@
-# Pester 5+ static-contract and gate tests for Task 15.196.q (SC-0443):
+# Pester 6.2+ static-contract and gate tests for Task 15.196.q (SC-0443):
 # ApplicationBuild-1Stage.otter must be a thin runner plan whose argument list
 # satisfies every mandatory parameter of Invoke-ApplicationBuildMasterStage.ps1,
 # and the runner must refuse before any compile when the approval boundary says no.

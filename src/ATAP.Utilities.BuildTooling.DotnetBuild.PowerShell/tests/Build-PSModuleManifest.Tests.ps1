@@ -1,8 +1,8 @@
-#Requires -Module Pester
+#Requires -Module @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 
 <#
 .SYNOPSIS
-  Pester 5+ tests for Build-PSModuleManifest.
+  Pester 6.2+ tests for Build-PSModuleManifest.
 .NOTES
   AI assisted using Powershell.instructions.md as guidelines
 #>

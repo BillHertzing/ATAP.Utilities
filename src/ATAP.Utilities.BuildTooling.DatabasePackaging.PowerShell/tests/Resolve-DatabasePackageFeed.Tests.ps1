@@ -1,5 +1,5 @@
 # AI assisted using Powershell.instructions.md as guidelines
-# Pester 5+ tests for DBA2-T05 / V4-E11: Resolve-DatabasePackageFeed must
+# Pester 6.2+ tests for DBA2-T05 / V4-E11: Resolve-DatabasePackageFeed must
 # map each canonical environment tier to its canonical database-* feed,
 # and must reject unknown tiers with a terminating error.
 

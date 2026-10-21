@@ -1,5 +1,5 @@
 # AI assisted using Powershell.instructions.md as guidelines
-# Pester 5+ tests for Test-SprintCheckpointCoverage conversation-state classification.
+# Pester 6.2+ tests for Test-SprintCheckpointCoverage conversation-state classification.
 #
 # SC-0327: a roster row used to satisfy coverage purely by worktree name plus a
 # reachable archive file. Neither fact says the archive holds THAT worktree's

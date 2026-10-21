@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for Promote-ProGetPackage (Stream G1).
+# Pester 6.2+ tests for Promote-ProGetPackage (Stream G1).
 # Move-ProGetPackageInterTier is mocked; no external ProGet calls happen.
 
 BeforeAll {

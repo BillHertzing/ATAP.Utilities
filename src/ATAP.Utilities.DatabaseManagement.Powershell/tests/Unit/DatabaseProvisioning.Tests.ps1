@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for DatabaseProvisioning path safety.
+# Pester 6.2+ tests for DatabaseProvisioning path safety.
 
 BeforeAll {
   $moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)

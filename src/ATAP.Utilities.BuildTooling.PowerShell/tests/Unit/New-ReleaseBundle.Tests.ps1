@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for deterministic schema-v2 ReleaseBundle assembly.
+# Pester 6.2+ tests for deterministic schema-v2 ReleaseBundle assembly.
 
 BeforeAll {
     $moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)

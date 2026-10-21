@@ -1,4 +1,4 @@
-#Requires -Module Pester
+#Requires -Module @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 
 BeforeAll {
   $sourcePath = Join-Path $PSScriptRoot '..\..\public\Invoke-Flyway.ps1'

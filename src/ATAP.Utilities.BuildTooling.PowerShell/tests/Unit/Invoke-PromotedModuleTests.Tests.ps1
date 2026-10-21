@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for Invoke-PromotedModuleTests (Stream M3).
+# Pester 6.2+ tests for Invoke-PromotedModuleTests (Stream M3).
 # Save-Module, Import-Module, Invoke-PSModulePesterTests and the
 # filesystem cmdlets are mocked; no real feed restore or test run happens.
 

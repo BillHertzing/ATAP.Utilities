@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for New-PSModuleNupkg (Stream G3).
+# Pester 6.2+ tests for New-PSModuleNupkg (Stream G3).
 # Register-/Unregister-PSResourceRepository and Publish-PSResource are mocked.
 
 BeforeAll {

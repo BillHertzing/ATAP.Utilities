@@ -1,5 +1,5 @@
 # AI assisted using Powershell.instructions.md as guidelines
-# Pester 5+ static-contract tests for V4-C02: the CSharpPackage-5Stage
+# Pester 6.2+ static-contract tests for V4-C02: the CSharpPackage-5Stage
 # OtterScript plan must be a thin runner plan, and the runner script must
 # preserve the contracts the plan depends on.
 

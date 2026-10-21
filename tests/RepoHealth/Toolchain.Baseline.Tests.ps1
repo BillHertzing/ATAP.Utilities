@@ -1,4 +1,4 @@
-#Requires -Module Pester
+#Requires -Module @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 BeforeAll {
   $script:repoRoot = (Resolve-Path -LiteralPath (Join-Path (Split-Path -Parent $PSCommandPath) '..\..')).Path
   $script:validator = Join-Path $script:repoRoot 'Build\Test-ToolchainBaseline.ps1'

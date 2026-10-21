@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for Publish-UniversalPackageToProGet (Stream G5).
+# Pester 6.2+ tests for Publish-UniversalPackageToProGet (Stream G5).
 # Invoke-RestMethod is mocked; no real HTTP traffic is generated.
 
 BeforeAll {

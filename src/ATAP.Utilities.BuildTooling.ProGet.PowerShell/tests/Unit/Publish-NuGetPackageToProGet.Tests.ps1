@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for Publish-NuGetPackageToProGet (Stream G4).
+# Pester 6.2+ tests for Publish-NuGetPackageToProGet (Stream G4).
 # Invoke-DotnetNuGetPush is mocked; no real `dotnet` process is spawned.
 
 BeforeAll {

@@ -1,5 +1,5 @@
 # AI assisted using Powershell.instructions.md as guidelines
-# Pester 5+ tests for DBA2-T07 / V4-E14: Collect-DatabasePackageEvidence
+# Pester 6.2+ tests for DBA2-T07 / V4-E14: Collect-DatabasePackageEvidence
 # must capture every evidence key into the output folder, record missing
 # optional sources as $null in evidence-bundle.json, and compute the
 # .nupkg SHA-256.

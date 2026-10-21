@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-#Requires -Module Pester
+#Requires -Module @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 
 Describe 'Ace consumer package version-line policy' -Tag 'RepoHealth' {
   BeforeAll {

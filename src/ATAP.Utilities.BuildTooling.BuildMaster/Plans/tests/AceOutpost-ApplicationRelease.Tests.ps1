@@ -1,4 +1,4 @@
-# Pester 5+ static-contract tests for Task 16.79: AceOutpost-ApplicationRelease.otter and its
+# Pester 6.2+ static-contract tests for Task 16.79: AceOutpost-ApplicationRelease.otter and its
 # five-stage pipeline must be a thin adapter over Invoke-ApplicationReleaseStage.ps1 whose
 # argument list satisfies every mandatory runner parameter (the raft silent-hang guard).
 

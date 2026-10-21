@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for Remove-DeveloperScratchDb (Stream J4).
+# Pester 6.2+ tests for Remove-DeveloperScratchDb (Stream J4).
 
 BeforeAll {
   $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'

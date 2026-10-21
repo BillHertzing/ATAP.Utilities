@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ unit tests for Move-ProGetPackageIntraTier.
+# Pester 6.2+ unit tests for Move-ProGetPackageIntraTier.
 # Validates Phase 2 push->pull enforcement, integration tier support,
 # testing->qa legacy normalization, production-name retirement,
 # same-feed Phase 1 mode (-ScanOnly), and the stub malware scan.

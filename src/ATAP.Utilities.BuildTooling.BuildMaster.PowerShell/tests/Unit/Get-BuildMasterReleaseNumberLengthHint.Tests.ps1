@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for the non-exported Get-BuildMasterReleaseNumberLengthHint helper (SC-0360).
+# Pester 6.2+ tests for the non-exported Get-BuildMasterReleaseNumberLengthHint helper (SC-0360).
 
 BeforeAll {
   $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'

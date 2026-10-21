@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for Invoke-FlywayRehearsal (Stream J5).
+# Pester 6.2+ tests for Invoke-FlywayRehearsal (Stream J5).
 
 BeforeAll {
   $script:createdResolveDatabaseSqlConnectionStub = $false

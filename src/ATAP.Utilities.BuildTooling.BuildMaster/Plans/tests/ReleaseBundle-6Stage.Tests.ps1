@@ -1,5 +1,5 @@
 # AI assisted using Powershell.instructions.md as guidelines
-# Pester 5+ static-contract tests for V4-A07: the ReleaseBundle-6Stage
+# Pester 6.2+ static-contract tests for V4-A07: the ReleaseBundle-6Stage
 # OtterScript plan must keep the existing per-stage OtterScript surface
 # (because Create-Artifact directives are stage-scoped) but every Exec
 # block invokes a dedicated pwsh -File runner; no inline pwsh -Command

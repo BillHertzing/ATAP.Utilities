@@ -1,5 +1,5 @@
 # AI assisted using Powershell.instructions.md as guidelines
-# Pester 5+ static-contract + behavioral tests for V4-B02: the PowerShell-module
+# Pester 6.2+ static-contract + behavioral tests for V4-B02: the PowerShell-module
 # 5-tier pipeline must be -NoProfile-safe. BuildMaster invokes the runner via
 # `pwsh -NoProfile -File`, so the user profile that populates $global:settings /
 # $global:configRootKeys never loads. Every settings lookup used by the plan and

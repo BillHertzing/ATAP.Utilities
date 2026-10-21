@@ -1,5 +1,5 @@
 # AI assisted using Powershell.instructions.md as guidelines
-# Pester 5+ tests for Test-CodeCoverageGate
+# Pester 6.2+ tests for Test-CodeCoverageGate
 
 BeforeAll {
     $functionName = 'Test-CodeCoverageGate'

@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests that enforce the module's structural rules:
+# Pester 6.2+ tests that enforce the module's structural rules:
 #   - every public/*.ps1 contains ONLY an eponymous function definition (no top-level code)
 #   - the manifest exports exactly those functions, all Verb-Noun, no dotted names
 #   - the manifest declares no binary cmdlets

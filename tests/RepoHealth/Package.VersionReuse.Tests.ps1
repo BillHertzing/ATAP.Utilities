@@ -1,4 +1,4 @@
-# Pester 5+ RepoHealth gate for Task 15.181.i Option B manual version policy.
+# Pester 6.2+ RepoHealth gate for Task 15.181.i Option B manual version policy.
 # A protected source-content change must be accompanied by a new manually selected version.
 
 Describe 'Package version reuse guard' -Tag 'RepoHealth' {

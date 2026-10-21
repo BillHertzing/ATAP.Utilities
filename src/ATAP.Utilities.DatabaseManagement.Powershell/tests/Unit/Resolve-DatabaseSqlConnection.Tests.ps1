@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for Resolve-DatabaseSqlConnection. These tests mock the
+# Pester 6.2+ tests for Resolve-DatabaseSqlConnection. These tests mock the
 # connection-opening helpers so they do not require a running SQL Server.
 
 BeforeAll {

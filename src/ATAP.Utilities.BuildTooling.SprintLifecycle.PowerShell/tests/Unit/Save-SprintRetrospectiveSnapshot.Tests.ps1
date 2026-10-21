@@ -1,5 +1,5 @@
 # AI assisted using ./claude/Rules/Powershell.md as guidelines
-# Pester 5+ tests for Save-SprintRetrospectiveSnapshot
+# Pester 6.2+ tests for Save-SprintRetrospectiveSnapshot
 
 BeforeAll {
   $functionName = 'Save-SprintRetrospectiveSnapshot'

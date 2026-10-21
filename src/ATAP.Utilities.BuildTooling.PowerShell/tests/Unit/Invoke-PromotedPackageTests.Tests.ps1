@@ -80,15 +80,15 @@ Describe 'Invoke-PromotedPackageTests isolated consumer gate' -Tag 'Unit' {
         $result = Invoke-PromotedPackageTests -Name 'pkg' -Version '1.0.0' -Feed 'nuget-development' -ResultsPath 'consumer' -ProGetUrl 'https://utat022:50000' -WhatIf
         $result.GatePass | Should -BeTrue
         $result.ResponseSummary | Should -Match 'isolated consumer'
-        Assert-MockCalled dotnet -Times 0 -Exactly -Scope It
-        Assert-MockCalled Set-Content -Times 0 -Exactly -Scope It
+        Should -Invoke dotnet -Times 0 -Exactly -Scope It
+        Should -Invoke Set-Content -Times 0 -Exactly -Scope It
     }
 
     It 'writes one execution-scoped net8 consumer with an XML-escaped exact PackageReference' {
         Mock Test-Path -ParameterFilter { $LiteralPath -like '*.csproj' } { $false }
         $result = Invoke-PromotedPackageTests -Name 'Pkg&<"''' -Version '1.0&<"''' -Feed 'nuget-development' -ResultsPath 'consumer' -ProGetUrl 'https://utat022:50000'
         $result.ProjectPath | Should -BeLike "$($script:artifactsPath)*promoted-consumer*PromotedPackageConsumer.csproj"
-        Assert-MockCalled Set-Content -Times 1 -Exactly -Scope It -ParameterFilter {
+        Should -Invoke Set-Content -Times 1 -Exactly -Scope It -ParameterFilter {
             $LiteralPath -like '*.csproj' -and
             ([regex]::Matches([string]$Value, '<PackageReference\s+')).Count -eq 1 -and
             [string]$Value -match 'Include="Pkg&amp;&lt;&quot;&apos;"' -and
@@ -102,7 +102,7 @@ Describe 'Invoke-PromotedPackageTests isolated consumer gate' -Tag 'Unit' {
     It 'targets net8.0-windows without an explicit baseline for Windows package IDs case-insensitively' {
         Mock Test-Path -ParameterFilter { $LiteralPath -like '*.csproj' } { $false }
         Invoke-PromotedPackageTests -Name 'ATAP.Utilities.Example.wInDoWs' -Version '1.0.0' -Feed 'nuget-development' -ResultsPath 'consumer' -ProGetUrl 'https://utat022:50000' | Out-Null
-        Assert-MockCalled Set-Content -Times 1 -Exactly -Scope It -ParameterFilter {
+        Should -Invoke Set-Content -Times 1 -Exactly -Scope It -ParameterFilter {
             $LiteralPath -like '*.csproj' -and
             [string]$Value -match '<TargetFramework>net8\.0-windows</TargetFramework>' -and
             [string]$Value -notmatch '<TargetFramework>net8\.0</TargetFramework>'
@@ -112,7 +112,7 @@ Describe 'Invoke-PromotedPackageTests isolated consumer gate' -Tag 'Unit' {
     It 'uses an explicitly supplied package-contract target framework' {
         Mock Test-Path -ParameterFilter { $LiteralPath -like '*.csproj' } { $false }
         Invoke-PromotedPackageTests -Name 'ATAP.Utilities.RRSBS.Domain' -Version '0.1.2' -Feed 'nuget-development' -ConsumerTargetFramework 'net10.0' -ResultsPath 'consumer' -ProGetUrl 'https://utat022:50000' | Out-Null
-        Assert-MockCalled Set-Content -Times 1 -Exactly -Scope It -ParameterFilter {
+        Should -Invoke Set-Content -Times 1 -Exactly -Scope It -ParameterFilter {
             $LiteralPath -like '*.csproj' -and [string]$Value -match '<TargetFramework>net10\.0</TargetFramework>'
         }
     }
@@ -120,7 +120,7 @@ Describe 'Invoke-PromotedPackageTests isolated consumer gate' -Tag 'Unit' {
     It 'does not treat an embedded Windows segment as a Windows package suffix' {
         Mock Test-Path -ParameterFilter { $LiteralPath -like '*.csproj' } { $false }
         Invoke-PromotedPackageTests -Name 'ATAP.Utilities.Windows.Interfaces' -Version '1.0.0' -Feed 'nuget-development' -ResultsPath 'consumer' -ProGetUrl 'https://utat022:50000' | Out-Null
-        Assert-MockCalled Set-Content -Times 1 -Exactly -Scope It -ParameterFilter {
+        Should -Invoke Set-Content -Times 1 -Exactly -Scope It -ParameterFilter {
             $LiteralPath -like '*.csproj' -and
             [string]$Value -match '<TargetFramework>net8\.0</TargetFramework>' -and
             [string]$Value -notmatch 'net8\.0-windows'
@@ -128,7 +128,7 @@ Describe 'Invoke-PromotedPackageTests isolated consumer gate' -Tag 'Unit' {
     }
     It 'restores the consumer from the requested tier plus stable dependency fallback and configured public sources' {
         Invoke-PromotedPackageTests -Name 'pkg' -Version '1.0.0' -Feed 'nuget-development' -ProjectPath 'ATAP.Utilities.Production.slnf' -ResultsPath 'consumer' -ProGetUrl 'https://utat022:50000' | Out-Null
-        Assert-MockCalled dotnet -Times 1 -Exactly -Scope It -ParameterFilter {
+        Should -Invoke dotnet -Times 1 -Exactly -Scope It -ParameterFilter {
             $rest[0] -eq 'restore' -and $rest[1] -like '*PromotedPackageConsumer.csproj' -and
             -not ($rest -contains 'ATAP.Utilities.Production.slnf') -and
             ($rest -contains 'https://utat022:50000/nuget/nuget-development/v3/index.json') -and
@@ -150,37 +150,37 @@ Describe 'Invoke-PromotedPackageTests isolated consumer gate' -Tag 'Unit' {
             '{"version":2,"source":"https://utat022:50000/nuget/nuget-stable/v3/index.json"}'
         }
         Invoke-PromotedPackageTests -Name 'pkg' -Version '1.0.0' -Feed 'nuget-stable' -ResultsPath 'consumer' -ProGetUrl 'https://utat022:50000' | Out-Null
-        Assert-MockCalled dotnet -Times 1 -Exactly -Scope It -ParameterFilter {
+        Should -Invoke dotnet -Times 1 -Exactly -Scope It -ParameterFilter {
             $rest[0] -eq 'restore' -and
             @($rest | Where-Object { $_ -eq 'https://utat022:50000/nuget/nuget-stable/v3/index.json' }).Count -eq 1
         }
     }
     It 'compiles only the isolated consumer with build --no-restore and never test pack or the SUT target' {
         Invoke-PromotedPackageTests -Name 'pkg' -Version '1.0.0' -Feed 'nuget-development' -ProjectPath 'src/SUT/SUT.csproj' -ResultsPath 'consumer' -ProGetUrl 'https://utat022:50000' | Out-Null
-        Assert-MockCalled dotnet -Times 1 -Exactly -Scope It -ParameterFilter {
+        Should -Invoke dotnet -Times 1 -Exactly -Scope It -ParameterFilter {
             $rest[0] -eq 'build' -and $rest[1] -like '*PromotedPackageConsumer.csproj' -and
             ($rest -contains '--no-restore') -and -not ($rest -contains 'src/SUT/SUT.csproj')
         }
-        Assert-MockCalled dotnet -Times 0 -Exactly -Scope It -ParameterFilter { $rest[0] -in @('test', 'pack') }
+        Should -Invoke dotnet -Times 0 -Exactly -Scope It -ParameterFilter { $rest[0] -in @('test', 'pack') }
     }
 
     It 'allows Development to update the project and lock without locked mode' {
         Mock Test-Path -ParameterFilter { $LiteralPath -like '*.csproj' } { $false }
         Invoke-PromotedPackageTests -Name 'pkg' -Version '1.0.0' -Feed 'nuget-development' -ResultsPath 'consumer' -ProGetUrl 'https://utat022:50000' | Out-Null
-        Assert-MockCalled Set-Content -Times 1 -Exactly -Scope It -ParameterFilter { $LiteralPath -like '*.csproj' }
-        Assert-MockCalled dotnet -Times 1 -Exactly -Scope It -ParameterFilter { $rest[0] -eq 'restore' -and -not ($rest -contains '--locked-mode') }
+        Should -Invoke Set-Content -Times 1 -Exactly -Scope It -ParameterFilter { $LiteralPath -like '*.csproj' }
+        Should -Invoke dotnet -Times 1 -Exactly -Scope It -ParameterFilter { $rest[0] -eq 'restore' -and -not ($rest -contains '--locked-mode') }
     }
 
     It 'fails a locked tier before dotnet when the persisted lock is missing' {
         Mock Test-Path -ParameterFilter { $LiteralPath -like '*packages.lock.json' } { $false }
         { Invoke-PromotedPackageTests -Name 'pkg' -Version '1.0.0' -Feed 'nuget-integration' -ResultsPath 'consumer' -ProGetUrl 'https://utat022:50000' -LockedRestore } | Should -Throw '*requires the persisted lock file*'
-        Assert-MockCalled dotnet -Times 0 -Exactly -Scope It
+        Should -Invoke dotnet -Times 0 -Exactly -Scope It
     }
 
     It 'fails a locked tier before dotnet when the consumer project drifted' {
         Mock Get-Content -ParameterFilter { $LiteralPath -like '*.csproj' } { '<Project />' }
         { Invoke-PromotedPackageTests -Name 'pkg' -Version '1.0.0' -Feed 'nuget-integration' -ResultsPath 'consumer' -ProGetUrl 'https://utat022:50000' -LockedRestore } | Should -Throw '*consumer project drifted*'
-        Assert-MockCalled dotnet -Times 0 -Exactly -Scope It
+        Should -Invoke dotnet -Times 0 -Exactly -Scope It
     }
 
     It 'uses locked restore without rewriting the deterministic consumer at locked tiers' {
@@ -189,8 +189,8 @@ Describe 'Invoke-PromotedPackageTests isolated consumer gate' -Tag 'Unit' {
         }
         $result = Invoke-PromotedPackageTests -Name 'pkg' -Version '1.0.0' -Feed 'nuget-integration' -ResultsPath 'consumer' -ProGetUrl 'https://utat022:50000' -LockedRestore
         $result.GatePass | Should -BeTrue
-        Assert-MockCalled Set-Content -Times 0 -Exactly -Scope It
-        Assert-MockCalled dotnet -Times 1 -Exactly -Scope It -ParameterFilter { $rest[0] -eq 'restore' -and ($rest -contains '--locked-mode') }
+        Should -Invoke Set-Content -Times 0 -Exactly -Scope It
+        Should -Invoke dotnet -Times 1 -Exactly -Scope It -ParameterFilter { $rest[0] -eq 'restore' -and ($rest -contains '--locked-mode') }
     }
 
     It 'fails provenance closed and skips compile when metadata names another tier' {
@@ -201,7 +201,7 @@ Describe 'Invoke-PromotedPackageTests isolated consumer gate' -Tag 'Unit' {
         $result.GatePass | Should -BeFalse
         $result.BuildExitCode | Should -BeNullOrEmpty
         $result.ResponseSummary | Should -Match 'did not restore from requested feed'
-        Assert-MockCalled dotnet -Times 0 -Exactly -Scope It -ParameterFilter { $rest[0] -eq 'build' }
+        Should -Invoke dotnet -Times 0 -Exactly -Scope It -ParameterFilter { $rest[0] -eq 'build' }
     }
 
     It 'pins an exact missing ATAP dependency and retries unlocked restore' {
@@ -216,7 +216,7 @@ Describe 'Invoke-PromotedPackageTests isolated consumer gate' -Tag 'Unit' {
         $result = Invoke-PromotedPackageTests -Name 'pkg' -Version '1.0.0' -Feed 'nuget-development' -ResultsPath 'consumer' -ProGetUrl 'https://utat022:50000'
         $result.GatePass | Should -BeTrue
         $script:restoreAttempt | Should -Be 2
-        Assert-MockCalled Set-Content -Times 1 -Exactly -Scope It -ParameterFilter {
+        Should -Invoke Set-Content -Times 1 -Exactly -Scope It -ParameterFilter {
             $LiteralPath -like '*.csproj' -and
             [string]$Value -match 'Include="ATAP\.Utilities\.Dependency" Version="2\.3\.4"'
         }
@@ -227,7 +227,7 @@ Describe 'Invoke-PromotedPackageTests isolated consumer gate' -Tag 'Unit' {
         $result.GatePass | Should -BeFalse
         $result.RestoreExitCode | Should -Be 1
         $result.BuildExitCode | Should -BeNullOrEmpty
-        Assert-MockCalled dotnet -Times 0 -Exactly -Scope It -ParameterFilter { $rest[0] -eq 'build' }
+        Should -Invoke dotnet -Times 0 -Exactly -Scope It -ParameterFilter { $rest[0] -eq 'build' }
     }
 
     It 'maps consumer build failure without claiming a test run' {
@@ -244,7 +244,7 @@ Describe 'Invoke-PromotedPackageTests isolated consumer gate' -Tag 'Unit' {
 
     It 'rejects an unapproved lifecycle feed before invoking dotnet' {
         { Invoke-PromotedPackageTests -Name 'pkg' -Version '1.0.0' -Feed 'nuget-preview' -ResultsPath 'consumer' -ProGetUrl 'https://utat022:50000' } | Should -Throw '*not an approved NuGet lifecycle tier*'
-        Assert-MockCalled dotnet -Times 0 -Exactly -Scope It
+        Should -Invoke dotnet -Times 0 -Exactly -Scope It
     }
 
     It 'returns build status without claiming xUnit results' {

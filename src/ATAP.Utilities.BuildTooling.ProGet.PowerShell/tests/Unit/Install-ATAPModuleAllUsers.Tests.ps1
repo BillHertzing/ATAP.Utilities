@@ -217,7 +217,7 @@ Describe 'Install-ATAPModuleAllUsers' {
         -ExpectedSha256 $script:NupkgHash -ModulesRoot $script:ModulesRoot -DeployRoot $script:DeployRoot -Confirm:$false } |
       Should -Throw '*absolute HTTPS URI*'
 
-    Assert-MockCalled Invoke-WebRequest -Times 0 -Exactly -Scope It
+    Should -Invoke Invoke-WebRequest -Times 0 -Exactly -Scope It
   }
 
   It 'installs into <ModulesRoot>\<Name>\<Version> and validates the fresh import' {

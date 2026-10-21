@@ -83,10 +83,10 @@ Describe 'Sync-ProGetPowerShellModules' {
     $result.ActionTaken | Should -Be 'Installed'
     $result.Repository | Should -Be 'powershellget-stable'
     $result.Tier | Should -Be 'stable'
-    Assert-MockCalled Resolve-ProGetFeedFromSettings -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Resolve-ProGetFeedFromSettings -Times 1 -Exactly -Scope It -ParameterFilter {
       $FeedType -eq 'powershellget' -and $Tier -eq 'QA'
     }
-    Assert-MockCalled Install-Module -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Install-Module -Times 1 -Exactly -Scope It -ParameterFilter {
       $Name -eq 'Fixture.Module' -and
       [string]$RequiredVersion -eq '1.2.0' -and
       $Repository -eq 'powershellget-stable' -and
@@ -104,8 +104,8 @@ Describe 'Sync-ProGetPowerShellModules' {
     $result.Repository | Should -Be 'customer-powershell'
     $result.Tier | Should -Be 'Explicit'
     $result.FeedUrl | Should -Be 'https://packages.example.test/nuget/customer-powershell/'
-    Assert-MockCalled Resolve-ProGetFeedFromSettings -Times 0 -Exactly -Scope It
-    Assert-MockCalled Find-Module -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Resolve-ProGetFeedFromSettings -Times 0 -Exactly -Scope It
+    Should -Invoke Find-Module -Times 1 -Exactly -Scope It -ParameterFilter {
       $Repository -eq 'customer-powershell' -and $Name -eq 'ATAP.*'
     }
   }
@@ -124,7 +124,7 @@ Describe 'Sync-ProGetPowerShellModules' {
       -Confirm:$false
 
     $result.FeedUrl | Should -Be 'https://packages.example.test/nuget/customer-powershell/'
-    Assert-MockCalled Resolve-ProGetFeedFromSettings -Times 0 -Exactly -Scope It
+    Should -Invoke Resolve-ProGetFeedFromSettings -Times 0 -Exactly -Scope It
   }
 
   It 'does not install when the newest local version equals the feed version' {
@@ -134,7 +134,7 @@ Describe 'Sync-ProGetPowerShellModules' {
 
     $result.Status | Should -Be 'UpToDate'
     $result.ActionTaken | Should -Be 'Skipped'
-    Assert-MockCalled Install-Module -Times 0 -Exactly -Scope It
+    Should -Invoke Install-Module -Times 0 -Exactly -Scope It
   }
 
   It 'does not downgrade when the local version is newer' {
@@ -143,7 +143,7 @@ Describe 'Sync-ProGetPowerShellModules' {
     $result = Sync-ProGetPowerShellModules -Confirm:$false
 
     $result.Status | Should -Be 'UpToDate'
-    Assert-MockCalled Install-Module -Times 0 -Exactly -Scope It
+    Should -Invoke Install-Module -Times 0 -Exactly -Scope It
   }
 
   It 'installs an available upgrade' {
@@ -167,7 +167,7 @@ Describe 'Sync-ProGetPowerShellModules' {
     $result = Sync-ProGetPowerShellModules -Scope CurrentUser -Confirm:$false
 
     $result.ProGetVersion | Should -Be '1.2.0-beta.10'
-    Assert-MockCalled Install-Module -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Install-Module -Times 1 -Exactly -Scope It -ParameterFilter {
       [string]$RequiredVersion -eq '1.2.0-beta.10' -and $AllowPrerelease
     }
   }
@@ -184,15 +184,15 @@ Describe 'Sync-ProGetPowerShellModules' {
 
     $result.ActionTaken | Should -Be 'Failed'
     $result.ErrorText | Should -Match 'does not support prerelease version'
-    Assert-MockCalled Install-ATAPModuleAllUsers -Times 0 -Exactly -Scope It
+    Should -Invoke Install-ATAPModuleAllUsers -Times 0 -Exactly -Scope It
   }
 
   It 'honors WhatIf without invoking either installer' {
     $result = Sync-ProGetPowerShellModules -WhatIf
 
     $result.ActionTaken | Should -Be 'WhatIf'
-    Assert-MockCalled Install-Module -Times 0 -Exactly -Scope It
-    Assert-MockCalled Install-ATAPModuleAllUsers -Times 0 -Exactly -Scope It
+    Should -Invoke Install-Module -Times 0 -Exactly -Scope It
+    Should -Invoke Install-ATAPModuleAllUsers -Times 0 -Exactly -Scope It
   }
 
   It 'uses the validated installer with the exact feed URI and hash pin' {
@@ -206,14 +206,14 @@ Describe 'Sync-ProGetPowerShellModules' {
       -Confirm:$false
 
     $result.ActionTaken | Should -Be 'Installed'
-    Assert-MockCalled Install-ATAPModuleAllUsers -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Install-ATAPModuleAllUsers -Times 1 -Exactly -Scope It -ParameterFilter {
       $ModuleName -eq 'Fixture.Module' -and
       [string]$RequiredVersion -eq '1.2.0' -and
       $Repository -eq 'customer-powershell' -and
       $FeedUrl -eq 'https://packages.example.test/nuget/customer-powershell/' -and
       $ExpectedSha256 -eq $hash
     }
-    Assert-MockCalled Install-Module -Times 0 -Exactly -Scope It
+    Should -Invoke Install-Module -Times 0 -Exactly -Scope It
   }
 
   It 'fails only the affected module when its validated-installer hash is missing' {
@@ -224,7 +224,7 @@ Describe 'Sync-ProGetPowerShellModules' {
 
     $result.ActionTaken | Should -Be 'Failed'
     $result.ErrorText | Should -Match 'valid SHA-256 pin is required'
-    Assert-MockCalled Install-ATAPModuleAllUsers -Times 0 -Exactly -Scope It
+    Should -Invoke Install-ATAPModuleAllUsers -Times 0 -Exactly -Scope It
   }
 
   It 'reports a validated-installer failure without claiming installation' {
@@ -245,8 +245,8 @@ Describe 'Sync-ProGetPowerShellModules' {
     Mock Resolve-ProGetFeedFromSettings { throw 'settings unavailable' }
 
     { Sync-ProGetPowerShellModules -Confirm:$false } | Should -Throw '*settings unavailable*'
-    Assert-MockCalled Install-Module -Times 0 -Exactly -Scope It
-    Assert-MockCalled Install-ATAPModuleAllUsers -Times 0 -Exactly -Scope It
+    Should -Invoke Install-Module -Times 0 -Exactly -Scope It
+    Should -Invoke Install-ATAPModuleAllUsers -Times 0 -Exactly -Scope It
   }
 
   It 'rejects an explicit FeedUrl without an explicit Repository' {
@@ -275,6 +275,6 @@ Describe 'Sync-ProGetPowerShellModules' {
     $result = @(Sync-ProGetPowerShellModules -Confirm:$false)
 
     $result.Count | Should -Be 0
-    Assert-MockCalled Install-Module -Times 0 -Exactly -Scope It
+    Should -Invoke Install-Module -Times 0 -Exactly -Scope It
   }
 }

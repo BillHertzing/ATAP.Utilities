@@ -103,9 +103,9 @@ Describe 'Invoke-PairedTierPromotion' -Tag 'Unit', 'PromotedModuleHostSensitive'
             $r.Succeeded     | Should -BeTrue
             $r.PairedAdvance | Should -BeTrue
             $r.ResponseSummary | Should -Match 'WhatIf'
-            Assert-MockCalled Promote-ProGetPackage -Times 0 -Exactly -Scope It
-            Assert-MockCalled Promote-DatabaseChangePackage -Times 0 -Exactly -Scope It
-            Assert-MockCalled Invoke-PromotedModuleTests -Times 0 -Exactly -Scope It
+            Should -Invoke Promote-ProGetPackage -Times 0 -Exactly -Scope It
+            Should -Invoke Promote-DatabaseChangePackage -Times 0 -Exactly -Scope It
+            Should -Invoke Invoke-PromotedModuleTests -Times 0 -Exactly -Scope It
         }
     }
 
@@ -118,13 +118,13 @@ Describe 'Invoke-PairedTierPromotion' -Tag 'Unit', 'PromotedModuleHostSensitive'
             $r.ValidationPassed | Should -BeTrue
             $r.ModuleName       | Should -Be 'ATAP.Utilities.RulesManagement.PowerShell'
 
-            Assert-MockCalled Promote-ProGetPackage -Times 1 -Exactly -Scope It -ParameterFilter {
+            Should -Invoke Promote-ProGetPackage -Times 1 -Exactly -Scope It -ParameterFilter {
                 $Name -eq 'ATAP.Utilities.RulesManagement.PowerShell' -and $ToFeed -eq 'powershellget-development'
             }
-            Assert-MockCalled Promote-DatabaseChangePackage -Times 1 -Exactly -Scope It -ParameterFilter {
+            Should -Invoke Promote-DatabaseChangePackage -Times 1 -Exactly -Scope It -ParameterFilter {
                 $PackageId -eq 'ATAPUtilities.Database' -and $ToFeed -eq 'database-development'
             }
-            Assert-MockCalled Invoke-PromotedModuleTests -Times 1 -Exactly -Scope It
+            Should -Invoke Invoke-PromotedModuleTests -Times 1 -Exactly -Scope It
         }
     }
 
@@ -150,7 +150,7 @@ Describe 'Invoke-PairedTierPromotion' -Tag 'Unit', 'PromotedModuleHostSensitive'
             $r = Invoke-PairedTierPromotion -ModuleVersion '1' -DatabasePackageVersion '1' -Tier 'Development'
             $r.Succeeded     | Should -BeFalse
             $r.PairedAdvance | Should -BeFalse
-            Assert-MockCalled Promote-DatabaseChangePackage -Times 0 -Exactly -Scope It
+            Should -Invoke Promote-DatabaseChangePackage -Times 0 -Exactly -Scope It
         }
         It 'Reports a PARTIAL ADVANCE when database promotion fails after module promotion' {
             Mock Promote-DatabaseChangePackage { [PSCustomObject]@{ Succeeded = $false } }
@@ -158,7 +158,7 @@ Describe 'Invoke-PairedTierPromotion' -Tag 'Unit', 'PromotedModuleHostSensitive'
             $r.Succeeded       | Should -BeFalse
             $r.PairedAdvance   | Should -BeFalse
             $r.ResponseSummary | Should -Match 'PARTIAL ADVANCE'
-            Assert-MockCalled Promote-ProGetPackage -Times 1 -Exactly -Scope It
+            Should -Invoke Promote-ProGetPackage -Times 1 -Exactly -Scope It
         }
     }
 
@@ -175,26 +175,26 @@ Describe 'Invoke-PairedTierPromotion' -Tag 'Unit', 'PromotedModuleHostSensitive'
             $r = Invoke-PairedTierPromotion -ModuleVersion '1' -DatabasePackageVersion '1' -Tier 'QA' -SkipValidation
             $r.Succeeded | Should -BeTrue
             ($r.Validations | Where-Object Status -ne 'Skipped') | Should -BeNullOrEmpty
-            Assert-MockCalled Invoke-PromotedModuleTests -Times 0 -Exactly -Scope It
+            Should -Invoke Invoke-PromotedModuleTests -Times 0 -Exactly -Scope It
         }
         It 'Skips only PromotedModuleTests under -SkipModuleTests' {
             $r = Invoke-PairedTierPromotion -ModuleVersion '1' -DatabasePackageVersion '1' -Tier 'Development' -SkipModuleTests
             ($r.Validations | Where-Object Name -eq 'PromotedModuleTests').Status | Should -Be 'Skipped'
             $r.Succeeded | Should -BeTrue
-            Assert-MockCalled Invoke-PromotedModuleTests -Times 0 -Exactly -Scope It
+            Should -Invoke Invoke-PromotedModuleTests -Times 0 -Exactly -Scope It
         }
         It 'Forwards -ProGetBaseUrl and -ProGetApiKeySecretName to Invoke-PromotedModuleTests (direct-endpoint restore)' {
             $r = Invoke-PairedTierPromotion -ModuleVersion '1' -DatabasePackageVersion '1' -Tier 'Development' `
                 -ProGetBaseUrl 'https://utat022:50000' -ProGetApiKeySecretName 'Test.ProGet.API.Key'
             $r.Succeeded | Should -BeTrue
-            Assert-MockCalled Invoke-PromotedModuleTests -Times 1 -Exactly -Scope It -ParameterFilter {
+            Should -Invoke Invoke-PromotedModuleTests -Times 1 -Exactly -Scope It -ParameterFilter {
                 $ProGetBaseUrl -eq 'https://utat022:50000' -and $ProGetApiKeySecretName -eq 'Test.ProGet.API.Key'
             }
         }
         It 'Does not pass ProGet direct-endpoint args when they are not supplied' {
             $r = Invoke-PairedTierPromotion -ModuleVersion '1' -DatabasePackageVersion '1' -Tier 'Development'
             $r.Succeeded | Should -BeTrue
-            Assert-MockCalled Invoke-PromotedModuleTests -Times 1 -Exactly -Scope It -ParameterFilter {
+            Should -Invoke Invoke-PromotedModuleTests -Times 1 -Exactly -Scope It -ParameterFilter {
                 [string]::IsNullOrEmpty($ProGetBaseUrl) -and $ProGetApiKeySecretName -eq 'ProGet.BuildMaster.API.Key.utat022'
             }
         }
@@ -204,7 +204,7 @@ Describe 'Invoke-PairedTierPromotion' -Tag 'Unit', 'PromotedModuleHostSensitive'
         It 'Skips DatabaseDataPresence when no connection string is supplied' {
             $r = Invoke-PairedTierPromotion -ModuleVersion '1' -DatabasePackageVersion '1' -Tier 'Integration'
             ($r.Validations | Where-Object Name -eq 'DatabaseDataPresence').Status | Should -Be 'Skipped'
-            Assert-MockCalled Get-AgentTextFromDatabase -Times 0 -Exactly -Scope It
+            Should -Invoke Get-AgentTextFromDatabase -Times 0 -Exactly -Scope It
         }
         It 'Passes DatabaseDataPresence when the AgentText record is present' {
             $r = Invoke-PairedTierPromotion -ModuleVersion '1' -DatabasePackageVersion '1' -Tier 'Integration' -DatabaseConnectionString 'Server=x;Database=ATAPUtilities;'

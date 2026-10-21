@@ -80,13 +80,13 @@ Describe 'Import-ATAPModuleFromProGet [private]' -Tag 'Unit', 'PromotedModuleHos
   It 'installs the latest stable module when no local copy exists' {
     Import-ATAPModuleFromProGet -ModuleName 'ATAP.Utilities.Security.Powershell' -RequiredCommand 'Get-BitWardenCredential'
 
-    Assert-MockCalled Find-Module -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Find-Module -Times 1 -Exactly -Scope It -ParameterFilter {
       $Name -eq 'ATAP.Utilities.Security.Powershell' -and $Repository -eq 'powershellget-stable'
     }
-    Assert-MockCalled Install-Module -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Install-Module -Times 1 -Exactly -Scope It -ParameterFilter {
       $Name -eq 'ATAP.Utilities.Security.Powershell' -and $Repository -eq 'powershellget-stable' -and $Scope -eq 'CurrentUser'
     }
-    Assert-MockCalled Import-Module -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Import-Module -Times 1 -Exactly -Scope It -ParameterFilter {
       $Name -eq 'ATAP.Utilities.Security.Powershell' -and $MinimumVersion -eq [version]'0.2.0'
     }
   }
@@ -96,10 +96,10 @@ Describe 'Import-ATAPModuleFromProGet [private]' -Tag 'Unit', 'PromotedModuleHos
 
     Import-ATAPModuleFromProGet -ModuleName 'ATAP.Utilities.Security.Powershell' -RequiredCommand 'Get-BitWardenCredential'
 
-    Assert-MockCalled Install-Module -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Install-Module -Times 1 -Exactly -Scope It -ParameterFilter {
       $Name -eq 'ATAP.Utilities.Security.Powershell'
     }
-    Assert-MockCalled Import-Module -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Import-Module -Times 1 -Exactly -Scope It -ParameterFilter {
       $Name -eq 'ATAP.Utilities.Security.Powershell' -and $MinimumVersion -eq [version]'0.2.0'
     }
   }
@@ -110,8 +110,8 @@ Describe 'Import-ATAPModuleFromProGet [private]' -Tag 'Unit', 'PromotedModuleHos
 
     Import-ATAPModuleFromProGet -ModuleName 'ATAP.Utilities.Security.Powershell' -RequiredCommand 'Get-BitWardenCredential'
 
-    Assert-MockCalled Install-Module -Times 0 -Exactly -Scope It
-    Assert-MockCalled Import-Module -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Install-Module -Times 0 -Exactly -Scope It
+    Should -Invoke Import-Module -Times 1 -Exactly -Scope It -ParameterFilter {
       $Name -eq 'ATAP.Utilities.Security.Powershell' -and $MinimumVersion -eq [version]'0.1.5'
     }
   }
@@ -121,7 +121,7 @@ Describe 'Import-ATAPModuleFromProGet [private]' -Tag 'Unit', 'PromotedModuleHos
 
     Import-ATAPModuleFromProGet -ModuleName 'ATAP.Utilities.Security.Powershell' -RequiredCommand 'Get-BitWardenCredential'
 
-    Assert-MockCalled Register-PSRepository -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Register-PSRepository -Times 1 -Exactly -Scope It -ParameterFilter {
       $Name -eq 'powershellget-stable' -and $SourceLocation -eq 'https://utat022:50000/nuget/powershellget-stable/'
     }
   }

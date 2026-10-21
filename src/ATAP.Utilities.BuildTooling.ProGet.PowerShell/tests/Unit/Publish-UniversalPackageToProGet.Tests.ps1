@@ -116,14 +116,14 @@ Describe 'Publish-UniversalPackageToProGet' -Tag 'Unit', 'PromotedModuleHostSens
             { Publish-UniversalPackageToProGet -Path $script:fakeUpack -Feed 'releasebundle-development' } |
                 Should -Throw -ExpectedMessage '*CeilingTier is required*'
 
-            Assert-MockCalled Invoke-RestMethod -Times 0 -Exactly -Scope It
+            Should -Invoke Invoke-RestMethod -Times 0 -Exactly -Scope It
         }
 
         It 'Blocks direct publish above the ceiling before REST call' {
             { Publish-UniversalPackageToProGet -Path $script:fakeUpack -Feed 'releasebundle-development' -CeilingTier 'Experimental' } |
                 Should -Throw -ExpectedMessage '*Promotion ceiling exceeded*'
 
-            Assert-MockCalled Invoke-RestMethod -Times 0 -Exactly -Scope It
+            Should -Invoke Invoke-RestMethod -Times 0 -Exactly -Scope It
         }
 
         It 'Allows an explicit Force bypass for direct publish above Experimental' {
@@ -155,7 +155,7 @@ Describe 'Publish-UniversalPackageToProGet' -Tag 'Unit', 'PromotedModuleHostSens
             $result = Publish-UniversalPackageToProGet -Path $script:fakeUpack -WhatIf
             $result.Published       | Should -BeFalse
             $result.ResponseSummary | Should -Match 'WhatIf'
-            Assert-MockCalled Invoke-RestMethod -Times 0 -Exactly -Scope It
+            Should -Invoke Invoke-RestMethod -Times 0 -Exactly -Scope It
         }
     }
 

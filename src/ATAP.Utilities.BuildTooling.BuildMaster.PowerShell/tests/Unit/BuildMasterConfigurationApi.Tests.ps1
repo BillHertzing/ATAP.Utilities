@@ -119,7 +119,7 @@ Describe 'BuildMaster configuration API functions' -Tag 'Unit' {
     Mock Invoke-RestMethod { throw 'API must not be called' }
     { New-BuildMasterApplication -Name 'Invalid' -ArtifactAssetDirectory 'Orphaned' } |
       Should -Throw '*valid only when ArtifactUsage is AssetDirectory*'
-    Assert-MockCalled Invoke-RestMethod -Times 0 -Exactly
+    Should -Invoke Invoke-RestMethod -Times 0 -Exactly
   }
 
   It 'treats a case-variant supported API projection as unchanged' {
@@ -149,7 +149,7 @@ Describe 'BuildMaster configuration API functions' -Tag 'Unit' {
 
     $result = New-BuildMasterApplication -Name 'Existing' -Description 'Same'
     $result.Action | Should -Be 'Unchanged'
-    Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly
+    Should -Invoke Invoke-RestMethod -Times 1 -Exactly
   }
 
   It 'surfaces bounded server validation response details' {

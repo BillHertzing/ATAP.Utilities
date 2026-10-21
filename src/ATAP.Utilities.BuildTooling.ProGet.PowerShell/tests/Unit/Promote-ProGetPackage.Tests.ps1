@@ -109,7 +109,7 @@ Describe 'Promote-ProGetPackage' -Tag 'Unit', 'PromotedModuleHostSensitive' {
             $result.Succeeded       | Should -BeTrue
             $result.ResponseSummary | Should -Match 'WhatIf'
             $result.InnerResult     | Should -BeNullOrEmpty
-            Assert-MockCalled Move-ProGetPackageInterTier -Times 0 -Exactly -Scope It
+            Should -Invoke Move-ProGetPackageInterTier -Times 0 -Exactly -Scope It
         }
     }
 
@@ -128,7 +128,7 @@ Describe 'Promote-ProGetPackage' -Tag 'Unit', 'PromotedModuleHostSensitive' {
             $result.ResponseSummary | Should -Match 'Promoted'
             $result.InnerResult     | Should -Not -BeNullOrEmpty
 
-            Assert-MockCalled Move-ProGetPackageInterTier -Times 1 -Exactly -Scope It -ParameterFilter {
+            Should -Invoke Move-ProGetPackageInterTier -Times 1 -Exactly -Scope It -ParameterFilter {
                 $Name -eq 'ATAP.Utilities.Foo' -and
                 $Version -eq '1.2.0-experimental.42' -and
                 $FromFeed -eq 'nuget-experimental' -and
@@ -141,7 +141,7 @@ Describe 'Promote-ProGetPackage' -Tag 'Unit', 'PromotedModuleHostSensitive' {
             Promote-ProGetPackage -Name 'pkg' -Version '1.0.0' `
                 -FromFeed 'nuget-development' -ToFeed 'nuget-integration' -Reason 'why' -CeilingTier 'Integration' | Out-Null
 
-            Assert-MockCalled Move-ProGetPackageInterTier -Times 1 -Exactly -Scope It -ParameterFilter {
+            Should -Invoke Move-ProGetPackageInterTier -Times 1 -Exactly -Scope It -ParameterFilter {
                 $Name -eq 'pkg' -and $Reason -eq 'why'
             }
         }
@@ -152,7 +152,7 @@ Describe 'Promote-ProGetPackage' -Tag 'Unit', 'PromotedModuleHostSensitive' {
                 -Reason 'integration gate' -CeilingTier 'Integration' `
                 -ProGetBaseUrl 'https://localhost:50000' -ProGetApiKeySecretName 'Test.ProGet.API.Key' | Out-Null
 
-            Assert-MockCalled Move-ProGetPackageInterTier -Times 1 -Exactly -Scope It -ParameterFilter {
+            Should -Invoke Move-ProGetPackageInterTier -Times 1 -Exactly -Scope It -ParameterFilter {
                 $ProGetBaseUrl -eq 'https://localhost:50000' -and $ProGetApiKeySecretName -eq 'Test.ProGet.API.Key'
             }
         }
@@ -172,7 +172,7 @@ Describe 'Promote-ProGetPackage' -Tag 'Unit', 'PromotedModuleHostSensitive' {
                 -ProGetBaseUrl 'https://localhost:50000' -ProGetApiKeySecretName 'Test.ProGet.API.Key' } |
                 Should -Throw '*signature verification failed*'
 
-            Assert-MockCalled Move-ProGetPackageInterTier -Times 0 -Exactly -Scope It
+            Should -Invoke Move-ProGetPackageInterTier -Times 0 -Exactly -Scope It
         }
 
         It 'Allows promotion when the destination tier is within CeilingTier' {
@@ -183,7 +183,7 @@ Describe 'Promote-ProGetPackage' -Tag 'Unit', 'PromotedModuleHostSensitive' {
             $result.Succeeded   | Should -BeTrue
             $result.CeilingTier | Should -Be 'Development'
 
-            Assert-MockCalled Move-ProGetPackageInterTier -Times 1 -Exactly -Scope It
+            Should -Invoke Move-ProGetPackageInterTier -Times 1 -Exactly -Scope It
         }
 
         It 'Aborts before the inner cmdlet when destination tier exceeds CeilingTier' {
@@ -192,7 +192,7 @@ Describe 'Promote-ProGetPackage' -Tag 'Unit', 'PromotedModuleHostSensitive' {
                 -Reason 'blocked' -CeilingTier 'Experimental' } |
                 Should -Throw -ExpectedMessage '*Promotion ceiling exceeded*'
 
-            Assert-MockCalled Move-ProGetPackageInterTier -Times 0 -Exactly -Scope It
+            Should -Invoke Move-ProGetPackageInterTier -Times 0 -Exactly -Scope It
         }
 
         It 'Allows an explicit NoCeilingCheck bypass' {
@@ -201,7 +201,7 @@ Describe 'Promote-ProGetPackage' -Tag 'Unit', 'PromotedModuleHostSensitive' {
                 -Reason 'manual emergency promotion' -NoCeilingCheck
 
             $result.Succeeded | Should -BeTrue
-            Assert-MockCalled Move-ProGetPackageInterTier -Times 1 -Exactly -Scope It
+            Should -Invoke Move-ProGetPackageInterTier -Times 1 -Exactly -Scope It
         }
     }
 

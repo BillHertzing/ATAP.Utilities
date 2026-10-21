@@ -99,8 +99,8 @@ Describe 'Set-FloatingPackagePins' {
       Set-FloatingPackagePins -PackagePropsPath $script:propsPath -ProGetUrl 'http://proget.local:50000' -WhatIf | Out-Null
       $after = Get-Content -LiteralPath $script:propsPath -Raw
       $after | Should -Be $before
-      Assert-MockCalled -CommandName Get-SecretATAP -Times 0 -Exactly -Scope It
-      Assert-MockCalled -CommandName Invoke-RestMethod -Times 0 -Exactly -Scope It
+      Should -Invoke -CommandName Get-SecretATAP -Times 0 -Exactly -Scope It
+      Should -Invoke -CommandName Invoke-RestMethod -Times 0 -Exactly -Scope It
     }
   }
 

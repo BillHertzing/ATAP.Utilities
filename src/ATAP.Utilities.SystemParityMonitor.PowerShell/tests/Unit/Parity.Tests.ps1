@@ -82,7 +82,7 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' -Tag 'Unit', 'Pa
         Should -Be 'Stopped|<not-collected>|<not-collected>'
       # The value shape stays three-part: filling the placeholders would perturb the Task 14.73
       # drift baseline and is a separate, deliberate change.
-      Assert-MockCalled -CommandName Get-Service -Times 0 -Exactly
+      Should -Invoke -CommandName Get-Service -Times 0 -Exactly
     }
   }
 

@@ -87,7 +87,7 @@ Describe 'Start-BuildMasterPipeline' -Tag 'Unit', 'PromotedModuleHostSensitive' 
       $result.BuildId | Should -Be '4271'
       $result.BuildNumber | Should -Be '4271'
       $result.ResponseSummary | Should -Match 'build queued'
-      Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter { $Method -eq 'Post' }
+      Should -Invoke Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter { $Method -eq 'Post' }
     }
 
     It 'Targets the correct endpoint URL' {
@@ -159,7 +159,7 @@ Describe 'Start-BuildMasterPipeline' -Tag 'Unit', 'PromotedModuleHostSensitive' 
 
       Start-BuildMasterPipeline -Application 'A' -ReleaseNumber '1.0.0' | Out-Null
 
-      Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter { $Method -eq 'Post' }
+      Should -Invoke Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter { $Method -eq 'Post' }
       $script:createBuildCalledWithFiniteTimeout | Should -BeTrue
     }
   }
@@ -204,7 +204,7 @@ Describe 'Start-BuildMasterPipeline' -Tag 'Unit', 'PromotedModuleHostSensitive' 
       $result = Start-BuildMasterPipeline -Application 'A' -ReleaseNumber '1.0.0' -WhatIf
       $result.Succeeded | Should -BeFalse
       $result.ResponseSummary | Should -Match 'WhatIf'
-      Assert-MockCalled Invoke-RestMethod -Times 0 -Exactly -Scope It
+      Should -Invoke Invoke-RestMethod -Times 0 -Exactly -Scope It
     }
   }
 }

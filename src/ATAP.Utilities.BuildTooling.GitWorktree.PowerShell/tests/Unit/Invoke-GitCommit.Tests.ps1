@@ -76,7 +76,7 @@ Describe 'Invoke-GitCommit' -Tag 'Unit', 'PromotedModuleHostSensitive' {
       ) `
       -Confirm:$false
 
-    Assert-MockCalled Assert-LockFilesClean -ModuleName ATAP.Utilities.BuildTooling.GitWorktree.PowerShell -Times 2 -Exactly -Scope It
+    Should -Invoke Assert-LockFilesClean -ModuleName ATAP.Utilities.BuildTooling.GitWorktree.PowerShell -Times 2 -Exactly -Scope It
 
     $log = @(& git -C $script:repo log --format='%H|%s' -2)
     $log[0] | Should -Match '\|docs\(readme\): update docs$'

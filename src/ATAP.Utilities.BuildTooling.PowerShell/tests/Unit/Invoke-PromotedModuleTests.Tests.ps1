@@ -139,8 +139,8 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
             $result.PesterTier      | Should -Be 'Alpha'
             $result.ResponseSummary | Should -Match 'WhatIf'
             $result.InnerResult     | Should -BeNullOrEmpty
-            Assert-MockCalled Save-Module -Times 0 -Exactly -Scope It
-            Assert-MockCalled Invoke-PSModulePesterTests -Times 0 -Exactly -Scope It
+            Should -Invoke Save-Module -Times 0 -Exactly -Scope It
+            Should -Invoke Invoke-PSModulePesterTests -Times 0 -Exactly -Scope It
         }
     }
 
@@ -149,14 +149,14 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
             Invoke-PromotedModuleTests -Name 'Mod' -Version '1.0.0' -Feed 'powershellget-development' `
                 -Tier 'Development' -ResultsPath 'r' -ModuleSourceRoot 'C:\fake\src\Mod' `
                 -WorkingDirectory 'C:\fake' | Out-Null
-            Assert-MockCalled Invoke-PSModulePesterTests -Times 1 -Exactly -Scope It -ParameterFilter { $Tier -eq 'Alpha' }
+            Should -Invoke Invoke-PSModulePesterTests -Times 1 -Exactly -Scope It -ParameterFilter { $Tier -eq 'Alpha' }
         }
 
         It 'Maps Integration to Beta' {
             Invoke-PromotedModuleTests -Name 'Mod' -Version '1.0.0' -Feed 'powershellget-integration' `
                 -Tier 'Integration' -ResultsPath 'r' -ModuleSourceRoot 'C:\fake\src\Mod' `
                 -WorkingDirectory 'C:\fake' | Out-Null
-            Assert-MockCalled Invoke-PSModulePesterTests -Times 1 -Exactly -Scope It -ParameterFilter { $Tier -eq 'Beta' }
+            Should -Invoke Invoke-PSModulePesterTests -Times 1 -Exactly -Scope It -ParameterFilter { $Tier -eq 'Beta' }
         }
 
         It 'Maps Experimental to Sprint' {
@@ -164,7 +164,7 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
                 -Tier 'Experimental' -ResultsPath 'r' -ModuleSourceRoot 'C:\fake\src\Mod' `
                 -WorkingDirectory 'C:\fake'
             $result.PesterTier | Should -Be 'Sprint'
-            Assert-MockCalled Invoke-PSModulePesterTests -Times 1 -Exactly -Scope It -ParameterFilter { $Tier -eq 'Sprint' }
+            Should -Invoke Invoke-PSModulePesterTests -Times 1 -Exactly -Scope It -ParameterFilter { $Tier -eq 'Sprint' }
         }
 
         It 'Maps QA and Production to themselves' {
@@ -198,15 +198,15 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
             $result.ResponseSummary | Should -Match 'Development-tier promoted-module tests using Alpha Pester filter'
             $result.InnerResult     | Should -Not -BeNullOrEmpty
 
-            Assert-MockCalled Save-Module -Times 1 -Exactly -Scope It -ParameterFilter {
+            Should -Invoke Save-Module -Times 1 -Exactly -Scope It -ParameterFilter {
                 $Name -eq 'Mod' -and $RequiredVersion -eq '1.0.0' -and $Repository -eq 'powershellget-development'
             }
-            Assert-MockCalled Invoke-WebRequest -Times 0 -Exactly -Scope It
-            Assert-MockCalled Remove-Module -Times 2 -Exactly -Scope It -ParameterFilter {
+            Should -Invoke Invoke-WebRequest -Times 0 -Exactly -Scope It
+            Should -Invoke Remove-Module -Times 2 -Exactly -Scope It -ParameterFilter {
                 $Name -eq 'Mod' -and $Force
             }
-            Assert-MockCalled Import-Module -Times 1 -Exactly -Scope It -ParameterFilter { $Name -match 'Mod\.psd1' }
-            Assert-MockCalled Invoke-PSModulePesterTests -Times 1 -Exactly -Scope It -ParameterFilter {
+            Should -Invoke Import-Module -Times 1 -Exactly -Scope It -ParameterFilter { $Name -match 'Mod\.psd1' }
+            Should -Invoke Invoke-PSModulePesterTests -Times 1 -Exactly -Scope It -ParameterFilter {
                 $ModuleRoot -eq 'C:\fake\src\Mod' -and $Tier -eq 'Alpha' -and (-not $SkipTestResult) -and $SkipCodeCoverage -and
                 $PesterOutputVerbosity -eq 'Normal' -and $PesterProgressInterval -eq 20 -and
                 $AdditionalExcludeTag -contains 'PromotedModuleHostSensitive'
@@ -244,10 +244,10 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
                 -Feed 'powershellget-integration' -Tier 'Integration' -ResultsPath 'r' `
                 -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\fake' | Out-Null
 
-            Assert-MockCalled Remove-Module -Times 1 -Exactly -Scope It -ParameterFilter {
+            Should -Invoke Remove-Module -Times 1 -Exactly -Scope It -ParameterFilter {
                 $ModuleInfo -eq $nestedCopy -and $Force
             }
-            Assert-MockCalled Import-Module -Times 1 -Exactly -Scope It
+            Should -Invoke Import-Module -Times 1 -Exactly -Scope It
         }
 
         It 'exposes sibling source modules only while importing the promoted target' {
@@ -275,7 +275,7 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
                 -Feed 'powershellget-development' -Tier 'Development' -ResultsPath 'C:\external\results' `
                 -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\external\working' | Out-Null
 
-            Assert-MockCalled Save-Module -Times 1 -Exactly -Scope It -ParameterFilter {
+            Should -Invoke Save-Module -Times 1 -Exactly -Scope It -ParameterFilter {
                 $Path -eq 'C:\external\working\_generated\_promoted-modules\Mod.1.0.0.powershellget-development'
             }
             $env:PSModulePath | Should -Be $before
@@ -292,7 +292,7 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
                     -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\fake'
             } | Should -Throw '*Unable to isolate promoted module*old-tier*'
 
-            Assert-MockCalled Import-Module -Times 0 -Exactly -Scope It
+            Should -Invoke Import-Module -Times 0 -Exactly -Scope It
         }
 
         It 'Passes explicit Pester output settings to the delegated test runner' {
@@ -302,7 +302,7 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
                 -PesterOutputVerbosity 'Diagnostic' `
                 -PesterProgressInterval 10 | Out-Null
 
-            Assert-MockCalled Invoke-PSModulePesterTests -Times 1 -Exactly -Scope It -ParameterFilter {
+            Should -Invoke Invoke-PSModulePesterTests -Times 1 -Exactly -Scope It -ParameterFilter {
                 $PesterOutputVerbosity -eq 'Diagnostic' -and $PesterProgressInterval -eq 10
             }
         }
@@ -347,14 +347,14 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
                 -ProGetBaseUrl 'https://utat022:50000/' -ProGetApiKeySecretName 'Test.ProGet.API.Key'
 
             $result.GatePass | Should -BeTrue
-            Assert-MockCalled Save-Module -Times 0 -Exactly -Scope It
-            Assert-MockCalled Invoke-WebRequest -Times 1 -Exactly -Scope It -ParameterFilter {
+            Should -Invoke Save-Module -Times 0 -Exactly -Scope It
+            Should -Invoke Invoke-WebRequest -Times 1 -Exactly -Scope It -ParameterFilter {
                 $Uri -eq 'https://utat022:50000/nuget/powershellget-development/package/Mod/1.0.0-Alpha001' -and
                 $OutFile -eq 'C:\fake\_generated\_promoted-modules\Mod.1.0.0-Alpha001.powershellget-development\Mod.1.0.0-Alpha001.nupkg' -and
                 $Headers['X-ApiKey'] -eq 'secret' -and
                 $TimeoutSec -eq 30
             }
-            Assert-MockCalled Expand-Archive -Times 1 -Exactly -Scope It -ParameterFilter {
+            Should -Invoke Expand-Archive -Times 1 -Exactly -Scope It -ParameterFilter {
                 $LiteralPath -eq 'C:\fake\_generated\_promoted-modules\Mod.1.0.0-Alpha001.powershellget-development\Mod.1.0.0-Alpha001.nupkg' -and
                 $DestinationPath -eq 'C:\fake\_generated\_promoted-modules\Mod.1.0.0-Alpha001.powershellget-development\package'
             }
@@ -377,8 +377,8 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
 
             $result.GatePass | Should -BeTrue
             $script:downloadAttempts | Should -Be 2
-            Assert-MockCalled Invoke-WebRequest -Times 2 -Exactly -Scope It
-            Assert-MockCalled Start-Sleep -Times 1 -Exactly -Scope It -ParameterFilter { $Seconds -eq 1 }
+            Should -Invoke Invoke-WebRequest -Times 2 -Exactly -Scope It
+            Should -Invoke Start-Sleep -Times 1 -Exactly -Scope It -ParameterFilter { $Seconds -eq 1 }
         }
 
         It 'Throws when the promoted-module restore produced no manifest' {

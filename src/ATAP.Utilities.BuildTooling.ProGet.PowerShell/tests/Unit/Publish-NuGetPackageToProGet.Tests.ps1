@@ -142,14 +142,14 @@ Describe 'Publish-NuGetPackageToProGet' -Tag 'Unit' {
             { Publish-NuGetPackageToProGet -NupkgPath $script:fakeNupkg -Feed 'nuget-development' } |
                 Should -Throw -ExpectedMessage '*CeilingTier is required*'
 
-            Assert-MockCalled Invoke-DotnetNuGetPush -Times 0 -Exactly -Scope It
+            Should -Invoke Invoke-DotnetNuGetPush -Times 0 -Exactly -Scope It
         }
 
         It 'Blocks direct publish above the ceiling before dotnet runs' {
             { Publish-NuGetPackageToProGet -NupkgPath $script:fakeNupkg -Feed 'nuget-development' -CeilingTier 'Experimental' } |
                 Should -Throw -ExpectedMessage '*Promotion ceiling exceeded*'
 
-            Assert-MockCalled Invoke-DotnetNuGetPush -Times 0 -Exactly -Scope It
+            Should -Invoke Invoke-DotnetNuGetPush -Times 0 -Exactly -Scope It
         }
 
         It 'Allows direct publish above Experimental when within CeilingTier' {
@@ -206,7 +206,7 @@ Describe 'Publish-NuGetPackageToProGet' -Tag 'Unit' {
             $result = Publish-NuGetPackageToProGet -NupkgPath $script:fakeNupkg -WhatIf
             $result.Published       | Should -BeFalse
             $result.ResponseSummary | Should -Match 'WhatIf'
-            Assert-MockCalled Invoke-DotnetNuGetPush -Times 0 -Exactly -Scope It
+            Should -Invoke Invoke-DotnetNuGetPush -Times 0 -Exactly -Scope It
         }
     }
 

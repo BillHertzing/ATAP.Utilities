@@ -119,7 +119,7 @@ Describe 'Publish-PSModuleToProGetFeed' {
         $result = Publish-PSModuleToProGetFeed -NupkgPath $script:fakeNupkg -Tier $Tier
         $result.FeedName | Should -Be $Expected
         $result.Published | Should -BeTrue
-        Assert-MockCalled Publish-PSResource -Times 1 -Exactly -Scope It
+        Should -Invoke Publish-PSResource -Times 1 -Exactly -Scope It
       } finally {
         Remove-Item Function:\Get-SecretATAP -ErrorAction SilentlyContinue
       }
@@ -174,7 +174,7 @@ Describe 'Publish-PSModuleToProGetFeed' {
       try {
         $result = Publish-PSModuleToProGetFeed -NupkgPath $script:fakeNupkg -Tier Alpha
         $result.SignatureVerified | Should -BeTrue
-        Assert-MockCalled Test-PSModulePackageSignature -Times 1 -Exactly -Scope It -ParameterFilter { $RequireTimestamp }
+        Should -Invoke Test-PSModulePackageSignature -Times 1 -Exactly -Scope It -ParameterFilter { $RequireTimestamp }
       } finally {
         Remove-Item Function:\Get-SecretATAP -ErrorAction SilentlyContinue
       }
@@ -185,7 +185,7 @@ Describe 'Publish-PSModuleToProGetFeed' {
       function global:Get-SecretATAP { throw 'must not be called' }
       try {
         { Publish-PSModuleToProGetFeed -NupkgPath $script:fakeNupkg -Tier Alpha } | Should -Throw '*unsigned package*'
-        Assert-MockCalled Publish-PSResource -Times 0 -Exactly -Scope It
+        Should -Invoke Publish-PSResource -Times 0 -Exactly -Scope It
       } finally {
         Remove-Item Function:\Get-SecretATAP -ErrorAction SilentlyContinue
       }
@@ -200,11 +200,11 @@ Describe 'Publish-PSModuleToProGetFeed' {
         $result.Published | Should -BeFalse
         $result.FeedName | Should -Be 'powershellget-experimental'
         $result.ResponseSummary | Should -Match 'WhatIf'
-        Assert-MockCalled Publish-PSResource -Times 0 -Exactly -Scope It
-        Assert-MockCalled Get-SecretATAP -Times 0 -Exactly -Scope It
-        Assert-MockCalled Get-PSResourceRepository -Times 0 -Exactly -Scope It
-        Assert-MockCalled Register-PSResourceRepository -Times 0 -Exactly -Scope It
-        Assert-MockCalled Set-PSResourceRepository -Times 0 -Exactly -Scope It
+        Should -Invoke Publish-PSResource -Times 0 -Exactly -Scope It
+        Should -Invoke Get-SecretATAP -Times 0 -Exactly -Scope It
+        Should -Invoke Get-PSResourceRepository -Times 0 -Exactly -Scope It
+        Should -Invoke Register-PSResourceRepository -Times 0 -Exactly -Scope It
+        Should -Invoke Set-PSResourceRepository -Times 0 -Exactly -Scope It
       } finally {
         Remove-Item Function:\Get-SecretATAP -ErrorAction SilentlyContinue
       }
@@ -217,8 +217,8 @@ Describe 'Publish-PSModuleToProGetFeed' {
       Mock Get-PSResourceRepository { $null }
       try {
         Publish-PSModuleToProGetFeed -NupkgPath $script:fakeNupkg -Tier Alpha | Out-Null
-        Assert-MockCalled Register-PSResourceRepository -Times 1 -Exactly -Scope It
-        Assert-MockCalled Set-PSResourceRepository -Times 0 -Exactly -Scope It
+        Should -Invoke Register-PSResourceRepository -Times 1 -Exactly -Scope It
+        Should -Invoke Set-PSResourceRepository -Times 0 -Exactly -Scope It
       } finally {
         Remove-Item Function:\Get-SecretATAP -ErrorAction SilentlyContinue
       }
@@ -229,8 +229,8 @@ Describe 'Publish-PSModuleToProGetFeed' {
       Mock Get-PSResourceRepository { [PSCustomObject]@{ Name = 'powershellget-development'; Uri = 'https://old.example/' } }
       try {
         Publish-PSModuleToProGetFeed -NupkgPath $script:fakeNupkg -Tier Alpha | Out-Null
-        Assert-MockCalled Set-PSResourceRepository -Times 1 -Exactly -Scope It
-        Assert-MockCalled Register-PSResourceRepository -Times 0 -Exactly -Scope It
+        Should -Invoke Set-PSResourceRepository -Times 1 -Exactly -Scope It
+        Should -Invoke Register-PSResourceRepository -Times 0 -Exactly -Scope It
       } finally {
         Remove-Item Function:\Get-SecretATAP -ErrorAction SilentlyContinue
       }

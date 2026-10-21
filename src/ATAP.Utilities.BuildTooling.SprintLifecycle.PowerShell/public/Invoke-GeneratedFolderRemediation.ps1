@@ -1,16 +1,14 @@
 function Invoke-GeneratedFolderRemediation {
   <#
   .SYNOPSIS
-    Plans and, on request, removes `_generated/` content that leaked past a
-    sprint boundary: stable worktree folders, prior-sprint carryover in the
-    current sprint worktrees. Stable-branch history is read-only planning.
+    Plans Generated folder remediation; all execution is currently held.
 
   .DESCRIPTION
-    These are legacy partial remediation modes, not the complete expanded
-    Task 16.84 solution. SprintCarryover now guards legacy candidates with
-    same-path default-byte equality. Complete stable-tree removal, ADS/custody
-    acceptance and coordinated history migration remain separate requirements.
-    Execution requires a separately reviewed plan and authorization.
+    Supported operation is read-only planning. Every -Execute request is refused
+    because complete approved, bound file/default-data, named-stream and
+    root/directory custody is not integrated. Individual entry restores do not
+    establish that contract. No caller approval flag or receipt bypass exists.
+    The prior controlled two-host cleanup remains accepted and is not repeated.
 
     Rule R-38 says sprint `_generated/` folders are deleted at sprint end. In
     practice, files reach the stable worktrees anyway (see SC-0470): sprint-close
@@ -18,19 +16,19 @@ function Invoke-GeneratedFolderRemediation {
     write backups straight into the stable worktrees. This cmdlet remediates
     three scopes:
 
-    StableWorktree
+    StableWorktree (Plan only)
       For each stable worktree (`<GitRoot>\<RepositoryName>` on -StableBranch),
-      deletes every untracked or ignored file under `_generated/`. Tracked
+      reports untracked or ignored legacy removal candidates under `_generated/`. Tracked
       files are NOT deleted here, nor is any path whose sprint segment is
       -SprintNumber or later (CurrentSprintProtected), because removing them would mean a commit to
       the stable branch. They are reported as TrackedDeferred and leave the
       stable branch when the sprint branch, which removes them in the
       SprintCarryover scope, merges at sprint end.
 
-    SprintCarryover
+    SprintCarryover (Plan only)
       For each current sprint worktree
       (`<GitRoot>\<RepositoryName>-wt-*-Sprint-<SprintNumber>-work-items`),
-      removes `_generated/` files that came from an earlier sprint:
+      reports legacy `_generated/` candidates from an earlier sprint:
         - InheritedTracked: files tracked on the sprint branch whose path also
           exists in the -StableBranch tree. They are removed with `git rm` and
           staged, never committed.
@@ -53,14 +51,12 @@ function Invoke-GeneratedFolderRemediation {
       Execution and -PushRewrittenHistory are retired. History changes require
       the separately coordinated operator workflow; this cmdlet only inventories.
 
-    Without -Execute the cmdlet only plans. Execution requires an explicit
-    StableWorktree and/or SprintCarryover scope and -ArchiveRoot. -NoArchive
-    execution is rejected before Git, helper loading or output creation.
-    Supported destructive actions go through ShouldProcess (ConfirmImpact High).
-    StableWorktree verifies ZIP paths and hashes; legacy SprintCarryover archiving
-    still does not establish complete ADS/custody acceptance. Archive destination
-    containment and concurrent-writer races remain unresolved; these partial
-    safeguards do not establish execution readiness.
+    Plan retains same-path default-byte comparison, Git/WIP and current/future
+    sprint protection. It does not establish complete inventory, ADS equality,
+    coherent restore, aggregate source stability or removal readiness.
+    No execution can create archives, temporary files or evidence, prune
+    directories, remove files or change a Git index. -WhatIf with -Execute
+    receives the same refusal. History mutation remains retired.
 
   .PARAMETER SprintNumber
     Current four-digit sprint number, for example '0016'.
@@ -73,12 +69,11 @@ function Invoke-GeneratedFolderRemediation {
   .PARAMETER StableBranch
     Stable branch name. Defaults to main.
   .PARAMETER Execute
-    Performs supported worktree removals with an explicit worktree scope and
-    archive root. StableHistory execution is retired. Without it, only plans.
+    Always refused until a complete approved custody contract is integrated.
+    Without this switch, only planning is supported.
   .PARAMETER ArchiveRoot
-    Folder receiving ZIP archives for supported execution scopes. Required with
-    -Execute; must be outside affected `_generated` trees. The lexical guard
-    does not prove resolved destination containment through junctions.
+    Retained for call compatibility; supplying an archive path cannot enable
+    execution. Planning does not create an archive.
   .PARAMETER NoArchive
     Retained for planning compatibility. Any use with -Execute is rejected.
   .PARAMETER HistoryWorkRoot
@@ -95,9 +90,8 @@ function Invoke-GeneratedFolderRemediation {
     Invoke-GeneratedFolderRemediation -SprintNumber '0016' -EvidencePath $plan
     # Legacy partial-mode inventory only; not the expanded Task 16.84 plan.
   .EXAMPLE
-    Invoke-GeneratedFolderRemediation -SprintNumber '0016' -Scope StableWorktree, SprintCarryover `
-      -Execute -ArchiveRoot 'D:\Temp\GeneratedArchive'
-    # Legacy partial-mode syntax only; not an approved Task 16.84 execution runbook.
+    Invoke-GeneratedFolderRemediation -SprintNumber '0016' -Scope StableWorktree, SprintCarryover
+    # Read-only candidate plan; no execution is supported.
   .EXAMPLE
     Invoke-GeneratedFolderRemediation -SprintNumber '0017' -Scope StableHistory
     # Read-only history inventory; history execution is retired.
@@ -156,6 +150,7 @@ function Invoke-GeneratedFolderRemediation {
     if ($PushRewrittenHistory) { throw '-PushRewrittenHistory is retired. Use read-only planning and the coordinated operator history workflow.' }
     if ($Execute -and $NoArchive) { throw '-Execute with -NoArchive is unsupported. Use planning and the reviewed archive workflow.' }
     if ($Execute -and $Scope -contains 'StableHistory') { throw 'StableHistory execution is retired, including default or combined scopes. Use read-only history planning and the coordinated operator workflow.' }
+    if ($Execute) { throw 'Execution held: complete approved bound file/default-data, named-stream and root/directory custody is not integrated. Use read-only planning.' }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
     if ($Scope -contains 'SprintCarryover' -and -not (Get-Command Get-GeneratedRemediationByteComparison -ErrorAction SilentlyContinue)) {
       . (Join-Path $PSScriptRoot '../private/Get-GeneratedRemediationByteComparison.ps1')

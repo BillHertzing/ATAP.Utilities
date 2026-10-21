@@ -211,7 +211,7 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
   It 'skips inherited files that have uncommitted modifications' {
     Set-Content -LiteralPath (Join-Path $script:sprint '_generated/legacy-tracked.txt') -Value 'edited'
     $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName 'Repo' `
-      -Scope SprintCarryover -Execute -NoArchive -Confirm:$false
+      -Scope SprintCarryover -Execute -ArchiveRoot $script:archive -Confirm:$false
 
     $r.Sprint[0].SkippedModified | Should -Contain '_generated/legacy-tracked.txt'
     Test-Path (Join-Path $script:sprint '_generated/legacy-tracked.txt') | Should -BeTrue
@@ -272,7 +272,7 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
   It 'preserves staged changes before asking the byte comparator' {
     New-TestFile $script:sprint '_generated/legacy-tracked.txt' 'staged WIP'
     Invoke-TestGit $script:sprint add -f -- _generated/legacy-tracked.txt | Out-Null
-    $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo -Scope SprintCarryover -Execute -NoArchive -Confirm:$false
+    $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo -Scope SprintCarryover -Execute -ArchiveRoot $script:archive -Confirm:$false
     $r.Sprint[0].SkippedModified | Should -Contain '_generated/legacy-tracked.txt'
     (Get-Content -LiteralPath (Join-Path $script:sprint '_generated/legacy-tracked.txt') -Raw).Trim() | Should -Be 'staged WIP'
     ($r.Sprint[0].DefaultDataWitnesses.Binding.RelativePath) | Should -Not -Contain '_generated/legacy-tracked.txt'
@@ -280,7 +280,7 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
 
   It 'holds carryover when stable branch identity differs' {
     Invoke-TestGit $script:stable checkout -q -b other | Out-Null
-    $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo -Scope SprintCarryover -Execute -NoArchive -Confirm:$false
+    $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo -Scope SprintCarryover -Execute -ArchiveRoot $script:archive -Confirm:$false
     $r.Sprint[0].Action | Should -Be Held
     $r.Errors -join ' ' | Should -Match 'Stable branch binding'
     $r.Sprint[0].GitRemoved | Should -Be 0
@@ -303,7 +303,7 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
       if ($args -contains '--git-common-dir') { $global:LASTEXITCODE = 128; return 'identity query failed' }
       & $script:realGitCommand @args
     }
-    $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo -Scope SprintCarryover -Execute -NoArchive -Confirm:$false
+    $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo -Scope SprintCarryover -Execute -ArchiveRoot $script:archive -Confirm:$false
     $r.Sprint[0].Action | Should -Be Held
     $r.Errors -join ' ' | Should -Match 'Git inventory failed'
     $r.Sprint[0].Archive | Should -BeNullOrEmpty
@@ -369,18 +369,40 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
         -Scope StableWorktree -Execute -Confirm:$false } | Should -Throw '*ArchiveRoot*'
   }
 
-  It 'rejects stable deletion with NoArchive and retains every original byte' {
-    $before = @(Get-ChildItem -LiteralPath (Join-Path $script:stable '_generated') -Recurse -File -Force |
-        Get-FileHash -Algorithm SHA256 | Sort-Object Path | Select-Object Path, Hash)
-    $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo `
-      -Scope StableWorktree -Execute -NoArchive -Confirm:$false
-    $r.Stable[0].Action | Should -Be Failed
-    $r.Stable[0].DeletedFiles | Should -Be 0
-    $r.Stable[0].Archive | Should -BeNullOrEmpty
-    $r.Errors -join ' ' | Should -Match 'NoArchive is not allowed'
-    $after = @(Get-ChildItem -LiteralPath (Join-Path $script:stable '_generated') -Recurse -File -Force |
-        Get-FileHash -Algorithm SHA256 | Sort-Object Path | Select-Object Path, Hash)
-    ($after | ConvertTo-Json -Compress) | Should -Be ($before | ConvertTo-Json -Compress)
+  It 'rejects unsupported options before Git autoload output or source and index mutation' {
+    $sourcePath=Join-Path $script:sprint '_generated/legacy-tracked.txt'
+    $sourceHash=(Get-FileHash -LiteralPath $sourcePath).Hash
+    $indexPath=(& $script:realGitCommand -C $script:sprint rev-parse --path-format=absolute --git-path index)
+    $indexHash=(Get-FileHash -LiteralPath $indexPath).Hash
+    $history=Join-Path $script:gitRoot 'history'
+    $evidence=Join-Path $script:gitRoot 'output/report.json'
+    Mock git { throw 'Unexpected Git call' }
+    Mock Get-Command { throw 'Unexpected helper lookup' }
+    Mock Import-Module { throw 'Unexpected helper loading' }
+    Mock New-Item { throw 'Unexpected output creation' }
+    $cases=@(
+      @{Execute=$true;NoArchive=$true;Scope=@('StableWorktree')},
+      @{Execute=$true;NoArchive=$true;Scope=@('SprintCarryover')},
+      @{Execute=$true;NoArchive=$true;Scope=@('StableWorktree','SprintCarryover');WhatIf=$true},
+      @{Execute=$true;Scope=@('StableHistory')},
+      @{Execute=$true;Scope=@('StableWorktree','StableHistory')},
+      @{Execute=$true},
+      @{PushRewrittenHistory=$true;Scope=@('StableHistory')},
+      @{Execute=$true;PushRewrittenHistory=$true;Scope=@('SprintCarryover')}
+    )
+    foreach($options in $cases){
+      { Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo -ArchiveRoot $script:archive -HistoryWorkRoot $history -EvidencePath $evidence -Confirm:$false @options } | Should -Throw
+    }
+    { Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo -Scope SprintCarryover -Execute -NoArchive -Confirm:$false } | Should -Throw '*NoArchive*unsupported*'
+    { Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo -Scope StableHistory -Execute -Confirm:$false } | Should -Throw '*StableHistory execution is retired*'
+    { Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo -PushRewrittenHistory } | Should -Throw '*PushRewrittenHistory is retired*'
+    Should -Invoke git -Times 0
+    Should -Invoke Get-Command -Times 0
+    Should -Invoke Import-Module -Times 0
+    Should -Invoke New-Item -Times 0
+    foreach($path in @($script:archive,$history,$evidence)){Test-Path -LiteralPath $path | Should -BeFalse}
+    (Get-FileHash -LiteralPath $sourcePath).Hash | Should -Be $sourceHash
+    (Get-FileHash -LiteralPath $indexPath).Hash | Should -Be $indexHash
   }
 
   It 'refuses an archive root inside a _generated folder under GitRoot' {
@@ -389,17 +411,27 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
       Should -Throw '*inside a _generated folder*'
   }
 
-  It 'requires -Execute for a push and a work root for a history rewrite' {
-    { Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName 'Repo' `
-        -Scope StableHistory -PushRewrittenHistory } | Should -Throw '*requires -Execute*'
-    { Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName 'Repo' `
-        -Scope StableHistory -Execute -Confirm:$false } | Should -Throw '*HistoryWorkRoot*'
+  It 'keeps history and NoArchive planning read-only with legacy parameters' {
+    $history=Join-Path $script:gitRoot 'unused-history'
+    $r=Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo -Scope StableHistory -NoArchive -HistoryWorkRoot $history
+    $r.Mode | Should -Be Plan
+    $r.History[0].Action | Should -Be Planned
+    $r.History[0].HistoryPathCount | Should -Be 2
+    $r.History[0].BareClone | Should -BeNullOrEmpty
+    $r.History[0].RefsRewritten | Should -BeNullOrEmpty
+    $r.History[0].Pushed | Should -BeFalse
+    Test-Path -LiteralPath $history | Should -BeFalse
+    Test-Path -LiteralPath $script:archive | Should -BeFalse
+    $worktreePlan=Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo -Scope StableWorktree,SprintCarryover -NoArchive
+    $worktreePlan.Mode | Should -Be Plan
+    $worktreePlan.Errors | Should -BeNullOrEmpty
+    Test-Path -LiteralPath (Join-Path $script:sprint '_generated/legacy-tracked.txt') | Should -BeTrue
   }
 
   It 'skips the stable scope when the stable worktree is not on the stable branch' {
     Invoke-TestGit $script:stable checkout -q -b other | Out-Null
     $r = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName 'Repo' `
-      -Scope StableWorktree -Execute -NoArchive -Confirm:$false
+      -Scope StableWorktree -Execute -ArchiveRoot $script:archive -Confirm:$false
     $r.Stable[0].Action | Should -BeLike 'Skipped*'
     Test-Path (Join-Path $script:stable '_generated/AIAdapterBackups/backup.json') | Should -BeTrue
   }

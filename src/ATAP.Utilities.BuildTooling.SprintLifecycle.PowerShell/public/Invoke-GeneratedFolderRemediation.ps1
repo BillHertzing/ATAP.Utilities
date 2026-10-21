@@ -3,7 +3,7 @@ function Invoke-GeneratedFolderRemediation {
   .SYNOPSIS
     Plans and, on request, removes `_generated/` content that leaked past a
     sprint boundary: stable worktree folders, prior-sprint carryover in the
-    current sprint worktrees, and `_generated/` paths in stable-branch history.
+    current sprint worktrees. Stable-branch history is read-only planning.
 
   .DESCRIPTION
     These are legacy partial remediation modes, not the complete expanded
@@ -50,26 +50,17 @@ function Invoke-GeneratedFolderRemediation {
 
     StableHistory
       Reports every `_generated/` path and commit reachable from -StableBranch.
-      With -Execute and -HistoryWorkRoot, the cmdlet makes a fresh bare clone
-      of origin and rewrites every branch and tag with
-      `git filter-repo --invert-paths --path _generated/`, then verifies that
-      no `_generated/` path remains. With -PushRewrittenHistory as well, it
-      force-pushes each rewritten branch and tag with a per-ref lease on the
-      pre-rewrite SHA. The push is refused while any other worktree of that
-      repository exists (sprint worktrees under -GitRoot and any registered
-      build/release worktree elsewhere), because they still carry the old history
-      and would re-introduce it on merge. After a push, every clone and
-      worktree has to be re-synchronized; GitHub keeps old commits reachable
-      through pull-request refs until GitHub support runs a GC.
+      Execution and -PushRewrittenHistory are retired. History changes require
+      the separately coordinated operator workflow; this cmdlet only inventories.
 
-    Without -Execute the cmdlet only plans. With -Execute, each destructive
-    action also goes through ShouldProcess (ConfirmImpact High). Before
-    StableWorktree deletion requires a ZIP under -ArchiveRoot, verified by exact
-    entry paths and SHA-256 readback before removal. It rejects -NoArchive when
-    deletion is attempted. The legacy SprintCarryover mode can bypass its archive
-    with -NoArchive and does not provide the stable mode's archive verification.
-    Archive destination junction/resolved-containment checks and concurrent-writer
-    races are unresolved; these partial safeguards do not establish execution readiness.
+    Without -Execute the cmdlet only plans. Execution requires an explicit
+    StableWorktree and/or SprintCarryover scope and -ArchiveRoot. -NoArchive
+    execution is rejected before Git, helper loading or output creation.
+    Supported destructive actions go through ShouldProcess (ConfirmImpact High).
+    StableWorktree verifies ZIP paths and hashes; legacy SprintCarryover archiving
+    still does not establish complete ADS/custody acceptance. Archive destination
+    containment and concurrent-writer races remain unresolved; these partial
+    safeguards do not establish execution readiness.
 
   .PARAMETER SprintNumber
     Current four-digit sprint number, for example '0016'.
@@ -82,21 +73,19 @@ function Invoke-GeneratedFolderRemediation {
   .PARAMETER StableBranch
     Stable branch name. Defaults to main.
   .PARAMETER Execute
-    Performs the removals. Without it, the cmdlet only produces the plan.
+    Performs supported worktree removals with an explicit worktree scope and
+    archive root. StableHistory execution is retired. Without it, only plans.
   .PARAMETER ArchiveRoot
-    Folder receiving ZIP archives. StableWorktree deletion always requires a
-    verified archive. SprintCarryover requires this folder unless -NoArchive is
-    passed. It must be outside affected `_generated` trees. The current lexical
-    guard does not prove resolved destination containment through junctions.
+    Folder receiving ZIP archives for supported execution scopes. Required with
+    -Execute; must be outside affected `_generated` trees. The lexical guard
+    does not prove resolved destination containment through junctions.
   .PARAMETER NoArchive
-    Bypasses archiving only in the legacy SprintCarryover mode. StableWorktree
-    reports a failed deletion attempt and retains originals when this switch is
-    used; skipped worktrees and worktrees with no deletion candidates are unchanged.
+    Retained for planning compatibility. Any use with -Execute is rejected.
   .PARAMETER HistoryWorkRoot
-    Empty-or-new folder for the bare clones that StableHistory rewrites.
-    Required with -Execute for StableHistory.
+    Retained for call compatibility only; no history output is created.
+    StableHistory execution is retired.
   .PARAMETER PushRewrittenHistory
-    Force-pushes the rewritten history. Requires -Execute and -HistoryWorkRoot.
+    Retired option; rejected with or without -Execute.
   .PARAMETER EvidencePath
     Optional JSON file path for the full report (SC-0033: place it under a
     `_generated/` folder of the current sprint).
@@ -110,9 +99,8 @@ function Invoke-GeneratedFolderRemediation {
       -Execute -ArchiveRoot 'D:\Temp\GeneratedArchive'
     # Legacy partial-mode syntax only; not an approved Task 16.84 execution runbook.
   .EXAMPLE
-    Invoke-GeneratedFolderRemediation -SprintNumber '0017' -Scope StableHistory -Execute `
-      -HistoryWorkRoot 'D:\Temp\GeneratedHistory' -PushRewrittenHistory
-    # Legacy partial-mode syntax only; not a coordinated history migration runbook.
+    Invoke-GeneratedFolderRemediation -SprintNumber '0017' -Scope StableHistory
+    # Read-only history inventory; history execution is retired.
   .NOTES
     Sprint 0016 unplanned remediation task. Durable SprintEnd fix: SC-0470.
     AI assisted using Powershell.instructions.md as guidelines.
@@ -164,6 +152,10 @@ function Invoke-GeneratedFolderRemediation {
   begin {
     $fn = 'Invoke-GeneratedFolderRemediation'
     $mn = 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell'
+    # Reject unsupported execution before logging, helper loading or Git/output.
+    if ($PushRewrittenHistory) { throw '-PushRewrittenHistory is retired. Use read-only planning and the coordinated operator history workflow.' }
+    if ($Execute -and $NoArchive) { throw '-Execute with -NoArchive is unsupported. Use planning and the reviewed archive workflow.' }
+    if ($Execute -and $Scope -contains 'StableHistory') { throw 'StableHistory execution is retired, including default or combined scopes. Use read-only history planning and the coordinated operator workflow.' }
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
     if ($Scope -contains 'SprintCarryover' -and -not (Get-Command Get-GeneratedRemediationByteComparison -ErrorAction SilentlyContinue)) {
       . (Join-Path $PSScriptRoot '../private/Get-GeneratedRemediationByteComparison.ps1')
@@ -311,7 +303,7 @@ function Invoke-GeneratedFolderRemediation {
     # Zips the given repo-relative files, preserving their relative paths.
     $archiveFiles = {
       param([string]$Root, [string[]]$RelativePaths, [string]$Name)
-      if ($NoArchive -or $RelativePaths.Count -eq 0) { return $null }
+      if ($RelativePaths.Count -eq 0) { return $null }
       $staging = Join-Path ([IO.Path]::GetTempPath()) "GeneratedRemediation-$([guid]::NewGuid().ToString('N'))"
       try {
         foreach ($rel in $RelativePaths) {
@@ -342,21 +334,17 @@ function Invoke-GeneratedFolderRemediation {
       if (-not (Get-ChildItem -LiteralPath $generated -Force)) { Remove-Item -LiteralPath $generated -Force }
     }
 
-    $needsArchive = $Execute -and -not $NoArchive -and
+    $needsArchive = $Execute -and
       ($Scope -contains 'StableWorktree' -or $Scope -contains 'SprintCarryover')
     if ($needsArchive) {
       if ([string]::IsNullOrWhiteSpace($ArchiveRoot)) {
-        throw "-ArchiveRoot is required with -Execute for the StableWorktree/SprintCarryover scopes (or pass -NoArchive)."
+        throw "-ArchiveRoot is required with -Execute for the StableWorktree/SprintCarryover scopes."
       }
       $ArchiveRoot = [IO.Path]::GetFullPath($ArchiveRoot)
       if ([IO.Path]::GetRelativePath([IO.Path]::GetFullPath($GitRoot), $ArchiveRoot) -match '(?i)(^|[\\/])_generated([\\/]|$)' -and
         $ArchiveRoot.StartsWith([IO.Path]::GetFullPath($GitRoot), [StringComparison]::OrdinalIgnoreCase)) {
         throw "-ArchiveRoot '$ArchiveRoot' is inside a _generated folder under GitRoot; it could be deleted by this remediation."
       }
-    }
-    if ($PushRewrittenHistory -and -not $Execute) { throw '-PushRewrittenHistory requires -Execute.' }
-    if ($Execute -and $Scope -contains 'StableHistory' -and [string]::IsNullOrWhiteSpace($HistoryWorkRoot)) {
-      throw '-HistoryWorkRoot is required with -Execute for the StableHistory scope.'
     }
   }
 
@@ -566,61 +554,7 @@ function Invoke-GeneratedFolderRemediation {
           HistoryCommits = $histCommits; OtherWorktrees = $otherWorktrees
           BareClone = $null; RefsRewritten = @(); Verified = $false; Pushed = $false
         }
-        if ($histPaths.Count -eq 0) {
-          $entry.Action = 'NoHistory'
-        } elseif ($Execute) {
-          try {
-            $null = & git filter-repo --version 2>&1
-            if ($LASTEXITCODE -ne 0) {
-              throw "git filter-repo is not installed. Install it ('py -m pip install git-filter-repo') and re-run."
-            }
-            if (-not $PSCmdlet.ShouldProcess("$repo history ($($histCommits.Count) commit(s))", 'Rewrite a fresh bare clone with git filter-repo')) {
-              $historyResults.Add([PSCustomObject]$entry); continue
-            }
-            $bare = Join-Path ([IO.Path]::GetFullPath($HistoryWorkRoot)) "$repo-$stamp.git"
-            if (Test-Path -LiteralPath $bare) { throw "History clone target '$bare' already exists." }
-            [void](New-Item -ItemType Directory -Path (Split-Path -Parent $bare) -Force)
-            $clone = & $invokeGit @('clone', '--bare', '--quiet', $originUrl, $bare)
-            if ($clone.ExitCode -ne 0) { throw "bare clone failed: $($clone.Error)" }
-            $entry.BareClone = $bare
-            $before = @{}
-            foreach ($line in (& $invokeGit @('-C', $bare, 'for-each-ref', '--format=%(refname) %(objectname)', 'refs/heads', 'refs/tags')).Output) {
-              $parts = $line -split ' ', 2; $before[$parts[0]] = $parts[1]
-            }
-            $filter = & $invokeGit @('-C', $bare, 'filter-repo', '--invert-paths', '--path', '_generated/', '--force')
-            if ($filter.ExitCode -ne 0) { throw "filter-repo failed: $($filter.Error)" }
-            $left = @((& $invokeGit @('-C', $bare, 'log', '--all', '--name-only', '--format=', '--', '_generated')).Output | Where-Object { $_ })
-            $entry.Verified = ($left.Count -eq 0)
-            if (-not $entry.Verified) { throw "verification failed: $($left.Count) _generated path(s) remain after filter-repo." }
-            $refs = foreach ($line in (& $invokeGit @('-C', $bare, 'for-each-ref', '--format=%(refname) %(objectname)', 'refs/heads', 'refs/tags')).Output) {
-              $parts = $line -split ' ', 2
-              [PSCustomObject]@{ Ref = $parts[0]; Old = $before[$parts[0]]; New = $parts[1] }
-            }
-            $entry.RefsRewritten = @($refs | Where-Object { $_.Old -ne $_.New })
-            $entry.Action = 'RewrittenLocally'
-
-            if ($PushRewrittenHistory) {
-              if ($otherWorktrees.Count -gt 0) {
-                throw "push refused: other worktree(s) still exist ($($otherWorktrees -join ', ')); they carry the old history. Remove them (run after sprint end) first."
-              }
-              if ($PSCmdlet.ShouldProcess("$originUrl ($($entry.RefsRewritten.Count) ref(s))", 'FORCE-PUSH rewritten history')) {
-                [void](& $invokeGit @('-C', $bare, 'remote', 'add', 'origin', $originUrl))
-                foreach ($ref in $entry.RefsRewritten) {
-                  $leaseArgs = if ($ref.Old) { "--force-with-lease=$($ref.Ref):$($ref.Old)" } else { '--force' }
-                  $push = & $invokeGit @('-C', $bare, 'push', $leaseArgs, 'origin', "$($ref.New):$($ref.Ref)")
-                  if ($push.ExitCode -ne 0) { throw "push of $($ref.Ref) failed: $($push.Error)" }
-                }
-                $entry.Pushed = $true
-                $entry.Action = 'Pushed'
-                Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
-                  -Message "[$repo] history rewritten and pushed. Re-sync every clone/worktree (fetch, then reset to origin/$StableBranch) after preserving local work."
-              }
-            }
-          } catch {
-            $entry.Action = 'Failed'
-            $errors.Add("[$repo] history: $($_.Exception.Message)")
-          }
-        }
+        if ($histPaths.Count -eq 0) { $entry.Action = 'NoHistory' }
         $historyResults.Add([PSCustomObject]$entry)
       }
     }

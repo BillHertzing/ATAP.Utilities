@@ -1,6 +1,6 @@
 BeforeAll {
   . "$PSScriptRoot\..\..\public\Invoke-GeneratedFolderRemediation.ps1"
-  $script:fixtureRoot = [IO.Path]::GetFullPath("$PSScriptRoot/../../../../_generated/Sprint0016/Task16.41/PeerTestAdoption/Fixtures")
+  $script:fixtureRoot = [IO.Path]::GetFullPath("$PSScriptRoot/../../../../_generated/Sprint0016/Task16.84/NestedProtectionTests-v1/Fixtures")
 
   function script:Get-TestCleanupPaths {
     param([string]$Root, [string]$Stable, [string]$Sprint)
@@ -117,6 +117,78 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
     (& git -C $script:sprint log --oneline).Count | Should -Be 2   # nothing committed
 
     @(Get-ChildItem $script:archive -Filter *.zip).Count | Should -Be 2
+  }
+
+  It 'protects every nested current or future sprint match in plan and execution across all three selectors' {
+    $protectedSegments = @(
+      'Sprint0015/Sprint0016',
+      'Sprint0015/Sprint0017',
+      'Sprint0016/Sprint0015',
+      'Sprint0015-and-Sprint0016',
+      'Sprint0015-and-Sprint0017',
+      'sPrInT_0015/SpRiNt-EnD-0016',
+      'SprintEnd0015/Sprint-0016',
+      'Sprint_0017-and-Sprint0015'
+    )
+    $protectedStable = @()
+    $protectedSprint = @()
+    foreach ($segment in $protectedSegments) {
+      $stableOnly = "_generated/$segment/stable-only.bin"
+      $inherited = "_generated/$segment/inherited.bin"
+      $untracked = "_generated/$segment/untracked.bin"
+      New-TestFile $script:stable $stableOnly "stable:$segment"
+      New-TestFile $script:stable $inherited "inherited:$segment"
+      Invoke-TestGit $script:stable add -f -- $inherited | Out-Null
+      New-TestFile $script:sprint $inherited "inherited:$segment"
+      Invoke-TestGit $script:sprint add -f -- $inherited | Out-Null
+      New-TestFile $script:sprint $untracked "untracked:$segment"
+      $protectedStable += $stableOnly
+      $protectedSprint += $inherited, $untracked
+    }
+    $oldTracked = '_generated/Sprint0014/Sprint0015/old-tracked.bin'
+    $oldUntracked = '_generated/Sprint0014/Sprint0015/old-untracked.bin'
+    $noSprint = '_generated/SprintABCD/no-number.bin'
+    foreach ($root in @($script:stable, $script:sprint)) {
+      New-TestFile $root $oldTracked 'old tracked'
+      Invoke-TestGit $root add -f -- $oldTracked | Out-Null
+      New-TestFile $root $oldUntracked 'old untracked'
+      New-TestFile $root $noSprint 'no sprint number'
+      Invoke-TestGit $root commit -q -m 'nested protection fixtures' | Out-Null
+    }
+    $before = @{}
+    foreach ($rel in $protectedStable) {
+      $path = Join-Path $script:stable $rel
+      $before[$path] = (Get-FileHash -LiteralPath $path).Hash
+    }
+    foreach ($rel in $protectedSprint) {
+      $path = Join-Path $script:sprint $rel
+      $before[$path] = (Get-FileHash -LiteralPath $path).Hash
+    }
+
+    $plan = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo -Scope StableWorktree, SprintCarryover
+    $plan.Errors | Should -BeNullOrEmpty
+    $plan.Mode | Should -Be Plan
+    $plan.Stable[0].CurrentSprintProtected | Should -Be (1 + $protectedSegments.Count)
+    foreach ($rel in $protectedSprint) {
+      $plan.Sprint[0].InheritedTracked | Should -Not -Contain $rel
+      $plan.Sprint[0].PriorSprintNamedTracked | Should -Not -Contain $rel
+      $plan.Sprint[0].PriorSprintNamedUntracked | Should -Not -Contain $rel
+    }
+    $plan.Sprint[0].InheritedTracked | Should -Contain $oldTracked
+    $plan.Sprint[0].PriorSprintNamedUntracked | Should -Contain $oldUntracked
+    $plan.Sprint[0].PriorSprintNamedUntracked | Should -Not -Contain $noSprint
+    foreach ($path in $before.Keys) { (Get-FileHash -LiteralPath $path).Hash | Should -Be $before[$path] }
+
+    $result = Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo -Scope StableWorktree, SprintCarryover -Execute -ArchiveRoot $script:archive -Confirm:$false
+    $result.Errors | Should -BeNullOrEmpty
+    foreach ($path in $before.Keys) { (Get-FileHash -LiteralPath $path).Hash | Should -Be $before[$path] }
+    $staged = @(Invoke-TestGit $script:sprint diff --cached --name-only)
+    foreach ($rel in $protectedSprint) { $staged | Should -Not -Contain $rel }
+    $staged | Should -Contain $oldTracked
+    Test-Path -LiteralPath (Join-Path $script:sprint $oldUntracked) | Should -BeFalse
+    Test-Path -LiteralPath (Join-Path $script:stable $oldUntracked) | Should -BeFalse
+    Test-Path -LiteralPath (Join-Path $script:stable $noSprint) | Should -BeFalse
+    Test-Path -LiteralPath (Join-Path $script:sprint $noSprint) | Should -BeTrue
   }
 
   It 'skips inherited files that have uncommitted modifications' {

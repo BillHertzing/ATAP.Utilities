@@ -272,13 +272,17 @@ function Invoke-GeneratedFolderRemediation {
       @(($Lines -join "`n") -split "`0" | ForEach-Object { $_.Trim("`n") } | Where-Object { $_ })
     }
 
-    # Returns the sprint number named by any path segment, or $null.
+    # Returns the highest sprint number across all matches in all segments, or $null.
     $priorSprintOf = {
       param([string]$RelativePath)
+      $highestSprint = $null
       foreach ($segment in ($RelativePath -split '[\\/]')) {
-        if ($segment -match '(?i)sprint[-_]?(?:end[-_]?)?(\d{4})') { return [int]$Matches[1] }
+        foreach ($sprintMatch in [regex]::Matches($segment, '(?i)sprint[-_]?(?:end[-_]?)?(\d{4})')) {
+          $sprint = [int]$sprintMatch.Groups[1].Value
+          if ($null -eq $highestSprint -or $sprint -gt $highestSprint) { $highestSprint = $sprint }
+        }
       }
-      $null
+      $highestSprint
     }
 
     # Lists files on disk under <root>\_generated as repo-relative '/' paths.

@@ -708,7 +708,12 @@ function Set-SprintBoundaryContext {
             if (-not (Test-Path -LiteralPath (Join-Path $candidatePath '.git'))) {
               $exclusionReason = 'no Git checkout at that path'
             } else {
-              $reportedTopLevel = @(& git -C $candidatePath rev-parse --show-toplevel 2>$null)
+              # Task 16.55.f / R1: in a non-elevated session with no safe.directory entries, Git
+              # refuses a checkout owned by another user ("dubious ownership"), which would make
+              # this probe fail closed on a first run. A per-command -c override for this exact
+              # candidate only lets the probe run; nothing is written to any Git configuration.
+              $probeTrustPath = ([System.IO.Path]::GetFullPath($candidatePath)).Replace('\', '/')
+              $reportedTopLevel = @(& git -c "safe.directory=$probeTrustPath" -C $candidatePath rev-parse --show-toplevel 2>$null)
               if ($LASTEXITCODE -ne 0 -or $reportedTopLevel.Count -eq 0 -or [string]::IsNullOrWhiteSpace([string]$reportedTopLevel[0])) {
                 $exclusionReason = 'git rev-parse --show-toplevel failed (not a valid Git checkout)'
               } else {

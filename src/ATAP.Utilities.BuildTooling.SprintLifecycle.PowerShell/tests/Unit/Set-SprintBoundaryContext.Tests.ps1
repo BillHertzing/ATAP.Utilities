@@ -883,6 +883,57 @@ Describe 'Set-SprintBoundaryContext [public]' {
       }
     }
 
+    It 'Start probes with a per-command safe.directory override for the exact candidate only (16.55.f R1)' {
+      # Chosen design: a mock seam on git that asserts the exact argument list. A real
+      # dubious-ownership refusal needs a different-owner directory plus a non-elevated token,
+      # which cannot be made deterministic from an elevated Windows test session.
+      $expectedTrust = ([System.IO.Path]::GetFullPath($script:gitCheckout)).Replace('\', '/')
+      # Globals carry data across the module/test session-state boundary the mock body runs in.
+      $global:Sbc1655fProbeArgs = $null
+      $global:Sbc1655fProbeTopLevel = $expectedTrust
+      Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell git {
+        $global:LASTEXITCODE = 0
+        $global:Sbc1655fProbeArgs = @($args)
+        return $global:Sbc1655fProbeTopLevel
+      } -ParameterFilter { $args -contains 'rev-parse' }
+
+      $result = Set-SprintBoundaryContext -Boundary Start @script:boundaryArgs `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -WorktreePaths @($script:gitCheckout) `
+        -InteractiveUserGitConfigPath $script:userConfig
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell git -Times 1 -Exactly -Scope It `
+        -ParameterFilter { $args -contains 'rev-parse' }
+      $probeArgs = $global:Sbc1655fProbeArgs
+      Remove-Variable -Name Sbc1655fProbeArgs, Sbc1655fProbeTopLevel -Scope Global -ErrorAction SilentlyContinue
+      $probeArgs[0] | Should -Be '-c'
+      $probeArgs[1] | Should -Be "safe.directory=$expectedTrust"
+      $probeArgs[2] | Should -Be '-C'
+      $probeArgs[3] | Should -Be $script:gitCheckout
+      @($probeArgs | Where-Object { $_ -like 'safe.directory=*' }).Count | Should -Be 1
+      @($probeArgs | Where-Object { $_ -match '[*]' }).Count | Should -Be 0
+      $probeArgs[-2..-1] | Should -Be @('rev-parse', '--show-toplevel')
+      $concern = $result.Concerns | Where-Object Concern -EQ 'InteractiveUserGitSafeDirectory'
+      $concern.Succeeded | Should -BeTrue
+      @($concern.ExcludedPaths).Count | Should -Be 0
+    }
+
+    It 'Start still excludes a candidate when the overridden probe reports a different top level (16.55.f)' {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell git {
+        $global:LASTEXITCODE = 0
+        return 'C:/somewhere/else'
+      } -ParameterFilter { $args -contains 'rev-parse' }
+
+      $result = Set-SprintBoundaryContext -Boundary Start @script:boundaryArgs `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -WorktreePaths @($script:gitCheckout) `
+        -InteractiveUserGitConfigPath $script:userConfig
+
+      $concern = $result.Concerns | Where-Object Concern -EQ 'InteractiveUserGitSafeDirectory'
+      $concern.ExcludedPaths | Should -Be @($script:gitCheckout)
+      $concern.ExcludedReasons[0] | Should -Match 'differs from the candidate path'
+    }
+
     It 'End forwards missing checkout paths to the ownership helper for conservative handling' {
       $goneCheckout = Join-Path $script:gitRoot 'Ace-wt-9-Sprint-0016-work-items'
       $result = Set-SprintBoundaryContext -Boundary End @script:boundaryArgs `

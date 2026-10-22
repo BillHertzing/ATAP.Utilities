@@ -41,7 +41,8 @@ Describe 'SystemParityMonitor scheduled package-manager profile configuration' -
   }
 
   BeforeEach {
-    $fixtureRoot = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
+    # Retain synthetic files under the run's owned TEMP, avoiding TestDrive teardown.
+    $fixtureRoot = Join-Path ([IO.Path]::GetTempPath()) ('SPC_'+[guid]::NewGuid().ToString('N'))
     $statePath = Join-Path $fixtureRoot 'Parity State With Spaces'
     $resultPath = Join-Path $fixtureRoot 'Task Results'
     New-Item -ItemType Directory -Path $statePath, $resultPath -Force | Out-Null
@@ -50,6 +51,7 @@ Describe 'SystemParityMonitor scheduled package-manager profile configuration' -
     $script:capturedProfiles = $null
     $script:capturedSharedDotNetToolPolicy = $null
 
+    Mock -CommandName Get-Command -ParameterFilter { $Name -eq 'Write-PSFMessage' } -MockWith { $null }
     Mock -CommandName Get-Command -ParameterFilter { $Name -eq 'pwsh' } -MockWith {
       [pscustomobject]@{ Source = 'C:\Program Files\PowerShell\7\pwsh.exe' }
     }

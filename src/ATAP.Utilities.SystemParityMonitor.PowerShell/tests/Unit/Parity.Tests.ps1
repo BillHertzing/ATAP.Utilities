@@ -1,7 +1,23 @@
+BeforeAll {
+  function script:Resolve-ParityFixtureModule {
+    param(
+      [Parameter(Mandatory)][string]$SourceManifest,
+      [object[]]$LoadedModules=@(Get-Module -Name 'ATAP.Utilities.SystemParityMonitor.PowerShell')
+    )
+    if ($LoadedModules.Count -eq 0) {
+      $LoadedModules=@(Import-Module -Name $SourceManifest -Force -PassThru -ErrorAction Stop)
+    }
+    if ($LoadedModules.Count -ne 1) {
+      throw 'Ambiguous Parity test fixture: exactly one loaded module identity is required.'
+    }
+    return $LoadedModules[0]
+  }
+}
+
 Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' -Tag 'Unit', 'ParityCore' {
   BeforeAll {
     $modulePath = Join-Path $PSScriptRoot '..\..\ATAP.Utilities.SystemParityMonitor.PowerShell.psd1'
-    Import-Module -Name $modulePath -Force
+    $script:parityFixtureModule=Resolve-ParityFixtureModule -SourceManifest $modulePath
   }
 
   BeforeEach {
@@ -35,6 +51,21 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' -Tag 'Unit', 'Pa
 
   # Each test has a unique GUID directory under the run's evidence TEMP root.
   # Retain these fixtures with the test results; evidence retention owns cleanup.
+
+  It 'keeps a single preloaded fixture identity without importing source again' {
+    Mock Import-Module { throw 'Source import must not replace a preloaded fixture.' }
+    $selected=Resolve-ParityFixtureModule -SourceManifest 'not-imported.psd1' -LoadedModules @($script:parityFixtureModule)
+    $selected.Path | Should -BeExactly $script:parityFixtureModule.Path
+    $selected.ModuleBase | Should -BeExactly $script:parityFixtureModule.ModuleBase
+    @(Get-Module -Name 'ATAP.Utilities.SystemParityMonitor.PowerShell') | Should -HaveCount 1
+    Should -Invoke Import-Module -Times 0 -Exactly
+  }
+
+  It 'rejects ambiguous fixture identities instead of selecting the first module' {
+    Mock Import-Module { throw 'Ambiguity must be rejected without importing.' }
+    {Resolve-ParityFixtureModule -SourceManifest 'not-imported.psd1' -LoadedModules @([pscustomobject]@{Path='one'},[pscustomobject]@{Path='two'})} | Should -Throw '*Ambiguous Parity test fixture*'
+    Should -Invoke Import-Module -Times 0 -Exactly
+  }
 
   It 'Add/Get/Confirm round-trips a peer change through JSONL files' {
     $entry = Add-ParityChangeEntry -StatePath $leftState -HostName 'utat022' -PeerHostName 'utat01' -Category 'Packages' -Item 'git' -OldValue '2.45' -NewValue '2.46' -PeerActionKind 'Manual' -PeerAction 'Review git package parity'
@@ -706,10 +737,9 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' -Tag 'Unit', 'Pa
 
 Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell scheduled task scripts' -Tag 'Unit' {
   BeforeAll {
-    $moduleRoot = (Get-Module -Name 'ATAP.Utilities.SystemParityMonitor.PowerShell').ModuleBase
-    if (-not $moduleRoot) {
-      throw 'ATAP.Utilities.SystemParityMonitor.PowerShell must be imported before scheduled-task tests run.'
-    }
+    $modulePath=Join-Path $PSScriptRoot '..\..\ATAP.Utilities.SystemParityMonitor.PowerShell.psd1'
+    $selectedModule=Resolve-ParityFixtureModule -SourceManifest $modulePath
+    $moduleRoot=$selectedModule.ModuleBase
     $scriptsRoot = Join-Path $moduleRoot 'scripts'
     $registerScriptPath = Join-Path $scriptsRoot 'Register-ParityScheduledTasks.ps1'
     $commonScriptPath = Join-Path $scriptsRoot 'ParityScheduledTask.Common.ps1'

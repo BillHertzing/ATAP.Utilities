@@ -1,4 +1,3 @@
-#Requires -RunAsAdministrator
 <#
 .SYNOPSIS
   Updates host package installations based on a SystemParityMonitor DriftReport
@@ -119,6 +118,12 @@ function Update-HostPackageFromDriftReport {
   )
 
   begin {
+    # Keep remediation administrator-only, including WhatIf, without elevating
+    # the entire module's read-only import surface. Predicate errors fail closed.
+    if (-not (Test-ParityAdministrator -ErrorAction Stop)) {
+      throw [System.UnauthorizedAccessException]::new('Update-HostPackageFromDriftReport requires Administrator rights, including WhatIf. Use an already elevated session.')
+    }
+
     $fn = $MyInvocation.MyCommand.Name
     $mn = 'ATAP.Utilities.SystemParityMonitor.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Entering $fn with PackageManager='$PackageManager', ReportPath='$ReportPath'"

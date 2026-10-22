@@ -9,8 +9,11 @@ BeforeAll {
 
     # Git may materialize LF or CRLF. Derive only fixture metadata from a private
     # checkout copy; the production verifier still enforces exact size and hash.
-    $script:fixtureManifest = Join-Path $TestDrive 'checkout-manifest.json'
-    $script:fixtureSourceRoot = Join-Path $TestDrive 'checkout-release-source'
+    # Keep this unique checkout under evidence TEMP for independent readback.
+    $checkoutRoot = Join-Path ([IO.Path]::GetTempPath()) ('ReleaseBundleCheckout_' + [guid]::NewGuid().ToString('N'))
+    [void][IO.Directory]::CreateDirectory($checkoutRoot)
+    $script:fixtureManifest = Join-Path $checkoutRoot 'checkout-manifest.json'
+    $script:fixtureSourceRoot = Join-Path $checkoutRoot 'checkout-release-source'
     Copy-Item -LiteralPath (Join-Path $fixturesDir 'source') -Destination $script:fixtureSourceRoot -Recurse
     $fixtureManifestObject = Get-Content (Join-Path $fixturesDir 'manifest/manifest.json') -Raw | ConvertFrom-Json
     foreach ($payload in $fixtureManifestObject.payloadFiles) {

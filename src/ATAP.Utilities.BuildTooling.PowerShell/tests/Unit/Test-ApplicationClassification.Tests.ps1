@@ -8,9 +8,14 @@ BeforeAll {
   $script:fixturePath = Join-Path $script:moduleRoot 'tests\fixtures\ApplicationClassification\valid'
   . $script:validatorPath
 
+  # Retain unique generated fixtures for evidence instead of TestDrive teardown.
+  $script:retainedFixtureRoot = Join-Path ([IO.Path]::GetTempPath()) ('AC_' + [guid]::NewGuid().ToString('N'))
+  [void][IO.Directory]::CreateDirectory($script:retainedFixtureRoot)
+
   function script:New-ClassificationCase {
     param([string] $Name)
-    $destination = Join-Path $TestDrive $Name
+    $destination = Join-Path $script:retainedFixtureRoot $Name
+    [void][IO.Directory]::CreateDirectory((Split-Path -Parent $destination))
     Copy-Item -LiteralPath $script:fixturePath -Destination $destination -Recurse
     return $destination
   }
@@ -102,6 +107,44 @@ Describe 'Test-ApplicationClassification valid contract' -Tag 'Unit', 'Task15.18
   It 'parses the schema and fixture manifest as JSON' {
     { Get-Content -LiteralPath $script:schemaPath -Raw | ConvertFrom-Json -Depth 30 } | Should -Not -Throw
     { Get-Content -LiteralPath (Join-Path $script:fixturePath 'ApplicationClassification.json') -Raw | ConvertFrom-Json -Depth 30 } | Should -Not -Throw
+  }
+}
+
+Describe 'Test-ApplicationClassification generated-root discovery' -Tag 'Unit', 'Task16.94' {
+  It 'discovers valid projects when the repository root has an _generated ancestor' {
+    $root = New-ClassificationCase '_generated/r'
+    $root.Replace('\', '/') | Should -Match '/_generated/'
+    $result = Invoke-ClassificationCase $root
+    $result.Success | Should -BeTrue
+    $result.InputProjectCount | Should -Be 4
+    $result.DetectedApplicationPaths | Should -Be @('Client/Client.csproj', 'Imported/Imported.csproj', 'Root/Root.csproj')
+  }
+
+  It 'excludes reserved child segments before XML parsing while retaining the real project universe' {
+    $root = New-ClassificationCase 'reserved-children'
+    foreach ($segment in @('bin', 'obj', '_generated', '.git')) {
+      foreach ($prefix in @('', 'Nested')) {
+        $directory = if ($prefix) { Join-Path $root $prefix $segment } else { Join-Path $root $segment }
+        [void][IO.Directory]::CreateDirectory($directory)
+        Set-Content -LiteralPath (Join-Path $directory 'Invalid.csproj') -Value '<invalid' -Encoding utf8NoBOM
+      }
+    }
+    $result = Invoke-ClassificationCase $root
+    $result.Success | Should -BeTrue
+    $result.InputProjectPaths | Should -Be @('Client/Client.csproj', 'Imported/Imported.csproj', 'Library/Library.csproj', 'Root/Root.csproj')
+    $result.ParsedProjectCount | Should -Be 4
+    $result.EvaluatedProjectCount | Should -Be 4
+  }
+
+  It 'reports stale manifest entries for an empty project universe without inventing an empty executable' {
+    $root = Join-Path $script:retainedFixtureRoot 'empty-universe'
+    [void][IO.Directory]::CreateDirectory($root)
+    Copy-Item -LiteralPath (Join-Path $script:fixturePath 'ApplicationClassification.json') -Destination $root
+    $failure = $null
+    try { Invoke-ClassificationCase $root } catch { $failure = $_ }
+    $failure | Should -Not -BeNullOrEmpty
+    $failure.Exception.Message | Should -Match 'ATAPAPP012 stale manifest entry'
+    $failure.Exception.Message | Should -Not -Match "ATAPAPP011 unclassified executable ''"
   }
 }
 

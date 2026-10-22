@@ -8,7 +8,7 @@ Describe 'SystemParityMonitor scheduled alerting' -Tag 'Unit' {
   }
 
   BeforeEach {
-    $fixtureRoot = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
+    $fixtureRoot = Join-Path ([IO.Path]::GetTempPath()) ('PA_' + [guid]::NewGuid().ToString('N'))
     $statePath = Join-Path $fixtureRoot 'ParityState'
     $resultPath = Join-Path $fixtureRoot 'TaskResults'
     New-Item -ItemType Directory -Path $statePath, $resultPath -Force | Out-Null

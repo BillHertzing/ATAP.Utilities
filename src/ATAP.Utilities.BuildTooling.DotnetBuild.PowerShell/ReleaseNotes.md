@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.1.13
+
+- Preserves genuine helper discovery and fixture filesystem checks under Pester 6.2 strict mocks.
+- Aligns the source manifest and release heading with the adjacent stable version.
+- Supersedes 0.1.12 after its Development gate failed; the failed package remains immutable.
+
 ## 0.1.11
 
 - Makes the read-only DAB configuration unit test independent of a globally

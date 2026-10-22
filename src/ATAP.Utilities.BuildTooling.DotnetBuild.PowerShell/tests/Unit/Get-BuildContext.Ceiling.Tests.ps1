@@ -11,6 +11,11 @@ BeforeAll {
   . (Join-Path $script:proGetPublicDir 'Get-CurrentTierFromStage.ps1')
   . (Join-Path $script:publicDir 'Get-BuildContext.ps1')
 
+  $script:buildContextHelperCommands = @{}
+  foreach ($helperName in @('Get-CeilingFromPrereleaseLabel', 'Get-CurrentTierFromStage', 'Resolve-FeatureSlug')) {
+    $script:buildContextHelperCommands[$helperName] = Microsoft.PowerShell.Core\Get-Command -Name $helperName -CommandType Function -ErrorAction Stop
+  }
+
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
     function global:Write-PSFMessage {
       param(
@@ -62,6 +67,9 @@ Describe 'Get-BuildContext ceiling/current-tier split' -Tag 'Unit' {
       return '0.1.0-Sprint.42'
     }
     Mock Get-Command -ParameterFilter { $Name -eq 'nbgv' } -MockWith { [PSCustomObject]@{ Name = 'nbgv' } }
+    Mock Get-Command -ParameterFilter {
+      $CommandType -eq 'Function' -and $Name -in @('Get-CeilingFromPrereleaseLabel', 'Get-CurrentTierFromStage', 'Resolve-FeatureSlug')
+    } -MockWith { $script:buildContextHelperCommands[$Name] }
   }
 
   AfterEach {

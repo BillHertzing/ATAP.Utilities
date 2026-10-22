@@ -5,7 +5,15 @@
 BeforeAll {
   $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
   . (Join-Path $publicDir 'Resolve-FeatureSlug.ps1')
+  . (Join-Path (Split-Path -Parent $publicDir) 'private/Get-CeilingFromPrereleaseLabel.ps1')
+  . (Join-Path (Split-Path -Parent (Split-Path -Parent $publicDir)) 'ATAP.Utilities.BuildTooling.ProGet.PowerShell/public/Get-CurrentTierFromStage.ps1')
   . (Join-Path $publicDir 'Get-BuildContext.ps1')
+
+  $script:buildContextHelperCommands = @{}
+  foreach ($helperName in @('Get-CeilingFromPrereleaseLabel', 'Get-CurrentTierFromStage', 'Resolve-FeatureSlug')) {
+    $script:buildContextHelperCommands[$helperName] = Microsoft.PowerShell.Core\Get-Command -Name $helperName -CommandType Function -ErrorAction Stop
+  }
+  $script:buildContextTestPathCommand = Microsoft.PowerShell.Core\Get-Command -Name 'Microsoft.PowerShell.Management\Test-Path' -CommandType Cmdlet -ErrorAction Stop
 
   # Suppress PSFramework noise in tests.
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
@@ -62,10 +70,22 @@ Describe 'Get-BuildContext' -Tag 'Unit' {
       return '0.1.0-Sprint.42'
     }
     Mock Get-Command -ParameterFilter { $Name -eq 'nbgv' } -MockWith { [PSCustomObject]@{ Name = 'nbgv' } }
-    # Test-Path is intentionally NOT defaulted here. The default (real) Test-Path
-    # returns $false against the fake repo root because no db YAML exists, which
-    # matches the absent-asset test. The present-asset test layers its own Mock
-    # inside the It block.
+    Mock Get-Command -ParameterFilter {
+      $CommandType -eq 'Function' -and $Name -in @('Get-CeilingFromPrereleaseLabel', 'Get-CurrentTierFromStage', 'Resolve-FeatureSlug')
+    } -MockWith { $script:buildContextHelperCommands[$Name] }
+    Mock Test-Path -ParameterFilter {
+      if (-not $LiteralPath) { return $false }
+      $fixturePath = [IO.Path]::GetFullPath([string]$LiteralPath).TrimEnd([IO.Path]::DirectorySeparatorChar)
+      $fixtureRoot = [IO.Path]::GetFullPath($script:fakeRepoRoot).TrimEnd([IO.Path]::DirectorySeparatorChar)
+      $fixturePath -ieq $fixtureRoot -or $fixturePath.StartsWith($fixtureRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)
+    } -MockWith {
+      param($LiteralPath, $PathType)
+      $parameters = @{ LiteralPath = $LiteralPath }
+      if ($PSBoundParameters.ContainsKey('PathType')) { $parameters.PathType = $PathType }
+      & $script:buildContextTestPathCommand @parameters
+    }
+    # Delegate fixture paths to the real filesystem; absent YAML stays absent.
+    # The present-asset test layers its specific YAML override inside the It block.
   }
 
   Context 'Parameter set enforcement (-ReleaseTag vs -Branch mutex)' {

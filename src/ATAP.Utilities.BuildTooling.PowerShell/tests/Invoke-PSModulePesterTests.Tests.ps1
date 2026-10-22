@@ -291,6 +291,57 @@ Describe 'Invoke-PSModulePesterTests (Sprint short-circuit)' -Tag 'Unit' {
   }
 }
 
+Describe 'Invoke-PSModulePesterTests run and framework gate' -Tag 'Unit' {
+  BeforeEach { Mock Write-PSFMessage { } }
+
+  It '<Case>' -ForEach @(
+    @{Case='accepts a complete Passed result'; Raw='Passed'; Blocks=0; Containers=0; State='Passed'; HasContainerError=$false; Missing=$false; Filtered=$false; Expected=$true}
+    @{Case='accepts Passed with filtered NotRun containers'; Raw='Passed'; Blocks=0; Containers=0; State='Passed'; HasContainerError=$false; Missing=$false; Filtered=$true; Expected=$true}
+    @{Case='rejects raw Failed with zero failed cases'; Raw='Failed'; Blocks=0; Containers=0; State='Passed'; HasContainerError=$false; Missing=$false; Filtered=$false; Expected=$false}
+    @{Case='rejects a failed container aggregate with passing cases'; Raw='Passed'; Blocks=0; Containers=1; State='Passed'; HasContainerError=$false; Missing=$false; Filtered=$false; Expected=$false}
+    @{Case='rejects a failed block with passing cases'; Raw='Passed'; Blocks=1; Containers=0; State='Passed'; HasContainerError=$false; Missing=$false; Filtered=$false; Expected=$false}
+    @{Case='rejects a Failed container with inconsistent zero aggregates'; Raw='Passed'; Blocks=0; Containers=0; State='Failed'; HasContainerError=$false; Missing=$false; Filtered=$false; Expected=$false}
+    @{Case='rejects an error-bearing container with inconsistent Passed summary'; Raw='Passed'; Blocks=0; Containers=0; State='Passed'; HasContainerError=$true; Missing=$false; Filtered=$false; Expected=$false}
+    @{Case='rejects a missing raw Result property'; Raw='Passed'; Blocks=0; Containers=0; State='Passed'; HasContainerError=$false; Missing=$true; Filtered=$false; Expected=$false}
+    @{Case='rejects a null raw Result'; Raw=$null; Blocks=0; Containers=0; State='Passed'; HasContainerError=$false; Missing=$false; Filtered=$false; Expected=$false}
+  ) {
+    $script:gateSummary=[PSCustomObject]@{
+      Result=$Raw; PassedCount=1; FailedCount=0; SkippedCount=0
+      NotRunCount=0; TotalCount=1; Duration=[TimeSpan]::Zero
+      FailedBlocksCount=$Blocks; FailedContainersCount=$Containers
+      FailedBlocks=@(); Tests=@([PSCustomObject]@{Name='passing synthetic case';Result='Passed';Duration=[TimeSpan]::Zero})
+      Containers=@([PSCustomObject]@{Item='synthetic-container';Result=$State;ErrorRecord=@()})
+    }
+    if($HasContainerError){$script:gateSummary.Containers[0].ErrorRecord=@([Management.Automation.ErrorRecord]::new([InvalidOperationException]::new('synthetic cleanup failed'),'CleanupFailure',[Management.Automation.ErrorCategory]::InvalidResult,$null))}
+    if($Blocks){$script:gateSummary.FailedBlocks=@([PSCustomObject]@{Path=@('synthetic','AfterAll');Result='Failed';ErrorRecord=@('synthetic teardown failed')})}
+    if($Missing){$script:gateSummary.PSObject.Properties.Remove('Result')}
+    if($Filtered){
+      $script:gateSummary.NotRunCount=2; $script:gateSummary.TotalCount=3
+      $script:gateSummary.Containers+=([PSCustomObject]@{Item='filtered-container';Result='NotRun';ErrorRecord=@()})
+    }
+    Mock Invoke-Pester { $script:gateSummary }
+    $root=Join-Path $script:tempRoot ([guid]::NewGuid().ToString('N'))
+    [void][IO.Directory]::CreateDirectory($root)
+    $out=Join-Path $root 'gate.xml'
+    $r=Invoke-PSModulePesterTests -ModuleRoot $root -Tier Alpha -OutputPath $out -CoverageOutputPath (Join-Path $root 'coverage.xml') -SkipCodeCoverage
+    $r.GatePass | Should -Be $Expected
+    $r.PassedCount | Should -Be 1
+    $r.FailedCount | Should -Be 0
+    $r.TotalCount | Should -Be 1
+    Should -Invoke Invoke-Pester -Times 1 -Exactly
+    if(-not $Expected){
+      $failure=Get-Content -LiteralPath ([IO.Path]::ChangeExtension($out,'.Failures.json')) -Raw|ConvertFrom-Json
+      $expectedRaw=if($Missing){''}else{[string]$Raw}
+      $failure.RawResult | Should -Be $expectedRaw
+      $failure.FailedBlocksCount | Should -Be $Blocks
+      $failure.FailedContainersCount | Should -Be $Containers
+      if($HasContainerError){$failure.ContainerFailures[0].Errors | Should -Contain 'synthetic cleanup failed'}
+      if($Blocks){$failure.FailedBlocks[0].Errors | Should -Contain 'synthetic teardown failed'}
+      if($State -eq 'Failed'){$failure.ContainerFailures[0].Result | Should -Be 'Failed'}
+    }
+  }
+}
+
 Describe 'Invoke-PSModulePesterTests (quiet output)' -Tag 'Unit' {
 
   BeforeEach {
@@ -311,6 +362,10 @@ Describe 'Invoke-PSModulePesterTests (quiet output)' -Tag 'Unit' {
       Write-Output 'expected success-stream noise'
 
       [PSCustomObject]@{
+        Result = 'Passed'
+        FailedBlocksCount = 0
+        FailedContainersCount = 0
+        Containers = @([PSCustomObject]@{Result='Passed';ErrorRecord=@();Item='synthetic-container'})
         PassedCount  = 1
         FailedCount  = 0
         SkippedCount = 0
@@ -346,6 +401,10 @@ Describe 'Invoke-PSModulePesterTests (quiet output)' -Tag 'Unit' {
       param($Configuration)
       $script:capturedPesterConfiguration = $Configuration
       [PSCustomObject]@{
+        Result = 'Passed'
+        FailedBlocksCount = 0
+        FailedContainersCount = 0
+        Containers = @([PSCustomObject]@{Result='Passed';ErrorRecord=@();Item='synthetic-container'})
         PassedCount  = 1
         FailedCount  = 0
         SkippedCount = 0
@@ -372,6 +431,10 @@ Describe 'Invoke-PSModulePesterTests (quiet output)' -Tag 'Unit' {
   It 'fails a non-Sprint gate when the tier filter selects zero tests' {
     Mock -CommandName Invoke-Pester -MockWith {
       [PSCustomObject]@{
+        Result = 'Passed'
+        FailedBlocksCount = 0
+        FailedContainersCount = 0
+        Containers = @([PSCustomObject]@{Result='Passed';ErrorRecord=@();Item='synthetic-container'})
         PassedCount  = 0
         FailedCount  = 0
         SkippedCount = 0
@@ -397,6 +460,10 @@ Describe 'Invoke-PSModulePesterTests (quiet output)' -Tag 'Unit' {
   It 'reports only executed tests in the tier gate total' {
     Mock -CommandName Invoke-Pester -MockWith {
       [PSCustomObject]@{
+        Result = 'Passed'
+        FailedBlocksCount = 0
+        FailedContainersCount = 0
+        Containers = @([PSCustomObject]@{Result='Passed';ErrorRecord=@();Item='synthetic-container'})
         PassedCount  = 1
         FailedCount  = 0
         SkippedCount = 0
@@ -440,6 +507,10 @@ Describe 'Invoke-PSModulePesterTests (quiet output)' -Tag 'Unit' {
           Path      = 'C:\tests\RunnerIsolation.Tests.ps1'
         }
         [PSCustomObject]@{
+          Result = 'Passed'
+          FailedBlocksCount = 0
+          FailedContainersCount = 0
+          Containers = @([PSCustomObject]@{Result='Passed';ErrorRecord=@();Item='synthetic-container'})
           PassedCount  = 1
           FailedCount  = 0
           SkippedCount = 0
@@ -484,6 +555,10 @@ Describe 'Invoke-PSModulePesterTests (quiet output)' -Tag 'Unit' {
       Mock -CommandName Invoke-Pester -MockWith {
         ${function:global:Get-SecretATAP} = { 'leaked-test-double' }
         [PSCustomObject]@{
+          Result = 'Passed'
+          FailedBlocksCount = 0
+          FailedContainersCount = 0
+          Containers = @([PSCustomObject]@{Result='Passed';ErrorRecord=@();Item='synthetic-container'})
           PassedCount  = 1
           FailedCount  = 0
           SkippedCount = 0

@@ -895,7 +895,28 @@ function Invoke-PSModulePesterTests {
 
       # A filtered run that selects no tests is a configuration failure, not a
       # successful gate. Sprint is the only intentional skip and returns above.
-      $gatePass = ($total -gt 0 -and $failed -eq 0)
+      # Pester can pass every case while a setup/teardown or framework cleanup
+      # fails. Its raw run result and block/container failures are authoritative.
+      $rawResult = if ($result) { [string]$result.Result } else { '' }
+      $failedBlocks = if ($result) { [int]$result.FailedBlocksCount } else { 0 }
+      $failedContainers = if ($result) { [int]$result.FailedContainersCount } else { 0 }
+      $containerFailures = @(
+        if ($result) {
+          foreach ($container in @($result.Containers)) {
+            if ($null -eq $container) { continue }
+            $errors = @($container.ErrorRecord | Where-Object { $null -ne $_ })
+            if ([string]$container.Result -eq 'Failed' -or $errors.Count -gt 0) {
+              [PSCustomObject]@{
+                Item   = [string]$container.Item
+                Result = [string]$container.Result
+                Errors = @($errors | ForEach-Object { $_.ToString() })
+              }
+            }
+          }
+        }
+      )
+      $gatePass = ($total -gt 0 -and $failed -eq 0 -and $rawResult -eq 'Passed' -and
+        $failedBlocks -eq 0 -and $failedContainers -eq 0 -and $containerFailures.Count -eq 0)
       if (-not $SkipTestResult -and $result) {
         & $writeJUnitResultCommand `
           -PesterResult $result `
@@ -911,7 +932,7 @@ function Invoke-PSModulePesterTests {
         $gateFailureMessage = if ($total -eq 0) {
           'Pester gate FAILED: no tests matched the tier filter'
         } else {
-          "Pester gate FAILED: $failed failing test(s) of $total"
+          "Pester gate FAILED: raw result '$rawResult'; $failed failing test(s) of $total; $failedBlocks failed block(s); $failedContainers failed container(s); $($containerFailures.Count) failed/error-bearing container record(s)"
         }
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $gateFailureMessage
         $failedTests = & $getFailedTestSummaryCommand `
@@ -933,6 +954,13 @@ function Invoke-PSModulePesterTests {
           Total      = $total
           OutputFile = $OutputPath
           Failures   = @($failedTests)
+          RawResult  = $rawResult
+          FailedBlocksCount = $failedBlocks
+          FailedContainersCount = $failedContainers
+          FailedBlocks = @($result.FailedBlocks | Where-Object { $null -ne $_ } | ForEach-Object {
+            [PSCustomObject]@{ Path = @($_.Path) -join '.'; Result = [string]$_.Result; Errors = @($_.ErrorRecord | Where-Object { $null -ne $_ } | ForEach-Object { $_.ToString() }) }
+          })
+          ContainerFailures = $containerFailures
         } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $failureArtifactPath -Encoding UTF8
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Pester failure detail artifact: '$failureArtifactPath'"
         foreach ($failedTest in @($failedTests)) {

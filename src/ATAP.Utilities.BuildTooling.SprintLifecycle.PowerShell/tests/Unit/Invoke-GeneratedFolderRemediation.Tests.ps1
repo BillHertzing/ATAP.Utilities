@@ -14,11 +14,14 @@ BeforeAll {
   . "$PSScriptRoot\..\..\private\Get-GeneratedRemediationFileSnapshot.ps1"
   $script:realFileSnapshot = (Get-Command Get-GeneratedRemediationFileSnapshot).ScriptBlock
   $script:fixtureRoot = [IO.Path]::GetFullPath("$PSScriptRoot/../../../../_generated/Sprint0016/Task16.84/CarryoverByteGuardTests-v1/Fixtures")
-  $script:realGitCommand = Get-Command 'C:/Program Files/Git/cmd/git.exe' -CommandType Application -ErrorAction Stop
+  # The function under test resolves Git with 'Get-Command git' and only requires an Application
+  # (no pinned install path), so the tests drive the same executable it resolves. Git for Windows
+  # puts both ...\cmd and ...\mingw64in on PATH and either may come first on a given host.
   $ordinaryGit = Get-Command git -ErrorAction Stop
-  if ($ordinaryGit.CommandType -ne 'Application' -or $ordinaryGit.Path -ine $script:realGitCommand.Path) {
-    throw 'Unmocked public git resolution differs from the preferred Git executable.'
+  if ($ordinaryGit.CommandType -ne 'Application') {
+    throw 'Unmocked public git resolution must be an application, not a function or alias.'
   }
+  $script:realGitCommand = $ordinaryGit
   $script:realCompressArchive = Get-Command Compress-Archive -CommandType Function, Cmdlet
   $null = New-Item -ItemType Directory -Path $script:fixtureRoot -Force
   $cursor = $script:fixtureRoot
@@ -190,6 +193,9 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
     $options = Initialize-TestBackupFixture
     Mock Get-GeneratedRemediationTreeCensus { Get-TestBackupCensus -RootPath $RootPath -MaxEntries $MaxEntries -MaxDepth $MaxDepth }
     $script:backupStreamPaths = [Collections.Generic.List[string]]::new()
+    # Pester 6 throws for a Get-Item call no -ParameterFilter matches; pass other calls through to
+    # the captured real cmdlet with explicit parameters (a PSBoundParameters splat hangs in a default mock).
+    Mock Get-Item { & $script:realBackupGetItem -LiteralPath $LiteralPath -Force:$Force -ErrorAction Stop }
     Mock Get-Item {
       $path = [IO.Path]::GetFullPath([string]$LiteralPath)
       if ($path.StartsWith($script:sprint+'\',[StringComparison]::OrdinalIgnoreCase)) {
@@ -912,6 +918,8 @@ Describe 'Invoke-GeneratedFolderRemediation [public]' {
   }
 
   It 'refuses before attempting a selected payload that would be unavailable' {
+    # Pester 6: unmatched Get-Item calls need a default; pass them through to the captured real cmdlet.
+    Mock Get-Item { & $script:realBackupGetItem -LiteralPath $LiteralPath -Force:$Force -ErrorAction Stop }
     Mock Get-Item { throw 'Unavailable selected payload' } -ParameterFilter { $LiteralPath -like '*backup.json' }
     { Invoke-GeneratedFolderRemediation -SprintNumber '0016' -GitRoot $script:gitRoot -RepositoryName Repo -Scope StableWorktree -Execute -ArchiveRoot $script:archive -Confirm:$false } | Should -Throw '*Execution held*'
     Should -Invoke Get-Item -Times 0 -ParameterFilter { $LiteralPath -like '*backup.json' }

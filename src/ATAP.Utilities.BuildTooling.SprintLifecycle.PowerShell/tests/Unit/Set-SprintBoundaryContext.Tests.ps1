@@ -774,7 +774,10 @@ Describe 'Set-SprintBoundaryContext [public]' {
     BeforeAll {
       $script:gitCheckout = Join-Path $script:gitRoot '_Planning-wt-40-Sprint-0016-work-items'
       New-Item -ItemType Directory -Path $script:gitCheckout -Force | Out-Null
-      Set-Content -LiteralPath (Join-Path $script:gitCheckout '.git') -Value 'gitdir: C:/fake/.git/worktrees/x' -Encoding utf8NoBOM
+      # Task 16.55.e: Start now requires Git to confirm the checkout (rev-parse --show-toplevel),
+      # so the fixture is a real repository. GIT_CONFIG_GLOBAL is already the isolated temp config.
+      & git init --quiet $script:gitCheckout
+      if ($LASTEXITCODE -ne 0) { throw "git init failed for fixture '$script:gitCheckout'" }
       $script:userConfig = Join-Path $script:gitRoot 'user.gitconfig'
       $script:boundaryArgs = @{
         GitRoot                  = $script:gitRoot
@@ -816,6 +819,68 @@ Describe 'Set-SprintBoundaryContext [public]' {
       $concern = $result.Concerns | Where-Object Concern -EQ 'InteractiveUserGitSafeDirectory'
       $concern.Succeeded | Should -BeTrue
       $concern.ExcludedPaths | Should -Be @($script:worktree)
+    }
+
+    It 'Start rejects a folder whose .git is a fake gitdir file and reports the reason' {
+      $fakeCheckout = Join-Path $script:gitRoot 'Ace-wt-901-Sprint-0016-work-items'
+      New-Item -ItemType Directory -Path $fakeCheckout -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $fakeCheckout '.git') -Value 'gitdir: x' -Encoding utf8NoBOM
+
+      $result = Set-SprintBoundaryContext -Boundary Start @script:boundaryArgs `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -WorktreePaths @($fakeCheckout) `
+        -InteractiveUserGitConfigPath $script:userConfig
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell `
+        Set-SprintOwnedGitSafeDirectory -Times 0 -Exactly -Scope It `
+        -ParameterFilter { $GitConfigPath -eq $script:userConfig }
+      $concern = $result.Concerns | Where-Object Concern -EQ 'InteractiveUserGitSafeDirectory'
+      $concern.Succeeded | Should -BeTrue
+      $concern.ExcludedPaths | Should -Be @($fakeCheckout)
+      @($concern.ExcludedReasons).Count | Should -Be 1
+      $concern.ExcludedReasons[0] | Should -Match 'rev-parse --show-toplevel failed'
+    }
+
+    It 'Start rejects a subfolder of a real repository because its Git top level differs' {
+      $subfolder = Join-Path $script:gitCheckout 'nested-sub'
+      New-Item -ItemType Directory -Path $subfolder -Force | Out-Null
+      # An empty .git directory passes the existence check but is not a repository, so Git
+      # walks up to the parent checkout and only the top-level comparison can reject it.
+      New-Item -ItemType Directory -Path (Join-Path $subfolder '.git') -Force | Out-Null
+
+      $result = Set-SprintBoundaryContext -Boundary Start @script:boundaryArgs `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -WorktreePaths @($subfolder) `
+        -InteractiveUserGitConfigPath $script:userConfig
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell `
+        Set-SprintOwnedGitSafeDirectory -Times 0 -Exactly -Scope It `
+        -ParameterFilter { $GitConfigPath -eq $script:userConfig }
+      $concern = $result.Concerns | Where-Object Concern -EQ 'InteractiveUserGitSafeDirectory'
+      $concern.ExcludedPaths | Should -Be @($subfolder)
+      $concern.ExcludedReasons[0] | Should -Match 'top level .* differs from the candidate path'
+    }
+
+    It 'Start accepts a real checkout case-insensitively and with forward slashes, and a repeat call is idempotent' {
+      $variant = $script:gitCheckout.ToUpperInvariant().Replace('\', '/')
+      $first = Set-SprintBoundaryContext -Boundary Start @script:boundaryArgs `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -WorktreePaths @($variant) `
+        -InteractiveUserGitConfigPath $script:userConfig
+      $second = Set-SprintBoundaryContext -Boundary Start @script:boundaryArgs `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -WorktreePaths @($variant) `
+        -InteractiveUserGitConfigPath $script:userConfig
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell `
+        Set-SprintOwnedGitSafeDirectory -Times 2 -Exactly -Scope It `
+        -ParameterFilter { $GitConfigPath -eq $script:userConfig -and $WorktreePaths[0] -eq $variant }
+      foreach ($result in @($first, $second)) {
+        $concern = $result.Concerns | Where-Object Concern -EQ 'InteractiveUserGitSafeDirectory'
+        $concern.Succeeded | Should -BeTrue
+        @($concern.ExcludedPaths).Count | Should -Be 0
+        @($concern.ExcludedReasons).Count | Should -Be 0
+      }
     }
 
     It 'End forwards missing checkout paths to the ownership helper for conservative handling' {

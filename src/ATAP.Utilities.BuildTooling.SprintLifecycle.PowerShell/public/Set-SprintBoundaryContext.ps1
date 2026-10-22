@@ -674,6 +674,7 @@ function Set-SprintBoundaryContext {
     $interactiveGitTrustResult = $null
     $interactiveGitConfigPath = $InteractiveUserGitConfigPath
     $interactiveGitTrustExcluded = [System.Collections.Generic.List[string]]::new()
+    $interactiveGitTrustExcludedReasons = [System.Collections.Generic.List[string]]::new()
     try {
       if (-not $SkipInteractiveUserGitTrust -and $WorktreePaths.Count -gt 0) {
         if ([string]::IsNullOrWhiteSpace($interactiveGitConfigPath)) {
@@ -699,10 +700,31 @@ function Set-SprintBoundaryContext {
         $interactiveGitTrustPaths = [System.Collections.Generic.List[string]]::new()
         foreach ($candidatePath in @($WorktreePaths)) {
           if ([string]::IsNullOrWhiteSpace($candidatePath)) { continue }
-          if ($Boundary -eq 'Start' -and -not (Test-Path -LiteralPath (Join-Path $candidatePath '.git'))) {
-            [void]$interactiveGitTrustExcluded.Add($candidatePath)
-            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Interactive-user Git trust skipped '$candidatePath': no Git checkout at that path"
-            continue
+          if ($Boundary -eq 'Start') {
+            # Task 16.55.e: a bare .git entry is not proof of a checkout (a stray
+            # 'gitdir: x' file qualified). Trust only a path that Git itself reports
+            # as its own top level; fail closed on any other outcome.
+            $exclusionReason = $null
+            if (-not (Test-Path -LiteralPath (Join-Path $candidatePath '.git'))) {
+              $exclusionReason = 'no Git checkout at that path'
+            } else {
+              $reportedTopLevel = @(& git -C $candidatePath rev-parse --show-toplevel 2>$null)
+              if ($LASTEXITCODE -ne 0 -or $reportedTopLevel.Count -eq 0 -or [string]::IsNullOrWhiteSpace([string]$reportedTopLevel[0])) {
+                $exclusionReason = 'git rev-parse --show-toplevel failed (not a valid Git checkout)'
+              } else {
+                $normalizedTopLevel = ([System.IO.Path]::GetFullPath(([string]$reportedTopLevel[0]).Trim())).Replace('/', '\').TrimEnd('\')
+                $normalizedCandidate = ([System.IO.Path]::GetFullPath($candidatePath)).Replace('/', '\').TrimEnd('\')
+                if (-not [string]::Equals($normalizedTopLevel, $normalizedCandidate, [System.StringComparison]::OrdinalIgnoreCase)) {
+                  $exclusionReason = "Git top level '$normalizedTopLevel' differs from the candidate path"
+                }
+              }
+            }
+            if ($null -ne $exclusionReason) {
+              [void]$interactiveGitTrustExcluded.Add($candidatePath)
+              [void]$interactiveGitTrustExcludedReasons.Add($exclusionReason)
+              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Interactive-user Git trust skipped '$candidatePath': $exclusionReason"
+              continue
+            }
           }
           [void]$interactiveGitTrustPaths.Add($candidatePath)
         }
@@ -731,6 +753,7 @@ function Set-SprintBoundaryContext {
         Error          = $interactiveGitTrustError
         Result         = $interactiveGitTrustResult
         ExcludedPaths  = $interactiveGitTrustExcluded.ToArray()
+        ExcludedReasons = $interactiveGitTrustExcludedReasons.ToArray()
       })
 
     # ------------------------------------------------------------------

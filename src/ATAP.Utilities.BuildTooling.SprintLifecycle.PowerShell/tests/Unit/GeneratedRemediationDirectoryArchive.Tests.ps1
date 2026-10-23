@@ -351,6 +351,11 @@ Describe 'One-directory sparse ADS archive and independent proof restore' {
   }
 
   It 'excludes only an exact zero long DATA marker and refuses unsupported markers before writes' {
+    # Pester 6 throws for a Get-Item call no -ParameterFilter matches; pass other calls through to the
+    # captured real cmdlet with explicit parameters (a PSBoundParameters splat hangs in a default mock).
+    # Only non -Stream calls reach this default, so it must not read $Stream: unbound, it resolves
+    # dynamically to the function's own 'foreach ($stream ...)' variable.
+    Mock Get-Item { & $script:realGetItem -LiteralPath $LiteralPath -Force:$Force -ErrorAction Stop }
     Mock Get-Item {
       & $script:realGetItem @PesterBoundParameters | Where-Object Stream -CNE ':$DATA'
       foreach ($marker in $script:markers) { $marker }

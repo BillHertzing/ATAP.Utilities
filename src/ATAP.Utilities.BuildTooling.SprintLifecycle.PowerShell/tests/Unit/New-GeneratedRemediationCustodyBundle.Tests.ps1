@@ -119,6 +119,11 @@ Describe 'Finite independent per-entry custody bundle' {
     $script:selected = @('_generated/sub/empty.bin','_generated/sub/selected.bin')
     $script:proofFixturePaths = @('_generated','_generated/sub') + $script:selected
     $script:streamAcquisitions = [Collections.Generic.List[string]]::new()
+    # Pester 6 throws for a Get-Item call no -ParameterFilter matches; pass other calls through to the
+    # captured real cmdlet with explicit parameters (a PSBoundParameters splat hangs in a default mock).
+    # Only non -Stream calls reach this default, so it must not read $Stream: unbound, it resolves
+    # dynamically to the function's own 'foreach ($stream ...)' variable.
+    Mock Get-Item { & $script:realGetItem -LiteralPath $LiteralPath -Force:$Force -ErrorAction Stop }
     Mock Get-Item {
       $path = [IO.Path]::GetFullPath([string]$LiteralPath)
       if ($path.StartsWith($script:root + '\',[StringComparison]::OrdinalIgnoreCase)) {
@@ -285,6 +290,11 @@ Describe 'Finite independent per-entry custody bundle' {
   }
   It 'holds pre-entry stream-set drift before invoking the first writer' {
     $script:calls=0
+    # Pester 6 throws for a Get-Item call no -ParameterFilter matches; pass other calls through to the
+    # captured real cmdlet with explicit parameters (a PSBoundParameters splat hangs in a default mock).
+    # Only non -Stream calls reach this default, so it must not read $Stream: unbound, it resolves
+    # dynamically to the function's own 'foreach ($stream ...)' variable.
+    Mock Get-Item { & $script:realGetItem -LiteralPath $LiteralPath -Force:$Force -ErrorAction Stop }
     Mock Get-Item {
       $script:calls++
       if($script:calls -eq 6){[IO.File]::WriteAllText($script:generated+':late','new')}

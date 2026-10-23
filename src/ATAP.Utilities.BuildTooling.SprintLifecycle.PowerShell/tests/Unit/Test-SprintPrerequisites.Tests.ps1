@@ -3,9 +3,17 @@
 Describe 'Test-SprintPrerequisites' -Tag 'Unit', 'PromotedModuleHostSensitive' {
   BeforeAll {
     Import-Module PSFramework -ErrorAction SilentlyContinue
-    if (-not (Get-Module -Name 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell')) {
-      Import-Module "$PSScriptRoot\..\..\ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell.psd1" -Force
-    }
+    # Pester 6 throws on Mock/Should -ModuleName when two copies of the module are loaded.
+    # The worktree manifest reports 0.1.0, but the installed BuildTooling.PowerShell requires
+    # SprintLifecycle >= 0.1.5, so the first autoloaded BuildTooling command (e.g. Assert-LockFilesClean)
+    # would load the installed SprintLifecycle as a second copy. Load BuildTooling first so its
+    # required modules are already resident, drop every SprintLifecycle copy, then import only the
+    # worktree copy under test. The order matters: importing BuildTooling after the worktree copy
+    # re-introduces the installed copy.
+    Import-Module ATAP.Utilities.BuildTooling.PowerShell -ErrorAction SilentlyContinue 3>$null
+    Get-Module -Name 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell' -All |
+      Remove-Module -Force -ErrorAction SilentlyContinue
+    Import-Module "$PSScriptRoot\..\..\ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell.psd1" -Force 3>$null
 
     Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell `
       -CommandName Initialize-ATAPConfigurationGlobals `

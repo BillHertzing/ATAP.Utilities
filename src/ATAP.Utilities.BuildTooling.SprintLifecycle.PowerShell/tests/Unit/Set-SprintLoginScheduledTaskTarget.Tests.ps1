@@ -536,6 +536,10 @@ Describe 'Set-SprintLoginScheduledTaskTarget explicit absent-task disposition' {
   }
 
   It 'does not require Export-ScheduledTask or Set-ScheduledTask commands for absence' {
+    # Pester 6 throws for a call no -ParameterFilter matches; pass the other presence probes
+    # through to the real cmdlet (captured before mocking; see SprintEndHostDisposition tests).
+    $realGetCommand = Get-Command -Name Get-Command -CommandType Cmdlet
+    Mock Get-Command { & $realGetCommand -Name $Name -ErrorAction SilentlyContinue }
     Mock Get-Command { throw 'Unavailable maintenance command.' } -ParameterFilter { $Name -in @('Export-ScheduledTask', 'Set-ScheduledTask') }
     $result = Set-SprintLoginScheduledTaskTarget -Boundary End -HostDisposition @{}
     $result.Ok | Should -BeTrue

@@ -51,7 +51,7 @@ function Get-MergedPesterConfigurations {
         }
       }
 
-      throw 'Pester 5 is required because no PesterConfiguration type or New-PesterConfiguration command is available.'
+      throw 'Pester 6.2.0 is required because no PesterConfiguration type or New-PesterConfiguration command is available.'
     }
 
     function Set-PesterConfigurationValue {

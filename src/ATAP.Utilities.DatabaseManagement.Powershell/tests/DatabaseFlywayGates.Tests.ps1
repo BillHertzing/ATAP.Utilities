@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-#Requires -Modules Pester, PSFramework
+#Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }, PSFramework
 
 <#
 .SYNOPSIS

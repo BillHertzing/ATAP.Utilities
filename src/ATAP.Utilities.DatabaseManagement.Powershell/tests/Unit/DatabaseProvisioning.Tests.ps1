@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for DatabaseProvisioning path safety.
+# Pester 6.2+ tests for DatabaseProvisioning path safety.
 
 BeforeAll {
   $moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
@@ -202,7 +202,7 @@ Describe 'DatabaseProvisioning database folder handling' -Tag 'Unit' {
     } | Should -Throw -ExpectedMessage '*already exists*Use -Force*'
 
     Test-Path -LiteralPath $script:databasePath -PathType Container | Should -BeTrue
-    Assert-MockCalled Invoke-DatabaseSqlNonQuery -Times 0 -Exactly -Scope It
+    Should -Invoke Invoke-DatabaseSqlNonQuery -Times 0 -Exactly -Scope It
   }
 
   It 'removes the existing database folder and provisions when -Force is supplied' -Tag 'PromotedModuleHostSensitive' {
@@ -220,7 +220,7 @@ Describe 'DatabaseProvisioning database folder handling' -Tag 'Unit' {
     $result.Success | Should -BeTrue
     Test-Path -LiteralPath $script:databasePath -PathType Container | Should -BeTrue
     Test-Path -LiteralPath (Join-Path $script:databasePath 'stale.txt') | Should -BeFalse
-    Assert-MockCalled Invoke-DatabaseSqlNonQuery -Times 3 -Exactly -Scope It
+    Should -Invoke Invoke-DatabaseSqlNonQuery -Times 3 -Exactly -Scope It
   }
 
   It 'resolves DBConnectionStringMasterSecretName from per-database settings before opening the SQL connection' -Tag 'PromotedModuleHostSensitive' {
@@ -241,7 +241,7 @@ Describe 'DatabaseProvisioning database folder handling' -Tag 'Unit' {
       -Force `
       -Confirm:$false | Out-Null
 
-    Assert-MockCalled Resolve-DatabaseSqlConnection -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Resolve-DatabaseSqlConnection -Times 1 -Exactly -Scope It -ParameterFilter {
       $DBConnectionStringMasterSecretName -eq 'ATAPUtilitiesDevelopmentMasterConnectionString' -and
       $DBConnectionStringMasterSecretNameDottedPath -eq 'ATAPUtilities.Development.DBConnectionStringMasterSecretName'
     }

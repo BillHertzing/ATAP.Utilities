@@ -1,9 +1,23 @@
+BeforeAll {
+  function script:Resolve-ParityFixtureModule {
+    param(
+      [Parameter(Mandatory)][string]$SourceManifest,
+      [object[]]$LoadedModules=@(Get-Module -Name 'ATAP.Utilities.SystemParityMonitor.PowerShell')
+    )
+    if ($LoadedModules.Count -eq 0) {
+      $LoadedModules=@(Import-Module -Name $SourceManifest -Force -PassThru -ErrorAction Stop)
+    }
+    if ($LoadedModules.Count -ne 1) {
+      throw 'Ambiguous Parity test fixture: exactly one loaded module identity is required.'
+    }
+    return $LoadedModules[0]
+  }
+}
+
 Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' -Tag 'Unit', 'ParityCore' {
   BeforeAll {
-    if (-not (Get-Module -Name 'ATAP.Utilities.SystemParityMonitor.PowerShell')) {
-      $modulePath = Join-Path $PSScriptRoot '..\..\ATAP.Utilities.SystemParityMonitor.PowerShell.psd1'
-      Import-Module -Name $modulePath -Force
-    }
+    $modulePath = Join-Path $PSScriptRoot '..\..\ATAP.Utilities.SystemParityMonitor.PowerShell.psd1'
+    $script:parityFixtureModule=Resolve-ParityFixtureModule -SourceManifest $modulePath
   }
 
   BeforeEach {
@@ -11,12 +25,46 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' -Tag 'Unit', 'Pa
     $leftState = Join-Path $testRoot 'utat022'
     $rightState = Join-Path $testRoot 'utat01'
     New-Item -ItemType Directory -Path $leftState, $rightState -Force | Out-Null
+
+    # Audit collectors see deterministic local surfaces, never the workstation.
+    $moduleName = 'ATAP.Utilities.SystemParityMonitor.PowerShell'
+    Mock Get-Command -ModuleName $moduleName { $null } -ParameterFilter { $Name -eq 'Write-PSFMessage' }
+    Mock Get-Command -ModuleName $moduleName { [pscustomobject]@{ Name = 'Get-SmbShare' } } -ParameterFilter { $Name -eq 'Get-SmbShare' }
+    Mock Get-CimInstance -ModuleName $moduleName {
+      switch ($ClassName) {
+        'Win32_OperatingSystem' {
+          [pscustomobject]@{ Caption = 'Fixture Windows'; Version = '10.0'; BuildNumber = '19045' }
+        }
+        'Win32_Service' {
+          @('W32Time', 'WinRM', 'sshd') | ForEach-Object {
+            [pscustomobject]@{ Name = $_; State = 'Running' }
+          }
+        }
+        default { throw "Unexpected fixture CIM class: $ClassName" }
+      }
+    }
+    Mock Get-SmbShare -ModuleName $moduleName { [pscustomobject]@{ Name = 'ParityState' } }
+    Mock Get-ItemProperty -ModuleName $moduleName {
+      throw 'Fixture SQL instance registry is unavailable.'
+    } -ParameterFilter { $Path -like 'HKLM:*Microsoft SQL Server*' }
   }
 
-  AfterEach {
-    if (Test-Path -LiteralPath $testRoot) {
-      Remove-Item -LiteralPath $testRoot -Recurse -Force
-    }
+  # Each test has a unique GUID directory under the run's evidence TEMP root.
+  # Retain these fixtures with the test results; evidence retention owns cleanup.
+
+  It 'keeps a single preloaded fixture identity without importing source again' {
+    Mock Import-Module { throw 'Source import must not replace a preloaded fixture.' }
+    $selected=Resolve-ParityFixtureModule -SourceManifest 'not-imported.psd1' -LoadedModules @($script:parityFixtureModule)
+    $selected.Path | Should -BeExactly $script:parityFixtureModule.Path
+    $selected.ModuleBase | Should -BeExactly $script:parityFixtureModule.ModuleBase
+    @(Get-Module -Name 'ATAP.Utilities.SystemParityMonitor.PowerShell') | Should -HaveCount 1
+    Should -Invoke Import-Module -Times 0 -Exactly
+  }
+
+  It 'rejects ambiguous fixture identities instead of selecting the first module' {
+    Mock Import-Module { throw 'Ambiguity must be rejected without importing.' }
+    {Resolve-ParityFixtureModule -SourceManifest 'not-imported.psd1' -LoadedModules @([pscustomobject]@{Path='one'},[pscustomobject]@{Path='two'})} | Should -Throw '*Ambiguous Parity test fixture*'
+    Should -Invoke Import-Module -Times 0 -Exactly
   }
 
   It 'Add/Get/Confirm round-trips a peer change through JSONL files' {
@@ -82,7 +130,12 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' -Tag 'Unit', 'Pa
         Should -Be 'Stopped|<not-collected>|<not-collected>'
       # The value shape stays three-part: filling the placeholders would perturb the Task 14.73
       # drift baseline and is a separate, deliberate change.
-      Assert-MockCalled -CommandName Get-Service -Times 0 -Exactly
+      Should -Invoke -CommandName Get-Service -Times 0 -Exactly
+
+      @($surfaces | Where-Object Item -Like 'Instance/*/AuditError') | Should -HaveCount 2
+      Should -Invoke Get-ItemProperty -Times 2 -Exactly -ParameterFilter {
+        $Path -like 'HKLM:*Microsoft SQL Server*'
+      }
     }
   }
 
@@ -684,10 +737,9 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' -Tag 'Unit', 'Pa
 
 Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell scheduled task scripts' -Tag 'Unit' {
   BeforeAll {
-    $moduleRoot = (Get-Module -Name 'ATAP.Utilities.SystemParityMonitor.PowerShell').ModuleBase
-    if (-not $moduleRoot) {
-      throw 'ATAP.Utilities.SystemParityMonitor.PowerShell must be imported before scheduled-task tests run.'
-    }
+    $modulePath=Join-Path $PSScriptRoot '..\..\ATAP.Utilities.SystemParityMonitor.PowerShell.psd1'
+    $selectedModule=Resolve-ParityFixtureModule -SourceManifest $modulePath
+    $moduleRoot=$selectedModule.ModuleBase
     $scriptsRoot = Join-Path $moduleRoot 'scripts'
     $registerScriptPath = Join-Path $scriptsRoot 'Register-ParityScheduledTasks.ps1'
     $commonScriptPath = Join-Path $scriptsRoot 'ParityScheduledTask.Common.ps1'
@@ -698,6 +750,7 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell scheduled task scripts' 
   BeforeEach {
     $script:scheduledTaskRegistrations = @()
     $script:s4uRegistrations = @()
+    Mock Get-Command { $null } -ParameterFilter { $Name -eq 'Write-PSFMessage' }
 
     Mock -CommandName Get-Command -ParameterFilter { $Name -eq 'pwsh' } -MockWith {
       [pscustomobject]@{ Source = 'C:\Program Files\PowerShell\7\pwsh.exe' }

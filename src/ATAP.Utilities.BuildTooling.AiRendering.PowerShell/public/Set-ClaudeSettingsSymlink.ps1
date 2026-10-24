@@ -20,6 +20,13 @@ function Set-ClaudeSettingsSymlink {
     Required for live mutation of ~/.claude/settings.json.
   .PARAMETER CheckpointConfirmed
     Required for live mutation of ~/.claude/settings.json after a checkpoint.
+  .PARAMETER BackupRoot
+    Folder for settings.json backups. Defaults to the SharedVSCode sprint
+    worktree's `_generated\ClaudeSettingsBackups`. When SharedVSCodeWorktreePath
+    is a stable Git root, the default is the host artifacts root instead
+    (`D:\ATAPArtifacts` on utat022, `C:\ATAPArtifacts` on utat01) under
+    `_generated\ClaudeSettingsBackups\<repo>`; other hosts fail closed
+    (Task 16.91.c, R-38).
   .OUTPUTS
     PSCustomObject describing the target path, backup path, and action.
   .EXAMPLE
@@ -233,7 +240,22 @@ function Set-ClaudeSettingsSymlink {
     }
 
     if (-not $BackupRoot) {
-      $BackupRoot = Join-Path $SharedVSCodeWorktreePath '_generated\ClaudeSettingsBackups'
+      # Task 16.91.c (SC-0470, R-38): SprintEnd renders from the stable
+      # SharedVSCode, so a stable Git root must not receive backups. Use the
+      # host artifacts root there; unknown hosts fail closed.
+      $sharedLeaf = Split-Path -Path $worktreeRootFull.TrimEnd('\', '/') -Leaf
+      $sharedIsStableGitRoot = ($sharedLeaf -notmatch '(?i)-wt-\d+-Sprint-\d{4}-work-items$') -and
+        (Test-Path -LiteralPath (Join-Path $worktreeRootFull '.git'))
+      if ($sharedIsStableGitRoot) {
+        $artifactsRoots = @{ 'utat022' = 'D:\ATAPArtifacts'; 'utat01' = 'C:\ATAPArtifacts' }
+        $hostName = ([string]$env:COMPUTERNAME).ToLowerInvariant()
+        if (-not $artifactsRoots.ContainsKey($hostName)) {
+          throw "No approved artifacts root for host '$hostName'; refusing to write Claude settings backups into the stable worktree '$worktreeRootFull'. Pass -BackupRoot outside every stable worktree."
+        }
+        $BackupRoot = Join-Path $artifactsRoots[$hostName] (Join-Path '_generated\ClaudeSettingsBackups' $sharedLeaf)
+      } else {
+        $BackupRoot = Join-Path $SharedVSCodeWorktreePath '_generated\ClaudeSettingsBackups'
+      }
     }
 
     if (-not $PSCmdlet.ShouldProcess($targetPath, 'render real Claude Code settings file from SharedVSCode overlay')) {

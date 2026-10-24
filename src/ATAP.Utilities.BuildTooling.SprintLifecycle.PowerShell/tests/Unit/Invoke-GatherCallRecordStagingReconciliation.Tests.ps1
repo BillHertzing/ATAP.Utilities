@@ -325,6 +325,12 @@ Describe 'Invoke-GatherCallRecordStagingReconciliation [private]' -Tag 'Unit' {
   It 'skips a file whose length or timestamp changes before invocation' {
     $fixture = New-ReconciliationFixture 'changed'
     $source = New-SegmentFile -Fixture $fixture -Age ([timespan]::FromHours(2))
+    # Pester 6 throws for a call no -ParameterFilter matches; pass the other calls (the staging
+    # root) through to the real cmdlet so only the source file is intercepted. The cmdlet object
+    # is captured before mocking and called with explicit parameters: a module-qualified call or a
+    # PSBoundParameters splat inside the mock body hangs under Pester 6.
+    $realGetItem = Get-Command -Name Get-Item -CommandType Cmdlet
+    Mock Get-Item { & $realGetItem -LiteralPath $LiteralPath -Force:$Force -ErrorAction Stop }
     Mock Get-Item {
       [System.IO.File]::AppendAllText($LiteralPath, " `n")
       [System.IO.File]::SetLastWriteTimeUtc($LiteralPath, $script:now)
@@ -340,6 +346,11 @@ Describe 'Invoke-GatherCallRecordStagingReconciliation [private]' -Tag 'Unit' {
   It 'skips a file that disappears before the stable recheck' {
     $fixture = New-ReconciliationFixture 'disappeared'
     $source = New-SegmentFile -Fixture $fixture -Age ([timespan]::FromHours(2))
+    # Pester 6 throws for a call no -ParameterFilter matches; pass the other calls (the staging
+    # and corpus roots) through to the real cmdlet so only the source file is intercepted. The
+    # cmdlet object is captured before mocking (see the Get-Item test above for why).
+    $realTestPath = Get-Command -Name Test-Path -CommandType Cmdlet
+    Mock Test-Path { & $realTestPath -LiteralPath $LiteralPath -PathType $PathType }
     Mock Test-Path { $false } -ParameterFilter {
       $LiteralPath -eq $source -and $PathType -eq 'Leaf'
     }

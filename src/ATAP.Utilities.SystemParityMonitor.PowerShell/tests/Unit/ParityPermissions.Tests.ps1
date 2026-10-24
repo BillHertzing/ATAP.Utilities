@@ -42,8 +42,8 @@ Describe 'Set-ParityAuditReadAccess safety contract' {
     $result | Should -HaveCount 8
     @($result | Where-Object Surface -eq 'FileSystem') | Should -HaveCount 2
     @($result | Where-Object Surface -eq 'SQL') | Should -HaveCount 5
-    Assert-MockCalled Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
-    Assert-MockCalled Grant-ParityWmiCimv2ReadAccess -Times 1 -Exactly -ParameterFilter { $WhatIf }
+    Should -Invoke Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
+    Should -Invoke Grant-ParityWmiCimv2ReadAccess -Times 1 -Exactly -ParameterFilter { $WhatIf }
   }
 
   It 'rejects a mismatched computer before ShouldProcess, native, or WMI work' {
@@ -52,8 +52,8 @@ Describe 'Set-ParityAuditReadAccess safety contract' {
 
     { Set-ParityAuditReadAccess @parameters -EnableWmiGrant -WhatIf } |
       Should -Throw '*must exactly match the local machine name*'
-    Assert-MockCalled Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
-    Assert-MockCalled Grant-ParityWmiCimv2ReadAccess -Times 0 -Exactly
+    Should -Invoke Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
+    Should -Invoke Grant-ParityWmiCimv2ReadAccess -Times 0 -Exactly
   }
 
   It 'accepts the exact local machine name case-insensitively' {
@@ -63,7 +63,7 @@ Describe 'Set-ParityAuditReadAccess safety contract' {
     $result = @(Set-ParityAuditReadAccess @parameters -WhatIf)
 
     @($result | Where-Object Surface -eq 'SQL') | Should -HaveCount 5
-    Assert-MockCalled Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
+    Should -Invoke Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
   }
 
   It 'plans inherited read for each distinct configured package-manager path' {
@@ -93,7 +93,7 @@ Describe 'Set-ParityAuditReadAccess safety contract' {
       'C:\Users\whertzing\AppData\Roaming\npm',
       'C:\Users\whertzing\AppData\Roaming\Python\Scripts\pip.exe'
     )
-    Assert-MockCalled Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
+    Should -Invoke Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
   }
 
   It 'plans non-inheriting read-and-execute access on validated user-profile ancestors' {
@@ -118,7 +118,7 @@ Describe 'Set-ParityAuditReadAccess safety contract' {
       'C:\Users\whertzing\AppData\Roaming\Python\Python311'
     )
     @($ancestorResults.Access | Sort-Object -Unique) | Should -Be @('(RX)')
-    Assert-MockCalled Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
+    Should -Invoke Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
   }
 
   It 'rejects duplicate package-manager identities before native or WMI work' {
@@ -129,8 +129,8 @@ Describe 'Set-ParityAuditReadAccess safety contract' {
     )
 
     { Set-ParityAuditReadAccess @parameters -EnableWmiGrant } | Should -Throw '*Identity values must be non-empty and unique*'
-    Assert-MockCalled Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
-    Assert-MockCalled Grant-ParityWmiCimv2ReadAccess -Times 0 -Exactly
+    Should -Invoke Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
+    Should -Invoke Grant-ParityWmiCimv2ReadAccess -Times 0 -Exactly
   }
 
   It 'accepts explicitly empty package-manager path fields without adding grants' {
@@ -142,7 +142,7 @@ Describe 'Set-ParityAuditReadAccess safety contract' {
     $result = @(Set-ParityAuditReadAccess @parameters -WhatIf)
 
     @($result | Where-Object Surface -eq 'PackageManagerProfile') | Should -HaveCount 0
-    Assert-MockCalled Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
+    Should -Invoke Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
   }
 
   It 'accepts exact Program Files nodejs only as NpmPrefix with inherited read and traverse' {
@@ -157,7 +157,7 @@ Describe 'Set-ParityAuditReadAccess safety contract' {
     $profileResult | Should -HaveCount 1
     $profileResult[0].Target | Should -Be 'C:\Program Files\nodejs'
     $profileResult[0].Access | Should -Be '(OI)(CI)(RX)'
-    Assert-MockCalled Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
+    Should -Invoke Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
   }
 
   It 'rejects Program Files nodejs for PipPath or NuGetToolPath with zero calls' {
@@ -169,8 +169,8 @@ Describe 'Set-ParityAuditReadAccess safety contract' {
 
       { Set-ParityAuditReadAccess @parameters -EnableWmiGrant } | Should -Throw "*PackageManagerProfiles $fieldName*"
     }
-    Assert-MockCalled Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
-    Assert-MockCalled Grant-ParityWmiCimv2ReadAccess -Times 0 -Exactly
+    Should -Invoke Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
+    Should -Invoke Grant-ParityWmiCimv2ReadAccess -Times 0 -Exactly
   }
 
   It 'rejects sibling and descendant Program Files npm paths with zero calls' {
@@ -182,8 +182,8 @@ Describe 'Set-ParityAuditReadAccess safety contract' {
 
       { Set-ParityAuditReadAccess @parameters -EnableWmiGrant } | Should -Throw '*NpmPrefix alone may instead equal*'
     }
-    Assert-MockCalled Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
-    Assert-MockCalled Grant-ParityWmiCimv2ReadAccess -Times 0 -Exactly
+    Should -Invoke Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
+    Should -Invoke Grant-ParityWmiCimv2ReadAccess -Times 0 -Exactly
   }
 
   It 'rejects traversal, another user, UNC, environment variables, and other drives with zero calls' {
@@ -202,8 +202,8 @@ Describe 'Set-ParityAuditReadAccess safety contract' {
       )
       { Set-ParityAuditReadAccess @parameters -EnableWmiGrant } | Should -Throw
     }
-    Assert-MockCalled Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
-    Assert-MockCalled Grant-ParityWmiCimv2ReadAccess -Times 0 -Exactly
+    Should -Invoke Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
+    Should -Invoke Grant-ParityWmiCimv2ReadAccess -Times 0 -Exactly
   }
 
   It 'rejects profiles missing any collector contract field with zero calls' {
@@ -213,7 +213,7 @@ Describe 'Set-ParityAuditReadAccess safety contract' {
     )
 
     { Set-ParityAuditReadAccess @parameters } | Should -Throw '*missing required field*NuGetToolPath*'
-    Assert-MockCalled Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
+    Should -Invoke Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
   }
 
   It 'emits only the exact approved additive filesystem and SQL grants' {
@@ -274,7 +274,7 @@ Describe 'Set-ParityAuditReadAccess safety contract' {
     }
 
     { Set-ParityAuditReadAccess @validParameters } | Should -Throw '*SQL*utat022\QA*'
-    Assert-MockCalled Invoke-ParityPermissionNativeCommand -Times 5 -Exactly -ParameterFilter { $FilePath -eq 'sqlcmd.exe' }
+    Should -Invoke Invoke-ParityPermissionNativeCommand -Times 5 -Exactly -ParameterFilter { $FilePath -eq 'sqlcmd.exe' }
   }
 
   It 'rejects missing, extra, or substituted instances before native execution' {
@@ -287,7 +287,7 @@ Describe 'Set-ParityAuditReadAccess safety contract' {
       $parameters.SqlInstanceNames = $instances
       { Set-ParityAuditReadAccess @parameters } | Should -Throw '*must contain exactly*'
     }
-    Assert-MockCalled Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
+    Should -Invoke Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
   }
 
   It 'rejects weird accounts, hostnames, usernames, and paths before native execution' {
@@ -303,12 +303,12 @@ Describe 'Set-ParityAuditReadAccess safety contract' {
       $parameters[$variant.Name] = $variant.Value
       { Set-ParityAuditReadAccess @parameters } | Should -Throw
     }
-    Assert-MockCalled Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
+    Should -Invoke Invoke-ParityPermissionNativeCommand -Times 0 -Exactly
   }
 
   It 'keeps WMI mutation separately gated and limits its ACE to enable plus remote-enable' {
     Set-ParityAuditReadAccess @validParameters | Out-Null
-    Assert-MockCalled Grant-ParityWmiCimv2ReadAccess -Times 0 -Exactly
+    Should -Invoke Grant-ParityWmiCimv2ReadAccess -Times 0 -Exactly
 
     $source = Get-Content -LiteralPath $scriptPath -Raw
     $source | Should -Match 'if \(\$EnableWmiGrant\)'
@@ -359,7 +359,7 @@ Describe 'Set-ParityAuditReadAccess safety contract' {
     $script:acePropertyTypes.AccessMask | Should -Be ([uint32])
     $script:acePropertyTypes.AceFlags | Should -Be ([uint32])
     $script:acePropertyTypes.AceType | Should -Be ([uint32])
-    Assert-MockCalled Invoke-CimMethod -Times 1 -Exactly -ParameterFilter { $MethodName -eq 'SetSecurityDescriptor' }
+    Should -Invoke Invoke-CimMethod -Times 1 -Exactly -ParameterFilter { $MethodName -eq 'SetSecurityDescriptor' }
   }
 
   It 'contains only function definitions at script load' {

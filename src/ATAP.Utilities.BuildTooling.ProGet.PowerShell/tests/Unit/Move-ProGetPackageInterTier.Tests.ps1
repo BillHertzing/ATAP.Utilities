@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ unit tests for Move-ProGetPackageInterTier.
+# Pester 6.2+ unit tests for Move-ProGetPackageInterTier.
 # All ProGet REST calls are mocked. Validates tier ordering, testing->qa legacy
 # normalization, production-name retirement, and 5-tier auto-routing.
 # AI assisted using Powershell.instructions.md as guidelines
@@ -103,7 +103,7 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit', 'PromotedModuleHostSensitive
           -FromFeed 'nuget-production' `
           -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key'
       } | Should -Throw -ExpectedMessage "*retired*Use 'nuget-stable'*"
-      Assert-MockCalled Invoke-RestMethod -Times 0 -Exactly -Scope It
+      Should -Invoke Invoke-RestMethod -Times 0 -Exactly -Scope It
     }
 
     It 'Rejects retired nuget-production explicit destination before any REST call' {
@@ -112,7 +112,7 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit', 'PromotedModuleHostSensitive
           -FromFeed 'nuget-qa' -ToFeed 'nuget-production' `
           -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key'
       } | Should -Throw -ExpectedMessage "*retired*Use 'nuget-stable'*"
-      Assert-MockCalled Invoke-RestMethod -Times 0 -Exactly -Scope It
+      Should -Invoke Invoke-RestMethod -Times 0 -Exactly -Scope It
     }  }
 
   Context 'Push feed as source is tolerated (strip -push and treat as pull)' {
@@ -191,8 +191,8 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit', 'PromotedModuleHostSensitive
         -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key' `
         -WhatIf 6>$null
       $result.Promoted | Should -BeFalse
-      Assert-MockCalled Get-SecretATAP -Times 0 -Exactly -Scope It
-      Assert-MockCalled Invoke-RestMethod -Times 0 -Exactly -Scope It
+      Should -Invoke Get-SecretATAP -Times 0 -Exactly -Scope It
+      Should -Invoke Invoke-RestMethod -Times 0 -Exactly -Scope It
     }
   }
 
@@ -217,7 +217,7 @@ Describe 'Move-ProGetPackageInterTier' -Tag 'Unit', 'PromotedModuleHostSensitive
 
       $result.Promoted | Should -BeTrue
       $result.Response | Should -Match 'idempotent retry'
-      Assert-MockCalled Invoke-RestMethod -ParameterFilter { $Method -eq 'Post' } -Times 0 -Exactly
+      Should -Invoke Invoke-RestMethod -ParameterFilter { $Method -eq 'Post' } -Times 0 -Exactly
     }
   }
 

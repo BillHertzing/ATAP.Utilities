@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for Start-LocalPowerShellModuleBuildMasterPoller.
+# Pester 6.2+ tests for Start-LocalPowerShellModuleBuildMasterPoller.
 # Uses a local throwaway Git repository and mocks BuildMaster API handoff.
 
 BeforeAll {

@@ -16,8 +16,11 @@ BeforeAll {
 
 Describe 'Set-SprintBoundaryContext [public]' {
   BeforeAll {
-    $script:gitRoot = Join-Path ([System.IO.Path]::GetTempPath()) "sbc_test_$([guid]::NewGuid().ToString('N'))"
+    $script:gitRoot = Join-Path ([IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../../../_generated/Sprint0016/StartupRecovery/GitSafeDirectory/EndCaller/Task-16.55.d/fixtures'))) "sbc_test_$([guid]::NewGuid().ToString('N'))"
     New-Item -ItemType Directory -Path $script:gitRoot -Force | Out-Null
+    $script:previousGitConfigGlobal = $env:GIT_CONFIG_GLOBAL
+    $env:GIT_CONFIG_GLOBAL = Join-Path $script:gitRoot 'isolated-global.gitconfig'
+    Set-Content -LiteralPath $env:GIT_CONFIG_GLOBAL -Value ''
 
     # Stable repo + sprint worktree + a workspace file inside the worktree.
     $script:repoName  = 'ATAP.Utilities'
@@ -36,15 +39,17 @@ Describe 'Set-SprintBoundaryContext [public]' {
   }
 
   AfterAll {
-    Remove-Item -Path $script:gitRoot -Recurse -Force -ErrorAction SilentlyContinue
+    $env:GIT_CONFIG_GLOBAL = $script:previousGitConfigGlobal
+    # Retain generated fixtures as verification evidence.
   }
 
   BeforeEach {
+    Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-AIAgentMemoryJunction { [pscustomobject]@{ Success = $true; Skipped = $false; MemoryRoot = $script:gitRoot; Errors = @() } }
     Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-SprintLoginScheduledTaskTarget { [PSCustomObject]@{ Ok = $true; Planned = $false; Changed = $false; Tasks = @(); Failures = @() } }
     Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-WorktreeJunctions { [PSCustomObject]@{ Success = $true; Errors = @() } }
     Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Initialize-DownstreamSprintFromSharedVSCode { }
     Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Reset-DownstreamToSharedVSCodeMain { }
-    Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-UserSettingsSymlink { }
+    Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-UserSettingsSymlink { [PSCustomObject]@{ Ok = $true; Planned = $false; Changed = $false } }
     Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-ClaudeSettingsSymlink { }
     Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Invoke-SprintAIAdapterLifecycle {
       [PSCustomObject]@{ DriftClean = $true; Results = @(); ChangedCount = 0; Idempotent = $true; UserGlobalIntentLedgerPath = 'intent.json' }
@@ -52,7 +57,7 @@ Describe 'Set-SprintBoundaryContext [public]' {
     Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-PowerShell7ProfileSymlink {
       [PSCustomObject]@{ Ok = $true; Failures = @(); Links = @(); DryRun = $false }
     }
-    Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-ServiceAccountGitSafeDirectory {
+    Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-SprintOwnedGitSafeDirectory {
       [PSCustomObject]@{ Success = $true; SelectedPaths = @($WorktreePaths); Added = @(); Removed = @(); Unchanged = @(); Before = @(); After = @() }
     }
     Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-SprintBoundaryUserProfiles {
@@ -726,7 +731,7 @@ Describe 'Set-SprintBoundaryContext [public]' {
         -ProfiledRemotingPolicy Disabled
 
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell `
-        Set-ServiceAccountGitSafeDirectory -Times 1 -Exactly -Scope It `
+        Set-SprintOwnedGitSafeDirectory -Times 1 -Exactly -Scope It `
         -ParameterFilter {
           $Boundary -eq 'Start' -and
           $GitConfigPath -eq $configPath -and
@@ -752,7 +757,7 @@ Describe 'Set-SprintBoundaryContext [public]' {
         -ProfiledRemotingPolicy Disabled
 
       Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell `
-        Set-ServiceAccountGitSafeDirectory -Times 1 -Exactly -Scope It `
+        Set-SprintOwnedGitSafeDirectory -Times 1 -Exactly -Scope It `
         -ParameterFilter {
           $Boundary -eq 'End' -and
           $GitConfigPath -eq $configPath -and
@@ -762,6 +767,234 @@ Describe 'Set-SprintBoundaryContext [public]' {
       $concern = $result.Concerns | Where-Object Concern -EQ 'ServiceAccountGitSafeDirectory'
       $concern.Succeeded | Should -BeTrue
       @($result.Errors | Where-Object { $_ -match 'Service-account Git safe.directory' }).Count | Should -Be 0
+    }
+  }
+
+  Context 'Task 16.55 interactive-user Git trust lifecycle' {
+    BeforeAll {
+      $script:gitCheckout = Join-Path $script:gitRoot '_Planning-wt-40-Sprint-0016-work-items'
+      New-Item -ItemType Directory -Path $script:gitCheckout -Force | Out-Null
+      # Task 16.55.e: Start now requires Git to confirm the checkout (rev-parse --show-toplevel),
+      # so the fixture is a real repository. GIT_CONFIG_GLOBAL is already the isolated temp config.
+      & git init --quiet $script:gitCheckout
+      if ($LASTEXITCODE -ne 0) { throw "git init failed for fixture '$script:gitCheckout'" }
+      $script:userConfig = Join-Path $script:gitRoot 'user.gitconfig'
+      $script:boundaryArgs = @{
+        GitRoot                  = $script:gitRoot
+        SkipSharedVSCodeSettings = $true
+        SkipProfileSymlinks      = $true
+        SkipAIAdapterLifecycle   = $true
+        ProfiledRemotingPolicy   = 'Disabled'
+      }
+    }
+
+    It 'Start delegates an existing checkout to the user global config with all five repositories' {
+      $result = Set-SprintBoundaryContext -Boundary Start @script:boundaryArgs `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -WorktreePaths @($script:gitCheckout) `
+        -InteractiveUserGitConfigPath $script:userConfig
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell `
+        Set-SprintOwnedGitSafeDirectory -Times 1 -Exactly -Scope It `
+        -ParameterFilter {
+          $Boundary -eq 'Start' -and
+          $GitConfigPath -eq $script:userConfig -and
+          $WorktreePaths.Count -eq 1 -and $WorktreePaths[0] -eq $script:gitCheckout -and
+          (@('Ace', 'ATAP.Utilities', 'ATAP.IAC', 'SharedVSCode', '_Planning') | Where-Object { $RepositoryNames -notcontains $_ }).Count -eq 0
+        }
+      $concern = $result.Concerns | Where-Object Concern -EQ 'InteractiveUserGitSafeDirectory'
+      $concern.Succeeded | Should -BeTrue
+      @($concern.ExcludedPaths).Count | Should -Be 0
+    }
+
+    It 'Start excludes a path that is not a Git checkout and makes no user-config call' {
+      $result = Set-SprintBoundaryContext -Boundary Start @script:boundaryArgs `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -WorktreePaths @($script:worktree) `
+        -InteractiveUserGitConfigPath $script:userConfig
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell `
+        Set-SprintOwnedGitSafeDirectory -Times 0 -Exactly -Scope It `
+        -ParameterFilter { $GitConfigPath -eq $script:userConfig }
+      $concern = $result.Concerns | Where-Object Concern -EQ 'InteractiveUserGitSafeDirectory'
+      $concern.Succeeded | Should -BeTrue
+      $concern.ExcludedPaths | Should -Be @($script:worktree)
+    }
+
+    It 'Start rejects a folder whose .git is a fake gitdir file and reports the reason' {
+      $fakeCheckout = Join-Path $script:gitRoot 'Ace-wt-901-Sprint-0016-work-items'
+      New-Item -ItemType Directory -Path $fakeCheckout -Force | Out-Null
+      Set-Content -LiteralPath (Join-Path $fakeCheckout '.git') -Value 'gitdir: x' -Encoding utf8NoBOM
+
+      $result = Set-SprintBoundaryContext -Boundary Start @script:boundaryArgs `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -WorktreePaths @($fakeCheckout) `
+        -InteractiveUserGitConfigPath $script:userConfig
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell `
+        Set-SprintOwnedGitSafeDirectory -Times 0 -Exactly -Scope It `
+        -ParameterFilter { $GitConfigPath -eq $script:userConfig }
+      $concern = $result.Concerns | Where-Object Concern -EQ 'InteractiveUserGitSafeDirectory'
+      $concern.Succeeded | Should -BeTrue
+      $concern.ExcludedPaths | Should -Be @($fakeCheckout)
+      @($concern.ExcludedReasons).Count | Should -Be 1
+      $concern.ExcludedReasons[0] | Should -Match 'rev-parse --show-toplevel failed'
+    }
+
+    It 'Start rejects a subfolder of a real repository because its Git top level differs' {
+      $subfolder = Join-Path $script:gitCheckout 'nested-sub'
+      New-Item -ItemType Directory -Path $subfolder -Force | Out-Null
+      # An empty .git directory passes the existence check but is not a repository, so Git
+      # walks up to the parent checkout and only the top-level comparison can reject it.
+      New-Item -ItemType Directory -Path (Join-Path $subfolder '.git') -Force | Out-Null
+
+      $result = Set-SprintBoundaryContext -Boundary Start @script:boundaryArgs `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -WorktreePaths @($subfolder) `
+        -InteractiveUserGitConfigPath $script:userConfig
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell `
+        Set-SprintOwnedGitSafeDirectory -Times 0 -Exactly -Scope It `
+        -ParameterFilter { $GitConfigPath -eq $script:userConfig }
+      $concern = $result.Concerns | Where-Object Concern -EQ 'InteractiveUserGitSafeDirectory'
+      $concern.ExcludedPaths | Should -Be @($subfolder)
+      $concern.ExcludedReasons[0] | Should -Match 'top level .* differs from the candidate path'
+    }
+
+    It 'Start accepts a real checkout case-insensitively and with forward slashes, and a repeat call is idempotent' {
+      $variant = $script:gitCheckout.ToUpperInvariant().Replace('\', '/')
+      $first = Set-SprintBoundaryContext -Boundary Start @script:boundaryArgs `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -WorktreePaths @($variant) `
+        -InteractiveUserGitConfigPath $script:userConfig
+      $second = Set-SprintBoundaryContext -Boundary Start @script:boundaryArgs `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -WorktreePaths @($variant) `
+        -InteractiveUserGitConfigPath $script:userConfig
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell `
+        Set-SprintOwnedGitSafeDirectory -Times 2 -Exactly -Scope It `
+        -ParameterFilter { $GitConfigPath -eq $script:userConfig -and $WorktreePaths[0] -eq $variant }
+      foreach ($result in @($first, $second)) {
+        $concern = $result.Concerns | Where-Object Concern -EQ 'InteractiveUserGitSafeDirectory'
+        $concern.Succeeded | Should -BeTrue
+        @($concern.ExcludedPaths).Count | Should -Be 0
+        @($concern.ExcludedReasons).Count | Should -Be 0
+      }
+    }
+
+    It 'Start probes with a per-command safe.directory override for the exact candidate only (16.55.f R1)' {
+      # Chosen design: a mock seam on git that asserts the exact argument list. A real
+      # dubious-ownership refusal needs a different-owner directory plus a non-elevated token,
+      # which cannot be made deterministic from an elevated Windows test session.
+      $expectedTrust = ([System.IO.Path]::GetFullPath($script:gitCheckout)).Replace('\', '/')
+      # Globals carry data across the module/test session-state boundary the mock body runs in.
+      $global:Sbc1655fProbeArgs = $null
+      $global:Sbc1655fProbeTopLevel = $expectedTrust
+      Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell git {
+        $global:LASTEXITCODE = 0
+        $global:Sbc1655fProbeArgs = @($args)
+        return $global:Sbc1655fProbeTopLevel
+      } -ParameterFilter { $args -contains 'rev-parse' }
+
+      $result = Set-SprintBoundaryContext -Boundary Start @script:boundaryArgs `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -WorktreePaths @($script:gitCheckout) `
+        -InteractiveUserGitConfigPath $script:userConfig
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell git -Times 1 -Exactly -Scope It `
+        -ParameterFilter { $args -contains 'rev-parse' }
+      $probeArgs = $global:Sbc1655fProbeArgs
+      Remove-Variable -Name Sbc1655fProbeArgs, Sbc1655fProbeTopLevel -Scope Global -ErrorAction SilentlyContinue
+      $probeArgs[0] | Should -Be '-c'
+      $probeArgs[1] | Should -Be "safe.directory=$expectedTrust"
+      $probeArgs[2] | Should -Be '-C'
+      $probeArgs[3] | Should -Be $script:gitCheckout
+      @($probeArgs | Where-Object { $_ -like 'safe.directory=*' }).Count | Should -Be 1
+      @($probeArgs | Where-Object { $_ -match '[*]' }).Count | Should -Be 0
+      $probeArgs[-2..-1] | Should -Be @('rev-parse', '--show-toplevel')
+      $concern = $result.Concerns | Where-Object Concern -EQ 'InteractiveUserGitSafeDirectory'
+      $concern.Succeeded | Should -BeTrue
+      @($concern.ExcludedPaths).Count | Should -Be 0
+    }
+
+    It 'Start still excludes a candidate when the overridden probe reports a different top level (16.55.f)' {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell git {
+        $global:LASTEXITCODE = 0
+        return 'C:/somewhere/else'
+      } -ParameterFilter { $args -contains 'rev-parse' }
+
+      $result = Set-SprintBoundaryContext -Boundary Start @script:boundaryArgs `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -WorktreePaths @($script:gitCheckout) `
+        -InteractiveUserGitConfigPath $script:userConfig
+
+      $concern = $result.Concerns | Where-Object Concern -EQ 'InteractiveUserGitSafeDirectory'
+      $concern.ExcludedPaths | Should -Be @($script:gitCheckout)
+      $concern.ExcludedReasons[0] | Should -Match 'differs from the candidate path'
+    }
+
+    It 'End forwards missing checkout paths to the ownership helper for conservative handling' {
+      $goneCheckout = Join-Path $script:gitRoot 'Ace-wt-9-Sprint-0016-work-items'
+      $result = Set-SprintBoundaryContext -Boundary End @script:boundaryArgs `
+        -SharedVSCodeWorktreePath $script:svStable `
+        -WorktreePaths @($goneCheckout) `
+        -InteractiveUserGitConfigPath $script:userConfig
+
+      $result.PerWorktree[0].Error | Should -BeNullOrEmpty
+      $result.PerWorktree[0].RetargetSkipped | Should -BeTrue
+      $result.PerWorktree[0].RetargetSkipReason | Should -Be 'WorktreeAlreadyAbsent'
+      $result.PerWorktree[0].JunctionsRetargeted | Should -BeFalse
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-WorktreeJunctions -Times 0 -Exactly
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell `
+        Set-SprintOwnedGitSafeDirectory -Times 1 -Exactly -Scope It `
+        -ParameterFilter { $Boundary -eq 'End' -and $GitConfigPath -eq $script:userConfig -and $WorktreePaths[0] -eq $goneCheckout }
+    }
+
+    It 'Resolves GIT_CONFIG_GLOBAL when no explicit path is supplied' {
+      $previous = $env:GIT_CONFIG_GLOBAL
+      try {
+        $env:GIT_CONFIG_GLOBAL = $script:userConfig
+        $null = Set-SprintBoundaryContext -Boundary Start @script:boundaryArgs `
+          -SharedVSCodeWorktreePath $script:svSprint `
+          -WorktreePaths @($script:gitCheckout)
+      } finally {
+        $env:GIT_CONFIG_GLOBAL = $previous
+      }
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell `
+        Set-SprintOwnedGitSafeDirectory -Times 1 -Exactly -Scope It `
+        -ParameterFilter { $GitConfigPath -eq $script:userConfig }
+    }
+
+    It 'SkipInteractiveUserGitTrust makes no user-config call and reports Skipped' {
+      $result = Set-SprintBoundaryContext -Boundary Start @script:boundaryArgs `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -WorktreePaths @($script:gitCheckout) `
+        -InteractiveUserGitConfigPath $script:userConfig `
+        -SkipInteractiveUserGitTrust
+
+      Should -Invoke -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell `
+        Set-SprintOwnedGitSafeDirectory -Times 0 -Exactly -Scope It `
+        -ParameterFilter { $GitConfigPath -eq $script:userConfig }
+      ($result.Concerns | Where-Object Concern -EQ 'InteractiveUserGitSafeDirectory').Action | Should -Be 'Skipped'
+    }
+
+    It 'A helper failure is reported on the concern without hiding other concerns' {
+      Mock -ModuleName ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell Set-SprintOwnedGitSafeDirectory {
+        throw 'simulated user-config failure'
+      } -ParameterFilter { $GitConfigPath -eq $script:userConfig }
+
+      $result = Set-SprintBoundaryContext -Boundary Start @script:boundaryArgs `
+        -SharedVSCodeWorktreePath $script:svSprint `
+        -WorktreePaths @($script:gitCheckout) `
+        -InteractiveUserGitConfigPath $script:userConfig
+
+      $concern = $result.Concerns | Where-Object Concern -EQ 'InteractiveUserGitSafeDirectory'
+      $concern.Succeeded | Should -BeFalse
+      @($result.Errors | Where-Object { $_ -match 'Interactive-user Git safe.directory lifecycle failed: simulated' }).Count | Should -Be 1
+      ($result.Concerns | Where-Object Concern -EQ 'ServiceAccountGitSafeDirectory').Succeeded | Should -BeTrue
     }
   }
 }

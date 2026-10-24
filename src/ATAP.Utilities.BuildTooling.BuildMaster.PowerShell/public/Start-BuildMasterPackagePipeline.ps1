@@ -180,6 +180,59 @@ function ConvertTo-BuildMasterBoundedReleaseNumber {
   return $Candidate.Substring(0, $prefixLength) + $suffix
 }
 
+function Get-BuildMasterReleaseNumberLengthHint {
+  <#
+.SYNOPSIS
+    Returns a diagnostic note when a release number is longer than the
+    workspace's 50-character BuildMaster release-number bound, or an empty
+    string when it is not.
+
+.DESCRIPTION
+    `Start-BuildMasterPackagePipeline` composes `<version>-<module>` and bounds
+    it to 50 characters with `ConvertTo-BuildMasterBoundedReleaseNumber` before
+    creating the release (SC-0360). It returns the bounded value as
+    `ReleaseNumber` and the unbounded value as `ComposedReleaseNumber`. A caller
+    that passes a composed, over-bound value to a later BuildMaster call may
+    therefore address an identifier that does not match the release that was
+    created.
+
+    Callers append this note to a failure message as context only. It does not
+    assert why the call failed, and it does not assert that BuildMaster itself
+    truncates release numbers; that limit was observed in SC-0360 but has not
+    been confirmed against BuildMaster documentation.
+
+.PARAMETER ReleaseNumber
+    The release number the caller sent to BuildMaster.
+
+.PARAMETER MaximumLength
+    The workspace release-number bound. Defaults to 50, the
+    `ConvertTo-BuildMasterBoundedReleaseNumber` default.
+
+.OUTPUTS
+    [string] A hint beginning with a space, or an empty string.
+#>
+  [CmdletBinding()]
+  [OutputType([string])]
+  param(
+    [Parameter(Mandatory = $false)]
+    [AllowEmptyString()]
+    [AllowNull()]
+    [string]$ReleaseNumber,
+
+    [Parameter(Mandatory = $false)]
+    [ValidateRange(16, 255)]
+    [int]$MaximumLength = 50
+  )
+
+  if ([string]::IsNullOrEmpty($ReleaseNumber) -or $ReleaseNumber.Length -le $MaximumLength) {
+    return ''
+  }
+
+  return (" Note: ReleaseNumber '{0}' is {1} characters, longer than the {2}-character workspace release-number bound." +
+    " If this release was created by Start-BuildMasterPackagePipeline, its identifier is the bounded ReleaseNumber that call returned (ConvertTo-BuildMasterBoundedReleaseNumber), and this composed value may not match it. See SC-0360.") -f
+    $ReleaseNumber, $ReleaseNumber.Length, $MaximumLength
+}
+
 function Start-BuildMasterPackagePipeline {
   <#
 .SYNOPSIS
@@ -258,6 +311,11 @@ function Start-BuildMasterPackagePipeline {
 
 .OUTPUTS
     [PSCustomObject] summarizing the release and build API results.
+    `ReleaseNumber` is the value sent to BuildMaster (at most 50 characters,
+    bounded with a deterministic hash suffix when longer); pass it to every
+    later BuildMaster call. `ComposedReleaseNumber` is the unbounded
+    `<version>-<module>` value and `ReleaseNumberWasBounded` says whether they
+    differ (SC-0360).
 #>
   [CmdletBinding(SupportsShouldProcess = $true)]
   [OutputType([PSCustomObject])]
@@ -353,7 +411,15 @@ function Start-BuildMasterPackagePipeline {
     } else {
       $releaseNumber = '{0}-{1}' -f $ResolvedPackageVersion, $ModuleName
     }
-    $releaseNumber = ConvertTo-BuildMasterBoundedReleaseNumber -Candidate $releaseNumber
+    # The workspace bounds release numbers to 50 characters (SC-0360). ReleaseNumber
+    # is the bounded value sent to BuildMaster and every later call must use;
+    # ComposedReleaseNumber is kept only for traceability.
+    $composedReleaseNumber = $releaseNumber
+    $releaseNumber = ConvertTo-BuildMasterBoundedReleaseNumber -Candidate $composedReleaseNumber
+    $releaseNumberWasBounded = $releaseNumber -cne $composedReleaseNumber
+    if ($releaseNumberWasBounded) {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Composed release number '$composedReleaseNumber' ($($composedReleaseNumber.Length) chars) exceeds the 50-character workspace bound; using bounded '$releaseNumber'."
+    }
     $effectiveReason = if ([string]::IsNullOrWhiteSpace($Reason)) {
       "Package orchestration detected $effectivePackageName $ResolvedPackageVersion"
     } else {
@@ -390,6 +456,8 @@ function Start-BuildMasterPackagePipeline {
         Application            = $Application
         PipelineName           = $PipelineName
         ReleaseNumber          = $releaseNumber
+        ComposedReleaseNumber  = $composedReleaseNumber
+        ReleaseNumberWasBounded = $releaseNumberWasBounded
         ReleaseName            = $releaseName
         ModuleName             = $ModuleName
         PackageName            = $effectivePackageName
@@ -462,6 +530,8 @@ function Start-BuildMasterPackagePipeline {
       Application            = $Application
       PipelineName           = $PipelineName
       ReleaseNumber          = $releaseNumber
+      ComposedReleaseNumber  = $composedReleaseNumber
+      ReleaseNumberWasBounded = $releaseNumberWasBounded
       ReleaseName            = $releaseName
       ModuleName             = $ModuleName
       PackageName            = $effectivePackageName

@@ -56,7 +56,7 @@ function Remove-SprintWorktreeSafely {
     $fn = 'Remove-SprintWorktreeSafely'
     $mn = 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
-    foreach ($helper in @('Get-SprintEndActiveWorkspaceRoot', 'Invoke-SprintEndNativeCommand', 'Get-SprintWorktreeRecoveryState', 'Remove-SprintWorktreeResidual', 'Remove-SprintWorktreeRecoveryMetadata')) {
+    foreach ($helper in @('Get-SprintEndActiveWorkspaceRoot', 'Invoke-SprintEndNativeCommand', 'Get-SprintWorktreeRecoveryState', 'Remove-SprintWorktreeResidual', 'Remove-SprintWorktreeRecoveryMetadata', 'Complete-SprintWorktreeNativeRemoval')) {
       if (-not (Get-Command $helper -ErrorAction SilentlyContinue)) { . (Join-Path $PSScriptRoot "..\private\$helper.ps1") }
     }
   }
@@ -142,7 +142,24 @@ function Remove-SprintWorktreeSafely {
       $temporary = $receiptFull + '.' + [guid]::NewGuid().ToString('N') + '.tmp'
       try {
         [IO.File]::WriteAllText($temporary, ($state | ConvertTo-Json -Depth 35), [Text.UTF8Encoding]::new($false))
-        [IO.File]::Move($temporary, $receiptFull, $true)
+        # Cloud/indexer readers can briefly deny delete-sharing on an existing
+        # receipt. Retry only this same atomic replacement, never a Git effect.
+        for ($receiptAttempt = 1; $receiptAttempt -le 6; $receiptAttempt++) {
+          try {
+            [IO.File]::Move($temporary, $receiptFull, $true)
+            break
+          } catch {
+            $receiptError = $_.Exception
+            while ($null -ne $receiptError.InnerException) { $receiptError = $receiptError.InnerException }
+            $nativeError = $receiptError.HResult -band 0xffff
+            $retryable = ($receiptError -is [IO.IOException] -or $receiptError -is [UnauthorizedAccessException]) -and
+              $nativeError -in @(5, 32, 33)
+            if (-not $retryable -or $receiptAttempt -eq 6) { throw }
+            $receiptDelay = 50 * [int][math]::Pow(2, $receiptAttempt - 1)
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Receipt replacement transient error $nativeError; attempt $receiptAttempt of 6; retry in $receiptDelay ms."
+            Start-Sleep -Milliseconds $receiptDelay
+          }
+        }
       } finally { if ([IO.File]::Exists($temporary)) { [IO.File]::Delete($temporary) } }
     }
     $record = {
@@ -278,7 +295,8 @@ function Remove-SprintWorktreeSafely {
           for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
             if (@(Get-SprintEndActiveWorkspaceRoot -WorktreePath $worktreeFull).Count) { throw 'Active workspace appeared before native removal.' }
             $attempts++
-            & $record 'BeforeNativeRemoval' @{ Attempt = $attempts }
+            $nativeSnapshot = Complete-SprintWorktreeNativeRemoval -Phase Capture -State $state -RepositoryPath $repositoryFull -WorktreePath $worktreeFull
+            & $record 'BeforeNativeRemoval' @{ Attempt = $attempts; MetadataSnapshot=$nativeSnapshot }
             $native = Invoke-RemovalGit $repositoryFull @('worktree', 'remove', $worktreeFull, '--force')
             $state.NativeAttempts += @{ Attempt = $attempts; Result = $native }
             & $record 'NativeResult' $native
@@ -287,7 +305,11 @@ function Remove-SprintWorktreeSafely {
             $stillRegistered = @($after.Output | Where-Object { $_ -like 'worktree *' -and (Get-RemovalPath $_.Substring(9)) -ieq $worktreeFull }).Count -gt 0
             $state.AfterRegistration = @($after.Output)
             if (-not $stillRegistered) {
-              if (-not $native.Succeeded) { throw "Git failed with exit code $($native.ExitCode) despite deregistration; explicit review required." }
+              if (-not $native.Succeeded) {
+                $recoveredNative = Complete-SprintWorktreeNativeRemoval -Phase Recover -State $state -RepositoryPath $repositoryFull -WorktreePath $worktreeFull -Snapshot $nativeSnapshot -NativeResult $native -Record $record
+                if (-not $recoveredNative) { throw "Git failed with exit code $($native.ExitCode) despite deregistration; explicit review required." }
+                $state.NativeAttempts[-1].MetadataCleanup = $nativeSnapshot
+              }
               $state.Deregistered = $true
               & $record 'Deregistered' $worktreeFull
               break

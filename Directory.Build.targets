@@ -310,7 +310,7 @@
           BeforeTargets="PrepareForBuild;Pack;Publish;VSTest"
           Condition="'$(DesignTimeBuild)' != 'true' And '$(IsCrossTargetingBuild)' != 'true' And '$(ATAPDeferredOpenHardwareMonitorLib)' != 'True'">
     <Error Condition="'$(ATAPArtifactsRoot)' == ''" Code="ATAPBUILD003"
-           Text="ATAP_ARTIFACTS_ROOT is required before build execution." />
+           Text="ATAPArtifactsRoot is required before build execution: pass /p:ATAPArtifactsRoot or set the ARTIFACTS_PATH environment variable." />
     <Error Condition="'$(ATAPArtifactsRoot)' != '' And ('$(ATAPArtifactsWorktreeId)' == '' Or '$(ATAPArtifactsExecutionId)' == '' Or '$(ArtifactsPath)' == '')"
            Code="ATAPBUILD004" Text="Artifact worktree ID, execution ID, and canonical ArtifactsPath are required." />
     <ValidateATAPArtifactsPath Condition="'$(ATAPArtifactsRoot)' != '' And '$(ATAPArtifactsWorktreeId)' != '' And '$(ATAPArtifactsExecutionId)' != '' And '$(ArtifactsPath)' != ''"
@@ -335,7 +335,7 @@
           Condition="'$(DesignTimeBuild)' != 'true' And '$(IsCrossTargetingBuild)' != 'true' And '$(ATAPDeferredOpenHardwareMonitorLib)' != 'True'">
     <Message Importance="high"
              Text="Validating the pinned publication toolchain baseline for '$(MSBuildProjectName)'..." />
-    <Exec Command="pwsh -File &quot;$(MSBuildThisFileDirectory)Build\Test-ToolchainBaseline.ps1&quot; -RepoRoot &quot;$(MSBuildThisFileDirectory)&quot; -ProbeProject &quot;$(MSBuildProjectFullPath)&quot; -RequireContinuousIntegrationBuild"
+    <Exec Command="pwsh -File &quot;$(MSBuildThisFileDirectory)Build\Test-ToolchainBaseline.ps1&quot; -RepoRoot &quot;$(MSBuildThisFileDirectory)&quot; -ProbeProject &quot;$(MSBuildProjectFullPath)&quot; -ArtifactsRoot &quot;$(ATAPArtifactsRoot)&quot; -RequireContinuousIntegrationBuild"
           WorkingDirectory="$(MSBuildThisFileDirectory)"
           ContinueOnError="false" />
   </Target></Project>

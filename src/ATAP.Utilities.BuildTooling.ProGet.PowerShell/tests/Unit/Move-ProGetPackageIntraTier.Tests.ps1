@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ unit tests for Move-ProGetPackageIntraTier.
+# Pester 6.2+ unit tests for Move-ProGetPackageIntraTier.
 # Validates Phase 2 push->pull enforcement, integration tier support,
 # testing->qa legacy normalization, production-name retirement,
 # same-feed Phase 1 mode (-ScanOnly), and the stub malware scan.
@@ -65,8 +65,8 @@ Describe 'Move-ProGetPackageIntraTier' -Tag 'Unit', 'PromotedModuleHostSensitive
         -FromFeed 'nuget-experimental-push' -ToFeed 'nuget-experimental' `
         -ProGetBaseUrl $script:baseUrl -ProGetApiKeySecretName 'Test.ProGet.API.Key' -WhatIf
       $result.Promoted | Should -BeFalse
-      Assert-MockCalled Get-SecretATAP -Times 0 -Exactly -Scope It
-      Assert-MockCalled Invoke-RestMethod -Times 0 -Exactly -Scope It
+      Should -Invoke Get-SecretATAP -Times 0 -Exactly -Scope It
+      Should -Invoke Invoke-RestMethod -Times 0 -Exactly -Scope It
     }
 
     It 'redacts a secret echoed by a promotion failure before throwing' {

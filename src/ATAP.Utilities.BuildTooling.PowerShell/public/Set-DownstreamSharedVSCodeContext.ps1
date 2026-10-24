@@ -73,15 +73,33 @@ function Set-DownstreamSharedVSCodeContext {
     $commitTemplateResolved = (Resolve-Path -Path $ctx.CommitTemplate).ProviderPath
     git config --local commit.template $commitTemplateResolved | Out-Null
 
+    # Task 16.85: both targets are committed under `text=auto eol=lf`, so they are written
+    # LF-only and UTF-8 without BOM. Set-Content used to append a CRLF line terminator after
+    # the source's own final LF, leaving Git to report newline-only modifications (Task 16.61).
+    # The terminator is kept, as LF, because every committed downstream blob carries that
+    # final empty line; dropping it would turn a newline fix into a content change in each
+    # repository. Unchanged bytes are not rewritten, so repeated boundaries are no-ops.
+    $writeLfFile = {
+      param([string]$Path, [string]$Content)
+      $normalized = ($Content -replace "`r`n|`r", "`n") + "`n"
+      $bytes = [System.Text.UTF8Encoding]::new($false).GetBytes($normalized)
+      if ((Test-Path -LiteralPath $Path -PathType Leaf) -and
+        [System.Linq.Enumerable]::SequenceEqual([byte[]][System.IO.File]::ReadAllBytes($Path), [byte[]]$bytes)) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Unchanged: $Path"
+        return
+      }
+      [System.IO.File]::WriteAllBytes($Path, $bytes)
+    }
+
     # Generate and write downstream .gitattributes
     $generatedGitAttributes = New-GeneratedFileContent -SourcePath $ctx.GitAttributes
     $downstreamGitAttributesPath = Join-Path $repoRoot '.gitattributes'
-    Set-Content -Path $downstreamGitAttributesPath -Value $generatedGitAttributes -Encoding UTF8
+    & $writeLfFile $downstreamGitAttributesPath $generatedGitAttributes
 
     # Generate and write downstream .gitconfig.shared
     $generatedGitConfig = New-GeneratedFileContent -SourcePath $ctx.GitConfig
     $downstreamSharedGitConfigPath = Join-Path $repoRoot '.gitconfig.shared'
-    Set-Content -Path $downstreamSharedGitConfigPath -Value $generatedGitConfig -Encoding UTF8
+    & $writeLfFile $downstreamSharedGitConfigPath $generatedGitConfig
 
     # Point git local config to the shared config include
     git config --local include.path $downstreamSharedGitConfigPath | Out-Null

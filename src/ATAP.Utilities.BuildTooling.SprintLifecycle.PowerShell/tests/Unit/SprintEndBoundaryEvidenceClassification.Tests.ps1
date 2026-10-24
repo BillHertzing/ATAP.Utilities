@@ -1,6 +1,12 @@
 #Requires -Version 7.0
 
 BeforeAll {
+  # Task 16.12: unrelated unit tests must never inspect workstation settings.
+  function Set-UserSettingsSymlink {
+    [CmdletBinding(SupportsShouldProcess)]
+    param([string]$SharedVSCodeWorktreePath, [switch]$CheckOnly, [string[]]$WorktreePaths)
+    throw 'Unmocked settings audit'
+  }
   function Set-SprintLoginScheduledTaskTarget {
     [CmdletBinding(SupportsShouldProcess)]
     param([string]$Boundary, [string]$GitRoot, [string[]]$WorktreePaths, [switch]$CheckOnly)
@@ -12,6 +18,10 @@ BeforeAll {
 
 Describe 'SprintEnd planning evidence classification and bounded receipts' -Tag 'Unit' {
   BeforeEach {
+    Mock Set-UserSettingsSymlink {
+      if (-not $CheckOnly) { throw 'Only a settings audit is permitted in this fixture' }
+      [PSCustomObject]@{ Ok = $true }
+    }
     Mock Write-PSFMessage {}
     Mock Set-SprintLoginScheduledTaskTarget { [PSCustomObject]@{ Ok = $true; Failures = @() } }
     $script:logicalPaths = @()
@@ -73,8 +83,17 @@ Describe 'SprintEnd planning evidence classification and bounded receipts' -Tag 
     $result.Failures | Should -Contain 'StaleSprintReferences'
   }
 
+  It 'fails a stale reference inside _generated as a GeneratedArtifact finding (Task 16.91.d)' {
+    $script:logicalPaths = @('C:/Fixture/Ace/_generated/receipt.json')
+    $result = Test-SprintEndBoundaryState -GitRoot $TestDrive -ProfilePaths @() -ProhibitedEnvironmentVariableNames @()
+    $result.Ok | Should -BeFalse
+    $result.Failures | Should -Contain 'GeneratedArtifactReferences'
+    $result.GeneratedArtifactReferences.Count | Should -Be 1
+    $result.HistoricalStaleReferences.Count | Should -Be 0
+    $result.LiveStaleReferences.Count | Should -Be 0
+  }
+
   It 'still reports existing historical identities including archived config names' -ForEach @(
-    @{ Path = 'C:/Fixture/Ace/_generated/receipt.json' },
     @{ Path = 'C:/Fixture/_Planning/SprintHistory/Archived/.mcp.json' },
     @{ Path = 'C:/Fixture/SharedVSCode/SolutionDocumentation/Inventory-Task-8.20.before.summary.json' }
   ) {

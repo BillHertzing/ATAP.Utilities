@@ -8,6 +8,46 @@ param(
   [string]$BuildId
 )
 
+function Resolve-ApplicationReleaseSecret {
+  <#
+  .SYNOPSIS
+    Resolves one release-stage secret through Get-SecretATAP with bounded Bitwarden 429 backoff.
+  .DESCRIPTION
+    Every UTAT022 account shares one Bitwarden machine-account token, and therefore one rate-limit
+    budget, so a stage resolves its ProGet key once and retries only on HTTP 429 (Task 16.88.c).
+    The wait honours the "Try again in N(s|m)" hint plus a 5-second margin, defaulting to 60 seconds.
+    Any other failure, or the last attempt, rethrows. The secret value is never logged.
+  .PARAMETER SecretName
+    SecretName to resolve.
+  .PARAMETER MaxAttempts
+    Total attempts, including the first.
+  .PARAMETER Sleep
+    Wait implementation; injected by tests.
+  .OUTPUTS
+    The secret value as a string.
+  #>
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory)][string]$SecretName,
+    [ValidateRange(1, 5)][int]$MaxAttempts = 3,
+    [scriptblock]$Sleep = { param([int]$Seconds) Start-Sleep -Seconds $Seconds }
+  )
+  $fn = 'Resolve-ApplicationReleaseSecret'
+  $mn = 'ATAP.Utilities.BuildTooling.BuildMaster'
+  for ($attempt = 1; ; $attempt++) {
+    try {
+      return [string](Get-SecretATAP -SecretName $SecretName -SecretStoreType BitwardenSecretsManager -ErrorAction Stop)
+    } catch {
+      $text = [string]$_.Exception.Message
+      if ($attempt -ge $MaxAttempts -or $text -notmatch '429|Too Many Requests') { throw }
+      $hint = [regex]::Match($text, 'Try again in (?<n>\d+)\s*(?<u>[sm])')
+      $wait = 5 + $(if ($hint.Success) { [int]$hint.Groups['n'].Value * $(if ($hint.Groups['u'].Value -eq 'm') { 60 } else { 1 }) } else { 60 })
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Bitwarden rate limit (429) resolving '$SecretName'; attempt $attempt of $MaxAttempts, waiting $wait s." -Tag 'bws-429'
+      & $Sleep $wait
+    }
+  }
+}
+
 function Invoke-ApplicationReleaseStage {
   <#
   .SYNOPSIS
@@ -16,6 +56,8 @@ function Invoke-ApplicationReleaseStage {
     Verifies the immutable context, tooling, v2 archive, pinned database package,
     preceding stage evidence, and downloaded destination bytes. Never builds,
     applies a database, installs a service, or publishes external distributions.
+    The product must be admitted by ApplicationReleaseAuthenticodeSigning.ps1, which also
+    supplies the referenced database pin (Task 16.78); nothing product-specific is a literal here.
   .PARAMETER ContextPath
     Operator-approved nonsecret release context JSON.
   .PARAMETER ExpectedContextSha256
@@ -46,7 +88,32 @@ function Invoke-ApplicationReleaseStage {
     $tiers = @('Experimental','Development','Integration','QA','Production')
     if ((Get-FileHash -LiteralPath $ContextPath -Algorithm SHA256).Hash -ine $ExpectedContextSha256) { throw 'Release context hash mismatch.' }
     $context = Get-Content -LiteralPath $ContextPath -Raw | ConvertFrom-Json
-    if ($context.productId -cne 'AceCommander' -or $context.ceilingTier -cne 'Production' -or $context.version -notmatch '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$') { throw 'Expected a stable AceCommander Production-ceiling context.' }
+    $productId = [string]$context.productId
+    # Evaluate the approval boundary in a child scope so its Set-StrictMode does not leak here.
+    $boundaryPath = Join-Path $PSScriptRoot 'ApplicationReleaseAuthenticodeSigning.ps1'
+    $databaseAdmission = & {
+      param($Path, $Product)
+      . $Path
+      $null = Get-ApplicationReleaseAuthenticodeContract -ProductId $Product
+      Get-ApplicationReleaseDatabaseAdmission -ProductId $Product
+    } $boundaryPath $productId
+    # Stable SemVer only; build metadata is allowed because ProGet keys universal packages by the base version.
+    $versionMatch = [regex]::Match([string]$context.version, '\A(?<base>(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*))(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?\z')
+    if ($context.ceilingTier -cne 'Production' -or -not $versionMatch.Success) { throw "Expected a stable $productId Production-ceiling context." }
+    $feedVersion = $versionMatch.Groups['base'].Value
+    if ($context.PSObject.Properties['feedVersion'] -and [string]$context.feedVersion -cne $feedVersion) { throw 'Context feedVersion disagrees with the base of its version.' }
+    $contextDatabase = if ($context.PSObject.Properties['databasePackageReference']) { $context.databasePackageReference } else { $null }
+    if ($null -ne $contextDatabase -and ([string]$contextDatabase.id -cne $databaseAdmission.Id -or [string]$contextDatabase.pinnedVersion -cne $databaseAdmission.PinnedVersion -or
+        ($databaseAdmission.CompatibleVersionRange -and [string]$contextDatabase.compatibleVersionRange -cne $databaseAdmission.CompatibleVersionRange) -or
+        ($databaseAdmission.LifecycleCeiling -and [string]$contextDatabase.lifecycleCeiling -cne $databaseAdmission.LifecycleCeiling))) {
+      throw "Context database reference is outside the admitted $productId release pin."
+    }
+    $contextDatabaseHash = if ($null -ne $contextDatabase -and $contextDatabase.PSObject.Properties['nupkgSha256']) { [string]$contextDatabase.nupkgSha256 } else { '' }
+    $databaseHash = if ($databaseAdmission.NupkgSha256) {
+      if ($contextDatabaseHash -and $contextDatabaseHash -ine $databaseAdmission.NupkgSha256) { throw 'Context database package hash conflicts with the admitted pin.' }
+      [string]$databaseAdmission.NupkgSha256
+    } else { $contextDatabaseHash }
+    if ($databaseHash -notmatch '^[a-fA-F0-9]{64}$') { throw "No hash-approved database package hash for $productId; the release context must carry databasePackageReference.nupkgSha256." }
     if ([string]$context.bundleSha256 -notmatch '^[a-fA-F0-9]{64}$') { throw 'Invalid bundle hash.' }
     if ((Get-FileHash -LiteralPath $context.bundlePath -Algorithm SHA256).Hash -ine $context.bundleSha256) { throw 'Approved bundle hash mismatch.' }
     if ([string]$context.evidenceRoot -notmatch '[\\/]_generated[\\/]') { throw 'Stage evidence must be under _generated.' }
@@ -67,7 +134,7 @@ function Invoke-ApplicationReleaseStage {
     }
   }
   process {
-    if (-not $PSCmdlet.ShouldProcess("$($context.productId) $($context.version) -> $feed", 'Verify and advance immutable application bundle')) { return }
+    if (-not $PSCmdlet.ShouldProcess("$productId $($context.version) -> $feed", 'Verify and advance immutable application bundle')) { return }
     Import-Module PSFramework -ErrorAction Stop
     $null = Get-Command Get-SecretATAP -ErrorAction Stop
     . $context.bundleVerifier
@@ -79,7 +146,10 @@ function Invoke-ApplicationReleaseStage {
       $verified = New-ReleaseBundle -BundlePath $context.bundlePath -VerificationPath (Join-Path $attemptRoot 'local') -ManifestSchema $context.manifestSchema
       if ($verified.ProductId -cne $context.productId -or $verified.BundleVersion -cne $context.version) { throw 'Bundle identity disagrees with context.' }
       $manifest = Get-Content -LiteralPath (Join-Path $verified.VerificationPath.FullName 'manifest.json') -Raw | ConvertFrom-Json
-      if ($manifest.databasePackageReference.id -cne 'ATAPUtilities.Database' -or $manifest.databasePackageReference.pinnedVersion -cne '0.1.6') { throw 'Database reference is outside the approved Commander release.' }
+      $manifestDatabase = $manifest.databasePackageReference
+      if ($manifestDatabase.id -cne $databaseAdmission.Id -or $manifestDatabase.pinnedVersion -cne $databaseAdmission.PinnedVersion -or
+          ($databaseAdmission.CompatibleVersionRange -and $manifestDatabase.compatibleVersionRange -cne $databaseAdmission.CompatibleVersionRange) -or
+          ($databaseAdmission.LifecycleCeiling -and $manifestDatabase.lifecycleCeiling -cne $databaseAdmission.LifecycleCeiling)) { throw "Database reference is outside the approved $productId release." }
       foreach ($component in @($manifest.applicationProvenance.root) + @($manifest.applicationProvenance.components)) {
         if ($component.qualityTier -cne 'Production' -or $component.version -notmatch '^\d+\.\d+\.\d+(\.\d+)?(\+[A-Za-z0-9.-]+)?$') { throw 'Prerelease or non-Production application provenance is prohibited.' }
       }
@@ -87,11 +157,15 @@ function Invoke-ApplicationReleaseStage {
       $serviceHost = [string]$placement['ProGet']
       if (-not $serviceHost -or $uri.Host -ine $serviceHost) { throw 'ProGet placement does not match release context.' }
       $secretName = "ProGet.BuildMaster.API.Key.$serviceHost"
+      # Resolve the ProGet key once per stage: each Get-SecretATAP is a full 'bws secret list'
+      # against the shared machine-account budget, and a stage used to resolve it up to five times.
+      try { $proGetKey = Resolve-ApplicationReleaseSecret -SecretName $secretName }
+      catch { throw "ProGet key resolution failed ($($_.Exception.GetType().Name)); no stage I/O was attempted." }
       function Get-VerifiedReleaseDownload {
         param([string]$Url,[string]$Path,[string]$Hash,[switch]$AllowMissing)
         $key = $null
         try {
-          $key = [string](Get-SecretATAP -SecretName $secretName -SecretStoreType BitwardenSecretsManager -ErrorAction Stop)
+          $key = $proGetKey
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Reading $Url" -Tag RestCall
           Invoke-WebRequest -Uri $Url -Headers @{'X-ApiKey'=$key} -OutFile $Path -MaximumRedirection 0 -TimeoutSec 120 -ErrorAction Stop | Out-Null
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Download completed.' -Tag RestCall
@@ -103,15 +177,16 @@ function Invoke-ApplicationReleaseStage {
         return $true
       }
       $baseUrl = $context.proGetBaseUrl.TrimEnd('/')
-      $databaseUrl = "$baseUrl/nuget/database-stable/v3/flatcontainer/ataputilities.database/0.1.6/ataputilities.database.0.1.6.nupkg"
-      $null = Get-VerifiedReleaseDownload -Url $databaseUrl -Path (Join-Path $attemptRoot 'database-reference.nupkg') -Hash 'E9CA804EFF2A25735CB3AC22B08D1F6A790C5E241BA54F3437FE82D9F41ACCCA'
-      $downloadUrl = "$baseUrl/upack/$feed/download/$($context.productId)/$($context.version)"
+      $databaseId = $databaseAdmission.Id.ToLowerInvariant(); $databaseVersion = $databaseAdmission.PinnedVersion
+      $databaseUrl = "$baseUrl/nuget/$($databaseAdmission.Feed)/v3/flatcontainer/$databaseId/$databaseVersion/$databaseId.$databaseVersion.nupkg"
+      $null = Get-VerifiedReleaseDownload -Url $databaseUrl -Path (Join-Path $attemptRoot 'database-reference.nupkg') -Hash $databaseHash
+      $downloadUrl = "$baseUrl/upack/$feed/download/$productId/$feedVersion"
       $alreadyPresent = Get-VerifiedReleaseDownload -Url $downloadUrl -Path (Join-Path $attemptRoot 'destination-before.upack') -Hash $context.bundleSha256 -AllowMissing
       if (-not $alreadyPresent) {
         if ($position -eq 0) {
           $key = $null
           try {
-            $key = [string](Get-SecretATAP -SecretName $secretName -SecretStoreType BitwardenSecretsManager -ErrorAction Stop)
+            $key = $proGetKey
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Publishing approved bytes to $feed" -Tag RestCall
             Invoke-RestMethod -Uri "$baseUrl/upack/$feed/upload" -Method Post -InFile $context.bundlePath -ContentType 'application/zip' -Headers @{'X-ApiKey'=$key} -MaximumRedirection 0 -TimeoutSec 180 -ErrorAction Stop | Out-Null
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Publication returned.' -Tag RestCall
@@ -119,13 +194,13 @@ function Invoke-ApplicationReleaseStage {
           finally { $key = $null }
         } else {
           $sourceFeed = 'releasebundle-' + $tiers[$position - 1].ToLowerInvariant()
-          $null = Get-VerifiedReleaseDownload -Url "$baseUrl/upack/$sourceFeed/download/$($context.productId)/$($context.version)" -Path (Join-Path $attemptRoot 'source.upack') -Hash $context.bundleSha256
+          $null = Get-VerifiedReleaseDownload -Url "$baseUrl/upack/$sourceFeed/download/$productId/$feedVersion" -Path (Join-Path $attemptRoot 'source.upack') -Hash $context.bundleSha256
           # The shared package wrapper does not classify releasebundle-* feeds.
           # The fixed five-tier ladder above is the authority for this application.
           $key = $null
           try {
-            $key = [string](Get-SecretATAP -SecretName $secretName -SecretStoreType BitwardenSecretsManager -ErrorAction Stop)
-            $promotion = @{name=$context.productId;version=$context.version;fromFeed=$sourceFeed;toFeed=$feed;comments="COMMANDER02 approved stable release; BuildMaster build $BuildId"}
+            $key = $proGetKey
+            $promotion = @{name=$productId;version=$feedVersion;fromFeed=$sourceFeed;toFeed=$feed;comments="$productId $($context.version) approved stable release; BuildMaster build $BuildId"}
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Promoting approved bytes from $sourceFeed to $feed" -Tag RestCall
             Invoke-RestMethod -Uri "$baseUrl/api/promotions/promote" -Method Post -Body $promotion -ContentType 'application/x-www-form-urlencoded' -Headers @{'X-ApiKey'=$key} -MaximumRedirection 0 -TimeoutSec 60 -ErrorAction Stop | Out-Null
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Promotion returned; destination verification follows.' -Tag RestCall
@@ -136,10 +211,10 @@ function Invoke-ApplicationReleaseStage {
       $downloadPath = Join-Path $attemptRoot 'destination-verified.upack'
       $null = Get-VerifiedReleaseDownload -Url $downloadUrl -Path $downloadPath -Hash $context.bundleSha256
       $remoteVerified = New-ReleaseBundle -BundlePath $downloadPath -VerificationPath (Join-Path $attemptRoot 'remote') -ManifestSchema $context.manifestSchema
-      $result = [pscustomobject]@{ success=$true; stage=$Stage; buildId=$BuildId; contextSha256=$ExpectedContextSha256; bundleSha256=$context.bundleSha256; version=$context.version; feed=$feed; downloadedPath=$downloadPath; verifiedEntryCount=$remoteVerified.VerifiedEntryCount; databaseReferenceVerified=$true; databaseApplied=$false; completedUtc=[DateTime]::UtcNow.ToString('o') }
+      $result = [pscustomobject]@{ success=$true; stage=$Stage; buildId=$BuildId; contextSha256=$ExpectedContextSha256; bundleSha256=$context.bundleSha256; version=$context.version; feedVersion=$feedVersion; feed=$feed; downloadedPath=$downloadPath; verifiedEntryCount=$remoteVerified.VerifiedEntryCount; databaseReferenceVerified=$true; databaseApplied=$false; completedUtc=[DateTime]::UtcNow.ToString('o') }
       $result | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $runRoot ($Stage + '.json')) -Encoding utf8
       $result
-    } finally { Stop-Transcript | Out-Null }
+    } finally { $proGetKey = $null; Stop-Transcript | Out-Null }
   }
   end { }
 }

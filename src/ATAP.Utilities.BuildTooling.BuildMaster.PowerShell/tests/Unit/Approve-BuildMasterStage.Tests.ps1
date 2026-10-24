@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for Approve-BuildMasterStage (Stream H, task H5).
+# Pester 6.2+ tests for Approve-BuildMasterStage (Stream H, task H5).
 # Mocks Invoke-RestMethod; no real network or BuildMaster contact.
 
 BeforeAll {
@@ -71,7 +71,7 @@ Describe 'Approve-BuildMasterStage' -Tag 'Unit' {
       $result.OperationName | Should -Be 'Approve-BuildMasterStage'
       $result.Stage | Should -Be 'Integration'
       $result.ResponseSummary | Should -Match 'approved'
-      Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter { $Method -eq 'Post' }
+      Should -Invoke Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter { $Method -eq 'Post' }
     }
 
     It 'Targets the correct endpoint URL' {
@@ -149,6 +149,30 @@ Describe 'Approve-BuildMasterStage' -Tag 'Unit' {
     }
   }
 
+  Context 'Over-limit release number (SC-0360)' {
+    BeforeEach {
+      Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Post' } -MockWith {
+        $resp = [PSCustomObject]@{ StatusCode = 404 }
+        $ex = [System.Net.WebException]::new('Response status code does not indicate success: 404 (Not Found).')
+        $errRec = [System.Management.Automation.ErrorRecord]::new($ex, 'BMNotFound', 'ObjectNotFound', $null)
+        $errRec.Exception | Add-Member -NotePropertyName 'Response' -NotePropertyValue $resp -Force
+        throw $errRec
+      }
+    }
+
+    It 'Names the truncation when a 404 follows an over-limit ReleaseNumber' {
+      { Approve-BuildMasterStage -Application 'A' -ReleaseNumber '0.1.34-ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell' -BuildNumber '1' -Stage 'QA' } |
+        Should -Throw -ExpectedMessage '*404*is 61 characters, longer than the 50-character workspace release-number bound*'
+    }
+
+    It 'Adds no truncation hint when the ReleaseNumber fits' {
+      $err = $null
+      try { Approve-BuildMasterStage -Application 'A' -ReleaseNumber '1.0.0' -BuildNumber '1' -Stage 'QA' } catch { $err = $_ }
+      $err | Should -Not -BeNullOrEmpty
+      $err.Exception.Message | Should -Not -BeLike '*workspace release-number bound*'
+    }
+  }
+
   Context 'Config resolution' {
     It 'Throws when the API key is not resolvable via Get-SecretATAP' {
       $global:settings = @{
@@ -169,7 +193,7 @@ Describe 'Approve-BuildMasterStage' -Tag 'Unit' {
       $result = Approve-BuildMasterStage -Application 'A' -ReleaseNumber '1.0.0' -BuildNumber '1' -Stage 'QA' -WhatIf
       $result.Succeeded | Should -BeFalse
       $result.ResponseSummary | Should -Match 'WhatIf'
-      Assert-MockCalled Invoke-RestMethod -Times 0 -Exactly -Scope It
+      Should -Invoke Invoke-RestMethod -Times 0 -Exactly -Scope It
     }
   }
 }

@@ -1,8 +1,11 @@
 #Requires -Version 7.0
-# Pester 5+ tests for Publish-NuGetPackageToProGet (Stream G4).
+# Pester 6.2+ tests for Publish-NuGetPackageToProGet (Stream G4).
 # Invoke-DotnetNuGetPush is mocked; no real `dotnet` process is spawned.
 
 BeforeAll {
+  if (-not (Get-Command Resolve-HostSuffixedSecretName -ErrorAction SilentlyContinue)) {
+    function global:Resolve-HostSuffixedSecretName { param($BaseName, $ServiceName, $SettingName) throw 'Test resolver must be mocked.' }
+  }
     $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
     . (Join-Path $publicDir 'Resolve-ProGetFeedFromSettings.ps1')
 
@@ -63,9 +66,7 @@ BeforeAll {
 
     $script:oldConfigRootKeys = $global:configRootKeys
     $script:oldSettings = $global:Settings
-    $script:savedAdminApiKey = [Environment]::GetEnvironmentVariable('PROGET_ADMIN_API_KEY', 'User')
     $script:secretApiKey = 'super-secret-api-key-XYZ987'
-    [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $script:secretApiKey, 'User')
     function Get-SecretATAP { [CmdletBinding()] param($SecretName, $SecretStoreType) $script:secretApiKey }
 
     $global:configRootKeys = @{
@@ -100,7 +101,6 @@ AfterAll {
     }
     $global:configRootKeys = $script:oldConfigRootKeys
     $global:Settings = $script:oldSettings
-    [Environment]::SetEnvironmentVariable('PROGET_ADMIN_API_KEY', $script:savedAdminApiKey, 'User')
     Remove-Variable -Name 'WritePSFMessageCalls' -Scope Global -ErrorAction SilentlyContinue
     Remove-Item Function:\Write-PSFMessage -ErrorAction SilentlyContinue
 }
@@ -108,6 +108,9 @@ AfterAll {
 Describe 'Publish-NuGetPackageToProGet' -Tag 'Unit' {
 
     BeforeEach {
+
+      Mock Resolve-HostSuffixedSecretName { "$BaseName.fixture" }
+        Mock Get-SecretATAP { $script:secretApiKey }
         $global:WritePSFMessageCalls.Clear()
         Mock Invoke-DotnetNuGetPush {
             [PSCustomObject]@{ ExitCode = 0; StdOut = 'Pushed successfully.' }
@@ -142,14 +145,14 @@ Describe 'Publish-NuGetPackageToProGet' -Tag 'Unit' {
             { Publish-NuGetPackageToProGet -NupkgPath $script:fakeNupkg -Feed 'nuget-development' } |
                 Should -Throw -ExpectedMessage '*CeilingTier is required*'
 
-            Assert-MockCalled Invoke-DotnetNuGetPush -Times 0 -Exactly -Scope It
+            Should -Invoke Invoke-DotnetNuGetPush -Times 0 -Exactly -Scope It
         }
 
         It 'Blocks direct publish above the ceiling before dotnet runs' {
             { Publish-NuGetPackageToProGet -NupkgPath $script:fakeNupkg -Feed 'nuget-development' -CeilingTier 'Experimental' } |
                 Should -Throw -ExpectedMessage '*Promotion ceiling exceeded*'
 
-            Assert-MockCalled Invoke-DotnetNuGetPush -Times 0 -Exactly -Scope It
+            Should -Invoke Invoke-DotnetNuGetPush -Times 0 -Exactly -Scope It
         }
 
         It 'Allows direct publish above Experimental when within CeilingTier' {
@@ -206,7 +209,7 @@ Describe 'Publish-NuGetPackageToProGet' -Tag 'Unit' {
             $result = Publish-NuGetPackageToProGet -NupkgPath $script:fakeNupkg -WhatIf
             $result.Published       | Should -BeFalse
             $result.ResponseSummary | Should -Match 'WhatIf'
-            Assert-MockCalled Invoke-DotnetNuGetPush -Times 0 -Exactly -Scope It
+            Should -Invoke Invoke-DotnetNuGetPush -Times 0 -Exactly -Scope It
         }
     }
 

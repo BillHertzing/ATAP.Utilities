@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for New-DeveloperScratchDb (Stream J2).
+# Pester 6.2+ tests for New-DeveloperScratchDb (Stream J2).
 
 BeforeAll {
   $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
@@ -69,10 +69,10 @@ Describe 'New-DeveloperScratchDb' -Tag 'Unit' {
     $result.SqlInstance | Should -Be 'test-sql'
     $result.Created | Should -BeTrue
     $result.Success | Should -BeTrue
-    Assert-MockCalled Resolve-DatabaseSqlConnection -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Resolve-DatabaseSqlConnection -Times 1 -Exactly -Scope It -ParameterFilter {
       $DatabaseHost -eq 'test-sql' -and $DatabaseName -eq 'master'
     }
-    Assert-MockCalled Invoke-DatabaseSqlNonQuery -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Invoke-DatabaseSqlNonQuery -Times 1 -Exactly -Scope It -ParameterFilter {
       $SqlConnection -eq $script:fakeConnection -and $CommandText.Contains('CREATE DATABASE [AceCommander-dev-billhertzing]')
     }
   }
@@ -84,13 +84,13 @@ Describe 'New-DeveloperScratchDb' -Tag 'Unit' {
 
     $result.Created | Should -BeFalse
     $result.ResponseSummary | Should -Be 'already present'
-    Assert-MockCalled Invoke-DatabaseSqlNonQuery -Times 0 -Exactly -Scope It
+    Should -Invoke Invoke-DatabaseSqlNonQuery -Times 0 -Exactly -Scope It
   }
 
   It 'accepts DBConnectionStringSecretName as its own parameter set' {
     New-DeveloperScratchDb -Application 'AceCommander' -GitHandle 'wh' -DBConnectionStringSecretName 'db-secret' | Out-Null
 
-    Assert-MockCalled Resolve-DatabaseSqlConnection -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Resolve-DatabaseSqlConnection -Times 1 -Exactly -Scope It -ParameterFilter {
       $DBConnectionStringSecretName -eq 'db-secret'
     }
   }
@@ -100,6 +100,6 @@ Describe 'New-DeveloperScratchDb' -Tag 'Unit' {
 
     $result.Created | Should -BeFalse
     $result.ResponseSummary | Should -Be "would create database 'AceCommander-dev-wh'"
-    Assert-MockCalled Invoke-DatabaseSqlNonQuery -Times 0 -Exactly -Scope It
+    Should -Invoke Invoke-DatabaseSqlNonQuery -Times 0 -Exactly -Scope It
   }
 }

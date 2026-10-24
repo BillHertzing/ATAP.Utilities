@@ -201,13 +201,17 @@ function Test-SprintCheckpointCoverage {
         } else {
           [IO.Path]::GetFullPath($memoryPath)
         }
+        $memoryRootPrefix = [IO.Path]::GetFullPath($memoryRoot).TrimEnd(
+          [char[]]@([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+        ) + [IO.Path]::DirectorySeparatorChar
         $memoryReachable = (
           $null -ne $memoryFull -and
           $memoryFull.StartsWith(
-            [IO.Path]::GetFullPath($memoryRoot),
+            $memoryRootPrefix,
             [StringComparison]::OrdinalIgnoreCase
           ) -and
-          (Test-Path -LiteralPath $memoryFull -PathType Container)
+          (Test-Path -LiteralPath $memoryFull -PathType Leaf) -and
+          (Get-Item -LiteralPath $memoryFull).Length -gt 0
         )
         if (-not $memoryReachable) {
           [void]$failures.Add(

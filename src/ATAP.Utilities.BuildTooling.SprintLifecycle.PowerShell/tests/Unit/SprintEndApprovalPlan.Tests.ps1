@@ -7,6 +7,13 @@
 # deterministically from its inputs, and keep its authority boundary explicit.
 
 BeforeAll {
+  . (Join-Path $PSScriptRoot '../../private/Get-SprintGeneratedArtifactState.ps1')
+  # Task 16.12: unrelated unit tests must never inspect workstation settings.
+  function Set-UserSettingsSymlink {
+    [CmdletBinding(SupportsShouldProcess)]
+    param([string]$SharedVSCodeWorktreePath, [switch]$CheckOnly, [string[]]$WorktreePaths)
+    throw 'Unmocked settings audit'
+  }
   # Task 15.208: isolate login maintenance from the host Task Scheduler.
   function Set-SprintLoginScheduledTaskTarget {
     [CmdletBinding(SupportsShouldProcess)]
@@ -28,6 +35,8 @@ BeforeAll {
     . $publicFunction.FullName
   }
 
+  function Assert-LockFilesClean { throw 'Unmocked lock-file runner' }
+
   function script:Get-Concern {
     param($Plan, [string]$Name)
     @($Plan.Concerns | Where-Object Concern -eq $Name) | Select-Object -First 1
@@ -36,6 +45,10 @@ BeforeAll {
 
 Describe 'SprintEnd approval plan' -Tag 'Unit' {
   BeforeEach {
+    Mock Set-UserSettingsSymlink {
+      if (-not $CheckOnly) { throw 'Only a settings audit is permitted in this fixture' }
+      [PSCustomObject]@{ Ok = $true }
+    }
     Mock Set-SprintLoginScheduledTaskTarget { [PSCustomObject]@{ Ok = $true; Planned = $false; Changed = $false; Tasks = @(); Failures = @() } }
   }
   Context 'Every concern documents its cause and stays deterministic' {
@@ -243,6 +256,10 @@ Describe 'SprintEnd approval plan' -Tag 'Unit' {
 
   Context 'Invoke-SprintEndLifecycle approval integration' {
     BeforeEach {
+      Mock Set-UserSettingsSymlink {
+        if (-not $CheckOnly) { throw 'Only a settings audit is permitted in this fixture' }
+        [PSCustomObject]@{ Ok = $true }
+      }
       $script:gitRoot = Join-Path $TestDrive 'GitHub'
       $script:planning = Join-Path $script:gitRoot '_Planning-wt-33-Sprint-0014-work-items'
       $script:shared = Join-Path $script:gitRoot 'SharedVSCode-wt-62-Sprint-0014-work-items'
@@ -255,6 +272,8 @@ Describe 'SprintEnd approval plan' -Tag 'Unit' {
       Mock Test-SprintEndCommandSurface { [PSCustomObject]@{ Ok = $true; Failures = @() } }
       Mock Test-SprintPrerequisites { [PSCustomObject]@{ AllOk = $true; Failures = @() } }
       Mock Test-SprintEndWorktreeState { [PSCustomObject]@{ Ok = $true; Failures = @() } }
+      # Task 16.91.b: lifecycle fixtures are not git repositories; the gate has its own suite.
+      Mock Get-SprintGeneratedArtifactState { [PSCustomObject]@{ Ok = $true; TrackedPaths = @(); CitedPaths = @(); Failures = @() } }
       Mock Test-SprintCheckpointCoverage { [PSCustomObject]@{ Ok = $true; Failures = @() } }
       Mock Invoke-SprintEndGitHubClose {
         [PSCustomObject]@{ Ok = $true; Repository = (Split-Path -Path $RepoPath -Leaf) }

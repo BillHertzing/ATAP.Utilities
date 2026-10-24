@@ -1,4 +1,4 @@
-#Requires -Module Pester
+#Requires -Module @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 
 # Task 15.185.j: package licensing contract.
 #
@@ -20,7 +20,7 @@ BeforeAll {
   # failure here is attributable to the licensing contract and not to a dependency.
   $script:representativeProject = Join-Path $script:repoRoot 'src\ATAP.Services.GenerateProgram.StringConstants\ATAP.Services.GenerateProgram.StringConstants.csproj'
 
-  foreach ($name in @('ATAP_ARTIFACTS_ROOT', 'ATAP_ARTIFACTS_WORKTREE_ID', 'ATAP_ARTIFACTS_EXECUTION_ID', 'ATAP_ARTIFACTS_PATH')) {
+  foreach ($name in @('ARTIFACTS_PATH', 'ATAP_ARTIFACTS_WORKTREE_ID', 'ATAP_ARTIFACTS_EXECUTION_ID', 'ATAP_ARTIFACTS_PATH')) {
     if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name, 'Process'))) {
       throw "RepoHealth requires process environment value $name."
     }
@@ -48,7 +48,7 @@ BeforeAll {
     $start.RedirectStandardError = $true
     foreach ($argument in @(
         'pack', $script:representativeProject, '-c', 'Release', '--nologo'
-        "-property:ATAPArtifactsRoot=$env:ATAP_ARTIFACTS_ROOT"
+        "-property:ATAPArtifactsRoot=$env:ARTIFACTS_PATH"
         "-property:ATAPArtifactsWorktreeId=$env:ATAP_ARTIFACTS_WORKTREE_ID"
         "-property:ATAPArtifactsExecutionId=$env:ATAP_ARTIFACTS_EXECUTION_ID"
         "-property:ArtifactsPath=$env:ATAP_ARTIFACTS_PATH"

@@ -1,6 +1,7 @@
 #Requires -Version 7.0
 
 BeforeAll {
+  . (Join-Path $PSScriptRoot '../../private/Get-SprintGeneratedArtifactState.ps1')
   $moduleRoot = Join-Path $PSScriptRoot '../..'
   foreach ($path in @('private/Invoke-SprintEndNativeCommand.ps1',
       'private/Get-SprintWorktreeClassification.ps1', 'private/Get-SprintEndLockFileApplicability.ps1')) {
@@ -19,7 +20,13 @@ BeforeAll {
   function Set-WorktreeJunctions { param($SourceRepoPath, $WorktreePath, $DevSourceRepoPath, $DevSourceRepoFolderNames, $SourceRepoFolderNames) }
   function Initialize-DownstreamSprintFromSharedVSCode { param($WorktreePath, $SharedVSCodeRepoName, $TemplateRef, $Profile, $SharedHooksSubPath, $CommitTemplateRelativePath) }
   function Reset-DownstreamToSharedVSCodeMain { param($WorktreePath, $SharedVSCodeRepoName, $SharedHooksSubPath, $CommitTemplateRelativePath) }
-  function Set-UserSettingsSymlink { param($SharedVSCodeWorktreePath) }
+  # Settings behavior is covered by SettingsLinkLifecycle.Sprint0016.Tests.ps1;
+  # keep this suite isolated from the host settings entry.
+  function Set-UserSettingsSymlink {
+    [CmdletBinding(SupportsShouldProcess)]
+    param([string]$SharedVSCodeWorktreePath, [switch]$CheckOnly, [string[]]$WorktreePaths)
+    [PSCustomObject]@{ Ok = $true; Planned = $false; Changed = $false }
+  }
   # Exercise the production Stage2 selection/call block with adversarial
   # repoResults that the normal repo-discovery deduplication cannot produce.
   $tokens = $null; $parseErrors = $null
@@ -76,6 +83,8 @@ Describe 'Login scheduled-task lifecycle integration' -Tag 'Unit' {
     Mock Test-SprintEndCommandSurface { [PSCustomObject]@{ Ok = $true } }
     Mock Test-SprintPrerequisites { [PSCustomObject]@{ AllOk = $true } }
     Mock Test-SprintEndWorktreeState { [PSCustomObject]@{ Ok = $true } }
+    # Task 16.91.b: lifecycle fixtures are not git repositories; the gate has its own suite.
+    Mock Get-SprintGeneratedArtifactState { [PSCustomObject]@{ Ok = $true; TrackedPaths = @(); CitedPaths = @(); Failures = @() } }
     Mock Test-SprintCheckpointCoverage { [PSCustomObject]@{ Ok = $true } }
     Mock Invoke-SprintEndInfrastructureCleanup { $script:trace.Add('cleanup'); [PSCustomObject]@{ Ok = $true } }
     Mock New-SprintEndHandoff { $script:trace.Add('handoff'); [PSCustomObject]@{ Ok = $true } }

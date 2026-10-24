@@ -1,5 +1,5 @@
 # AI assisted using Powershell.instructions.md as guidelines
-# Pester 5+ regression tests for SEC-T1 / BLOCKER-8:
+# Pester 6.2+ regression tests for SEC-T1 / BLOCKER-8:
 # Verify no ProGet API key appears in OtterScript plan Arguments or build artifacts.
 
 BeforeAll {

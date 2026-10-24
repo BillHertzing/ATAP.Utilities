@@ -57,7 +57,7 @@ Describe 'Add-ScopeCreepIdea' -Tag 'Unit' {
     $result.IsSprintTarget | Should -BeTrue
     $result.ResolvedVia | Should -Be 'SprintSiblingWorktree'
     $script:appendedEntries.Count | Should -Be 1
-    Assert-MockCalled Resolve-PlanningWorktreeRoot -Times 1
+    Should -Invoke Resolve-PlanningWorktreeRoot -Times 1
   }
 
   It 'allocates the next unique SC id across Inbox, Adopted, and Deferred before writing' {
@@ -74,9 +74,9 @@ Describe 'Add-ScopeCreepIdea' -Tag 'Unit' {
     $result.ScopeCreepId | Should -Be 'SC-0147'
     $script:appendedEntries.Count | Should -Be 1
     $script:appendedEntries[0] | Should -Match '## SC-0147'
-    Assert-MockCalled Get-Content -Times 1 -ParameterFilter { $LiteralPath -eq $script:inboxPath }
-    Assert-MockCalled Get-Content -Times 1 -ParameterFilter { $LiteralPath -eq $script:adoptedPath }
-    Assert-MockCalled Get-Content -Times 1 -ParameterFilter { $LiteralPath -eq $script:deferredPath }
+    Should -Invoke Get-Content -Times 1 -ParameterFilter { $LiteralPath -eq $script:inboxPath }
+    Should -Invoke Get-Content -Times 1 -ParameterFilter { $LiteralPath -eq $script:adoptedPath }
+    Should -Invoke Get-Content -Times 1 -ParameterFilter { $LiteralPath -eq $script:deferredPath }
   }
 
   It 'writes an entry without tags when the optional tags prompt is unavailable' {
@@ -96,7 +96,7 @@ Describe 'Add-ScopeCreepIdea' -Tag 'Unit' {
     $result.ScopeCreepId | Should -Be 'SC-0147'
     $script:appendedEntries.Count | Should -Be 1
     $script:appendedEntries[0] | Should -Not -Match '(?m)^- \*\*Tags\*\*:'
-    Assert-MockCalled Read-Host -Times 1
+    Should -Invoke Read-Host -Times 1
   }
 
   It 'propagates the resolver refusal and never writes when only a stable worktree is available' {
@@ -114,6 +114,6 @@ Describe 'Add-ScopeCreepIdea' -Tag 'Unit' {
         -Confirm:$false } | Should -Throw '*Refusing to fall back to the stable*'
 
     $script:appendedEntries.Count | Should -Be 0
-    Assert-MockCalled Add-Content -Times 0
+    Should -Invoke Add-Content -Times 0
   }
 }

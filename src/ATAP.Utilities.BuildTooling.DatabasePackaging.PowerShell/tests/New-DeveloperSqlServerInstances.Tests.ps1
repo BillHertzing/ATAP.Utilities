@@ -1,5 +1,5 @@
 # AI assisted using ./claude/Rules/Powershell.md as guidelines
-# Pester 5+ happy-path tests for New-DeveloperSqlServerInstances
+# Pester 6.2+ happy-path tests for New-DeveloperSqlServerInstances
 
 BeforeAll {
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {

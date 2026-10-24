@@ -165,10 +165,123 @@ Secret **keys** follow `<System>.<Area>.<What>` (these keys are what
 | Admin API keys | `BuildMaster.Admin.ApiKey`, `ProGet.Admin.ApiKey` |
 | Cross-tool keys | `ProGet.ApiKey.ForBuildMaster` (BuildMaster→ProGet), stored in `BuildMaster-Core` |
 | AceCommander | `AceCommander.Encryption.Key1`, `AceCommander.Encryption.Key2` |
+| Dropbox API | `Dropbox.API.SyncMonitor` (JSON: `appKey`, `appSecret`, `refreshToken`) |
 
 > **Paired credentials (username + password):** BWS secrets are single-valued. Whether a
 > service login is stored as two keys (`….Username` / `….Password`) or as a JSON value is
 > decided per-secret during migration; the `Get-SecretATAP` provider supports both.
+
+---
+
+## Phase 4: Dropbox Sync Monitor app (read-only Dropbox API access)
+
+Keywords: organizational setup, dropbox, dropbox-sync.
+
+**Purpose.** A read-only Dropbox API identity that lets the SC-0502 AceOutpost
+background detector compare local files with their Dropbox cloud copies. That
+comparison is the only reliable way to see that a host has stopped uploading; the
+desktop tray reported "No sync issues" during a 27-hour stall. The incident is
+written up in the `_Planning` repository (another repository, so no relative link):
+`InformationForTheFuture/Sprint0016/DropboxSyncStall-v1/Handoff-DropboxSyncStall-Findings-And-Recovery.md`.
+This is done once per organization; one app works for all hosts.
+
+### 4.1 Create the app
+
+Create it at <https://www.dropbox.com/developers/apps>:
+
+- Name: `Sync Monitor`.
+- Permission type: **Scoped App**.
+- Access type: **Full Dropbox**. The detector must read `/whertzing/GitHub/...`;
+  "App folder" cannot see those paths, and the access type cannot be changed after
+  creation.
+- Status: Development, with "Only you" as the user. That is sufficient; no production
+  application or branding is needed.
+
+### 4.2 Permissions tab
+
+Set the scopes **before** authorizing, because a refresh token keeps the scopes in
+effect when it was issued.
+
+- Tick only `files.metadata.read`. `account_info.read` is pre-ticked and required.
+- Leave every `*.write` scope, `files.permanent_delete`, `files.content.read`, and all
+  Collaboration and OpenID scopes unticked.
+- Click **Submit**.
+
+### 4.3 Settings, OAuth 2
+
+- Turn "Allow public clients" **OFF**; this is a confidential service that uses the app
+  secret.
+- Do **not** use "Generate access token"; that token lasts about 4 hours.
+- Leave Redirect URIs empty; the flow below shows the code on the Dropbox page.
+
+### 4.4 Obtain the long-lived refresh token (one time)
+
+Values are entered at prompts, never on the command line or in chat.
+
+```powershell
+$appKey    = (Read-Host 'App key').Trim()
+$appSecret = (Read-Host 'App secret' -MaskInput).Trim()   # click Show under App secret, then Copy
+Start-Process "https://www.dropbox.com/oauth2/authorize?client_id=$appKey&response_type=code&token_access_type=offline"
+$code = (Read-Host 'Click Allow, then paste the code here' -MaskInput).Trim()
+$r = Invoke-RestMethod -Method Post -Uri 'https://api.dropboxapi.com/oauth2/token' -Body @{ code=$code; grant_type='authorization_code'; client_id=$appKey; client_secret=$appSecret }
+"refresh_token length: $($r.refresh_token.Length); scope: $($r.scope)"
+$r.refresh_token | Set-Clipboard
+```
+
+- Where the code appears: after Continue, then Allow, Dropbox shows an "Access code
+  generated" page with the code in a box.
+- Codes expire within minutes and are single-use. Exchange immediately.
+
+Troubleshooting:
+
+| Error | Meaning / fix |
+| --- | --- |
+| `invalid_client: Invalid client_id or client_secret` | Key/secret pair wrong: secret copied while hidden, whitespace, or swapped. Re-enter with `.Trim()`; check that both lengths are about 15 characters. |
+| `invalid_grant: code has expired` | The code was too old or already used. Get a fresh code and exchange it at once. |
+| `redirect_uri` error | Remove any `redirect_uri` from the URL and keep Redirect URIs empty. |
+
+### 4.5 Store the Bitwarden Secrets Manager secret
+
+- Key: `Dropbox.API.SyncMonitor`.
+- The value is a JSON object, which `Get-SecretATAP` supports through `-SecretField`
+  with case-insensitive property names:
+
+```json
+{ "appKey": "<app key>", "appSecret": "<app secret>", "refreshToken": "<refresh token>" }
+```
+
+- Project placement: put it in the project read by the AceOutpost service's machine
+  account. Proposed: `AceCommander-Core`, read by machine account `AceCommander`
+  (**operator to confirm**). Add a matching row to the 2.2 projects table only after the
+  operator confirms.
+- **Caveat (important):** if `-SecretField` does not match a property name,
+  `Get-SecretATAPBitwardenSecretsManager` returns the **whole raw value**, the entire
+  JSON including the app secret, instead of failing (see
+  `src/ATAP.Utilities.BuildTooling.Secrets.PowerShell/public/Get-SecretATAPBitwardenSecretsManager.ps1`,
+  lines 137-146). Consumers must reject a returned value that is itself JSON.
+- **Rate limit:** all UTAT022 accounts share one bws token, and bursts return HTTP 429.
+  Consumers resolve the secret once at start and cache the short-lived access token in
+  memory.
+
+### 4.6 Verify (read-only, run once)
+
+```powershell
+$s = 'Dropbox.API.SyncMonitor'
+$t = Invoke-RestMethod -Method Post -Uri 'https://api.dropboxapi.com/oauth2/token' -Body @{ grant_type='refresh_token'; refresh_token=(Get-SecretATAP -SecretName $s -SecretField 'refreshToken'); client_id=(Get-SecretATAP -SecretName $s -SecretField 'appKey'); client_secret=(Get-SecretATAP -SecretName $s -SecretField 'appSecret') }
+$m = Invoke-RestMethod -Method Post -Uri 'https://api.dropboxapi.com/2/files/get_metadata' -Headers @{ Authorization = "Bearer $($t.access_token)" } -ContentType 'application/json' -Body '{"path":"/whertzing/GitHub/_Planning/.git/refs/heads/<sprint-branch>"}'
+"$($m.name) rev=$($m.rev) server_modified=$($m.server_modified)"
+```
+
+### 4.7 Rotation and revocation
+
+- The refresh token does not expire unless revoked (App Console, Settings, or by
+  unlinking the app from the Dropbox account).
+- To rotate: regenerate the app secret if needed, repeat 4.4, and update the secret
+  value.
+- A leaked token with only `files.metadata.read` can list file names and metadata but
+  cannot read or change content.
+
+**Consumer:** SC-0502 (AceOutpost Dropbox stall detector, Sprint 0017).
 
 ---
 

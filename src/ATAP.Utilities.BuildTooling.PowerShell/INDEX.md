@@ -328,7 +328,7 @@ Retired in Sprint 0007 task B08. Retained for provenance only — no active cmdl
 | [New-PesterDescribeBlock.ps1](../ATAP.Utilities.BuildTooling.PesterScaffolding.PowerShell/public/New-PesterDescribeBlock.ps1) | Child-owned Describe-block model builder. |
 | [New-PesterFileModel.ps1](../ATAP.Utilities.BuildTooling.PesterScaffolding.PowerShell/public/New-PesterFileModel.ps1) | Child-owned Pester file-model builder. |
 | [New-PesterItBlock.ps1](../ATAP.Utilities.BuildTooling.PesterScaffolding.PowerShell/public/New-PesterItBlock.ps1) | Child-owned It-block model builder. |
-| [New-PesterTestFile.ps1](../ATAP.Utilities.BuildTooling.PesterScaffolding.PowerShell/public/New-PesterTestFile.ps1) | Child-owned Pester v5 test-file renderer. |
+| [New-PesterTestFile.ps1](../ATAP.Utilities.BuildTooling.PesterScaffolding.PowerShell/public/New-PesterTestFile.ps1) | Child-owned Pester 6.2.0 test-file renderer. |
 | [New-ProGetApiKey.ps1](public/New-ProGetApiKey.ps1)                                                       | Creates new pro get api key resources or scaffolding.                                                                                                                                                                                                              |
 | [New-ProGetConnector.ps1](public/New-ProGetConnector.ps1)                                                 | Creates new pro get connector resources or scaffolding.                                                                                                                                                                                                            |
 | [New-ProGetFeedSet.ps1](public/New-ProGetFeedSet.ps1)                                                     | Creates new pro get feed set resources or scaffolding.                                                                                                                                                                                                             |
@@ -413,8 +413,8 @@ Retired in Sprint 0007 task B08. Retained for provenance only — no active cmdl
 
 | File                                                                                         | Purpose                                             |
 | -------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| [Build-PSModuleManifest.Tests.ps1](tests/Build-PSModuleManifest.Tests.ps1)                   | Pester 5+ tests for Build-PSModuleManifest.         |
-| [Build-PSModulePsm1.Tests.ps1](tests/Build-PSModulePsm1.Tests.ps1)                           | Pester 5+ tests for consolidation, hoisting, and safe export-declaration stripping. |
+| [Build-PSModuleManifest.Tests.ps1](tests/Build-PSModuleManifest.Tests.ps1)                   | Pester 6.2.0 tests for Build-PSModuleManifest.         |
+| [Build-PSModulePsm1.Tests.ps1](tests/Build-PSModulePsm1.Tests.ps1)                           | Pester 6.2.0 tests for consolidation, hoisting, and safe export-declaration stripping. |
 | [Invoke-FailureAcknowledgedGate.Tests.ps1](../ATAP.Utilities.BuildTooling.AiRendering.PowerShell/tests/Invoke-FailureAcknowledgedGate.Tests.ps1) | AiRendering child tests. |
 | [Invoke-PSModulePesterTests.Tests.ps1](tests/Invoke-PSModulePesterTests.Tests.ps1)           | Pester tests for tier filters, quiet output, module-reload and global secret-resolver isolation, and exclusion of filtered `NotRun` records from gate/JUnit totals. |
 | [Invoke-PSModulePSScriptAnalyzer.Tests.ps1](tests/Invoke-PSModulePSScriptAnalyzer.Tests.ps1) | Pester tests for invoke psmodule psscript analyzer. |
@@ -619,3 +619,4 @@ inside a disposable temp copy because repository rules ignore compiled binaries.
 | [Test-GitHubMCP.ps1](tools/Test-GitHubMCP.ps1)   | Test the GitHub MCP server connection                                      |
 
 - Version bumped to 0.1.13 in Sprint 11
+- Task 16.11 source: facade and child settings helpers share identical transaction/readback behavior, including recovery metadata and target/readability verdicts. Source validation: 236 passed, 0 failed; packaging and both-host acceptance remain in Task 16.12.

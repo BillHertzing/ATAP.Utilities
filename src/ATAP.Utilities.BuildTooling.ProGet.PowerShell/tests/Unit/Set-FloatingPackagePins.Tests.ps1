@@ -1,6 +1,9 @@
 #Requires -Version 7.0
 
 BeforeAll {
+  if (-not (Get-Command Resolve-HostSuffixedSecretName -ErrorAction SilentlyContinue)) {
+    function global:Resolve-HostSuffixedSecretName { param($BaseName, $ServiceName, $SettingName) throw 'Test resolver must be mocked.' }
+  }
   $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
   . (Join-Path $publicDir 'Set-FloatingPackagePins.ps1')
 
@@ -39,6 +42,7 @@ BeforeAll {
 
 Describe 'Set-FloatingPackagePins' {
   BeforeEach {
+    Mock Resolve-HostSuffixedSecretName { "$BaseName.fixture" }
     Mock -CommandName Get-SecretATAP -MockWith { 'test-proget-key' }
     $script:propsPath = Join-Path -Path $TestDrive -ChildPath 'Directory.Packages.props'
     New-PropsFixture -Path $script:propsPath
@@ -46,6 +50,7 @@ Describe 'Set-FloatingPackagePins' {
 
   Context 'pinning floating ATAP.* entries' {
     BeforeEach {
+      Mock Resolve-HostSuffixedSecretName { "$BaseName.fixture" }
       Mock -CommandName Invoke-RestMethod -MockWith {
         param($Uri)
         if ($Uri -match 'atap\.utilities\.philote') {
@@ -99,13 +104,14 @@ Describe 'Set-FloatingPackagePins' {
       Set-FloatingPackagePins -PackagePropsPath $script:propsPath -ProGetUrl 'http://proget.local:50000' -WhatIf | Out-Null
       $after = Get-Content -LiteralPath $script:propsPath -Raw
       $after | Should -Be $before
-      Assert-MockCalled -CommandName Get-SecretATAP -Times 0 -Exactly -Scope It
-      Assert-MockCalled -CommandName Invoke-RestMethod -Times 0 -Exactly -Scope It
+      Should -Invoke -CommandName Get-SecretATAP -Times 0 -Exactly -Scope It
+      Should -Invoke -CommandName Invoke-RestMethod -Times 0 -Exactly -Scope It
     }
   }
 
   Context 'when a package is missing from the feed' {
     BeforeEach {
+      Mock Resolve-HostSuffixedSecretName { "$BaseName.fixture" }
       Mock -CommandName Invoke-RestMethod -MockWith {
         param($Uri)
         if ($Uri -match 'atap\.utilities\.philote') {

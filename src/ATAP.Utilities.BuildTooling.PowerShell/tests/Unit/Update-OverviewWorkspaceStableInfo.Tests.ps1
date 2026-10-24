@@ -1,5 +1,5 @@
 # AI assisted using ./claude/Rules/Powershell.md as guidelines
-# Pester 5+ tests for Update-OverviewWorkspaceStableInfo
+# Pester 6.2+ tests for Update-OverviewWorkspaceStableInfo
 
 BeforeAll {
   $functionName = 'Update-OverviewWorkspaceStableInfo'

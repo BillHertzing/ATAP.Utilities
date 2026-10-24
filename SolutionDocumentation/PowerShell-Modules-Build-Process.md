@@ -497,7 +497,7 @@ testable with Pester and reusable across build scripts.
 | `Get-TierFromNBGVLabel`               | Legacy helper that maps NBGV prerelease label (Sprint / feature / Alpha / Beta / QA / empty) to ceiling tier name and PowerShellGet feed |
 | `Invoke-PSModuleBuild`                | Wraps `dotnet publish` or `Build-Module`, writes staged output to a named output directory             |
 | `Publish-PSModuleToProGetFeed`        | Calls `Publish-PSResource`, reading the ProGet API key from Bitwarden via `-BitWardenSecretName`       |
-| `Test-PSModule`                       | Pester 5+ wrapper that applies the tier-appropriate tag filter (`-Tag Unit`, `-Tag Integration`, etc.) |
+| `Test-PSModule`                       | Pester 6.2.0 wrapper that applies the tier-appropriate tag filter (`-Tag Unit`, `-Tag Integration`, etc.) |
 | `Assert-PSModuleQualityGate`          | Verifies coverage ≥ `PassingCodeCoveragePct` and test pass rate; throws on gate failure                |
 | `Move-ProGetPackageInterTier`         | Promotes a package from one tier's feed to the next (existing cmdlet — update to 5-tier order)         |
 | `New-PSModuleArtifactLayout`          | Creates the staging directory structure: `.nupkg`, `.psd1`, metadata, and test-result files            |

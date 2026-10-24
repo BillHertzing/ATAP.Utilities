@@ -11,7 +11,7 @@
 # These tests fail fast if that drift is reintroduced, before a module ever
 # reaches a ProGet feed.
 
-#Requires -Module Pester
+#Requires -Module @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 
 BeforeAll {
   $script:moduleRoot = Join-Path $PSScriptRoot '..\..' | Resolve-Path

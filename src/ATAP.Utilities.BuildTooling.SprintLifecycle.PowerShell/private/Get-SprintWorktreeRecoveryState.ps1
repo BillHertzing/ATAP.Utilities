@@ -46,7 +46,18 @@ function Get-SprintWorktreeRecoveryState {
             $nativeArguments = @($_.Result.ArgumentList)
             $_.Result.Succeeded -eq $true -and $_.Result.ExitCode -eq 0 -and $_.Result.FilePath -eq 'git' -and $nativeArguments.Count -eq 6 -and $nativeArguments[0] -eq '-C' -and $nativeArguments[1] -ieq $RepositoryPath -and $nativeArguments[2] -eq 'worktree' -and $nativeArguments[3] -eq 'remove' -and $nativeArguments[4] -ieq $WorktreePath -and $nativeArguments[5] -eq '--force'
           })
-          if ($successful.Count -ne 1 -or -not $state.AfterRegistration) { throw 'Receipt lacks exactly one successful native removal and registration result.' }
+          $recovered = @($state.NativeAttempts | Where-Object {
+            $nativeArguments = @($_.Result.ArgumentList)
+            $cleanup = $_.MetadataCleanup
+            if (-not $cleanup -or $_.Result.Succeeded -ne $false -or $_.Result.ExitCode -ne 255 -or $_.Result.FilePath -ne 'git' -or $nativeArguments.Count -ne 6 -or $nativeArguments[0] -ne '-C' -or $nativeArguments[1] -ine $RepositoryPath -or $nativeArguments[2] -ne 'worktree' -or $nativeArguments[3] -ne 'remove' -or $nativeArguments[4] -ine $WorktreePath -or $nativeArguments[5] -ne '--force') { return $false }
+            if ($cleanup.RepositoryPath -ine $RepositoryPath -or $cleanup.WorktreePath -ine $WorktreePath -or $cleanup.CommonDirectory -ine $common -or $cleanup.Head -ine $state.Head -or $cleanup.RecoveryReference -cne $state.RecoveryReference -or -not $cleanup.CreationTimeUtc -or (Split-Path $cleanup.AdministrativePath -Parent) -ine (Join-Path $common 'worktrees')) { return $false }
+            $relative = [IO.Path]::GetRelativePath($RepositoryPath, $cleanup.AdministrativePath).Replace('\', '/')
+            if (@($_.Result.Output).Count -ne 1 -or $_.Result.Output[0] -cne "error: failed to delete '$relative': Permission denied" -or (Get-Item -LiteralPath $cleanup.AdministrativePath -Force -ErrorAction SilentlyContinue) -or (Get-Item -LiteralPath (Join-Path $WorktreePath '.git') -Force -ErrorAction SilentlyContinue)) { return $false }
+            $captured = @($state.Events | Where-Object { $_.Event -eq 'BeforeNativeRemoval' -and $_.Detail.MetadataSnapshot -and ($_.Detail.MetadataSnapshot | ConvertTo-Json -Compress) -ceq ($cleanup | ConvertTo-Json -Compress) })
+            $completed = @($state.Events | Where-Object { $_.Event -eq 'NativeMetadataCleanupComplete' -and ($_.Detail | ConvertTo-Json -Compress) -ceq ($cleanup | ConvertTo-Json -Compress) })
+            return ($captured.Count -eq 1 -and $completed.Count -eq 1)
+          })
+          if (($successful.Count + $recovered.Count) -ne 1 -or -not $state.AfterRegistration) { throw 'Receipt lacks exactly one successful native removal and registration result.' }
           if (@(Convert-RecoveryRegistration $state.AfterRegistration | Where-Object Path -IEQ $WorktreePath).Count) { throw 'Receipt post-registration contradicts deregistration.' }
         }
       }

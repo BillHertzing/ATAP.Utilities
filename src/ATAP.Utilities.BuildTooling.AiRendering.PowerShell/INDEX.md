@@ -18,6 +18,9 @@
 ## Assets
 
 - `Resources/FailureAcknowledged.schema.json`
+- `tests/Unit/InstructionDistributorContract.Sprint0016.Tests.ps1` — current
+  no-base manifest, error propagation and repeat-run stability; see ReadMe
+  "Instruction distributor contract" for the canonical renderer input.
 
 ## Boundary
 

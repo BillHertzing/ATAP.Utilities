@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for New-ProGetFeedSet.
+# Pester 6.2+ tests for New-ProGetFeedSet.
 # Invoke-RestMethod is mocked; no real ProGet traffic is generated.
 
 BeforeAll {
@@ -97,8 +97,8 @@ Describe 'New-ProGetFeedSet' -Tag 'Unit', 'PromotedModuleHostSensitive' {
     $result.FeedName | Should -Be 'releasebundle-experimental'
     $result.Created | Should -BeFalse
     $result.SkippedExisting | Should -BeTrue
-    Assert-MockCalled Invoke-RestMethod -Times 0 -Exactly -Scope It -ParameterFilter { $Method -eq 'Post' -and $Uri -like '*/api/management/feeds/create' }
-    Assert-MockCalled Invoke-RestMethod -Times 0 -Exactly -Scope It -ParameterFilter { $Method -eq 'Post' -and $Uri -like '*/api/api-keys/create' }
+    Should -Invoke Invoke-RestMethod -Times 0 -Exactly -Scope It -ParameterFilter { $Method -eq 'Post' -and $Uri -like '*/api/management/feeds/create' }
+    Should -Invoke Invoke-RestMethod -Times 0 -Exactly -Scope It -ParameterFilter { $Method -eq 'Post' -and $Uri -like '*/api/api-keys/create' }
   }
 
   It 'honors FeedNameFilter so non-matching existing feeds are untouched' {
@@ -106,7 +106,7 @@ Describe 'New-ProGetFeedSet' -Tag 'Unit', 'PromotedModuleHostSensitive' {
 
     @($result).Count | Should -Be 1
     $result.FeedName | Should -Be 'releasebundle-experimental'
-    Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter {
       $Method -eq 'Post' -and
       $Uri -like '*/api/management/feeds/create' -and
       ($Body | ConvertFrom-Json).name -eq 'releasebundle-experimental'

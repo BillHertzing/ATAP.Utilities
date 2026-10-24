@@ -8,7 +8,7 @@
 - **Target repo:** `ATAP.Utilities` (unless explicitly noted).
 - **Shell:** PowerShell 7.x (pwsh). Use `Select-String`, `Get-ChildItem`, etc. — never bash.
 - **Logging:** `Write-PSFMessage` only. No `Write-Host`, no `Write-Output` for logging.
-- **Tests:** Every new public cmdlet ships with Pester 5+ unit tests under `tests/` and passes `Invoke-Pester -Output Detailed`.
+- **Tests:** Every new public cmdlet ships with Pester 6.2.0 unit tests under `tests/` and passes `Invoke-Pester -Output Detailed`.
 - **Commit style:** Conventional Commits. Reference the task ID (e.g., `feat(bt): T-03 add Get-PSModuleVersionFromNBGV`).
 - **Boundary rule:** Only edit files under this repo's `src/ATAP.Utilities.BuildTooling.PowerShell/` or `tests/` for that module unless a task says otherwise.
 
@@ -222,7 +222,7 @@ Each T-1x task delivers one public cmdlet in [src/ATAP.Utilities.BuildTooling.Po
 
 1. Look up the tier's tag filter from Plan §5.2.
 2. Skip entirely if `$Tier -eq 'Sprint'`.
-3. Build a Pester 5 `Configuration` object with `TestResult.Enabled`, `TestResult.OutputFormat = 'JUnitXml'`, `CodeCoverage.Enabled`, `CodeCoverage.OutputFormat = 'JaCoCo'` (or Cobertura via PSCodeCoverage helper).
+3. Build a Pester 6.2.0 `Configuration` object with `TestResult.Enabled`, `TestResult.OutputFormat = 'JUnitXml'`, `CodeCoverage.Enabled`, `CodeCoverage.OutputFormat = 'JaCoCo'` (or Cobertura via PSCodeCoverage helper).
 4. Run `Invoke-Pester -Configuration $cfg`.
    **Acceptance:** Pester tests (meta) cover the filter selection logic and verify the config object shape for each tier.
    **Dependencies:** T-12.

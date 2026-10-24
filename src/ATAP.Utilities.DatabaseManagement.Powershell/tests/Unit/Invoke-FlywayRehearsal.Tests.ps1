@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for Invoke-FlywayRehearsal (Stream J5).
+# Pester 6.2+ tests for Invoke-FlywayRehearsal (Stream J5).
 
 BeforeAll {
   $script:createdResolveDatabaseSqlConnectionStub = $false
@@ -95,10 +95,10 @@ Describe 'Invoke-FlywayRehearsal' -Tag 'Unit' {
     $result.Created | Should -BeTrue
     $result.Dropped | Should -BeTrue
     $result.Success | Should -BeTrue
-    Assert-MockCalled Resolve-DatabaseSqlConnection -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Resolve-DatabaseSqlConnection -Times 1 -Exactly -Scope It -ParameterFilter {
       $DatabaseHost -eq 'localhost' -and $InstanceName -eq 'test-sql' -and $DatabaseName -eq 'master'
     }
-    Assert-MockCalled Invoke-Flyway -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Invoke-Flyway -Times 1 -Exactly -Scope It -ParameterFilter {
       $DatabaseName -eq 'AceCommander-rehearsal-4271' -and $FlywayCommand -eq 'migrate'
     }
   }
@@ -107,7 +107,7 @@ Describe 'Invoke-FlywayRehearsal' -Tag 'Unit' {
     $result = Invoke-FlywayRehearsal -Application 'AceCommander' -BuildId '4271' -RehearsalDb 'custom-rehearsal' -SqlInstance 'test-sql'
 
     $result.RehearsalDb | Should -Be 'custom-rehearsal'
-    Assert-MockCalled Invoke-DatabaseSqlNonQuery -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Invoke-DatabaseSqlNonQuery -Times 1 -Exactly -Scope It -ParameterFilter {
       $CommandText.Contains('CREATE DATABASE [custom-rehearsal]')
     }
   }
@@ -123,10 +123,10 @@ Describe 'Invoke-FlywayRehearsal' -Tag 'Unit' {
     $result = Invoke-FlywayRehearsal -Application 'AceCommander' -BuildId '4271' -DatabaseHost 'localhost' -SqlInstance 'EXPWHERTZING'
 
     $result.ServerInstance | Should -Be 'localhost\EXPWHERTZING'
-    Assert-MockCalled Invoke-DatabaseSqlNonQuery -Times 2 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Invoke-DatabaseSqlNonQuery -Times 2 -Exactly -Scope It -ParameterFilter {
       $SqlConnection -eq $script:fakeConnection
     }
-    Assert-MockCalled Invoke-Flyway -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Invoke-Flyway -Times 1 -Exactly -Scope It -ParameterFilter {
       $DatabaseHost -eq 'localhost' -and $SqlInstance -eq 'EXPWHERTZING'
     }
   }
@@ -137,7 +137,7 @@ Describe 'Invoke-FlywayRehearsal' -Tag 'Unit' {
     { Invoke-FlywayRehearsal -Application 'AceCommander' -BuildId '4271' -SqlInstance 'test-sql' } |
       Should -Throw -ExpectedMessage '*flyway failed*'
 
-    Assert-MockCalled Invoke-DatabaseSqlNonQuery -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Invoke-DatabaseSqlNonQuery -Times 1 -Exactly -Scope It -ParameterFilter {
       $CommandText.Contains('DROP DATABASE [AceCommander-rehearsal-4271]') -and -not $CommandText.Contains('CREATE DATABASE')
     }
   }
@@ -145,10 +145,10 @@ Describe 'Invoke-FlywayRehearsal' -Tag 'Unit' {
   It 'passes DBConnectionStringSecretName through to Invoke-Flyway' {
     Invoke-FlywayRehearsal -Application 'AceCommander' -BuildId '4271' -DBConnectionStringSecretName 'db-secret' | Out-Null
 
-    Assert-MockCalled Resolve-DatabaseSqlConnection -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Resolve-DatabaseSqlConnection -Times 1 -Exactly -Scope It -ParameterFilter {
       $DBConnectionStringSecretName -eq 'db-secret'
     }
-    Assert-MockCalled Invoke-Flyway -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Invoke-Flyway -Times 1 -Exactly -Scope It -ParameterFilter {
       $DBConnectionStringSecretName -eq 'db-secret' -and $DatabaseName -eq 'AceCommander-rehearsal-4271'
     }
   }
@@ -174,10 +174,10 @@ Describe 'Invoke-FlywayRehearsal' -Tag 'Unit' {
 
       Invoke-FlywayRehearsal -Application 'AceCommander' -BuildId '4271' -SqlConnection $realConnection | Out-Null
 
-      Assert-MockCalled Resolve-DatabaseSqlConnection -Times 1 -Exactly -Scope It -ParameterFilter {
+      Should -Invoke Resolve-DatabaseSqlConnection -Times 1 -Exactly -Scope It -ParameterFilter {
         $SqlConnection -eq $realConnection
       }
-      Assert-MockCalled Invoke-Flyway -Times 1 -Exactly -Scope It -ParameterFilter {
+      Should -Invoke Invoke-Flyway -Times 1 -Exactly -Scope It -ParameterFilter {
         $SqlConnection -eq $script:fakeConnection -and $DatabaseName -eq 'AceCommander-rehearsal-4271'
       }
     } finally {

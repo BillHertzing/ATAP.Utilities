@@ -1,5 +1,39 @@
 # Release notes
 
+## 0.1.49
+
+- Recover only the exact Git255 permission-denied result for an empty worktree
+  administrative slot captured before native removal. Revalidate the owning
+  repository, slot creation identity, absent registration/pointer and preserved
+  HEAD before each nonrecursive deletion; retain the original failed Git result.
+- Bound empty-slot deletion to six attempts for Windows errors 5/32/33. Never
+  repeat deregistered Git removal, prune unrelated slots or accept unknown errors.
+- Require captured identity and cleanup-completion evidence when resuming these
+  receipts. Changed contents, links, recovery refs or recreated pointers fail closed.
+- Retain the settings-pointer and atomic receipt-replacement repairs from 0.1.48.
+
+## 0.1.48
+
+- Retry only atomic worktree-recovery receipt replacement after transient Windows
+  access-denied, sharing-violation or lock-violation errors. Six attempts use bounded
+  50/100/200/400/800 ms delays; persistent or other failures still stop cleanup.
+- Keep the same serialized receipt and temporary file through retries. Never
+  repeat Git removal, delete an existing receipt, change access permissions, or
+  clear file attributes to force replacement.
+- Retain the 0.1.47 settings-fixture repair. Its immutable release passed
+  Development but stopped at Integration on a transient receipt rename denial.
+
+## 0.1.47
+
+- Retain the transactional settings-pointer fix prepared in 0.1.46: Start selects
+  the actual Shared sprint root; End selects readable stable settings and checks
+  them independently before cleanup. The immutable 0.1.46 attempt failed its
+  Development unit-test gate and was not installed.
+- Isolate settings audits in four unrelated SprintEnd unit fixtures, and make
+  lock-file-runner discovery deterministic. Test doubles refuse settings mutation;
+  real settings-helper and lifecycle gate regressions remain active.
+- Task 16.12 targets UTAT022 only; UTAT01 acceptance remains Task 16.64.
+
 ## 0.1.45
 
 - Isolate the authentic installed 0.1.43 recovery fixture with a uniquely prefixed

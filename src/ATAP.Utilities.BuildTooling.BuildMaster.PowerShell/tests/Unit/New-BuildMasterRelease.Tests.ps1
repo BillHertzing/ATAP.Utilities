@@ -1,5 +1,5 @@
-﻿#Requires -Version 7.0
-# Pester 5+ tests for New-BuildMasterRelease (Stream H, task H3).
+#Requires -Version 7.0
+# Pester 6.2+ tests for New-BuildMasterRelease (Stream H, task H3).
 # Mocks Invoke-RestMethod; no real network or BuildMaster contact.
 
 BeforeAll {
@@ -67,7 +67,7 @@ Describe 'New-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' {
       $result.OperationName | Should -Be 'New-BuildMasterRelease'
       $result.ReleaseId | Should -Be '12345'
       $result.ResponseSummary | Should -Match 'created'
-      Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter { $Method -eq 'Post' }
+      Should -Invoke Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter { $Method -eq 'Post' }
     }
 
     It 'Includes the X-ApiKey header on the POST' {
@@ -123,7 +123,7 @@ Describe 'New-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' {
 
       New-BuildMasterRelease -Application 'A' -ReleaseNumber '1.0.0' -PipelineName 'P' | Out-Null
 
-      Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter { $Method -eq 'Post' }
+      Should -Invoke Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter { $Method -eq 'Post' }
       $script:createCalledWithFiniteTimeout | Should -BeTrue
     }
   }
@@ -150,7 +150,7 @@ Describe 'New-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' {
       $result.Succeeded | Should -BeTrue
       $result.ReleaseId | Should -Be '999'
       $result.ResponseSummary | Should -Be 'idempotent: release already exists'
-      Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter { $Method -eq 'Get' }
+      Should -Invoke Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter { $Method -eq 'Get' }
       $script:getCalledWithFiniteTimeout | Should -BeTrue
     }
 
@@ -225,6 +225,38 @@ Describe 'New-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' {
     }
   }
 
+  Context 'Over-limit release number (SC-0360)' {
+    It 'Names the truncation when create and both lookups miss an over-limit ReleaseNumber' {
+      Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Post' -and $Uri -like '*/api/releases/create' } -MockWith {
+        $resp = [PSCustomObject]@{ StatusCode = 400 }
+        $ex = [System.Net.WebException]::new('Response status code does not indicate success: 400 (Bad Request).')
+        $errRec = [System.Management.Automation.ErrorRecord]::new($ex, 'BMBadRequest', 'InvalidOperation', $null)
+        $errRec.Exception | Add-Member -NotePropertyName 'Response' -NotePropertyValue $resp -Force
+        throw $errRec
+      }
+      Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Get' } -MockWith { $null }
+      Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Post' -and $Uri -like '*/api/json/Applications_GetApplications' } -MockWith {
+        [PSCustomObject]@{ Application_Id = 42; Application_Name = 'Other' }
+      }
+
+      { New-BuildMasterRelease -Application 'A' -ReleaseNumber '0.1.34-ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell' -PipelineName 'P' } |
+        Should -Throw -ExpectedMessage '*400*is 61 characters, longer than the 50-character workspace release-number bound*'
+    }
+
+    It 'Names the truncation on a non-probed failure for an over-limit ReleaseNumber' {
+      Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Post' } -MockWith {
+        $resp = [PSCustomObject]@{ StatusCode = 500 }
+        $ex = [System.Net.WebException]::new('Response status code does not indicate success: 500 (Internal Server Error).')
+        $errRec = [System.Management.Automation.ErrorRecord]::new($ex, 'BMServerError', 'InvalidOperation', $null)
+        $errRec.Exception | Add-Member -NotePropertyName 'Response' -NotePropertyValue $resp -Force
+        throw $errRec
+      }
+
+      { New-BuildMasterRelease -Application 'A' -ReleaseNumber ('9.9.9-' + ('M' * 45)) -PipelineName 'P' } |
+        Should -Throw -ExpectedMessage '*500*is 51 characters, longer than the 50-character workspace release-number bound*'
+    }
+  }
+
   Context 'Config resolution' {
     It 'Uses -BuildMasterAdminApiKeySecretName parameter when supplied (overrides $global:settings)' {
       $script:capturedHeaders = $null
@@ -260,7 +292,7 @@ Describe 'New-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' {
 
       New-BuildMasterRelease -Application 'A' -ReleaseNumber '1.0.0' -PipelineName 'P' | Out-Null
 
-      Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter {
+      Should -Invoke Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter {
         $Method -eq 'Post' -and $Uri -eq 'https://utat022:50017/api/releases/create'
       }
     }
@@ -272,7 +304,7 @@ Describe 'New-BuildMasterRelease' -Tag 'Unit', 'PromotedModuleHostSensitive' {
       $result = New-BuildMasterRelease -Application 'A' -ReleaseNumber '1.0.0' -PipelineName 'P' -WhatIf
       $result.Succeeded | Should -BeFalse
       $result.ResponseSummary | Should -Match 'WhatIf'
-      Assert-MockCalled Invoke-RestMethod -Times 0 -Exactly -Scope It
+      Should -Invoke Invoke-RestMethod -Times 0 -Exactly -Scope It
     }
   }
 }

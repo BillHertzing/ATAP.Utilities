@@ -1,4 +1,4 @@
-#Requires -Module Pester
+#Requires -Module @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 
 BeforeAll {
   $script:repoRoot = (Resolve-Path (Join-Path (Split-Path -Parent $PSCommandPath) '..\..')).Path

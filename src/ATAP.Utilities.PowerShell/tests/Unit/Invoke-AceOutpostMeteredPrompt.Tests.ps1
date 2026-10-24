@@ -22,7 +22,7 @@
 # ProcessStartInfo exactly as the core does. Nothing in this suite writes an environment variable
 # in the test process or at any durable scope.
 
-#Requires -Module Pester
+#Requires -Module @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 
 BeforeAll {
   $coreFile = Join-Path $PSScriptRoot '..\..\public\Start-AceOutpostMeteredHarness.ps1'

@@ -1,4 +1,4 @@
-#requires -Modules Pester
+#requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 
 Describe 'BuildTooling Secrets child module contract' {
   BeforeAll {

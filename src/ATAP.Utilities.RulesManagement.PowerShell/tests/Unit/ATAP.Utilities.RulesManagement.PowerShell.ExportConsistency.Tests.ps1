@@ -8,7 +8,7 @@
 # export each declared name (no phantom exports). This fails fast if a phantom
 # export is reintroduced before the module reaches a ProGet feed.
 
-#Requires -Module Pester
+#Requires -Module @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 
 BeforeAll {
   $script:moduleRoot   = Join-Path $PSScriptRoot '..\..' | Resolve-Path

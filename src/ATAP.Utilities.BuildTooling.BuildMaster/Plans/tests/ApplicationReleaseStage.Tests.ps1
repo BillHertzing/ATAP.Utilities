@@ -1,9 +1,10 @@
 BeforeAll {
   . (Join-Path $PSScriptRoot '../Invoke-ApplicationReleaseStage.ps1')
   function New-ReleaseContextFixture {
+    param([string]$ProductId = 'AceCommander', [string]$Version = '0.1.1')
     # Same Dropbox exclusion as New-ReleaseBundle.Tests.ps1: fixtures written under a
     # Dropbox-synced path can be locked by the indexer between write and reopen.
-    $fixtureBase = if ($env:ATAP_ARTIFACTS_ROOT) { Join-Path $env:ATAP_ARTIFACTS_ROOT 'test-fixtures/ApplicationReleaseStage' }
+    $fixtureBase = if ($env:ARTIFACTS_PATH) { Join-Path $env:ARTIFACTS_PATH 'test-fixtures/ApplicationReleaseStage' }
                    else { Join-Path ([IO.Path]::GetTempPath()) 'atap-test-fixtures/ApplicationReleaseStage' }
     if ($fixtureBase -match '(?i)[\/]Dropbox[\/]') { throw "Fixture root must not be under Dropbox: $fixtureBase" }
     $root = Join-Path $fixtureBase ([guid]::NewGuid().ToString('N'))
@@ -12,10 +13,15 @@ BeforeAll {
     $verifier = Join-Path $root 'verify.ps1'; Set-Content $verifier '# fixture'
     $schema = Join-Path $root 'schema.json'; Set-Content $schema '{}'
     $context = [ordered]@{
-      productId='AceCommander'; ceilingTier='Production'; version='0.1.1'; bundlePath=$bundle
+      productId=$ProductId; ceilingTier='Production'; version=$Version; bundlePath=$bundle
       bundleSha256=(Get-FileHash $bundle).Hash; evidenceRoot=(Join-Path $root '_generated/evidence')
       bundleVerifier=$verifier; manifestSchema=$schema; proGetBaseUrl='https://utat022:50000'
       tooling=@(@{path=$verifier;sha256=(Get-FileHash $verifier).Hash},@{path=$schema;sha256=(Get-FileHash $schema).Hash})
+    }
+    if ($ProductId -eq 'AceOutpost') {
+      # Shape written by Invoke-ApplicationBuildMasterStage.ps1 (Task 16.78).
+      $context.databasePackageReference = [ordered]@{ id='ATAPUtilities.Database'; pinnedVersion='0.1.17'; compatibleVersionRange='[0.1.17,0.1.18)'; lifecycleCeiling='database-stable'; nupkgSha256=('b' * 64); feed='database-stable' }
+      $context.feedVersion = ($Version -split '\+', 2)[0]
     }
     $path = Join-Path $root 'context.json'
     $context | ConvertTo-Json -Depth 5 | Set-Content $path
@@ -47,9 +53,9 @@ Describe 'Application release fail-closed preparation' {
     $fixture = New-ReleaseContextFixture; $fixture.Context.version = '0.1.1-Sprint.2'; Save-FixtureContext $fixture
     { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 } | Should -Throw '*stable AceCommander*'
   }
-  It 'rejects other products' {
-    $fixture = New-ReleaseContextFixture; $fixture.Context.productId = 'AceOutpost'; Save-FixtureContext $fixture
-    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 } | Should -Throw '*stable AceCommander*'
+  It 'rejects products the approval boundary does not admit' {
+    $fixture = New-ReleaseContextFixture; $fixture.Context.productId = 'AceMobile'; Save-FixtureContext $fixture
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 } | Should -Throw '*not admitted*'
   }
   It 'rejects modified tooling' {
     $fixture = New-ReleaseContextFixture; Add-Content $fixture.Context.bundleVerifier 'changed'
@@ -108,6 +114,11 @@ Describe 'Application release fail-closed preparation' {
     $schema.properties.sourceBranch['$ref'] | Should -Be '#/$defs/nonEmptyToken'
     $schema.properties.releaseVersion['$ref'] | Should -Be '#/$defs/semVerString'
   }
+  It 'keeps product and database pins out of the stage script (Task 16.78)' {
+    $source = Get-Content (Join-Path $PSScriptRoot '../Invoke-ApplicationReleaseStage.ps1') -Raw
+    $source | Should -Not -Match "COMMANDER02|'AceCommander'|0\.1\.6|0\.1\.17|E9CA804E"
+    $source | Should -Match 'Get-ApplicationReleaseDatabaseAdmission'
+  }
   It 'uses the native form-encoded promotion endpoint for releasebundle feeds' {
     $source = Get-Content (Join-Path $PSScriptRoot '../Invoke-ApplicationReleaseStage.ps1') -Raw
     $source | Should -Match '/api/promotions/promote'
@@ -117,5 +128,103 @@ Describe 'Application release fail-closed preparation' {
     $source | Should -Match '/upload" -Method Post'
     $source | Should -Match "ContentType 'application/zip'"
     ([regex]::Matches($source, '-MaximumRedirection 0')).Count | Should -Be 3
+  }
+}
+
+Describe 'Task 16.88.c ProGet key resolved once per stage with 429 backoff' {
+  BeforeAll {
+    $script:rateLimited = 'bws secret list failed (exit 1). Output: Error: 0: Received error message from server: [429 Too Many Requests] {"object":"error","message":"Slow down! Too many requests. Try again in 1m."}'
+    if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) { function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments)]$Rest) } }
+    if (-not (Get-Command Get-SecretATAP -ErrorAction SilentlyContinue)) { function global:Get-SecretATAP { param($SecretName, $SecretStoreType) } }
+  }
+  BeforeEach {
+    $script:calls = 0
+    $script:waits = [System.Collections.Generic.List[int]]::new()
+    $script:sleep = { param([int]$Seconds) $script:waits.Add($Seconds) }
+  }
+  It 'returns the key from a single call when Bitwarden answers' {
+    Mock Get-SecretATAP { $script:calls++; 'fixture-key' }
+    Resolve-ApplicationReleaseSecret -SecretName 'ProGet.BuildMaster.API.Key.fixture' -Sleep $script:sleep | Should -BeExactly 'fixture-key'
+    $script:calls | Should -Be 1
+    $script:waits.Count | Should -Be 0
+  }
+  It 'waits the hinted interval plus 5 s after a 429, then succeeds: <Hint>' -ForEach @(
+    @{ Hint = 'Try again in 1m.'; Wait = 65 }, @{ Hint = 'Try again in 1s.'; Wait = 6 }, @{ Hint = 'no hint'; Wait = 65 }
+  ) {
+    $script:message = "bws secret list failed (exit 1). Output: [429 Too Many Requests] $Hint"
+    Mock Get-SecretATAP { $script:calls++; if ($script:calls -eq 1) { throw $script:message }; 'fixture-key' }
+    Resolve-ApplicationReleaseSecret -SecretName 'ProGet.BuildMaster.API.Key.fixture' -Sleep $script:sleep | Should -BeExactly 'fixture-key'
+    $script:calls | Should -Be 2
+    @($script:waits) | Should -Be @($Wait)
+  }
+  It 'rethrows a non-429 failure immediately without waiting' {
+    Mock Get-SecretATAP { $script:calls++; throw 'bws secret list failed (exit 1). Output: [504 Gateway Timeout]' }
+    { Resolve-ApplicationReleaseSecret -SecretName 'ProGet.BuildMaster.API.Key.fixture' -Sleep $script:sleep } | Should -Throw '*504*'
+    $script:calls | Should -Be 1
+    $script:waits.Count | Should -Be 0
+  }
+  It 'stops after MaxAttempts consecutive 429s and rethrows' {
+    Mock Get-SecretATAP { $script:calls++; throw $script:rateLimited }
+    { Resolve-ApplicationReleaseSecret -SecretName 'ProGet.BuildMaster.API.Key.fixture' -MaxAttempts 3 -Sleep $script:sleep } | Should -Throw '*429*'
+    $script:calls | Should -Be 3
+    @($script:waits) | Should -Be @(65, 65)
+  }
+  It 'resolves the ProGet key exactly once in the stage script' {
+    $source = Get-Content (Join-Path $PSScriptRoot '../Invoke-ApplicationReleaseStage.ps1') -Raw
+    ([regex]::Matches($source, 'Get-SecretATAP -SecretName')).Count | Should -Be 1
+    ([regex]::Matches($source, 'Resolve-ApplicationReleaseSecret -SecretName \$secretName')).Count | Should -Be 1
+    ([regex]::Matches($source, '\$key = \$proGetKey')).Count | Should -Be 3
+    $source | Should -Match '\$proGetKey = \$null'
+  }
+}
+
+Describe 'Task 16.78 generalized product admission' {
+  It 'admits an AceOutpost Production-ceiling context during WhatIf: <Version>' -ForEach @(
+    @{ Version = '0.1.16' }, @{ Version = '0.1.16+85df38d1a2' }
+  ) {
+    $fixture = New-ReleaseContextFixture -ProductId AceOutpost -Version $Version
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 -WhatIf } | Should -Not -Throw
+    Test-Path $fixture.Context.evidenceRoot | Should -BeFalse
+  }
+  It 'keeps the AceCommander pin: a conflicting context database hash is refused' {
+    $fixture = New-ReleaseContextFixture
+    $fixture.Context.databasePackageReference = [ordered]@{ id='ATAPUtilities.Database'; pinnedVersion='0.1.6'; nupkgSha256=('c' * 64) }
+    Save-FixtureContext $fixture
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 -WhatIf } | Should -Throw '*conflicts with the admitted pin*'
+  }
+  It 'refuses an AceOutpost context with the wrong database pin: <Case>' -ForEach @(
+    @{ Case = 'Commander version'; Field = 'pinnedVersion'; Value = '0.1.6' },
+    @{ Case = 'wrong range'; Field = 'compatibleVersionRange'; Value = '[0.1.17,0.2.0)' },
+    @{ Case = 'lower ceiling'; Field = 'lifecycleCeiling'; Value = 'database-experimental' },
+    @{ Case = 'other package'; Field = 'id'; Value = 'ATAPUtilities.Other' }
+  ) {
+    $fixture = New-ReleaseContextFixture -ProductId AceOutpost -Version '0.1.16'
+    $fixture.Context.databasePackageReference[$Field] = $Value; Save-FixtureContext $fixture
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 -WhatIf } | Should -Throw '*outside the admitted AceOutpost release pin*'
+  }
+  It 'refuses an AceOutpost context without a hash-approved database package hash' {
+    $fixture = New-ReleaseContextFixture -ProductId AceOutpost -Version '0.1.16'
+    $fixture.Context.databasePackageReference.Remove('nupkgSha256'); Save-FixtureContext $fixture
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 -WhatIf } | Should -Throw '*nupkgSha256*'
+  }
+  It 'refuses prerelease AceOutpost versions and a feedVersion that disagrees with the version' {
+    $fixture = New-ReleaseContextFixture -ProductId AceOutpost -Version '0.1.16-rc.1'
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 -WhatIf } | Should -Throw '*stable AceOutpost*'
+    $fixture = New-ReleaseContextFixture -ProductId AceOutpost -Version '0.1.16+abc'
+    $fixture.Context.feedVersion = '0.1.15'; Save-FixtureContext $fixture
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 -WhatIf } | Should -Throw '*feedVersion*'
+  }
+  It 'refuses out-of-order AceOutpost stages and accepts the next stage after matching evidence' {
+    $fixture = New-ReleaseContextFixture -ProductId AceOutpost -Version '0.1.16'
+    $runRoot = Join-Path $fixture.Context.evidenceRoot '77'; [IO.Directory]::CreateDirectory($runRoot) | Out-Null
+    @{success=$true; contextSha256=$fixture.Hash; bundleSha256=$fixture.Context.bundleSha256; buildId='77';stage='Integration'} | ConvertTo-Json | Set-Content (Join-Path $runRoot 'Integration.json')
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Production 77 -WhatIf } | Should -Throw
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash QA 77 -WhatIf } | Should -Not -Throw
+  }
+  It 'exposes the admitted database pins from the approval boundary' {
+    . (Join-Path $PSScriptRoot '../ApplicationReleaseAuthenticodeSigning.ps1')
+    (Get-ApplicationReleaseDatabaseAdmission -ProductId AceOutpost).PinnedVersion | Should -BeExactly '0.1.17'
+    (Get-ApplicationReleaseDatabaseAdmission -ProductId AceCommander).NupkgSha256 | Should -Match '^[A-F0-9]{64}$'
+    { Get-ApplicationReleaseDatabaseAdmission -ProductId aceoutpost } | Should -Throw '*no admitted release database pin*'
   }
 }

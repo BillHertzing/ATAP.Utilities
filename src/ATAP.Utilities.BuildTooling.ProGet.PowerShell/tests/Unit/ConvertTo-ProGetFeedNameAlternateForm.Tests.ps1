@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ unit tests for ConvertTo-ProGetFeedNameAlternateForm.
+# Pester 6.2+ unit tests for ConvertTo-ProGetFeedNameAlternateForm.
 # Covers the 5-tier expansion added in Area 2B (Integration/Intg support).
 # AI assisted using Powershell.instructions.md as guidelines
 

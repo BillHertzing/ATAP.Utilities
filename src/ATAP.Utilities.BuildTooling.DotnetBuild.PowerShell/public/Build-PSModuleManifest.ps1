@@ -151,6 +151,84 @@ function Build-PSModuleManifest {
       } else {
         @()
       }
+      $resolvedRequiredModules = $sourceRequiredModules
+      if ($familyRequiredModules.Count -gt 0) {
+        # Family metadata supplies floors; source constraints and ordering remain authoritative.
+        $familyByName = @{}
+        foreach ($dependency in $familyRequiredModules) {
+          $name = [string]$dependency.ModuleName
+          if (-not $familyByName.ContainsKey($name) -or
+              [version]$dependency.ModuleVersion -gt [version]$familyByName[$name].ModuleVersion) {
+            $familyByName[$name] = $dependency
+          }
+        }
+        $mergeRequirement = {
+          param($Existing, $Incoming, [version]$Floor)
+          $merged = @{}
+          foreach ($entry in @($Existing, $Incoming)) {
+            if ($entry -is [string]) { $entry = @{ ModuleName = $entry } }
+            if ($null -eq $entry) { continue }
+            foreach ($key in $entry.Keys) {
+              if ($key -eq 'ModuleName' -and $merged.ContainsKey($key)) { continue }
+              if ($key -in @('GUID', 'RequiredVersion') -and $merged.ContainsKey($key) -and
+                  [string]$merged[$key] -ne [string]$entry[$key]) {
+                throw "Conflicting $key constraints for RequiredModules '$($merged.ModuleName)'."
+              }
+              if ($key -eq 'ModuleVersion' -and $merged.ContainsKey($key) -and
+                  [version]$merged[$key] -ge [version]$entry[$key]) { continue }
+              if ($key -eq 'MaximumVersion' -and $merged.ContainsKey($key) -and
+                  [version]([string]$merged[$key]).Replace('*', '2147483647') -le
+                  [version]([string]$entry[$key]).Replace('*', '2147483647')) { continue }
+              $merged[$key] = $entry[$key]
+            }
+          }
+          $minimum = if ($merged.ContainsKey('ModuleVersion')) { [version]$merged.ModuleVersion } else { [version]'0.0' }
+          if ($Floor -gt $minimum) { $minimum = $Floor }
+          $maximum = if ($merged.ContainsKey('MaximumVersion')) {
+            [version]([string]$merged.MaximumVersion).Replace('*', '2147483647')
+          } else { $null }
+          if ($maximum -and $minimum -gt $maximum) {
+            throw "Family/source minimum '$minimum' exceeds MaximumVersion '$($merged.MaximumVersion)' for '$($merged.ModuleName)'."
+          }
+          if ($merged.ContainsKey('RequiredVersion')) {
+            $exact = [version]$merged.RequiredVersion
+            if ($exact -lt $minimum -or ($maximum -and $exact -gt $maximum)) {
+              throw "RequiredVersion '$exact' conflicts with family/source version bounds for '$($merged.ModuleName)'."
+            }
+            $merged.Remove('ModuleVersion')
+            # The validated exact version implies both bounds; ModuleSpecification forbids combining these keys.
+            $merged.Remove('MaximumVersion')
+          } elseif ($minimum -gt [version]'0.0' -or $merged.ContainsKey('ModuleVersion')) {
+            $merged.ModuleVersion = $minimum.ToString()
+          }
+          if ($merged.Count -eq 1 -and $merged.ContainsKey('ModuleName')) {
+            return [string]$merged.ModuleName
+          }
+          return $merged
+        }
+        $resolvedRequiredModules = [Collections.Generic.List[object]]::new()
+        $sourceIndex = @{}
+        foreach ($dependency in $sourceRequiredModules) {
+          $name = if ($dependency -is [string]) { $dependency } else { [string]$dependency.ModuleName }
+          $floor = if ($familyByName.ContainsKey($name)) { [version]$familyByName[$name].ModuleVersion } else { [version]'0.0' }
+          if ($sourceIndex.ContainsKey($name)) {
+            $index = $sourceIndex[$name]
+            $resolvedRequiredModules[$index] = & $mergeRequirement $resolvedRequiredModules[$index] $dependency $floor
+          } else {
+            $sourceIndex[$name] = $resolvedRequiredModules.Count
+            $resolved = if ($familyByName.ContainsKey($name)) { & $mergeRequirement $dependency $null $floor } else { $dependency }
+            $resolvedRequiredModules.Add($resolved)
+          }
+        }
+        foreach ($dependency in $familyRequiredModules) {
+          if (-not $sourceIndex.ContainsKey($dependency.ModuleName)) {
+            $sourceIndex[$dependency.ModuleName] = $resolvedRequiredModules.Count
+            $resolvedRequiredModules.Add($familyByName[$dependency.ModuleName])
+          }
+        }
+        $resolvedRequiredModules = $resolvedRequiredModules.ToArray()
+      }
+
       $params = @{
         Path          = $OutputManifestPath
         ModuleVersion = $ModuleVersion
@@ -164,7 +242,7 @@ function Build-PSModuleManifest {
           @{ Key = 'Description'; Value = $sourceManifest.Description },
           @{ Key = 'PowerShellVersion'; Value = if ($sourceManifest.PowerShellVersion) { [version]$sourceManifest.PowerShellVersion } else { $null } },
           @{ Key = 'CompatiblePSEditions'; Value = @($sourceManifest.CompatiblePSEditions | Where-Object { $_ }) },
-          @{ Key = 'RequiredModules'; Value = if ($familyRequiredModules.Count -gt 0) { $familyRequiredModules } else { $sourceRequiredModules } },
+          @{ Key = 'RequiredModules'; Value = $resolvedRequiredModules },
           @{ Key = 'CmdletsToExport'; Value = @($sourceManifest.CmdletsToExport | Where-Object { $_ }) },
           @{ Key = 'VariablesToExport'; Value = @($sourceManifest.VariablesToExport | Where-Object { $_ }) }
         )) {

@@ -6,7 +6,7 @@ Runs Pester tests for a PowerShell module with tier-appropriate tag filters.
 Tier-aware wrapper around Invoke-Pester used by the 5-Tier module build
 pipeline. At tier Sprint, tests are skipped entirely and GatePass = $true.
 At tiers Alpha and above, the tag include/exclude lists follow section 5.2
-of the 5-Tier Implementation Plan. Pester 5 is required. JUnit XML test
+of the 5-Tier Implementation Plan. Pester 6.2.0 is required. JUnit XML test
 results and JaCoCo code coverage are emitted to the supplied paths.
 
 .PARAMETER ModuleRoot
@@ -100,7 +100,7 @@ function Get-PSModulePesterTierFilter {
   }
 }
 
-# Internal helper: builds the Pester 5 Configuration object from pre-computed
+# Internal helper: builds the Pester 6.2 Configuration object from pre-computed
 # filter lists and the test/output/coverage paths. Also dot-sourceable for
 # meta-tests.
 function New-PSModulePesterConfiguration {
@@ -760,13 +760,17 @@ function Invoke-PSModulePesterTests {
         }
       }
 
-      # Pester 6 removes APIs used by the reviewed test suite. Select the supported major explicitly.
+      $pesterConfigurationType = 'PesterConfiguration' -as [type]
+      if ($pesterConfigurationType -and $pesterConfigurationType.Assembly.GetName().Version -ne [version]'6.2.0.0') {
+        throw 'BuildTooling requires Pester 6.2.0. Start a fresh profiled PowerShell process before invoking the runner.'
+      }
+      # Select the reviewed execution version; dependency minimums may allow newer versions.
       $pester = Get-Module -ListAvailable -Name Pester |
-        Where-Object { $_.Version -ge [version]'5.0.0' -and $_.Version -lt [version]'6.0.0' } |
+        Where-Object { $_.Version -eq [version]'6.2.0' } |
         Sort-Object Version -Descending |
         Select-Object -First 1
       if (-not $pester) {
-        $msg = 'Pester 5 is not installed. Install it with: Install-Module Pester -MinimumVersion 5.0.0 -MaximumVersion 5.999.999 -Scope CurrentUser -Force'
+        $msg = 'Pester 6.2.0 is not installed. Install it with: Install-Module Pester -RequiredVersion 6.2.0 -Scope CurrentUser -Force'
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
         throw $msg
       }
@@ -891,7 +895,28 @@ function Invoke-PSModulePesterTests {
 
       # A filtered run that selects no tests is a configuration failure, not a
       # successful gate. Sprint is the only intentional skip and returns above.
-      $gatePass = ($total -gt 0 -and $failed -eq 0)
+      # Pester can pass every case while a setup/teardown or framework cleanup
+      # fails. Its raw run result and block/container failures are authoritative.
+      $rawResult = if ($result) { [string]$result.Result } else { '' }
+      $failedBlocks = if ($result) { [int]$result.FailedBlocksCount } else { 0 }
+      $failedContainers = if ($result) { [int]$result.FailedContainersCount } else { 0 }
+      $containerFailures = @(
+        if ($result) {
+          foreach ($container in @($result.Containers)) {
+            if ($null -eq $container) { continue }
+            $errors = @($container.ErrorRecord | Where-Object { $null -ne $_ })
+            if ([string]$container.Result -eq 'Failed' -or $errors.Count -gt 0) {
+              [PSCustomObject]@{
+                Item   = [string]$container.Item
+                Result = [string]$container.Result
+                Errors = @($errors | ForEach-Object { $_.ToString() })
+              }
+            }
+          }
+        }
+      )
+      $gatePass = ($total -gt 0 -and $failed -eq 0 -and $rawResult -eq 'Passed' -and
+        $failedBlocks -eq 0 -and $failedContainers -eq 0 -and $containerFailures.Count -eq 0)
       if (-not $SkipTestResult -and $result) {
         & $writeJUnitResultCommand `
           -PesterResult $result `
@@ -907,7 +932,7 @@ function Invoke-PSModulePesterTests {
         $gateFailureMessage = if ($total -eq 0) {
           'Pester gate FAILED: no tests matched the tier filter'
         } else {
-          "Pester gate FAILED: $failed failing test(s) of $total"
+          "Pester gate FAILED: raw result '$rawResult'; $failed failing test(s) of $total; $failedBlocks failed block(s); $failedContainers failed container(s); $($containerFailures.Count) failed/error-bearing container record(s)"
         }
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $gateFailureMessage
         $failedTests = & $getFailedTestSummaryCommand `
@@ -929,6 +954,13 @@ function Invoke-PSModulePesterTests {
           Total      = $total
           OutputFile = $OutputPath
           Failures   = @($failedTests)
+          RawResult  = $rawResult
+          FailedBlocksCount = $failedBlocks
+          FailedContainersCount = $failedContainers
+          FailedBlocks = @($result.FailedBlocks | Where-Object { $null -ne $_ } | ForEach-Object {
+            [PSCustomObject]@{ Path = @($_.Path) -join '.'; Result = [string]$_.Result; Errors = @($_.ErrorRecord | Where-Object { $null -ne $_ } | ForEach-Object { $_.ToString() }) }
+          })
+          ContainerFailures = $containerFailures
         } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $failureArtifactPath -Encoding UTF8
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Pester failure detail artifact: '$failureArtifactPath'"
         foreach ($failedTest in @($failedTests)) {

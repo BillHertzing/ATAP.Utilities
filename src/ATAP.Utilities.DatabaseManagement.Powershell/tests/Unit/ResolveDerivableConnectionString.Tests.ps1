@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for Task 10.7 BWS-only connection-string resolution in
+# Pester 6.2+ tests for Task 10.7 BWS-only connection-string resolution in
 # Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName.
 # These mock the connection-opening helper so no SQL Server is required.
 

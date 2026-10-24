@@ -151,3 +151,5 @@ links to humans using your project. You can include links like:
 ## Licensing
 
 The code in this project is licensed under MIT license.
+
+- [V00150 developer database newline recovery](./Database/Documentation/V00150-Newline-Recovery.md) preserves immutable migration checksums and completes existing Dev/Exp databases without recreation.

@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for Remove-FeatureSharedDb (Stream J4).
+# Pester 6.2+ tests for Remove-FeatureSharedDb (Stream J4).
 
 BeforeAll {
   $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
@@ -76,10 +76,10 @@ Describe 'Remove-FeatureSharedDb' -Tag 'Unit' {
     $result.DatabaseName | Should -Be 'AceCommander-PaymentRefactor-shared'
     $result.SqlInstance | Should -Be 'test-sql'
     $result.Dropped | Should -BeTrue
-    Assert-MockCalled Resolve-DatabaseSqlConnection -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Resolve-DatabaseSqlConnection -Times 1 -Exactly -Scope It -ParameterFilter {
       $DatabaseHost -eq 'test-sql' -and $DatabaseName -eq 'master'
     }
-    Assert-MockCalled Invoke-DatabaseSqlNonQuery -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Invoke-DatabaseSqlNonQuery -Times 1 -Exactly -Scope It -ParameterFilter {
       $SqlConnection -eq $script:fakeConnection -and $CommandText.Contains('DROP DATABASE [AceCommander-PaymentRefactor-shared]')
     }
   }
@@ -88,10 +88,10 @@ Describe 'Remove-FeatureSharedDb' -Tag 'Unit' {
     $result = @(Remove-FeatureSharedDb -Application 'AceCommander' -SqlInstance 'test-sql' -Force)
 
     $result.DatabaseName | Should -Be @('AceCommander-PaymentRefactor-shared', 'AceCommander-LongFeature-shared')
-    Assert-MockCalled Invoke-DatabaseSqlQuery -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Invoke-DatabaseSqlQuery -Times 1 -Exactly -Scope It -ParameterFilter {
       $CommandText.Contains("LIKE N'AceCommander-%-shared'")
     }
-    Assert-MockCalled Invoke-DatabaseSqlNonQuery -Times 2 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Invoke-DatabaseSqlNonQuery -Times 2 -Exactly -Scope It -ParameterFilter {
       $CommandText.Contains('DROP DATABASE [AceCommander-')
     }
   }
@@ -100,13 +100,13 @@ Describe 'Remove-FeatureSharedDb' -Tag 'Unit' {
     $result = @(Remove-FeatureSharedDb -Application 'AceCommander' -SqlInstance 'test-sql' -WhatIf)
 
     $result.ResponseSummary | Should -Contain "would drop feature shared database 'AceCommander-PaymentRefactor-shared'"
-    Assert-MockCalled Invoke-DatabaseSqlNonQuery -Times 0 -Exactly -Scope It
+    Should -Invoke Invoke-DatabaseSqlNonQuery -Times 0 -Exactly -Scope It
   }
 
   It 'accepts DBConnectionStringSecretName as its own parameter set' {
     Remove-FeatureSharedDb -Application 'AceCommander' -Feature 'PaymentRefactor' -DBConnectionStringSecretName 'db-secret' -Force | Out-Null
 
-    Assert-MockCalled Resolve-DatabaseSqlConnection -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Resolve-DatabaseSqlConnection -Times 1 -Exactly -Scope It -ParameterFilter {
       $DBConnectionStringSecretName -eq 'db-secret'
     }
   }

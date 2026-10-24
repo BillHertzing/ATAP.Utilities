@@ -1,4 +1,4 @@
-#Requires -Modules Pester
+#Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 
 # Task 13.76.g — elevation broker contract.
 #

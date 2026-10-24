@@ -45,6 +45,11 @@ function Set-SprintBoundaryContext {
 
     Every worker is invoked under the cmdlet's own ShouldProcess, so -WhatIf
     previews the full retarget without mutating anything.
+
+    Git trust is tracked separately for each host, caller, configuration and
+    exact checkout under the checkout's _generated/SprintGitTrust folder. End
+    removes only entries introduced by Start with a valid ownership receipt.
+    Pre-existing values and paths with unavailable evidence are preserved.
   .PARAMETER Boundary
     'Start' retargets the supplied worktrees and the machine settings symlinks to
     the SharedVSCode sprint worktree. 'End' retargets them back to the stable
@@ -127,6 +132,19 @@ function Set-SprintBoundaryContext {
   .PARAMETER SkipServiceAccountGitTrust
     Skip SC-0321 service-account Git trust processing. Intended only for isolated
     diagnostics and tests.
+  .PARAMETER InteractiveUserGitConfigPath
+    Explicit global Git configuration file for the interactive user running the
+    boundary (Task 16.55). When omitted it is resolved from GIT_CONFIG_GLOBAL
+    (process, then User scope), then the origin reported by
+    git config --global --show-origin, then $HOME\.gitconfig. This is the same
+    configuration Test-SprintInfrastructureHealth reads for GitSafeDirectory.
+  .PARAMETER InteractiveUserGitTrustRepositoryNames
+    Repository names whose exact sprint worktrees are lifecycle-managed in the
+    interactive user's safe.directory list. Defaults to all five participating
+    repositories.
+  .PARAMETER SkipInteractiveUserGitTrust
+    Skip Task 16.55 interactive-user Git trust processing. Intended only for
+    isolated diagnostics and tests.
   .PARAMETER ProfiledRemotingPolicy
     Controls the local ATAP.PS7.Profiled endpoint concern. Disabled never probes or
     registers it. Auto, the safe default, treats a host with no remoting surface and
@@ -225,6 +243,13 @@ function Set-SprintBoundaryContext {
 
     [switch]$SkipServiceAccountGitTrust,
 
+    [string]$InteractiveUserGitConfigPath,
+
+    [ValidateNotNullOrEmpty()]
+    [string[]]$InteractiveUserGitTrustRepositoryNames = @('Ace', 'ATAP.Utilities', 'ATAP.IAC', 'SharedVSCode', '_Planning'),
+
+    [switch]$SkipInteractiveUserGitTrust,
+
     [ValidateSet('Disabled', 'Auto', 'Required')]
     [string]$ProfiledRemotingPolicy = 'Auto',
 
@@ -273,7 +298,7 @@ function Set-SprintBoundaryContext {
 
     # When the file is dot-sourced from source (no module import), the private
     # settings-symlink helpers are not yet defined. Load them on demand.
-    foreach ($privateHelperName in @('Set-UserSettingsSymlink', 'Set-AIAgentMemoryJunction')) {
+    foreach ($privateHelperName in @('Set-UserSettingsSymlink', 'Set-AIAgentMemoryJunction', 'Set-SprintOwnedGitSafeDirectory')) {
       if (-not (Get-Command -Name $privateHelperName -CommandType Function -ErrorAction SilentlyContinue)) {
         $privateHelperPath = Join-Path $PSScriptRoot '..' 'private' "$privateHelperName.ps1"
         if (Test-Path -LiteralPath $privateHelperPath) {
@@ -312,6 +337,8 @@ function Set-SprintBoundaryContext {
     foreach ($worktreePath in $WorktreePaths) {
       $wtEntry = [ordered]@{
         WorktreePath        = $worktreePath
+        RetargetSkipped     = $false
+        RetargetSkipReason  = $null
         StableRepoPath      = $null
         JunctionsRetargeted  = $false
         ContextRetargeted    = $false
@@ -337,6 +364,14 @@ function Set-SprintBoundaryContext {
       }
 
       if (-not (Test-Path -LiteralPath $worktreePath -PathType Container)) {
+        if ($Boundary -eq 'End') {
+          # Infrastructure cleanup repeats End after worktree teardown. Trust
+          # processing below still sees the exact path, but cannot infer ownership.
+          $wtEntry.RetargetSkipped = $true
+          $wtEntry.RetargetSkipReason = 'WorktreeAlreadyAbsent'
+          $perWorktree.Add([PSCustomObject]$wtEntry)
+          continue
+        }
         $wtEntry.Error = "Worktree path not found: '$worktreePath'"
         $errors.Add($wtEntry.Error)
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $wtEntry.Error
@@ -596,14 +631,14 @@ function Set-SprintBoundaryContext {
     # ------------------------------------------------------------------
     # Service-account Git trust (SC-0321). Only exact Ace and ATAP.Utilities
     # sprint worktree paths are selected by the helper. Start adds missing
-    # values idempotently; End removes only those exact values.
+    # values idempotently; End removes only values with Start ownership receipts.
     # ------------------------------------------------------------------
     $serviceAccountGitTrustOk = $true
     $serviceAccountGitTrustError = $null
     $serviceAccountGitTrustResult = $null
     try {
       if (-not $SkipServiceAccountGitTrust -and $WorktreePaths.Count -gt 0) {
-        $serviceAccountGitTrustResult = Set-ServiceAccountGitSafeDirectory `
+        $serviceAccountGitTrustResult = Set-SprintOwnedGitSafeDirectory `
           -Boundary $Boundary `
           -WorktreePaths $WorktreePaths `
           -GitConfigPath $ServiceAccountGitConfigPath `
@@ -619,7 +654,7 @@ function Set-SprintBoundaryContext {
     }
     $concerns.Add([PSCustomObject]@{
         Concern        = 'ServiceAccountGitSafeDirectory'
-        Action         = ($SkipServiceAccountGitTrust ? 'Skipped' : "Set-ServiceAccountGitSafeDirectory ($Boundary)")
+        Action         = ($SkipServiceAccountGitTrust ? 'Skipped' : "Set-SprintOwnedGitSafeDirectory ($Boundary)")
         StableByDesign = $false
         Succeeded      = $serviceAccountGitTrustOk
         Error          = $serviceAccountGitTrustError
@@ -627,38 +662,149 @@ function Set-SprintBoundaryContext {
       })
 
     # ------------------------------------------------------------------
+    # Interactive-user Git trust (Task 16.55). Test-SprintInfrastructureHealth
+    # checks the current user's global safe.directory list, which the
+    # service-account concern above never touches. The same exact-path helper
+    # targets the user's resolved global configuration. Start passes only
+    # existing Git checkouts; End requires a valid Start ownership receipt.
+    # Missing receipts (including torn-down checkouts) preserve trust.
+    # ------------------------------------------------------------------
+    $interactiveGitTrustOk = $true
+    $interactiveGitTrustError = $null
+    $interactiveGitTrustResult = $null
+    $interactiveGitConfigPath = $InteractiveUserGitConfigPath
+    $interactiveGitTrustExcluded = [System.Collections.Generic.List[string]]::new()
+    $interactiveGitTrustExcludedReasons = [System.Collections.Generic.List[string]]::new()
+    try {
+      if (-not $SkipInteractiveUserGitTrust -and $WorktreePaths.Count -gt 0) {
+        if ([string]::IsNullOrWhiteSpace($interactiveGitConfigPath)) {
+          $interactiveGitConfigPath = $env:GIT_CONFIG_GLOBAL
+        }
+        if ([string]::IsNullOrWhiteSpace($interactiveGitConfigPath)) {
+          $interactiveGitConfigPath = [System.Environment]::GetEnvironmentVariable('GIT_CONFIG_GLOBAL', 'User')
+        }
+        if ([string]::IsNullOrWhiteSpace($interactiveGitConfigPath)) {
+          $originLine = @(& git config --global --show-origin --list 2>$null | Select-Object -First 1)
+          if ($LASTEXITCODE -eq 0 -and $originLine.Count -gt 0 -and $originLine[0] -match '^file:(?<origin>[^\t]+)\t') {
+            $origin = $Matches['origin'].Trim()
+            if ($origin.StartsWith('"') -and $origin.EndsWith('"')) {
+              $origin = $origin.Substring(1, $origin.Length - 2).Replace('\\', '\')
+            }
+            $interactiveGitConfigPath = $origin
+          }
+        }
+        if ([string]::IsNullOrWhiteSpace($interactiveGitConfigPath)) {
+          $interactiveGitConfigPath = Join-Path $HOME '.gitconfig'
+        }
+
+        $interactiveGitTrustPaths = [System.Collections.Generic.List[string]]::new()
+        foreach ($candidatePath in @($WorktreePaths)) {
+          if ([string]::IsNullOrWhiteSpace($candidatePath)) { continue }
+          if ($Boundary -eq 'Start') {
+            # Task 16.55.e: a bare .git entry is not proof of a checkout (a stray
+            # 'gitdir: x' file qualified). Trust only a path that Git itself reports
+            # as its own top level; fail closed on any other outcome.
+            $exclusionReason = $null
+            if (-not (Test-Path -LiteralPath (Join-Path $candidatePath '.git'))) {
+              $exclusionReason = 'no Git checkout at that path'
+            } else {
+              # Task 16.55.f / R1: in a non-elevated session with no safe.directory entries, Git
+              # refuses a checkout owned by another user ("dubious ownership"), which would make
+              # this probe fail closed on a first run. A per-command -c override for this exact
+              # candidate only lets the probe run; nothing is written to any Git configuration.
+              $probeTrustPath = ([System.IO.Path]::GetFullPath($candidatePath)).Replace('\', '/')
+              $reportedTopLevel = @(& git -c "safe.directory=$probeTrustPath" -C $candidatePath rev-parse --show-toplevel 2>$null)
+              if ($LASTEXITCODE -ne 0 -or $reportedTopLevel.Count -eq 0 -or [string]::IsNullOrWhiteSpace([string]$reportedTopLevel[0])) {
+                $exclusionReason = 'git rev-parse --show-toplevel failed (not a valid Git checkout)'
+              } else {
+                $normalizedTopLevel = ([System.IO.Path]::GetFullPath(([string]$reportedTopLevel[0]).Trim())).Replace('/', '\').TrimEnd('\')
+                $normalizedCandidate = ([System.IO.Path]::GetFullPath($candidatePath)).Replace('/', '\').TrimEnd('\')
+                if (-not [string]::Equals($normalizedTopLevel, $normalizedCandidate, [System.StringComparison]::OrdinalIgnoreCase)) {
+                  $exclusionReason = "Git top level '$normalizedTopLevel' differs from the candidate path"
+                }
+              }
+            }
+            if ($null -ne $exclusionReason) {
+              [void]$interactiveGitTrustExcluded.Add($candidatePath)
+              [void]$interactiveGitTrustExcludedReasons.Add($exclusionReason)
+              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Interactive-user Git trust skipped '$candidatePath': $exclusionReason"
+              continue
+            }
+          }
+          [void]$interactiveGitTrustPaths.Add($candidatePath)
+        }
+
+        if ($interactiveGitTrustPaths.Count -gt 0) {
+          $interactiveGitTrustResult = Set-SprintOwnedGitSafeDirectory `
+            -Boundary $Boundary `
+            -WorktreePaths $interactiveGitTrustPaths.ToArray() `
+            -GitConfigPath $interactiveGitConfigPath `
+            -RepositoryNames $InteractiveUserGitTrustRepositoryNames `
+            -Confirm:$false `
+            -WhatIf:$WhatIfPreference
+        }
+      }
+    } catch {
+      $interactiveGitTrustOk = $false
+      $interactiveGitTrustError = "Interactive-user Git safe.directory lifecycle failed: $($_.Exception.Message)"
+      $errors.Add($interactiveGitTrustError)
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $interactiveGitTrustError
+    }
+    $concerns.Add([PSCustomObject]@{
+        Concern        = 'InteractiveUserGitSafeDirectory'
+        Action         = ($SkipInteractiveUserGitTrust ? 'Skipped' : "Set-SprintOwnedGitSafeDirectory ($Boundary) -> $interactiveGitConfigPath")
+        StableByDesign = $false
+        Succeeded      = $interactiveGitTrustOk
+        Error          = $interactiveGitTrustError
+        Result         = $interactiveGitTrustResult
+        ExcludedPaths  = $interactiveGitTrustExcluded.ToArray()
+        ExcludedReasons = $interactiveGitTrustExcludedReasons.ToArray()
+      })
+
+    # ------------------------------------------------------------------
     # Machine-global concern: SharedVSCode settings symlinks (once)
     # ------------------------------------------------------------------
     $settingsOk = $true
     $settingsError = $null
-    try {
-      if (-not $SkipSharedVSCodeSettings -and $PSCmdlet.ShouldProcess($SharedVSCodeWorktreePath, "Retarget SharedVSCode settings symlinks ($Boundary)")) {
-        $sharedSettingsRenderParameters = @{
-          Boundary = 'Start'
-          TargetRoot = $SharedVSCodeWorktreePath
-          SharedVSCodeWorktreePath = $SharedVSCodeWorktreePath
-          Confirm = $false
-          WhatIf = $WhatIfPreference
-          AllowUserGlobalWrite = $AllowUserGlobalWrite
-          CheckpointConfirmed = $CheckpointConfirmed
+    $settingsResult = $null
+    $settingsRoot = if ($Boundary -eq 'End') { Join-Path $GitRoot 'SharedVSCode' } else { $SharedVSCodeWorktreePath }
+    if (-not $SkipSharedVSCodeSettings) {
+      # Adapter failure must remain visible without preventing settings recovery.
+      try {
+        if ($PSCmdlet.ShouldProcess($settingsRoot, "Render SharedVSCode adapters ($Boundary)")) {
+          $sharedSettingsRenderParameters = @{
+            Boundary = 'Start'; TargetRoot = $settingsRoot; SharedVSCodeWorktreePath = $settingsRoot
+            Confirm = $false; WhatIf = $WhatIfPreference; AllowUserGlobalWrite = $AllowUserGlobalWrite
+            CheckpointConfirmed = $CheckpointConfirmed
+          }
+          if ($Boundary -eq 'End') { $sharedSettingsRenderParameters.OmitSprintWorktrees = $true }
+          Invoke-SprintAIAdapterLifecycle @sharedSettingsRenderParameters | Out-Null
         }
-        if ($Boundary -eq 'End') {
-          $sharedSettingsRenderParameters.OmitSprintWorktrees = $true
-        }
-        Invoke-SprintAIAdapterLifecycle @sharedSettingsRenderParameters | Out-Null
-        Set-UserSettingsSymlink -SharedVSCodeWorktreePath $SharedVSCodeWorktreePath
+      } catch {
+        $settingsOk = $false
+        $settingsError = "Settings adapter lifecycle failed: $($_.Exception.Message)"
+        $errors.Add($settingsError)
       }
-    } catch {
-      $settingsOk = $false
-      $settingsError = "Settings symlink retarget failed: $($_.Exception.Message)"
-      $errors.Add($settingsError)
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $settingsError
+      try {
+        if ($PSCmdlet.ShouldProcess($settingsRoot, "Retarget SharedVSCode settings symlink ($Boundary)")) {
+          $settingsResult = Set-UserSettingsSymlink -SharedVSCodeWorktreePath $settingsRoot -Confirm:$false -WhatIf:$WhatIfPreference
+          if ($null -eq $settingsResult -or (-not $settingsResult.Ok -and -not ($WhatIfPreference -and $settingsResult.Planned))) {
+            throw 'Settings helper did not verify the exact readable destination.'
+          }
+        }
+      } catch {
+        $settingsOk = $false
+        $settingsError = "Settings symlink retarget failed: $($_.Exception.Message)"
+        $errors.Add($settingsError)
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $settingsError
+      }
     }
     $concerns.Add([PSCustomObject]@{
         Concern        = 'SharedVSCodeSettings'
         Action         = ($SkipSharedVSCodeSettings ? 'Skipped' : 'Invoke-SprintAIAdapterLifecycle (authoritative shared and user-global adapter lifecycle) + Set-UserSettingsSymlink')
         StableByDesign = $false
         Succeeded      = $settingsOk
+        Result         = $settingsResult
         Error          = $settingsError
       })
 

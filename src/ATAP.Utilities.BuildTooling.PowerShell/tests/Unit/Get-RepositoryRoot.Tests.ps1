@@ -1,5 +1,5 @@
 # AI assisted using Powershell.instructions.md as guidelines
-# Pester 5+ tests for Get-RepositoryRoot -Absolute (Task 12.35 bug 2)
+# Pester 6.2+ tests for Get-RepositoryRoot -Absolute (Task 12.35 bug 2)
 
 BeforeAll {
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {

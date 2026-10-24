@@ -46,3 +46,23 @@ this child.
 ## Functional area
 
 PowerShell Build & Packaging - START HERE: `SolutionDocumentation/PowerShell-Modules-Build-Process.md`.
+
+## Instruction distributor contract (Task 16.54)
+
+The current manifest uses composer-owned `CLAUDE.md` and `AGENTS.md` targets on
+`ai.core.main-instructions.v1`. `Get-AICoreInstructionBody` selects the carrier
+target and passes its `composedMaterialization` (`copy` or `generated-wrapper`)
+to the canonical renderer API. Missing or duplicate records/targets, missing
+body shapes, invalid ownership and unsupported shapes are errors.
+
+Sprint 0015 retired the `*-base.md` targets and files. Installed version 0.1.3
+still looks up those retired target names; the source fix must be shipped in a
+new immutable package. Recreating base files or adding obsolete manifest
+targets does not repair that installed contract. The legacy fallback remains
+only for older worktrees lacking the canonical renderer or manifest.
+
+`tests/Unit/InstructionDistributorContract.Sprint0016.Tests.ps1` verifies the
+no-base contract through all three builders, output content and second-run
+hash/timestamp stability. Set `ATAP_AI_CONTRACT_SHARED_ROOT` to the reviewed
+SharedVSCode checkout for its real renderer API; standalone runs use the stable
+sibling checkout. Fixtures stay under the owning repository's `_generated/`.

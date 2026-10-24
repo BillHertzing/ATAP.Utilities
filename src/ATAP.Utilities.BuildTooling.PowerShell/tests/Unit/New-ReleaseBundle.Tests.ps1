@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for deterministic schema-v2 ReleaseBundle assembly.
+# Pester 6.2+ tests for deterministic schema-v2 ReleaseBundle assembly.
 
 BeforeAll {
     $moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
@@ -9,8 +9,11 @@ BeforeAll {
 
     # Git may materialize LF or CRLF. Derive only fixture metadata from a private
     # checkout copy; the production verifier still enforces exact size and hash.
-    $script:fixtureManifest = Join-Path $TestDrive 'checkout-manifest.json'
-    $script:fixtureSourceRoot = Join-Path $TestDrive 'checkout-release-source'
+    # Keep this unique checkout under evidence TEMP for independent readback.
+    $checkoutRoot = Join-Path ([IO.Path]::GetTempPath()) ('ReleaseBundleCheckout_' + [guid]::NewGuid().ToString('N'))
+    [void][IO.Directory]::CreateDirectory($checkoutRoot)
+    $script:fixtureManifest = Join-Path $checkoutRoot 'checkout-manifest.json'
+    $script:fixtureSourceRoot = Join-Path $checkoutRoot 'checkout-release-source'
     Copy-Item -LiteralPath (Join-Path $fixturesDir 'source') -Destination $script:fixtureSourceRoot -Recurse
     $fixtureManifestObject = Get-Content (Join-Path $fixturesDir 'manifest/manifest.json') -Raw | ConvertFrom-Json
     foreach ($payload in $fixtureManifestObject.payloadFiles) {
@@ -32,8 +35,8 @@ BeforeAll {
     #
     # This is the Task 15.174.b root cause reaching test fixtures. ATAPBUILD004 guards
     # ArtifactsPath but not fixture roots, so the exclusion is enforced here.
-    $script:fixtureOutputRoot = if ($env:ATAP_ARTIFACTS_ROOT) {
-        [IO.Path]::GetFullPath((Join-Path $env:ATAP_ARTIFACTS_ROOT 'test-fixtures/New-ReleaseBundle'))
+    $script:fixtureOutputRoot = if ($env:ARTIFACTS_PATH) {
+        [IO.Path]::GetFullPath((Join-Path $env:ARTIFACTS_PATH 'test-fixtures/New-ReleaseBundle'))
     } else {
         [IO.Path]::GetFullPath((Join-Path ([IO.Path]::GetTempPath()) 'atap-test-fixtures/New-ReleaseBundle'))
     }

@@ -53,9 +53,11 @@
     <SolutionDir>$(MSBuildThisFileDirectory)</SolutionDir>
 
     <!-- Task 15.180.j common build contract. Caller-owned identifiers are deliberately
-         explicit; Task 15.180.l resolves and propagates them across every invocation. -->
+         explicit; Task 15.180.l resolves and propagates them across every invocation.
+         Callers pass ATAPArtifactsRoot explicitly; a direct build falls back to the canonical
+         ARTIFACTS_PATH environment variable (Task 16.83.d). The legacy ATAP_ARTIFACTS_ROOT input is retired. -->
     <ATAPRepositorySlug>ATAP.Utilities</ATAPRepositorySlug>
-    <ATAPArtifactsRoot Condition="'$(ATAPArtifactsRoot)' == ''">$(ATAP_ARTIFACTS_ROOT)</ATAPArtifactsRoot>
+    <ATAPArtifactsRoot Condition="'$(ATAPArtifactsRoot)' == ''">$(ARTIFACTS_PATH)</ATAPArtifactsRoot>
     <ATAPArtifactsWorktreeId Condition="'$(ATAPArtifactsWorktreeId)' == ''">$(ATAP_ARTIFACTS_WORKTREE_ID)</ATAPArtifactsWorktreeId>
     <ATAPArtifactsExecutionId Condition="'$(ATAPArtifactsExecutionId)' == ''">$(ATAP_ARTIFACTS_EXECUTION_ID)</ATAPArtifactsExecutionId>
     <ATAPExpectedArtifactsPath Condition="'$(ATAPArtifactsRoot)' != '' And '$(ATAPArtifactsWorktreeId)' != '' And '$(ATAPArtifactsExecutionId)' != ''">$(ATAPArtifactsRoot)\dotnet\$(ATAPRepositorySlug)\$(ATAPArtifactsWorktreeId)\$(ATAPArtifactsExecutionId)</ATAPExpectedArtifactsPath>

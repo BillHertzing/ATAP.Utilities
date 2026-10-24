@@ -9,7 +9,7 @@ param(
   [bool]$ExpectedAllowPrerelease = $false,
   [string]$ProbeProject = '',
   [switch]$RequireContinuousIntegrationBuild,
-  [string]$ArtifactsRoot = $env:ATAP_ARTIFACTS_ROOT,
+  [string]$ArtifactsRoot = $env:ARTIFACTS_PATH,
   [string]$ArtifactsWorktreeId = $env:ATAP_ARTIFACTS_WORKTREE_ID,
   [string]$ArtifactsExecutionId = $env:ATAP_ARTIFACTS_EXECUTION_ID,
   [string]$ArtifactsPath = $env:ATAP_ARTIFACTS_PATH,
@@ -43,7 +43,7 @@ function Test-ToolchainBaseline {
     [bool]$ExpectedAllowPrerelease=$false,
     [string]$ProbeProject='',
     [switch]$RequireContinuousIntegrationBuild,
-    [string]$ArtifactsRoot=$env:ATAP_ARTIFACTS_ROOT,
+    [string]$ArtifactsRoot=$env:ARTIFACTS_PATH,
     [string]$ArtifactsWorktreeId=$env:ATAP_ARTIFACTS_WORKTREE_ID,
     [string]$ArtifactsExecutionId=$env:ATAP_ARTIFACTS_EXECUTION_ID,
     [string]$ArtifactsPath=$env:ATAP_ARTIFACTS_PATH

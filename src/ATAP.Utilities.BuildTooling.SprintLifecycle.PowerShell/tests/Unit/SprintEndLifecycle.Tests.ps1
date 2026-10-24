@@ -1,6 +1,14 @@
 #Requires -Version 7.0
 
 BeforeAll {
+  . (Join-Path $PSScriptRoot '../../private/Get-SprintGeneratedArtifactState.ps1')
+  # Settings behavior is covered by SettingsLinkLifecycle.Sprint0016.Tests.ps1;
+  # keep this suite isolated from the host settings entry.
+  function Set-UserSettingsSymlink {
+    [CmdletBinding(SupportsShouldProcess)]
+    param([string]$SharedVSCodeWorktreePath, [switch]$CheckOnly, [string[]]$WorktreePaths)
+    [PSCustomObject]@{ Ok = $true; Planned = $false; Changed = $false }
+  }
   # Task 15.208: isolate login maintenance from the host Task Scheduler.
   function Set-SprintLoginScheduledTaskTarget {
     [CmdletBinding(SupportsShouldProcess)]
@@ -751,6 +759,8 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       Mock Test-SprintEndCommandSurface { [PSCustomObject]@{ Ok = $true; Failures = @() } }
       Mock Test-SprintPrerequisites { [PSCustomObject]@{ AllOk = $true; Failures = @() } }
       Mock Test-SprintEndWorktreeState { [PSCustomObject]@{ Ok = $true; Failures = @() } }
+      # Task 16.91.b: lifecycle fixtures are not git repositories; the gate has its own suite.
+      Mock Get-SprintGeneratedArtifactState { [PSCustomObject]@{ Ok = $true; TrackedPaths = @(); CitedPaths = @(); Failures = @() } }
       Mock Test-SprintCheckpointCoverage { [PSCustomObject]@{ Ok = $true; Failures = @() } }
     }
 

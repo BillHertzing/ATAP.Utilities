@@ -33,7 +33,7 @@ Copyright = '(c) Bill Hertzing for ATAPUtilities.org. All rights reserved.'
 Description = 'BuildTooling ATAP.Utilities.BuildTooling.PesterScaffolding.PowerShell child module.'
 
 # Minimum version of the PowerShell engine required by this module
-PowerShellVersion = '7.0'
+PowerShellVersion = '7.4'
 
 # Name of the PowerShell host required by this module
 # PowerShellHostName = ''
@@ -53,7 +53,7 @@ PowerShellVersion = '7.0'
 # Modules that must be imported into the global environment prior to importing this module
 RequiredModules = @(
     @{ModuleName = 'ATAP.Utilities.BuildTooling.Common.PowerShell'; ModuleVersion = '0.1.5'; },
-    @{ModuleName = 'Pester'; ModuleVersion = '5.7.1'; }
+    @{ModuleName = 'Pester'; ModuleVersion = '6.2.0'; }
 )
 
 # Assemblies that must be loaded prior to importing this module

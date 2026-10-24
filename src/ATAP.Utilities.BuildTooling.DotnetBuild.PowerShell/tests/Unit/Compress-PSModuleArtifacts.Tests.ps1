@@ -1,5 +1,5 @@
 # Requires -Version 7.0
-# Pester 5+ tests for Compress-PSModuleArtifacts (task T-1A).
+# Pester 6.2+ tests for Compress-PSModuleArtifacts (task T-1A).
 # Uses a stub 7z.exe when the real one is unavailable.
 
 BeforeAll {

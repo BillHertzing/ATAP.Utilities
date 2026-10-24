@@ -45,8 +45,16 @@ function Invoke-SprintEndLifecycle {
   Controls the profiled-remoting boundary concern. Auto is the safe default;
   Disabled opts out, while Required fails when remoting is unavailable.
 
+  .PARAMETER ClearGeneratedArtifacts
+  Clears every selected sprint worktree's `_generated/` before any pull request
+  is created or merged (R-38, Task 16.91.a). Refused while the
+  GeneratedArtifacts gate fails.
+
   .PARAMETER CreatePullRequests
-  Creates missing draft PRs and ensures closing keywords.
+  Creates missing draft PRs and ensures closing keywords. Like every close
+  effect, it first requires the GeneratedArtifacts gate (Task 16.91.b): no
+  tracked `_generated/` file in any selected worktree, and no board or
+  InformationForTheFuture citation of an existing `_generated/` path.
 
   .PARAMETER MergePullRequests
   Merges ready PRs and verifies originating issues close.
@@ -152,6 +160,9 @@ function Invoke-SprintEndLifecycle {
     [Parameter()]
     [ValidateSet('Disabled', 'Auto', 'Required')]
     [string]$ProfiledRemotingPolicy = 'Auto',
+
+    [Parameter()]
+    [switch]$ClearGeneratedArtifacts,
 
     [Parameter()]
     [switch]$CreatePullRequests,
@@ -405,6 +416,21 @@ function Invoke-SprintEndLifecycle {
       $phases.TemplateRef = @()
     }
 
+    # Independently audit settings before any close effect, even when settings
+    # or boundary application was skipped. A post-cleanup audit is too late.
+    $phases.SettingsPreCleanup = $null
+    if ($failures.Count -eq 0 -and ($CleanupInfrastructure -or $WriteHandoff -or $CreatePullRequests -or $MergePullRequests)) {
+      try {
+        if (-not (Get-Command -Name 'Set-UserSettingsSymlink' -ErrorAction SilentlyContinue)) {
+          . (Join-Path $PSScriptRoot '../private/Set-UserSettingsSymlink.ps1')
+        }
+        $phases.SettingsPreCleanup = Set-UserSettingsSymlink -SharedVSCodeWorktreePath (Join-Path $gitRootFull 'SharedVSCode') -CheckOnly -WorktreePaths $worktreeFullPaths -Confirm:$false
+        if ($null -eq $phases.SettingsPreCleanup -or -not $phases.SettingsPreCleanup.Ok) { throw 'Settings must target readable stable SharedVSCode before closing sprint worktrees.' }
+      } catch {
+        $phases.SettingsPreCleanup = [PSCustomObject]@{ Ok = $false; Error = $_.Exception.Message }
+        [void]$failures.Add('SettingsPreCleanup')
+      }
+    }
     # Teardown without a boundary application still requires a read-only pair
     # audit before any handoff or infrastructure cleanup can proceed. The final
     # audit alone is too late to protect a target in a removed worktree.
@@ -432,6 +458,49 @@ function Invoke-SprintEndLifecycle {
         $phases.LoginScheduledTasksPreCleanup = [PSCustomObject]@{ Ok = $false; Failures = @($_.Exception.Message) }
         [void]$failures.Add('LoginScheduledTasksPreCleanup')
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Login pair pre-cleanup audit failed: $($_.Exception.Message)"
+      }
+    }
+
+    # Task 16.91.b (SC-0470, R-38). Nothing under _generated may reach a stable
+    # branch, and cited evidence must be relocated before it can be cleared.
+    # This read-only gate guards every close effect, including dry runs.
+    $closeEffectRequested = [bool]($ClearGeneratedArtifacts -or $CreatePullRequests -or $MergePullRequests -or
+      $WriteHandoff -or $CleanupInfrastructure)
+    $phases.GeneratedArtifacts = $null
+    if ($failures.Count -eq 0 -and $closeEffectRequested) {
+      try {
+        if (-not (Get-Command -Name 'Get-SprintGeneratedArtifactState' -ErrorAction SilentlyContinue)) {
+          . (Join-Path $PSScriptRoot '../private/Get-SprintGeneratedArtifactState.ps1')
+        }
+        $phases.GeneratedArtifacts = Get-SprintGeneratedArtifactState -WorktreePaths $worktreeFullPaths -PlanningRoot $planningRootFull
+        if (-not $phases.GeneratedArtifacts.Ok) { [void]$failures.Add('GeneratedArtifacts') }
+      } catch {
+        $phases.GeneratedArtifacts = [PSCustomObject]@{ Ok = $false; Failures = @($_.Exception.Message) }
+        [void]$failures.Add('GeneratedArtifacts')
+      }
+    }
+
+    # Task 16.91.a. Restore the pre-merge clear that the typed-lifecycle
+    # rewrite dropped, so sprint _generated never rides into stable.
+    $phases.GeneratedClear = $null
+    if ($failures.Count -eq 0 -and $ClearGeneratedArtifacts -and $phases.Context.Ok) {
+      $clearParameters = @{
+        SprintNumber  = ('{0:D4}' -f [int]$phases.Context.ClosedSprintNumber)
+        GitRoot       = $gitRootFull
+        WorktreePaths = $worktreeFullPaths
+        PlanningRoot  = $planningRootFull
+        Force         = $true
+        Confirm       = $false
+      }
+      if ($WhatIfPreference) { $clearParameters.WhatIf = $true }
+      try {
+        $phases.GeneratedClear = Clear-SprintGeneratedArtifacts @clearParameters
+        if ($phases.GeneratedClear.blocked -or @($phases.GeneratedClear.errors).Count -gt 0) {
+          [void]$failures.Add('GeneratedClear')
+        }
+      } catch {
+        $phases.GeneratedClear = [PSCustomObject]@{ blocked = $true; errors = @($_.Exception.Message) }
+        [void]$failures.Add('GeneratedClear')
       }
     }
 

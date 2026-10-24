@@ -15,6 +15,13 @@ BeforeAll {
   }
   function Set-SprintBoundaryUserProfiles { [CmdletBinding(SupportsShouldProcess)] param($ATAPUtilitiesRoot, $ATAPIACRoot, $GitRoot) throw 'Unmocked profiles.' }
   function Invoke-SprintEndServiceAccountFreshShell { param() throw 'Unmocked account shell.' }
+  # Isolate the boundary's settings-link audit from the host settings entry (as Test-SprintEndBoundaryState.Tests.ps1 does);
+  # without it the real CheckOnly audit runs against the live host and the boundary Ok depends on machine state.
+  function Set-UserSettingsSymlink {
+    [CmdletBinding(SupportsShouldProcess)]
+    param([string]$SharedVSCodeWorktreePath, [switch]$CheckOnly, [string[]]$WorktreePaths)
+    [PSCustomObject]@{ Ok = $true; Planned = $false; Changed = $false }
+  }
   function Get-SecretATAP { [CmdletBinding()] param($SecretName, $SecretField, $SecretStoreType) throw 'Unmocked secret retrieval.' }
   function git { param([Parameter(ValueFromRemainingArguments)]$Arguments) throw 'Unmocked Git.' }
   function Get-RepositoryRoot { [CmdletBinding()] param([switch]$Absolute) $script:fixtureRoot }
@@ -46,6 +53,15 @@ Describe 'SprintEnd scoped personal-vault metadata in actual checkers' {
     Mock Set-SprintLoginScheduledTaskTarget { [PSCustomObject]@{ Ok=$true; Failures=@(); Tasks=@() } }
     Mock Get-SecretATAP { 'inert-fixture-key' }
     Mock Test-InfraUrlReachable { [PSCustomObject]@{ Ok=$true; Detail='Mocked'; Skipped=$true } }
+    # Pester 6 throws for a call no -ParameterFilter matches; pass the helper-presence probes
+    # through to the real cmdlet so only flyway/nbgv are intercepted. The cmdlet object is
+    # captured before mocking and called with explicit parameters: a module-qualified call or a
+    # PSBoundParameters splat inside the mock body hangs under Pester 6.
+    $realGetCommand = Get-Command -Name Get-Command -CommandType Cmdlet
+    Mock Get-Command {
+      if ($CommandType) { & $realGetCommand -Name $Name -CommandType $CommandType -ErrorAction SilentlyContinue }
+      else { & $realGetCommand -Name $Name -ErrorAction SilentlyContinue }
+    }
     Mock Get-Command { throw 'Inert absent optional executable.' } -ParameterFilter { $Name -in @('flyway', 'nbgv') }
     Mock git { $global:LASTEXITCODE=0; '*' }
     Mock Invoke-RestMethod { throw 'No real network calls allowed.' }

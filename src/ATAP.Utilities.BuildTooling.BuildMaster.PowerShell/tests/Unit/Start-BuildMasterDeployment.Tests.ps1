@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for Start-BuildMasterDeployment.
+# Pester 6.2+ tests for Start-BuildMasterDeployment.
 # Mocks Invoke-RestMethod; no real BuildMaster contact.
 
 BeforeAll {
@@ -92,7 +92,7 @@ Describe 'Start-BuildMasterDeployment' -Tag 'Unit', 'PromotedModuleHostSensitive
       $result.DeploymentId | Should -Be '3021'
       $result.DeploymentState | Should -Be 'pending'
       $result.ResponseSummary | Should -Match 'deployment started'
-      Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter { $Method -eq 'Post' }
+      Should -Invoke Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter { $Method -eq 'Post' }
     }
 
     It 'Targets the correct endpoint URL' {
@@ -173,7 +173,7 @@ Describe 'Start-BuildMasterDeployment' -Tag 'Unit', 'PromotedModuleHostSensitive
 
       Start-BuildMasterDeployment -Application 'A' -ReleaseNumber '1.0.0' -BuildNumber '2' | Out-Null
 
-      Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter { $Method -eq 'Post' }
+      Should -Invoke Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter { $Method -eq 'Post' }
       $script:deployCalledWithFiniteTimeout | Should -BeTrue
     }
   }
@@ -204,6 +204,30 @@ Describe 'Start-BuildMasterDeployment' -Tag 'Unit', 'PromotedModuleHostSensitive
     }
   }
 
+  Context 'Over-limit release number (SC-0360)' {
+    BeforeEach {
+      Mock Invoke-RestMethod -ParameterFilter { $Method -eq 'Post' } -MockWith {
+        $resp = [PSCustomObject]@{ StatusCode = 400 }
+        $ex = [System.Net.WebException]::new('Response status code does not indicate success: 400 (Bad Request).')
+        $errRec = [System.Management.Automation.ErrorRecord]::new($ex, 'BMBadRequest', 'InvalidOperation', $null)
+        $errRec.Exception | Add-Member -NotePropertyName 'Response' -NotePropertyValue $resp -Force
+        throw $errRec
+      }
+    }
+
+    It 'Names the truncation when a 400 follows an over-limit ReleaseNumber' {
+      { Start-BuildMasterDeployment -Application 'A' -ReleaseNumber '0.1.34-ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell' -BuildNumber '2' } |
+        Should -Throw -ExpectedMessage '*400*is 61 characters, longer than the 50-character workspace release-number bound*'
+    }
+
+    It 'Adds no truncation hint when the ReleaseNumber fits' {
+      $err = $null
+      try { Start-BuildMasterDeployment -Application 'A' -ReleaseNumber '1.0.0' -BuildNumber '2' } catch { $err = $_ }
+      $err | Should -Not -BeNullOrEmpty
+      $err.Exception.Message | Should -Not -BeLike '*workspace release-number bound*'
+    }
+  }
+
   Context 'Config resolution' {
     It 'Throws when no API key secret name is configured' {
       $global:settings = @{ BuildMasterBaseUrl = 'https://x.example' }
@@ -223,7 +247,7 @@ Describe 'Start-BuildMasterDeployment' -Tag 'Unit', 'PromotedModuleHostSensitive
 
       $result.Succeeded | Should -BeFalse
       $result.ResponseSummary | Should -Match 'WhatIf'
-      Assert-MockCalled Invoke-RestMethod -Times 0 -Exactly -Scope It
+      Should -Invoke Invoke-RestMethod -Times 0 -Exactly -Scope It
     }
   }
 }

@@ -1,4 +1,4 @@
-#Requires -Modules Pester
+#Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 
 # Unit coverage for New-CommanderReleaseBundle's guard rails.
 #

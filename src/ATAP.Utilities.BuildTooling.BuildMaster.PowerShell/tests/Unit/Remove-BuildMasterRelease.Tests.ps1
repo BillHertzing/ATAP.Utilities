@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for Remove-BuildMasterRelease (Stream E, task E04b).
+# Pester 6.2+ tests for Remove-BuildMasterRelease (Stream E, task E04b).
 # Mocks Invoke-RestMethod; no real network or BuildMaster contact.
 
 BeforeAll {

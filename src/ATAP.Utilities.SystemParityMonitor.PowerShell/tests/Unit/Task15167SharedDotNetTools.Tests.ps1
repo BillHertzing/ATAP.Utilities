@@ -6,8 +6,13 @@ Describe 'Task 15.167 shared .NET tool parity contract' -Tag 'Unit' {
     }
   }
 
+  BeforeEach {
+    $fixtureRoot=Join-Path ([IO.Path]::GetTempPath()) ('ST_'+[guid]::NewGuid().ToString('N'))
+    [void][IO.Directory]::CreateDirectory($fixtureRoot)
+  }
+
   It 'collects the exact shared version and verifies the current logical identity' {
-    $sharedPath = Join-Path $TestDrive 'shared-tools'
+    $sharedPath = Join-Path $fixtureRoot 'shared-tools'
     New-Item -ItemType Directory -Path (Join-Path $sharedPath '.store\dotnet-trace\10.0.731102') -Force | Out-Null
     New-Item -ItemType File -Path (Join-Path $sharedPath 'dotnet-trace.exe') -Force | Out-Null
     $policy = [pscustomobject]@{
@@ -18,13 +23,13 @@ Describe 'Task 15.167 shared .NET tool parity contract' -Tag 'Unit' {
       Consumers = @([pscustomobject]@{ LogicalIdentity = 'ParityAudit'; ActualIdentity = 'UTAT022\SvcParityAudit'; EvidenceMode = 'CurrentProcess' })
     }
 
-    InModuleScope ATAP.Utilities.SystemParityMonitor.PowerShell -Parameters @{ Policy = $policy; SharedPath = $sharedPath } {
+    InModuleScope ATAP.Utilities.SystemParityMonitor.PowerShell -Parameters @{ Policy = $policy; SharedPath = $sharedPath; FixtureRoot = $fixtureRoot } {
       Mock Invoke-ParityNativeCommand {
         param($Command, $ArgumentList)
         if ($ArgumentList -contains '--version') { return [pscustomobject]@{ ExitCode = 0; Output = @('10.0.731102+fixture') } }
         [pscustomobject]@{ ExitCode = 0; Output = @('help') }
       }
-      $surfaces = @(Get-SharedDotNetToolParitySurfaces -HostName utat022 -StatePath $TestDrive -Policy $Policy -CurrentIdentityName 'UTAT022\SvcParityAudit')
+      $surfaces = @(Get-SharedDotNetToolParitySurfaces -HostName utat022 -StatePath $fixtureRoot -Policy $Policy -CurrentIdentityName 'UTAT022\SvcParityAudit')
       ($surfaces | Where-Object Category -eq 'SharedDotNetTool').Value |
         Should -Be 'Available;Version=10.0.731102;Path=<shared>'
       ($surfaces | Where-Object Category -eq 'SharedDotNetToolConsumer').Value |
@@ -33,8 +38,8 @@ Describe 'Task 15.167 shared .NET tool parity contract' -Tag 'Unit' {
   }
 
   It 'reports a user-scoped-only installation as actionable audit error' {
-    $sharedPath = Join-Path $TestDrive 'shared-empty'
-    $userPath = Join-Path $TestDrive 'user-tools'
+    $sharedPath = Join-Path $fixtureRoot 'shared-empty'
+    $userPath = Join-Path $fixtureRoot 'user-tools'
     New-Item -ItemType Directory -Path $sharedPath -Force | Out-Null
     New-Item -ItemType Directory -Path (Join-Path $userPath '.store\dotnet-trace\10.0.731102') -Force | Out-Null
     $policy = [pscustomobject]@{
@@ -44,15 +49,15 @@ Describe 'Task 15.167 shared .NET tool parity contract' -Tag 'Unit' {
       Consumers = @([pscustomobject]@{ LogicalIdentity = 'ParityAudit'; ActualIdentity = 'UTAT022\SvcParityAudit'; EvidenceMode = 'CurrentProcess' })
     }
 
-    InModuleScope ATAP.Utilities.SystemParityMonitor.PowerShell -Parameters @{ Policy = $policy; UserPath = $userPath } {
-      $surfaces = @(Get-SharedDotNetToolParitySurfaces -HostName utat022 -StatePath $TestDrive -Policy $Policy -PackageManagerProfiles @([pscustomobject]@{ Identity = 'UTAT022\whertzing'; NuGetToolPath = $UserPath }) -CurrentIdentityName 'UTAT022\SvcParityAudit')
+    InModuleScope ATAP.Utilities.SystemParityMonitor.PowerShell -Parameters @{ Policy = $policy; UserPath = $userPath; FixtureRoot = $fixtureRoot } {
+      $surfaces = @(Get-SharedDotNetToolParitySurfaces -HostName utat022 -StatePath $fixtureRoot -Policy $Policy -PackageManagerProfiles @([pscustomobject]@{ Identity = 'UTAT022\whertzing'; NuGetToolPath = $UserPath }) -CurrentIdentityName 'UTAT022\SvcParityAudit')
       ($surfaces | Where-Object Category -eq 'SharedDotNetTool').Value | Should -Match '^AuditError=UserScopedOnly'
     }
   }
 
   It 'rejects stale and wrong-identity consumer evidence instead of treating a label as impersonation' {
-    $sharedPath = Join-Path $TestDrive 'shared-evidence'
-    $evidencePath = Join-Path $TestDrive 'consumer.json'
+    $sharedPath = Join-Path $fixtureRoot 'shared-evidence'
+    $evidencePath = Join-Path $fixtureRoot 'consumer.json'
     New-Item -ItemType Directory -Path (Join-Path $sharedPath '.store\dotnet-trace\10.0.731102') -Force | Out-Null
     New-Item -ItemType File -Path (Join-Path $sharedPath 'dotnet-trace.exe') -Force | Out-Null
     [pscustomobject]@{
@@ -71,19 +76,19 @@ Describe 'Task 15.167 shared .NET tool parity contract' -Tag 'Unit' {
       Consumers = @([pscustomobject]@{ LogicalIdentity = 'BuildMaster'; ActualIdentity = 'UTAT022\SvcBuildmaster'; EvidenceMode = 'EvidenceFile'; EvidencePath = $evidencePath })
     }
 
-    InModuleScope ATAP.Utilities.SystemParityMonitor.PowerShell -Parameters @{ Policy = $policy } {
+    InModuleScope ATAP.Utilities.SystemParityMonitor.PowerShell -Parameters @{ Policy = $policy; FixtureRoot = $fixtureRoot } {
       Mock Invoke-ParityNativeCommand {
         param($Command, $ArgumentList)
         [pscustomobject]@{ ExitCode = 0; Output = if ($ArgumentList -contains '--version') { @('10.0.731102') } else { @('help') } }
       }
-      $surfaces = @(Get-SharedDotNetToolParitySurfaces -HostName utat022 -StatePath $TestDrive -Policy $Policy -CurrentIdentityName 'UTAT022\SvcParityAudit')
+      $surfaces = @(Get-SharedDotNetToolParitySurfaces -HostName utat022 -StatePath $fixtureRoot -Policy $Policy -CurrentIdentityName 'UTAT022\SvcParityAudit')
       ($surfaces | Where-Object Category -eq 'SharedDotNetToolConsumer').Value | Should -Be 'AuditError=WrongIdentity'
     }
   }
 
   It 'requires exact Task 15.167 journals and Verified peer acknowledgements' {
-    $leftPath = Join-Path $TestDrive 'left'
-    $rightPath = Join-Path $TestDrive 'right'
+    $leftPath = Join-Path $fixtureRoot 'left'
+    $rightPath = Join-Path $fixtureRoot 'right'
     New-Item -ItemType Directory -Path $leftPath, $rightPath -Force | Out-Null
     $entryId = [guid]::NewGuid().ToString()
     [pscustomobject]@{
@@ -119,8 +124,8 @@ Describe 'Task 15.167 shared .NET tool parity contract' -Tag 'Unit' {
   }
 
   It 'surfaces insufficient Task 15.167 acknowledgements through the public comparison result and report' {
-    $leftPath = Join-Path $TestDrive 'compare-left'
-    $rightPath = Join-Path $TestDrive 'compare-right'
+    $leftPath = Join-Path $fixtureRoot 'compare-left'
+    $rightPath = Join-Path $fixtureRoot 'compare-right'
     $reportPath = Join-Path $leftPath 'DriftReport.fixture.md'
     New-Item -ItemType Directory -Path $leftPath, $rightPath -Force | Out-Null
     $capturedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
@@ -191,7 +196,7 @@ Describe 'Task 15.167 shared .NET tool parity contract' -Tag 'Unit' {
       SchemaVersion = 1
       SharedPath = 'C:\ProgramData\dotnet\tools'
       Tools = @([pscustomobject]@{ PackageId = 'dotnet-trace'; CommandName = 'dotnet-trace.exe'; ExpectedVersion = '10.0.731102' })
-      Consumers = @([pscustomobject]@{ LogicalIdentity = 'BuildMaster'; ActualIdentity = 'SOMEOTHERHOST\NoSuchIdentity'; EvidenceMode = 'EvidenceFile'; EvidencePath = (Join-Path $TestDrive 'should-not-exist.json') })
+      Consumers = @([pscustomobject]@{ LogicalIdentity = 'BuildMaster'; ActualIdentity = 'SOMEOTHERHOST\NoSuchIdentity'; EvidenceMode = 'EvidenceFile'; EvidencePath = (Join-Path $fixtureRoot 'should-not-exist.json') })
     }
     { Invoke-SharedDotNetToolConsumerProbe -Policy $policy -LogicalIdentity BuildMaster -Confirm:$false } |
       Should -Throw '*does not match configured identity*'
@@ -207,9 +212,14 @@ Describe 'Task 15.167 scheduled required-change alerting' -Tag 'Unit' {
     . (Join-Path $scriptsRoot 'Invoke-ParityScheduledCompareTask.ps1')
   }
 
+  BeforeEach {
+    $fixtureRoot=Join-Path ([IO.Path]::GetTempPath()) ('ST_'+[guid]::NewGuid().ToString('N'))
+    [void][IO.Directory]::CreateDirectory($fixtureRoot)
+  }
+
   It 'emits an immediate actionable warning when required rollout evidence is insufficient' {
-    $statePath = Join-Path $TestDrive 'scheduled-state'
-    $resultPath = Join-Path $TestDrive 'scheduled-results'
+    $statePath = Join-Path $fixtureRoot 'scheduled-state'
+    $resultPath = Join-Path $fixtureRoot 'scheduled-results'
     New-Item -ItemType Directory -Path $statePath, $resultPath -Force | Out-Null
     Mock -CommandName Import-Module
     Mock -CommandName Compare-ParityAudits -MockWith {

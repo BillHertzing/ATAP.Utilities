@@ -17,7 +17,7 @@
 # listener" is a bare loopback TcpListener that accepts a connection and serves nothing.
 # The credential used throughout is the obviously fake literal 'test-user:test-secret'.
 
-#Requires -Module Pester
+#Requires -Module @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 
 BeforeAll {
   $rootTrustFunctionFile = Join-Path $PSScriptRoot '..\..\private\Test-AceOutpostCurrentUserRootTrust.ps1'

@@ -1,4 +1,4 @@
-#Requires -Module Pester
+#Requires -Module @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 BeforeAll {
   $script:moduleRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
   . (Join-Path $script:moduleRoot 'public\Invoke-MSBuildWithLists.ps1')

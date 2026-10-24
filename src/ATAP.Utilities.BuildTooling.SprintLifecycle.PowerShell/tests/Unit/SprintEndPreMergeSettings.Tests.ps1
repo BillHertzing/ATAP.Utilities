@@ -1,6 +1,13 @@
 #Requires -Version 7.0
 
 BeforeAll {
+  . (Join-Path $PSScriptRoot '../../private/Get-SprintGeneratedArtifactState.ps1')
+  # Task 16.12: unrelated unit tests must never inspect workstation settings.
+  function Set-UserSettingsSymlink {
+    [CmdletBinding(SupportsShouldProcess)]
+    param([string]$SharedVSCodeWorktreePath, [switch]$CheckOnly, [string[]]$WorktreePaths)
+    throw 'Unmocked settings audit'
+  }
   # Load the actual lifecycle only; every dependency is a local fail-closed
   # stub or a Pester mock. No installed lifecycle or host boundary runs here.
   function Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
@@ -50,6 +57,10 @@ BeforeAll {
 
 Describe 'SprintEnd premerge shared settings deferral' -Tag 'Unit' {
   BeforeEach {
+    Mock Set-UserSettingsSymlink {
+      if (-not $CheckOnly) { throw 'Only a settings audit is permitted in this fixture' }
+      [PSCustomObject]@{ Ok = $true }
+    }
     $gitRoot = Join-Path $TestDrive 'GitHub'
     $planning = Join-Path $gitRoot '_Planning-wt-35-Sprint-0015-work-items'
     $shared = Join-Path $gitRoot 'SharedVSCode-wt-64-Sprint-0015-work-items'
@@ -73,6 +84,8 @@ Describe 'SprintEnd premerge shared settings deferral' -Tag 'Unit' {
     Mock Test-SprintEndCommandSurface { [PSCustomObject]@{ Ok = $true } }
     Mock Test-SprintPrerequisites { [PSCustomObject]@{ AllOk = $true } }
     Mock Test-SprintEndWorktreeState { [PSCustomObject]@{ Ok = $true } }
+    # Task 16.91.b: lifecycle fixtures are not git repositories; the gate has its own suite.
+    Mock Get-SprintGeneratedArtifactState { [PSCustomObject]@{ Ok = $true; TrackedPaths = @(); CitedPaths = @(); Failures = @() } }
     Mock Test-SprintCheckpointCoverage { [PSCustomObject]@{ Ok = $true } }
     $script:boundaryCalls = @()
     Mock Set-SprintBoundaryContext {

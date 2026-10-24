@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for Resolve-DbInstanceName (Stream J, task J1).
+# Pester 6.2+ tests for Resolve-DbInstanceName (Stream J, task J1).
 # Pure function; no external dependencies need to be mocked.
 
 BeforeAll {

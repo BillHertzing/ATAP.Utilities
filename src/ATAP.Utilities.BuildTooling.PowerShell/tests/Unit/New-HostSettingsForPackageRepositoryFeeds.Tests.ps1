@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ unit tests for New-HostSettingsForPackageRepositoryFeeds.
+# Pester 6.2+ unit tests for New-HostSettingsForPackageRepositoryFeeds.
 # The helper writes fragment files, so Set-Content is mocked to capture output
 # for assertions without touching the real host-settings paths.
 # Validates that the Integration tier was added (72 total feed combinations

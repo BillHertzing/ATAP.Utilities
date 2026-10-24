@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for New-PSModuleNupkg (Stream G3).
+# Pester 6.2+ tests for New-PSModuleNupkg (Stream G3).
 # Register-/Unregister-PSResourceRepository and Publish-PSResource are mocked.
 
 BeforeAll {
@@ -114,7 +114,7 @@ Describe 'New-PSModuleNupkg' -Tag 'Unit' {
 
         It 'Always unregisters the temporary repository (finally cleanup)' {
             New-PSModuleNupkg -ModulePath $script:modulePath -OutputPath $script:outputPath | Out-Null
-            Assert-MockCalled Unregister-PSResourceRepository -Times 1 -Exactly -Scope It
+            Should -Invoke Unregister-PSResourceRepository -Times 1 -Exactly -Scope It
         }
 
         It 'Calls Publish-PSResource with -Path and skips dependency resolution for the empty staging repository' -Tag 'PromotedModuleHostSensitive' {
@@ -149,7 +149,7 @@ Describe 'New-PSModuleNupkg' -Tag 'Unit' {
                 { New-PSModuleNupkg -ModulePath $script:modulePath -OutputPath $script:outputPath } |
                     Should -Throw -ExpectedMessage '*Simulated pack failure*'
             } finally {
-                Assert-MockCalled Unregister-PSResourceRepository -Times 1 -Exactly -Scope It
+                Should -Invoke Unregister-PSResourceRepository -Times 1 -Exactly -Scope It
             }
         }
     }
@@ -163,14 +163,14 @@ Describe 'New-PSModuleNupkg' -Tag 'Unit' {
 
             $result = New-PSModuleNupkg -ModulePath $script:modulePath -OutputPath $script:outputPath
             $result.FullName | Should -Be $existing
-            Assert-MockCalled Publish-PSResource -Times 0 -Exactly -Scope It
+            Should -Invoke Publish-PSResource -Times 0 -Exactly -Scope It
         }
     }
 
     Context 'WhatIf' -Tag 'BuildTranscriptNoise' {
         It 'Does not invoke Publish-PSResource under -WhatIf' {
             New-PSModuleNupkg -ModulePath $script:modulePath -OutputPath $script:outputPath -WhatIf | Out-Null
-            Assert-MockCalled Publish-PSResource -Times 0 -Exactly -Scope It
+            Should -Invoke Publish-PSResource -Times 0 -Exactly -Scope It
         }
     }
 }

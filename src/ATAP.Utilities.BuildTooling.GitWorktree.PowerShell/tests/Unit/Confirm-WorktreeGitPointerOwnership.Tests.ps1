@@ -23,7 +23,7 @@ Describe 'Confirm-WorktreeGitPointerOwnership' {
 
     $result.Verified | Should -BeTrue
     $result.Repaired | Should -BeFalse
-    Assert-MockCalled Set-Acl -Times 0 -Exactly
+    Should -Invoke Set-Acl -Times 0 -Exactly
   }
 
   It 'repairs only the exact pointer and verifies the owner again' {
@@ -43,7 +43,7 @@ Describe 'Confirm-WorktreeGitPointerOwnership' {
 
     $result.Verified | Should -BeTrue
     $result.Repaired | Should -BeTrue
-    Assert-MockCalled Set-Acl -Times 1 -Exactly -ParameterFilter {
+    Should -Invoke Set-Acl -Times 1 -Exactly -ParameterFilter {
       $LiteralPath -eq (Join-Path $script:worktree '.git')
     }
     $script:aclReads | Should -Be 2
@@ -61,7 +61,7 @@ Describe 'Confirm-WorktreeGitPointerOwnership' {
         -Confirm:$false
     } | Should -Throw '*not interactive operator*'
 
-    Assert-MockCalled Set-Acl -Times 0 -Exactly
+    Should -Invoke Set-Acl -Times 0 -Exactly
   }
 
   It 'contains no safe.directory mutation or wildcard trust' {

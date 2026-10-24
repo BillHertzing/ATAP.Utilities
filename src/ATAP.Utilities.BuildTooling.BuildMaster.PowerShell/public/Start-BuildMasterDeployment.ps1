@@ -77,6 +77,9 @@ function Start-BuildMasterDeployment {
     $fn = 'Start-BuildMasterDeployment'
     $mn = 'ATAP.Utilities.BuildTooling.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn (Application='$Application' ReleaseNumber='$ReleaseNumber' BuildNumber='$BuildNumber' ToStage='$ToStage')" -Tag 'Trace'
+    if (-not (Get-Command -Name 'Get-BuildMasterReleaseNumberLengthHint' -ErrorAction SilentlyContinue)) {
+      . (Join-Path $PSScriptRoot 'Start-BuildMasterPackagePipeline.ps1')
+    }
 
     $BuildMasterBaseUrl = Get-PVal -ParameterName 'BuildMasterBaseUrl' -originalPSBoundParameters $PSBoundParameters -DefaultValue $BuildMasterBaseUrl
     if ([string]::IsNullOrWhiteSpace($BuildMasterBaseUrl)) {
@@ -212,7 +215,7 @@ function Start-BuildMasterDeployment {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg -Tag 'RestCall'
         throw $msg
       }
-      $msg = "POST $uri failed: $($_.Exception.Message)"
+      $msg = "POST $uri failed: $($_.Exception.Message)$(Get-BuildMasterReleaseNumberLengthHint -ReleaseNumber $ReleaseNumber)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg -Tag 'RestCall'
       throw $msg
     }

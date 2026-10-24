@@ -21,7 +21,7 @@ Describe 'Set-ProGetServiceDependency' {
 
       Set-ProGetServiceDependency
 
-      Assert-MockCalled 'sc.exe' -Times 0
+      Should -Invoke 'sc.exe' -Times 0
     }
   }
 
@@ -39,7 +39,7 @@ Describe 'Set-ProGetServiceDependency' {
     It 'Calls sc.exe config with new dependency' {
       Set-ProGetServiceDependency
 
-      Assert-MockCalled 'sc.exe' -Times 1 -Exactly
+      Should -Invoke 'sc.exe' -Times 1 -Exactly
     }
   }
 
@@ -49,7 +49,7 @@ Describe 'Set-ProGetServiceDependency' {
 
     It 'Throws and logs an error' {
       { Set-ProGetServiceDependency } | Should -Throw
-      Assert-MockCalled Write-PSFMessage -ParameterFilter {
+      Should -Invoke Write-PSFMessage -ParameterFilter {
         $Level -eq 'Error' -and $Message -like '*does not exist*'
       }
     }

@@ -142,6 +142,10 @@ function Get-AICoreInstructionBody {
         "$($manifestTarget.Count). The $Carrier carrier cannot be composed from canonical.")
     }
 
+    if ([string]$manifestTarget[0].materialization -ne 'composer-owner') {
+      throw "Target '$targetCarrierName' on '$recordId' must declare materialization 'composer-owner'."
+    }
+
     $composedProperty = $manifestTarget[0].PSObject.Properties['composedMaterialization']
     if (-not $composedProperty -or [string]::IsNullOrWhiteSpace([string]$composedProperty.Value)) {
       throw ("Target '$targetCarrierName' on '$recordId' declares no 'composedMaterialization'. " +
@@ -149,6 +153,10 @@ function Get-AICoreInstructionBody {
         "'generated-wrapper'); without it the emitted bytes would be a guess.")
     }
     $materialization = [string]$composedProperty.Value
+    if ($materialization -notin @('copy', 'generated-wrapper')) {
+      throw ("Target '$targetCarrierName' on '$recordId' declares unsupported " +
+        "composedMaterialization '$materialization'; expected 'copy' or 'generated-wrapper'.")
+    }
 
     $sourceContent = Get-Content -LiteralPath $canonicalFullPath -Raw -ErrorAction Stop
     $sourceHash = Get-AIAdapterFileHash -Path $canonicalFullPath -NormalizeNewlines

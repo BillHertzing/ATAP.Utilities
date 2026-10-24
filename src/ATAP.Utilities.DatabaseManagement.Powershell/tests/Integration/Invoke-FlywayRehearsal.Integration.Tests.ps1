@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ opt-in integration coverage for Stream J5.
+# Pester 6.2+ opt-in integration coverage for Stream J5.
 
 BeforeAll {
   $moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)

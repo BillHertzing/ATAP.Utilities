@@ -20,7 +20,7 @@ Optional string expression for the -TestCases parameter used in Pester v4 style
 parameterized tests (e.g., '@(@{Value=1},@{Value=2})').
 
 .PARAMETER ForEach
-Optional string expression for the -ForEach parameter used in Pester v5 style
+Optional string expression for the -ForEach parameter used in Pester 6.2.0 style
 data-driven tests. Takes precedence over TestCases in rendered output.
 
 .PARAMETER Body

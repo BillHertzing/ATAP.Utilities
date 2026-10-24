@@ -1,5 +1,5 @@
 ﻿#Requires -Version 7.0
-# Pester 5+ tests for Start-BuildMasterPipeline (Stream H, task H4).
+# Pester 6.2+ tests for Start-BuildMasterPipeline (Stream H, task H4).
 # Mocks Invoke-RestMethod; no real network or BuildMaster contact.
 
 BeforeAll {
@@ -51,15 +51,11 @@ BeforeAll {
 
   $script:oldConfigRootKeys = $global:configRootKeys
   $script:oldSettings = $global:settings
-  $script:savedSecretName = [Environment]::GetEnvironmentVariable('BuildMasterAdminApiKeySecretName', 'User')
-  $script:savedBaseUrl = [Environment]::GetEnvironmentVariable('BUILDMASTER_BASE_URL', 'User')
 }
 
 AfterAll {
   $global:configRootKeys = $script:oldConfigRootKeys
   $global:settings = $script:oldSettings
-  [Environment]::SetEnvironmentVariable('BuildMasterAdminApiKeySecretName', $script:savedSecretName, 'User')
-  [Environment]::SetEnvironmentVariable('BUILDMASTER_BASE_URL', $script:savedBaseUrl, 'User')
 }
 
 Describe 'Start-BuildMasterPipeline' -Tag 'Unit', 'PromotedModuleHostSensitive' {
@@ -87,7 +83,7 @@ Describe 'Start-BuildMasterPipeline' -Tag 'Unit', 'PromotedModuleHostSensitive' 
       $result.BuildId | Should -Be '4271'
       $result.BuildNumber | Should -Be '4271'
       $result.ResponseSummary | Should -Match 'build queued'
-      Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter { $Method -eq 'Post' }
+      Should -Invoke Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter { $Method -eq 'Post' }
     }
 
     It 'Targets the correct endpoint URL' {
@@ -159,7 +155,7 @@ Describe 'Start-BuildMasterPipeline' -Tag 'Unit', 'PromotedModuleHostSensitive' 
 
       Start-BuildMasterPipeline -Application 'A' -ReleaseNumber '1.0.0' | Out-Null
 
-      Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter { $Method -eq 'Post' }
+      Should -Invoke Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter { $Method -eq 'Post' }
       $script:createBuildCalledWithFiniteTimeout | Should -BeTrue
     }
   }
@@ -190,11 +186,33 @@ Describe 'Start-BuildMasterPipeline' -Tag 'Unit', 'PromotedModuleHostSensitive' 
 
   Context 'Config resolution' {
     It 'Throws when no API key secret name is configured' {
+      if (-not [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable('BuildMasterAdminApiKeySecretName', 'User'))) {
+        Set-ItResult -Skipped -Because 'User-scope BuildMasterAdminApiKeySecretName is configured; the missing-name guard cannot be exercised without changing the User environment.'
+        return
+      }
+
       $global:settings = @{ BuildMasterBaseUrl = 'https://x.example' }
-      [Environment]::SetEnvironmentVariable('BuildMasterAdminApiKeySecretName', $null, 'Process')
-      [Environment]::SetEnvironmentVariable('BuildMasterAdminApiKeySecretName', $null, 'User')
-      { Start-BuildMasterPipeline -Application 'A' -ReleaseNumber '1.0.0' } |
-        Should -Throw -ExpectedMessage '*BuildMasterAdminApiKeySecretName*'
+      $savedProcessSecretName = [Environment]::GetEnvironmentVariable('BuildMasterAdminApiKeySecretName', 'Process')
+      Mock Invoke-RestMethod { throw 'HTTP must not be called without a secret name.' }
+      try {
+        [Environment]::SetEnvironmentVariable('BuildMasterAdminApiKeySecretName', $null, 'Process')
+        { Start-BuildMasterPipeline -Application 'A' -ReleaseNumber '1.0.0' } |
+          Should -Throw -ExpectedMessage '*BuildMasterAdminApiKeySecretName*'
+        Should -Invoke Invoke-RestMethod -Times 0 -Exactly -Scope It
+        Should -Invoke Get-SecretATAP -Times 0 -Exactly -Scope It
+      } finally {
+        [Environment]::SetEnvironmentVariable('BuildMasterAdminApiKeySecretName', $savedProcessSecretName, 'Process')
+      }
+    }
+
+    It 'throws before HTTP when the configured secret has no readable API key value' {
+      Mock Get-SecretATAP { throw 'fixture secret value is unavailable' }
+      Mock Invoke-RestMethod { throw 'HTTP must not be called without an API key value.' }
+
+      { Start-BuildMasterPipeline -Application 'A' -ReleaseNumber '1.0.0' -BuildMasterAdminApiKeySecretName 'Fixture.BuildMaster.Admin.API.Key' } |
+        Should -Throw -ExpectedMessage '*Unable to resolve BuildMaster admin API key value*'
+      Should -Invoke Get-SecretATAP -Times 4 -Exactly -Scope It
+      Should -Invoke Invoke-RestMethod -Times 0 -Exactly -Scope It
     }
   }
 
@@ -204,7 +222,7 @@ Describe 'Start-BuildMasterPipeline' -Tag 'Unit', 'PromotedModuleHostSensitive' 
       $result = Start-BuildMasterPipeline -Application 'A' -ReleaseNumber '1.0.0' -WhatIf
       $result.Succeeded | Should -BeFalse
       $result.ResponseSummary | Should -Match 'WhatIf'
-      Assert-MockCalled Invoke-RestMethod -Times 0 -Exactly -Scope It
+      Should -Invoke Invoke-RestMethod -Times 0 -Exactly -Scope It
     }
   }
 }

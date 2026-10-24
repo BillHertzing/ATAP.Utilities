@@ -15,7 +15,12 @@ BeforeAll {
 
   $script:setUserScopeProfilePath = Join-Path $PSScriptRoot '..' '..' '..' `
     'ATAP.Utilities.BuildTooling.PowerShell' 'public' 'Set-UserScopeProfile.ps1'
-  Import-Module ATAP.Utilities.BuildTooling.PowerShell -RequiredVersion 0.1.73 -Force
+  # Load the installed BuildTooling first (no version pin: 0.1.73 is no longer installed) so its
+  # required SprintLifecycle >= 0.1.5 copy is resident BEFORE the worktree copy (manifest 0.1.0) is
+  # imported. Otherwise the first autoloaded BuildTooling command loads the installed SprintLifecycle
+  # as a second copy and Pester 6 rejects every Mock -ModuleName. The Remove-Module below then
+  # leaves only the worktree copy; the order matters.
+  Import-Module ATAP.Utilities.BuildTooling.PowerShell
   $script:manifestPath = Join-Path $PSScriptRoot '..' '..' 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell.psd1'
   Get-Module -Name ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell -All |
     Remove-Module -Force -ErrorAction SilentlyContinue

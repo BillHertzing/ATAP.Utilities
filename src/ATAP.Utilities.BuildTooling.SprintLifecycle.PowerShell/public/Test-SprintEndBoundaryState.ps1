@@ -67,9 +67,15 @@ function Test-SprintEndBoundaryState {
   scopes: `LiveConfiguration` and `HistoricalEvidence`. Live configuration is
   active adapters, settings, and workspace files; historical evidence is
   `SprintHistory\`, `SprintRetrospective\` (including `WorkspaceArchive\`),
-  any `Archived\` folder, `Samples\`/`Sample\` folders, and `_generated\`
-  evidence. Both scopes are searched and reported, but only
-  `LiveConfiguration` findings can fail the gate (`Ok` / `Failures`).
+  any `Archived\` folder, and `Samples\`/`Sample\` folders. Both scopes are
+  searched and reported, but only `LiveConfiguration` findings can fail the
+  gate (`Ok` / `Failures`).
+  Task 16.91.d (SC-0470, R-38) removed `_generated\` from historical evidence.
+  A stale reference under a search root's `_generated\` is classified
+  `GeneratedArtifact`, listed in `GeneratedArtifactReferences`, and fails the
+  gate as `GeneratedArtifactReferences`: sprint `_generated\` must be cleared
+  (Invoke-SprintEndLifecycle -ClearGeneratedArtifacts) and durable evidence
+  relocated to InformationForTheFuture before the boundary is clean.
   `StaleReferences` now carries a `Classification` property on every entry
   (`'LiveConfiguration'` or `'HistoricalEvidence'`) — this is an additive,
   backward-compatible change. The result also adds `LiveStaleReferences` and
@@ -186,7 +192,13 @@ function Test-SprintEndBoundaryState {
     $staleReferences = [System.Collections.Generic.List[object]]::new()
     $extensions = @('*.code-workspace', '*.json', '*.jsonc', '*.toml')
     $alwaysSkipPathPattern = '[\\/]\.git[\\/]'
-    $historicalEvidencePathPattern = '(?i)[\\/](?:_generated|SprintHistory|SprintRetrospective|Archived|Samples?)[\\/]'
+    # Task 16.91.d (SC-0470, R-38): _generated is no longer exempt as historical
+    # evidence. A stale sprint reference inside a search root's _generated is a
+    # GeneratedArtifact finding that fails the gate; durable evidence belongs in
+    # InformationForTheFuture. The test is relative to the search root so a root
+    # that itself lives under a _generated folder is not misclassified.
+    $historicalEvidencePathPattern = '(?i)[\\/](?:SprintHistory|SprintRetrospective|Archived|Samples?)[\\/]'
+    $generatedArtifactPathPattern = '(?i)(?:^|[\\/])_generated[\\/]'
     $committedTaskEvidencePathPattern = '(?i)[\\/]SolutionDocumentation[\\/][^\\/]*-Task-\d+(?:\.\d+)*\.(?:before|after)\.summary\.json$'
     $planningInputPathPattern = '(?i)[\\/]_Planning(?:-wt-\d+-Sprint-\d{4}-work-items)?[\\/](?:InformationForTheFuture[\\/]|Research[\\/]OrganizationalModel[\\/]SeedData[\\/]).*\.json$'
     $generatedBuildMetadataPathPattern = '(?i)[\\/]obj[\\/](?:[^\\/]+[\\/])*(?:project\.assets\.json|[^\\/]+\.csproj\.nuget\.dgspec\.json|[^\\/]+\.sourcelink\.json)$'
@@ -196,7 +208,10 @@ function Test-SprintEndBoundaryState {
       foreach ($extension in $extensions) {
         foreach ($file in @(Get-ChildItem -LiteralPath $searchRoot -Filter $extension -File -Recurse -ErrorAction SilentlyContinue)) {
           if ($file.FullName -match $alwaysSkipPathPattern) { continue }
-          $classification = if (
+          $searchRelativePath = [IO.Path]::GetRelativePath($searchRoot, $file.FullName)
+          $classification = if ($searchRelativePath -match $generatedArtifactPathPattern) {
+            'GeneratedArtifact'
+          } elseif (
             $file.FullName -match $historicalEvidencePathPattern -or
             $file.FullName -match $committedTaskEvidencePathPattern -or (
               ($file.FullName -match $planningInputPathPattern -or
@@ -228,6 +243,7 @@ function Test-SprintEndBoundaryState {
     }
     $liveStaleReferences = @($staleReferences | Where-Object { $_.Classification -eq 'LiveConfiguration' })
     $historicalStaleReferences = @($staleReferences | Where-Object { $_.Classification -eq 'HistoricalEvidence' })
+    $generatedArtifactReferences = @($staleReferences | Where-Object { $_.Classification -eq 'GeneratedArtifact' })
 
     if (-not $PSBoundParameters.ContainsKey('ATAPUtilitiesRoot') -or [string]::IsNullOrWhiteSpace($ATAPUtilitiesRoot)) {
       $ATAPUtilitiesRoot = Join-Path $gitRootFull 'ATAP.Utilities'
@@ -428,7 +444,19 @@ function Test-SprintEndBoundaryState {
       [void]$failures.Add('LoginScheduledTasks')
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $loginScheduledTaskError
     }
+    $settingsLink = $null
+    try {
+      if (-not (Get-Command -Name 'Set-UserSettingsSymlink' -ErrorAction SilentlyContinue)) {
+        . (Join-Path $PSScriptRoot '../private/Set-UserSettingsSymlink.ps1')
+      }
+      $settingsLink = Set-UserSettingsSymlink -SharedVSCodeWorktreePath (Join-Path $gitRootFull 'SharedVSCode') -CheckOnly -WorktreePaths $WorktreePaths -Confirm:$false
+      if ($null -eq $settingsLink -or -not $settingsLink.Ok) { throw 'Settings stable target/readability audit failed.' }
+    } catch {
+      $settingsLink = [PSCustomObject]@{ Ok = $false; Error = $_.Exception.Message }
+      [void]$failures.Add('SettingsLink')
+    }
     if ($liveStaleReferences.Count -gt 0) { [void]$failures.Add('StaleSprintReferences') }
+    if ($generatedArtifactReferences.Count -gt 0) { [void]$failures.Add('GeneratedArtifactReferences') }
     if ($environmentFindings.Count -gt 0) { [void]$failures.Add('SecretEnvironmentVariables') }
     if (-not $freshShell.Ok) { [void]$failures.Add('FreshShellProfile') }
     if ($managedProfileFailures.Count -gt 0) { [void]$failures.Add('ManagedUserProfiles') }
@@ -437,13 +465,15 @@ function Test-SprintEndBoundaryState {
       StaleReferences              = $staleReferences.ToArray()
       LiveStaleReferences          = $liveStaleReferences
       HistoricalStaleReferences    = $historicalStaleReferences
-      Profiles                     = @($profileResults)
+      GeneratedArtifactReferences  = $generatedArtifactReferences
+      Profiles                    = @($profileResults)
       MissingProfiles              = $missingProfiles
       ManagedProfileFailures       = @($managedProfileFailures)
       SecretEnvironmentVariables   = $environmentFindings.ToArray()
       AllowedPersonalVaultEnvironmentVariables = $allowedPersonalVaultEnvironmentVariables.ToArray()
       HostDisposition = $hostDispositionParameters['HostDisposition']
       FreshShell                   = $freshShell
+      SettingsLink                 = $settingsLink
       LoginScheduledTasks          = $loginScheduledTasks
       LoginScheduledTaskError      = $loginScheduledTaskError
       Failures                     = $failures.ToArray()

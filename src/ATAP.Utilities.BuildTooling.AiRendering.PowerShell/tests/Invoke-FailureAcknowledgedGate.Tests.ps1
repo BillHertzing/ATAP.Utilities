@@ -1,5 +1,5 @@
 # AI assisted using Powershell.instructions.md as guidelines
-# Pester 5+ tests for Invoke-FailureAcknowledgedGate
+# Pester 6.2+ tests for Invoke-FailureAcknowledgedGate
 
 BeforeAll {
   $functionName = 'Invoke-FailureAcknowledgedGate'

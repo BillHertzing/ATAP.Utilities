@@ -81,7 +81,7 @@ FunctionsToExport = @(
   'Clear-SprintGeneratedArtifacts', 'Complete-GatherCallRecordSegment', 'Convert-TasksMdToSprintBoard', 'Get-SprintEndApprovalPlan',
   'Get-SprintEndContext',
   'Get-SprintHistoryReconstruction', 'Initialize-CorpusStorageBoundary', 'Initialize-DownstreamSprintFromSharedVSCode',
-  'Initialize-SprintAIAdapters', 'Invoke-GatherCallRecordReconciliation', 'Invoke-SprintAIAdapterLifecycle', 'Invoke-SprintEndGitHubClose',
+  'Initialize-SprintAIAdapters', 'Invoke-GatherCallRecordReconciliation', 'Invoke-GeneratedFolderRemediation', 'Invoke-SprintAIAdapterLifecycle', 'Invoke-SprintEndGitHubClose',
   'Invoke-SprintEndInfrastructureCleanup', 'Invoke-SprintEndLifecycle', 'Invoke-SprintEndOverviewClose',
   'Invoke-SprintEndRehearsal',
   'New-OverviewSprintWorkspace', 'New-SprintEndDefectRoute', 'New-SprintEndHandoff', 'New-SprintStage1',

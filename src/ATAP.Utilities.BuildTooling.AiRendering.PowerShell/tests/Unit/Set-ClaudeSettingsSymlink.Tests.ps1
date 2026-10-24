@@ -1,4 +1,4 @@
-#Requires -Modules Pester
+#Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 
 BeforeAll {
   function Write-PSFMessage {
@@ -200,5 +200,25 @@ Describe 'Set-ClaudeSettingsSymlink managed render boundary' {
     (Get-Content -LiteralPath $settingsPath -Raw) | Should -BeExactly '{"localPreference":"original"}'
     (Get-ChildItem -LiteralPath (Join-Path $script:sharedRoot '_generated\ClaudeSettingsBackups') -File).Count |
       Should -Be 1
+  }
+
+  It 'never defaults backups into a stable SharedVSCode Git root and fails closed on an unknown host (Task 16.91.c)' {
+    Copy-Item -LiteralPath (Join-Path $script:sharedRoot '.ai') -Destination $script:sharedStable -Recurse
+    New-Item -ItemType Directory -Path (Join-Path $script:sharedStable '.git') -Force | Out-Null
+    $originalComputerName = $env:COMPUTERNAME
+    try {
+      $env:COMPUTERNAME = 'fixture-unknown-host'
+      {
+        Set-ClaudeSettingsSymlink `
+          -SharedVSCodeWorktreePath $script:sharedStable `
+          -AllowUserGlobalWrite `
+          -CheckpointConfirmed `
+          -Confirm:$false
+      } | Should -Throw "*No approved artifacts root for host 'fixture-unknown-host'*"
+    } finally {
+      $env:COMPUTERNAME = $originalComputerName
+    }
+
+    Test-Path -LiteralPath (Join-Path $script:sharedStable '_generated') | Should -BeFalse
   }
 }

@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for Set-GlobalConfigRootKeys orchestration and in-module sibling resolution.
+# Pester 6.2+ tests for Set-GlobalConfigRootKeys orchestration and in-module sibling resolution.
 
 BeforeAll {
   $script:moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)

@@ -1,5 +1,5 @@
 # AI assisted using Powershell.instructions.md as guidelines
-# Pester 5+ static-contract + behavioral tests for V4-B02: the PowerShell-module
+# Pester 6.2+ static-contract + behavioral tests for V4-B02: the PowerShell-module
 # 5-tier pipeline must be -NoProfile-safe. BuildMaster invokes the runner via
 # `pwsh -NoProfile -File`, so the user profile that populates $global:settings /
 # $global:configRootKeys never loads. Every settings lookup used by the plan and
@@ -189,25 +189,30 @@ Describe 'PowerShell module BuildMaster external artifact boundary' {
         $resolved | Should -Exist
     }
 
-    It 'uses canonical ARTIFACTS_PATH before legacy ATAP_ARTIFACTS_ROOT' {
-        $original = [Environment]::GetEnvironmentVariable('ATAP_ARTIFACTS_ROOT', 'Process')
+    It 'ignores the retired ATAP_ARTIFACTS_ROOT input (Task 16.83.d)' {
+        $originalCanonical = [Environment]::GetEnvironmentVariable('ARTIFACTS_PATH', 'Process')
+        $originalLegacy = [Environment]::GetEnvironmentVariable('ATAP_ARTIFACTS_ROOT', 'Process')
         $machineRoot = [Environment]::GetEnvironmentVariable('ARTIFACTS_PATH', 'Machine')
-        $environmentRoot = Join-Path $machineRoot 'Pester/PowerShellModuleBuildMaster/legacy-env'
-        $canonicalRoot = @('Process', 'User', 'Machine') |
-            ForEach-Object { [Environment]::GetEnvironmentVariable('ARTIFACTS_PATH', [EnvironmentVariableTarget]$_) } |
-            Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
-            Select-Object -First 1
+        $canonicalRoot = Join-Path $machineRoot 'Pester/PowerShellModuleBuildMaster/canonical-only'
+        $legacyRoot = Join-Path $machineRoot 'Pester/PowerShellModuleBuildMaster/legacy-env'
         try {
-            [Environment]::SetEnvironmentVariable('ATAP_ARTIFACTS_ROOT', $environmentRoot, 'Process')
+            [Environment]::SetEnvironmentVariable('ARTIFACTS_PATH', $canonicalRoot, 'Process')
+            [Environment]::SetEnvironmentVariable('ATAP_ARTIFACTS_ROOT', $legacyRoot, 'Process')
             $resolved = Resolve-PowerShellModuleArtifactDirectory `
                 -SourcePath $script:RepoRoot `
                 -BuildMasterBuildId '910002'
-            $expectedRoot = if ($canonicalRoot) { $canonicalRoot } else { $environmentRoot }
-            $resolved | Should -Be ([IO.Path]::GetFullPath((Join-Path $expectedRoot 'BuildMaster/PowerShellModules/910002')))
+            $resolved | Should -Be ([IO.Path]::GetFullPath((Join-Path $canonicalRoot 'BuildMaster/PowerShellModules/910002')))
+            $resolved | Should -Not -BeLike ([IO.Path]::GetFullPath($legacyRoot) + '*')
         }
         finally {
-            [Environment]::SetEnvironmentVariable('ATAP_ARTIFACTS_ROOT', $original, 'Process')
+            [Environment]::SetEnvironmentVariable('ARTIFACTS_PATH', $originalCanonical, 'Process')
+            [Environment]::SetEnvironmentVariable('ATAP_ARTIFACTS_ROOT', $originalLegacy, 'Process')
         }
+    }
+
+    It 'contains no legacy ATAP_ARTIFACTS_ROOT lookup in the resolver' {
+        $resolverText = (Get-Command -Name Resolve-PowerShellModuleArtifactDirectory).Definition
+        $resolverText | Should -Not -Match "GetEnvironmentVariable\('ATAP_ARTIFACTS_ROOT'"
     }
 
     It 'uses canonical ARTIFACTS_PATH when the legacy root is absent' {
@@ -229,7 +234,7 @@ Describe 'PowerShell module BuildMaster external artifact boundary' {
         }
     }
 
-    It 'keeps canonical root ahead of stale legacy and explicit root ahead of both' {
+    It 'ignores a stale legacy root and keeps the explicit root ahead of canonical' {
         $originalCanonical = [Environment]::GetEnvironmentVariable('ARTIFACTS_PATH', 'Process')
         $originalLegacy = [Environment]::GetEnvironmentVariable('ATAP_ARTIFACTS_ROOT', 'Process')
         $machineRoot = [Environment]::GetEnvironmentVariable('ARTIFACTS_PATH', 'Machine')
@@ -258,7 +263,7 @@ Describe 'PowerShell module BuildMaster external artifact boundary' {
 
     It 'defaults this Dropbox worktree owner to the configured external artifact root' {
         $configuredRoot = $null
-        foreach ($variable in @('ARTIFACTS_PATH', 'ATAP_ARTIFACTS_ROOT')) {
+        foreach ($variable in @('ARTIFACTS_PATH')) {
             $configuredRoot = @('Process', 'User', 'Machine') |
                 ForEach-Object { [Environment]::GetEnvironmentVariable($variable, [EnvironmentVariableTarget]$_) } |
                 Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |

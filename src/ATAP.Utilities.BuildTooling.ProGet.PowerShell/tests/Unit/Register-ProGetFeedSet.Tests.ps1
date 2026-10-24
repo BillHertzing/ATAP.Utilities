@@ -63,7 +63,7 @@ Describe 'Register-ProGetFeedSet' -Tag 'Unit' {
   It 'unregisters obsolete legacy promotion-matrix feeds by default' {
     Register-ProGetFeedSet -Confirm:$false | Out-Null
 
-    Assert-MockCalled Unregister-PSResourceRepository -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Unregister-PSResourceRepository -Times 1 -Exactly -Scope It -ParameterFilter {
       $Name -eq 'IntPreNugProdPushFeed'
     }
   }
@@ -71,7 +71,7 @@ Describe 'Register-ProGetFeedSet' -Tag 'Unit' {
   It 'does not unregister canonical or connector repositories' {
     Register-ProGetFeedSet -Confirm:$false | Out-Null
 
-    Assert-MockCalled Unregister-PSResourceRepository -Times 0 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Unregister-PSResourceRepository -Times 0 -Exactly -Scope It -ParameterFilter {
       $Name -eq 'PSGallery'
     }
   }
@@ -79,13 +79,13 @@ Describe 'Register-ProGetFeedSet' -Tag 'Unit' {
   It 'registers only powershellget feeds in both repository stores' {
     Register-ProGetFeedSet -Confirm:$false | Out-Null
 
-    Assert-MockCalled Register-PSResourceRepository -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Register-PSResourceRepository -Times 1 -Exactly -Scope It -ParameterFilter {
       $Name -eq 'powershellget-stable' -and $Uri -eq 'https://utat022:50000/nuget/powershellget-stable/v2'
     }
-    Assert-MockCalled Register-PSResourceRepository -Times 0 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Register-PSResourceRepository -Times 0 -Exactly -Scope It -ParameterFilter {
       $Name -eq 'nuget-stable'
     }
-    Assert-MockCalled Register-PSRepository -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Register-PSRepository -Times 1 -Exactly -Scope It -ParameterFilter {
       $Name -eq 'powershellget-stable' -and
       $SourceLocation -eq 'https://utat022:50000/nuget/powershellget-stable/' -and
       $PublishLocation -eq 'https://utat022:50000/nuget/powershellget-stable/' -and
@@ -96,7 +96,7 @@ Describe 'Register-ProGetFeedSet' -Tag 'Unit' {
   It 'skips pruning when -PruneObsolete is $false' {
     Register-ProGetFeedSet -PruneObsolete $false -Confirm:$false | Out-Null
 
-    Assert-MockCalled Unregister-PSResourceRepository -Times 0 -Exactly -Scope It
+    Should -Invoke Unregister-PSResourceRepository -Times 0 -Exactly -Scope It
   }
 
   It 'is idempotent — an already-registered canonical feed is not re-registered' {
@@ -106,8 +106,8 @@ Describe 'Register-ProGetFeedSet' -Tag 'Unit' {
 
     $result = Register-ProGetFeedSet -Confirm:$false
 
-    Assert-MockCalled Register-PSResourceRepository -Times 0 -Exactly -Scope It
-    Assert-MockCalled Set-PSResourceRepository -Times 0 -Exactly -Scope It
+    Should -Invoke Register-PSResourceRepository -Times 0 -Exactly -Scope It
+    Should -Invoke Set-PSResourceRepository -Times 0 -Exactly -Scope It
     ($result | Where-Object { $_.RepositoryKind -eq 'PSResourceGet' }).RegistrationResult | Should -Be 'AlreadyRegistered'
   }
 
@@ -118,8 +118,8 @@ Describe 'Register-ProGetFeedSet' -Tag 'Unit' {
 
     $result = Register-ProGetFeedSet -Confirm:$false
 
-    Assert-MockCalled Register-PSResourceRepository -Times 0 -Exactly -Scope It
-    Assert-MockCalled Set-PSResourceRepository -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Register-PSResourceRepository -Times 0 -Exactly -Scope It
+    Should -Invoke Set-PSResourceRepository -Times 1 -Exactly -Scope It -ParameterFilter {
       $Name -eq 'powershellget-stable' -and
       $Uri -eq 'https://utat022:50000/nuget/powershellget-stable/v2' -and
       $Trusted
@@ -139,8 +139,8 @@ Describe 'Register-ProGetFeedSet' -Tag 'Unit' {
 
     $result = Register-ProGetFeedSet -Confirm:$false
 
-    Assert-MockCalled Register-PSRepository -Times 0 -Exactly -Scope It
-    Assert-MockCalled Set-PSRepository -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Register-PSRepository -Times 0 -Exactly -Scope It
+    Should -Invoke Set-PSRepository -Times 1 -Exactly -Scope It -ParameterFilter {
       $Name -eq 'powershellget-stable' -and
       $SourceLocation -eq 'https://utat022:50000/nuget/powershellget-stable/' -and
       $PublishLocation -eq 'https://utat022:50000/nuget/powershellget-stable/' -and

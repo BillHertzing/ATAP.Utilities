@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# Pester 5+ tests for Resolve-DatabaseSqlConnection. These tests mock the
+# Pester 6.2+ tests for Resolve-DatabaseSqlConnection. These tests mock the
 # connection-opening helpers so they do not require a running SQL Server.
 
 BeforeAll {
@@ -42,9 +42,9 @@ Describe 'Resolve-DatabaseSqlConnection' -Tag 'Unit' {
 
     $result.Connection | Should -Be 'existing-connection'
     $result.IsCallerOwned | Should -BeTrue
-    Assert-MockCalled Assert-DatabaseSqlConnectionIsOpen -Times 1 -Exactly -Scope It
-    Assert-MockCalled Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName -Times 0 -Exactly -Scope It
-    Assert-MockCalled Resolve-DatabaseSqlConnectionFromConnectionParts -Times 0 -Exactly -Scope It
+    Should -Invoke Assert-DatabaseSqlConnectionIsOpen -Times 1 -Exactly -Scope It
+    Should -Invoke Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName -Times 0 -Exactly -Scope It
+    Should -Invoke Resolve-DatabaseSqlConnectionFromConnectionParts -Times 0 -Exactly -Scope It
   }
 
   It 'uses DBConnectionStringSecretName before connection parts and marks IsCallerOwned false' {
@@ -56,10 +56,10 @@ Describe 'Resolve-DatabaseSqlConnection' -Tag 'Unit' {
 
     $result.Connection | Should -Be 'bitwarden:db-secret'
     $result.IsCallerOwned | Should -BeFalse
-    Assert-MockCalled Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName -Times 1 -Exactly -Scope It -ParameterFilter {
       $SecretName -eq 'db-secret'
     }
-    Assert-MockCalled Resolve-DatabaseSqlConnectionFromConnectionParts -Times 0 -Exactly -Scope It
+    Should -Invoke Resolve-DatabaseSqlConnectionFromConnectionParts -Times 0 -Exactly -Scope It
   }
 
   It 'uses DBConnectionStringSecretName from settings before connection parts' {
@@ -81,10 +81,10 @@ Describe 'Resolve-DatabaseSqlConnection' -Tag 'Unit' {
 
     $result.Connection | Should -Be 'bitwarden:db-secret-from-settings'
     $result.IsCallerOwned | Should -BeFalse
-    Assert-MockCalled Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName -Times 1 -Exactly -Scope It -ParameterFilter {
       $SecretName -eq 'db-secret-from-settings'
     }
-    Assert-MockCalled Resolve-DatabaseSqlConnectionFromConnectionParts -Times 0 -Exactly -Scope It
+    Should -Invoke Resolve-DatabaseSqlConnectionFromConnectionParts -Times 0 -Exactly -Scope It
   }
 
   It 'uses DBConnectionStringMasterSecretName from settings when resolving master' {
@@ -108,10 +108,10 @@ Describe 'Resolve-DatabaseSqlConnection' -Tag 'Unit' {
 
     $result.Connection | Should -Be 'bitwarden:master-secret-from-settings'
     $result.IsCallerOwned | Should -BeFalse
-    Assert-MockCalled Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName -Times 1 -Exactly -Scope It -ParameterFilter {
       $SecretName -eq 'master-secret-from-settings'
     }
-    Assert-MockCalled Resolve-DatabaseSqlConnectionFromConnectionParts -Times 0 -Exactly -Scope It
+    Should -Invoke Resolve-DatabaseSqlConnectionFromConnectionParts -Times 0 -Exactly -Scope It
   }
 
   It 'uses DBConnectionStringDBSecretName from settings when resolving a named database' {
@@ -135,10 +135,10 @@ Describe 'Resolve-DatabaseSqlConnection' -Tag 'Unit' {
 
     $result.Connection | Should -Be 'bitwarden:db-secret-from-settings'
     $result.IsCallerOwned | Should -BeFalse
-    Assert-MockCalled Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName -Times 1 -Exactly -Scope It -ParameterFilter {
       $SecretName -eq 'db-secret-from-settings'
     }
-    Assert-MockCalled Resolve-DatabaseSqlConnectionFromConnectionParts -Times 0 -Exactly -Scope It
+    Should -Invoke Resolve-DatabaseSqlConnectionFromConnectionParts -Times 0 -Exactly -Scope It
   }
 
   It 'normalizes SqlInstance from the caller bound-parameter map to InstanceName' {
@@ -170,7 +170,7 @@ Describe 'Resolve-DatabaseSqlConnection' -Tag 'Unit' {
 
     $result.Connection | Should -Be 'bitwarden:db-secret'
     $result.IsCallerOwned | Should -BeFalse
-    Assert-MockCalled Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName -Times 1 -Exactly -Scope It -ParameterFilter {
+    Should -Invoke Resolve-DatabaseSqlConnectionFromDBConnectionStringSecretName -Times 1 -Exactly -Scope It -ParameterFilter {
       $SecretName -eq 'db-secret'
     }
   }

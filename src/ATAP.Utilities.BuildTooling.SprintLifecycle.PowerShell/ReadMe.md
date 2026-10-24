@@ -2,6 +2,15 @@
 
 Sprint lifecycle commands for SprintStart, SprintEnd, worktree teardown, checkpoint archival, and sprint-boundary validation.
 
+Version 0.1.49 recovers a narrowly identified native cleanup failure: Git255 with
+the exact permission-denied message for a pre-captured, now-empty administrative
+slot. The registration and worktree pointer must be absent, the captured owning
+repository and slot identity must match, and the recovery ref must preserve HEAD.
+Only that empty directory is deleted nonrecursively, with at most six attempts
+for Windows access/sharing/lock errors. The failed Git result stays in the receipt;
+captured identity and completion evidence are required for subsequent resume.
+Unknown failures, new files, unsafe links or recreated worktrees still stop cleanup.
+
 Version 0.1.39 was verified as the release that a name-only
 `Import-Module` resolved to from the AllUsers path on UTAT022. Version 0.1.34 was
 the first release to export `Write-GatherCallRecord`. Version 0.1.14 remains the accepted **two-host** deploy state for
@@ -240,3 +249,12 @@ in `Tasks.Sprint0015.ProceduralDetails.html`.
 ## Functional area
 
 PowerShell Build & Packaging - START HERE: `SolutionDocumentation/PowerShell-Modules-Build-Process.md`.
+
+Task 16.12 release replacement 0.1.47 isolates the settings audit in unrelated
+SprintEnd unit fixtures and retains the real fail-closed settings regressions.
+UTAT022 installed acceptance is recorded in the Planning Task16.12 deployment
+handoff; UTAT01 remains separately scoped under Task16.64.
+
+Version 0.1.48 bounds retries of transient atomic receipt-replacement failures
+without repeating worktree removal. Persistent denial preserves the prior receipt
+and fails closed after six attempts; no permission or attribute changes are made.

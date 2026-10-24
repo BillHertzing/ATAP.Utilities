@@ -18,7 +18,7 @@
 # phantom export (e.g. a tool re-adding a basename that defines no function) is
 # reintroduced before the module reaches a ProGet feed.
 
-#Requires -Module Pester
+#Requires -Module @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 
 BeforeAll {
   $script:moduleRoot   = Join-Path $PSScriptRoot '..\..' | Resolve-Path

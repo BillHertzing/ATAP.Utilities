@@ -4,7 +4,7 @@ Creates a PesterFile model conforming to the Data-Driven Unit Test RuleSet.
 
 .DESCRIPTION
 Applies the Data-Driven Unit Test RuleSet to generate a PesterFile model that
-uses Pester v5 -ForEach on It blocks to drive parameterized test execution.
+uses Pester 6.2.0 -ForEach on It blocks to drive parameterized test execution.
 The template creates:
 
   - A single Describe block named after the function under test.
@@ -16,7 +16,7 @@ The template creates:
 This satisfies Pester Kind structural rules:
   1. Data defined in BeforeDiscovery or as a literal array in foreach.
   2. All assertions inside It blocks.
-  3. -ForEach used on It (Pester v5 preferred style).
+  3. -ForEach used on It (Pester 6.2.0 preferred style).
 
 .PARAMETER FunctionName
 Name of the function under test.

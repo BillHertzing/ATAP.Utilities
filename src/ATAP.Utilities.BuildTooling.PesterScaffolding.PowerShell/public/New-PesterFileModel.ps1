@@ -4,7 +4,7 @@ Creates a new Pester file model hashtable representing a structured .Tests.ps1 f
 
 .DESCRIPTION
 Builds a structured hashtable (the PesterFile model) that describes every composable
-element of a Pester v5 test file: Param block, BeforeDiscovery, one or more Describe
+element of a Pester 6.2.0 test file: Param block, BeforeDiscovery, one or more Describe
 blocks, and their nested Context / It / setup-teardown blocks.
 
 The returned model is consumed by New-PesterTestFile to synthesize the actual

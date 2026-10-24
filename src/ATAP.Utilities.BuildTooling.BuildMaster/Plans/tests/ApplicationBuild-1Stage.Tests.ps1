@@ -1,4 +1,4 @@
-# Pester 5+ static-contract and gate tests for Task 15.196.q (SC-0443):
+# Pester 6.2+ static-contract and gate tests for Task 15.196.q (SC-0443):
 # ApplicationBuild-1Stage.otter must be a thin runner plan whose argument list
 # satisfies every mandatory parameter of Invoke-ApplicationBuildMasterStage.ps1,
 # and the runner must refuse before any compile when the approval boundary says no.
@@ -180,5 +180,61 @@ Describe 'Invoke-ApplicationBuildMasterStage fails closed before any compile' {
   It 'refuses an unversioned or malformed release version' {
     $params = $script:common.Clone(); $params.ReleaseVersion = '0.1.3-beta'
     { Invoke-ApplicationBuildMasterStage @params -ProductId 'AceOutpost' -CodeSigningCertificateThumbprint $script:hostLeaf -Confirm:$false } | Should -Throw
+  }
+}
+
+Describe 'Task 16.78 build runner sprint defaults and release-context reconciliation' {
+  It 'carries no Sprint0015 literals' {
+    $script:RunnerText | Should -Not -Match '(?i)sprint0015|Task15\.196\\q'
+  }
+  It 'derives the sprint number only from sprint worktree folder names: <Leaf>' -ForEach @(
+    @{ Leaf = 'Ace-wt-47-Sprint-0016-work-items'; Expected = '0016' },
+    @{ Leaf = 'ATAP.Utilities-wt-146-Sprint-0016-work-items'; Expected = '0016' },
+    @{ Leaf = 'Ace-wt-9-Sprint-0021'; Expected = '0021' }
+  ) {
+    Get-ApplicationBuildSprintNumber -Path (Join-Path $TestDrive $Leaf) -ParameterName 'WorktreeId' | Should -BeExactly $Expected
+  }
+  It 'refuses to derive from a non-sprint checkout: <Leaf>' -ForEach @(
+    @{ Leaf = 'Ace' }, @{ Leaf = 'Ace-release-0.1.16' }, @{ Leaf = 'Ace-wt-47-Sprint-16' }
+  ) {
+    { Get-ApplicationBuildSprintNumber -Path (Join-Path $TestDrive $Leaf) -ParameterName 'WorktreeId' } | Should -Throw '*pass -WorktreeId explicitly*'
+  }
+  It 'writes the fields the release stage reads into the release context' {
+    $contextBlock = [regex]::Match($script:RunnerText, '(?s)\$context = \[ordered\]@\{(?<body>.*?)\r?\n    \}').Groups['body'].Value
+    $contextBlock | Should -Not -BeNullOrEmpty
+    foreach ($name in @('tooling', 'bundleVerifier', 'manifestSchema', 'evidenceRoot', 'bundleSha256', 'proGetBaseUrl', 'feedVersion', 'databasePackageReference', 'ceilingTier')) {
+      $contextBlock | Should -Match "\b$name\s*="
+    }
+    $script:RunnerText | Should -Match '\$databaseReference\.nupkgSha256\s*='
+  }
+  It 'the release stage reads every reconciled context field the runner writes' {
+    $releaseText = Get-Content -LiteralPath (Join-Path $script:PlansDir 'Invoke-ApplicationReleaseStage.ps1') -Raw
+    foreach ($name in @('nupkgSha256', 'feedVersion', 'bundleVerifier', 'manifestSchema', 'tooling', 'evidenceRoot')) {
+      $releaseText | Should -Match ([regex]::Escape($name))
+    }
+  }
+  It 'refuses a non-sprint Ace checkout without an explicit WorktreeId before any compile' {
+    $tmp = Join-Path ([IO.Path]::GetTempPath()) "appbuild_$([guid]::NewGuid().ToString('N'))"
+    try {
+      New-Item -ItemType Directory -Path (Join-Path $tmp 'src\ATAP.Utilities.BuildTooling.PowerShell'), (Join-Path $tmp 'ace'), (Join-Path $tmp '_generated\database') -Force | Out-Null
+      $manifest = Join-Path $tmp 'src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1'; Set-Content -LiteralPath $manifest -Value '@{}'
+      $signerDir = Join-Path $tmp 'src\ATAP.Utilities.BuildTooling.ProGet.PowerShell\public'; New-Item -ItemType Directory -Path $signerDir -Force | Out-Null
+      Copy-Item -Path (Join-Path $script:PlansDir '..\..\ATAP.Utilities.BuildTooling.ProGet.PowerShell\public\Set-AuthenticodeFileSignature.ps1') -Destination $signerDir
+      if (-not (Get-Command Get-SecretATAP -ErrorAction SilentlyContinue)) { function global:Get-SecretATAP { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) 'stub' } }
+      $evidence = Join-Path $tmp '_generated\database\release-evidence.json'; Set-Content -LiteralPath $evidence -Value '{}'
+      . (Join-Path $script:PlansDir 'ApplicationReleaseAuthenticodeSigning.ps1')
+      $params = @{
+        BuildToolingModulePath = $manifest; SourcePath = (Join-Path $tmp 'ace'); BuildMasterBuildId = '1'; BuildNumber = '1'; ExecutionId = '1'
+        ApplicationName = 'AceOutpost-Build'; ProductId = 'AceOutpost'; Branch = 'b'; Stage = 'Build'; ArtifactsRoot = 'C:\ATAPArtifacts'
+        ReleaseVersion = '0.1.16'; SourceTag = 'AceOutpost/v0.1.16'; ProGetUrl = 'https://utat022:50000'; ProGetApiKeySecretName = 'ProGet.BuildMaster.API.Key.utat022'
+        CodeSigningCertificateThumbprint = (Get-ApplicationReleaseAdmittedSignerThumbprint -HostName $env:COMPUTERNAME)
+        ReleaseNotes = 'n'; ExpectedTestsPassed = 1; ConversationId = '01a0a0b5-f9cf-7b83-8096-f3fdd7138ae0'
+        DatabasePackagePinnedVersion = '0.1.17'; DatabasePackageCompatibleVersionRange = '[0.1.17,0.1.18)'; DatabasePackageLifecycleCeiling = 'database-stable'
+        DatabaseEvidencePath = $evidence; DatabaseEvidenceSha256 = (Get-FileHash -LiteralPath $evidence -Algorithm SHA256).Hash
+        EvidenceRoot = (Join-Path $tmp '_generated\q')
+      }
+      { Invoke-ApplicationBuildMasterStage @params -WhatIf } | Should -Throw '*pass -WorktreeId explicitly*'
+      { Invoke-ApplicationBuildMasterStage @params -WorktreeId 'sprint0016-ace' -WhatIf } | Should -Not -Throw
+    } finally { Remove-Item -LiteralPath $tmp -Recurse -Force -ErrorAction SilentlyContinue }
   }
 }

@@ -1,7 +1,7 @@
-## Pester v5.7.1 test suite for _LabelLocationForEllipse
+## Pester v6.2.0 test suite for _LabelLocationForEllipse
 # Save next to _LabelLocationForEllipse.ps1 (or adjust the import path below)
 # Run with:  Invoke-Pester -Path .\_LabelLocationForEllipse.Tests.ps1
-#requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '5.7.1' }
+#requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 
 BeforeAll {
   # Dot‑source the function under test. Adjust path if the layout differs.

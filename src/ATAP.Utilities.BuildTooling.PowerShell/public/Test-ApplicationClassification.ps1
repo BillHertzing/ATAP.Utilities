@@ -91,11 +91,11 @@ function Test-ApplicationClassification {
     }
 
     $allProjectFiles = @(Get-ChildItem -LiteralPath $root -Recurse -Filter '*.csproj' -File -ErrorAction Stop |
-        Where-Object { $_.FullName -notmatch '[\\/](bin|obj|_generated|\.git)[\\/]' } |
         ForEach-Object {
-          $relative = & $normalize ([IO.Path]::GetRelativePath($root, $_.FullName))
+          $relative = [IO.Path]::GetRelativePath($root, $_.FullName).Replace('\', '/')
           [pscustomobject]@{ FullName = $_.FullName; RelativePath = $relative }
         } |
+        Where-Object { $_.RelativePath -notmatch '(?i)(^|/)(bin|obj|_generated|\.git)(/|$)' } |
         Sort-Object RelativePath)
 
     $excludedSet = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
@@ -189,13 +189,25 @@ function Test-ApplicationClassification {
     }
 
     $testProjectSet = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
-    @($evaluated | Where-Object IsTestProject).RelativePath | ForEach-Object { $null = $testProjectSet.Add($_) }
+    foreach ($project in $evaluated) {
+      if ($project.IsTestProject -and -not [string]::IsNullOrWhiteSpace($project.RelativePath)) {
+        $null = $testProjectSet.Add($project.RelativePath)
+      }
+    }
     $detectedSet = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
-    @($declared | Where-Object { $_.DeclaredExecutable -and -not $testProjectSet.Contains($_.RelativePath) }).RelativePath |
-      ForEach-Object { $null = $detectedSet.Add($_) }
-    @($evaluated | Where-Object EvaluatedExecutable).RelativePath | ForEach-Object { $null = $detectedSet.Add($_) }
+    foreach ($project in $declared) {
+      if ($project.DeclaredExecutable -and -not [string]::IsNullOrWhiteSpace($project.RelativePath) -and
+        -not $testProjectSet.Contains($project.RelativePath)) {
+        $null = $detectedSet.Add($project.RelativePath)
+      }
+    }
+    foreach ($project in $evaluated) {
+      if ($project.EvaluatedExecutable -and -not [string]::IsNullOrWhiteSpace($project.RelativePath)) {
+        $null = $detectedSet.Add($project.RelativePath)
+      }
+    }
     $detected = @($detectedSet | Sort-Object)
-    $inputProjectPaths = @($projectFiles.RelativePath | Sort-Object)
+    $inputProjectPaths = @($projectFiles | ForEach-Object RelativePath | Sort-Object)
 
     $actualPathByCaseFold = @{}
     foreach ($project in $projectFiles) { $actualPathByCaseFold[$project.RelativePath.ToLowerInvariant()] = $project.RelativePath }
@@ -230,7 +242,7 @@ function Test-ApplicationClassification {
     $roots = @($manifest.applications | Where-Object classification -eq 'ShippingRoot')
     if ($roots.Count -gt 1) { $errors.Add('ATAPAPP013 more than one shipping root is not authorized.') }
     $rootSet = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
-    $roots.projectPath | ForEach-Object { $null = $rootSet.Add([string] $_) }
+    foreach ($application in $roots) { $null = $rootSet.Add([string] $application.projectPath) }
 
     foreach ($application in @($manifest.applications)) {
       $path = [string] $application.projectPath

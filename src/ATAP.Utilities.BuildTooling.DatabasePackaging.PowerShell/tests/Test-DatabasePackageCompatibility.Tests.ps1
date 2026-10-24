@@ -1,7 +1,7 @@
 #Requires -Version 7.0
 <#
 .SYNOPSIS
-    Pester 5 tests for Test-DatabasePackageCompatibility (DBA2-T06 / V4-E12).
+    Pester 6.2+ tests for Test-DatabasePackageCompatibility (DBA2-T06 / V4-E12).
 #>
 
 BeforeAll {

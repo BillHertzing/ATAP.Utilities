@@ -289,7 +289,7 @@ function Invoke-SprintEndInfrastructureCleanup {
             -Boundary End `
             -SharedVSCodeWorktreePath $stableSharedVSCode `
             -GitRoot $GitRoot `
-            -WorktreePaths @() `
+            -WorktreePaths $WorktreePaths `
             -SkipLoginScheduledTasks `
             -ProfiledRemotingPolicy $ProfiledRemotingPolicy `
             -Confirm:$false

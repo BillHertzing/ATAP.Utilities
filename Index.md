@@ -61,3 +61,5 @@ ReadWrite only for trusted maintainer/provisioning identities.
   w, Bitwarden Secrets Manager ws, DPAPI token resolution, the later
   ReadOnly/ReadWrite token-purpose split, BuildMaster secret access, and
   the DB connection-string BWS cleanup.
+
+- [V00150 developer database newline recovery](./Database/Documentation/V00150-Newline-Recovery.md)

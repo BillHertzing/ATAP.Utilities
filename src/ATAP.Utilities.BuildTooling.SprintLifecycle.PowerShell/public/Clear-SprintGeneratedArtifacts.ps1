@@ -4,16 +4,22 @@ function Clear-SprintGeneratedArtifacts {
     Deletes the contents of the `_generated/` folder in every sprint worktree
     for the specified sprint number.
   .DESCRIPTION
-    At sprint close (SprintEndAgent Step 10.7), each repository worktree for
-    the given sprint contains a `_generated/` directory that holds transient
-    build artifacts:  test-result XML files, PSScriptAnalyzer reports, compiled
-    `.psm1` / `.psd1` manifests, compressed `.nupkg` / `.zip` packages, CI-hook
-    scripts, and diagnostic one-off scripts.
+    At sprint close, each repository worktree for the given sprint contains a
+    `_generated/` directory that holds transient build artifacts and
+    point-in-time evidence (R-38, SC-0033). Invoke-SprintEndLifecycle
+    -ClearGeneratedArtifacts calls this cmdlet before any pull request is
+    created or merged (Task 16.91.a, SC-0470).
 
-    None of these files are committed to source control (`_generated/` is
-    `.gitignore`-listed in every repo).  They can all be regenerated on demand
-    by re-running the BuildTooling pipeline.  This cmdlet removes them to free
-    disk space and prevent stale artifacts from polluting the next sprint.
+    `_generated/` is `.gitignore`-listed in every repo and must never reach a
+    stable branch. Evidence that must outlive the sprint belongs under
+    `_Planning/InformationForTheFuture/` (R-38).
+
+    Protected-evidence guard (fails closed): before removing anything this
+    cmdlet runs Get-SprintGeneratedArtifactState over the selected worktrees.
+    It removes nothing, and returns `blocked = $true` with the findings, when
+    any `_generated/` file is tracked by git, or when a sprint board or an
+    `InformationForTheFuture` document cites a `_generated/` path that exists.
+    Relocate the cited evidence (or untrack the files) and run again.
 
     What is NOT deleted:
       - The `_generated/` directory itself (just the contents are removed).
@@ -23,15 +29,18 @@ function Clear-SprintGeneratedArtifacts {
         Step 10b.2).
 
     Worktree discovery:
-      The cmdlet searches `$GitRoot` for directories whose names match the
-      pattern  `*-wt-*-sprint-<SprintNumber>-work-items`.  Only direct children
-      of `$GitRoot` are examined (one level deep).
+      When -WorktreePaths is supplied, exactly those worktrees are used; each
+      must be named `*-wt-<n>-Sprint-<SprintNumber>-work-items`, so a stable
+      worktree is never cleared. Otherwise the cmdlet searches `$GitRoot` for
+      directories whose names match the pattern
+      `*-wt-*-sprint-<SprintNumber>-work-items`.  Only direct children of
+      `$GitRoot` are examined (one level deep).
 
     Idempotent:  safe to call multiple times; already-absent directories are
     silently skipped.
 
-    ConfirmImpact is Medium because `_generated/` contents are always
-    reproducible.  Pass -Force to suppress the confirmation prompt in
+    ConfirmImpact is Medium because the guard keeps cited or tracked content
+    out of reach.  Pass -Force to suppress the confirmation prompt in
     agent/pipeline invocations.
   .PARAMETER SprintNumber
     Four-digit zero-padded sprint number (e.g. '0006').  Used to locate the
@@ -39,6 +48,13 @@ function Clear-SprintGeneratedArtifacts {
   .PARAMETER GitRoot
     Root directory that contains all worktree folders.
     Defaults to 'C:\Dropbox\whertzing\GitHub'.
+  .PARAMETER WorktreePaths
+    Optional explicit sprint worktrees to clear (the SprintEnd close set).
+  .PARAMETER PlanningRoot
+    _Planning sprint worktree whose boards and InformationForTheFuture are
+    scanned for citations. Defaults to the single
+    `_Planning-wt-*-Sprint-<SprintNumber>-work-items` folder under $GitRoot;
+    the cmdlet throws when it cannot be resolved.
   .PARAMETER Force
     Bypasses the Medium-impact confirmation prompt.  Use for agent/pipeline
     invocations.
@@ -50,6 +66,8 @@ function Clear-SprintGeneratedArtifacts {
       filesRemoved          [int]      — total file count deleted
       directoriesRemoved    [int]      — total sub-directory count deleted
       errors                [string[]] — per-item error messages (empty if clean)
+      blocked               [bool]     — true when the guard refused to clear
+      generatedArtifactState [object]  — Get-SprintGeneratedArtifactState result
   .EXAMPLE
     Clear-SprintGeneratedArtifacts -SprintNumber '0006' -WhatIf
     # Lists what would be deleted without removing anything.
@@ -59,7 +77,7 @@ function Clear-SprintGeneratedArtifacts {
   .EXAMPLE
     Clear-SprintGeneratedArtifacts -SprintNumber '0006' -GitRoot 'D:\Repos' -Force
   .NOTES
-    Called from SprintEndAgent Step 10.7.
+    Called from Invoke-SprintEndLifecycle -ClearGeneratedArtifacts (pre-merge).
     AI assisted using ./claude/Rules/Powershell.md as guidelines.
   .LINK
     New-SprintBitwardenSecrets
@@ -74,6 +92,14 @@ function Clear-SprintGeneratedArtifacts {
 
     [Parameter(Mandatory = $false)]
     [string]$GitRoot = 'C:\Dropbox\whertzing\GitHub',
+
+    [Parameter(Mandatory = $false)]
+    [ValidateNotNullOrEmpty()]
+    [string[]]$WorktreePaths,
+
+    [Parameter(Mandatory = $false)]
+    [ValidateNotNullOrEmpty()]
+    [string]$PlanningRoot,
 
     [Parameter(Mandatory = $false)]
     [switch]$Force
@@ -95,20 +121,72 @@ function Clear-SprintGeneratedArtifacts {
     if ($Force -and -not $WhatIfPreference) {
       $ConfirmPreference = 'None'
     }
+
+    if (-not (Get-Command -Name 'Get-SprintGeneratedArtifactState' -ErrorAction SilentlyContinue)) {
+      . (Join-Path $PSScriptRoot '..\private\Get-SprintGeneratedArtifactState.ps1')
+    }
   }
 
   process {
     $worktreePattern = "*-wt-*-sprint-$SprintNumber-work-items"
-    $workTrees = Get-ChildItem -LiteralPath $GitRoot -Directory -Filter $worktreePattern
+    if ($PSBoundParameters.ContainsKey('WorktreePaths')) {
+      $workTrees = foreach ($worktreePath in $WorktreePaths) {
+        $leaf = Split-Path -Path ([IO.Path]::GetFullPath($worktreePath)) -Leaf
+        if ($leaf -notmatch "(?i)-wt-\d+-Sprint-$SprintNumber-work-items$") {
+          $msg = "'$worktreePath' is not a Sprint $SprintNumber worktree; refusing to clear its _generated/."
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
+          throw $msg
+        }
+        if (Test-Path -LiteralPath $worktreePath -PathType Container) { Get-Item -LiteralPath $worktreePath }
+      }
+      $workTrees = @($workTrees)
+    } else {
+      $workTrees = @(Get-ChildItem -LiteralPath $GitRoot -Directory -Filter $worktreePattern)
+    }
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose `
       -Message "Found $($workTrees.Count) worktree(s) matching '$worktreePattern'"
+
+    if (-not $PSBoundParameters.ContainsKey('PlanningRoot')) {
+      $planningCandidates = @(Get-ChildItem -LiteralPath $GitRoot -Directory -Filter "_Planning-wt-*-Sprint-$SprintNumber-work-items")
+      if ($planningCandidates.Count -ne 1) {
+        $msg = "Expected exactly one _Planning Sprint $SprintNumber worktree under '$GitRoot' (found $($planningCandidates.Count)); pass -PlanningRoot."
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
+        throw $msg
+      }
+      $PlanningRoot = $planningCandidates[0].FullName
+    }
 
     $workTreesScanned = $workTrees.Count
     $workTreesWithGenerated = 0
     $filesRemoved = 0
     $directoriesRemoved = 0
     $errors = [System.Collections.Generic.List[string]]::new()
+
+    # Task 16.91.a (SC-0470): tracked or cited _generated content blocks the
+    # whole clear; nothing is removed from any worktree.
+    $generatedArtifactState = $null
+    if ($workTrees.Count -gt 0) {
+      $generatedArtifactState = Get-SprintGeneratedArtifactState `
+        -WorktreePaths @($workTrees.FullName) -PlanningRoot $PlanningRoot
+      if (-not $generatedArtifactState.Ok) {
+        $msg = "Refusing to clear _generated/: $($generatedArtifactState.Failures -join ', ') " +
+          "($(@($generatedArtifactState.TrackedPaths).Count) tracked, $(@($generatedArtifactState.CitedPaths).Count) cited). " +
+          'Relocate cited evidence to InformationForTheFuture (R-38) and untrack _generated files first.'
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
+        $errors.Add($msg)
+        return [PSCustomObject]@{
+          sprintNumber           = $SprintNumber
+          workTreesScanned       = $workTreesScanned
+          workTreesWithGenerated = 0
+          filesRemoved           = 0
+          directoriesRemoved     = 0
+          errors                 = $errors.ToArray()
+          blocked                = $true
+          generatedArtifactState = $generatedArtifactState
+        }
+      }
+    }
 
     foreach ($wt in $workTrees) {
       $generatedPath = Join-Path -Path $wt.FullName -ChildPath '_generated'
@@ -172,6 +250,8 @@ function Clear-SprintGeneratedArtifacts {
       filesRemoved           = $filesRemoved
       directoriesRemoved     = $directoriesRemoved
       errors                 = $errors.ToArray()
+      blocked                = $false
+      generatedArtifactState = $generatedArtifactState
     }
   }
 }

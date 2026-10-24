@@ -31,6 +31,8 @@ The install is deliberately strict and all-or-nothing:
      real error instead of "Version folder already exists".
 
 Every run writes a transcript and a JSON result record under `_generated\deploy\` (SC-0033).
+Package staging uses the existing FastTempBasePathConfigRootKey setting. The configured
+local directory must already exist; there is no fallback to the process TEMP directory.
 
 .PARAMETER ModuleName
 Module/package id to install.
@@ -152,6 +154,7 @@ function Install-ATAPModuleAllUsers {
     $tempPaths = [System.Collections.Generic.List[string]]::new()
     $transcriptStarted = $false
     $createdVersionPath = $null
+    $configuredTempRoot = $null
 
     if (-not (Test-Path -LiteralPath $DeployRoot)) {
       New-Item -ItemType Directory -Path $DeployRoot -Force | Out-Null
@@ -172,6 +175,58 @@ function Install-ATAPModuleAllUsers {
         throw "Install-ATAPModuleAllUsers requires Administrator rights. Re-run from an elevated shell, or route the request through the ATAP elevation broker."
       }
 
+      # Resolve the existing host setting before repository registration or network access.
+      # Validate the raw setting too: Get-PVal must not silently substitute an environment
+      # override for the configured value, nor coerce a non-string value into a path.
+      $keysVariable = Get-Variable -Name configRootKeys -Scope Global -ErrorAction SilentlyContinue
+      $settingsVariable = Get-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
+      if (-not $keysVariable -or $keysVariable.Value -isnot [hashtable] -or
+          -not $keysVariable.Value.ContainsKey('FastTempBasePathConfigRootKey')) {
+        throw 'FastTempBasePathConfigRootKey is missing from global configRootKeys.'
+      }
+      $tempKey = $keysVariable.Value['FastTempBasePathConfigRootKey']
+      if ($tempKey -isnot [string] -or [string]::IsNullOrWhiteSpace($tempKey) -or
+          -not $settingsVariable -or $settingsVariable.Value -isnot [hashtable] -or
+          -not $settingsVariable.Value.ContainsKey($tempKey)) {
+        throw 'The configured FastTemp setting is missing from global settings.'
+      }
+      $configuredValue = $settingsVariable.Value[$tempKey]
+      if ($configuredValue -isnot [string] -or [string]::IsNullOrWhiteSpace($configuredValue)) {
+        throw 'The configured FastTemp setting must be a nonempty string.'
+      }
+      $null = Get-Command -Name Get-PVal -ErrorAction Stop
+      $resolvedTemp = Get-PVal -ParameterName $tempKey -dottedPath $tempKey `
+        -originalPSBoundParameters @{} -Settings $settingsVariable.Value -ErrorAction Stop
+      if ($resolvedTemp -isnot [string] -or $resolvedTemp -cne $configuredValue) {
+        throw 'FastTemp resolution differs from global settings; environment overrides are not allowed.'
+      }
+      # This Windows AllUsers installer accepts local drive paths only, never UNC,
+      # provider-qualified, drive-relative, device, or drive-root cleanup locations.
+      if ($resolvedTemp -notmatch '^[A-Za-z]:[\\/]' -or $resolvedTemp.Substring(2).Contains(':') -or
+          -not [IO.Path]::IsPathFullyQualified($resolvedTemp)) {
+        throw 'FastTemp must be an absolute local filesystem directory path.'
+      }
+      $configuredTempRoot = [IO.Path]::GetFullPath($resolvedTemp).TrimEnd('\', '/')
+      if ($configuredTempRoot -eq [IO.Path]::GetPathRoot($resolvedTemp).TrimEnd('\', '/')) {
+        throw 'FastTemp must not be a drive root.'
+      }
+      $tempDirectory = Get-Item -LiteralPath $configuredTempRoot -Force -ErrorAction Stop
+      if ($tempDirectory.PSProvider.Name -ne 'FileSystem' -or -not $tempDirectory.PSIsContainer -or
+          ($tempDirectory.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+        throw 'FastTemp must be an existing filesystem directory without a reparse point.'
+      }
+
+      $tempRoot = [IO.Path]::GetFullPath((Join-Path $configuredTempRoot "ATAP-InstallModule-$([guid]::NewGuid().ToString('N'))"))
+      if ([IO.Path]::GetDirectoryName($tempRoot) -ine $configuredTempRoot) {
+        throw 'Installer staging escaped the configured FastTemp directory.'
+      }
+      # No Force: a pre-existing child is never adopted or scheduled for deletion.
+      $createdTemp = New-Item -ItemType Directory -Path $tempRoot -ErrorAction Stop
+      if (-not $createdTemp) {
+        throw 'Staging directory creation was not confirmed.'
+      }
+      $tempPaths.Add($tempRoot)
+
       if (-not (Get-PSRepository -Name $Repository -ErrorAction SilentlyContinue)) {
         $tempName = "ATAP-Temp-Feed-Install-$([guid]::NewGuid().Guid.Replace('-', ''))"
         Register-PSRepository -Name $tempName -SourceLocation $FeedUrl -InstallationPolicy Trusted -ErrorAction Stop
@@ -179,10 +234,6 @@ function Install-ATAPModuleAllUsers {
       }
 
       $result.DownloadUri = Get-ATAPModuleDownloadUri -FeedUrl $FeedUrl -ModuleName $ModuleName -RequiredVersion $RequiredVersion
-
-      $tempRoot = Join-Path -Path $env:TEMP -ChildPath "ATAP-InstallModule-$([guid]::NewGuid().Guid.Replace('-', ''))"
-      New-Item -ItemType Directory -Path $tempRoot -Force | Out-Null
-      $tempPaths.Add($tempRoot)
 
       $nupkgPath = Join-Path -Path $tempRoot -ChildPath "$ModuleName.$RequiredVersion.nupkg"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling $($result.DownloadUri)" -Tag 'WebRequestCall'
@@ -301,6 +352,34 @@ function Install-ATAPModuleAllUsers {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $result.ErrorText
     }
     finally {
+      if ($result.TempRepositoryName) {
+        Unregister-PSRepository -Name $result.TempRepositoryName -ErrorAction SilentlyContinue
+      }
+      foreach ($path in $tempPaths) {
+        try {
+          $absolutePath = [IO.Path]::GetFullPath($path)
+          if ([IO.Path]::GetDirectoryName($absolutePath) -ine $configuredTempRoot -or
+              [IO.Path]::GetFileName($absolutePath) -notmatch '^ATAP-InstallModule-[0-9a-f]{32}$') {
+            throw 'Owned staging path no longer satisfies containment.'
+          }
+          # Get-Item errors (including disappearance/denial) remain visible as unknown cleanup,
+          # rather than treating a failed Test-Path probe as proof of successful deletion.
+          $currentRoot = Get-Item -LiteralPath $configuredTempRoot -Force -ErrorAction Stop
+          $ownedDirectory = Get-Item -LiteralPath $absolutePath -Force -ErrorAction Stop
+          if (-not $currentRoot.PSIsContainer -or -not $ownedDirectory.PSIsContainer -or
+              ($currentRoot.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+              ($ownedDirectory.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+            throw 'Staging cleanup refused a replaced directory or reparse point.'
+          }
+          Remove-Item -LiteralPath $absolutePath -Recurse -Force -ErrorAction Stop
+        }
+        catch {
+          $result.ExitStatus = if ($result.ExitStatus -gt 0) { $result.ExitStatus } else { 1 }
+          $result.ErrorText += " Staging cleanup failed for '$path': $($_.Exception.Message)"
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $result.ErrorText
+        }
+      }
+      # Persist after cleanup so a failed cleanup cannot leave a success-only receipt.
       $result.EndTime = Get-Date
       $result.ResultJsonPath = Join-Path -Path $DeployRoot -ChildPath "Install-ATAPModuleAllUsers-$ModuleName-$RequiredVersion-$ts.json"
       try {
@@ -310,14 +389,6 @@ function Install-ATAPModuleAllUsers {
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Tag 'Warning' -Message "Could not write result record: $($_.Exception.Message)"
       }
 
-      if ($result.TempRepositoryName) {
-        Unregister-PSRepository -Name $result.TempRepositoryName -ErrorAction SilentlyContinue
-      }
-      foreach ($path in $tempPaths) {
-        if (Test-Path -LiteralPath $path) {
-          Remove-Item -LiteralPath $path -Recurse -Force -ErrorAction SilentlyContinue
-        }
-      }
       if ($transcriptStarted) {
         try { Stop-Transcript | Out-Null } catch { }
       }

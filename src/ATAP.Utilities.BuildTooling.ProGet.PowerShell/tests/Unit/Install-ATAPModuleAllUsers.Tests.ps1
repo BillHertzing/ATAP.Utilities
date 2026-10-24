@@ -1,11 +1,15 @@
 #Requires -Version 7.0
+param([string]$FixtureRoot)
 
 # Task 13.76.c — canonical validated AllUsers installer, promoted from the standalone
-# _Planning script. Coverage deliberately includes the integration path: the standalone
+# _Planning script. Coverage includes fixture staging with the import boundary mocked: the standalone
 # version shipped with green unit tests and had never completed an install, because every
 # defect that mattered sat in the untested path between download and fresh import.
 
 BeforeAll {
+  # The reviewed isolated run disables Pester's automatic TEMP TestDrive and supplies
+  # a unique physical fixture root under this repository's _generated directory.
+  if ($FixtureRoot) { $TestDrive = $FixtureRoot }
   $moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
   $privateDir = Join-Path $moduleRoot 'private'
   $publicDir = Join-Path $moduleRoot 'public'
@@ -34,6 +38,8 @@ BeforeAll {
 }
 
 Describe 'Get-ATAPModuleVersionInstallPath' {
+  BeforeEach { Mock Write-PSFMessage { } }
+
   It 'composes <ModulesRoot>\<Name>\<Version>' {
     $expected = Join-Path (Join-Path 'C:\Modules' 'ATAP.Utilities') '1.2.3'
     Get-ATAPModuleVersionInstallPath -ModuleName 'ATAP.Utilities' -RequiredVersion '1.2.3' -ModulesRoot 'C:\Modules' |
@@ -42,6 +48,8 @@ Describe 'Get-ATAPModuleVersionInstallPath' {
 }
 
 Describe 'Test-ATAPModuleFileHash' {
+  BeforeEach { Mock Write-PSFMessage { } }
+
   BeforeAll {
     $script:HashFile = Join-Path $TestDrive 'hash-fixture.txt'
     Set-Content -LiteralPath $script:HashFile -Value 'installer-hash-fixture' -NoNewline
@@ -62,6 +70,8 @@ Describe 'Test-ATAPModuleFileHash' {
 }
 
 Describe 'Get-ATAPModuleDownloadCandidateUris' {
+  BeforeEach { Mock Write-PSFMessage { } }
+
   BeforeAll {
     $script:Feed = 'https://localhost:50000/nuget/powershellget-stable'
     $script:Name = 'ATAP.Utilities.BuildTooling.Common.PowerShell'
@@ -99,6 +109,8 @@ Describe 'Get-ATAPModuleDownloadCandidateUris' {
 }
 
 Describe 'Get-ATAPModuleDownloadUri' {
+  BeforeEach { Mock Write-PSFMessage { } }
+
   It 'returns the first reachable candidate' {
     Mock Test-ATAPModuleEndpointReachable { $Uri -notmatch '/api/v2/' }
     $uri = Get-ATAPModuleDownloadUri -FeedUrl 'https://localhost:50000/nuget/powershellget-stable' -ModuleName 'M' -RequiredVersion '1.0.0'
@@ -119,6 +131,8 @@ Describe 'Get-ATAPModuleDownloadUri' {
 }
 
 Describe 'Get-ATAPModuleDependencyFloorViolations' {
+  BeforeEach { Mock Write-PSFMessage { } }
+
   It 'flags a missing dependency and one below its floor' {
     $requirements = @(
       [pscustomobject]@{ ModuleName = 'PSFramework'; ModuleVersion = '1.14.457' }
@@ -165,6 +179,8 @@ Describe 'Get-ATAPModuleDependencyFloorViolations' {
 }
 
 Describe 'Get-ATAPModuleDependencyRequirementsFromManifest' {
+  BeforeEach { Mock Write-PSFMessage { } }
+
   It 'reads RequiredModules from a manifest' {
     $p = Join-Path $TestDrive 'WithDeps.psd1'
     Set-Content -LiteralPath $p -Value "@{ ModuleVersion = '1.0.0'; RequiredModules = @(@{ ModuleName = 'PSFramework'; ModuleVersion = '1.14.457' }) }"
@@ -181,11 +197,36 @@ Describe 'Get-ATAPModuleDependencyRequirementsFromManifest' {
 }
 
 Describe 'Install-ATAPModuleAllUsers' {
+  BeforeAll {
+    if (-not (Get-Command Get-PVal -ErrorAction SilentlyContinue)) {
+      function Get-PVal {
+        [CmdletBinding()]
+        param($ParameterName, $dottedPath, $originalPSBoundParameters, $Settings)
+        throw 'The settings resolver must be mocked in installer unit tests.'
+      }
+    }
+    function Invoke-FixtureInstall {
+      Install-ATAPModuleAllUsers -ModuleName $script:Name -RequiredVersion $script:Version `
+        -Repository 'powershellget-stable' -FeedUrl 'https://localhost:50000/nuget/powershellget-stable' `
+        -ExpectedSha256 $script:NupkgHash -ModulesRoot $script:ModulesRoot -DeployRoot $script:DeployRoot -Confirm:$false
+    }
+  }
+
   BeforeEach {
+    Mock Write-PSFMessage { }
+    $script:SavedSettings = Get-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue
+    $script:SavedKeys = Get-Variable -Name configRootKeys -Scope Global -ErrorAction SilentlyContinue
+    $script:SavedSettingsValue = if ($script:SavedSettings) { $script:SavedSettings.Value } else { $null }
+    $script:SavedKeysValue = if ($script:SavedKeys) { $script:SavedKeys.Value } else { $null }
     $script:Root = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
     $script:ModulesRoot = Join-Path $script:Root 'Modules'
     $script:DeployRoot = Join-Path $script:Root 'deploy'
     New-Item -ItemType Directory -Path $script:ModulesRoot, $script:DeployRoot -Force | Out-Null
+    $script:FastTemp = Join-Path $script:Root 'configured-temp'
+    New-Item -ItemType Directory -Path $script:FastTemp | Out-Null
+    $global:configRootKeys = @{ FastTempBasePathConfigRootKey = 'FAST_TEMP_BASE_PATH' }
+    $global:settings = @{ FAST_TEMP_BASE_PATH = $script:FastTemp }
+    $script:DownloadPaths = [Collections.Generic.List[string]]::new()
 
     $script:Name = 'Fixture.Module'
     $script:Version = '1.0.0'
@@ -204,11 +245,205 @@ Describe 'Install-ATAPModuleAllUsers' {
     Mock Test-ATAPModuleAllUsersElevated { $true }
     Mock Get-PSRepository { [pscustomobject]@{ Name = 'powershellget-stable' } }
     Mock Get-ATAPModuleDownloadUri { 'https://localhost:50000/nuget/powershellget-stable/package/Fixture.Module/1.0.0' }
-    Mock Invoke-WebRequest { Copy-Item -LiteralPath $script:Nupkg -Destination $OutFile -Force }
+    Mock Invoke-WebRequest {
+      $script:DownloadPaths.Add($OutFile)
+      Copy-Item -LiteralPath $script:Nupkg -Destination $OutFile -Force
+    }
+    Mock Get-PVal { $Settings[$dottedPath] }
+    Mock Get-Item {
+      # Model metadata for synthetic fixtures, while retaining real creation/copy/removal.
+      # Sync-backed fixture attributes are not an input to these installer unit cases.
+      # Adverse tests below override this default with explicit reparse/denial metadata.
+      $candidate = [IO.Path]::GetFullPath([string]$LiteralPath)
+      $boundary = [IO.Path]::GetFullPath($script:Root).TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
+      if (-not $candidate.StartsWith($boundary, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Unexpected metadata probe outside owned fixture: $candidate"
+      }
+      $isDirectory = [IO.Directory]::Exists($candidate)
+      if (-not $isDirectory -and -not [IO.File]::Exists($candidate)) {
+        throw "Fixture path does not exist: $candidate"
+      }
+      [pscustomobject]@{
+        FullName = $candidate
+        PSProvider = [pscustomobject]@{ Name = 'FileSystem' }
+        PSIsContainer = $isDirectory
+        Attributes = if ($isDirectory) { [IO.FileAttributes]::Directory } else { [IO.FileAttributes]::Normal }
+      }
+    }
+    Mock Register-PSRepository { throw 'Unexpected repository registration in unit tests.' }
+    Mock Unregister-PSRepository { }
+    Mock Import-Module { } -ParameterFilter { $FullyQualifiedName }
+    Mock Remove-Module { } -ParameterFilter { $Name -eq $script:Name }
+    Mock Get-Module {
+      [pscustomobject]@{
+        ModuleBase = Join-Path (Join-Path $script:ModulesRoot $script:Name) $script:Version
+        Version = [version]$script:Version
+      }
+    } -ParameterFilter { $Name -eq $script:Name }
     Mock Get-ATAPModuleInstalledVersions { @{} }
     Mock Test-PSModulePackageSignature { [pscustomobject]@{ Valid = $true } }
     Mock Start-Transcript { }
     Mock Stop-Transcript { }
+  }
+
+  AfterEach {
+    if ($script:SavedSettings) { $global:settings = $script:SavedSettingsValue }
+    else { Remove-Variable -Name settings -Scope Global -ErrorAction SilentlyContinue }
+    if ($script:SavedKeys) { $global:configRootKeys = $script:SavedKeysValue }
+    else { Remove-Variable -Name configRootKeys -Scope Global -ErrorAction SilentlyContinue }
+  }
+
+  It 'uses the configured root despite a different process TEMP and cleans only its unique child' {
+    $originalTemp = $env:TEMP
+    $script:FastTemp | Should -Not -Be $originalTemp
+    $sentinel = Join-Path $script:FastTemp 'unrelated.txt'
+    Set-Content -LiteralPath $sentinel -Value 'retain'
+    $unrelated = Join-Path $script:FastTemp 'ATAP-InstallModule-preexisting'
+    New-Item -ItemType Directory -Path $unrelated | Out-Null
+    $r = Invoke-FixtureInstall
+    $r.ExitStatus | Should -Be 0
+    $child = Split-Path $script:DownloadPaths[0] -Parent
+    (Split-Path $child -Parent) | Should -Be $script:FastTemp
+    (Split-Path $child -Leaf) | Should -Match '^ATAP-InstallModule-[0-9a-f]{32}$'
+    Test-Path -LiteralPath $child | Should -BeFalse
+    Get-Content -LiteralPath $sentinel | Should -Be 'retain'
+    Test-Path -LiteralPath $unrelated | Should -BeTrue
+    $env:TEMP | Should -Be $originalTemp
+    Should -Invoke Get-PVal -Times 1 -Exactly -ParameterFilter {
+      $ParameterName -eq 'FAST_TEMP_BASE_PATH' -and $dottedPath -eq 'FAST_TEMP_BASE_PATH' -and
+      $originalPSBoundParameters.Count -eq 0 -and $Settings.FAST_TEMP_BASE_PATH -eq $script:FastTemp
+    }
+  }
+
+  It 'chooses a different owned child for each attempt' {
+    Invoke-FixtureInstall | Out-Null
+    # The second call reaches download but refuses to overwrite the first fixture install.
+    $r = Invoke-FixtureInstall
+    $r.ErrorText | Should -Match 'already exists'
+    $script:DownloadPaths.Count | Should -Be 2
+    $script:DownloadPaths[0] | Should -Not -Be $script:DownloadPaths[1]
+    foreach ($download in $script:DownloadPaths) {
+      Test-Path -LiteralPath (Split-Path $download -Parent) | Should -BeFalse
+    }
+  }
+
+  It 'fails before repository or download access for invalid FastTemp configuration: <Case>' -ForEach @(
+    @{ Case = 'missing key'; Kind = 'key'; Value = $null }
+    @{ Case = 'missing settings'; Kind = 'settings'; Value = $null }
+    @{ Case = 'missing value'; Kind = 'value'; Value = $null }
+    @{ Case = 'empty value'; Kind = 'path'; Value = '' }
+    @{ Case = 'whitespace'; Kind = 'path'; Value = '  ' }
+    @{ Case = 'nonstring'; Kind = 'path'; Value = 42 }
+    @{ Case = 'relative'; Kind = 'path'; Value = 'temp' }
+    @{ Case = 'drive relative'; Kind = 'path'; Value = 'C:temp' }
+    @{ Case = 'provider'; Kind = 'path'; Value = 'Registry::HKEY_CURRENT_USER\Temp' }
+    @{ Case = 'UNC'; Kind = 'path'; Value = '\\server\share\temp' }
+    @{ Case = 'drive root'; Kind = 'path'; Value = 'C:\' }
+    @{ Case = 'alternate stream'; Kind = 'path'; Value = 'C:\Temp:stream' }
+  ) {
+    switch ($Kind) {
+      'key' { $global:configRootKeys = @{} }
+      'settings' { Remove-Variable -Name settings -Scope Global }
+      'value' { $global:settings = @{} }
+      'path' { $global:settings.FAST_TEMP_BASE_PATH = $Value }
+    }
+    $r = Invoke-FixtureInstall
+    $r.ExitStatus | Should -Be 1
+    $r.ErrorText | Should -Not -BeNullOrEmpty
+    Should -Invoke Get-PSRepository -Times 0 -Exactly
+    Should -Invoke Register-PSRepository -Times 0 -Exactly
+    Should -Invoke Invoke-WebRequest -Times 0 -Exactly
+    Should -Invoke Import-Module -Times 0 -Exactly -ParameterFilter { $FullyQualifiedName }
+    @(Get-ChildItem -LiteralPath $script:FastTemp -Force).Count | Should -Be 0
+  }
+
+  It 'rejects a conflicting resolver override instead of using another root' {
+    Mock Get-PVal { $env:TEMP }
+    $r = Invoke-FixtureInstall
+    $r.ExitStatus | Should -Be 1
+    $r.ErrorText | Should -Match 'differs from global settings'
+    Should -Invoke Invoke-WebRequest -Times 0 -Exactly
+  }
+
+  It 'rejects a configured <Kind> before download' -ForEach @(@{ Kind = 'file' }, @{ Kind = 'absent' }) {
+    $invalid = Join-Path $script:Root $Kind
+    if ($Kind -eq 'file') { Set-Content -LiteralPath $invalid -Value 'retain' }
+    $global:settings.FAST_TEMP_BASE_PATH = $invalid
+    (Invoke-FixtureInstall).ExitStatus | Should -Be 1
+    Should -Invoke Invoke-WebRequest -Times 0 -Exactly
+  }
+
+  It 'does not adopt or clean a child when directory creation fails' {
+    Mock New-Item { throw 'simulated staging collision' } -ParameterFilter {
+      $Path -like "$script:FastTemp*ATAP-InstallModule-*"
+    }
+    Mock Remove-Item { throw 'Unexpected cleanup of unowned path' } -ParameterFilter {
+      $LiteralPath -like "$script:FastTemp*"
+    }
+    $r = Invoke-FixtureInstall
+    $r.ErrorText | Should -Match 'staging collision'
+    Should -Invoke Remove-Item -Times 0 -Exactly -ParameterFilter { $LiteralPath -like "$script:FastTemp*" }
+    Should -Invoke Invoke-WebRequest -Times 0 -Exactly
+  }
+
+  It 'records cleanup failure in both returned and persisted results' {
+    Mock Remove-Item { throw 'simulated cleanup denial' } -ParameterFilter {
+      $LiteralPath -like "$script:FastTemp*ATAP-InstallModule-*"
+    }
+    $r = Invoke-FixtureInstall
+    $r.ExitStatus | Should -Be 1
+    $r.ErrorText | Should -Match 'Staging cleanup failed.*cleanup denial'
+    $record = Get-Content -LiteralPath $r.ResultJsonPath -Raw | ConvertFrom-Json
+    $record.ExitStatus | Should -Be 1
+    $record.ErrorText | Should -Be $r.ErrorText
+    Test-Path -LiteralPath (Split-Path $script:DownloadPaths[0] -Parent) | Should -BeTrue
+  }
+
+  It 'rejects a configured reparse point before directory creation or download' {
+    Mock Get-Item {
+      [pscustomobject]@{
+        PSProvider = [pscustomobject]@{ Name = 'FileSystem' }
+        PSIsContainer = $true
+        Attributes = [IO.FileAttributes]::Directory -bor [IO.FileAttributes]::ReparsePoint
+      }
+    } -ParameterFilter { $LiteralPath -eq $script:FastTemp }
+    $r = Invoke-FixtureInstall
+    $r.ErrorText | Should -Match 'without a reparse point'
+    Should -Invoke Invoke-WebRequest -Times 0 -Exactly
+    @(Get-ChildItem -LiteralPath $script:FastTemp).Count | Should -Be 0
+  }
+
+  It 'refuses recursive cleanup if the owned child is replaced by a reparse point' {
+    # Metadata substitution only: never create a real link to another directory.
+    Mock Get-Item {
+      [pscustomobject]@{
+        PSIsContainer = $true
+        Attributes = [IO.FileAttributes]::Directory -bor [IO.FileAttributes]::ReparsePoint
+      }
+    } -ParameterFilter { $LiteralPath -like "$script:FastTemp*ATAP-InstallModule-*" }
+    Mock Remove-Item { throw 'Unexpected recursive cleanup' } -ParameterFilter {
+      $LiteralPath -like "$script:FastTemp*ATAP-InstallModule-*"
+    }
+    $r = Invoke-FixtureInstall
+    $r.ExitStatus | Should -Be 1
+    $r.ErrorText | Should -Match 'cleanup refused.*reparse point'
+    $record = Get-Content -LiteralPath $r.ResultJsonPath -Raw | ConvertFrom-Json
+    $record.ExitStatus | Should -Be 1
+    $record.ErrorText | Should -Be $r.ErrorText
+    Should -Invoke Remove-Item -Times 0 -Exactly -ParameterFilter {
+      $LiteralPath -like "$script:FastTemp*ATAP-InstallModule-*"
+    }
+  }
+
+  It 'records an unreadable owned child as unknown cleanup rather than success' {
+    Mock Get-Item { throw 'simulated probe denial' } -ParameterFilter {
+      $LiteralPath -like "$script:FastTemp*ATAP-InstallModule-*"
+    }
+    $r = Invoke-FixtureInstall
+    $r.ExitStatus | Should -Be 1
+    $r.ErrorText | Should -Match 'Staging cleanup failed.*probe denial'
+    $record = Get-Content -LiteralPath $r.ResultJsonPath -Raw | ConvertFrom-Json
+    $record.ExitStatus | Should -Be 1
   }
 
   It 'rejects a cleartext feed URL at parameter binding' {

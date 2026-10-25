@@ -10,11 +10,120 @@ BeforeAll {
   $script:RunnerPath   = Join-Path $script:PlansDir 'Invoke-ApplicationBuildMasterStage.ps1'
   $script:PlanText     = Get-Content -LiteralPath $script:PlanPath -Raw
   $script:RunnerText   = Get-Content -LiteralPath $script:RunnerPath -Raw
+  $script:FixtureRoot = [IO.Path]::GetFullPath((Join-Path $script:PlansDir '..\..\..\_generated\Sprint0017\17.65\StageEvidence\Fixtures'))
+
+  function Remove-StageFixture {
+    param([string]$Path)
+    $resolved = [IO.Path]::GetFullPath($Path)
+    if (-not $resolved.StartsWith($script:FixtureRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+      throw "Refusing fixture cleanup outside $script:FixtureRoot"
+    }
+    Remove-Item -LiteralPath $resolved -Recurse -Force -ErrorAction SilentlyContinue
+  }
 
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$Rest) }
   }
   . $script:RunnerPath
+}
+
+Describe 'Source-owned per-execution evidence routing' {
+  BeforeAll {
+    $tokens = $null; $parseErrors = $null
+    $runnerAst = [Management.Automation.Language.Parser]::ParseFile($script:RunnerPath, [ref]$tokens, [ref]$parseErrors)
+    if ($parseErrors.Count) { throw 'Runner parse failed.' }
+    $publishNode = @($runnerAst.FindAll({ param($n)
+      $n -is [Management.Automation.Language.AssignmentStatementAst] -and $n.Left.Extent.Text -eq '$publish'
+    }, $true))
+    if ($publishNode.Count -ne 1) { throw 'Expected one publisher assignment.' }
+    $script:PublishFragment = [scriptblock]::Create($publishNode[0].Extent.Text)
+    $switchNode = @($runnerAst.FindAll({ param($n)
+      $n -is [Management.Automation.Language.SwitchStatementAst] -and $n.Condition.Extent.Text -eq '$contract.BundleEntryPointKind'
+    }, $true))
+    if ($switchNode.Count -ne 1) { throw 'Expected one bundle dispatch switch.' }
+    $script:BundleFragment = [scriptblock]::Create($switchNode[0].Extent.Text)
+  }
+
+  It 'uses the source sprint and isolates product/build/execution without creating directories: <Product>' -ForEach @(
+    @{ Product = 'AceOutpost' }, @{ Product = 'AceCommander' }
+  ) {
+    $source = Join-Path $script:FixtureRoot 'space parent\Ace-wt-9-Sprint-0021-work-items'
+    $actual = Get-ApplicationBuildSourceEvidencePath -SourcePath $source -ProductId $Product -BuildMasterBuildId 101 -ExecutionId 202
+    $actual | Should -BeExactly (Join-Path $source "_generated\Sprint0021\ApplicationBuild\$Product\101\202")
+    $actual | Should -Not -Exist
+    $actual | Should -Not -Be (Get-ApplicationBuildSourceEvidencePath -SourcePath $source -ProductId $Product -BuildMasterBuildId 101 -ExecutionId 203)
+    $actual | Should -Not -Be (Get-ApplicationBuildSourceEvidencePath -SourcePath $source -ProductId $Product -BuildMasterBuildId 102 -ExecutionId 202)
+  }
+
+  It 'rejects unsafe path segments: <Key>' -ForEach @(
+    @{ Key = 'ProductId'; Value = '..\outside' },
+    @{ Key = 'BuildMasterBuildId'; Value = '../101' },
+    @{ Key = 'ExecutionId'; Value = "202`n" }
+  ) {
+    $parameters = @{ SourcePath = (Join-Path $script:FixtureRoot 'Ace-wt-49-Sprint-0017-work-items'); ProductId = 'AceOutpost'; BuildMasterBuildId = '101'; ExecutionId = '202' }
+    $parameters[$Key] = $Value
+    { Get-ApplicationBuildSourceEvidencePath @parameters } | Should -Throw
+  }
+
+  It 'fails closed when the source sprint cannot be resolved' {
+    { Get-ApplicationBuildSourceEvidencePath -SourcePath (Join-Path $script:FixtureRoot 'Ace') -ProductId AceOutpost -BuildMasterBuildId 101 -ExecutionId 202 } | Should -Throw
+  }
+
+  It 'forwards publisher evidence while preserving payload routing: <Product>' -ForEach @(
+    @{ Product = 'AceOutpost' }, @{ Product = 'AceCommander' }
+  ) {
+    # Execute only the real child-command assignment; the process function is a capture stub.
+    function Invoke-ApplicationStageProcess {
+      param($FilePath, $WorkingDirectory, $ArgumentList)
+      [pscustomobject]@{ FilePath = $FilePath; WorkingDirectory = $WorkingDirectory; ArgumentList = $ArgumentList }
+    }
+    $SourcePath = Join-Path $script:FixtureRoot 'Ace-wt-49-Sprint-0017-work-items'
+    $ProductId = $Product; $BuildMasterBuildId = '101'; $ExecutionId = '202'
+    $sourceEvidence = Get-ApplicationBuildSourceEvidencePath -SourcePath $SourcePath -ProductId $ProductId -BuildMasterBuildId $BuildMasterBuildId -ExecutionId $ExecutionId
+    $publishEvidence = Join-Path $sourceEvidence 'publish'
+    $publishScript = 'publisher.ps1'; $publishRecord = 'product.json'; $publishExecutionId = 'bm101-202'
+    $ArtifactsRoot = 'D:\ATAPArtifacts'; $WorktreeId = 'sprint0017-ace'
+    . $script:PublishFragment
+    $publish.FilePath | Should -BeExactly 'pwsh'
+    $publish.WorkingDirectory | Should -BeExactly $SourcePath
+    @($publish.ArgumentList | Where-Object { $_ -eq '-EvidencePath' }).Count | Should -Be 1
+    $publish.ArgumentList[[array]::IndexOf($publish.ArgumentList, '-EvidencePath') + 1] | Should -BeExactly $publishEvidence
+    $publish.ArgumentList[[array]::IndexOf($publish.ArgumentList, '-ArtifactsRoot') + 1] | Should -BeExactly $ArtifactsRoot
+    $publish.ArgumentList[[array]::IndexOf($publish.ArgumentList, '-WorktreeId') + 1] | Should -BeExactly $WorktreeId
+  }
+
+  It 'splats bundle evidence only to the selected AceOutpost repository branch: <Product>' -ForEach @(
+    @{ Product = 'AceOutpost'; Kind = 'RepositoryScript'; ExpectedEvidence = $true },
+    @{ Product = 'AceCommander'; Kind = 'BuildToolingFunction'; ExpectedEvidence = $false }
+  ) {
+    $fixture = Join-Path $script:FixtureRoot ([guid]::NewGuid().ToString('N'))
+    try {
+      $SourcePath = Join-Path $fixture 'Ace-wt-49-Sprint-0017-work-items'
+      $buildToolingRoot = Join-Path $fixture 'tooling'
+      $entry = Join-Path $SourcePath 'bundle.ps1'
+      $toolEntry = Join-Path $buildToolingRoot 'src\ATAP.Utilities.BuildTooling.PowerShell\public\New-CommanderReleaseBundle.ps1'
+      New-Item -ItemType Directory -Path $SourcePath, (Split-Path $toolEntry -Parent) -Force | Out-Null
+      # These fixture entrypoints contain capture functions only. No real bundler is loaded.
+      Set-Content -LiteralPath $entry -Value 'function New-AceOutpostReleaseBundle { param($EvidencePath) [pscustomobject]@{ EvidencePath = $EvidencePath; HasEvidence = $PSBoundParameters.ContainsKey("EvidencePath") } }'
+      Set-Content -LiteralPath $toolEntry -Value 'function New-CommanderReleaseBundle { param($EvidencePath) [pscustomobject]@{ EvidencePath = $EvidencePath; HasEvidence = $PSBoundParameters.ContainsKey("EvidencePath") } }'
+      $provenancePath = Join-Path $fixture 'provenance.json'; Set-Content -LiteralPath $provenancePath -Value '{}'
+      function Write-StageJson { param($Path, $Object) 'fixture-hash' }
+      function Invoke-RestMethod { throw 'Network prohibited.' }
+      function Invoke-WebRequest { throw 'Network prohibited.' }
+      function Get-SecretATAP { throw 'Secrets prohibited.' }
+      $ProductId = $Product
+      $sourceEvidence = Get-ApplicationBuildSourceEvidencePath -SourcePath $SourcePath -ProductId $ProductId -BuildMasterBuildId 101 -ExecutionId 202
+      $contract = @{ BundleEntryPointKind = $Kind; BundleEntryPoint = 'bundle.ps1'; BundleFunctionName = 'New-CommanderReleaseBundle' }
+      $bundleParameters = @{ PublishRoot = 'D:\ATAPArtifacts\publish'; OutputRoot = 'D:\ATAPArtifacts\bundles' }
+      $DatabaseEvidencePath = 'fixture-db'; $DatabaseEvidenceSha256 = 'fixture-hash'; $signer = 'fixture-signer'
+      $buildEvidence = Join-Path $fixture 'stage'; $inventory = @(); $ProGetUrl = 'https://example.invalid'
+      . $script:BundleFragment
+      $bundle.HasEvidence | Should -Be $ExpectedEvidence
+      if ($ExpectedEvidence) { $bundle.EvidencePath | Should -BeExactly (Join-Path $sourceEvidence 'bundle') }
+      $bundleParameters.PublishRoot | Should -BeExactly 'D:\ATAPArtifacts\publish'
+      $bundleParameters.OutputRoot | Should -BeExactly 'D:\ATAPArtifacts\bundles'
+    } finally { Remove-StageFixture -Path $fixture }
+  }
 }
 
 Describe 'ApplicationBuild-1Stage.otter is a thin runner plan' {
@@ -103,7 +212,7 @@ Describe 'ApplicationBuild-1Stage.otter is a thin runner plan' {
 
 Describe 'Invoke-ApplicationBuildMasterStage fails closed before any compile' {
   BeforeEach {
-    $script:tmp = Join-Path ([IO.Path]::GetTempPath()) "appbuild_$([guid]::NewGuid().ToString('N'))"
+    $script:tmp = Join-Path $script:FixtureRoot "appbuild_$([guid]::NewGuid().ToString('N'))"
     New-Item -ItemType Directory -Path (Join-Path $script:tmp 'src\ATAP.Utilities.BuildTooling.PowerShell') -Force | Out-Null
     New-Item -ItemType Directory -Path (Join-Path $script:tmp 'ace') -Force | Out-Null
     $script:manifest = Join-Path $script:tmp 'src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1'
@@ -129,10 +238,10 @@ Describe 'Invoke-ApplicationBuildMasterStage fails closed before any compile' {
       ReleaseNotes = 'n'; ExpectedTestsPassed = 1; ConversationId = '01a0a0b5-f9cf-7b83-8096-f3fdd7138ae0'
       DatabasePackagePinnedVersion = '0.1.13'; DatabasePackageCompatibleVersionRange = '[0.1.13,0.1.14)'; DatabasePackageLifecycleCeiling = 'database-experimental'
       DatabaseEvidencePath = $script:databaseEvidencePath; DatabaseEvidenceSha256 = $script:databaseEvidenceSha256
-      EvidenceRoot = (Join-Path $script:tmp '_generated\q')
+      EvidenceRoot = (Join-Path $script:tmp '_generated\q'); WorktreeId = 'sprint0017-ace'
     }
   }
-  AfterEach { Remove-Item -LiteralPath $script:tmp -Recurse -Force -ErrorAction SilentlyContinue }
+  AfterEach { Remove-StageFixture -Path $script:tmp }
 
   It 'refuses a product the boundary does not admit' {
     { Invoke-ApplicationBuildMasterStage @script:common -ProductId 'AceMobile' -CodeSigningCertificateThumbprint $script:hostLeaf -Confirm:$false } | Should -Throw -ExpectedMessage '*not admitted*'
@@ -151,7 +260,8 @@ Describe 'Invoke-ApplicationBuildMasterStage fails closed before any compile' {
   }
 
   It 'refuses an evidence root outside _generated' {
-    $params = $script:common.Clone(); $params.EvidenceRoot = (Join-Path $script:tmp 'elsewhere')
+    # Rejected input only: this location is never created or written.
+    $params = $script:common.Clone(); $params.EvidenceRoot = (Join-Path $script:PlansDir 'elsewhere')
     { Invoke-ApplicationBuildMasterStage @params -ProductId 'AceOutpost' -CodeSigningCertificateThumbprint $script:hostLeaf -Confirm:$false } | Should -Throw -ExpectedMessage '*_generated*'
   }
 
@@ -162,8 +272,9 @@ Describe 'Invoke-ApplicationBuildMasterStage fails closed before any compile' {
 
   It 'refuses database evidence outside _generated' {
     $params = $script:common.Clone()
-    $params.DatabaseEvidencePath = $script:manifest
-    $params.DatabaseEvidenceSha256 = (Get-FileHash -LiteralPath $script:manifest -Algorithm SHA256).Hash
+    # Use an existing read-only source file outside the generated fixture ancestry.
+    $params.DatabaseEvidencePath = $script:RunnerPath
+    $params.DatabaseEvidenceSha256 = (Get-FileHash -LiteralPath $script:RunnerPath -Algorithm SHA256).Hash
     { Invoke-ApplicationBuildMasterStage @params -ProductId 'AceOutpost' -CodeSigningCertificateThumbprint $script:hostLeaf -Confirm:$false } | Should -Throw -ExpectedMessage '*must be under a _generated folder*'
   }
 
@@ -214,7 +325,7 @@ Describe 'Task 16.78 build runner sprint defaults and release-context reconcilia
     }
   }
   It 'refuses a non-sprint Ace checkout without an explicit WorktreeId before any compile' {
-    $tmp = Join-Path ([IO.Path]::GetTempPath()) "appbuild_$([guid]::NewGuid().ToString('N'))"
+    $tmp = Join-Path $script:FixtureRoot "appbuild_$([guid]::NewGuid().ToString('N'))"
     try {
       New-Item -ItemType Directory -Path (Join-Path $tmp 'src\ATAP.Utilities.BuildTooling.PowerShell'), (Join-Path $tmp 'ace'), (Join-Path $tmp '_generated\database') -Force | Out-Null
       $manifest = Join-Path $tmp 'src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1'; Set-Content -LiteralPath $manifest -Value '@{}'
@@ -235,6 +346,6 @@ Describe 'Task 16.78 build runner sprint defaults and release-context reconcilia
       }
       { Invoke-ApplicationBuildMasterStage @params -WhatIf } | Should -Throw '*pass -WorktreeId explicitly*'
       { Invoke-ApplicationBuildMasterStage @params -WorktreeId 'sprint0016-ace' -WhatIf } | Should -Not -Throw
-    } finally { Remove-Item -LiteralPath $tmp -Recurse -Force -ErrorAction SilentlyContinue }
+    } finally { Remove-StageFixture -Path $tmp }
   }
 }

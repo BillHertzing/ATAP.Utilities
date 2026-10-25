@@ -58,6 +58,26 @@ function Get-ApplicationBuildSprintNumber {
   $match.Groups['sprint'].Value
 }
 
+function Get-ApplicationBuildSourceEvidencePath {
+  <#
+  .SYNOPSIS
+    Returns the source-owned evidence directory for one application build execution.
+  .DESCRIPTION
+    Derives the sprint from the source worktree name without creating directories.
+    Stage-owned logs remain under the separate BuildTooling EvidenceRoot.
+  #>
+  [CmdletBinding()]
+  [OutputType([string])]
+  param(
+    [Parameter(Mandatory)][string]$SourcePath,
+    [Parameter(Mandatory)][ValidateSet('AceOutpost', 'AceCommander')][string]$ProductId,
+    [Parameter(Mandatory)][ValidatePattern('\A[0-9]+\z')][string]$BuildMasterBuildId,
+    [Parameter(Mandatory)][ValidatePattern('\A[0-9]+\z')][string]$ExecutionId
+  )
+  $sourceSprint = Get-ApplicationBuildSprintNumber -Path $SourcePath -ParameterName 'SourcePath'
+  Join-Path ([IO.Path]::GetFullPath($SourcePath)) "_generated\Sprint$sourceSprint\ApplicationBuild\$ProductId\$BuildMasterBuildId\$ExecutionId"
+}
+
 function Invoke-ApplicationBuildMasterStage {
   <#
   .SYNOPSIS
@@ -241,6 +261,12 @@ function Invoke-ApplicationBuildMasterStage {
     if ($LASTEXITCODE -ne 0 -or $tagCommit -ine $head) { throw "SourceTag '$SourceTag' does not peel to HEAD '$head' of '$SourcePath'." }
     $sourceCommit = $head.ToLowerInvariant()
 
+    # Publish/bundle reports belong to the source repository, independently of payload
+    # artifacts and the BuildTooling-owned stage logs/inventory/context.
+    $sourceEvidence = Get-ApplicationBuildSourceEvidencePath -SourcePath $SourcePath -ProductId $ProductId `
+      -BuildMasterBuildId $BuildMasterBuildId -ExecutionId $ExecutionId
+    $publishEvidence = Join-Path $sourceEvidence 'publish'
+
     # 2. Deterministic publish, as a child process so the publisher's own guards apply unchanged.
     $publishRecord = Join-Path $SourcePath $contract.ProductRecordPath
     $publishScript = Join-Path $SourcePath $contract.PublishEntryPoint
@@ -248,7 +274,8 @@ function Invoke-ApplicationBuildMasterStage {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Publishing '$ProductId' from '$SourcePath' (execution '$publishExecutionId')."
     $publish = Invoke-ApplicationStageProcess -FilePath 'pwsh' -WorkingDirectory $SourcePath -ArgumentList @(
       '-NoLogo', '-NonInteractive', '-File', $publishScript,
-      '-ProductRecord', $publishRecord, '-ExecutionId', $publishExecutionId, '-ArtifactsRoot', $ArtifactsRoot, '-WorktreeId', $WorktreeId)
+      '-ProductRecord', $publishRecord, '-ExecutionId', $publishExecutionId, '-ArtifactsRoot', $ArtifactsRoot, '-WorktreeId', $WorktreeId,
+      '-EvidencePath', $publishEvidence)
     Set-Content -LiteralPath (Join-Path $buildEvidence 'publish.stdout.txt') -Value $publish.StdOut
     Set-Content -LiteralPath (Join-Path $buildEvidence 'publish.stderr.txt') -Value $publish.StdErr
     if ($publish.ExitCode -ne 0) { throw "Deterministic publish failed (exit $($publish.ExitCode)): $($publish.StdErr)" }
@@ -295,6 +322,9 @@ function Invoke-ApplicationBuildMasterStage {
     switch ($contract.BundleEntryPointKind) {
       'RepositoryScript' {
         . (Join-Path $SourcePath $contract.BundleEntryPoint)
+        if ($ProductId -eq 'AceOutpost') {
+          $bundleParameters.EvidencePath = Join-Path $sourceEvidence 'bundle'
+        }
         $bundleParameters.DatabaseEvidencePath = $DatabaseEvidencePath
         $bundleParameters.DatabaseEvidenceSha256 = $DatabaseEvidenceSha256
         $bundleParameters.ApplicationProvenanceSha256 = (Get-FileHash -LiteralPath $provenancePath -Algorithm SHA256).Hash

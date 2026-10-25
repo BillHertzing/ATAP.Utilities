@@ -1,7 +1,7 @@
 function Set-DownstreamSharedVSCodeContext {
   <#
   .SYNOPSIS
-    Applies SharedVSCode settings to the current downstream Git repository.
+    Applies SharedVSCode settings to the repository containing the workspace files.
   .DESCRIPTION
     Reads workspace context(s), then for each:
     - Sets git local commit.template to the resolved commit template path.
@@ -71,7 +71,7 @@ function Set-DownstreamSharedVSCodeContext {
   foreach ($ctx in $contexts) {
     # Set commit template
     $commitTemplateResolved = (Resolve-Path -Path $ctx.CommitTemplate).ProviderPath
-    git config --local commit.template $commitTemplateResolved | Out-Null
+    git -C $repoRoot config --local commit.template $commitTemplateResolved | Out-Null
 
     # Task 16.85: both targets are committed under `text=auto eol=lf`, so they are written
     # LF-only and UTF-8 without BOM. Set-Content used to append a CRLF line terminator after
@@ -102,12 +102,12 @@ function Set-DownstreamSharedVSCodeContext {
     & $writeLfFile $downstreamSharedGitConfigPath $generatedGitConfig
 
     # Point git local config to the shared config include
-    git config --local include.path $downstreamSharedGitConfigPath | Out-Null
+    git -C $repoRoot config --local include.path $downstreamSharedGitConfigPath | Out-Null
 
     # Set hooks path if the hooks directory exists
     if (Test-Path -Path $ctx.HooksPath) {
       $hooksResolved = (Resolve-Path -Path $ctx.HooksPath).ProviderPath
-      git config --local core.hooksPath $hooksResolved | Out-Null
+      git -C $repoRoot config --local core.hooksPath $hooksResolved | Out-Null
     }
     }
   }

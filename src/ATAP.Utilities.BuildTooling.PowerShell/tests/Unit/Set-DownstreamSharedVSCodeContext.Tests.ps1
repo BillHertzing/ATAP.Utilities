@@ -8,11 +8,12 @@ BeforeAll {
 Describe 'Set-DownstreamSharedVSCodeContext [public]' {
   BeforeAll {
     # Build fake SharedVSCode tree and fake downstream repo
-    $script:tempDir      = Join-Path ([System.IO.Path]::GetTempPath()) "sdsvc_$([guid]::NewGuid().ToString('N'))"
+    $script:evidenceRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..\..\_generated\Sprint0017\17.4'))
+    $script:tempDir      = Join-Path $script:evidenceRoot "sdsvc_$([guid]::NewGuid().ToString('N'))"
     $script:fakeGitRoot  = $script:tempDir
     $script:fakeShared   = Join-Path $script:fakeGitRoot 'SharedVSCode'
-    $script:fakeRepoRoot = Join-Path $script:tempDir 'DownstreamRepo'
-    $script:wrongRepoRoot = Join-Path $script:tempDir 'WrongRepo'
+    $script:fakeRepoRoot = Join-Path $script:tempDir 'Downstream Repo'
+    $script:wrongRepoRoot = Join-Path $script:tempDir 'Wrong Repo'
 
     New-Item -ItemType Directory -Path $script:fakeShared -Force | Out-Null
     New-Item -ItemType Directory -Path (Join-Path $script:fakeShared '.githooks') -Force | Out-Null
@@ -35,7 +36,11 @@ Describe 'Set-DownstreamSharedVSCodeContext [public]' {
   }
 
   AfterAll {
-    Remove-Item -Path $script:tempDir -Recurse -Force -ErrorAction SilentlyContinue
+    $cleanupRoot = [IO.Path]::GetFullPath($script:tempDir)
+    if (-not $cleanupRoot.StartsWith($script:evidenceRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+      throw 'Fixture cleanup escaped the owned evidence directory.'
+    }
+    Remove-Item -LiteralPath $cleanupRoot -Recurse -Force -ErrorAction SilentlyContinue
   }
 
   BeforeEach {
@@ -198,5 +203,59 @@ Describe 'Set-DownstreamSharedVSCodeContext [public]' {
 
     Test-Path (Join-Path $script:fakeRepoRoot '.gitattributes') | Should -BeTrue
     Test-Path (Join-Path $script:wrongRepoRoot '.gitattributes') | Should -BeFalse
+  }
+
+  It 'Targets all three Git writes explicitly when called from another directory' {
+    Push-Location $script:wrongRepoRoot
+    try {
+      Set-DownstreamSharedVSCodeContext -WorkspaceFiles @($script:wsFile) -GitRoot $script:fakeGitRoot
+    } finally {
+      Pop-Location
+    }
+
+    Should -Invoke git -ModuleName $script:moduleName -Times 3 -Exactly -Scope It -ParameterFilter {
+      $args[0] -eq '-C' -and $args[1] -eq $script:fakeRepoRoot -and
+      $args[2] -eq 'config' -and $args[3] -eq '--local'
+    }
+  }
+
+  It 'Updates only the target Git repository and preserves the caller config byte for byte' {
+    # Forward this test's mock to native Git; all mutations stay in owned fixtures.
+    Mock git -ModuleName $script:moduleName {
+      & git.exe @args
+      if ($LASTEXITCODE -ne 0) { throw "Fixture Git failed with exit code $LASTEXITCODE" }
+    }
+    foreach ($repo in @($script:fakeRepoRoot, $script:wrongRepoRoot)) {
+      & git.exe init --quiet $repo
+      if ($LASTEXITCODE -ne 0) { throw 'Could not initialize disposable Git repository.' }
+    }
+    foreach ($key in @('commit.template', 'include.path', 'core.hooksPath')) {
+      & git.exe -C $script:wrongRepoRoot config --local $key 'caller-sentinel'
+      if ($LASTEXITCODE -ne 0) { throw 'Could not set fixture sentinel.' }
+    }
+    $callerConfig = Join-Path $script:wrongRepoRoot '.git\config'
+    $beforeHash = (Get-FileHash -LiteralPath $callerConfig).Hash
+    Push-Location $script:wrongRepoRoot
+    try {
+      Set-DownstreamSharedVSCodeContext -WorkspaceFiles @($script:wsFile) -GitRoot $script:fakeGitRoot
+    } finally {
+      Pop-Location
+    }
+
+    (Get-FileHash -LiteralPath $callerConfig).Hash | Should -BeExactly $beforeHash
+    (& git.exe -C $script:fakeRepoRoot config --local --get commit.template) |
+      Should -BeExactly (Resolve-Path (Join-Path $script:fakeShared 'GitTemplates\git.commit.template.txt')).ProviderPath
+    (& git.exe -C $script:fakeRepoRoot config --local --get include.path) |
+      Should -BeExactly (Join-Path $script:fakeRepoRoot '.gitconfig.shared')
+    (& git.exe -C $script:fakeRepoRoot config --local --get core.hooksPath) |
+      Should -BeExactly (Resolve-Path (Join-Path $script:fakeShared '.githooks')).ProviderPath
+  }
+
+  It 'Rejects workspace files from different roots before any Git write' {
+    $otherWorkspace = Join-Path $script:wrongRepoRoot 'Other.code-workspace'
+    '{}' | Set-Content -LiteralPath $otherWorkspace
+    { Set-DownstreamSharedVSCodeContext -WorkspaceFiles @($script:wsFile, $otherWorkspace) -GitRoot $script:fakeGitRoot } |
+      Should -Throw '*multiple downstream repository roots*'
+    Should -Invoke git -ModuleName $script:moduleName -Times 0 -Exactly -Scope It
   }
 }

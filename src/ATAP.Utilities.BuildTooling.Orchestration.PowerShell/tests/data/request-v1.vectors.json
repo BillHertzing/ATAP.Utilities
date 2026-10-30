@@ -1,0 +1,687 @@
+{
+  "formatVersion": "request-v1-vectors-1",
+  "schema": "../../schemas/request-v1.schema.json",
+  "contractSha256": "5A3533409C94418D3E5E44331CA7E3511A1BD459BD3138DBA4E4FC7509CA7959",
+  "limits": [
+    "Finite shape fixtures and conditional semantic expectations only; no orchestration runtime/canonicalizer/authorization/state implementation invoked",
+    "Every envelope digest is a lowercase placeholder; a shape pass is not a correct digest or accepted operation",
+    "For runtime-only expectations assume current caller result access and a verified correct digest unless the case tests a forged digest or changed-content precedence; replace fixture placeholder with actual canonical digest in later runtime tests",
+    "Null expectedShape marks strict-parser capability observations, not schema pass/fail acceptance",
+    "Empty evidence inventory may pass shape; actual evidence sufficiency and allowed status vocabulary remain coordinator/task checks"
+  ],
+  "vectors": [
+    {
+      "id": "shape-valid-Claim",
+      "layer": "shape",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": true,
+      "reason": "Required common fields and closed category payload; placeholder digest shape only",
+      "contract": "S1 operation table"
+    },
+    {
+      "id": "shape-valid-ReportResult",
+      "layer": "shape",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-ReportResult\",\"category\":\"ReportResult\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[\"C-applied\"],\"payload\":{\"statedLimits\":\"Source only; not deployed.\",\"evidence\":[{\"reference\":\"_generated/Sprint0017/result.json\",\"digest\":{\"algorithm\":\"SHA256\",\"value\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}}],\"claimId\":\"claim-A\",\"outcome\":\"source-ready\"}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": true,
+      "reason": "Required common fields and closed category payload; placeholder digest shape only",
+      "contract": "S1 operation table"
+    },
+    {
+      "id": "shape-valid-AcceptChange",
+      "layer": "shape",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-AcceptChange\",\"category\":\"AcceptChange\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[\"R-applied\"],\"payload\":{\"reportRequestId\":\"R-applied\",\"evidence\":[{\"reference\":\"_generated/Sprint0017/result.json\",\"digest\":{\"algorithm\":\"SHA256\",\"value\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}}],\"approvedChange\":{\"annotation\":\"Source-ready accepted\"}}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": true,
+      "reason": "Required common fields and closed category payload; placeholder digest shape only",
+      "contract": "S1 operation table"
+    },
+    {
+      "id": "shape-valid-Release",
+      "layer": "shape",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Release\",\"category\":\"Release\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[\"C-applied\"],\"payload\":{\"releaseReason\":\"Bounded source work handed off\",\"claimId\":\"claim-A\"}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": true,
+      "reason": "Required common fields and closed category payload; placeholder digest shape only",
+      "contract": "S1 operation table"
+    },
+    {
+      "json": "{\"request\":{\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-missing-protocolVersion",
+      "contract": "S1 common inputs",
+      "reason": "Required semantic input missing; no defaults",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-missing-resourceId",
+      "contract": "S1 common inputs",
+      "reason": "Required semantic input missing; no defaults",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-missing-sprintId",
+      "contract": "S1 common inputs",
+      "reason": "Required semantic input missing; no defaults",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-missing-requestId",
+      "contract": "S1 common inputs",
+      "reason": "Required semantic input missing; no defaults",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-missing-category",
+      "contract": "S1 common inputs",
+      "reason": "Required semantic input missing; no defaults",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-missing-taskId",
+      "contract": "S1 common inputs",
+      "reason": "Required semantic input missing; no defaults",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-missing-scope",
+      "contract": "S1 common inputs",
+      "reason": "Required semantic input missing; no defaults",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-missing-holder",
+      "contract": "S1 common inputs",
+      "reason": "Required semantic input missing; no defaults",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-missing-authorizationReference",
+      "contract": "S1 common inputs",
+      "reason": "Required semantic input missing; no defaults",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-missing-generation",
+      "contract": "S1 common inputs",
+      "reason": "Required semantic input missing; no defaults",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-missing-expectedRevision",
+      "contract": "S1 common inputs",
+      "reason": "Required semantic input missing; no defaults",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-missing-predecessors",
+      "contract": "S1 common inputs",
+      "reason": "Required semantic input missing; no defaults",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[]},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-missing-payload",
+      "contract": "S1 common inputs",
+      "reason": "Required semantic input missing; no defaults",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-envelope-missing-request",
+      "contract": "S1 canonical request/digest",
+      "reason": "Required envelope member absent",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}}}",
+      "expectedShape": false,
+      "id": "shape-envelope-missing-digest",
+      "contract": "S1 canonical request/digest",
+      "reason": "Required envelope member absent",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"extra\":true}",
+      "expectedShape": false,
+      "id": "shape-invalid-unknown-envelope",
+      "contract": "S1 closed/required inputs",
+      "reason": "unknown-envelope",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{},\"extra\":true},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-invalid-unknown-request",
+      "contract": "S1 closed/required inputs",
+      "reason": "unknown-request",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\",\"extra\":\"x\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-invalid-unknown-holder",
+      "contract": "S1 closed/required inputs",
+      "reason": "unknown-holder",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\",\"extra\":\"x\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-invalid-unknown-scope",
+      "contract": "S1 closed/required inputs",
+      "reason": "unknown-scope",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"transport\":{\"extra\":\"x\"}}",
+      "expectedShape": false,
+      "id": "shape-invalid-unknown-transport",
+      "contract": "S1 closed/required inputs",
+      "reason": "unknown-transport",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"transport\":{\"authorizationReference\":\"grant-other\"}}",
+      "expectedShape": false,
+      "id": "shape-invalid-transport-authority",
+      "contract": "S1 closed/required inputs",
+      "reason": "transport-authority",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\"}",
+      "expectedShape": false,
+      "id": "shape-invalid-upper-digest",
+      "contract": "S1 closed/required inputs",
+      "reason": "upper-digest",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-invalid-short-digest",
+      "contract": "S1 closed/required inputs",
+      "reason": "short-digest",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\n\"}",
+      "expectedShape": false,
+      "id": "shape-invalid-digest-newline",
+      "contract": "S1 closed/required inputs",
+      "reason": "digest-newline",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-invalid-empty-id",
+      "contract": "S1 closed/required inputs",
+      "reason": "empty-id",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":1,\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-invalid-numeric-id",
+      "contract": "S1 closed/required inputs",
+      "reason": "numeric-id",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":null,\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-invalid-null-holder",
+      "contract": "S1 closed/required inputs",
+      "reason": "null-holder",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-invalid-empty-scope",
+      "contract": "S1 closed/required inputs",
+      "reason": "empty-scope",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[\"C\",\"C\"],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-invalid-duplicate-predecessor",
+      "contract": "S1 closed/required inputs",
+      "reason": "duplicate-predecessor",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v2\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-invalid-unknown-version",
+      "contract": "S1 closed/required inputs",
+      "reason": "unknown-version",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-invalid-wrong-case-category",
+      "contract": "S1 closed/required inputs",
+      "reason": "wrong-case-category",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Allocate\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-invalid-allocation",
+      "contract": "S1 closed/required inputs",
+      "reason": "allocation",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{\"command\":\"Invoke-Anything\"}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-invalid-executable-payload",
+      "contract": "S1 closed/required inputs",
+      "reason": "executable-payload",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-ReportResult\",\"category\":\"ReportResult\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[\"C-applied\"],\"payload\":{\"statedLimits\":\"Source only; not deployed.\",\"evidence\":[{\"reference\":\"_generated/Sprint0017/result.json\",\"digest\":{\"algorithm\":\"SHA256\",\"value\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}}],\"outcome\":\"source-ready\"}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-invalid-report-missing-claim",
+      "contract": "S1 operation inputs",
+      "reason": "report-missing-claim",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-ReportResult\",\"category\":\"ReportResult\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[\"C-applied\"],\"payload\":{\"statedLimits\":\"Source only; not deployed.\",\"evidence\":[{\"reference\":\"_generated/Sprint0017/result.json\",\"digest\":{\"algorithm\":\"SHA256\",\"value\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}}],\"claimId\":\"claim-A\",\"outcome\":\"done\"}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-invalid-report-invalid-outcome",
+      "contract": "S1 operation inputs",
+      "reason": "report-invalid-outcome",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-ReportResult\",\"category\":\"ReportResult\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[\"C-applied\"],\"payload\":{\"evidence\":[{\"reference\":\"_generated/Sprint0017/result.json\",\"digest\":{\"algorithm\":\"SHA256\",\"value\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}}],\"claimId\":\"claim-A\",\"outcome\":\"source-ready\"}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-invalid-report-missing-limits",
+      "contract": "S1 operation inputs",
+      "reason": "report-missing-limits",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-ReportResult\",\"category\":\"ReportResult\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[\"C-applied\"],\"payload\":{\"statedLimits\":\"Source only; not deployed.\",\"evidence\":[{\"reference\":\"file\",\"digest\":{\"algorithm\":\"SHA256\"}}],\"claimId\":\"claim-A\",\"outcome\":\"source-ready\"}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-invalid-report-incomplete-evidence",
+      "contract": "S1 operation inputs",
+      "reason": "report-incomplete-evidence",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-AcceptChange\",\"category\":\"AcceptChange\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[\"R-applied\"],\"payload\":{\"reportRequestId\":\"R-applied\",\"evidence\":[{\"reference\":\"_generated/Sprint0017/result.json\",\"digest\":{\"algorithm\":\"SHA256\",\"value\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}}],\"approvedChange\":{}}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-invalid-accept-empty-change",
+      "contract": "S1 operation inputs",
+      "reason": "accept-empty-change",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-AcceptChange\",\"category\":\"AcceptChange\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[\"R-applied\"],\"payload\":{\"evidence\":[{\"reference\":\"_generated/Sprint0017/result.json\",\"digest\":{\"algorithm\":\"SHA256\",\"value\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}}],\"approvedChange\":{\"annotation\":\"Source-ready accepted\"}}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-invalid-accept-missing-report",
+      "contract": "S1 operation inputs",
+      "reason": "accept-missing-report",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-AcceptChange\",\"category\":\"AcceptChange\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[\"R-applied\"],\"payload\":{\"releaseReason\":\"wrong\",\"claimId\":\"claim-A\"}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-invalid-accept-wrong-payload",
+      "contract": "S1 operation inputs",
+      "reason": "accept-wrong-payload",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Release\",\"category\":\"Release\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[\"C-applied\"],\"payload\":{\"claimId\":\"claim-A\"}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-invalid-release-missing-reason",
+      "contract": "S1 operation inputs",
+      "reason": "release-missing-reason",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Release\",\"category\":\"Release\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[\"C-applied\"],\"payload\":{\"releaseReason\":\"Bounded source work handed off\",\"claimId\":\"claim-A\",\"reportRequestId\":\"R-applied\"}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-invalid-release-extra-report",
+      "contract": "S1 operation inputs",
+      "reason": "release-extra-report",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{\"releaseReason\":\"wrong\",\"claimId\":\"claim-A\"}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "id": "shape-invalid-claim-with-release-payload",
+      "contract": "S1 operation inputs",
+      "reason": "claim-with-release-payload",
+      "layer": "shape"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"transport\":{\"deliveryId\":\"delivery-B\",\"receivedAt\":\"observed-later\"}}",
+      "expectedShape": true,
+      "id": "shape-valid-transport",
+      "contract": "S1 transport exclusion",
+      "reason": "Transport metadata outside canonical request and never authority",
+      "layer": "shape"
+    },
+    {
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Return retained status/result; canonical equality unaffected",
+      "json": "{\r\n  \"request\": {\r\n    \"payload\": {},\r\n    \"predecessors\": [],\r\n    \"expectedRevision\": \"head-A\",\r\n    \"generation\": \"epoch-A\",\r\n    \"authorizationReference\": \"grant-A\",\r\n    \"holder\": {\r\n      \"holderId\": \"Senior1\",\r\n      \"sessionId\": \"session-A\"\r\n    },\r\n    \"scope\": [\r\n      {\r\n        \"registeredRootId\": \"utilities-sprint\",\r\n        \"path\": \"src/Owned.ps1\"\r\n      }\r\n    ],\r\n    \"taskId\": \"17.19.c\",\r\n    \"category\": \"Claim\",\r\n    \"requestId\": \"R-Claim\",\r\n    \"sprintId\": \"0017\",\r\n    \"resourceId\": \"board-S17\",\r\n    \"protocolVersion\": \"Coordination-v1\"\r\n  },\r\n  \"digest\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"\r\n}",
+      "contract": "S1-S4; schema pass grants no semantic acceptance",
+      "expectedShape": true,
+      "given": "Existing same key/canonical request as shape-valid-Claim; reverse all request object member order and change whitespace only",
+      "id": "runtime-canonical-object-order",
+      "semanticExpectation": "ASSERTED_FROM_ACCEPTED_CONTRACT_NOT_EXECUTED"
+    },
+    {
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Return retained status/result",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-\\u005317\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "contract": "S1-S4; schema pass grants no semantic acceptance",
+      "expectedShape": true,
+      "given": "Existing same key and canonical request; equivalent escaped string spelling only",
+      "id": "runtime-canonical-escape",
+      "semanticExpectation": "ASSERTED_FROM_ACCEPTED_CONTRACT_NOT_EXECUTED"
+    },
+    {
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "IdentityConflict before DigestMismatch",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.d\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "contract": "S1-S4; schema pass grants no semantic acceptance",
+      "expectedShape": true,
+      "given": "Existing same identity; taskId changes with original supplied digest",
+      "id": "runtime-changed-target",
+      "semanticExpectation": "ASSERTED_FROM_ACCEPTED_CONTRACT_NOT_EXECUTED"
+    },
+    {
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "IdentityConflict",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-B\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "contract": "S1-S4; schema pass grants no semantic acceptance",
+      "expectedShape": true,
+      "given": "Existing same identity; holder session changes with original supplied digest",
+      "id": "runtime-changed-session",
+      "semanticExpectation": "ASSERTED_FROM_ACCEPTED_CONTRACT_NOT_EXECUTED"
+    },
+    {
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "IdentityConflict",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-B\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "contract": "S1-S4; schema pass grants no semantic acceptance",
+      "expectedShape": true,
+      "given": "Existing same identity; authorization reference changes",
+      "id": "runtime-changed-authorization",
+      "semanticExpectation": "ASSERTED_FROM_ACCEPTED_CONTRACT_NOT_EXECUTED"
+    },
+    {
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "IdentityConflict; arrays retain order",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[\"B\",\"A\"],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "contract": "S1-S4; schema pass grants no semantic acceptance",
+      "expectedShape": true,
+      "given": "Existing identity had predecessors [A,B], retry [B,A]",
+      "id": "runtime-changed-predecessor-order",
+      "semanticExpectation": "ASSERTED_FROM_ACCEPTED_CONTRACT_NOT_EXECUTED"
+    },
+    {
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "IdentityConflict; no path rewriting during equality",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "contract": "S1-S4; schema pass grants no semantic acceptance",
+      "expectedShape": true,
+      "given": "Existing identity had original path src/Owned.ps1; retry path string case changes even if filesystem resolves same",
+      "id": "runtime-path-case-equality",
+      "semanticExpectation": "ASSERTED_FROM_ACCEPTED_CONTRACT_NOT_EXECUTED"
+    },
+    {
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "DigestMismatch; original record unchanged",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "contract": "S1-S4; schema pass grants no semantic acceptance",
+      "expectedShape": true,
+      "given": "Authorized same-key same canonical bytes but supplied digest does not match recomputation",
+      "id": "runtime-digest-mismatch",
+      "semanticExpectation": "ASSERTED_FROM_ACCEPTED_CONTRACT_NOT_EXECUTED"
+    },
+    {
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Rejected AuthorityConflict before RevisionConflict",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-retired\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "contract": "S1-S4; schema pass grants no semantic acceptance",
+      "expectedShape": true,
+      "given": "NEW identity, retired epoch and stale revision",
+      "id": "runtime-stale-authority-and-revision",
+      "semanticExpectation": "ASSERTED_FROM_ACCEPTED_CONTRACT_NOT_EXECUTED"
+    },
+    {
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Rejected RevisionConflict",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-stale\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "contract": "S1-S4; schema pass grants no semantic acceptance",
+      "expectedShape": true,
+      "given": "NEW identity, correct authority and Applied predecessors, stale head",
+      "id": "runtime-stale-revision",
+      "semanticExpectation": "ASSERTED_FROM_ACCEPTED_CONTRACT_NOT_EXECUTED"
+    },
+    {
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Pending WaitingForPredecessor, then revalidate revision after it applies",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Release\",\"category\":\"Release\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[\"C-applied\"],\"payload\":{\"releaseReason\":\"Bounded source work handed off\",\"claimId\":\"claim-A\"}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "contract": "S1-S4; schema pass grants no semantic acceptance",
+      "expectedShape": true,
+      "given": "Durably Pending claim C-applied exists; Release references it",
+      "id": "runtime-pending-predecessor",
+      "semanticExpectation": "ASSERTED_FROM_ACCEPTED_CONTRACT_NOT_EXECUTED"
+    },
+    {
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Rejected MissingPredecessor, no forward wait",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Release\",\"category\":\"Release\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[\"M\"],\"payload\":{\"releaseReason\":\"Bounded source work handed off\",\"claimId\":\"claim-A\"}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "contract": "S1-S4; schema pass grants no semantic acceptance",
+      "expectedShape": true,
+      "given": "NEW identity references M that has not arrived",
+      "id": "runtime-missing-predecessor",
+      "semanticExpectation": "ASSERTED_FROM_ACCEPTED_CONTRACT_NOT_EXECUTED"
+    },
+    {
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Rejected PredecessorFailed",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Release\",\"category\":\"Release\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[\"C-applied\"],\"payload\":{\"releaseReason\":\"Bounded source work handed off\",\"claimId\":\"claim-A\"}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "contract": "S1-S4; schema pass grants no semantic acceptance",
+      "expectedShape": true,
+      "given": "Referenced C-applied actually has terminal Rejected outcome",
+      "id": "runtime-rejected-predecessor",
+      "semanticExpectation": "ASSERTED_FROM_ACCEPTED_CONTRACT_NOT_EXECUTED"
+    },
+    {
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Rejected CausalCycle",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[\"R-Claim\"],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "contract": "S1-S4; schema pass grants no semantic acceptance",
+      "expectedShape": true,
+      "given": "NEW identity references itself",
+      "id": "runtime-self-predecessor",
+      "semanticExpectation": "ASSERTED_FROM_ACCEPTED_CONTRACT_NOT_EXECUTED"
+    },
+    {
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Rejected ForeignPredecessor; no cross-resource admission",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[\"foreign-R\"],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "contract": "S1-S4; schema pass grants no semantic acceptance",
+      "expectedShape": true,
+      "given": "Predecessor exists only under another resource identity",
+      "id": "runtime-foreign-predecessor",
+      "semanticExpectation": "ASSERTED_FROM_ACCEPTED_CONTRACT_NOT_EXECUTED"
+    },
+    {
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Reject containment invalidity; schema shape alone permits string",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"../repo-other/secret.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "contract": "S1-S4; schema pass grants no semantic acceptance",
+      "expectedShape": true,
+      "given": "Registered root resolves path outside authorized scope",
+      "id": "runtime-escaped-root",
+      "semanticExpectation": "ASSERTED_FROM_ACCEPTED_CONTRACT_NOT_EXECUTED"
+    },
+    {
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Rejected AuthorityConflict",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "contract": "S1-S4; schema pass grants no semantic acceptance",
+      "expectedShape": true,
+      "given": "NEW identity holder/session does not match admitted coordinator grant",
+      "id": "runtime-holder-authorization",
+      "semanticExpectation": "ASSERTED_FROM_ACCEPTED_CONTRACT_NOT_EXECUTED"
+    },
+    {
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Rejected ClaimConflict",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-ReportResult\",\"category\":\"ReportResult\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[\"C-applied\"],\"payload\":{\"statedLimits\":\"Source only; not deployed.\",\"evidence\":[{\"reference\":\"_generated/Sprint0017/result.json\",\"digest\":{\"algorithm\":\"SHA256\",\"value\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}}],\"claimId\":\"claim-A\",\"outcome\":\"source-ready\"}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "contract": "S1-S4; schema pass grants no semantic acceptance",
+      "expectedShape": true,
+      "given": "Report claim is active under another holder",
+      "id": "runtime-report-wrong-holder",
+      "semanticExpectation": "ASSERTED_FROM_ACCEPTED_CONTRACT_NOT_EXECUTED"
+    },
+    {
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Rejected ResultConflict",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-AcceptChange\",\"category\":\"AcceptChange\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[\"R-applied\"],\"payload\":{\"reportRequestId\":\"R-applied\",\"evidence\":[{\"reference\":\"_generated/Sprint0017/result.json\",\"digest\":{\"algorithm\":\"SHA256\",\"value\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}}],\"approvedChange\":{\"annotation\":\"Source-ready accepted\"}}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "contract": "S1-S4; schema pass grants no semantic acceptance",
+      "expectedShape": true,
+      "given": "Referenced report is Applied and matches same task/claim, but the evidence digest no longer matches",
+      "id": "runtime-approval-evidence-mismatch",
+      "semanticExpectation": "ASSERTED_FROM_ACCEPTED_CONTRACT_NOT_EXECUTED"
+    },
+    {
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Rejected ClaimConflict",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Release\",\"category\":\"Release\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[\"C-applied\"],\"payload\":{\"releaseReason\":\"Bounded source work handed off\",\"claimId\":\"claim-A\"}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "contract": "S1-S4; schema pass grants no semantic acceptance",
+      "expectedShape": true,
+      "given": "NEW identity targets already released claim",
+      "id": "runtime-release-already-released-new-id",
+      "semanticExpectation": "ASSERTED_FROM_ACCEPTED_CONTRACT_NOT_EXECUTED"
+    },
+    {
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Return original Applied before new-operation authority/revision checks; no replay",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-retired\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "contract": "S1-S4; schema pass grants no semantic acceptance",
+      "expectedShape": true,
+      "given": "Existing identical Applied request; current result-read permission granted, original epoch now retired",
+      "id": "runtime-retained-applied-old-epoch",
+      "semanticExpectation": "ASSERTED_FROM_ACCEPTED_CONTRACT_NOT_EXECUTED"
+    },
+    {
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Return original Rejected MissingPredecessor; no dependency execution even if missing target later arrives",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Release\",\"category\":\"Release\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[\"M\"],\"payload\":{\"releaseReason\":\"Bounded source work handed off\",\"claimId\":\"claim-A\"}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "contract": "S1-S4; schema pass grants no semantic acceptance",
+      "expectedShape": true,
+      "given": "Restored authentic terminal Rejected MissingPredecessor with original references and digest",
+      "id": "runtime-retained-missing-rejection-after-restore",
+      "semanticExpectation": "ASSERTED_FROM_ACCEPTED_CONTRACT_NOT_EXECUTED"
+    },
+    {
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Return original Rejected CausalCycle; no mutation",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[\"R-Claim\"],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "contract": "S1-S4; schema pass grants no semantic acceptance",
+      "expectedShape": true,
+      "given": "Restored authentic terminal Rejected CausalCycle with immutable self-reference",
+      "id": "runtime-retained-self-cycle-after-restore",
+      "semanticExpectation": "ASSERTED_FROM_ACCEPTED_CONTRACT_NOT_EXECUTED"
+    },
+    {
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Distinct identity key, then normal S3 validation; never folded into old retry",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"r-claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "contract": "S1-S4; schema pass grants no semantic acceptance",
+      "expectedShape": true,
+      "given": "NEW requestId differs only by case from retained ID; all other new-request checks pass",
+      "id": "runtime-case-sensitive-id",
+      "semanticExpectation": "ASSERTED_FROM_ACCEPTED_CONTRACT_NOT_EXECUTED"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": null,
+      "id": "parser-duplicate-decoded-member",
+      "note": "Test-Json observation is not proof of duplicate-member detection",
+      "contract": "S1 strict parser",
+      "expectedStrictInputDecision": "InvalidRequest; reject duplicate decoded members before schema object validation",
+      "layer": "parser-only"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"request\\u0049d\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": null,
+      "id": "parser-escaped-duplicate-member",
+      "contract": "S1 strict parser",
+      "expectedStrictInputDecision": "InvalidRequest after key escape decoding",
+      "layer": "parser-only"
+    },
+    {
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-\\ud800\",\"sprintId\":\"0017\",\"requestId\":\"R-Claim\",\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": null,
+      "id": "parser-unpaired-surrogate",
+      "contract": "S1 strict parser",
+      "expectedStrictInputDecision": "InvalidRequest malformed Unicode; strict scalar parser required",
+      "layer": "parser-only"
+    },
+    {
+      "json": "{ \"request\": ",
+      "expectedShape": false,
+      "id": "shape-invalid-json-syntax",
+      "contract": "S1 strict parsing",
+      "reason": "Malformed JSON syntax",
+      "layer": "shape"
+    },
+    {
+      "id": "shape-invalid-numeric-id-fraction",
+      "layer": "shape",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":1.0,\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "reason": "ID is a string; schema rejects numeric type, not a general lexical integer canonicalizer",
+      "contract": "S1 identifiers are strings"
+    },
+    {
+      "id": "shape-invalid-numeric-id-exponent",
+      "layer": "shape",
+      "json": "{\"request\":{\"protocolVersion\":\"Coordination-v1\",\"resourceId\":\"board-S17\",\"sprintId\":\"0017\",\"requestId\":1e0,\"category\":\"Claim\",\"taskId\":\"17.19.c\",\"scope\":[{\"registeredRootId\":\"utilities-sprint\",\"path\":\"src/Owned.ps1\"}],\"holder\":{\"holderId\":\"Senior1\",\"sessionId\":\"session-A\"},\"authorizationReference\":\"grant-A\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"predecessors\":[],\"payload\":{}},\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "expectedShape": false,
+      "reason": "ID is a string; schema rejects numeric type, not a general lexical integer canonicalizer",
+      "contract": "S1 identifiers are strings"
+    }
+  ]
+}

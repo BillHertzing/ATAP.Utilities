@@ -1,0 +1,1148 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:atap:coordination:state:v1",
+  "title": "Coordination-v1 durable state shape",
+  "description": "Shape of retained state, not proof of durable storage, compatible restore, admission, authorization or publication completeness.",
+  "$comment": "Authority: frozen Coordination-v1 SHA256 5A3533409C94418D3E5E44331CA7E3511A1BD459BD3138DBA4E4FC7509CA7959 and request schema SHA256 6266286DCCF7A499FF332E0CC2384B7807EEE477AECB9F9DA4B7F45BFA261CDE. Accepted request definitions are copied unchanged into local definitions; no external references. terminalEvidence defines ONLY shared identity/status/reason/receipt bindings, not the future result-v1 schema or Get-CoordResult grammar. Task17.19.e must bind its independently accepted result representation to these common evidence fields before runtime admission; no result payload/default/status semantics invented here. JSON Schema cannot enforce graph closure, immutable history, digest/byte correspondence, authority, unique keyed IDs, local owner exclusion, compatibility, atomicity or lossless restore. Strict parser and later validators remain mandatory.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "resourceId",
+    "lineageId",
+    "registeredRoots",
+    "generation",
+    "committedRevision",
+    "committedOutputManifest",
+    "custodyEvidence",
+    "compatibilityEvidence",
+    "admissionEvidence",
+    "requests",
+    "claims",
+    "reservations",
+    "preparedOperations",
+    "commitReceipts",
+    "mutationAdmission"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "Coordination-state-v1",
+      "type": "string"
+    },
+    "resourceId": {
+      "$ref": "#/definitions/nonemptyString"
+    },
+    "lineageId": {
+      "$ref": "#/definitions/nonemptyString"
+    },
+    "registeredRoots": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "registeredRootId",
+          "path"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "registeredRootId": {
+            "$ref": "#/definitions/nonemptyString"
+          },
+          "path": {
+            "$ref": "#/definitions/nonemptyString"
+          }
+        }
+      },
+      "description": "Actual identity/root/containment/alias validation remains runtime; strings are not grants."
+    },
+    "generation": {
+      "$ref": "#/definitions/nonemptyString"
+    },
+    "committedRevision": {
+      "$ref": "#/definitions/nonemptyString"
+    },
+    "committedOutputManifest": {
+      "$ref": "#/definitions/stateOutputManifest"
+    },
+    "custodyEvidence": {
+      "$ref": "#/definitions/stateReceiptReference"
+    },
+    "compatibilityEvidence": {
+      "$ref": "#/definitions/stateReceiptReference"
+    },
+    "admissionEvidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/stateReceiptReference"
+      },
+      "description": "Bootstrap/import/re-admission receipts. References do not prove authentic external witness, consumed FIRST_USE, retired epoch linkage or actual compatible package bytes."
+    },
+    "requests": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/stateRequestRecord"
+      }
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/stateClaim"
+      },
+      "description": "Active claims only; released ownership remains in immutable requests/results, not expiry takeover."
+    },
+    "reservations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/stateReservation"
+      }
+    },
+    "preparedOperations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/statePreparedOperation"
+      },
+      "description": "Retain exact prepared plans through recovery and committed history; collection name does not mean all entries are currently Prepared."
+    },
+    "commitReceipts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/stateCommitReceipt"
+      }
+    },
+    "mutationAdmission": {
+      "type": "object",
+      "required": [
+        "status",
+        "reason",
+        "observedOutputs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "Admitted",
+            "Held",
+            "NeedsRecovery"
+          ],
+          "type": "string"
+        },
+        "reason": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "observedOutputs": {
+          "items": {
+            "$ref": "#/definitions/stateFileImage"
+          },
+          "type": "array"
+        }
+      },
+      "description": "Recorded resource admission/hold/recovery observation, not a current authority grant. Cross-check actual custody/exclusion, committed manifest and incomplete preparations before mutation; delayed third-state replacement must hold even if old requests remain Applied."
+    }
+  },
+  "definitions": {
+    "stateDigest": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA256 spelling only; recompute and bind to exact bytes at runtime."
+    },
+    "stateReceiptReference": {
+      "type": "object",
+      "required": [
+        "reference",
+        "digest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "reference": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "digest": {
+          "$ref": "#/definitions/stateDigest"
+        }
+      },
+      "description": "Exact receipt bytes must be retained/resolvable and authenticated under custody; a well-formed reference is not proof."
+    },
+    "stateManifestEntry": {
+      "type": "object",
+      "required": [
+        "path",
+        "digest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "digest": {
+          "$ref": "#/definitions/stateDigest"
+        }
+      }
+    },
+    "stateOutputManifest": {
+      "type": "object",
+      "required": [
+        "markdown",
+        "boardHtml",
+        "proceduralDetailsHtml",
+        "accomplishedHtml"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "markdown": {
+          "$ref": "#/definitions/stateManifestEntry"
+        },
+        "boardHtml": {
+          "$ref": "#/definitions/stateManifestEntry"
+        },
+        "proceduralDetailsHtml": {
+          "$ref": "#/definitions/stateManifestEntry"
+        },
+        "accomplishedHtml": {
+          "$ref": "#/definitions/stateManifestEntry"
+        }
+      },
+      "description": "Exact canonical quartet paths/digests; highest board version, path uniqueness and correspondence to files require runtime verification."
+    },
+    "stateBytes": {
+      "type": "object",
+      "required": [
+        "bytesBase64",
+        "digest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "bytesBase64": {
+          "type": "string",
+          "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$",
+          "description": "Lossless stored bytes. Pattern checks alphabet/padding shape, not canonical pad bits, decoded content, numeric lexemes or digest agreement.",
+          "not": {
+            "pattern": "[^A-Za-z0-9+/=]"
+          }
+        },
+        "digest": {
+          "$ref": "#/definitions/stateDigest"
+        }
+      }
+    },
+    "stateFileImage": {
+      "type": "object",
+      "required": [
+        "path",
+        "bytesBase64",
+        "digest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "bytesBase64": {
+          "type": "string",
+          "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$",
+          "not": {
+            "pattern": "[^A-Za-z0-9+/=]"
+          }
+        },
+        "digest": {
+          "$ref": "#/definitions/stateDigest"
+        }
+      }
+    },
+    "stateQuartetImages": {
+      "type": "object",
+      "required": [
+        "markdown",
+        "boardHtml",
+        "proceduralDetailsHtml",
+        "accomplishedHtml"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "markdown": {
+          "$ref": "#/definitions/stateFileImage"
+        },
+        "boardHtml": {
+          "$ref": "#/definitions/stateFileImage"
+        },
+        "proceduralDetailsHtml": {
+          "$ref": "#/definitions/stateFileImage"
+        },
+        "accomplishedHtml": {
+          "$ref": "#/definitions/stateFileImage"
+        }
+      }
+    },
+    "stateHead": {
+      "type": "object",
+      "required": [
+        "generation",
+        "committedRevision",
+        "outputManifest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "generation": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "committedRevision": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "outputManifest": {
+          "$ref": "#/definitions/stateOutputManifest"
+        }
+      }
+    },
+    "stateTerminalEvidence": {
+      "type": "object",
+      "required": [
+        "resourceId",
+        "requestId",
+        "digest",
+        "status",
+        "reason",
+        "receipt"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "resourceId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "requestId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "digest": {
+          "$ref": "#/definitions/stateDigest"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Applied",
+            "Rejected"
+          ]
+        },
+        "reason": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "receipt": {
+          "$ref": "#/definitions/stateReceiptReference"
+        }
+      },
+      "$comment": "Only common retained evidence, not final result schema. Receipt must retain original immutable outcome and identity/digest binding; external receipt resolution/authenticity is runtime-only. Later result schema17.19.e must bind compatible result bytes without changing these accepted contract meanings."
+    },
+    "stateRecoveryEvidence": {
+      "type": "object",
+      "required": [
+        "reason",
+        "observedOutputs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "observedOutputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/stateFileImage"
+          },
+          "description": "Known observations only; empty means no file observation available. Never implies all outputs match."
+        }
+      }
+    },
+    "stateRejectedRequest": {
+      "type": "object",
+      "required": [
+        "resourceId",
+        "requestId"
+      ],
+      "properties": {
+        "resourceId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "requestId": {
+          "$ref": "#/definitions/nonemptyString"
+        }
+      },
+      "additionalProperties": true,
+      "$comment": "Intentional historical-evidence exception, not executable request grammar. Preserve original safely identified request, including invalid fields/references causing a terminal rejection. Strict original parsing, digest/result/provenance and non-execution are runtime requirements. Do not remove/repair unknown or missing fields to fit executable request shape."
+    },
+    "stateRequestRecord": {
+      "type": "object",
+      "required": [
+        "request",
+        "digest",
+        "originalRequestJson",
+        "queueOrdinal",
+        "status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "request": {
+          "type": "object"
+        },
+        "digest": {
+          "$ref": "#/definitions/stateDigest"
+        },
+        "originalRequestJson": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Immutable original semantic request JSON text; preserve for request/digest evidence. It excludes envelope digest and transport observations, which are not semantic inputs. Strict parsing, correspondence to the request object and canonical digest/equality require runtime validation; JSON Schema does not parse this string."
+        },
+        "queueOrdinal": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "not": {
+            "pattern": "[^0-9]"
+          },
+          "description": "Exact nonnegative integer ordinal encoded as decimal string without machine-number precision loss. No initial value or configured upper bound selected. Runtime compares integer value and uniqueness; it never replaces causal/authority checks."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Pending",
+            "Prepared",
+            "Applied",
+            "Rejected",
+            "NeedsRecovery"
+          ]
+        },
+        "pendingEvidence": {
+          "type": "object",
+          "required": [
+            "reason"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "reason": {
+              "$ref": "#/definitions/nonemptyString"
+            }
+          }
+        },
+        "preparedOperationId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "terminalEvidence": {
+          "$ref": "#/definitions/stateTerminalEvidence"
+        },
+        "recoveryEvidence": {
+          "$ref": "#/definitions/stateRecoveryEvidence"
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "pendingEvidence"
+          ],
+          "properties": {
+            "status": {
+              "const": "Pending"
+            },
+            "request": {
+              "$ref": "#/definitions/request"
+            }
+          },
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "terminalEvidence"
+                ]
+              },
+              {
+                "required": [
+                  "preparedOperationId"
+                ]
+              },
+              {
+                "required": [
+                  "recoveryEvidence"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "required": [
+            "preparedOperationId"
+          ],
+          "properties": {
+            "status": {
+              "const": "Prepared"
+            },
+            "request": {
+              "$ref": "#/definitions/request"
+            }
+          },
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "pendingEvidence"
+                ]
+              },
+              {
+                "required": [
+                  "terminalEvidence"
+                ]
+              },
+              {
+                "required": [
+                  "recoveryEvidence"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "required": [
+            "preparedOperationId",
+            "recoveryEvidence"
+          ],
+          "properties": {
+            "status": {
+              "const": "NeedsRecovery"
+            },
+            "request": {
+              "$ref": "#/definitions/request"
+            }
+          },
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "pendingEvidence"
+                ]
+              },
+              {
+                "required": [
+                  "terminalEvidence"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "required": [
+            "preparedOperationId",
+            "terminalEvidence"
+          ],
+          "properties": {
+            "status": {
+              "const": "Applied"
+            },
+            "request": {
+              "$ref": "#/definitions/request"
+            },
+            "terminalEvidence": {
+              "properties": {
+                "status": {
+                  "const": "Applied"
+                }
+              }
+            }
+          },
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "pendingEvidence"
+                ]
+              },
+              {
+                "required": [
+                  "recoveryEvidence"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "required": [
+            "terminalEvidence"
+          ],
+          "properties": {
+            "status": {
+              "const": "Rejected"
+            },
+            "request": {
+              "$ref": "#/definitions/stateRejectedRequest"
+            },
+            "terminalEvidence": {
+              "properties": {
+                "status": {
+                  "const": "Rejected"
+                }
+              }
+            }
+          },
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "pendingEvidence"
+                ]
+              },
+              {
+                "required": [
+                  "preparedOperationId"
+                ]
+              },
+              {
+                "required": [
+                  "recoveryEvidence"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "description": "Shape separates live operation states from immutable terminal evidence. Cross-field/resource/digest equality, graph membership, authentic status, legal temporal transitions and stable retries are later validators. No non-admitted persistence failure record is fabricated."
+    },
+    "stateClaim": {
+      "type": "object",
+      "required": [
+        "claimId",
+        "resourceId",
+        "taskId",
+        "scope",
+        "holder",
+        "generation",
+        "claimRequestId"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "claimId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "resourceId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "taskId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "scope": {
+          "$ref": "#/definitions/scope"
+        },
+        "holder": {
+          "$ref": "#/definitions/holder"
+        },
+        "generation": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "claimRequestId": {
+          "$ref": "#/definitions/nonemptyString"
+        }
+      }
+    },
+    "stateReservation": {
+      "type": "object",
+      "required": [
+        "reservationId",
+        "resourceId",
+        "requestId",
+        "taskId",
+        "scope",
+        "generation"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "reservationId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "resourceId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "requestId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "taskId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "scope": {
+          "$ref": "#/definitions/scope"
+        },
+        "generation": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "preparedOperationId": {
+          "$ref": "#/definitions/nonemptyString"
+        }
+      },
+      "description": "Imported/unpublished request-bound reservation survives missing visible board task. No automatic expiry or reallocation from absence."
+    },
+    "statePreparedOperation": {
+      "type": "object",
+      "required": [
+        "operationId",
+        "resourceId",
+        "status",
+        "baseHead",
+        "nextRevision",
+        "requestIds",
+        "beforeStateImage",
+        "afterStateImage",
+        "beforeOutputs",
+        "afterOutputs",
+        "outputManifest",
+        "reservations"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operationId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "resourceId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Prepared",
+            "NeedsRecovery",
+            "Applied"
+          ]
+        },
+        "baseHead": {
+          "$ref": "#/definitions/stateHead"
+        },
+        "nextRevision": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "requestIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/definitions/nonemptyString"
+          }
+        },
+        "beforeStateImage": {
+          "$ref": "#/definitions/stateBytes"
+        },
+        "afterStateImage": {
+          "$ref": "#/definitions/stateBytes"
+        },
+        "beforeOutputs": {
+          "$ref": "#/definitions/stateQuartetImages"
+        },
+        "afterOutputs": {
+          "$ref": "#/definitions/stateQuartetImages"
+        },
+        "outputManifest": {
+          "$ref": "#/definitions/stateOutputManifest"
+        },
+        "reservations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/stateReservation"
+          }
+        },
+        "recoveryEvidence": {
+          "$ref": "#/definitions/stateRecoveryEvidence"
+        },
+        "commitReceiptId": {
+          "$ref": "#/definitions/nonemptyString"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "NeedsRecovery"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "recoveryEvidence"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "Applied"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "commitReceiptId"
+            ]
+          }
+        },
+        {
+          "then": {
+            "not": {
+              "required": [
+                "commitReceiptId"
+              ]
+            }
+          },
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "Prepared",
+                  "NeedsRecovery"
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "description": "Immutable plan membership/images/next token persist through recovery. Mutable status/observations reference that same plan. Schema does not prove plan immutability, path/image correspondence or durable commit; no cross-file atomicity claim."
+    },
+    "stateCommitReceipt": {
+      "type": "object",
+      "required": [
+        "receiptId",
+        "resourceId",
+        "operationId",
+        "generation",
+        "committedRevision",
+        "requestIds",
+        "outputManifest",
+        "reservations",
+        "terminalEvidence"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "receiptId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "resourceId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "operationId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "generation": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "committedRevision": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "requestIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/definitions/nonemptyString"
+          }
+        },
+        "outputManifest": {
+          "$ref": "#/definitions/stateOutputManifest"
+        },
+        "reservations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/stateReservation"
+          }
+        },
+        "terminalEvidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/definitions/stateTerminalEvidence"
+              },
+              {
+                "properties": {
+                  "status": {
+                    "const": "Applied"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "description": "S2 common batch result/manifest/reservation bindings only. Receipt integrity, every member result, exact committed pair and successful after-image verification require runtime proof and later result-schema binding."
+    },
+    "nonemptyString": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Exact decoded string; preserve case and Unicode scalar sequence. No trim, case folding, Unicode normalization or measured length limit."
+    },
+    "holder": {
+      "type": "object",
+      "required": [
+        "holderId",
+        "sessionId"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "holderId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "sessionId": {
+          "$ref": "#/definitions/nonemptyString"
+        }
+      }
+    },
+    "scope": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Ordered exact owned scope. Original path strings are identity-bearing; later resolved containment must separately validate each registered root/path and ancestor conflicts. No path-string rewrite during retry equality.",
+      "items": {
+        "type": "object",
+        "required": [
+          "registeredRootId",
+          "path"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "registeredRootId": {
+            "$ref": "#/definitions/nonemptyString"
+          },
+          "path": {
+            "$ref": "#/definitions/nonemptyString"
+          }
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "description": "Ordered evidence bindings; shape permits an empty inventory, which does not prove sufficient evidence for any approval. Later coordinator/task acceptance checks determine sufficiency. No evidence algorithm is inferred from the request's SHA256 algorithm.",
+      "items": {
+        "type": "object",
+        "required": [
+          "reference",
+          "digest"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "reference": {
+            "$ref": "#/definitions/nonemptyString"
+          },
+          "digest": {
+            "type": "object",
+            "required": [
+              "algorithm",
+              "value"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "algorithm": {
+                "$ref": "#/definitions/nonemptyString"
+              },
+              "value": {
+                "$ref": "#/definitions/nonemptyString"
+              }
+            }
+          }
+        }
+      }
+    },
+    "claimPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Closed empty payload: existing task, requested scope, holder/session and coordinator authorization are already mandatory common request fields. No duplicate or invented Claim input."
+    },
+    "reportPayload": {
+      "type": "object",
+      "required": [
+        "claimId",
+        "outcome",
+        "evidence",
+        "statedLimits"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "claimId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "outcome": {
+          "type": "string",
+          "enum": [
+            "source-ready",
+            "failed",
+            "blocked"
+          ]
+        },
+        "evidence": {
+          "$ref": "#/definitions/evidence"
+        },
+        "statedLimits": {
+          "$ref": "#/definitions/nonemptyString"
+        }
+      },
+      "description": "Report only; no approval, claim release or parent/task completion. Active claim/holder validity requires later runtime checks."
+    },
+    "acceptPayload": {
+      "type": "object",
+      "required": [
+        "reportRequestId",
+        "evidence",
+        "approvedChange"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "reportRequestId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "evidence": {
+          "$ref": "#/definitions/evidence"
+        },
+        "approvedChange": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": false,
+          "properties": {
+            "annotation": {
+              "$ref": "#/definitions/nonemptyString"
+            },
+            "status": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Requested task status token, not an approval by itself. Later validator checks supported board annotation/status vocabulary and complete task acceptance evidence; source-ready cannot imply deployed-done."
+            }
+          }
+        }
+      },
+      "description": "Requires explicit coordinator authorization and exact Applied report predecessor for this same task/claim, with matching evidence. Failed/blocked report cannot justify completed status. None of those stateful rules is schema-enforced."
+    },
+    "releasePayload": {
+      "type": "object",
+      "required": [
+        "claimId",
+        "releaseReason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "claimId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "releaseReason": {
+          "$ref": "#/definitions/nonemptyString"
+        }
+      },
+      "description": "Release exact active claim only; it does not accept/complete a feature. A report is not a prerequisite to releasing blocked work. Holder/coordinator authority and retained duplicate outcomes require runtime validation."
+    },
+    "request": {
+      "type": "object",
+      "required": [
+        "protocolVersion",
+        "resourceId",
+        "sprintId",
+        "requestId",
+        "category",
+        "taskId",
+        "scope",
+        "holder",
+        "authorizationReference",
+        "generation",
+        "expectedRevision",
+        "predecessors",
+        "payload"
+      ],
+      "additionalProperties": false,
+      "$comment": "All properties here, including authorization, epoch/revision, original scope strings and predecessor order, are immutable and digest-covered. No numeric fields exist in this v1 wire shape; IDs/versions/tokens remain strings. No optional defaults. Same-ID classification uses the whole validated canonical request, not only payload.",
+      "properties": {
+        "protocolVersion": {
+          "type": "string",
+          "const": "Coordination-v1"
+        },
+        "resourceId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "sprintId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Case-sensitive opaque ID. Uniqueness is resource-lifetime across sprints/sessions/generations/restores, not JSON Schema uniqueItems or a UUID format requirement."
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "Claim",
+            "ReportResult",
+            "AcceptChange",
+            "Release"
+          ]
+        },
+        "taskId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "scope": {
+          "$ref": "#/definitions/scope"
+        },
+        "holder": {
+          "$ref": "#/definitions/holder"
+        },
+        "authorizationReference": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "generation": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "expectedRevision": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "predecessors": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/definitions/nonemptyString"
+          },
+          "description": "Ordered unique request IDs. Empty means no predecessors. Same-resource existence, self/cycles, states and category relationships require runtime graph validation; do not sort during retry canonicalization."
+        },
+        "payload": {
+          "type": "object"
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "category": {
+              "const": "Claim"
+            },
+            "payload": {
+              "$ref": "#/definitions/claimPayload"
+            }
+          }
+        },
+        {
+          "properties": {
+            "category": {
+              "const": "ReportResult"
+            },
+            "payload": {
+              "$ref": "#/definitions/reportPayload"
+            }
+          }
+        },
+        {
+          "properties": {
+            "category": {
+              "const": "AcceptChange"
+            },
+            "payload": {
+              "$ref": "#/definitions/acceptPayload"
+            }
+          }
+        },
+        {
+          "properties": {
+            "category": {
+              "const": "Release"
+            },
+            "payload": {
+              "$ref": "#/definitions/releasePayload"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,821 @@
+{
+  "formatVersion": "result-v1-vectors-1",
+  "schema": "../../schemas/result-v1.schema.json",
+  "contractSha256": "5A3533409C94418D3E5E44331CA7E3511A1BD459BD3138DBA4E4FC7509CA7959",
+  "stateSchemaSha256": "95863BAAC08E7A8434459BBAD86CE542D0911BA943E0D1AA5683FE783507A613",
+  "limits": [
+    "Finite synthetic shape fixtures, not trusted journal results; hashes, IDs, paths, receipt references and byte/state data are placeholders",
+    "Runtime-only conditions are NOT_RUN and assume authentic consistent state/digests/permissions except the specifically tested predicate",
+    "State common terminal evidence is copied exactly; runtime must compare identity/status/reason/digest/receipt to retained state, with no rewritten history",
+    "A receipt references independent retained journal evidence, never a required self-hash of the response wrapper or query observation",
+    "Applied ReportResult may describe source-ready/failed/blocked work; Applied Release/AcceptChange never automatically prove feature/parent done",
+    "Null expectedShape is a parser capability observation, not asserted schema enforcement"
+  ],
+  "vectors": [
+    {
+      "reason": "Retained Pending shape only; original durable evidence must be verified",
+      "expectedShape": true,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "layer": "shape",
+      "id": "shape-valid-Pending"
+    },
+    {
+      "reason": "Retained Prepared shape only; original durable evidence must be verified",
+      "expectedShape": true,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Prepared\",\"reason\":\"Prepared\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"operationEvidence\":{\"baseHead\":{\"generation\":\"epoch-A\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"committedRevision\":\"head-A\"},\"requestIds\":[\"R-A\"],\"operationId\":\"op-A\",\"receipt\":{\"reference\":\"journal/prepared.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"nextRevision\":\"head-B\"}}}",
+      "layer": "shape",
+      "id": "shape-valid-Prepared"
+    },
+    {
+      "reason": "Retained Applied shape only; original durable evidence must be verified",
+      "expectedShape": true,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Applied\",\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Applied\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"commitEvidence\":{\"receipt\":{\"reference\":\"journal/commit.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"receiptId\":\"receipt-A\",\"committedRevision\":\"head-B\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"generation\":\"epoch-A\",\"operationId\":\"op-A\"},\"claims\":[{\"generation\":\"epoch-A\",\"scope\":[{\"path\":\"src/Owned.ps1\",\"registeredRootId\":\"utilities-sprint\"}],\"claimRequestId\":\"R-Applied\",\"claimId\":\"claim-A\",\"taskId\":\"17.19.d\",\"holder\":{\"sessionId\":\"session-A\",\"holderId\":\"Senior1\"},\"resourceId\":\"board-S17\"}]}}",
+      "layer": "shape",
+      "id": "shape-valid-Applied"
+    },
+    {
+      "reason": "Retained Rejected shape only; original durable evidence must be verified",
+      "expectedShape": true,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Rejected\",\"reason\":\"MissingPredecessor\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"MissingPredecessor\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Rejected\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}}}",
+      "layer": "shape",
+      "id": "shape-valid-Rejected"
+    },
+    {
+      "reason": "Retained NeedsRecovery shape only; original durable evidence must be verified",
+      "expectedShape": true,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"NeedsRecovery\",\"reason\":\"InterruptedPublication\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"operationEvidence\":{\"baseHead\":{\"generation\":\"epoch-A\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"committedRevision\":\"head-A\"},\"requestIds\":[\"R-A\"],\"operationId\":\"op-A\",\"receipt\":{\"reference\":\"journal/prepared.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"nextRevision\":\"head-B\"},\"recoveryEvidence\":{\"observedOutputs\":[],\"reason\":\"InterruptedPublication\"}},\"observation\":{\"reason\":\"Incomplete publication\",\"status\":\"NeedsRecovery\",\"head\":{\"generation\":\"epoch-A\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"committedRevision\":\"head-A\"}}}",
+      "layer": "shape",
+      "id": "shape-valid-NeedsRecovery"
+    },
+    {
+      "reason": "Applied ReportResult is its own operation effect, not automatic feature completion",
+      "expectedShape": true,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Applied\",\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"ReportResult\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Applied\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"commitEvidence\":{\"receipt\":{\"reference\":\"journal/commit.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"receiptId\":\"receipt-A\",\"committedRevision\":\"head-B\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"generation\":\"epoch-A\",\"operationId\":\"op-A\"},\"reportedWork\":{\"statedLimits\":\"Source-ready only; not installed or deployed\",\"evidence\":[{\"reference\":\"source/report.json\",\"digest\":{\"algorithm\":\"SHA256\",\"value\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}}],\"claimId\":\"claim-A\",\"outcome\":\"source-ready\"}}}",
+      "layer": "shape",
+      "id": "shape-valid-Applied-ReportResult"
+    },
+    {
+      "reason": "Applied AcceptChange is its own operation effect, not automatic feature completion",
+      "expectedShape": true,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Applied\",\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"AcceptChange\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Applied\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"commitEvidence\":{\"receipt\":{\"reference\":\"journal/commit.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"receiptId\":\"receipt-A\",\"committedRevision\":\"head-B\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"generation\":\"epoch-A\",\"operationId\":\"op-A\"},\"acceptedChange\":{\"approvedChange\":{\"annotation\":\"Independent source acceptance recorded\"},\"reportRequestId\":\"R-report\",\"evidence\":[{\"reference\":\"source/report.json\",\"digest\":{\"algorithm\":\"SHA256\",\"value\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}}]}}}",
+      "layer": "shape",
+      "id": "shape-valid-Applied-AcceptChange"
+    },
+    {
+      "reason": "Applied Release is its own operation effect, not automatic feature completion",
+      "expectedShape": true,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Applied\",\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Release\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Applied\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"commitEvidence\":{\"receipt\":{\"reference\":\"journal/commit.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"receiptId\":\"receipt-A\",\"committedRevision\":\"head-B\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"generation\":\"epoch-A\",\"operationId\":\"op-A\"},\"releasedClaimId\":\"claim-A\"}}",
+      "layer": "shape",
+      "id": "shape-valid-Applied-Release"
+    },
+    {
+      "reason": "Reporting failed work can be an Applied operation; failure is not feature done",
+      "expectedShape": true,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Applied\",\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"ReportResult\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Applied\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"commitEvidence\":{\"receipt\":{\"reference\":\"journal/commit.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"receiptId\":\"receipt-A\",\"committedRevision\":\"head-B\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"generation\":\"epoch-A\",\"operationId\":\"op-A\"},\"reportedWork\":{\"statedLimits\":\"Source-ready only; not installed or deployed\",\"evidence\":[{\"reference\":\"source/report.json\",\"digest\":{\"algorithm\":\"SHA256\",\"value\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}}],\"claimId\":\"claim-A\",\"outcome\":\"failed\"}}}",
+      "layer": "shape",
+      "id": "shape-valid-Applied-failed-report"
+    },
+    {
+      "reason": "Do not invent absent invalid original input fields; exact history is in state/journal",
+      "expectedShape": true,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Rejected\",\"reason\":\"MissingPredecessor\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"reservations\":[],\"terminalEvidence\":{\"reason\":\"MissingPredecessor\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Rejected\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}}}",
+      "layer": "shape",
+      "id": "shape-valid-Rejected-missing-original-metadata"
+    },
+    {
+      "reason": "Rejected historical invalid kind remains non-executable evidence",
+      "expectedShape": true,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Rejected\",\"reason\":\"MissingPredecessor\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"reservations\":[],\"terminalEvidence\":{\"reason\":\"MissingPredecessor\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Rejected\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Allocate\"}}",
+      "layer": "shape",
+      "id": "shape-valid-Rejected-unsupported-original-kind"
+    },
+    {
+      "reason": "Non-retained response never claims a durable request status/receipt",
+      "expectedShape": true,
+      "json": "{\"reason\":\"Denied\",\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"NotAdmitted\"}",
+      "layer": "shape",
+      "id": "shape-valid-NotAdmitted-Denied"
+    },
+    {
+      "reason": "Non-retained response never claims a durable request status/receipt",
+      "expectedShape": true,
+      "json": "{\"reason\":\"InvalidRequest\",\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"NotAdmitted\"}",
+      "layer": "shape",
+      "id": "shape-valid-NotAdmitted-InvalidRequest"
+    },
+    {
+      "reason": "Non-retained response never claims a durable request status/receipt",
+      "expectedShape": true,
+      "json": "{\"reason\":\"IdentityConflict\",\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"NotAdmitted\"}",
+      "layer": "shape",
+      "id": "shape-valid-NotAdmitted-IdentityConflict"
+    },
+    {
+      "reason": "Non-retained response never claims a durable request status/receipt",
+      "expectedShape": true,
+      "json": "{\"reason\":\"DigestMismatch\",\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"NotAdmitted\"}",
+      "layer": "shape",
+      "id": "shape-valid-NotAdmitted-DigestMismatch"
+    },
+    {
+      "reason": "Non-retained response never claims a durable request status/receipt",
+      "expectedShape": true,
+      "json": "{\"reason\":\"ResourceHeld\",\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"NotAdmitted\"}",
+      "layer": "shape",
+      "id": "shape-valid-NotAdmitted-ResourceHeld"
+    },
+    {
+      "reason": "Non-retained response never claims a durable request status/receipt",
+      "expectedShape": true,
+      "json": "{\"reason\":\"PersistenceFailed\",\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"NotAdmitted\"}",
+      "layer": "shape",
+      "id": "shape-valid-NotAdmitted-PersistenceFailed"
+    },
+    {
+      "reason": "Unknown is current query observation, not retained rejection or free-ID authorization",
+      "expectedShape": true,
+      "json": "{\"reason\":\"No retained key in verified complete lookup\",\"observation\":{\"reason\":\"Verified current head for fixture only\",\"status\":\"Complete\",\"head\":{\"generation\":\"epoch-A\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"committedRevision\":\"head-B\"}},\"queryStatus\":\"Unknown\",\"responseKind\":\"QueryObservation\",\"resourceId\":\"board-S17\",\"requestId\":\"R-unknown\",\"schemaVersion\":\"Coordination-result-v1\"}",
+      "layer": "shape",
+      "id": "shape-valid-query-Unknown"
+    },
+    {
+      "reason": "Unavailable query cannot masquerade as absent durable request",
+      "expectedShape": true,
+      "json": "{\"reason\":\"Authoritative lookup unavailable\",\"observation\":{\"reason\":\"Current state not proved complete\",\"status\":\"Unavailable\"},\"queryStatus\":\"Unavailable\",\"responseKind\":\"QueryObservation\",\"resourceId\":\"board-S17\",\"requestId\":\"R-unknown\",\"schemaVersion\":\"Coordination-result-v1\"}",
+      "layer": "shape",
+      "id": "shape-valid-query-Unavailable"
+    },
+    {
+      "reason": "Unavailable query cannot masquerade as absent durable request",
+      "expectedShape": true,
+      "json": "{\"reason\":\"Authoritative lookup unavailable\",\"observation\":{\"reason\":\"Current state not proved complete\",\"status\":\"Held\",\"head\":{\"generation\":\"epoch-A\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"committedRevision\":\"head-B\"}},\"queryStatus\":\"Unavailable\",\"responseKind\":\"QueryObservation\",\"resourceId\":\"board-S17\",\"requestId\":\"R-unknown\",\"schemaVersion\":\"Coordination-result-v1\"}",
+      "layer": "shape",
+      "id": "shape-valid-query-Held"
+    },
+    {
+      "reason": "Unavailable query cannot masquerade as absent durable request",
+      "expectedShape": true,
+      "json": "{\"reason\":\"Authoritative lookup unavailable\",\"observation\":{\"reason\":\"Current state not proved complete\",\"status\":\"NeedsRecovery\",\"head\":{\"generation\":\"epoch-A\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"committedRevision\":\"head-B\"}},\"queryStatus\":\"Unavailable\",\"responseKind\":\"QueryObservation\",\"resourceId\":\"board-S17\",\"requestId\":\"R-unknown\",\"schemaVersion\":\"Coordination-result-v1\"}",
+      "layer": "shape",
+      "id": "shape-valid-query-NeedsRecovery"
+    },
+    {
+      "reason": "Current hold cannot reclassify original terminal outcome",
+      "expectedShape": true,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Applied\",\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Applied\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"commitEvidence\":{\"receipt\":{\"reference\":\"journal/commit.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"receiptId\":\"receipt-A\",\"committedRevision\":\"head-B\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"generation\":\"epoch-A\",\"operationId\":\"op-A\"},\"claims\":[{\"generation\":\"epoch-A\",\"scope\":[{\"path\":\"src/Owned.ps1\",\"registeredRootId\":\"utilities-sprint\"}],\"claimRequestId\":\"R-Applied\",\"claimId\":\"claim-A\",\"taskId\":\"17.19.d\",\"holder\":{\"sessionId\":\"session-A\",\"holderId\":\"Senior1\"},\"resourceId\":\"board-S17\"}]},\"observation\":{\"reason\":\"Current custody uncertainty\",\"status\":\"Held\",\"head\":{\"generation\":\"epoch-A\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"committedRevision\":\"head-B\"}}}",
+      "layer": "shape",
+      "id": "shape-valid-retained-Applied-current-held"
+    },
+    {
+      "reason": "Required response envelope member missing",
+      "expectedShape": false,
+      "json": "{\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "layer": "shape",
+      "id": "shape-missing-envelope-schemaVersion"
+    },
+    {
+      "reason": "Required response envelope member missing",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "layer": "shape",
+      "id": "shape-missing-envelope-responseKind"
+    },
+    {
+      "reason": "Required response envelope member missing",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\"}",
+      "layer": "shape",
+      "id": "shape-missing-envelope-retained"
+    },
+    {
+      "reason": "Required retained Pending evidence missing",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "layer": "shape",
+      "id": "shape-missing-Pending-resourceId"
+    },
+    {
+      "reason": "Required retained Pending evidence missing",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "layer": "shape",
+      "id": "shape-missing-Pending-requestId"
+    },
+    {
+      "reason": "Required retained Pending evidence missing",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "layer": "shape",
+      "id": "shape-missing-Pending-digest"
+    },
+    {
+      "reason": "Required retained Pending evidence missing",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "layer": "shape",
+      "id": "shape-missing-Pending-status"
+    },
+    {
+      "reason": "Required retained Pending evidence missing",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "layer": "shape",
+      "id": "shape-missing-Pending-reason"
+    },
+    {
+      "reason": "Required retained Pending evidence missing",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "layer": "shape",
+      "id": "shape-missing-Pending-receipt"
+    },
+    {
+      "reason": "Required retained Pending evidence missing",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\"}}",
+      "layer": "shape",
+      "id": "shape-missing-Pending-reservations"
+    },
+    {
+      "reason": "Required retained Pending evidence missing",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "layer": "shape",
+      "id": "shape-missing-Pending-category"
+    },
+    {
+      "reason": "Required retained Pending evidence missing",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "layer": "shape",
+      "id": "shape-missing-Pending-generation"
+    },
+    {
+      "reason": "Required retained Pending evidence missing",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"reservations\":[]}}",
+      "layer": "shape",
+      "id": "shape-missing-Pending-expectedRevision"
+    },
+    {
+      "reason": "unknown-root",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]},\"extra\":true}",
+      "layer": "shape",
+      "id": "shape-invalid-unknown-root"
+    },
+    {
+      "reason": "unknown-retained",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"extra\":true}}",
+      "layer": "shape",
+      "id": "shape-invalid-unknown-retained"
+    },
+    {
+      "reason": "unknown-terminal",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Applied\",\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Applied\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"extra\":true},\"commitEvidence\":{\"receipt\":{\"reference\":\"journal/commit.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"receiptId\":\"receipt-A\",\"committedRevision\":\"head-B\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"generation\":\"epoch-A\",\"operationId\":\"op-A\"},\"claims\":[{\"generation\":\"epoch-A\",\"scope\":[{\"path\":\"src/Owned.ps1\",\"registeredRootId\":\"utilities-sprint\"}],\"claimRequestId\":\"R-Applied\",\"claimId\":\"claim-A\",\"taskId\":\"17.19.d\",\"holder\":{\"sessionId\":\"session-A\",\"holderId\":\"Senior1\"},\"resourceId\":\"board-S17\"}]}}",
+      "layer": "shape",
+      "id": "shape-invalid-unknown-terminal"
+    },
+    {
+      "reason": "unknown-receipt",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"extra\":true},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "layer": "shape",
+      "id": "shape-invalid-unknown-receipt"
+    },
+    {
+      "reason": "unknown-observation",
+      "expectedShape": false,
+      "json": "{\"reason\":\"No retained key in verified complete lookup\",\"observation\":{\"reason\":\"Verified current head for fixture only\",\"status\":\"Complete\",\"head\":{\"generation\":\"epoch-A\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"committedRevision\":\"head-B\"},\"extra\":true},\"queryStatus\":\"Unknown\",\"responseKind\":\"QueryObservation\",\"resourceId\":\"board-S17\",\"requestId\":\"R-unknown\",\"schemaVersion\":\"Coordination-result-v1\"}",
+      "layer": "shape",
+      "id": "shape-invalid-unknown-observation"
+    },
+    {
+      "reason": "unknown-report",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Applied\",\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"ReportResult\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Applied\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"commitEvidence\":{\"receipt\":{\"reference\":\"journal/commit.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"receiptId\":\"receipt-A\",\"committedRevision\":\"head-B\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"generation\":\"epoch-A\",\"operationId\":\"op-A\"},\"reportedWork\":{\"statedLimits\":\"Source-ready only; not installed or deployed\",\"evidence\":[{\"reference\":\"source/report.json\",\"digest\":{\"algorithm\":\"SHA256\",\"value\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}}],\"claimId\":\"claim-A\",\"outcome\":\"source-ready\",\"extra\":true}}}",
+      "layer": "shape",
+      "id": "shape-invalid-unknown-report"
+    },
+    {
+      "reason": "unknown-commit",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Applied\",\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Applied\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"commitEvidence\":{\"receipt\":{\"reference\":\"journal/commit.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"receiptId\":\"receipt-A\",\"committedRevision\":\"head-B\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"generation\":\"epoch-A\",\"operationId\":\"op-A\",\"extra\":true},\"claims\":[{\"generation\":\"epoch-A\",\"scope\":[{\"path\":\"src/Owned.ps1\",\"registeredRootId\":\"utilities-sprint\"}],\"claimRequestId\":\"R-Applied\",\"claimId\":\"claim-A\",\"taskId\":\"17.19.d\",\"holder\":{\"sessionId\":\"session-A\",\"holderId\":\"Senior1\"},\"resourceId\":\"board-S17\"}]}}",
+      "layer": "shape",
+      "id": "shape-invalid-unknown-commit"
+    },
+    {
+      "reason": "unknown-operation",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Prepared\",\"reason\":\"Prepared\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"operationEvidence\":{\"baseHead\":{\"generation\":\"epoch-A\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"committedRevision\":\"head-A\"},\"requestIds\":[\"R-A\"],\"operationId\":\"op-A\",\"receipt\":{\"reference\":\"journal/prepared.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"nextRevision\":\"head-B\",\"extra\":true}}}",
+      "layer": "shape",
+      "id": "shape-invalid-unknown-operation"
+    },
+    {
+      "reason": "mixed-notadmitted-retained",
+      "expectedShape": false,
+      "json": "{\"reason\":\"IdentityConflict\",\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"NotAdmitted\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "layer": "shape",
+      "id": "shape-invalid-mixed-notadmitted-retained"
+    },
+    {
+      "reason": "notadmitted-pending-status",
+      "expectedShape": false,
+      "json": "{\"reason\":\"PersistenceFailed\",\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"NotAdmitted\",\"status\":\"Pending\"}",
+      "layer": "shape",
+      "id": "shape-invalid-notadmitted-pending-status"
+    },
+    {
+      "reason": "notadmitted-success-receipt",
+      "expectedShape": false,
+      "json": "{\"reason\":\"PersistenceFailed\",\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"NotAdmitted\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}}",
+      "layer": "shape",
+      "id": "shape-invalid-notadmitted-success-receipt"
+    },
+    {
+      "reason": "query-retained-outcome",
+      "expectedShape": false,
+      "json": "{\"reason\":\"No retained key in verified complete lookup\",\"observation\":{\"reason\":\"Verified current head for fixture only\",\"status\":\"Complete\",\"head\":{\"generation\":\"epoch-A\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"committedRevision\":\"head-B\"}},\"queryStatus\":\"Unknown\",\"responseKind\":\"QueryObservation\",\"resourceId\":\"board-S17\",\"requestId\":\"R-unknown\",\"schemaVersion\":\"Coordination-result-v1\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Rejected\",\"reason\":\"MissingPredecessor\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"MissingPredecessor\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Rejected\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}}}",
+      "layer": "shape",
+      "id": "shape-invalid-query-retained-outcome"
+    },
+    {
+      "reason": "pending-terminal",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"MissingPredecessor\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Rejected\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}}}",
+      "layer": "shape",
+      "id": "shape-invalid-pending-terminal"
+    },
+    {
+      "reason": "prepared-missing-plan",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Prepared\",\"reason\":\"Prepared\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "layer": "shape",
+      "id": "shape-invalid-prepared-missing-plan"
+    },
+    {
+      "reason": "prepared-commit",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Prepared\",\"reason\":\"Prepared\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"operationEvidence\":{\"baseHead\":{\"generation\":\"epoch-A\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"committedRevision\":\"head-A\"},\"requestIds\":[\"R-A\"],\"operationId\":\"op-A\",\"receipt\":{\"reference\":\"journal/prepared.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"nextRevision\":\"head-B\"},\"commitEvidence\":{\"receipt\":{\"reference\":\"journal/commit.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"receiptId\":\"receipt-A\",\"committedRevision\":\"head-B\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"generation\":\"epoch-A\",\"operationId\":\"op-A\"}}}",
+      "layer": "shape",
+      "id": "shape-invalid-prepared-commit"
+    },
+    {
+      "reason": "recovery-missing-evidence",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"NeedsRecovery\",\"reason\":\"InterruptedPublication\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"operationEvidence\":{\"baseHead\":{\"generation\":\"epoch-A\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"committedRevision\":\"head-A\"},\"requestIds\":[\"R-A\"],\"operationId\":\"op-A\",\"receipt\":{\"reference\":\"journal/prepared.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"nextRevision\":\"head-B\"}},\"observation\":{\"reason\":\"Incomplete publication\",\"status\":\"NeedsRecovery\",\"head\":{\"generation\":\"epoch-A\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"committedRevision\":\"head-A\"}}}",
+      "layer": "shape",
+      "id": "shape-invalid-recovery-missing-evidence"
+    },
+    {
+      "reason": "applied-missing-terminal",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Applied\",\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"commitEvidence\":{\"receipt\":{\"reference\":\"journal/commit.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"receiptId\":\"receipt-A\",\"committedRevision\":\"head-B\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"generation\":\"epoch-A\",\"operationId\":\"op-A\"},\"claims\":[{\"generation\":\"epoch-A\",\"scope\":[{\"path\":\"src/Owned.ps1\",\"registeredRootId\":\"utilities-sprint\"}],\"claimRequestId\":\"R-Applied\",\"claimId\":\"claim-A\",\"taskId\":\"17.19.d\",\"holder\":{\"sessionId\":\"session-A\",\"holderId\":\"Senior1\"},\"resourceId\":\"board-S17\"}]}}",
+      "layer": "shape",
+      "id": "shape-invalid-applied-missing-terminal"
+    },
+    {
+      "reason": "applied-missing-commit",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Applied\",\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Applied\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"claims\":[{\"generation\":\"epoch-A\",\"scope\":[{\"path\":\"src/Owned.ps1\",\"registeredRootId\":\"utilities-sprint\"}],\"claimRequestId\":\"R-Applied\",\"claimId\":\"claim-A\",\"taskId\":\"17.19.d\",\"holder\":{\"sessionId\":\"session-A\",\"holderId\":\"Senior1\"},\"resourceId\":\"board-S17\"}]}}",
+      "layer": "shape",
+      "id": "shape-invalid-applied-missing-commit"
+    },
+    {
+      "reason": "applied-rejected-terminal",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Applied\",\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Rejected\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"commitEvidence\":{\"receipt\":{\"reference\":\"journal/commit.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"receiptId\":\"receipt-A\",\"committedRevision\":\"head-B\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"generation\":\"epoch-A\",\"operationId\":\"op-A\"},\"claims\":[{\"generation\":\"epoch-A\",\"scope\":[{\"path\":\"src/Owned.ps1\",\"registeredRootId\":\"utilities-sprint\"}],\"claimRequestId\":\"R-Applied\",\"claimId\":\"claim-A\",\"taskId\":\"17.19.d\",\"holder\":{\"sessionId\":\"session-A\",\"holderId\":\"Senior1\"},\"resourceId\":\"board-S17\"}]}}",
+      "layer": "shape",
+      "id": "shape-invalid-applied-rejected-terminal"
+    },
+    {
+      "reason": "rejected-applied-terminal",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Rejected\",\"reason\":\"MissingPredecessor\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"MissingPredecessor\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Applied\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}}}",
+      "layer": "shape",
+      "id": "shape-invalid-rejected-applied-terminal"
+    },
+    {
+      "reason": "rejected-commit",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Rejected\",\"reason\":\"MissingPredecessor\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"MissingPredecessor\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Rejected\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"commitEvidence\":{\"receipt\":{\"reference\":\"journal/commit.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"receiptId\":\"receipt-A\",\"committedRevision\":\"head-B\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"generation\":\"epoch-A\",\"operationId\":\"op-A\"}}}",
+      "layer": "shape",
+      "id": "shape-invalid-rejected-commit"
+    },
+    {
+      "reason": "rejected-claims",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Rejected\",\"reason\":\"MissingPredecessor\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"MissingPredecessor\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Rejected\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"claims\":[{\"generation\":\"epoch-A\",\"scope\":[{\"path\":\"src/Owned.ps1\",\"registeredRootId\":\"utilities-sprint\"}],\"claimRequestId\":\"R-Applied\",\"claimId\":\"claim-A\",\"taskId\":\"17.19.d\",\"holder\":{\"sessionId\":\"session-A\",\"holderId\":\"Senior1\"},\"resourceId\":\"board-S17\"}]}}",
+      "layer": "shape",
+      "id": "shape-invalid-rejected-claims"
+    },
+    {
+      "reason": "claim-empty-claims",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Applied\",\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Applied\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"commitEvidence\":{\"receipt\":{\"reference\":\"journal/commit.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"receiptId\":\"receipt-A\",\"committedRevision\":\"head-B\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"generation\":\"epoch-A\",\"operationId\":\"op-A\"},\"claims\":[]}}",
+      "layer": "shape",
+      "id": "shape-invalid-claim-empty-claims"
+    },
+    {
+      "reason": "claim-report-effect",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Applied\",\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Applied\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"commitEvidence\":{\"receipt\":{\"reference\":\"journal/commit.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"receiptId\":\"receipt-A\",\"committedRevision\":\"head-B\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"generation\":\"epoch-A\",\"operationId\":\"op-A\"},\"claims\":[{\"generation\":\"epoch-A\",\"scope\":[{\"path\":\"src/Owned.ps1\",\"registeredRootId\":\"utilities-sprint\"}],\"claimRequestId\":\"R-Applied\",\"claimId\":\"claim-A\",\"taskId\":\"17.19.d\",\"holder\":{\"sessionId\":\"session-A\",\"holderId\":\"Senior1\"},\"resourceId\":\"board-S17\"}],\"reportedWork\":{\"statedLimits\":\"Source-ready only; not installed or deployed\",\"evidence\":[{\"reference\":\"source/report.json\",\"digest\":{\"algorithm\":\"SHA256\",\"value\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}}],\"claimId\":\"claim-A\",\"outcome\":\"source-ready\"}}}",
+      "layer": "shape",
+      "id": "shape-invalid-claim-report-effect"
+    },
+    {
+      "reason": "report-missing-work",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Applied\",\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"ReportResult\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Applied\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"commitEvidence\":{\"receipt\":{\"reference\":\"journal/commit.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"receiptId\":\"receipt-A\",\"committedRevision\":\"head-B\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"generation\":\"epoch-A\",\"operationId\":\"op-A\"}}}",
+      "layer": "shape",
+      "id": "shape-invalid-report-missing-work"
+    },
+    {
+      "reason": "report-done-outcome",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Applied\",\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"ReportResult\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Applied\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"commitEvidence\":{\"receipt\":{\"reference\":\"journal/commit.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"receiptId\":\"receipt-A\",\"committedRevision\":\"head-B\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"generation\":\"epoch-A\",\"operationId\":\"op-A\"},\"reportedWork\":{\"statedLimits\":\"Source-ready only; not installed or deployed\",\"evidence\":[{\"reference\":\"source/report.json\",\"digest\":{\"algorithm\":\"SHA256\",\"value\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}}],\"claimId\":\"claim-A\",\"outcome\":\"done\"}}}",
+      "layer": "shape",
+      "id": "shape-invalid-report-done-outcome"
+    },
+    {
+      "reason": "release-missing-claim",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Applied\",\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Release\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Applied\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"commitEvidence\":{\"receipt\":{\"reference\":\"journal/commit.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"receiptId\":\"receipt-A\",\"committedRevision\":\"head-B\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"generation\":\"epoch-A\",\"operationId\":\"op-A\"}}}",
+      "layer": "shape",
+      "id": "shape-invalid-release-missing-claim"
+    },
+    {
+      "reason": "release-completion",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Applied\",\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Release\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Applied\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"commitEvidence\":{\"receipt\":{\"reference\":\"journal/commit.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"receiptId\":\"receipt-A\",\"committedRevision\":\"head-B\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"generation\":\"epoch-A\",\"operationId\":\"op-A\"},\"releasedClaimId\":\"claim-A\",\"acceptedChange\":{\"approvedChange\":{\"annotation\":\"Independent source acceptance recorded\"},\"reportRequestId\":\"R-report\",\"evidence\":[{\"reference\":\"source/report.json\",\"digest\":{\"algorithm\":\"SHA256\",\"value\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}}]}}}",
+      "layer": "shape",
+      "id": "shape-invalid-release-completion"
+    },
+    {
+      "reason": "accept-missing-change",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Applied\",\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"AcceptChange\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Applied\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"commitEvidence\":{\"receipt\":{\"reference\":\"journal/commit.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"receiptId\":\"receipt-A\",\"committedRevision\":\"head-B\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"generation\":\"epoch-A\",\"operationId\":\"op-A\"}}}",
+      "layer": "shape",
+      "id": "shape-invalid-accept-missing-change"
+    },
+    {
+      "reason": "accept-empty-change",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Applied\",\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"AcceptChange\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Applied\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"commitEvidence\":{\"receipt\":{\"reference\":\"journal/commit.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"receiptId\":\"receipt-A\",\"committedRevision\":\"head-B\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"generation\":\"epoch-A\",\"operationId\":\"op-A\"},\"acceptedChange\":{\"approvedChange\":{},\"reportRequestId\":\"R-report\",\"evidence\":[{\"reference\":\"source/report.json\",\"digest\":{\"algorithm\":\"SHA256\",\"value\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}}]}}}",
+      "layer": "shape",
+      "id": "shape-invalid-accept-empty-change"
+    },
+    {
+      "reason": "unknown-with-unavailable",
+      "expectedShape": false,
+      "json": "{\"reason\":\"No retained key in verified complete lookup\",\"observation\":{\"status\":\"Unavailable\",\"reason\":\"Unreadable\"},\"queryStatus\":\"Unknown\",\"responseKind\":\"QueryObservation\",\"resourceId\":\"board-S17\",\"requestId\":\"R-unknown\",\"schemaVersion\":\"Coordination-result-v1\"}",
+      "layer": "shape",
+      "id": "shape-invalid-unknown-with-unavailable"
+    },
+    {
+      "reason": "unavailable-with-complete",
+      "expectedShape": false,
+      "json": "{\"reason\":\"Authoritative lookup unavailable\",\"observation\":{\"reason\":\"Mismatched query status\",\"status\":\"Complete\",\"head\":{\"generation\":\"epoch-A\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"committedRevision\":\"head-B\"}},\"queryStatus\":\"Unavailable\",\"responseKind\":\"QueryObservation\",\"resourceId\":\"board-S17\",\"requestId\":\"R-unknown\",\"schemaVersion\":\"Coordination-result-v1\"}",
+      "layer": "shape",
+      "id": "shape-invalid-unavailable-with-complete"
+    },
+    {
+      "reason": "complete-without-head",
+      "expectedShape": false,
+      "json": "{\"reason\":\"No retained key in verified complete lookup\",\"observation\":{\"reason\":\"Verified current head for fixture only\",\"status\":\"Complete\"},\"queryStatus\":\"Unknown\",\"responseKind\":\"QueryObservation\",\"resourceId\":\"board-S17\",\"requestId\":\"R-unknown\",\"schemaVersion\":\"Coordination-result-v1\"}",
+      "layer": "shape",
+      "id": "shape-invalid-complete-without-head"
+    },
+    {
+      "reason": "unavailable-with-head",
+      "expectedShape": false,
+      "json": "{\"reason\":\"Authoritative lookup unavailable\",\"observation\":{\"reason\":\"Current state not proved complete\",\"status\":\"Unavailable\",\"head\":{\"generation\":\"epoch-A\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"committedRevision\":\"head-B\"}},\"queryStatus\":\"Unavailable\",\"responseKind\":\"QueryObservation\",\"resourceId\":\"board-S17\",\"requestId\":\"R-unknown\",\"schemaVersion\":\"Coordination-result-v1\"}",
+      "layer": "shape",
+      "id": "shape-invalid-unavailable-with-head"
+    },
+    {
+      "reason": "version-number",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":1,\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "layer": "shape",
+      "id": "shape-invalid-version-number"
+    },
+    {
+      "reason": "version-final-lf",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\\n\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "layer": "shape",
+      "id": "shape-invalid-version-final-lf"
+    },
+    {
+      "reason": "kind-final-lf",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\\n\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "layer": "shape",
+      "id": "shape-invalid-kind-final-lf"
+    },
+    {
+      "reason": "status-final-lf",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\\n\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "layer": "shape",
+      "id": "shape-invalid-status-final-lf"
+    },
+    {
+      "reason": "kind-lowercase",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"retainedoutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "layer": "shape",
+      "id": "shape-invalid-kind-lowercase"
+    },
+    {
+      "reason": "kind-nonascii",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetаinedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "layer": "shape",
+      "id": "shape-invalid-kind-nonascii"
+    },
+    {
+      "reason": "status-nonascii",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Рending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "layer": "shape",
+      "id": "shape-invalid-status-nonascii"
+    },
+    {
+      "reason": "digest-upper",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "layer": "shape",
+      "id": "shape-invalid-digest-upper"
+    },
+    {
+      "reason": "digest-final-lf",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\n\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "layer": "shape",
+      "id": "shape-invalid-digest-final-lf"
+    },
+    {
+      "reason": "digest-nonascii",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١١\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "layer": "shape",
+      "id": "shape-invalid-digest-nonascii"
+    },
+    {
+      "reason": "reason-notadmitted-final-lf",
+      "expectedShape": false,
+      "json": "{\"reason\":\"InvalidRequest\\n\",\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"NotAdmitted\"}",
+      "layer": "shape",
+      "id": "shape-invalid-reason-notadmitted-final-lf"
+    },
+    {
+      "reason": "reason-notadmitted-case",
+      "expectedShape": false,
+      "json": "{\"reason\":\"invalidrequest\",\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"NotAdmitted\"}",
+      "layer": "shape",
+      "id": "shape-invalid-reason-notadmitted-case"
+    },
+    {
+      "reason": "feature-done-flag",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"featureDone\":true}}",
+      "layer": "shape",
+      "id": "shape-invalid-feature-done-flag"
+    },
+    {
+      "reason": "parent-complete-flag",
+      "expectedShape": false,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"parentComplete\":true}}",
+      "layer": "shape",
+      "id": "shape-invalid-parent-complete-flag"
+    },
+    {
+      "semanticExecution": "NOT_RUN",
+      "json": "{\"reason\":\"IdentityConflict\",\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"NotAdmitted\"}",
+      "id": "runtime-same-id-changed-payload",
+      "expectedShape": true,
+      "contract": "Accepted Coordination-v1 S1-S4",
+      "given": "Existing key, changed canonical semantic request with old digest; original terminal/pending record retained",
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "IdentityConflict side response precedes digest/revision checks; original immutable result unchanged"
+    },
+    {
+      "semanticExecution": "NOT_RUN",
+      "json": "{\"reason\":\"DigestMismatch\",\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"NotAdmitted\"}",
+      "id": "runtime-same-id-forged-digest",
+      "expectedShape": true,
+      "contract": "Accepted Coordination-v1 S1-S4",
+      "given": "Existing key, same canonical request but supplied digest mismatches",
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "DigestMismatch side response; no replacement of original outcome"
+    },
+    {
+      "semanticExecution": "NOT_RUN",
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Applied\",\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Applied\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"commitEvidence\":{\"receipt\":{\"reference\":\"journal/commit.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"receiptId\":\"receipt-A\",\"committedRevision\":\"head-B\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"generation\":\"epoch-A\",\"operationId\":\"op-A\"},\"claims\":[{\"generation\":\"epoch-A\",\"scope\":[{\"path\":\"src/Owned.ps1\",\"registeredRootId\":\"utilities-sprint\"}],\"claimRequestId\":\"R-Applied\",\"claimId\":\"claim-A\",\"taskId\":\"17.19.d\",\"holder\":{\"sessionId\":\"session-A\",\"holderId\":\"Senior1\"},\"resourceId\":\"board-S17\"}]}}",
+      "id": "runtime-applied-old-epoch",
+      "expectedShape": true,
+      "contract": "Accepted Coordination-v1 S1-S4",
+      "given": "Exact same Applied request retry after epoch retirement; current read permission allowed",
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Return original Applied before new-operation authority/revision checks; no replay"
+    },
+    {
+      "semanticExecution": "NOT_RUN",
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Rejected\",\"reason\":\"MissingPredecessor\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"MissingPredecessor\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Rejected\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}}}",
+      "id": "runtime-rejected-missing-after-restore",
+      "expectedShape": true,
+      "contract": "Accepted Coordination-v1 S1-S4",
+      "given": "Authentic terminal MissingPredecessor restored; original missing target may still be absent or has since arrived",
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Return exact original Rejected MissingPredecessor; never execute invalid historical edges"
+    },
+    {
+      "semanticExecution": "NOT_RUN",
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Rejected\",\"reason\":\"CausalCycle\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"CausalCycle\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Rejected\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}}}",
+      "id": "runtime-rejected-cycle-after-restore",
+      "expectedShape": true,
+      "contract": "Accepted Coordination-v1 S1-S4",
+      "given": "Authentic terminal CausalCycle self-reference preserved in original state record",
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Return original Rejected CausalCycle, not re-evaluation or fake successful predecessor"
+    },
+    {
+      "semanticExecution": "NOT_RUN",
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Rejected\",\"reason\":\"AuthorityConflict\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"AuthorityConflict\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Rejected\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}}}",
+      "id": "runtime-authority-versus-revision",
+      "expectedShape": true,
+      "contract": "Accepted Coordination-v1 S1-S4",
+      "given": "NEW durable safely rejected request has retired epoch and stale expected revision",
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Rejected AuthorityConflict takes precedence"
+    },
+    {
+      "semanticExecution": "NOT_RUN",
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"reason\":\"WaitingForPredecessor\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "id": "runtime-pending-predecessor",
+      "expectedShape": true,
+      "contract": "Accepted Coordination-v1 S1-S4",
+      "given": "Existing predecessor durably Pending/Prepared/NeedsRecovery",
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Pending WaitingForPredecessor; revalidate revision when dependencies resolve"
+    },
+    {
+      "semanticExecution": "NOT_RUN",
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Rejected\",\"reason\":\"RevisionConflict\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"RevisionConflict\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Rejected\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}}}",
+      "id": "runtime-new-stale-revision",
+      "expectedShape": true,
+      "contract": "Accepted Coordination-v1 S1-S4",
+      "given": "NEW request all predecessor Applied and expected revision stale",
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Rejected RevisionConflict, no implicit rebase"
+    },
+    {
+      "semanticExecution": "NOT_RUN",
+      "json": "{\"reason\":\"PersistenceFailed\",\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"NotAdmitted\"}",
+      "id": "runtime-persistence-failure",
+      "expectedShape": true,
+      "contract": "Accepted Coordination-v1 S1-S4",
+      "given": "Submission/rejection could not persist",
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Non-admitted PersistenceFailed; never durable Pending/Rejected or accepted success"
+    },
+    {
+      "semanticExecution": "NOT_RUN",
+      "json": "{\"reason\":\"ResourceHeld\",\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"NotAdmitted\"}",
+      "id": "runtime-custody-cannot-queue",
+      "expectedShape": true,
+      "contract": "Accepted Coordination-v1 S1-S4",
+      "given": "Fresh request arrives while custody cannot safely accept queue writes",
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Non-admitted ResourceHeld, not durable Pending"
+    },
+    {
+      "semanticExecution": "NOT_RUN",
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"reason\":\"ResourceHeld\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "id": "runtime-durably-held",
+      "expectedShape": true,
+      "contract": "Accepted Coordination-v1 S1-S4",
+      "given": "Request is durably Pending but resource currently held",
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Retained Pending ResourceHeld; no preparation until proven clear"
+    },
+    {
+      "semanticExecution": "NOT_RUN",
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Prepared\",\"reason\":\"Prepared\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"operationEvidence\":{\"baseHead\":{\"generation\":\"epoch-A\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"committedRevision\":\"head-A\"},\"requestIds\":[\"R-A\"],\"operationId\":\"op-A\",\"receipt\":{\"reference\":\"journal/prepared.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"nextRevision\":\"head-B\"}}}",
+      "id": "runtime-all-after-no-commit",
+      "expectedShape": true,
+      "contract": "Accepted Coordination-v1 S1-S4",
+      "given": "After-images exist but durable commit receipt absent",
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Prepared/incomplete, recover same next pair once; never advertise Applied"
+    },
+    {
+      "semanticExecution": "NOT_RUN",
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"NeedsRecovery\",\"reason\":\"InterruptedPublication\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"operationEvidence\":{\"baseHead\":{\"generation\":\"epoch-A\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"committedRevision\":\"head-A\"},\"requestIds\":[\"R-A\"],\"operationId\":\"op-A\",\"receipt\":{\"reference\":\"journal/prepared.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"nextRevision\":\"head-B\"},\"recoveryEvidence\":{\"observedOutputs\":[],\"reason\":\"InterruptedPublication\"}},\"observation\":{\"reason\":\"Incomplete publication\",\"status\":\"NeedsRecovery\",\"head\":{\"generation\":\"epoch-A\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"committedRevision\":\"head-A\"}}}",
+      "id": "runtime-third-state",
+      "expectedShape": true,
+      "contract": "Accepted Coordination-v1 S1-S4",
+      "given": "Observed file differs from both prepared before and after",
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Stay NeedsRecovery, preserve third-state bytes and old committed head"
+    },
+    {
+      "semanticExecution": "NOT_RUN",
+      "json": "{\"reason\":\"Authoritative lookup unavailable\",\"observation\":{\"reason\":\"Current state not proved complete\",\"status\":\"Unavailable\"},\"queryStatus\":\"Unavailable\",\"responseKind\":\"QueryObservation\",\"resourceId\":\"board-S17\",\"requestId\":\"R-unknown\",\"schemaVersion\":\"Coordination-result-v1\"}",
+      "id": "runtime-missing-state-not-unknown",
+      "expectedShape": true,
+      "contract": "Accepted Coordination-v1 S1-S4",
+      "given": "Established state unavailable/lost and lookup cannot prove absence",
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Unavailable query observation; no synthetic Unknown/reinitialization/ID reuse"
+    },
+    {
+      "semanticExecution": "NOT_RUN",
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Applied\",\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Applied\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"commitEvidence\":{\"receipt\":{\"reference\":\"journal/commit.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"receiptId\":\"receipt-A\",\"committedRevision\":\"head-B\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"generation\":\"epoch-A\",\"operationId\":\"op-A\"},\"claims\":[{\"generation\":\"epoch-A\",\"scope\":[{\"path\":\"src/Owned.ps1\",\"registeredRootId\":\"utilities-sprint\"}],\"claimRequestId\":\"R-Applied\",\"claimId\":\"claim-A\",\"taskId\":\"17.19.d\",\"holder\":{\"sessionId\":\"session-A\",\"holderId\":\"Senior1\"},\"resourceId\":\"board-S17\"}]}}",
+      "id": "runtime-forged-terminal",
+      "expectedShape": true,
+      "contract": "Accepted Coordination-v1 S1-S4",
+      "given": "Well-shaped terminal evidence fails identity/digest/status/receipt authenticity",
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Hold/reject result integrity, never trust shape as durable result"
+    },
+    {
+      "semanticExecution": "NOT_RUN",
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Applied\",\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Applied\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"commitEvidence\":{\"receipt\":{\"reference\":\"journal/commit.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"receiptId\":\"receipt-A\",\"committedRevision\":\"head-B\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"generation\":\"epoch-A\",\"operationId\":\"op-A\"},\"claims\":[{\"generation\":\"epoch-A\",\"scope\":[{\"path\":\"src/Owned.ps1\",\"registeredRootId\":\"utilities-sprint\"}],\"claimRequestId\":\"R-Applied\",\"claimId\":\"claim-A\",\"taskId\":\"17.19.d\",\"holder\":{\"sessionId\":\"session-A\",\"holderId\":\"Senior1\"},\"resourceId\":\"board-S17\"}]},\"observation\":{\"reason\":\"Current custody uncertainty\",\"status\":\"Held\",\"head\":{\"generation\":\"epoch-A\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"committedRevision\":\"head-B\"}}}",
+      "id": "runtime-current-hold-versus-original-outcome",
+      "expectedShape": true,
+      "contract": "Accepted Coordination-v1 S1-S4",
+      "given": "Authentic Applied outcome and later resource hold",
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Preserve original Applied; current Held observation does not rewrite terminal reason/epoch"
+    },
+    {
+      "semanticExecution": "NOT_RUN",
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Applied\",\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"ReportResult\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Applied\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"commitEvidence\":{\"receipt\":{\"reference\":\"journal/commit.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"receiptId\":\"receipt-A\",\"committedRevision\":\"head-B\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"generation\":\"epoch-A\",\"operationId\":\"op-A\"},\"reportedWork\":{\"statedLimits\":\"Source-ready only; not installed or deployed\",\"evidence\":[{\"reference\":\"source/report.json\",\"digest\":{\"algorithm\":\"SHA256\",\"value\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}}],\"claimId\":\"claim-A\",\"outcome\":\"source-ready\"}}}",
+      "id": "runtime-source-ready-report",
+      "expectedShape": true,
+      "contract": "Accepted Coordination-v1 S1-S4",
+      "given": "ReportResult source-ready operation applied",
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Recorded report only; coordinator approval/deployment/feature done remain separate"
+    },
+    {
+      "semanticExecution": "NOT_RUN",
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Applied\",\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Release\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Applied\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"commitEvidence\":{\"receipt\":{\"reference\":\"journal/commit.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"receiptId\":\"receipt-A\",\"committedRevision\":\"head-B\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"generation\":\"epoch-A\",\"operationId\":\"op-A\"},\"releasedClaimId\":\"claim-A\"}}",
+      "id": "runtime-release-not-done",
+      "expectedShape": true,
+      "contract": "Accepted Coordination-v1 S1-S4",
+      "given": "Exact claim Release operation Applied",
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Ownership released only, no task/parent/feature completion inferred"
+    },
+    {
+      "semanticExecution": "NOT_RUN",
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Applied\",\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"AcceptChange\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"Applied\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Applied\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"commitEvidence\":{\"receipt\":{\"reference\":\"journal/commit.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"receiptId\":\"receipt-A\",\"committedRevision\":\"head-B\",\"outputManifest\":{\"markdown\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/markdown\"},\"boardHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/boardHtml\"},\"proceduralDetailsHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/proceduralDetailsHtml\"},\"accomplishedHtml\":{\"digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"path\":\"board/accomplishedHtml\"}},\"generation\":\"epoch-A\",\"operationId\":\"op-A\"},\"acceptedChange\":{\"approvedChange\":{\"annotation\":\"Independent source acceptance recorded\"},\"reportRequestId\":\"R-report\",\"evidence\":[{\"reference\":\"source/report.json\",\"digest\":{\"algorithm\":\"SHA256\",\"value\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}}]}}}",
+      "id": "runtime-acceptance-not-parent-done",
+      "expectedShape": true,
+      "contract": "Accepted Coordination-v1 S1-S4",
+      "given": "Coordinator accepted one explicit task annotation",
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Only that approved task change applied; parent/deploy completion needs separate evidence"
+    },
+    {
+      "semanticExecution": "NOT_RUN",
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Rejected\",\"reason\":\"MissingPredecessor\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[],\"terminalEvidence\":{\"reason\":\"MissingPredecessor\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"resourceId\":\"board-S17\",\"status\":\"Rejected\",\"requestId\":\"other-R\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}}}",
+      "id": "runtime-terminal-evidence-equality",
+      "expectedShape": true,
+      "contract": "Accepted Coordination-v1 S1-S4",
+      "given": "Nested common state terminalEvidence ID differs from retained request identity",
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Reject integrity mismatch; schema cannot enforce cross-field equality"
+    },
+    {
+      "semanticExecution": "NOT_RUN",
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "id": "runtime-opaque-id-case",
+      "expectedShape": true,
+      "contract": "Accepted Coordination-v1 S1-S4",
+      "given": "requestId string differs in case from another retained identity",
+      "layer": "runtime-only",
+      "expectedSemanticDecision": "Different exact identity, no culture casefold/trim/coercion; later lookup authority still required"
+    },
+    {
+      "expectedShape": null,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-S17\",\"requestId\":\"R-A\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "layer": "parser-only",
+      "expectedStrictInputDecision": "InvalidRequest on duplicate decoded members; schema cannot establish universal strict parsing",
+      "id": "parser-duplicate-member"
+    },
+    {
+      "expectedShape": null,
+      "json": "{\"schemaVersion\":\"Coordination-result-v1\",\"responseKind\":\"RetainedOutcome\",\"retained\":{\"resourceId\":\"board-\\ud800\",\"requestId\":\"R-A\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"Pending\",\"reason\":\"Eligible\",\"receipt\":{\"reference\":\"journal/outcome.json\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"category\":\"Claim\",\"generation\":\"epoch-A\",\"expectedRevision\":\"head-A\",\"reservations\":[]}}",
+      "layer": "parser-only",
+      "expectedStrictInputDecision": "InvalidRequest malformed Unicode; strict parser required",
+      "id": "parser-malformed-unicode"
+    }
+  ]
+}

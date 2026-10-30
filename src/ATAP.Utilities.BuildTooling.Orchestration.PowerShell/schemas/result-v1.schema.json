@@ -1,0 +1,1114 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:atap:coordination:result:v1",
+  "title": "Coordination-v1 result and query response shapes",
+  "$comment": "Authority: accepted contract5A353340, request6266286D, state95863BAA. Exact accepted common definitions are copied locally with full provenance in the author report. No external refs or frozen-source edits. RetainedOutcome contains the durable recorded outcome; NotAdmitted is a non-retained submission response; QueryObservation records only the present lookup observation. A changing observation never replaces the immutable terminal record. Receipt references bind independent retained journal/operation/result evidence, not a self-hash of this response or a query-time wrapper. State terminalEvidence maps unchanged to retained.terminalEvidence, and its receipt binds the same original immutable journal outcome. Runtime must verify cross-field identity/status/reason/digest/receipt equality, strict parsing/canonicalization, permissions, authenticity, publication/graph/custody/compatibility and stable retry precedence. Shape success never proves a task done or a request durably admitted.",
+  "oneOf": [
+    {
+      "$ref": "#/definitions/resultRetainedResponse"
+    },
+    {
+      "$ref": "#/definitions/resultNotAdmittedResponse"
+    },
+    {
+      "$ref": "#/definitions/resultQueryResponse"
+    }
+  ],
+  "definitions": {
+    "resultObservation": {
+      "type": "object",
+      "required": [
+        "status",
+        "reason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "Complete",
+            "Held",
+            "NeedsRecovery",
+            "Unavailable"
+          ]
+        },
+        "reason": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "head": {
+          "$ref": "#/definitions/stateHead"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "Complete"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "head"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "Unavailable"
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "required": [
+                "head"
+              ]
+            }
+          }
+        }
+      ],
+      "description": "Current resource read observation, never durable request status. Complete requires verified current committed head at runtime; Held/NeedsRecovery head, if known, is the old recorded head, not a complete proposed publication. Unavailable cannot advertise a verified head."
+    },
+    "resultOperationEvidence": {
+      "type": "object",
+      "required": [
+        "operationId",
+        "baseHead",
+        "nextRevision",
+        "requestIds",
+        "receipt"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operationId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "baseHead": {
+          "$ref": "#/definitions/stateHead"
+        },
+        "nextRevision": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "requestIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/definitions/nonemptyString"
+          }
+        },
+        "receipt": {
+          "$ref": "#/definitions/stateReceiptReference"
+        }
+      },
+      "description": "Reference to exact retained prepared plan, including images and reservations in state/journal. No duplicate image representation or inferred commit; fixed base/next pair and membership must match the accepted state record."
+    },
+    "resultCommitEvidence": {
+      "type": "object",
+      "required": [
+        "operationId",
+        "receiptId",
+        "generation",
+        "committedRevision",
+        "outputManifest",
+        "receipt"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operationId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "receiptId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "generation": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "committedRevision": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "outputManifest": {
+          "$ref": "#/definitions/stateOutputManifest"
+        },
+        "receipt": {
+          "$ref": "#/definitions/stateReceiptReference"
+        }
+      },
+      "description": "Original durable commit binding, not current query head. Must resolve to state commit receipt with exact operation/results/reservations/manifest and successful after-image verification."
+    },
+    "resultRetained": {
+      "type": "object",
+      "required": [
+        "resourceId",
+        "requestId",
+        "digest",
+        "status",
+        "reason",
+        "receipt",
+        "reservations"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "resourceId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "requestId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "digest": {
+          "$ref": "#/definitions/stateDigest"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Pending",
+            "Prepared",
+            "Applied",
+            "Rejected",
+            "NeedsRecovery"
+          ]
+        },
+        "reason": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "receipt": {
+          "$ref": "#/definitions/stateReceiptReference"
+        },
+        "category": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "generation": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "expectedRevision": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "reservations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/stateReservation"
+          }
+        },
+        "claims": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/stateClaim"
+          }
+        },
+        "operationEvidence": {
+          "$ref": "#/definitions/resultOperationEvidence"
+        },
+        "commitEvidence": {
+          "$ref": "#/definitions/resultCommitEvidence"
+        },
+        "terminalEvidence": {
+          "$ref": "#/definitions/stateTerminalEvidence"
+        },
+        "recoveryEvidence": {
+          "$ref": "#/definitions/stateRecoveryEvidence"
+        },
+        "reportedWork": {
+          "$ref": "#/definitions/reportPayload"
+        },
+        "acceptedChange": {
+          "$ref": "#/definitions/acceptPayload"
+        },
+        "releasedClaimId": {
+          "$ref": "#/definitions/nonemptyString"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "Pending",
+                  "Prepared",
+                  "Applied",
+                  "NeedsRecovery"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "category",
+              "generation",
+              "expectedRevision"
+            ],
+            "properties": {
+              "category": {
+                "enum": [
+                  "Claim",
+                  "ReportResult",
+                  "AcceptChange",
+                  "Release"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "Pending",
+                  "Rejected",
+                  "Prepared",
+                  "NeedsRecovery"
+                ]
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "claims"
+                  ]
+                },
+                {
+                  "required": [
+                    "reportedWork"
+                  ]
+                },
+                {
+                  "required": [
+                    "acceptedChange"
+                  ]
+                },
+                {
+                  "required": [
+                    "releasedClaimId"
+                  ]
+                },
+                {
+                  "required": [
+                    "commitEvidence"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "Applied"
+              }
+            }
+          },
+          "then": {
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "category": {
+                      "const": "Claim"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "claims"
+                  ],
+                  "properties": {
+                    "claims": {
+                      "minItems": 1
+                    }
+                  },
+                  "not": {
+                    "anyOf": [
+                      {
+                        "required": [
+                          "reportedWork"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "acceptedChange"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "releasedClaimId"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "category": {
+                      "const": "ReportResult"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "reportedWork"
+                  ],
+                  "not": {
+                    "anyOf": [
+                      {
+                        "required": [
+                          "claims"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "acceptedChange"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "releasedClaimId"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "category": {
+                      "const": "AcceptChange"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "acceptedChange"
+                  ],
+                  "not": {
+                    "anyOf": [
+                      {
+                        "required": [
+                          "claims"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "reportedWork"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "releasedClaimId"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "category": {
+                      "const": "Release"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "releasedClaimId"
+                  ],
+                  "not": {
+                    "anyOf": [
+                      {
+                        "required": [
+                          "claims"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "reportedWork"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "acceptedChange"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "oneOf": [
+        {
+          "properties": {
+            "status": {
+              "const": "Pending"
+            }
+          },
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "terminalEvidence"
+                ]
+              },
+              {
+                "required": [
+                  "operationEvidence"
+                ]
+              },
+              {
+                "required": [
+                  "recoveryEvidence"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "required": [
+            "operationEvidence"
+          ],
+          "properties": {
+            "status": {
+              "const": "Prepared"
+            }
+          },
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "terminalEvidence"
+                ]
+              },
+              {
+                "required": [
+                  "recoveryEvidence"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "required": [
+            "operationEvidence",
+            "recoveryEvidence"
+          ],
+          "properties": {
+            "status": {
+              "const": "NeedsRecovery"
+            }
+          },
+          "not": {
+            "required": [
+              "terminalEvidence"
+            ]
+          }
+        },
+        {
+          "required": [
+            "terminalEvidence",
+            "commitEvidence"
+          ],
+          "properties": {
+            "status": {
+              "const": "Applied"
+            },
+            "terminalEvidence": {
+              "properties": {
+                "status": {
+                  "const": "Applied"
+                }
+              }
+            }
+          },
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "operationEvidence"
+                ]
+              },
+              {
+                "required": [
+                  "recoveryEvidence"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "required": [
+            "terminalEvidence"
+          ],
+          "properties": {
+            "status": {
+              "const": "Rejected"
+            },
+            "terminalEvidence": {
+              "properties": {
+                "status": {
+                  "const": "Rejected"
+                }
+              }
+            }
+          },
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "operationEvidence"
+                ]
+              },
+              {
+                "required": [
+                  "recoveryEvidence"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "description": "Persisted request outcome. Applied means the requested operation committed: a report may describe failed/blocked/source-ready work; a release only ends ownership; AcceptChange applies only its authorized task change. None is an automatic feature-done or parent acceptance flag. Terminal reason/receipt/identity/digest remain the original immutable common state evidence, even after epoch retirement. Rejected may lack category/epoch/revision if the original safely identified invalid request lacked those fields; do not invent defaults or repair original rejected inputs. Retained reason is preserved text; known S3 typed reason meanings must be checked at runtime without rewriting historical evidence to fit a new enum."
+    },
+    "resultRetainedResponse": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "responseKind",
+        "retained"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "type": "string",
+          "const": "Coordination-result-v1"
+        },
+        "responseKind": {
+          "type": "string",
+          "const": "RetainedOutcome"
+        },
+        "retained": {
+          "$ref": "#/definitions/resultRetained"
+        },
+        "observation": {
+          "$ref": "#/definitions/resultObservation"
+        }
+      },
+      "description": "Get/submit retry response referencing retained durable outcome. Optional observation describes current resource state only; it cannot replace or reclassify retained terminal outcome. Current result-read permission remains mandatory."
+    },
+    "resultNotAdmittedResponse": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "responseKind",
+        "reason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "type": "string",
+          "const": "Coordination-result-v1"
+        },
+        "responseKind": {
+          "type": "string",
+          "const": "NotAdmitted"
+        },
+        "reason": {
+          "type": "string",
+          "enum": [
+            "Denied",
+            "InvalidRequest",
+            "IdentityConflict",
+            "DigestMismatch",
+            "ResourceHeld",
+            "PersistenceFailed"
+          ]
+        },
+        "resourceId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "requestId": {
+          "$ref": "#/definitions/nonemptyString"
+        }
+      },
+      "description": "Non-retained submission response only. No durable status, digest/result disclosure, claim, success receipt or accepted Pending implied. Optional IDs are safe caller-supplied identity hints only. Existing-ID conflict/mismatched-digest response leaves original retained outcome unchanged. A NEW authorized safely identified validation rejection is instead RetainedOutcome/Rejected only after actual rejection persistence; otherwise InvalidRequest/Denied/PersistenceFailed, never false durable success."
+    },
+    "resultQueryResponse": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "responseKind",
+        "resourceId",
+        "requestId",
+        "queryStatus",
+        "reason",
+        "observation"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "type": "string",
+          "const": "Coordination-result-v1"
+        },
+        "responseKind": {
+          "type": "string",
+          "const": "QueryObservation"
+        },
+        "resourceId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "requestId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "queryStatus": {
+          "type": "string",
+          "enum": [
+            "Unknown",
+            "Unavailable"
+          ]
+        },
+        "reason": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "observation": {
+          "$ref": "#/definitions/resultObservation"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "queryStatus": {
+                "const": "Unknown"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "observation": {
+                "properties": {
+                  "status": {
+                    "const": "Complete"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "queryStatus": {
+                "const": "Unavailable"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "observation": {
+                "properties": {
+                  "status": {
+                    "enum": [
+                      "Held",
+                      "NeedsRecovery",
+                      "Unavailable"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "description": "Read-only lookup observation, never persisted rejection or permission to reuse an ID. Unknown requires authoritative verified complete state lookup with no retained key; missing/inaccessible/unreconciled state must report Unavailable. Exact authorization and lookup truth are runtime-only; permission denial uses NotAdmitted/Denied with no retained disclosure."
+    },
+    "nonemptyString": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Exact decoded string; preserve case and Unicode scalar sequence. No trim, case folding, Unicode normalization or measured length limit."
+    },
+    "holder": {
+      "type": "object",
+      "required": [
+        "holderId",
+        "sessionId"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "holderId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "sessionId": {
+          "$ref": "#/definitions/nonemptyString"
+        }
+      }
+    },
+    "scope": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Ordered exact owned scope. Original path strings are identity-bearing; later resolved containment must separately validate each registered root/path and ancestor conflicts. No path-string rewrite during retry equality.",
+      "items": {
+        "type": "object",
+        "required": [
+          "registeredRootId",
+          "path"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "registeredRootId": {
+            "$ref": "#/definitions/nonemptyString"
+          },
+          "path": {
+            "$ref": "#/definitions/nonemptyString"
+          }
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "description": "Ordered evidence bindings; shape permits an empty inventory, which does not prove sufficient evidence for any approval. Later coordinator/task acceptance checks determine sufficiency. No evidence algorithm is inferred from the request's SHA256 algorithm.",
+      "items": {
+        "type": "object",
+        "required": [
+          "reference",
+          "digest"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "reference": {
+            "$ref": "#/definitions/nonemptyString"
+          },
+          "digest": {
+            "type": "object",
+            "required": [
+              "algorithm",
+              "value"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "algorithm": {
+                "$ref": "#/definitions/nonemptyString"
+              },
+              "value": {
+                "$ref": "#/definitions/nonemptyString"
+              }
+            }
+          }
+        }
+      }
+    },
+    "reportPayload": {
+      "type": "object",
+      "required": [
+        "claimId",
+        "outcome",
+        "evidence",
+        "statedLimits"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "claimId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "outcome": {
+          "type": "string",
+          "enum": [
+            "source-ready",
+            "failed",
+            "blocked"
+          ]
+        },
+        "evidence": {
+          "$ref": "#/definitions/evidence"
+        },
+        "statedLimits": {
+          "$ref": "#/definitions/nonemptyString"
+        }
+      },
+      "description": "Report only; no approval, claim release or parent/task completion. Active claim/holder validity requires later runtime checks."
+    },
+    "acceptPayload": {
+      "type": "object",
+      "required": [
+        "reportRequestId",
+        "evidence",
+        "approvedChange"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "reportRequestId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "evidence": {
+          "$ref": "#/definitions/evidence"
+        },
+        "approvedChange": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": false,
+          "properties": {
+            "annotation": {
+              "$ref": "#/definitions/nonemptyString"
+            },
+            "status": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Requested task status token, not an approval by itself. Later validator checks supported board annotation/status vocabulary and complete task acceptance evidence; source-ready cannot imply deployed-done."
+            }
+          }
+        }
+      },
+      "description": "Requires explicit coordinator authorization and exact Applied report predecessor for this same task/claim, with matching evidence. Failed/blocked report cannot justify completed status. None of those stateful rules is schema-enforced."
+    },
+    "stateDigest": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA256 spelling only; recompute and bind to exact bytes at runtime."
+    },
+    "stateReceiptReference": {
+      "type": "object",
+      "required": [
+        "reference",
+        "digest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "reference": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "digest": {
+          "$ref": "#/definitions/stateDigest"
+        }
+      },
+      "description": "Exact receipt bytes must be retained/resolvable and authenticated under custody; a well-formed reference is not proof."
+    },
+    "stateHead": {
+      "type": "object",
+      "required": [
+        "generation",
+        "committedRevision",
+        "outputManifest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "generation": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "committedRevision": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "outputManifest": {
+          "$ref": "#/definitions/stateOutputManifest"
+        }
+      }
+    },
+    "stateOutputManifest": {
+      "type": "object",
+      "required": [
+        "markdown",
+        "boardHtml",
+        "proceduralDetailsHtml",
+        "accomplishedHtml"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "markdown": {
+          "$ref": "#/definitions/stateManifestEntry"
+        },
+        "boardHtml": {
+          "$ref": "#/definitions/stateManifestEntry"
+        },
+        "proceduralDetailsHtml": {
+          "$ref": "#/definitions/stateManifestEntry"
+        },
+        "accomplishedHtml": {
+          "$ref": "#/definitions/stateManifestEntry"
+        }
+      },
+      "description": "Exact canonical quartet paths/digests; highest board version, path uniqueness and correspondence to files require runtime verification."
+    },
+    "stateManifestEntry": {
+      "type": "object",
+      "required": [
+        "path",
+        "digest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "digest": {
+          "$ref": "#/definitions/stateDigest"
+        }
+      }
+    },
+    "stateClaim": {
+      "type": "object",
+      "required": [
+        "claimId",
+        "resourceId",
+        "taskId",
+        "scope",
+        "holder",
+        "generation",
+        "claimRequestId"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "claimId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "resourceId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "taskId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "scope": {
+          "$ref": "#/definitions/scope"
+        },
+        "holder": {
+          "$ref": "#/definitions/holder"
+        },
+        "generation": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "claimRequestId": {
+          "$ref": "#/definitions/nonemptyString"
+        }
+      }
+    },
+    "stateReservation": {
+      "type": "object",
+      "required": [
+        "reservationId",
+        "resourceId",
+        "requestId",
+        "taskId",
+        "scope",
+        "generation"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "reservationId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "resourceId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "requestId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "taskId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "scope": {
+          "$ref": "#/definitions/scope"
+        },
+        "generation": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "preparedOperationId": {
+          "$ref": "#/definitions/nonemptyString"
+        }
+      },
+      "description": "Imported/unpublished request-bound reservation survives missing visible board task. No automatic expiry or reallocation from absence."
+    },
+    "stateRecoveryEvidence": {
+      "type": "object",
+      "required": [
+        "reason",
+        "observedOutputs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "observedOutputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/stateFileImage"
+          },
+          "description": "Known observations only; empty means no file observation available. Never implies all outputs match."
+        }
+      }
+    },
+    "stateFileImage": {
+      "type": "object",
+      "required": [
+        "path",
+        "bytesBase64",
+        "digest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "bytesBase64": {
+          "type": "string",
+          "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$",
+          "not": {
+            "pattern": "[^A-Za-z0-9+/=]"
+          }
+        },
+        "digest": {
+          "$ref": "#/definitions/stateDigest"
+        }
+      }
+    },
+    "stateTerminalEvidence": {
+      "type": "object",
+      "required": [
+        "resourceId",
+        "requestId",
+        "digest",
+        "status",
+        "reason",
+        "receipt"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "resourceId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "requestId": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "digest": {
+          "$ref": "#/definitions/stateDigest"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Applied",
+            "Rejected"
+          ]
+        },
+        "reason": {
+          "$ref": "#/definitions/nonemptyString"
+        },
+        "receipt": {
+          "$ref": "#/definitions/stateReceiptReference"
+        }
+      },
+      "$comment": "Only common retained evidence, not final result schema. Receipt must retain original immutable outcome and identity/digest binding; external receipt resolution/authenticity is runtime-only. Later result schema17.19.e must bind compatible result bytes without changing these accepted contract meanings."
+    }
+  }
+}

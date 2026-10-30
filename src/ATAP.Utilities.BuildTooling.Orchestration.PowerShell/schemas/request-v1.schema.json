@@ -1,0 +1,194 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:atap:coordination:request:v1",
+  "title": "Coordination-v1 request envelope",
+  "description": "Closed wire shape for accepted Coordination-v1 S1-S4. Schema validation is necessary, never authority to admit or execute a request.",
+  "$comment": "Authority: ../Documentation/Coordination-v1.md SHA256 5A3533409C94418D3E5E44331CA7E3511A1BD459BD3138DBA4E4FC7509CA7959, externally accepted 2026-10-26. Canonical SHA256 input is the request object ONLY. Digest and transport are outside that immutable semantic input. No unbound external references. Duplicate decoded members, malformed Unicode, lexical numeric restrictions and digest recomputation require strict parsing/canonicalization outside JSON Schema. Authorization, registered resource/task/root lookup, resolved path containment, claim/result binding, revision/generation/causality, custody and retained-retry precedence require later validators. No runtime behavior is proved by this schema.",
+  "type": "object",
+  "required": ["request", "digest"],
+  "additionalProperties": false,
+  "properties": {
+    "request": { "$ref": "#/definitions/request" },
+    "digest": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "Lowercase SHA256 of S1 canonical UTF-8 JSON bytes for request. Shape validates spelling only; no recomputation or trust in caller-supplied value."
+    },
+    "transport": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional delivery observations, excluded from canonical request. Never identity, ordering, authority, custody or semantic defaults.",
+      "properties": {
+        "deliveryId": { "$ref": "#/definitions/nonemptyString" },
+        "receivedAt": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Informational opaque receipt-time text; no clock ordering or format assertion."
+        }
+      }
+    }
+  },
+  "definitions": {
+    "nonemptyString": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Exact decoded string; preserve case and Unicode scalar sequence. No trim, case folding, Unicode normalization or measured length limit."
+    },
+    "holder": {
+      "type": "object",
+      "required": ["holderId", "sessionId"],
+      "additionalProperties": false,
+      "properties": {
+        "holderId": { "$ref": "#/definitions/nonemptyString" },
+        "sessionId": { "$ref": "#/definitions/nonemptyString" }
+      }
+    },
+    "scope": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Ordered exact owned scope. Original path strings are identity-bearing; later resolved containment must separately validate each registered root/path and ancestor conflicts. No path-string rewrite during retry equality.",
+      "items": {
+        "type": "object",
+        "required": ["registeredRootId", "path"],
+        "additionalProperties": false,
+        "properties": {
+          "registeredRootId": { "$ref": "#/definitions/nonemptyString" },
+          "path": { "$ref": "#/definitions/nonemptyString" }
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "description": "Ordered evidence bindings; shape permits an empty inventory, which does not prove sufficient evidence for any approval. Later coordinator/task acceptance checks determine sufficiency. No evidence algorithm is inferred from the request's SHA256 algorithm.",
+      "items": {
+        "type": "object",
+        "required": ["reference", "digest"],
+        "additionalProperties": false,
+        "properties": {
+          "reference": { "$ref": "#/definitions/nonemptyString" },
+          "digest": {
+            "type": "object",
+            "required": ["algorithm", "value"],
+            "additionalProperties": false,
+            "properties": {
+              "algorithm": { "$ref": "#/definitions/nonemptyString" },
+              "value": { "$ref": "#/definitions/nonemptyString" }
+            }
+          }
+        }
+      }
+    },
+    "claimPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Closed empty payload: existing task, requested scope, holder/session and coordinator authorization are already mandatory common request fields. No duplicate or invented Claim input."
+    },
+    "reportPayload": {
+      "type": "object",
+      "required": ["claimId", "outcome", "evidence", "statedLimits"],
+      "additionalProperties": false,
+      "properties": {
+        "claimId": { "$ref": "#/definitions/nonemptyString" },
+        "outcome": { "type": "string", "enum": ["source-ready", "failed", "blocked"] },
+        "evidence": { "$ref": "#/definitions/evidence" },
+        "statedLimits": { "$ref": "#/definitions/nonemptyString" }
+      },
+      "description": "Report only; no approval, claim release or parent/task completion. Active claim/holder validity requires later runtime checks."
+    },
+    "acceptPayload": {
+      "type": "object",
+      "required": ["reportRequestId", "evidence", "approvedChange"],
+      "additionalProperties": false,
+      "properties": {
+        "reportRequestId": { "$ref": "#/definitions/nonemptyString" },
+        "evidence": { "$ref": "#/definitions/evidence" },
+        "approvedChange": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": false,
+          "properties": {
+            "annotation": { "$ref": "#/definitions/nonemptyString" },
+            "status": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Requested task status token, not an approval by itself. Later validator checks supported board annotation/status vocabulary and complete task acceptance evidence; source-ready cannot imply deployed-done."
+            }
+          }
+        }
+      },
+      "description": "Requires explicit coordinator authorization and exact Applied report predecessor for this same task/claim, with matching evidence. Failed/blocked report cannot justify completed status. None of those stateful rules is schema-enforced."
+    },
+    "releasePayload": {
+      "type": "object",
+      "required": ["claimId", "releaseReason"],
+      "additionalProperties": false,
+      "properties": {
+        "claimId": { "$ref": "#/definitions/nonemptyString" },
+        "releaseReason": { "$ref": "#/definitions/nonemptyString" }
+      },
+      "description": "Release exact active claim only; it does not accept/complete a feature. A report is not a prerequisite to releasing blocked work. Holder/coordinator authority and retained duplicate outcomes require runtime validation."
+    },
+    "request": {
+      "type": "object",
+      "required": [
+        "protocolVersion", "resourceId", "sprintId", "requestId", "category",
+        "taskId", "scope", "holder", "authorizationReference", "generation",
+        "expectedRevision", "predecessors", "payload"
+      ],
+      "additionalProperties": false,
+      "$comment": "All properties here, including authorization, epoch/revision, original scope strings and predecessor order, are immutable and digest-covered. No numeric fields exist in this v1 wire shape; IDs/versions/tokens remain strings. No optional defaults. Same-ID classification uses the whole validated canonical request, not only payload.",
+      "properties": {
+        "protocolVersion": { "type": "string", "const": "Coordination-v1" },
+        "resourceId": { "$ref": "#/definitions/nonemptyString" },
+        "sprintId": { "$ref": "#/definitions/nonemptyString" },
+        "requestId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Case-sensitive opaque ID. Uniqueness is resource-lifetime across sprints/sessions/generations/restores, not JSON Schema uniqueItems or a UUID format requirement."
+        },
+        "category": { "type": "string", "enum": ["Claim", "ReportResult", "AcceptChange", "Release"] },
+        "taskId": { "$ref": "#/definitions/nonemptyString" },
+        "scope": { "$ref": "#/definitions/scope" },
+        "holder": { "$ref": "#/definitions/holder" },
+        "authorizationReference": { "$ref": "#/definitions/nonemptyString" },
+        "generation": { "$ref": "#/definitions/nonemptyString" },
+        "expectedRevision": { "$ref": "#/definitions/nonemptyString" },
+        "predecessors": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/definitions/nonemptyString" },
+          "description": "Ordered unique request IDs. Empty means no predecessors. Same-resource existence, self/cycles, states and category relationships require runtime graph validation; do not sort during retry canonicalization."
+        },
+        "payload": { "type": "object" }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "category": { "const": "Claim" },
+            "payload": { "$ref": "#/definitions/claimPayload" }
+          }
+        },
+        {
+          "properties": {
+            "category": { "const": "ReportResult" },
+            "payload": { "$ref": "#/definitions/reportPayload" }
+          }
+        },
+        {
+          "properties": {
+            "category": { "const": "AcceptChange" },
+            "payload": { "$ref": "#/definitions/acceptPayload" }
+          }
+        },
+        {
+          "properties": {
+            "category": { "const": "Release" },
+            "payload": { "$ref": "#/definitions/releasePayload" }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -7,12 +7,14 @@ BeforeAll {
 Describe 'Orchestration module source manifest' -Tag 'Unit' {
   It 'pins the module identity and PowerShell platform' {
     $script:manifest.RootModule | Should -BeExactly 'ATAP.Utilities.BuildTooling.Orchestration.PowerShell.psm1'
-    $script:manifest.ModuleVersion | Should -BeExactly '0.1.0'
+    $script:manifest.ModuleVersion | Should -BeExactly '0.1.1'
     $script:manifest.GUID | Should -BeExactly '01131809-7fd2-4b6d-8a34-f584b55ad4fa'
     $script:manifest.PowerShellVersion | Should -BeExactly '7.4'
     @($script:manifest.CompatiblePSEditions).Count | Should -Be 1
     $script:manifest.CompatiblePSEditions[0] | Should -BeExactly 'Core'
     $script:version.version | Should -BeExactly $script:manifest.ModuleVersion
+    $script:manifest.CompanyName | Should -BeExactly 'ATAP'
+    $script:manifest.Copyright | Should -BeExactly '(c) Bill Hertzing for ATAPUtilities.org. All rights reserved.'
   }
   It 'declares only the required PSFramework minimum' {
     @($script:manifest.RequiredModules).Count | Should -Be 1

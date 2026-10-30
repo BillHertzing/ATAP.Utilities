@@ -65,3 +65,63 @@ RDB-800 through RDB-870 own rehearsal, per-target authorization, execution,
 and proof that preserved scopes stayed unchanged.  The close variant rejected
 by this decision is an unqualified fresh-database reset that silently destroys
 user, AceCommander, or scheduled-task state while claiming to reset RRSBS.
+
+## Experimental UserLogin amendment — 2026-10-29 (America/Denver)
+
+This subordinate amendment applies only to **UTAT022\Expwhertzing / ATAPUtilities,
+Experimental**, within the existing design05/decisions09 UserLogin model. The
+original register and all other-tier/object dispositions above remain unchanged.
+
+### Operator approval and exact scope
+
+Bill explicitly approved the Experimental amendment with no drops, preserving
+shared Philote and non-user objects. This is **typed operator approval**, recorded
+by the coordinator in root chat `01a18563-f33a-79f1-a863-5da8876a946d`; the
+[approval receipt](D:/ATAPArtifacts/Sprint0017/Task17.68.a/Approval40/Operator-Approval.json)
+was recorded at `2026-10-29T23:42:35.8486336Z`.
+
+| Approval record | SHA256 |
+| --- | --- |
+| [Explicit typed approval receipt](D:/ATAPArtifacts/Sprint0017/Task17.68.a/Approval40/Operator-Approval.json) | `C0E7C003DB91D6762A5632DC5DCF994A6FEB13BF27A5384A374ADDAACC9F6E8D` |
+| [Approved amendment snapshot](D:/ATAPArtifacts/Sprint0017/Task17.68.a/Approval40/Approved-Amendment.json) | `4449ED0C5BB0FBA82A98F1694CD79F90957A8A3C5204213D9EE3FD56DB0F148F` |
+| [Exact presented Draft03](D:/ATAPArtifacts/Sprint0017/Task17.68.a/Decision38/Decision-Packet.json) | `BE89AB10ACF896ADF050AB74C3D9CFB2B07980EE926AA13592D534F99A7088F0` |
+
+The **approved exact drop list is `[]`**. All 12 historical candidates were absent
+in the accepted snapshot. No wildcard or `IF EXISTS` expansion is approved; a
+later present object needs refreshed exact disposition and operator-approved
+amended scope under the existing workflow.
+
+Retain the existing AceCommander creation model and its conditional Philote
+authority. Do not recreate the retired ATAPUtilities user mirror. Within this
+Experimental UserLogin action, preserve `ATAPUtilities.Philote` and its incoming
+FKs, `ScheduledTask`/`ScheduledTaskRun`, all 22 classified modules, RRSBS/V2,
+Tags/Gmail, ContentSummary and every non-user object. Original Carry, Preserve,
+Retired and Exclude dispositions remain as recorded above.
+
+### Bounded evidence and uncovered entries
+
+The [consumer decision report](D:/ATAPArtifacts/Sprint0017/Task17.68.a/Decision38/Report.json)
+and its [accepted documentation receipt](D:/ATAPArtifacts/Sprint0017/Task17.68.a/Decision38/Acceptance.json)
+record a verdict or explicit uncovered entry for each exact candidate and the
+archived seed/loader scope. The accepted evidence includes 14 corrected checksum
+matches and 22 bounded definition matches, with two explicit transformed-source
+candidates. These counts do not establish global consumer absence or applied
+release provenance. The original T12 stop and recorded coverage limits remain.
+
+- DAB effective host/configuration/entity mapping and remote consumers remain unknown.
+- External, dynamic and cross-database callers remain uncovered. SQL Agent evidence
+  covers three step rows in one job with zero broad candidate-token flags.
+- Three CSVs and six exact loader references were found in the archive within the
+  bounded search; runtime, packaging, dynamic and other-scope consumption remain unknown.
+- Observed `dbo.flyway_schema_history` is distinct from configured release authority;
+  the V2 contract expects `rrsbs_flyway_schema_history`. Package/configuration,
+  producer, applied-byte lineage and migration-number binding remain unverified.
+
+### Execution boundary
+
+This records approval of amendment scope and the empty drop list. It grants no
+reset, drop, grant, clean, repair, `Rebuild-All` or migration execution permission.
+Existing RDB-850/RDB-655 and exact-target/release responsibilities continue; this
+amendment adds no new gate. Existing R-10/R-11 waivers remain Experimental-only,
+and promotion beyond Experimental requires separate operator approval.
+Independent nondestructive source work remains distinct from database execution.

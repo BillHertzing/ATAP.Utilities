@@ -45,6 +45,50 @@ change-tracking: yes
   }
 }
 
+Describe 'New-MarkdownChangeTrackingReport LF output' -Tag 'Unit' {
+  BeforeAll {
+    $script:lfBase = 'D:\ATAPArtifacts\Sprint0017\Task17.9.b\CoreReportLF329\Fixtures'
+    $null = [IO.Directory]::CreateDirectory($script:lfBase)
+  }
+  It 'writes UTF8 LF output and preserves the <Kind> input bytes' -ForEach @(
+    @{ Kind = 'LF'; Eol = "`n" },
+    @{ Kind = 'CRLF'; Eol = "`r`n" },
+    @{ Kind = 'CR'; Eol = "`r" }
+  ) {
+    $case = Join-Path $script:lfBase ([guid]::NewGuid().ToString('N'))
+    $source = Join-Path $case 'source'
+    $null = [IO.Directory]::CreateDirectory($source)
+    $inputPath = Join-Path $source 'unicode.md'
+    $outputPath = Join-Path $case 'report.html'
+    $inputBytes = [Text.UTF8Encoding]::new($false).GetBytes("last-updated: yes${Eol}# café <example>${Eol}")
+    [IO.File]::WriteAllBytes($inputPath, $inputBytes)
+
+    New-MarkdownChangeTrackingReport -Path $source -Output $outputPath | Out-Null
+
+    $actual = [IO.File]::ReadAllBytes($outputPath)
+    [array]::IndexOf($actual, [byte]13) | Should -Be -1
+    $actual[-1] | Should -Be 10
+    ($actual.Length -ge 3 -and $actual[0] -eq 0xEF -and $actual[1] -eq 0xBB -and $actual[2] -eq 0xBF) | Should -BeFalse
+    $html = [Text.UTF8Encoding]::new($false, $true).GetString($actual)
+    $html | Should -Match 'Header detected'
+    [Net.WebUtility]::HtmlDecode($html) | Should -Match 'café <example>'
+    $html | Should -Match '&lt;example&gt;'
+    [Convert]::ToHexString([IO.File]::ReadAllBytes($inputPath)) | Should -BeExactly ([Convert]::ToHexString($inputBytes))
+  }
+  It 'does not create an output or parent under WhatIf' {
+    $case = Join-Path $script:lfBase ([guid]::NewGuid().ToString('N'))
+    $source = Join-Path $case 'source'
+    $null = [IO.Directory]::CreateDirectory($source)
+    $inputPath = Join-Path $source 'source.md'
+    [IO.File]::WriteAllText($inputPath, "# café`n", [Text.UTF8Encoding]::new($false))
+    $before = (Get-FileHash $inputPath).Hash
+    $parent = Join-Path $case 'not-created'
+    New-MarkdownChangeTrackingReport -Path $source -Output (Join-Path $parent 'report.html') -WhatIf | Out-Null
+    Test-Path -LiteralPath $parent | Should -BeFalse
+    (Get-FileHash $inputPath).Hash | Should -BeExactly $before
+  }
+}
+
 Describe 'New-MarkdownChangeTrackingReport [public]' -Tag 'Unit' {
   BeforeEach {
     $script:root = script:New-TestMarkdownTree

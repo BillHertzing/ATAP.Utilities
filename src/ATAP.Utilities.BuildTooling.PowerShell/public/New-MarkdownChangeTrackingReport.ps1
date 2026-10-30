@@ -107,7 +107,7 @@ function New-MarkdownChangeTrackingReport {
         }
 
         $firstLines = Get-Content -LiteralPath $file.FullName -TotalCount 10 -ErrorAction Stop
-        $previewText = if ($firstLines) { $firstLines -join "`r`n" } else { '' }
+        $previewText = if ($firstLines) { $firstLines -join "`n" } else { '' }
 
         $hasTrackedHeader =
           $previewText -match '(?im)^<!--\s*change-tracking:' -or
@@ -252,7 +252,8 @@ pre { white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; ba
     }
 
     if ($PSCmdlet.ShouldProcess($Output, 'Write Markdown change-tracking report')) {
-      Set-Content -LiteralPath $Output -Value $html -Encoding UTF8
+      $normalizedHtml = ($html -replace "`r`n|`r", "`n").TrimEnd([char]10) + "`n"
+      Set-Content -LiteralPath $Output -Value $normalizedHtml -Encoding utf8NoBOM -NoNewline
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
         -Message "Wrote Markdown change-tracking report for $($items.Count) file(s) ($trackedCount tracked, $untrackedCount untracked) to '$Output'."
       Get-Item -LiteralPath $Output

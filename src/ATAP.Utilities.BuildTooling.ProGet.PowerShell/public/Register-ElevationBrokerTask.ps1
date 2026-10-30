@@ -104,8 +104,7 @@ function Register-ElevationBrokerTask {
       $TemplatePath = Join-Path $resourceRoot 'ATAP-ElevatedInstallBroker.xml'
     }
 
-    $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
-    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    $isAdmin = Test-ElevationBrokerAdministrator
     if (-not $isAdmin) {
       throw "Must run ELEVATED. Registering a task that runs as $ServiceAccount with HighestAvailable requires administrator rights."
     }
@@ -129,8 +128,7 @@ function Register-ElevationBrokerTask {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Normalised ServiceAccount to '$ServiceAccount' for XML UserId SID resolution."
     }
     try {
-      $resolvedSid = ([System.Security.Principal.NTAccount]$ServiceAccount).Translate(
-        [System.Security.Principal.SecurityIdentifier]).Value
+      $resolvedSid = Resolve-ElevationBrokerAccountSid -ServiceAccount $ServiceAccount
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "ServiceAccount '$ServiceAccount' resolves to SID $resolvedSid."
     }
     catch {
@@ -241,7 +239,9 @@ function Register-ElevationBrokerTask {
 
         $exported = & schtasks /query /tn $fullTaskName /xml ONE 2>$null
         if ($LASTEXITCODE -eq 0 -and $exported) {
-          [System.IO.File]::WriteAllText($backupPath, ($exported -join "`r`n"),
+          $backupXml = ($exported -join "`n").Replace("`r`n", "`n").Replace("`r", "`n")
+          if (-not $backupXml.EndsWith("`n")) { $backupXml += "`n" }
+          [System.IO.File]::WriteAllText($backupPath, $backupXml,
             [System.Text.UnicodeEncoding]::new($false, $true))
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Existing task exported to '$backupPath' before deletion."
         }
@@ -300,4 +300,16 @@ function Register-ElevationBrokerTask {
 
   end {
   }
+}
+
+function Test-ElevationBrokerAdministrator {
+  ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+  ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
+function Resolve-ElevationBrokerAccountSid {
+  param([string]$ServiceAccount)
+
+  ([System.Security.Principal.NTAccount]$ServiceAccount).Translate(
+    [System.Security.Principal.SecurityIdentifier]).Value
 }

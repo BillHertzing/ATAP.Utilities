@@ -411,10 +411,10 @@ function Register-ATAPParityScheduledTasks {
         "`$ErrorActionPreference = 'Stop'"
         "& '$($pwshPath -replace "'", "''")' -NoProfile -NonInteractive -ExecutionPolicy Bypass -File '$($scriptPath -replace "'", "''")' $quotedArguments"
         "exit `$LASTEXITCODE"
-      ) -join "`r`n"
+      ) -join "`n"
 
       if ($PSCmdlet.ShouldProcess($dispatcherPath, "point dispatcher at SystemParityMonitor $ModuleVersion")) {
-        Set-Content -LiteralPath $dispatcherPath -Value $dispatcherContent -Encoding utf8NoBOM
+        Set-Content -LiteralPath $dispatcherPath -Value ($dispatcherContent + "`n") -Encoding utf8NoBOM -NoNewline
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Dispatcher '$dispatcherPath' now targets SystemParityMonitor $ModuleVersion."
       }
 

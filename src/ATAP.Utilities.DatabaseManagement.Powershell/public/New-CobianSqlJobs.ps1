@@ -1,3 +1,8 @@
+function Test-CobianSqlJobsAdministrator {
+  $principal = [Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+  $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
 function New-CobianSqlJobs {
   <#
 .SYNOPSIS
@@ -45,10 +50,9 @@ function New-CobianSqlJobs {
     SchDateAndTime format: 'YYYY-MM-DD HH:MM:SS:' (trailing colon, no milliseconds).
     SchDaysOfWeek repeats per selected day — requires §DuplicatedKeys:True on section.
 
-    CRLF NOTE (SC-encoding):
-    The script file is LF-encoded (VS Code default). Cobian Reflector requires CRLF
-    in its UTF-16 MainList.lst. Generated sections are normalized to CRLF before
-    writing to prevent ArgumentOutOfRangeException on service start.
+    LINE ENDINGS:
+    Native .lst writes use the approved CRLF format exception and retain the
+    detected encoding/BOM. The PowerShell source file remains LF-only.
 #>
 
   [CmdletBinding(SupportsShouldProcess = $true)]
@@ -68,8 +72,7 @@ function New-CobianSqlJobs {
   Set-StrictMode -Version Latest
   $ErrorActionPreference = 'Stop'
 
-  $principal = [Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
-  if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+  if (-not (Test-CobianSqlJobsAdministrator)) {
     throw "$($MyInvocation.MyCommand.Name) must be run from an elevated PowerShell session because it updates Cobian Reflector task files."
   }
 
@@ -247,7 +250,7 @@ SDFtp={ *§* $ftp *§* }
     # SchDateAndTime format: 'YYYY-MM-DD HH:MM:SS:' (trailing colon, no ms — confirmed)
     # §DuplicatedKeys:True is required for repeating SchDaysOfWeek entries
     $dateOnly = ($dt -split ' ')[0]
-    $dayLines = ($days | ForEach-Object { "SchDaysOfWeek=$_" }) -join "`r`n"
+    $dayLines = ($days | ForEach-Object { "SchDaysOfWeek=$_" }) -join "`n"
     return @"
 
 <§- $g -§>
@@ -376,8 +379,8 @@ TaskImpersonationPassword=$E4
   Write-Host "Backup        : $bak" -ForegroundColor Green
 
   # ── Read file — detect and preserve native encoding (UTF-16 LE or UTF-8) ─────
-  $sr = [System.IO.StreamReader]::new($ListPath, $true)   # detectEncodingFromBom=true
-  $raw = $sr.ReadToEnd()
+  $sr = [System.IO.StreamReader]::new($ListPath, [System.Text.UTF8Encoding]::new($false), $true)
+  $raw = $sr.ReadToEnd().Replace("`r`n", "`n").Replace("`r", "`n")
   $fileEncoding = $sr.CurrentEncoding
   $sr.Dispose()
   Write-Host "File encoding  : $($fileEncoding.EncodingName)"
@@ -447,16 +450,15 @@ TaskImpersonationPassword=$E4
   # ── Inject BackupTask references into root section ────────────────────────────
   if ($newRefs.Count -gt 0) {
     $closeTag = "<§§- $rootGuid -§§>"
-    $insertion = ($newRefs -join "`r`n") + "`r`n"
+    $insertion = ($newRefs -join "`n") + "`n"
     $raw = $raw.Replace($closeTag, $insertion + $closeTag)
   }
 
   # ── Append all new sections to end of file ────────────────────────────────────
-  # Normalize to CRLF: the script file is LF-encoded (VS Code default), so heredoc
-  # strings use LF only. Cobian requires CRLF in its UTF-16 file. The regex leaves
-  # existing \r\n pairs untouched and converts bare \n to \r\n.
-  $newContent = $newSections.ToString() -replace '(?<!\r)\n', "`r`n"
-  $raw += $newContent
+  # Normalize all text first, then emit native .lst CRLF (approved format exception).
+  $raw = ($raw + $newSections.ToString()).Replace("`r`n", "`n").Replace("`r", "`n")
+  if (-not $raw.EndsWith("`n", [System.StringComparison]::Ordinal)) { $raw += "`n" }
+  $raw = $raw.Replace("`n", "`r`n")
 
   # ── Write file back — preserve original encoding (UTF-16 LE when Cobian UI rewrites) ──
   [System.IO.File]::WriteAllText($ListPath, $raw, $fileEncoding)

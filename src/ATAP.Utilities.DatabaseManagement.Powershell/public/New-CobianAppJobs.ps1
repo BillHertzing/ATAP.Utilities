@@ -68,6 +68,9 @@
     ► Backs up MainList.lst automatically before modifying it
     ► Idempotent — skips tasks that already exist by name
 
+    Native .lst writes use the approved CRLF format exception and retain the
+    detected encoding/BOM. The PowerShell source file remains LF-only.
+
     Confirmed data directories (verified 2026-04-03):
       ProGet      C:\ProgramData\ProGet\       (9.3 MB — Packages\, Extensions\, LocalStorage\)
       BuildMaster C:\ProgramData\BuildMaster\  (~0 MB currently — Extensions\, Temp\)
@@ -142,8 +145,7 @@ function New-CobianAppJobs {
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Entering function'
 
-    $principal = [Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
-    if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    if (-not (Test-CobianAppJobsAdministrator)) {
       throw "$fn must be run from an elevated PowerShell session because it updates Cobian Reflector task files."
     }
 
@@ -347,7 +349,7 @@ SDFtp={ *§* $ftp *§* }
       # SchDaysOfWeek: 0=Sun 1=Mon 2=Tue 3=Wed 4=Thu 5=Fri 6=Sat
       # §DuplicatedKeys:True required for repeating SchDaysOfWeek entries
       $dateOnly = ($dt -split ' ')[0]
-      $dayLines = ($days | ForEach-Object { "SchDaysOfWeek=$_" }) -join "`r`n"
+      $dayLines = ($days | ForEach-Object { "SchDaysOfWeek=$_" }) -join "`n"
       return @"
 
 <§- $g -§>
@@ -521,8 +523,8 @@ TaskImpersonationPassword=$E4
       }
 
       # ── Read file — detect and preserve native encoding ───────────────────────────
-      $sr           = [System.IO.StreamReader]::new($ListPath, $true)
-      $raw          = $sr.ReadToEnd()
+      $sr           = [System.IO.StreamReader]::new($ListPath, [System.Text.UTF8Encoding]::new($false), $true)
+      $raw          = $sr.ReadToEnd().Replace("`r`n", "`n").Replace("`r", "`n")
       $fileEncoding = $sr.CurrentEncoding
       $sr.Dispose()
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "File encoding: $($fileEncoding.EncodingName)"
@@ -588,12 +590,13 @@ TaskImpersonationPassword=$E4
       # ── Inject BackupTask references into root section ────────────────────────────
       if ($newRefs.Count -gt 0 -and $PSCmdlet.ShouldProcess($ListPath, 'Inject task references and append sections')) {
         $closeTag  = "<§§- $rootGuid -§§>"
-        $insertion = ($newRefs -join "`r`n") + "`r`n"
+        $insertion = ($newRefs -join "`n") + "`n"
         $raw       = $raw.Replace($closeTag, $insertion + $closeTag)
 
-        # Normalize bare LF to CRLF before appending (Cobian requires CRLF in its file)
-        $newContent = $newSections.ToString() -replace '(?<!\r)\n', "`r`n"
-        $raw += $newContent
+        # Normalize all text first, then emit native .lst CRLF (approved format exception).
+        $raw = ($raw + $newSections.ToString()).Replace("`r`n", "`n").Replace("`r", "`n")
+        if (-not $raw.EndsWith("`n", [System.StringComparison]::Ordinal)) { $raw += "`n" }
+        $raw = $raw.Replace("`n", "`r`n")
 
         [System.IO.File]::WriteAllText($ListPath, $raw, $fileEncoding)
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Saved: $ListPath"
@@ -619,4 +622,9 @@ TaskImpersonationPassword=$E4
   end {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Leaving function'
   }
+}
+
+function Test-CobianAppJobsAdministrator {
+  $principal = [Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+  $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }

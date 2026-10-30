@@ -58,10 +58,10 @@ function Export-AgentTextToFiles {
         "Materialization: $($Target.Materialization)"
         '-->'
         ''
-      ) -join "`r`n"
+      ) -join "`n"
 
       if ($Target.Path -ieq 'AGENTS.md') {
-        return "# AGENTS.md instructions for ATAP shared repositories`r`n`r`n$header$($Record.BodyText.TrimStart())"
+        return "# AGENTS.md instructions for ATAP shared repositories`n`n$header$($Record.BodyText.TrimStart())"
       }
 
       return $header + $Record.BodyText.TrimStart()
@@ -81,9 +81,6 @@ function Export-AgentTextToFiles {
         }
 
         $directory = Split-Path -Path $targetPath -Parent
-        if (-not (Test-Path -LiteralPath $directory -PathType Container)) {
-          New-Item -ItemType Directory -Path $directory -Force | Out-Null
-        }
 
         $content = switch ([string]$target.Materialization) {
           'copy' { [string]$AgentText.BodyText; break }
@@ -91,23 +88,21 @@ function Export-AgentTextToFiles {
           default { throw "Export-AgentTextToFiles does not yet support materialization '$($target.Materialization)' for $($target.Path)" }
         }
 
-        $normalized = $content -replace "`r?`n", "`r`n"
-        if (-not $normalized.EndsWith("`r`n", [StringComparison]::Ordinal)) {
-          $normalized += "`r`n"
+        $normalized = $content -replace "`r`n|`r", "`n"
+        if (-not $normalized.EndsWith("`n", [StringComparison]::Ordinal)) { $normalized += "`n" }
+        $desiredBytes = [System.Text.UTF8Encoding]::new($false).GetBytes($normalized)
+        [byte[]] $existingBytes = $null
+        if (Test-Path -LiteralPath $targetPath -PathType Leaf) {
+          $existingBytes = [System.IO.File]::ReadAllBytes($targetPath)
         }
-
         $action = 'unchanged'
-        $existing = if (Test-Path -LiteralPath $targetPath -PathType Leaf) {
-          [System.IO.File]::ReadAllText($targetPath, [System.Text.Encoding]::UTF8)
-        }
-        else {
-          $null
-        }
-
-        if ($existing -cne $normalized) {
+        if ($null -eq $existingBytes -or -not [System.Linq.Enumerable]::SequenceEqual[byte]($existingBytes, $desiredBytes)) {
           $action = 'written'
           if ($PSCmdlet.ShouldProcess($targetPath, 'write AgentText adapter')) {
-            [System.IO.File]::WriteAllText($targetPath, $normalized, [System.Text.UTF8Encoding]::new($false))
+            if (-not (Test-Path -LiteralPath $directory -PathType Container)) {
+              New-Item -ItemType Directory -Path $directory -Force | Out-Null
+            }
+            [System.IO.File]::WriteAllBytes($targetPath, $desiredBytes)
           }
         }
 

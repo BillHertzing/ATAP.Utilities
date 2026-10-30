@@ -29,6 +29,72 @@ BeforeAll {
 
   $moduleRoot = Join-Path $PSScriptRoot '..\..'
   . (Join-Path $moduleRoot 'private\Invoke-SprintEndNativeCommand.ps1')
+  function Resolve-ProfileTestIacRoot {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$UtilitiesRoot)
+
+    function normalizedProfilePath([string]$Path) {
+      [IO.Path]::GetFullPath($Path).Replace('\', '/').TrimEnd('/')
+    }
+    function profileWorktrees([string[]]$Output) {
+      $records = [Collections.Generic.List[object]]::new()
+      $record = $null
+      foreach ($field in (($Output -join [Environment]::NewLine) -split '\x00|\r?\n')) {
+        if ($field.StartsWith('worktree ', [StringComparison]::Ordinal)) {
+          if ($null -ne $record) { $records.Add($record) }
+          $record = [pscustomobject]@{ Path = $field.Substring(9); Head = ''; Branch = ''; Prunable = $false }
+        } elseif ($field.StartsWith('HEAD ', [StringComparison]::Ordinal) -and $null -ne $record) {
+          $record.Head = $field.Substring(5)
+        } elseif ($field.StartsWith('branch ', [StringComparison]::Ordinal) -and $null -ne $record) {
+          $record.Branch = $field.Substring(7)
+        } elseif ($field.StartsWith('prunable', [StringComparison]::Ordinal) -and $null -ne $record) {
+          $record.Prunable = $true
+        }
+      }
+      if ($null -ne $record) { $records.Add($record) }
+      $records.ToArray()
+    }
+    function profileSprint([string]$Branch) {
+      $matches = [regex]::Matches($Branch, '(?i)(?:^|[-/])Sprint-(?<Sprint>\d{4})(?:-|$)')
+      if ($matches.Count -gt 1) { throw 'ProfileDependency.AmbiguousSprintBranch' }
+      if ($matches.Count -eq 1) { $matches[0].Groups['Sprint'].Value }
+    }
+
+    $common = Invoke-SprintEndNativeCommand -FilePath git -ArgumentList @('-C', $UtilitiesRoot, 'rev-parse', '--path-format=absolute', '--git-common-dir')
+    $commonPaths = @($common.Output | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    if ($commonPaths.Count -ne 1) { throw 'ProfileDependency.MissingCommonDirectory' }
+    $commonPath = normalizedProfilePath $commonPaths[0]
+    if ([IO.Path]::GetFileName($commonPath) -ne '.git') { throw 'ProfileDependency.UnrecognizedCommonDirectory' }
+    $repositoryParent = Split-Path (Split-Path $commonPath -Parent) -Parent
+    $iacAnchor = Join-Path $repositoryParent 'ATAP.IAC'
+    $headResult = Invoke-SprintEndNativeCommand -FilePath git -ArgumentList @('-C', $UtilitiesRoot, 'rev-parse', 'HEAD')
+    $heads = @($headResult.Output | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    if ($heads.Count -ne 1) { throw 'ProfileDependency.MissingHead' }
+    $head = $heads[0].Trim()
+    $utilitiesResult = Invoke-SprintEndNativeCommand -FilePath git -ArgumentList @('-C', $UtilitiesRoot, 'worktree', 'list', '--porcelain', '-z')
+    $utilities = @(profileWorktrees $utilitiesResult.Output)
+    $current = @($utilities | Where-Object { -not $_.Prunable -and (normalizedProfilePath $_.Path) -ieq (normalizedProfilePath $UtilitiesRoot) })
+    if ($current.Count -ne 1 -or $current[0].Head -ine $head) { throw 'ProfileDependency.CurrentWorktreeChangedOrMissing' }
+
+    $sprint = profileSprint $current[0].Branch
+    $mode = 'CurrentRegisteredBranch'
+    if (-not $sprint) {
+      # A clean detached build checkout can live on another volume. Bind only
+      # to a unique Sprint branch registered at its exact source revision.
+      $sprints = @(@(foreach ($worktree in $utilities) {
+        if (-not $worktree.Prunable -and $worktree.Head -ieq $head) { profileSprint $worktree.Branch }
+      }) | Sort-Object -Unique)
+      if (@($sprints).Count -eq 0) { throw 'ProfileDependency.MissingSprintAuthority' }
+      if (@($sprints).Count -ne 1) { throw 'ProfileDependency.AmbiguousSprintAuthority' }
+      $sprint = @($sprints)[0]
+      $mode = 'ExactHeadRegisteredSprintBranch'
+    }
+    $iacResult = Invoke-SprintEndNativeCommand -FilePath git -ArgumentList @('-C', $iacAnchor, 'worktree', 'list', '--porcelain', '-z')
+    $candidates = @(profileWorktrees $iacResult.Output | Where-Object { -not $_.Prunable -and (profileSprint $_.Branch) -eq $sprint })
+    if ($candidates.Count -eq 0) { throw 'ProfileDependency.MissingMatchingSprintIac' }
+    if ($candidates.Count -ne 1) { throw 'ProfileDependency.AmbiguousMatchingSprintIac' }
+    [pscustomobject]@{ IacRoot = normalizedProfilePath $candidates[0].Path; SprintNumber = $sprint; Binding = $mode; CommonGitDirectory = $commonPath }
+  }
   # Load the complete child-module public surface. A partial hand-maintained list
   # let commands already present in an interactive developer session mask missing
   # mock targets; the clean BuildMaster process correctly rejected those mocks.
@@ -492,23 +558,13 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       }
     }
 
-    It 'keeps secret-bearing settings out of the process-environment profile' {
+    It 'keeps secret-bearing settings out of the process-environment profile' -Tag 'RelocatedProfile49' {
       $resolvedModuleRoot = (Resolve-Path -LiteralPath $moduleRoot).Path
       $profileRoot = Join-Path (Split-Path $resolvedModuleRoot -Parent) 'ATAP.Utilities.PowerShell\Profiles'
       $environmentProfile = Get-Content -Raw -LiteralPath (Join-Path $profileRoot 'global_EnvironmentVariables.ps1')
       $utilitiesRepoRoot = Split-Path (Split-Path $resolvedModuleRoot -Parent) -Parent
-      $githubRoot = Split-Path $utilitiesRepoRoot -Parent
-      $sprintMatch = [regex]::Match((Split-Path $utilitiesRepoRoot -Leaf), 'Sprint-(?<Sprint>\d{4})')
-      $iacRoot = if ($sprintMatch.Success) {
-        Get-ChildItem -LiteralPath $githubRoot -Directory |
-          Where-Object { $_.Name -match "^ATAP\.IAC-wt-\d+-Sprint-$($sprintMatch.Groups['Sprint'].Value)-work-items$" } |
-          Select-Object -ExpandProperty FullName -First 1
-      } else {
-        Join-Path $githubRoot 'ATAP.IAC'
-      }
-      if (-not $iacRoot) {
-        throw "Could not locate the Sprint $($sprintMatch.Groups['Sprint'].Value) ATAP.IAC worktree."
-      }
+      $dependency = Resolve-ProfileTestIacRoot -UtilitiesRoot $utilitiesRepoRoot
+      $iacRoot = $dependency.IacRoot
       $userProfile = Get-Content -Raw -LiteralPath (Join-Path $iacRoot 'Windows\ProfileTemplates\CurrentUserAllHostsV7CoreProfile.ps1')
 
       foreach ($secretKey in @(
@@ -525,6 +581,105 @@ Describe 'SprintEnd typed lifecycle' -Tag 'Unit' {
       }
       $userProfile | Should -Match 'ATAP\.Utilities\.PowerShell'
       $userProfile | Should -Match 'Process environment setup was skipped'
+    }
+
+    Context 'profile dependency source resolution' -Tag 'RelocatedProfile49' {
+      BeforeEach {
+        $artifactRoot = [Environment]::GetEnvironmentVariable('ARTIFACTS_PATH', 'Process')
+        if (-not $artifactRoot) { $artifactRoot = [Environment]::GetEnvironmentVariable('ARTIFACTS_PATH', 'User') }
+        if (-not $artifactRoot) { throw 'ARTIFACTS_PATH is required for profile metadata cases.' }
+        $script:p49Root = Join-Path $artifactRoot 'Sprint0017/Task17.66.c/RelocatedProfile49/Run01/MetadataOnly'
+        $script:p49Source = Join-Path $script:p49Root 'repositories/ATAP.Utilities-source'
+        $script:p49Detached = Join-Path $script:p49Root 'artifacts/ReleaseCheckout'
+        $script:p49Common = Join-Path $script:p49Root 'repositories/ATAP.Utilities/.git'
+        $script:p49Anchor = Join-Path $script:p49Root 'repositories/ATAP.IAC'
+        $script:p49Iac = Join-Path $script:p49Root 'dependencies/IAC source with spaces'
+        $script:p49Head = 'a' * 40
+        $script:p49Utilities = @(
+          "worktree $script:p49Source", "HEAD $script:p49Head",
+          'branch refs/heads/source-Sprint-0042-work-items', '',
+          "worktree $script:p49Detached", "HEAD $script:p49Head", 'detached', ''
+        ) -join [char]0
+        $script:p49IacMetadata = @(
+          "worktree $script:p49Anchor", ('HEAD ' + ('b' * 40)), 'branch refs/heads/main', '',
+          "worktree $script:p49Iac", ('HEAD ' + ('c' * 40)), 'branch refs/heads/iac-Sprint-0042-work-items', ''
+        ) -join [char]0
+
+        Mock Invoke-SprintEndNativeCommand {
+          if ($FilePath -ne 'git' -or $ArgumentList.Count -lt 3 -or $ArgumentList[0] -ne '-C') {
+            throw 'Unexpected fixture native command.'
+          }
+          $requestedRoot = [IO.Path]::GetFullPath($ArgumentList[1])
+          $tail = $ArgumentList[2..($ArgumentList.Count - 1)] -join ' '
+          $answer = if ($requestedRoot -ieq [IO.Path]::GetFullPath($script:p49Source) -or
+                        $requestedRoot -ieq [IO.Path]::GetFullPath($script:p49Detached)) {
+            switch ($tail) {
+              'rev-parse --path-format=absolute --git-common-dir' { $script:p49Common }
+              'rev-parse HEAD' { $script:p49Head }
+              'worktree list --porcelain -z' { $script:p49Utilities }
+              default { throw 'Unexpected fixture Utilities Git query.' }
+            }
+          } elseif ($requestedRoot -ieq [IO.Path]::GetFullPath($script:p49Anchor) -and $tail -eq 'worktree list --porcelain -z') {
+            $script:p49IacMetadata
+          } else { throw 'Unexpected fixture dependency Git query.' }
+          [pscustomobject]@{ Output = @($answer); ExitCode = 0; Succeeded = $true }
+        }
+      }
+
+      It 'selects the current registered Sprint dependency without relying on a checkout leaf' {
+        $result = Resolve-ProfileTestIacRoot -UtilitiesRoot $script:p49Source
+
+        $result.SprintNumber | Should -Be '0042'
+        $result.Binding | Should -Be 'CurrentRegisteredBranch'
+        $result.IacRoot | Should -Be ($script:p49Iac.Replace('\', '/'))
+      }
+
+      It 'resolves a detached relocated checkout through its common repository and exact source revision' {
+        $result = Resolve-ProfileTestIacRoot -UtilitiesRoot $script:p49Detached
+
+        $result.IacRoot | Should -Be ($script:p49Iac.Replace('\', '/'))
+        $result.Binding | Should -Be 'ExactHeadRegisteredSprintBranch'
+        Should -Invoke Invoke-SprintEndNativeCommand -Times 1 -Exactly -ParameterFilter {
+          [IO.Path]::GetFullPath($ArgumentList[1]) -ieq [IO.Path]::GetFullPath($script:p49Anchor)
+        }
+      }
+
+      It 'refuses a missing or prunable Sprint dependency instead of selecting the stable profile' {
+        $script:p49IacMetadata += ('prunable fixture dependency unavailable' + [char]0)
+
+        { Resolve-ProfileTestIacRoot -UtilitiesRoot $script:p49Detached } |
+          Should -Throw '*ProfileDependency.MissingMatchingSprintIac*'
+      }
+
+      It 'refuses two registered IAC dependencies for the selected Sprint' {
+        $second = Join-Path $script:p49Root 'dependencies/another IAC'
+        $script:p49IacMetadata += (@(
+          "worktree $second", ('HEAD ' + ('d' * 40)), 'branch refs/heads/another-Sprint-0042-work-items', ''
+        ) -join [char]0)
+
+        { Resolve-ProfileTestIacRoot -UtilitiesRoot $script:p49Detached } |
+          Should -Throw '*ProfileDependency.AmbiguousMatchingSprintIac*'
+      }
+
+      It 'refuses ambiguous Sprint authority for a detached source revision' {
+        $other = Join-Path $script:p49Root 'repositories/other source'
+        $script:p49Utilities += (@(
+          "worktree $other", "HEAD $script:p49Head", 'branch refs/heads/source-Sprint-0043-work-items', ''
+        ) -join [char]0)
+
+        { Resolve-ProfileTestIacRoot -UtilitiesRoot $script:p49Detached } |
+          Should -Throw '*ProfileDependency.AmbiguousSprintAuthority*'
+        Should -Invoke Invoke-SprintEndNativeCommand -Times 0 -Exactly -ParameterFilter {
+          [IO.Path]::GetFullPath($ArgumentList[1]) -ieq [IO.Path]::GetFullPath($script:p49Anchor)
+        }
+      }
+
+      It 'refuses a detached source revision with no registered Sprint authority' {
+        $script:p49Utilities = $script:p49Utilities.Replace('branch refs/heads/source-Sprint-0042-work-items', 'detached')
+
+        { Resolve-ProfileTestIacRoot -UtilitiesRoot $script:p49Detached } |
+          Should -Throw '*ProfileDependency.MissingSprintAuthority*'
+      }
     }
 
     It 'verifies managed developer and service-account profiles when ProfilePaths is not supplied' {

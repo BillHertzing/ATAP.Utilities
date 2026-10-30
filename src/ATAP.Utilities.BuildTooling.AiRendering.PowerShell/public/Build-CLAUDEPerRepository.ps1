@@ -231,7 +231,8 @@ function Build-CLAUDEPerRepository {
         -Carrier CLAUDE `
         -FallbackBaseFilePath $legacyBaseFilePath
       $baseFilePath = $coreBody.SourcePath
-      $baseContent = $coreBody.Content
+      # Normalize before sentinel removal as well as composition, including lone CR.
+      $baseContent = $coreBody.Content -replace "`r`n|`r", "`n"
       $baseLastModified = (Get-Item -LiteralPath $baseFilePath -ErrorAction Stop).LastWriteTime
       # The provenance table must name the file actually read. Hard-coding 'CLAUDE-base.md'
       # would keep the old bytes but assert a source this cmdlet no longer consults - the
@@ -348,7 +349,7 @@ function Build-CLAUDEPerRepository {
           # Step 6c: Combine local + provenance + base into CLAUDE.md
           $combinedParts = @()
           if ($localContent) {
-            $combinedParts += $localContent.TrimEnd()
+            $combinedParts += ($localContent -replace "`r`n|`r", "`n").TrimEnd()
           }
           $combinedParts += $provenanceBlock
           $combinedParts += $baseContent.TrimEnd()
@@ -371,7 +372,10 @@ function Build-CLAUDEPerRepository {
           }
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Writing CLAUDE.md for $repoName to: $claudeMdPath (LinkType: $($claudeMdLinkType ?? 'none'))"
 
-          if ($null -ne $existingContent -and $existingContent -ceq $combinedContent) {
+          if ($null -ne $existingContent -and [string]::Equals(
+              [Convert]::ToBase64String([byte[]](Get-Content -LiteralPath $claudeMdPath -AsByteStream -Raw -ErrorAction Stop)),
+              [Convert]::ToBase64String([Text.UTF8Encoding]::new($false).GetBytes($combinedContent)),
+              [StringComparison]::Ordinal)) {
             $repoResult.Success = $true
             $repoResult.WrittenPath = $claudeMdPath
             $repoResult.ClaudeMdLinkType = $claudeMdLinkType

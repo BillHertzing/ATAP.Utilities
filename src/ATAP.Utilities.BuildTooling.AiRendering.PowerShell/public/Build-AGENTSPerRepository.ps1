@@ -355,15 +355,17 @@ function Build-AGENTSPerRepository {
           }
 
           # Combine: AI-LOCAL block (repo-specific) then AI-CORE block (rendered base
-          # verbatim). Deterministic, non-timestamped sentinels make the AI-CORE block
+          # with LF newlines). Deterministic, non-timestamped sentinels make the AI-CORE block
           # machine-recoverable for the Task 10.23.h core diff and keep the file
           # byte-idempotent on re-run.
           $combinedParts = [System.Collections.Generic.List[string]]::new()
           $combinedParts.Add('<!-- AI-LOCAL:BEGIN -->')
-          if ($localContent) { $combinedParts.Add($localContent.TrimEnd()) }
+          # Normalize section bodies too: LF separators alone leave embedded CRLF/CR
+          # intact and can make a mixed-ending output look unchanged on the next run.
+          if ($localContent) { $combinedParts.Add(($localContent -replace "`r`n|`r", "`n").TrimEnd()) }
           $combinedParts.Add('<!-- AI-LOCAL:END -->')
           $combinedParts.Add('<!-- AI-CORE:BEGIN -->')
-          $combinedParts.Add($baseContent.TrimEnd())
+          $combinedParts.Add(($baseContent -replace "`r`n|`r", "`n").TrimEnd())
           $combinedParts.Add('<!-- AI-CORE:END -->')
           # Task 13.76.b: Codex agent-specific policy is APPENDED after AI-CORE, never in
           # place of it. Order matters: core first keeps the no-double-core carrier contract
@@ -371,7 +373,7 @@ function Build-AGENTSPerRepository {
           # Task 10.23.h core diff.
           if ($codexAgentContent) {
             $combinedParts.Add('<!-- AI-AGENT-CODEX:BEGIN -->')
-            $combinedParts.Add($codexAgentContent.TrimEnd())
+            $combinedParts.Add(($codexAgentContent -replace "`r`n|`r", "`n").TrimEnd())
             $combinedParts.Add('<!-- AI-AGENT-CODEX:END -->')
             $repoResult.HasCodexBlock = $true
           }
@@ -384,7 +386,10 @@ function Build-AGENTSPerRepository {
             Get-Content -LiteralPath $agentsMdPath -Raw -ErrorAction Stop
           } else { $null }
 
-          if ($null -ne $existing -and $existing -ceq $combinedContent) {
+          if ($null -ne $existing -and [string]::Equals(
+              [Convert]::ToBase64String([byte[]](Get-Content -LiteralPath $agentsMdPath -AsByteStream -Raw -ErrorAction Stop)),
+              [Convert]::ToBase64String([Text.UTF8Encoding]::new($false).GetBytes($combinedContent)),
+              [StringComparison]::Ordinal)) {
             $repoResult.Action = 'unchanged'
             $repoResult.Success = $true
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "AGENTS.md unchanged for $repoName"

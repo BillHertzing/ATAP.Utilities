@@ -16,8 +16,8 @@ These files are rendered ONCE at the SharedVSCode worktree root by Render-AIAdap
 (the ai.agent-specific.* records) and contain ONLY per-agent deltas plus a pointer to
 AGENTS.md for core, never the core body (no-double-core invariant). Distribution is a
 PURE COPY (the agent-specific content is repo-independent; repo-specific rules live in
-the AGENTS.md / CLAUDE.md AI-LOCAL block). A pure copy makes the self-copy into the
-SharedVSCode worktree a harmless no-op and keeps re-runs idempotent.
+the AGENTS.md / CLAUDE.md AI-LOCAL block). Content is copied with LF line endings;
+already-normalized self-copies into SharedVSCode and repeated runs are no-ops.
 
 When the workspace is a sprint Overview workspace (it carries a sprintEphemeral block
 and/or lists at least one sprint worktree folder), any repository that has no sprint
@@ -209,6 +209,9 @@ function Build-AgentSpecificPerRepository {
           throw "Rendered agent-specific base '$($spec.RelativePath)' not found at '$baseFilePath'. Render it first from canonical via Render-AIAdapters (ai.agent-specific.* records)."
         }
         $baseContent = Get-Content -LiteralPath $baseFilePath -Raw -ErrorAction Stop
+        # SC-0472: normalize before comparison and distribution. This lane is a
+        # copy, not a section join: do not trim content, whitespace or final LFs.
+        $baseContent = $baseContent -replace "`r`n|`r", "`n"
         if ($baseContent -match 'SourceId:\s*ai\.core\.main-instructions\.v1' -or
           $baseContent -match '<!-- AI-CORE:BEGIN -->') {
           throw "Rendered agent-specific base '$($spec.RelativePath)' contains the shared core body. The no-double-core invariant requires core instructions to live only in AGENTS.md."
@@ -272,7 +275,10 @@ function Build-AgentSpecificPerRepository {
               Get-Content -LiteralPath $destPath -Raw -ErrorAction Stop
             } else { $null }
 
-            if ($null -ne $existing -and $existing -ceq $base.Content) {
+            if ($null -ne $existing -and [string]::Equals(
+                [Convert]::ToBase64String([byte[]](Get-Content -LiteralPath $destPath -AsByteStream -Raw -ErrorAction Stop)),
+                [Convert]::ToBase64String([Text.UTF8Encoding]::new($false).GetBytes($base.Content)),
+                [StringComparison]::Ordinal)) {
               $fileResult.Action = 'unchanged'
               $fileResult.Success = $true
             } elseif ($PSCmdlet.ShouldProcess($destPath, "Write agent-specific $($base.Name)")) {

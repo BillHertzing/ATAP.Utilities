@@ -241,7 +241,7 @@ IF EXISTS
            JOIN sys.index_columns AS ic ON ic.object_id = t.object_id AND ic.index_id = k.unique_index_id
            JOIN sys.columns AS c ON c.object_id = t.object_id AND c.column_id = ic.column_id
            WHERE t.schema_id = SCHEMA_ID(N'ACE') AND t.[name] = e.TableName
-             AND k.[name] = e.ConstraintName AND k.[type] = e.KeyType
+             AND k.[name] = e.ConstraintName AND k.[type] COLLATE DATABASE_DEFAULT = e.KeyType
              AND c.[name] = e.ColumnName AND ic.key_ordinal = 1
              AND (SELECT COUNT_BIG(*) FROM sys.index_columns AS allkeys
                   WHERE allkeys.object_id = t.object_id AND allkeys.index_id = k.unique_index_id

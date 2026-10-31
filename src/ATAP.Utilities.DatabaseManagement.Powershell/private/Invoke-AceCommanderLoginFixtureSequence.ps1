@@ -139,7 +139,7 @@ function Invoke-AceCommanderLoginFixtureSequence {
         if (-not [string]::Equals($actual, $Hash, [StringComparison]::Ordinal)) { throw 'FixturePinMismatch' }
         return $utf8.GetString($bytes)
       }
-      $login = readPinnedFixture $LoginFixturePath '81C02B51F650D1E21036238B5D4574B20F8F4F0421050DEC4BDD83FDD36928A8'
+      $login = readPinnedFixture $LoginFixturePath '91DD6DE9CC3D89A573F19757FCBA3E4454B5DB0B0402C6A2414070D78AFF01BF'
       $decrypt = readPinnedFixture $DecryptFixturePath 'CD79D47FDD8DF818B7C70A6B2FB8183D99C6CD8AC79CFA70E9255442225E0433'
 
       function assertSession([switch]$BeforeBinding) {

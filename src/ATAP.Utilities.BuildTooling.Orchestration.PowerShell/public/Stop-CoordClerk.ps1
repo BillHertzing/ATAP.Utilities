@@ -46,7 +46,7 @@ function Stop-CoordClerk {
   .EXAMPLE
     Stop-CoordClerk @admittedBindings -Control $control -WhatIf
   .NOTES
-    Source-only request seam; no export, installed producer or completed drain claim.
+    Request-only same-process seam; no producer observation or completed-drain claim.
     Status describes this call's observation, not exclusive ownership of a signal;
     concurrent Stop calls may both return StopRequested after Cancel returns.
   .LINK

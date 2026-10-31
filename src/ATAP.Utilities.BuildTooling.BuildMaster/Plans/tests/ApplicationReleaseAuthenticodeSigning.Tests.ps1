@@ -18,6 +18,34 @@ BeforeAll {
 }
 
 Describe 'ApplicationReleaseAuthenticodeSigning boundary (Task 15.196.q, q.1)' {
+  Context 'database admission' {
+    It 'returns only the selected AceCommander experimental database tuple' {
+      $admission = Get-ApplicationReleaseDatabaseAdmission -ProductId 'AceCommander'
+      $admission.ProductId | Should -BeExactly 'AceCommander'
+      $admission.Id | Should -BeExactly 'ATAPUtilities.Database'
+      $admission.PinnedVersion | Should -BeExactly '0.1.18-Sprint.1'
+      $admission.CompatibleVersionRange | Should -BeExactly '[0.1.18-Sprint.1]'
+      $admission.LifecycleCeiling | Should -BeExactly 'database-experimental'
+      $admission.Feed | Should -BeExactly 'database-experimental'
+      $admission.NupkgSha256 | Should -BeExactly '789CC87195813DE4B40ED0A2AD4AB0DC9B2520F06149DC914D9C92216CD3269B'
+      # The lookup returns a fixed tuple; downstream stages enforce candidate mismatch.
+      $admission.PinnedVersion | Should -Not -BeExactly '0.1.6'
+      $admission.LifecycleCeiling | Should -Not -BeExactly 'database-stable'
+    }
+
+    It 'preserves AceOutpost admission and refuses unknown or differently cased products' {
+      $admission = Get-ApplicationReleaseDatabaseAdmission -ProductId 'AceOutpost'
+      $admission.Id | Should -BeExactly 'ATAPUtilities.Database'
+      $admission.PinnedVersion | Should -BeExactly '0.1.17'
+      $admission.CompatibleVersionRange | Should -BeExactly '[0.1.17,0.1.18)'
+      $admission.LifecycleCeiling | Should -BeExactly 'database-stable'
+      $admission.Feed | Should -BeExactly 'database-stable'
+      $null -eq $admission.NupkgSha256 | Should -BeTrue
+      { Get-ApplicationReleaseDatabaseAdmission -ProductId 'AceMobile' } | Should -Throw '*no admitted release database pin*'
+      { Get-ApplicationReleaseDatabaseAdmission -ProductId 'acecommander' } | Should -Throw '*no admitted release database pin*'
+    }
+  }
+
   It 'admits exactly two products and twelve signed files, nothing else' {
     $contract = Get-ApplicationReleaseAuthenticodeReleaseContract
     ($contract.Products.ProductId -join ',') | Should -Be 'AceOutpost,AceCommander'

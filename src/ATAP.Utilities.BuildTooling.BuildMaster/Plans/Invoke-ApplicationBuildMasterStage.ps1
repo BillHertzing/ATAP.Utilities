@@ -309,7 +309,56 @@ function Invoke-ApplicationBuildMasterStage {
       files = @($signing.Files | ForEach-Object { [ordered]@{ name = $_.Name; sha256 = $_.Sha256.ToLowerInvariant(); signerThumbprint = $_.SignerThumbprint; timestamperThumbprint = $_.TimestampThumbprint; timestamped = $true } })
     })
 
-    # 4. Bundle through the product's own entry point.
+    # 4. Bind the admitted database bytes BEFORE any bundler/archive/upload boundary.
+    $databaseAdmission = Get-ApplicationReleaseDatabaseAdmission -ProductId $ProductId
+    if ($DatabasePackageId -cne $databaseAdmission.Id -or $DatabasePackagePinnedVersion -cne $databaseAdmission.PinnedVersion -or
+        ($databaseAdmission.CompatibleVersionRange -and $DatabasePackageCompatibleVersionRange -cne $databaseAdmission.CompatibleVersionRange) -or
+        ($databaseAdmission.LifecycleCeiling -and $DatabasePackageLifecycleCeiling -cne $databaseAdmission.LifecycleCeiling) -or
+        $DatabasePackageLifecycleCeiling -cne $databaseAdmission.Feed) { throw 'Database reference is outside the admitted application release pin.' }
+    $applicationCeiling = 'Production'
+    if ($ProductId -ceq 'AceCommander') {
+      if ($databaseAdmission.Id -cne 'ATAPUtilities.Database' -or $databaseAdmission.PinnedVersion -cne '0.1.18-Sprint.1' -or
+          $databaseAdmission.CompatibleVersionRange -cne '[0.1.18-Sprint.1]' -or $databaseAdmission.LifecycleCeiling -cne 'database-experimental' -or
+          $databaseAdmission.Feed -cne 'database-experimental' -or
+          $databaseAdmission.NupkgSha256 -ine '789CC87195813DE4B40ED0A2AD4AB0DC9B2520F06149DC914D9C92216CD3269B') { throw 'AceCommander requires the exact source-adopted Experimental database admission.' }
+      $applicationCeiling = 'Experimental'
+    }
+    if ($databaseAdmission.NupkgSha256 -and $databaseAdmission.NupkgSha256 -notmatch '\A[0-9a-fA-F]{64}\z') { throw 'Invalid admitted database package hash.' }
+    $baseUrl = $ProGetUrl.TrimEnd('/')
+    $databasePackageLower = $DatabasePackageId.ToLowerInvariant()
+    $databaseFeed = [string]$databaseAdmission.Feed
+    $databasePackageUrl = "$baseUrl/nuget/$databaseFeed/v3/flatcontainer/$databasePackageLower/$DatabasePackagePinnedVersion/$databasePackageLower.$DatabasePackagePinnedVersion.nupkg"
+    $databasePackagePath = Join-Path $buildEvidence 'database-reference.nupkg'
+    $apiKey = [string](Get-SecretATAP -SecretName $ProGetApiKeySecretName -SecretStoreType BitwardenSecretsManager -ErrorAction Stop)
+    try {
+      $headers = @{ 'X-ApiKey' = $apiKey }
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling $databasePackageUrl" -Tag 'RestCall'
+      Invoke-WebRequest -Uri $databasePackageUrl -Headers $headers -OutFile $databasePackagePath -MaximumRedirection 0 -ErrorAction Stop | Out-Null
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from $databasePackageUrl" -Tag 'RestCall'
+    } finally { $apiKey = $null; $headers = $null }
+    $databasePackageSha = (Get-FileHash -LiteralPath $databasePackagePath -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($databasePackageSha -notmatch '\A[0-9a-f]{64}\z' -or
+        ($databaseAdmission.NupkgSha256 -and $databasePackageSha -ine $databaseAdmission.NupkgSha256)) { throw 'Database package hash disagrees with the admitted pin.' }
+    $databaseArchive = [IO.Compression.ZipFile]::OpenRead($databasePackagePath)
+    try {
+      $specs = @($databaseArchive.Entries | Where-Object { $_.FullName -match '\A[^/\\]+\.nuspec\z' })
+      if ($specs.Count -ne 1) { throw 'Database package requires exactly one root nuspec.' }
+      $specStream = $specs[0].Open()
+      try {
+        $xmlSettings = [Xml.XmlReaderSettings]::new(); $xmlSettings.DtdProcessing = [Xml.DtdProcessing]::Prohibit; $xmlSettings.XmlResolver = $null
+        $specReader = [Xml.XmlReader]::Create($specStream, $xmlSettings)
+        try {
+          $spec = [Xml.XmlDocument]::new(); $spec.XmlResolver = $null; $spec.Load($specReader)
+          $metadata = @($spec.SelectNodes('/*[local-name()="package"]/*[local-name()="metadata"]'))
+          if ($metadata.Count -ne 1) { throw 'Invalid database package metadata.' }
+          $ids = @($metadata[0].SelectNodes('*[local-name()="id"]')); $versions = @($metadata[0].SelectNodes('*[local-name()="version"]'))
+          if ($ids.Count -ne 1 -or $versions.Count -ne 1 -or $ids[0].InnerText -cne $databaseAdmission.Id -or
+              $versions[0].InnerText -cne $databaseAdmission.PinnedVersion) { throw 'Database package identity/version disagrees with the admitted pin.' }
+        } finally { $specReader.Dispose() }
+      } finally { $specStream.Dispose() }
+    } finally { $databaseArchive.Dispose() }
+
+    # 4b. Bundle through the product's own entry point using only the closed manifest reference.
     $outputRoot = Join-Path (Split-Path -Parent (Split-Path -Parent $publishRoot)) "bundles\$ProductId"
     $databaseReference = @{ id = $DatabasePackageId; pinnedVersion = $DatabasePackagePinnedVersion; compatibleVersionRange = $DatabasePackageCompatibleVersionRange; lifecycleCeiling = $DatabasePackageLifecycleCeiling }
     $bundleParameters = @{
@@ -319,6 +368,7 @@ function Invoke-ApplicationBuildMasterStage {
       SignedInventoryPath = $inventoryPath; SignedInventorySha256 = $inventorySha
       ApplicationProvenancePath = $provenancePath
     }
+    if ($ProductId -ceq 'AceCommander') { $bundleParameters.CeilingTier = $applicationCeiling }
     switch ($contract.BundleEntryPointKind) {
       'RepositoryScript' {
         . (Join-Path $SourcePath $contract.BundleEntryPoint)
@@ -385,17 +435,6 @@ function Invoke-ApplicationBuildMasterStage {
         if ((Get-FileHash -LiteralPath $verifyPath -Algorithm SHA256).Hash.ToLowerInvariant() -cne $bundleSha) { throw 'Bytes downloaded from the feed do not equal the uploaded bundle.' }
         Remove-Item -LiteralPath $verifyPath -Force
       }
-      # Task 16.78: bind the referenced database package bytes into the context. The release
-      # stage re-downloads them at every tier and requires the same hash; the approval
-      # boundary may additionally pin it (AceCommander 0.1.6).
-      $databasePackageLower = $DatabasePackageId.ToLowerInvariant()
-      $databasePackageUrl = "$baseUrl/nuget/$DatabasePackageLifecycleCeiling/v3/flatcontainer/$databasePackageLower/$DatabasePackagePinnedVersion/$databasePackageLower.$DatabasePackagePinnedVersion.nupkg"
-      $databasePackagePath = Join-Path $buildEvidence 'database-reference.nupkg'
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling $databasePackageUrl" -Tag 'RestCall'
-      Invoke-WebRequest -Uri $databasePackageUrl -Headers $headers -OutFile $databasePackagePath -MaximumRedirection 0 -ErrorAction Stop | Out-Null
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from $databasePackageUrl" -Tag 'RestCall'
-      $databaseReference.nupkgSha256 = (Get-FileHash -LiteralPath $databasePackagePath -Algorithm SHA256).Hash.ToLowerInvariant()
-      $databaseReference.feed = $DatabasePackageLifecycleCeiling
     } finally { $apiKey = $null; $headers = $null }
 
     # Task 16.78: the release stage verifies every tier with a hash-bound bundle verifier and
@@ -426,6 +465,9 @@ function Invoke-ApplicationBuildMasterStage {
     }
 
     # 6. Nonsecret release context + stage evidence for the promotion adapter.
+    $contextDatabaseReference = $databaseReference.Clone()
+    $contextDatabaseReference.nupkgSha256 = $databasePackageSha
+    $contextDatabaseReference.feed = $databaseFeed
     $context = [ordered]@{
       schemaVersion = '1.0'; productId = $ProductId; version = $ReleaseVersion; artifactKind = $contract.ArtifactKind
       sourceCommit = $sourceCommit; sourceTag = $SourceTag; branch = $Branch
@@ -433,7 +475,7 @@ function Invoke-ApplicationBuildMasterStage {
       signerThumbprint = $signer; signedBy = "$env:USERDOMAIN\$env:USERNAME"; signedFiles = @($toSign.Name); timestampAuthority = $tsa.AbsoluteUri
       signedInventoryPath = $inventoryPath; signedInventorySha256 = $inventorySha.ToLowerInvariant()
       proGetBaseUrl = $baseUrl; experimentalFeed = $ExperimentalFeed; feedVersion = $feedVersion; feedState = $feedState
-      databasePackageReference = $databaseReference; ceilingTier = 'Production'
+      databasePackageReference = $contextDatabaseReference; ceilingTier = $applicationCeiling
       installerRelativePath = $contract.InstallerRelativePath; evidenceRoot = $EvidenceRoot
       tooling = $tooling; bundleVerifier = $bundleVerifier; manifestSchema = $manifestSchema; worktreeId = $WorktreeId
       buildMaster = @{ applicationName = $ApplicationName; buildId = $BuildMasterBuildId; buildNumber = $BuildNumber; executionId = $ExecutionId; host = $env:COMPUTERNAME }

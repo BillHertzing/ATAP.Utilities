@@ -23,6 +23,10 @@ BeforeAll {
       $context.databasePackageReference = [ordered]@{ id='ATAPUtilities.Database'; pinnedVersion='0.1.17'; compatibleVersionRange='[0.1.17,0.1.18)'; lifecycleCeiling='database-stable'; nupkgSha256=('b' * 64); feed='database-stable' }
       $context.feedVersion = ($Version -split '\+', 2)[0]
     }
+    if ($ProductId -ceq 'AceCommander') {
+      $context.ceilingTier = 'Experimental'
+      $context.databasePackageReference = [ordered]@{ id='ATAPUtilities.Database'; pinnedVersion='0.1.18-Sprint.1'; compatibleVersionRange='[0.1.18-Sprint.1]'; lifecycleCeiling='database-experimental'; feed='database-experimental'; nupkgSha256='789CC87195813DE4B40ED0A2AD4AB0DC9B2520F06149DC914D9C92216CD3269B' }
+    }
     $path = Join-Path $root 'context.json'
     $context | ConvertTo-Json -Depth 5 | Set-Content $path
     @{Context=$context;Path=$path;Hash=(Get-FileHash $path).Hash}
@@ -66,17 +70,17 @@ Describe 'Application release fail-closed preparation' {
     { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 } | Should -Throw '*schema must be hash-bound*'
   }
   It 'rejects advancing without a preceding successful stage' {
-    $fixture = New-ReleaseContextFixture
+    $fixture = New-ReleaseContextFixture -ProductId AceOutpost
     { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Production 42 -ErrorAction Stop } | Should -Throw
   }
   It 'rejects cross-build preceding-stage evidence' {
-    $fixture = New-ReleaseContextFixture
+    $fixture = New-ReleaseContextFixture -ProductId AceOutpost
     $runRoot = Join-Path $fixture.Context.evidenceRoot '42'; [IO.Directory]::CreateDirectory($runRoot) | Out-Null
     @{success=$true; contextSha256=$fixture.Hash; bundleSha256=$fixture.Context.bundleSha256; buildId='41';stage='Experimental'} | ConvertTo-Json | Set-Content (Join-Path $runRoot 'Experimental.json')
     { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Development 42 } | Should -Throw '*Preceding stage evidence*'
   }
   It 'accepts matching previous-stage evidence during WhatIf' {
-    $fixture = New-ReleaseContextFixture
+    $fixture = New-ReleaseContextFixture -ProductId AceOutpost
     $runRoot = Join-Path $fixture.Context.evidenceRoot '42'; [IO.Directory]::CreateDirectory($runRoot) | Out-Null
     @{success=$true; contextSha256=$fixture.Hash; bundleSha256=$fixture.Context.bundleSha256; buildId='42';stage='Experimental'} | ConvertTo-Json | Set-Content (Join-Path $runRoot 'Experimental.json')
     { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Development 42 -WhatIf } | Should -Not -Throw
@@ -114,9 +118,9 @@ Describe 'Application release fail-closed preparation' {
     $schema.properties.sourceBranch['$ref'] | Should -Be '#/$defs/nonEmptyToken'
     $schema.properties.releaseVersion['$ref'] | Should -Be '#/$defs/semVerString'
   }
-  It 'keeps product and database pins out of the stage script (Task 16.78)' {
+  It 'retains boundary admission and excludes historical database literals' {
     $source = Get-Content (Join-Path $PSScriptRoot '../Invoke-ApplicationReleaseStage.ps1') -Raw
-    $source | Should -Not -Match "COMMANDER02|'AceCommander'|0\.1\.6|0\.1\.17|E9CA804E"
+    $source | Should -Not -Match "COMMANDER02|0\.1\.6|0\.1\.17|E9CA804E"
     $source | Should -Match 'Get-ApplicationReleaseDatabaseAdmission'
   }
   It 'uses the native form-encoded promotion endpoint for releasebundle feeds' {
@@ -188,9 +192,9 @@ Describe 'Task 16.78 generalized product admission' {
   }
   It 'keeps the AceCommander pin: a conflicting context database hash is refused' {
     $fixture = New-ReleaseContextFixture
-    $fixture.Context.databasePackageReference = [ordered]@{ id='ATAPUtilities.Database'; pinnedVersion='0.1.6'; nupkgSha256=('c' * 64) }
+    $fixture.Context.databasePackageReference.nupkgSha256 = ('c' * 64)
     Save-FixtureContext $fixture
-    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 -WhatIf } | Should -Throw '*conflicts with the admitted pin*'
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 -WhatIf } | Should -Throw '*exact adopted context*'
   }
   It 'refuses an AceOutpost context with the wrong database pin: <Case>' -ForEach @(
     @{ Case = 'Commander version'; Field = 'pinnedVersion'; Value = '0.1.6' },
@@ -226,5 +230,82 @@ Describe 'Task 16.78 generalized product admission' {
     (Get-ApplicationReleaseDatabaseAdmission -ProductId AceOutpost).PinnedVersion | Should -BeExactly '0.1.17'
     (Get-ApplicationReleaseDatabaseAdmission -ProductId AceCommander).NupkgSha256 | Should -Match '^[A-F0-9]{64}$'
     { Get-ApplicationReleaseDatabaseAdmission -ProductId aceoutpost } | Should -Throw '*no admitted release database pin*'
+  }
+}
+
+Describe 'Unit 845 exact Experimental-only AceCommander database dependency' {
+  BeforeEach {
+    Mock Import-Module { throw 'Unexpected module import' }
+    Mock Resolve-ApplicationReleaseSecret { throw 'Unexpected secret lookup' }
+    Mock Invoke-WebRequest { throw 'Unexpected download' }
+    Mock Invoke-RestMethod { throw 'Unexpected upload or promotion' }
+    Mock Start-Transcript { throw 'Unexpected transcript' }
+  }
+  AfterEach {
+    Should -Invoke Import-Module -Times 0 -Exactly
+    Should -Invoke Resolve-ApplicationReleaseSecret -Times 0 -Exactly
+    Should -Invoke Invoke-WebRequest -Times 0 -Exactly
+    Should -Invoke Invoke-RestMethod -Times 0 -Exactly
+    Should -Invoke Start-Transcript -Times 0 -Exactly
+  }
+  It 'admits the exact tuple for Experimental preparation with a stable application identity' {
+    $fixture = New-ReleaseContextFixture -Version '0.1.12+89a3339a44'
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 -WhatIf } | Should -Not -Throw
+    Test-Path $fixture.Context.evidenceRoot | Should -BeFalse
+  }
+  It 'refuses the candidate before any effects in <Stage>' -ForEach @(
+    @{ Stage='Development' }, @{ Stage='Integration' }, @{ Stage='QA' }, @{ Stage='Production' }
+  ) {
+    $fixture = New-ReleaseContextFixture -Version '0.1.12'
+    # No WhatIf: the ceiling guard itself must refuse before the process block.
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash $Stage 42 } | Should -Throw '*permits only the Experimental stage*'
+    Test-Path $fixture.Context.evidenceRoot | Should -BeFalse
+  }
+  It 'refuses an altered reference field: <Field>' -ForEach @(
+    @{ Field='id'; Value='ATAPUtilities.Other' },
+    @{ Field='pinnedVersion'; Value='0.1.6' },
+    @{ Field='compatibleVersionRange'; Value='[0.1.18-Sprint.1,0.1.19)' },
+    @{ Field='lifecycleCeiling'; Value='database-stable' },
+    @{ Field='feed'; Value='database-stable' },
+    @{ Field='nupkgSha256'; Value=('c' * 64) }
+  ) {
+    $fixture = New-ReleaseContextFixture
+    $fixture.Context.databasePackageReference[$Field] = $Value; Save-FixtureContext $fixture
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 } | Should -Throw '*exact adopted context*'
+    Test-Path $fixture.Context.evidenceRoot | Should -BeFalse
+  }
+  It 'refuses a missing context binding: <Field>' -ForEach @(
+    @{ Field='id' }, @{ Field='pinnedVersion' }, @{ Field='compatibleVersionRange' },
+    @{ Field='lifecycleCeiling' }, @{ Field='feed' }, @{ Field='nupkgSha256' }
+  ) {
+    $fixture = New-ReleaseContextFixture
+    $fixture.Context.databasePackageReference.Remove($Field); Save-FixtureContext $fixture
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 } | Should -Throw '*exact adopted context*'
+  }
+  It 'refuses a missing database reference even with a Production ceiling' {
+    $fixture = New-ReleaseContextFixture
+    $fixture.Context.Remove('databasePackageReference'); $fixture.Context.ceilingTier='Production'; Save-FixtureContext $fixture
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 } | Should -Throw '*exact adopted context*'
+  }
+  It 'refuses a changed application ceiling: <Ceiling>' -ForEach @(
+    @{ Ceiling='Production' }, @{ Ceiling='Development' }, @{ Ceiling='experimental' }
+  ) {
+    $fixture = New-ReleaseContextFixture
+    $fixture.Context.ceilingTier=$Ceiling; Save-FixtureContext $fixture
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 } | Should -Throw '*exact adopted context*'
+  }
+  It 'refuses context tampering before the candidate exception' {
+    $fixture = New-ReleaseContextFixture
+    Add-Content $fixture.Path ' '
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 } | Should -Throw '*context hash mismatch*'
+  }
+  It 'does not admit an Experimental-ceiling AceOutpost context' {
+    $fixture = New-ReleaseContextFixture -ProductId AceOutpost
+    $fixture.Context.ceilingTier='Experimental'; Save-FixtureContext $fixture
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 } | Should -Throw '*stable AceOutpost Production-ceiling context*'
+  }
+  It 'retains AceOutpost Production-ceiling admission' {
+    $fixture = New-ReleaseContextFixture -ProductId AceOutpost
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 -WhatIf } | Should -Not -Throw
   }
 }

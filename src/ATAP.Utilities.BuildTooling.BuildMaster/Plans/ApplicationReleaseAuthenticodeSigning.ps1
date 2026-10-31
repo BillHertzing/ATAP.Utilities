@@ -195,7 +195,7 @@ function Get-ApplicationReleaseDatabaseAdmission {
 
   $admissions = @(
     [pscustomobject]@{ ProductId = 'AceOutpost'; Id = 'ATAPUtilities.Database'; PinnedVersion = '0.1.17'; CompatibleVersionRange = '[0.1.17,0.1.18)'; LifecycleCeiling = 'database-stable'; Feed = 'database-stable'; NupkgSha256 = $null }
-    [pscustomobject]@{ ProductId = 'AceCommander'; Id = 'ATAPUtilities.Database'; PinnedVersion = '0.1.6'; CompatibleVersionRange = $null; LifecycleCeiling = $null; Feed = 'database-stable'; NupkgSha256 = 'E9CA804EFF2A25735CB3AC22B08D1F6A790C5E241BA54F3437FE82D9F41ACCCA' }
+    [pscustomobject]@{ ProductId = 'AceCommander'; Id = 'ATAPUtilities.Database'; PinnedVersion = '0.1.18-Sprint.1'; CompatibleVersionRange = '[0.1.18-Sprint.1]'; LifecycleCeiling = 'database-experimental'; Feed = 'database-experimental'; NupkgSha256 = '789CC87195813DE4B40ED0A2AD4AB0DC9B2520F06149DC914D9C92216CD3269B' }
   )
   $match = @($admissions | Where-Object { $_.ProductId -ceq $ProductId })
   if ($match.Count -ne 1) {

@@ -133,10 +133,14 @@ Describe 'ApplicationBuild-1Stage.otter is a thin runner plan' {
     $script:RunnerPath | Should -Exist
   }
 
-  It 'contains exactly one Exec block invoking pwsh -NoProfile -File with the runner' {
+  It 'contains exactly one Exec block invoking profiled pwsh -File with the runner' {
     ([regex]::Matches($script:PlanText, '(?im)^\s*(InedoCore::)?Exec\s*\(')).Count | Should -Be 1
     $script:PlanText | Should -Match 'FileName:\s*pwsh'
-    $script:PlanText | Should -Match '-NoProfile\s+-File\s+"\$InvokeApplicationBuildStageScript"'
+    $code = (($script:PlanText -split "`r?`n" | Where-Object { $_ -notmatch '^\s*#' }) -join "`n")
+    $arguments = @([regex]::Matches($code, '(?im)^\s*Arguments:\s*>>(?<args>.*?)>>'))
+    $arguments.Count | Should -Be 1
+    $arguments[0].Groups['args'].Value | Should -Match '(?i)(?:^|\s)-File\s+"\$InvokeApplicationBuildStageScript"(?:\s|$)'
+    $arguments[0].Groups['args'].Value | Should -Not -Match '(?i)(?:^|\s)-NoProfile(?:\s|$)'
   }
 
   It 'contains no Decrypt call, no API key value and no inline -Command (comment prose excluded)' {
@@ -316,7 +320,7 @@ Describe 'Task 16.78 build runner sprint defaults and release-context reconcilia
     foreach ($name in @('tooling', 'bundleVerifier', 'manifestSchema', 'evidenceRoot', 'bundleSha256', 'proGetBaseUrl', 'feedVersion', 'databasePackageReference', 'ceilingTier')) {
       $contextBlock | Should -Match "\b$name\s*="
     }
-    $script:RunnerText | Should -Match '\$databaseReference\.nupkgSha256\s*='
+    $script:RunnerText | Should -Match '\$contextDatabaseReference\.nupkgSha256\s*=\s*\$databasePackageSha'
   }
   It 'the release stage reads every reconciled context field the runner writes' {
     $releaseText = Get-Content -LiteralPath (Join-Path $script:PlansDir 'Invoke-ApplicationReleaseStage.ps1') -Raw
@@ -347,5 +351,116 @@ Describe 'Task 16.78 build runner sprint defaults and release-context reconcilia
       { Invoke-ApplicationBuildMasterStage @params -WhatIf } | Should -Throw '*pass -WorktreeId explicitly*'
       { Invoke-ApplicationBuildMasterStage @params -WorktreeId 'sprint0016-ace' -WhatIf } | Should -Not -Throw
     } finally { Remove-StageFixture -Path $tmp }
+  }
+}
+
+Describe 'Database bytes are admitted before the immutable application boundary' {
+  BeforeAll {
+    $bindingText = [regex]::Match($script:RunnerText, '(?s)# 4\. Bind the admitted database bytes[^\r\n]*(?:\r\n|\n|\r)(?<body>.*?)# 4b\. Bundle').Groups['body'].Value
+    if (-not $bindingText) { throw 'Expected the production prearchive binding block.' }
+    $script:DatabaseBindingFragment = [scriptblock]::Create($bindingText)
+    $parametersText = [regex]::Match($script:RunnerText, '(?s)(\$databaseReference = @\{.*?)(?=    switch \(\$contract.BundleEntryPointKind\))').Groups[1].Value
+    if (-not $parametersText) { throw 'Expected the production manifest and bundle parameter block.' }
+    $script:DatabaseParametersFragment = [scriptblock]::Create($parametersText)
+    $contextText = [regex]::Match($script:RunnerText, '(?s)(\$contextDatabaseReference = \$databaseReference.Clone\(\).*?)(?=    \$context =)').Groups[1].Value
+    if (-not $contextText) { throw 'Expected the production outer-context reference block.' }
+    $script:DatabaseContextFragment = [scriptblock]::Create($contextText)
+    function Get-ApplicationReleaseDatabaseAdmission { param($ProductId) $script:dbAdmission }
+    function Get-SecretATAP { param($SecretName, $SecretStoreType) throw 'Unmocked secret resolution prohibited.' }
+    function Invoke-DatabaseBoundaryFixture {
+      # Execute the actual parser/binding and parameter code, with no production bundler loaded.
+      $ProductId = 'AceCommander'; $DatabasePackageId = 'ATAPUtilities.Database'
+      $DatabasePackagePinnedVersion = '0.1.18-Sprint.1'; $DatabasePackageCompatibleVersionRange = '[0.1.18-Sprint.1]'
+      $DatabasePackageLifecycleCeiling = 'database-experimental'
+      if ($script:dbVariant -eq 'WrongReference') { $DatabasePackagePinnedVersion = '0.1.6' }
+      $ProGetUrl = 'https://example.invalid'; $ProGetApiKeySecretName = 'SYNTHETIC.KEY'
+      $buildEvidence = $script:dbFixture; $fn = 'fixture'; $mn = 'fixture'
+      . $script:DatabaseBindingFragment
+      $SourcePath = 'synthetic-source'; $buildToolingRoot = 'synthetic-tooling'; $signedRoot = 'synthetic-signed'; $outputRoot = 'synthetic-output'
+      $ReleaseVersion = '0.1.12'; $sourceCommit = 'synthetic'; $SourceTag = 'synthetic'; $Branch = 'synthetic'
+      $ReleaseNotes = 'synthetic'; $ExpectedTestsPassed = 1; $ConversationId = 'synthetic'
+      $inventoryPath = 'synthetic'; $inventorySha = 'synthetic'; $provenancePath = 'synthetic'
+      . $script:DatabaseParametersFragment
+      # Sentinels represent effects after the real binding block; static ordering below also
+      # checks the actual production dispatch/upload positions, independently of this harness.
+      $script:dbEvents.Add('bundler'); $script:dbBundlerCalls++
+      $script:dbEvents.Add('archive'); $script:dbArchiveCalls++
+      $script:dbEvents.Add('upload'); $script:dbUploadCalls++
+      . $script:DatabaseContextFragment
+      [pscustomobject]@{ Reference = $databaseReference; Parameters = $bundleParameters; ContextReference = $contextDatabaseReference; Ceiling = $applicationCeiling }
+    }
+    function Write-DatabaseFixturePackage {
+      param($Path, $Id, $Version)
+      $zip = [IO.Compression.ZipFile]::Open($Path, [IO.Compression.ZipArchiveMode]::Create)
+      try {
+        $entry = $zip.CreateEntry('ATAPUtilities.Database.nuspec')
+        $writer = [IO.StreamWriter]::new($entry.Open())
+        try { $writer.Write('<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd"><metadata><id>' + $Id + '</id><version>' + $Version + '</version></metadata></package>') }
+        finally { $writer.Dispose() }
+      } finally { $zip.Dispose() }
+    }
+  }
+  BeforeEach {
+    $script:dbFixture = Join-Path $script:FixtureRoot ('database_' + [guid]::NewGuid().ToString('N'))
+    $null = New-Item -ItemType Directory -Path $script:dbFixture -Force
+    $script:dbPackage = Join-Path $script:dbFixture 'synthetic.nupkg'
+    Write-DatabaseFixturePackage $script:dbPackage 'ATAPUtilities.Database' '0.1.18-Sprint.1'
+    $script:dbAdmission = [pscustomobject]@{ Id = 'ATAPUtilities.Database'; PinnedVersion = '0.1.18-Sprint.1'; CompatibleVersionRange = '[0.1.18-Sprint.1]'; LifecycleCeiling = 'database-experimental'; Feed = 'database-experimental'; NupkgSha256 = '789CC87195813DE4B40ED0A2AD4AB0DC9B2520F06149DC914D9C92216CD3269B' }
+    $script:dbVariant = ''; $script:dbEvents = [Collections.Generic.List[string]]::new()
+    $script:dbBundlerCalls = 0; $script:dbArchiveCalls = 0; $script:dbUploadCalls = 0
+    Mock Get-ApplicationReleaseDatabaseAdmission { $script:dbAdmission }
+    Mock Get-SecretATAP { 'SYNTHETIC-NOT-A-CREDENTIAL' }
+    Mock Invoke-WebRequest {
+      $script:dbEvents.Add('download')
+      $Uri | Should -BeExactly 'https://example.invalid/nuget/database-experimental/v3/flatcontainer/ataputilities.database/0.1.18-Sprint.1/ataputilities.database.0.1.18-Sprint.1.nupkg'
+      if ($script:dbVariant -ne 'MissingPackage') { Copy-Item -LiteralPath $script:dbPackage -Destination $OutFile -Force }
+    }
+    Mock Get-FileHash {
+      $script:dbEvents.Add('hash')
+      if (-not [IO.File]::Exists($LiteralPath)) { throw 'Synthetic package missing.' }
+      [pscustomobject]@{ Hash = $(if ($script:dbVariant -eq 'WrongHash') { 'A' * 64 } else { $script:dbAdmission.NupkgSha256 }) }
+    } -ParameterFilter { $LiteralPath -eq (Join-Path $script:dbFixture 'database-reference.nupkg') }
+    # Positive anchor must reach all three boundary sentinels before each mutation.
+    $baseline = Invoke-DatabaseBoundaryFixture
+    $baseline.Ceiling | Should -BeExactly 'Experimental'
+    $script:dbBundlerCalls | Should -Be 1; $script:dbArchiveCalls | Should -Be 1; $script:dbUploadCalls | Should -Be 1
+    Remove-Item -LiteralPath (Join-Path $script:dbFixture 'database-reference.nupkg') -Force
+    $script:dbEvents.Clear(); $script:dbBundlerCalls = 0; $script:dbArchiveCalls = 0; $script:dbUploadCalls = 0
+  }
+  AfterEach { Remove-StageFixture -Path $script:dbFixture }
+
+  It 'binds before bundle/archive/upload and keeps the manifest reference closed' {
+    $actual = Invoke-DatabaseBoundaryFixture
+    ($script:dbEvents -join ',') | Should -BeExactly 'download,hash,bundler,archive,upload'
+    (@($actual.Parameters.DatabasePackageReference.Keys | Sort-Object) -join ',') | Should -BeExactly 'compatibleVersionRange,id,lifecycleCeiling,pinnedVersion'
+    $actual.Reference.Count | Should -Be 4
+    $actual.Parameters.CeilingTier | Should -BeExactly 'Experimental'; $actual.Ceiling | Should -BeExactly 'Experimental'
+    $actual.ContextReference.feed | Should -BeExactly 'database-experimental'
+    $actual.ContextReference.nupkgSha256 | Should -BeExactly $script:dbAdmission.NupkgSha256.ToLowerInvariant()
+    $actual.ContextReference.Count | Should -Be 6
+    [object]::ReferenceEquals($actual.Reference, $actual.ContextReference) | Should -BeFalse
+  }
+  It 'refuses <Variant> with zero bundler/archive/upload effects' -ForEach @(
+    @{ Variant = 'WrongReference' }, @{ Variant = 'MissingAdmissionHash' }, @{ Variant = 'WrongHash' },
+    @{ Variant = 'MissingPackage' }, @{ Variant = 'WrongIdentity' }, @{ Variant = 'WrongVersion' }) {
+    param($Variant)
+    $script:dbVariant = $Variant
+    if ($Variant -eq 'MissingAdmissionHash') { $script:dbAdmission.NupkgSha256 = $null }
+    if ($Variant -in @('WrongIdentity', 'WrongVersion')) {
+      Remove-Item -LiteralPath $script:dbPackage -Force
+      $id = if ($Variant -eq 'WrongIdentity') { 'Other.Database' } else { 'ATAPUtilities.Database' }
+      $version = if ($Variant -eq 'WrongVersion') { '0.1.6' } else { '0.1.18-Sprint.1' }
+      Write-DatabaseFixturePackage $script:dbPackage $id $version
+    }
+    { Invoke-DatabaseBoundaryFixture } | Should -Throw
+    $script:dbBundlerCalls | Should -Be 0; $script:dbArchiveCalls | Should -Be 0; $script:dbUploadCalls | Should -Be 0
+  }
+  It 'places actual production binding before bundle dispatch and upload with no late first binding' {
+    $script:RunnerText.IndexOf('$databasePackageSha =') | Should -BeLessThan $script:RunnerText.IndexOf('switch ($contract.BundleEntryPointKind)')
+    $script:RunnerText.IndexOf('$spec.Load($specReader)') | Should -BeLessThan $script:RunnerText.IndexOf('switch ($contract.BundleEntryPointKind)')
+    $script:RunnerText.IndexOf('$spec.Load($specReader)') | Should -BeLessThan $script:RunnerText.IndexOf('Invoke-RestMethod -Uri "$baseUrl/upack/$ExperimentalFeed/upload"')
+    ([regex]::Matches($script:RunnerText, 'Invoke-WebRequest -Uri \$databasePackageUrl')).Count | Should -Be 1
+    $script:RunnerText | Should -Match 'databasePackageReference = \$contextDatabaseReference; ceilingTier = \$applicationCeiling'
+    $script:RunnerText | Should -Match '\$applicationCeiling = ''Production'''
   }
 }

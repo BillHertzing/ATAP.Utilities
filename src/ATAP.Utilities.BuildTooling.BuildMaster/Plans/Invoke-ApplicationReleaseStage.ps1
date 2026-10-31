@@ -57,7 +57,8 @@ function Invoke-ApplicationReleaseStage {
     preceding stage evidence, and downloaded destination bytes. Never builds,
     applies a database, installs a service, or publishes external distributions.
     The product must be admitted by ApplicationReleaseAuthenticodeSigning.ps1, which also
-    supplies the referenced database pin (Task 16.78); nothing product-specific is a literal here.
+    supplies the referenced database pin (Task 16.78). The adopted AceCommander experimental
+    database dependency has one exact, Experimental-only context exception.
   .PARAMETER ContextPath
     Operator-approved nonsecret release context JSON.
   .PARAMETER ExpectedContextSha256
@@ -99,10 +100,29 @@ function Invoke-ApplicationReleaseStage {
     } $boundaryPath $productId
     # Stable SemVer only; build metadata is allowed because ProGet keys universal packages by the base version.
     $versionMatch = [regex]::Match([string]$context.version, '\A(?<base>(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*))(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?\z')
-    if ($context.ceilingTier -cne 'Production' -or -not $versionMatch.Success) { throw "Expected a stable $productId Production-ceiling context." }
+    $contextDatabase = if ($context.PSObject.Properties['databasePackageReference']) { $context.databasePackageReference } else { $null }
+    # Unit 845: this exact dependency cannot enter the legacy Production-ceiling path,
+    # even if a caller changes its context ceiling or omits the context reference.
+    $experimentalCommander = $productId -ceq 'AceCommander' -and (
+      $databaseAdmission.PinnedVersion -ceq '0.1.18-Sprint.1' -or
+      [string]$contextDatabase.pinnedVersion -ceq '0.1.18-Sprint.1' -or $context.ceilingTier -ceq 'Experimental')
+    if ($experimentalCommander) {
+      if ($context.ceilingTier -cne 'Experimental' -or
+          [string]$contextDatabase.id -cne 'ATAPUtilities.Database' -or
+          [string]$contextDatabase.pinnedVersion -cne '0.1.18-Sprint.1' -or
+          [string]$contextDatabase.compatibleVersionRange -cne '[0.1.18-Sprint.1]' -or
+          [string]$contextDatabase.lifecycleCeiling -cne 'database-experimental' -or
+          [string]$contextDatabase.feed -cne 'database-experimental' -or
+          [string]$contextDatabase.nupkgSha256 -ine '789CC87195813DE4B40ED0A2AD4AB0DC9B2520F06149DC914D9C92216CD3269B' -or
+          $databaseAdmission.Feed -cne 'database-experimental' -or
+          $databaseAdmission.NupkgSha256 -ine '789CC87195813DE4B40ED0A2AD4AB0DC9B2520F06149DC914D9C92216CD3269B') {
+        throw 'AceCommander experimental database requires the exact adopted context reference, feed, hash, and Experimental ceiling.'
+      }
+      if ($Stage -cne 'Experimental') { throw 'AceCommander experimental database dependency permits only the Experimental stage.' }
+    }
+    if (-not $versionMatch.Success -or (-not $experimentalCommander -and $context.ceilingTier -cne 'Production')) { throw "Expected a stable $productId Production-ceiling context (or its exact admitted Experimental-only dependency)." }
     $feedVersion = $versionMatch.Groups['base'].Value
     if ($context.PSObject.Properties['feedVersion'] -and [string]$context.feedVersion -cne $feedVersion) { throw 'Context feedVersion disagrees with the base of its version.' }
-    $contextDatabase = if ($context.PSObject.Properties['databasePackageReference']) { $context.databasePackageReference } else { $null }
     if ($null -ne $contextDatabase -and ([string]$contextDatabase.id -cne $databaseAdmission.Id -or [string]$contextDatabase.pinnedVersion -cne $databaseAdmission.PinnedVersion -or
         ($databaseAdmission.CompatibleVersionRange -and [string]$contextDatabase.compatibleVersionRange -cne $databaseAdmission.CompatibleVersionRange) -or
         ($databaseAdmission.LifecycleCeiling -and [string]$contextDatabase.lifecycleCeiling -cne $databaseAdmission.LifecycleCeiling))) {

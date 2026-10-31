@@ -38,6 +38,29 @@ BeforeAll {
     Invoke-AceCommanderLoginFixtureSequence -SqlConnection $script:connection554 -LoginFixturePath $script:loginPath554 -DecryptFixturePath $script:decryptPath554 -FlywayParameters $script:parameters554 -WhatIf:$WhatIfMode -Confirm:$false
   }
 
+  function New-SyntheticSqlFailure699 {
+    param([int]$Count = 2)
+    # Construct inert provider exceptions by reflection: no connection, SQL, Add-Type or compilation.
+    $exceptionType = 'System.Data.SqlClient.SqlException' -as [type]
+    if ($null -eq $exceptionType) { throw 'Synthetic SqlClient exception type unavailable.' }
+    $collectionType = $exceptionType.Assembly.GetType('System.Data.SqlClient.SqlErrorCollection', $true)
+    $errorType = $exceptionType.Assembly.GetType('System.Data.SqlClient.SqlError', $true)
+    $instanceFlags = [Reflection.BindingFlags]'Instance,NonPublic'
+    $constructor = $errorType.GetConstructor($instanceFlags, $null,
+      [type[]]@([int], [byte], [byte], [string], [string], [string], [int], [Exception]), $null)
+    $add = $collectionType.GetMethod('Add', $instanceFlags, $null, [type[]]@($errorType), $null)
+    $factory = $exceptionType.GetMethod('CreateException', [Reflection.BindingFlags]'Static,NonPublic', $null,
+      [type[]]@($collectionType, [string]), $null)
+    if ($null -eq $constructor -or $null -eq $add -or $null -eq $factory) { throw 'Synthetic SqlClient signature unavailable.' }
+    $collection = [Activator]::CreateInstance($collectionType, $true)
+    for ($index = 0; $index -lt $Count; $index++) {
+      $errorItem = $constructor.Invoke([object[]]@((207 + $index), [byte]1, [byte]16,
+        'SECRET699-SERVER', 'SECRET699-MESSAGE', 'SECRET699-PROCEDURE', (100 + $index), $null))
+      $null = $add.Invoke($collection, [object[]]@($errorItem))
+    }
+    return $factory.Invoke($null, [object[]]@($collection, 'SECRET699-VERSION'))
+  }
+
 }
 
 Describe 'Pinned Login160/Decrypt170 private fixture sequence' -Tag 'Unit' {
@@ -461,5 +484,84 @@ Describe 'Pinned Login160/Decrypt170 private fixture sequence' -Tag 'Unit' {
     $script:nativeCalls554.Count | Should -Be 2
     $script:trace554.Count | Should -Be 6
     Should -Invoke New-DatabaseSqlCommand -Times 1 -Exactly
+  }
+
+  It 'carries only wrapped SQL numeric fields and safe type through the existing receipt message' -Tag 'SafeDiagnostics699' {
+    $sql = New-SyntheticSqlFailure699
+    $sql.Data['SECRET699-DATA'] = 'SECRET699-VALUE'
+    $script:failure699 = [InvalidOperationException]::new('SECRET699-WRAPPER', $sql)
+    Mock Invoke-DatabaseSqlQuery { throw $script:failure699 } -ParameterFilter { $CommandText -ceq $script:loginText554 }
+    $caught699 = $null
+    try { Invoke-Sequence554 } catch { $caught699 = $_ }
+    $caught699 | Should -Not -BeNullOrEmpty
+    $expected = 'Invoke-AceCommanderLoginFixtureSequence: FixtureExecutionFailed at before160. Diagnostic[Type=System.Data.SqlClient.SqlException;Sql=Number=207,State=1,Class=16,LineNumber=100|Number=208,State=1,Class=16,LineNumber=101]'
+    $caught699.Exception.Message | Should -BeExactly $expected
+    $receipt = @{ Error = $caught699.Exception.Message } | ConvertTo-Json | ConvertFrom-Json
+    $receipt.Error | Should -BeExactly $expected
+    $caught699.Exception.InnerException | Should -BeNullOrEmpty
+    $caught699.Exception.Data.Contains('SECRET699-DATA') | Should -BeFalse
+    $caught699.Exception.Data.Contains('Number') | Should -BeFalse
+    $caught699.Exception.Data['FailedPhase'] | Should -BeExactly 'before160'
+    @($caught699.Exception.Data['CompletedPhases']).Count | Should -Be 0
+    $caught699.Exception.ToString() | Should -Not -Match 'SECRET699'
+    Should -Invoke Write-PSFMessage -Times 0 -Exactly -ParameterFilter { $Message -match 'SECRET699' }
+    Should -Invoke Invoke-Flyway -Times 0 -Exactly
+    $script:loginCalls554 | Should -Be 0 # Filtered fault occurs before the default mock body.
+  }
+
+  It 'reports safe nonSQL type without copying numeric-looking Data or secret text' -Tag 'SafeDiagnostics699' {
+    $script:failure699 = [FormatException]::new('SECRET699-NONSQL')
+    $script:failure699.Data['Number'] = 999
+    $script:failure699.Data['SECRET699-DATA'] = 'SECRET699-VALUE'
+    Mock Invoke-DatabaseSqlQuery { throw $script:failure699 } -ParameterFilter { $CommandText -ceq $script:loginText554 }
+    $caught699 = $null
+    try { Invoke-Sequence554 } catch { $caught699 = $_ }
+    $caught699 | Should -Not -BeNullOrEmpty
+    $caught699.Exception.Message | Should -BeExactly 'Invoke-AceCommanderLoginFixtureSequence: FixtureExecutionFailed at before160. Diagnostic[Type=System.FormatException]'
+    $caught699.Exception.InnerException | Should -BeNullOrEmpty
+    $caught699.Exception.ToString() | Should -Not -Match 'SECRET699|999|Sql='
+    Should -Invoke Write-PSFMessage -Times 0 -Exactly -ParameterFilter { $Message -match 'SECRET699' }
+    Should -Invoke Invoke-Flyway -Times 0 -Exactly
+  }
+
+  It 'caps SQL diagnostics at four errors and a bounded receipt suffix' -Tag 'SafeDiagnostics699' {
+    $script:failure699 = New-SyntheticSqlFailure699 -Count 7
+    Mock Invoke-DatabaseSqlQuery { throw $script:failure699 } -ParameterFilter { $CommandText -ceq $script:loginText554 }
+    $caught699 = $null
+    try { Invoke-Sequence554 } catch { $caught699 = $_ }
+    $caught699 | Should -Not -BeNullOrEmpty
+    $message = $caught699.Exception.Message
+    ([regex]::Matches($message, 'Number=')).Count | Should -Be 8 # Number and LineNumber per entry.
+    $message | Should -Match 'Number=210,State=1,Class=16,LineNumber=103\]$'
+    $message | Should -Not -Match 'Number=211|Number=212|Number=213|SECRET699'
+    $message.Length | Should -BeLessOrEqual 512
+    $caught699.Exception.InnerException | Should -BeNullOrEmpty
+    Should -Invoke Invoke-Flyway -Times 0 -Exactly
+  }
+
+  It 'bounds wrapper traversal without exposing a deeply nested SQL exception' -Tag 'SafeDiagnostics699' {
+    $script:failure699 = New-SyntheticSqlFailure699
+    for ($index = 0; $index -lt 16; $index++) {
+      $script:failure699 = [InvalidOperationException]::new('SECRET699-DEEP', $script:failure699)
+    }
+    Mock Invoke-DatabaseSqlQuery { throw $script:failure699 } -ParameterFilter { $CommandText -ceq $script:loginText554 }
+    $caught699 = $null
+    try { Invoke-Sequence554 } catch { $caught699 = $_ }
+    $caught699 | Should -Not -BeNullOrEmpty
+    $caught699.Exception.Message | Should -BeExactly 'Invoke-AceCommanderLoginFixtureSequence: FixtureExecutionFailed at before160. Diagnostic[Type=System.InvalidOperationException]'
+    $caught699.Exception.ToString() | Should -Not -Match 'Sql=|SECRET699'
+    $caught699.Exception.InnerException | Should -BeNullOrEmpty
+    Should -Invoke Invoke-Flyway -Times 0 -Exactly
+  }
+
+  It 'replaces unlisted exception type metadata with a constant safe label' -Tag 'SafeDiagnostics699' {
+    $script:failure699 = [System.Security.SecurityException]::new('SECRET699-UNLISTED')
+    Mock Invoke-DatabaseSqlQuery { throw $script:failure699 } -ParameterFilter { $CommandText -ceq $script:loginText554 }
+    $caught699 = $null
+    try { Invoke-Sequence554 } catch { $caught699 = $_ }
+    $caught699 | Should -Not -BeNullOrEmpty
+    $caught699.Exception.Message | Should -BeExactly 'Invoke-AceCommanderLoginFixtureSequence: FixtureExecutionFailed at before160. Diagnostic[Type=Other]'
+    $caught699.Exception.ToString() | Should -Not -Match 'SecurityException|SECRET699'
+    Should -Invoke Invoke-Flyway -Times 0 -Exactly
   }
 }

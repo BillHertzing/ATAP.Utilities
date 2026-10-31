@@ -234,8 +234,39 @@ function Invoke-AceCommanderLoginFixtureSequence {
         PackageName = $common.PackageName; PackageVersion = $common.PackageVersion
       }
     } catch {
+      $caughtException = $_.Exception
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Fixture sequence stopped at $($progress.Phase): $($progress.Failure). Earlier migration commits may remain."
-      $failureRecord = [InvalidOperationException]::new("Invoke-AceCommanderLoginFixtureSequence: $($progress.Failure) at $($progress.Phase).")
+      # The receipt persists Message only. Never attach the original exception or its text/Data.
+      # Inspect at most eight wrappers and four SQL errors; only known types and typed numbers escape.
+      $diagnostic = ' Diagnostic[Type=Other]'
+      try {
+        $safeTypes = @('System.Exception', 'System.InvalidOperationException', 'System.ArgumentException',
+          'System.FormatException', 'System.TimeoutException', 'System.ObjectDisposedException',
+          'System.IO.IOException', 'System.Management.Automation.RuntimeException',
+          'System.Management.Automation.MethodInvocationException', 'System.Management.Automation.ActionPreferenceStopException',
+          'Microsoft.Data.SqlClient.SqlException', 'System.Data.SqlClient.SqlException')
+        $safeType = 'Other'
+        $sqlErrors = [Collections.Generic.List[string]]::new()
+        $current = $caughtException
+        for ($depth = 0; $depth -lt 8 -and $null -ne $current; $depth++) {
+          $typeName = $current.GetType().FullName
+          $safeType = if ($typeName -cin $safeTypes) { $typeName } else { 'Other' }
+          if ($typeName -cin @('Microsoft.Data.SqlClient.SqlException', 'System.Data.SqlClient.SqlException')) {
+            for ($index = 0; $index -lt [Math]::Min(4, $current.Errors.Count); $index++) {
+              $sqlError = $current.Errors[$index]
+              if ($sqlError.Number -is [int] -and $sqlError.State -is [byte] -and
+                  $sqlError.Class -is [byte] -and $sqlError.LineNumber -is [int] -and $sqlError.LineNumber -ge 0) {
+                $sqlErrors.Add("Number=$($sqlError.Number),State=$($sqlError.State),Class=$($sqlError.Class),LineNumber=$($sqlError.LineNumber)")
+              }
+            }
+            break
+          }
+          $current = $current.InnerException
+        }
+        $sqlSuffix = if ($sqlErrors.Count) { ';Sql=' + ($sqlErrors -join '|') } else { '' }
+        $diagnostic = ' Diagnostic[Type=' + $safeType + $sqlSuffix + ']'
+      } catch { } # Diagnostics must never replace the original phase/failure outcome.
+      $failureRecord = [InvalidOperationException]::new("Invoke-AceCommanderLoginFixtureSequence: $($progress.Failure) at $($progress.Phase)." + $diagnostic)
       $failureRecord.Data['FailedPhase'] = $progress.Phase
       $failureRecord.Data['CompletedPhases'] = $completed.ToArray()
       throw $failureRecord

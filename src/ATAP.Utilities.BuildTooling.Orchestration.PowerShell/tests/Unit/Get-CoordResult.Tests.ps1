@@ -161,7 +161,7 @@ BeforeAll {
   }
 }
 
-Describe 'Get-CoordResult local retained projection' {
+Describe 'Get-CoordResult local retained projection' -Tag 'Unit' {
   BeforeEach { Mock Write-PSFMessage {} }
 
   It 'preserves exact <Status> data and linked clones without writes' -ForEach @(
@@ -370,7 +370,7 @@ Describe 'Get-CoordResult local retained projection' {
   }
 }
 
-Describe 'Get-CoordResult selected receipt membership closure (F1)' {
+Describe 'Get-CoordResult selected receipt membership closure (F1)' -Tag 'Unit' {
   BeforeEach { Mock Write-PSFMessage {} }
 
   BeforeAll {
@@ -420,7 +420,7 @@ Describe 'Get-CoordResult selected receipt membership closure (F1)' {
   }
 }
 
-Describe 'Get-CoordResult absent selected record evidence (F1b)' {
+Describe 'Get-CoordResult absent selected record evidence (F1b)' -Tag 'Unit' {
   BeforeEach { Mock Write-PSFMessage {} }
 
   It 'refuses retained exact terminal evidence for an absent record while preserving a case-only no-evidence NotFound' {

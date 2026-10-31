@@ -1,3 +1,4 @@
+#Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 # AI assisted using Powershell.instructions.md as guidelines
 # Pester 6.2+ static-contract tests for V4-E08 / DBA2-T03: the
 # DatabaseChangePackage-5Stage OtterScript plan must be a thin runner plan,
@@ -5,6 +6,7 @@
 
 BeforeAll {
     $script:PlansDir   = Join-Path $PSScriptRoot '..'
+    $script:fixtureSource631 = [IO.Path]::GetFullPath((Join-Path $script:PlansDir '../../..'))
     $script:PlanPath   = Join-Path $script:PlansDir 'DatabaseChangePackage-5Stage.otter'
     $script:RunnerPath = Join-Path $script:PlansDir 'Invoke-DatabasePackageBuildMasterStage.ps1'
     $script:PlanText   = Get-Content -LiteralPath $script:PlanPath -Raw
@@ -29,7 +31,11 @@ Describe 'V4-E08 plan shape: DatabaseChangePackage-5Stage.otter is a thin runner
 
     It 'the single Exec invokes pwsh -File with the runner script' {
         $script:PlanText | Should -Match 'FileName:\s*pwsh'
-        $script:PlanText | Should -Match '-NoProfile\s+-File\s+"\$InvokeDatabasePackageStageScript"'
+        $script:PlanText | Should -Match '-File\s+"\$InvokeDatabasePackageStageScript"'
+    }
+
+    It 'plan enables normal PowerShell profiles' {
+        $script:PlanText | Should -Not -Match '(?i)-NoProfile\b'
     }
 
     It 'plan contains no inline pwsh -Command blocks' {
@@ -638,29 +644,374 @@ Describe 'Task 9.10 behavior: per-tier apply + rehearsal helpers' {
 
     Context 'Invoke-DatabasePackageTierRehearsal enforcement' {
         It 'throws (blocks Experimental apply or later promotion) when rehearsal reports Success=$false' {
-            function global:Invoke-DatabasePackageRehearsal {
-                param([Parameter(ValueFromRemainingArguments)]$a)
-                $null = $a
+            # Mock the resolved wrapper binding; a global stub is shadowed by BeforeAll's source definition.
+            Mock Invoke-DatabasePackageRehearsal {
                 [PSCustomObject]@{ Success = $false; ValidateOutput = 'boom' }
             }
+            Mock Expand-DatabaseChangePackage { throw 'Unexpected package expansion in rehearsal-result unit test' }
             { Invoke-DatabasePackageTierRehearsal -NupkgPath $script:FakeNupkg `
                 -Application 'ATAPUtilities' -Tier 'Development' -BuildId '123' `
                 -ConnectionStringSecretName 'dbConnectionString-x' } | Should -Throw '*rehearsal FAILED*'
-            Remove-Item Function:\Invoke-DatabasePackageRehearsal -ErrorAction SilentlyContinue
+            Should -Invoke Invoke-DatabasePackageRehearsal -Times 1 -Exactly -Scope It
+            Should -Invoke Expand-DatabaseChangePackage -Times 0 -Exactly -Scope It
         }
 
         It 'returns the result (allows promotion) when the rehearsal reports Success=$true' {
-            function global:Invoke-DatabasePackageRehearsal {
-                param([Parameter(ValueFromRemainingArguments)]$a)
-                $null = $a
+            Mock Invoke-DatabasePackageRehearsal {
                 [PSCustomObject]@{ Success = $true; ElapsedSeconds = 1 }
             }
+            Mock Expand-DatabaseChangePackage { throw 'Unexpected package expansion in rehearsal-result unit test' }
             $r = Invoke-DatabasePackageTierRehearsal -NupkgPath $script:FakeNupkg `
                 -Application 'ATAPUtilities' -Tier 'Development' -BuildId '123' `
                 -ConnectionStringSecretName 'dbConnectionString-x'
             @($r).Count | Should -Be 1
             $r.Success | Should -BeTrue
-            Remove-Item Function:\Invoke-DatabasePackageRehearsal -ErrorAction SilentlyContinue
+            Should -Invoke Invoke-DatabasePackageRehearsal -Times 1 -Exactly -Scope It
+            Should -Invoke Expand-DatabaseChangePackage -Times 0 -Exactly -Scope It
         }
+    }
+}
+
+# Helper-only tests: compile named AST function definitions, never the stage entry script.
+BeforeAll {
+    $tokens580 = $null; $errors580 = $null
+    $ast580 = [Management.Automation.Language.Parser]::ParseFile($script:RunnerPath, [ref]$tokens580, [ref]$errors580)
+    if ($errors580.Count) { throw 'Stage source parse failed' }
+    foreach ($name580 in @('Get-DatabasePackageExpectedCatalogParameters', 'Get-DatabasePackageFixtureRehearsalParameters', 'Invoke-DatabasePackageTierRehearsal',
+        'Invoke-DatabasePackageTierApply', 'Invoke-DatabasePackageStageApply',
+        'Get-DatabaseTierEnvironment', 'Get-DatabasePackageApplyMarkerPath', 'Add-DatabasePackagePublishTrace')) {
+        $nodes580 = @($ast580.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq $name580 }, $true))
+        if ($nodes580.Count -ne 1) { throw 'Expected exactly one helper definition' }
+        . ([scriptblock]::Create($nodes580[0].Extent.Text))
+    }
+    $db580 = Join-Path $script:PlansDir '../../ATAP.Utilities.DatabaseManagement.Powershell/public'
+    foreach ($file580 in @('Invoke-DatabasePackageRehearsal.ps1', 'Invoke-Flyway.ps1',
+        'Expand-DatabaseChangePackage.ps1', 'Get-DatabasePackageManifest.ps1')) {
+        $astDependency580 = [Management.Automation.Language.Parser]::ParseFile((Join-Path $db580 $file580), [ref]$tokens580, [ref]$errors580)
+        if ($errors580.Count -or @($astDependency580.EndBlock.Statements | Where-Object { $_ -isnot [Management.Automation.Language.FunctionDefinitionAst] }).Count) {
+            throw 'Unexpected executable dependency source'
+        }
+        foreach ($definition580 in $astDependency580.EndBlock.Statements) { . ([scriptblock]::Create($definition580.Extent.Text)) }
+    }
+    if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
+        function Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
+    }
+}
+
+Describe 'Selected immutable database catalog maps (580)' -Tag 'Unit' {
+    BeforeEach {
+        $script:seen580 = $null
+        Mock Write-PSFMessage {}
+        Mock Test-Path { $true }
+        Mock Expand-DatabaseChangePackage { 'D:/ATAPArtifacts/mock580-expanded' }
+        Mock Get-DatabasePackageManifest { [pscustomobject]@{ dbChangeUnit = 'ATAPUtilities.Database'; appVersion = 'fixture' } }
+        Mock Remove-Item {}
+        Mock Set-Content { throw 'Unexpected marker write' }
+        Mock Add-DatabasePackagePublishTrace {}
+        Mock Invoke-DatabasePackageRehearsal {
+            $script:seen580 = @{} + $PesterBoundParameters
+            [pscustomobject]@{ Success = $true }
+        }
+        Mock Invoke-Flyway {
+            $script:seen580 = @{} + $PesterBoundParameters
+            [pscustomobject]@{ Success = $true }
+        }
+    }
+
+    It 'selects the exact tuple on first capture and matching resume' -ForEach @(
+        @{ Captured = $null }
+        @{ Captured = [pscustomobject]@{ DatabaseApplication = 'ATAPUtilities'; DatabasePackageId = 'ATAPUtilities.Database'; DatabaseStream = '' } }
+    ) {
+        $map = Get-DatabasePackageExpectedCatalogParameters -DatabaseApplication ATAPUtilities -DatabasePackageId ATAPUtilities.Database -CapturedContext $Captured
+        $map.Count | Should -Be 1
+        $map.ExpectedDatabaseName | Should -BeExactly 'ATAPUtilities'
+    }
+
+    It 'omits bindings for unrelated tuple <Label>' -ForEach @(
+        @{ Label = 'application'; App = 'Other'; Id = 'Other.Database'; Stream = '' }
+        @{ Label = 'stream'; App = 'ATAPUtilities'; Id = 'ATAPUtilities.Other.Database'; Stream = 'Other' }
+        @{ Label = 'case'; App = 'ataputilities'; Id = 'ATAPUtilities.Database'; Stream = '' }
+        @{ Label = 'other package'; App = 'ATAPUtilities'; Id = 'Other.Database'; Stream = '' }
+    ) {
+        (Get-DatabasePackageExpectedCatalogParameters -DatabaseApplication $App -DatabasePackageId $Id -DatabaseStream $Stream).Count | Should -Be 0
+    }
+
+    It 'refuses incomplete or changed selected captured identity' -ForEach @(
+        @{ Captured = [pscustomobject]@{ DatabaseApplication = 'ATAPUtilities'; DatabasePackageId = 'ATAPUtilities.Database' } }
+        @{ Captured = [pscustomobject]@{ DatabaseApplication = 'Other'; DatabasePackageId = 'ATAPUtilities.Database'; DatabaseStream = '' } }
+    ) {
+        { Get-DatabasePackageExpectedCatalogParameters -DatabaseApplication ATAPUtilities -DatabasePackageId ATAPUtilities.Database -CapturedContext $Captured } | Should -Throw '*Captured database identity*'
+    }
+
+    It 'cannot turn a selected capture into an unrelated tuple' {
+        $capture = [pscustomobject]@{ DatabaseApplication = 'ATAPUtilities'; DatabasePackageId = 'ATAPUtilities.Database'; DatabaseStream = '' }
+        { Get-DatabasePackageExpectedCatalogParameters -DatabaseApplication Other -DatabasePackageId Other.Database -CapturedContext $capture } | Should -Throw '*identity changed*'
+    }
+
+    It 'binds rehearsal target and exact ordered history' {
+        Invoke-DatabasePackageTierRehearsal -NupkgPath 'D:/ATAPArtifacts/mock580.nupkg' -Application ATAPUtilities -Tier Experimental -BuildId 580 -ConnectionStringSecretName Test.Secret -ExpectedDatabaseName ATAPUtilities -SourcePath $script:fixtureSource631 -ExpectedPackageName ATAPUtilities.Database -ExpectedPackageVersion fixture -Confirm:$false | Out-Null
+        $script:seen580.ExpectedSourceDatabaseName | Should -BeExactly 'ATAPUtilities'
+        ($script:seen580.FlywayAdditionalArgs -join '|') | Should -BeExactly '-defaultSchema=dbo|-table=flyway_schema_history'
+    }
+
+    It 'keeps generic rehearsal keys omitted' {
+        Invoke-DatabasePackageTierRehearsal -NupkgPath 'D:/ATAPArtifacts/mock580.nupkg' -Application Other -Tier Experimental -BuildId 580 -ConnectionStringSecretName Test.Secret -Confirm:$false | Out-Null
+        $script:seen580.ContainsKey('ExpectedSourceDatabaseName') | Should -BeFalse
+        $script:seen580.ContainsKey('FlywayAdditionalArgs') | Should -BeFalse
+    }
+
+    It 'binds apply target history and empty shared location' {
+        Invoke-DatabasePackageTierApply -NupkgPath 'D:/ATAPArtifacts/mock580.nupkg' -Application ATAPUtilities -DatabasePackageId ATAPUtilities.Database -PackageVersion fixture -Tier Experimental -ConnectionStringSecretName Test.Secret -ExpectedDatabaseName ATAPUtilities -Confirm:$false | Out-Null
+        $script:seen580.ExpectedDatabaseName | Should -BeExactly 'ATAPUtilities'
+        ($script:seen580.FlywayAdditionalArgs -join '|') | Should -BeExactly '-defaultSchema=dbo|-table=flyway_schema_history'
+        $script:seen580.ContainsKey('FlywaySharedSqlMigrationsPath') | Should -BeTrue
+        $script:seen580.FlywaySharedSqlMigrationsPath | Should -BeExactly ''
+    }
+
+    It 'keeps generic apply keys omitted' {
+        Invoke-DatabasePackageTierApply -NupkgPath 'D:/ATAPArtifacts/mock580.nupkg' -Application Other -DatabasePackageId Other.Database -PackageVersion fixture -Tier Experimental -ConnectionStringSecretName Test.Secret -Confirm:$false | Out-Null
+        foreach ($key in @('ExpectedDatabaseName', 'FlywayAdditionalArgs', 'FlywaySharedSqlMigrationsPath')) { $script:seen580.ContainsKey($key) | Should -BeFalse }
+    }
+
+    It 'refuses wrong expected application before rehearsal or apply effects' {
+        { Invoke-DatabasePackageTierRehearsal -NupkgPath 'D:/ATAPArtifacts/mock580.nupkg' -Application Other -Tier Experimental -BuildId 580 -ConnectionStringSecretName Test.Secret -ExpectedDatabaseName ATAPUtilities -Confirm:$false } | Should -Throw '*Expected rehearsal catalog*'
+        { Invoke-DatabasePackageTierApply -NupkgPath 'D:/ATAPArtifacts/mock580.nupkg' -Application Other -DatabasePackageId Other.Database -PackageVersion fixture -Tier Experimental -ConnectionStringSecretName Test.Secret -ExpectedDatabaseName ATAPUtilities -Confirm:$false } | Should -Throw '*Expected apply catalog*'
+        Should -Invoke Invoke-DatabasePackageRehearsal -Times 0 -Exactly -Scope It
+        Should -Invoke Expand-DatabaseChangePackage -Times 0 -Exactly -Scope It
+        Should -Invoke Invoke-Flyway -Times 0 -Exactly -Scope It
+    }
+
+    It 'does not invoke rehearsal or native helper under WhatIf' {
+        Invoke-DatabasePackageTierRehearsal -NupkgPath 'D:/ATAPArtifacts/mock580.nupkg' -Application ATAPUtilities -Tier Experimental -BuildId 580 -ConnectionStringSecretName Test.Secret -ExpectedDatabaseName ATAPUtilities -SourcePath $script:fixtureSource631 -ExpectedPackageName ATAPUtilities.Database -ExpectedPackageVersion fixture -WhatIf
+        Invoke-DatabasePackageTierApply -NupkgPath 'D:/ATAPArtifacts/mock580.nupkg' -Application ATAPUtilities -DatabasePackageId ATAPUtilities.Database -PackageVersion fixture -Tier Experimental -ConnectionStringSecretName Test.Secret -ExpectedDatabaseName ATAPUtilities -WhatIf
+        Should -Invoke Invoke-DatabasePackageRehearsal -Times 0 -Exactly -Scope It
+        Should -Invoke Invoke-Flyway -Times 0 -Exactly -Scope It
+    }
+
+    It 'refuses mismatched stage expectation even when marker already exists' {
+        { Invoke-DatabasePackageStageApply -ContextDirectory 'D:/ATAPArtifacts/mock580' -DatabasePackageId Other.Database -DatabaseApplication Other -PackageVersion fixture -Tier Experimental -NupkgPath 'D:/ATAPArtifacts/mock580.nupkg' -ConnectionStringSecretName Test.Secret -TracePath 'D:/ATAPArtifacts/mock580/trace.log' -ExpectedDatabaseName ATAPUtilities -Confirm:$false } | Should -Throw '*Expected stage catalog*'
+        Should -Invoke Invoke-Flyway -Times 0 -Exactly -Scope It
+        Should -Invoke Set-Content -Times 0 -Exactly -Scope It
+    }
+}
+
+Describe 'Stage apply internal binding bridge (580)' -Tag 'Unit' {
+    BeforeEach {
+        $script:bridge580 = $null
+        Mock Write-PSFMessage {}
+        Mock Test-Path { $LiteralPath -like '*.nupkg' }
+        Mock Add-DatabasePackagePublishTrace {}
+        Mock Set-Content { throw 'Unexpected marker write' }
+        Mock Invoke-DatabasePackageTierApply {
+            $script:bridge580 = @{} + $PesterBoundParameters
+            [pscustomobject]@{ Applied = $false }
+        }
+    }
+    It 'forwards bound expectation only for selected bridge <Selected>' -ForEach @(
+        @{ Selected = $true }; @{ Selected = $false }
+    ) {
+        $params580 = @{
+            ContextDirectory = 'D:/ATAPArtifacts/mock580'
+            DatabasePackageId = 'ATAPUtilities.Database'; DatabaseApplication = 'ATAPUtilities'
+            PackageVersion = 'fixture'; Tier = 'Experimental'
+            NupkgPath = 'D:/ATAPArtifacts/mock580.nupkg'; ConnectionStringSecretName = 'Test.Secret'
+            TracePath = 'D:/ATAPArtifacts/mock580/trace.log'
+        }
+        if ($Selected) { $params580.ExpectedDatabaseName = 'ATAPUtilities' }
+        Invoke-DatabasePackageStageApply @params580 -Confirm:$false
+        $script:bridge580.ContainsKey('ExpectedDatabaseName') | Should -Be $Selected
+        if ($Selected) { $script:bridge580.ExpectedDatabaseName | Should -BeExactly 'ATAPUtilities' }
+        Should -Invoke Invoke-DatabasePackageTierApply -Times 1 -Exactly -Scope It
+        Should -Invoke Set-Content -Times 0 -Exactly -Scope It
+    }
+}
+
+Describe 'Resume identity refusal before generic fallback (591)' -Tag 'Unit' {
+    It 'refuses malformed captured stream for current tuple <Label>' -ForEach @(
+        @{ Label = 'missing/space'; Captured = [pscustomobject]@{ DatabaseApplication = 'ATAPUtilities'; DatabasePackageId = 'ATAPUtilities.Database' }; App = 'ATAPUtilities'; Id = 'ATAPUtilities.Database'; Stream = ' ' }
+        @{ Label = 'null/space'; Captured = [pscustomobject]@{ DatabaseApplication = 'ATAPUtilities'; DatabasePackageId = 'ATAPUtilities.Database'; DatabaseStream = $null }; App = 'ATAPUtilities'; Id = 'ATAPUtilities.Database'; Stream = ' ' }
+        @{ Label = 'missing/changed'; Captured = [pscustomobject]@{ DatabaseApplication = 'ATAPUtilities'; DatabasePackageId = 'ATAPUtilities.Database' }; App = 'Other'; Id = 'Other.Database'; Stream = '' }
+        @{ Label = 'null/changed'; Captured = [pscustomobject]@{ DatabaseApplication = 'ATAPUtilities'; DatabasePackageId = 'ATAPUtilities.Database'; DatabaseStream = $null }; App = 'Other'; Id = 'Other.Database'; Stream = '' }
+        @{ Label = 'unrelated/null'; Captured = [pscustomobject]@{ DatabaseApplication = 'Other'; DatabasePackageId = 'Other.Database'; DatabaseStream = $null }; App = 'Other'; Id = 'Other.Database'; Stream = '' }
+        @{ Label = 'unrelated/nonstring'; Captured = [pscustomobject]@{ DatabaseApplication = 'Other'; DatabasePackageId = 'Other.Database'; DatabaseStream = 0 }; App = 'Other'; Id = 'Other.Database'; Stream = '' }
+    ) {
+        { Get-DatabasePackageExpectedCatalogParameters -DatabaseApplication $App -DatabasePackageId $Id -DatabaseStream $Stream -CapturedContext $Captured } |
+            Should -Throw '*Captured database identity is incomplete*'
+    }
+
+    It 'refuses whitespace-only selected stream before fallback <Label>' -ForEach @(
+        @{ Label = 'first/space'; Stream = ' '; Captured = $null }
+        @{ Label = 'resume/tab'; Stream = [string][char]9; Captured = [pscustomobject]@{ DatabaseApplication = 'ATAPUtilities'; DatabasePackageId = 'ATAPUtilities.Database'; DatabaseStream = '' } }
+    ) {
+        { Get-DatabasePackageExpectedCatalogParameters -DatabaseApplication ATAPUtilities -DatabasePackageId ATAPUtilities.Database -DatabaseStream $Stream -CapturedContext $Captured } |
+            Should -Throw '*whitespace-only stream*'
+    }
+
+    It 'refuses another missing captured field even for unrelated current tuple' -ForEach @(
+        @{ Captured = [pscustomobject]@{ DatabasePackageId = 'Other.Database'; DatabaseStream = '' } }
+        @{ Captured = [pscustomobject]@{ DatabaseApplication = 'Other'; DatabaseStream = '' } }
+    ) {
+        { Get-DatabasePackageExpectedCatalogParameters -DatabaseApplication Other -DatabasePackageId Other.Database -CapturedContext $Captured } |
+            Should -Throw '*Captured database identity is incomplete*'
+    }
+
+    It 'keeps a valid unrelated captured tuple omitted' {
+        $capture591 = [pscustomobject]@{ DatabaseApplication = 'Other'; DatabasePackageId = 'Other.Database'; DatabaseStream = '' }
+        (Get-DatabasePackageExpectedCatalogParameters -DatabaseApplication Other -DatabasePackageId Other.Database -CapturedContext $capture591).Count | Should -Be 0
+    }
+
+    It 'keeps true first-run null capture supported for unrelated tuple' {
+        (Get-DatabasePackageExpectedCatalogParameters -DatabaseApplication Other -DatabasePackageId Other.Database -CapturedContext $null).Count | Should -Be 0
+    }
+
+    It 'places identity refusal before context writes audit package and marker commands' {
+        $tokens591 = $null; $errors591 = $null
+        $ast591 = [Management.Automation.Language.Parser]::ParseFile($script:RunnerPath, [ref]$tokens591, [ref]$errors591)
+        $errors591.Count | Should -Be 0
+        $main591 = @($ast591.FindAll({ param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq 'Invoke-DatabasePackageBuildMasterStage' }, $true))
+        $main591.Count | Should -Be 1
+        $selection591 = @($main591[0].FindAll({ param($n) $n -is [Management.Automation.Language.CommandAst] -and $n.GetCommandName() -ceq 'Get-DatabasePackageExpectedCatalogParameters' }, $true))
+        $selection591.Count | Should -Be 1
+        $later591 = @($main591[0].FindAll({ param($n)
+            $n -is [Management.Automation.Language.CommandAst] -and $n.GetCommandName() -in @(
+                'Write-BuildMasterRunContextJson', 'Assert-DatabasePackageDeploymentPrincipal',
+                'New-DatabaseChangePackage', 'Set-DatabasePackageStageCompleted', 'Invoke-DatabasePackageStageApply')
+        }, $true))
+        $later591.Count | Should -BeGreaterThan 0
+        foreach ($command591 in $later591) { $command591.Extent.StartOffset | Should -BeGreaterThan $selection591[0].Extent.StartOffset }
+    }
+}
+
+Describe 'Captured selected whitespace alias (591)' -Tag 'Unit' {
+    It 'refuses captured whitespace even with current tuple <App>' -ForEach @(
+        @{ App = 'Other'; Id = 'Other.Database' }
+        @{ App = 'ATAPUtilities'; Id = 'ATAPUtilities.Database' }
+    ) {
+        $capture591 = [pscustomobject]@{ DatabaseApplication = 'ATAPUtilities'; DatabasePackageId = 'ATAPUtilities.Database'; DatabaseStream = ' ' }
+        { Get-DatabasePackageExpectedCatalogParameters -DatabaseApplication $App -DatabasePackageId $Id -CapturedContext $capture591 } |
+            Should -Throw '*Captured database identity*whitespace-only stream*'
+    }
+}
+
+Describe 'Selected stage fixture forwarding (631)' -Tag 'Unit' {
+    BeforeEach {
+        $script:seen631 = $null
+        Mock Write-PSFMessage {}
+        Mock Test-Path { $true }
+        Mock Invoke-DatabasePackageRehearsal {
+            $script:seen631 = @{} + $PesterBoundParameters
+            [pscustomobject]@{ Success = $true }
+        }
+        Mock Invoke-Flyway { throw 'Unexpected native path' }
+        Mock Expand-DatabaseChangePackage { throw 'Unexpected package expansion' }
+        Mock Set-Content { throw 'Unexpected state write' }
+    }
+
+    It 'forwards exact source fixture pair and identity for <Label>' -ForEach @(
+        @{ Label = 'Experimental fresh'; Tier631 = 'Experimental'; Build631 = 'fresh631' }
+        @{ Label = 'Experimental resume'; Tier631 = 'Experimental'; Build631 = 'resume631' }
+        @{ Label = 'promotion'; Tier631 = 'Development'; Build631 = 'promote631' }
+    ) {
+        Invoke-DatabasePackageTierRehearsal -NupkgPath 'D:/ATAPArtifacts/mock631.nupkg' -Application ATAPUtilities -Tier $Tier631 -BuildId $Build631 -ConnectionStringSecretName Test.Secret -ExpectedDatabaseName ATAPUtilities -SourcePath $script:fixtureSource631 -ExpectedPackageName ATAPUtilities.Database -ExpectedPackageVersion '1.2.3-immutable631' -Confirm:$false | Out-Null
+        $script:seen631.LoginFixturePath | Should -BeExactly (Join-Path $script:fixtureSource631 'Database/Verify/AceCommander/Verify_Login_V00160_ExactCatalog.sql')
+        $script:seen631.DecryptFixturePath | Should -BeExactly (Join-Path $script:fixtureSource631 'Database/Verify/AceCommander/Verify_Decrypt_V00170_ExactCatalog.sql')
+        $script:seen631.ExpectedPackageName | Should -BeExactly 'ATAPUtilities.Database'
+        $script:seen631.ExpectedPackageVersion | Should -BeExactly '1.2.3-immutable631'
+        $script:seen631.ExpectedSourceDatabaseName | Should -BeExactly 'ATAPUtilities'
+        $script:seen631.BuildId | Should -BeExactly ($Build631 + '-' + $Tier631)
+        ($script:seen631.FlywayAdditionalArgs -join '|') | Should -BeExactly '-defaultSchema=dbo|-table=flyway_schema_history'
+        $script:seen631.ContainsKey('SourcePath') | Should -BeFalse
+        Should -Invoke Invoke-DatabasePackageRehearsal -Times 1 -Exactly -Scope It
+        Should -Invoke Invoke-Flyway -Times 0 -Exactly -Scope It
+    }
+
+    It 'keeps all fixture keys omitted for generic rehearsal' {
+        Invoke-DatabasePackageTierRehearsal -NupkgPath 'D:/ATAPArtifacts/mock631.nupkg' -Application Other -Tier Experimental -BuildId 631 -ConnectionStringSecretName Test.Secret -Confirm:$false | Out-Null
+        foreach ($key631 in @('ExpectedSourceDatabaseName', 'LoginFixturePath', 'DecryptFixturePath', 'ExpectedPackageName', 'ExpectedPackageVersion', 'FlywayAdditionalArgs')) {
+            $script:seen631.ContainsKey($key631) | Should -BeFalse
+        }
+    }
+
+    It 'refuses raw package version <Label> before effects' -ForEach @(
+        @{ Label = 'missing'; RawVersion = $null }
+        @{ Label = 'numeric'; RawVersion = 631 }
+        @{ Label = 'false'; RawVersion = $false }
+        @{ Label = 'array'; RawVersion = @('fixture') }
+        @{ Label = 'empty'; RawVersion = '' }
+        @{ Label = 'padded'; RawVersion = 'fixture ' }
+    ) {
+        { Invoke-DatabasePackageTierRehearsal -NupkgPath 'D:/ATAPArtifacts/mock631.nupkg' -Application ATAPUtilities -Tier Experimental -BuildId 631 -ConnectionStringSecretName Test.Secret -ExpectedDatabaseName ATAPUtilities -SourcePath $script:fixtureSource631 -ExpectedPackageName ATAPUtilities.Database -ExpectedPackageVersion $RawVersion -Confirm:$false } | Should -Throw '*actual nonempty trim-exact package version*'
+        Should -Invoke Invoke-DatabasePackageRehearsal -Times 0 -Exactly -Scope It
+        Should -Invoke Test-Path -Times 0 -Exactly -Scope It
+        Should -Invoke Invoke-Flyway -Times 0 -Exactly -Scope It
+        Should -Invoke Set-Content -Times 0 -Exactly -Scope It
+    }
+
+    It 'refuses invalid source root <Label>' -ForEach @(
+        @{ Label = 'missing'; Root631 = '' }
+        @{ Label = 'relative'; Root631 = 'relative631' }
+        @{ Label = 'padded'; Root631 = ' D:/ATAPArtifacts/mock631' }
+    ) {
+        { Invoke-DatabasePackageTierRehearsal -NupkgPath 'D:/ATAPArtifacts/mock631.nupkg' -Application ATAPUtilities -Tier Experimental -BuildId 631 -ConnectionStringSecretName Test.Secret -ExpectedDatabaseName ATAPUtilities -SourcePath $Root631 -ExpectedPackageName ATAPUtilities.Database -ExpectedPackageVersion fixture -Confirm:$false } | Should -Throw '*absolute trim-exact SourcePath*'
+        Should -Invoke Invoke-DatabasePackageRehearsal -Times 0 -Exactly -Scope It
+        Should -Invoke Test-Path -Times 0 -Exactly -Scope It
+    }
+
+    It 'refuses fixture-only metadata without catalog selection <Key631>' -ForEach @(
+        @{ Key631 = 'SourcePath'; Value631 = 'D:/ATAPArtifacts/mock631' }
+        @{ Key631 = 'ExpectedPackageName'; Value631 = 'ATAPUtilities.Database' }
+        @{ Key631 = 'ExpectedPackageVersion'; Value631 = 'fixture' }
+    ) {
+        $extra631 = @{}; $extra631[$Key631] = $Value631
+        { Invoke-DatabasePackageTierRehearsal -NupkgPath 'D:/ATAPArtifacts/mock631.nupkg' -Application Other -Tier Experimental -BuildId 631 -ConnectionStringSecretName Test.Secret @extra631 -Confirm:$false } | Should -Throw '*requires explicit ExpectedDatabaseName*'
+        Should -Invoke Invoke-DatabasePackageRehearsal -Times 0 -Exactly -Scope It
+        Should -Invoke Test-Path -Times 0 -Exactly -Scope It
+    }
+
+    It 'refuses selected missing or changed package identity <Identity631>' -ForEach @(
+        @{ Identity631 = $null }; @{ Identity631 = 'Other.Database' }; @{ Identity631 = 'ataputilities.Database' }
+    ) {
+        { Invoke-DatabasePackageTierRehearsal -NupkgPath 'D:/ATAPArtifacts/mock631.nupkg' -Application ATAPUtilities -Tier Experimental -BuildId 631 -ConnectionStringSecretName Test.Secret -ExpectedDatabaseName ATAPUtilities -SourcePath $script:fixtureSource631 -ExpectedPackageName $Identity631 -ExpectedPackageVersion fixture -Confirm:$false } | Should -Throw '*exact existing package identity*'
+        Should -Invoke Invoke-DatabasePackageRehearsal -Times 0 -Exactly -Scope It
+    }
+
+    It 'does not bind private source or call wrapper under selected WhatIf' {
+        Invoke-DatabasePackageTierRehearsal -NupkgPath 'D:/ATAPArtifacts/mock631.nupkg' -Application ATAPUtilities -Tier Experimental -BuildId 631 -ConnectionStringSecretName Test.Secret -ExpectedDatabaseName ATAPUtilities -SourcePath $script:fixtureSource631 -ExpectedPackageName ATAPUtilities.Database -ExpectedPackageVersion fixture -WhatIf
+        Should -Invoke Invoke-DatabasePackageRehearsal -Times 0 -Exactly -Scope It
+        Should -Invoke Test-Path -Times 1 -Exactly -Scope It
+    }
+
+    It 'requires explicit same-root private definition binding before wrapper' {
+        Mock Test-Path { $LiteralPath -like '*.nupkg' }
+        { Invoke-DatabasePackageTierRehearsal -NupkgPath 'D:/ATAPArtifacts/mock631.nupkg' -Application ATAPUtilities -Tier Experimental -BuildId 631 -ConnectionStringSecretName Test.Secret -ExpectedDatabaseName ATAPUtilities -SourcePath $script:fixtureSource631 -ExpectedPackageName ATAPUtilities.Database -ExpectedPackageVersion fixture -Confirm:$false } | Should -Throw '*source helper is missing*'
+        Should -Invoke Invoke-DatabasePackageRehearsal -Times 0 -Exactly -Scope It
+    }
+
+    It 'wires fixture splat only to all3 main rehearsal calls while preserving7 catalog splats' {
+        $tokens631 = $null; $errors631 = $null
+        $ast631 = [Management.Automation.Language.Parser]::ParseFile($script:RunnerPath, [ref]$tokens631, [ref]$errors631)
+        $errors631.Count | Should -Be 0
+        $calls631 = @($ast631.FindAll({ param($n) $n -is [Management.Automation.Language.CommandAst] -and $n.GetCommandName() -in @('Invoke-DatabasePackageTierRehearsal', 'Invoke-DatabasePackageStageApply', 'Invoke-DatabasePackageTierApply') }, $true))
+        $calls631.Count | Should -Be 7
+        foreach ($call631 in $calls631) {
+            @($call631.CommandElements | Where-Object { $_ -is [Management.Automation.Language.VariableExpressionAst] -and $_.Splatted -and $_.VariablePath.UserPath -ceq 'expectedCatalogParameters' }).Count | Should -Be 1
+            $fixtureCount631 = @($call631.CommandElements | Where-Object { $_ -is [Management.Automation.Language.VariableExpressionAst] -and $_.Splatted -and $_.VariablePath.UserPath -ceq 'fixtureRehearsalParameters' }).Count
+            if ($call631.GetCommandName() -ceq 'Invoke-DatabasePackageTierRehearsal') { $fixtureCount631 | Should -Be 1 }
+            else { $fixtureCount631 | Should -Be 0 }
+        }
+    }
+
+    It 'validates raw context version before its cast and audit or package actions' {
+        $tokens631 = $null; $errors631 = $null
+        $ast631 = [Management.Automation.Language.Parser]::ParseFile($script:RunnerPath, [ref]$tokens631, [ref]$errors631)
+        $main631 = @($ast631.FindAll({ param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq 'Invoke-DatabasePackageBuildMasterStage' }, $true))[0]
+        $guards631 = @($main631.FindAll({ param($n) $n -is [Management.Automation.Language.CommandAst] -and $n.GetCommandName() -ceq 'Get-DatabasePackageFixtureRehearsalParameters' }, $true))
+        $guards631.Count | Should -Be 2
+        $guards631[0].Extent.Text | Should -Match '-ExpectedPackageVersion\s+\$context\.ResolvedPackageVersion'
+        $guards631[1].Extent.Text | Should -Match '-ExpectedPackageVersion\s+\$existingContext\.ResolvedVersion'
+        $cast631 = @($main631.FindAll({ param($n) $n -is [Management.Automation.Language.AssignmentStatementAst] -and $n.Extent.Text -ceq '$resolvedVersion = [string]$context.ResolvedPackageVersion' }, $true))[0]
+        $guards631[0].Extent.StartOffset | Should -BeLessThan $cast631.Extent.StartOffset
+        $effects631 = @($main631.FindAll({ param($n) $n -is [Management.Automation.Language.CommandAst] -and $n.GetCommandName() -in @('Assert-DatabasePackageDeploymentPrincipal', 'Write-BuildMasterRunContextJson', 'New-DatabaseChangePackage', 'Invoke-DatabasePackageTierRehearsal', 'Invoke-DatabasePackageStageApply') }, $true))
+        foreach ($effect631 in $effects631) { $effect631.Extent.StartOffset | Should -BeGreaterThan $guards631[1].Extent.StartOffset }
     }
 }

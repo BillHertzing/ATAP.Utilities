@@ -674,6 +674,71 @@ function Assert-DatabasePackageDeploymentPrincipal {
   }
 }
 
+function Get-DatabasePackageExpectedCatalogParameters {
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory)][string]$DatabaseApplication,
+    [Parameter(Mandatory)][string]$DatabasePackageId,
+    [AllowEmptyString()][string]$DatabaseStream = '',
+    [AllowNull()][object]$CapturedContext
+  )
+  # Validate every resume identity before deciding whether generic omission applies.
+  if ($null -ne $CapturedContext) {
+    foreach ($key in @('DatabaseApplication', 'DatabasePackageId', 'DatabaseStream')) {
+      if ($CapturedContext.PSObject.Properties.Name -notcontains $key -or
+          $CapturedContext.$key -isnot [string]) { throw 'Captured database identity is incomplete.' }
+    }
+    if ($CapturedContext.DatabaseApplication -ceq 'ATAPUtilities' -and
+        $CapturedContext.DatabasePackageId -ceq 'ATAPUtilities.Database' -and
+        $CapturedContext.DatabaseStream.Length -gt 0 -and
+        [string]::IsNullOrWhiteSpace($CapturedContext.DatabaseStream)) {
+      throw 'Captured database identity cannot use a whitespace-only stream.'
+    }
+  }
+  if ($DatabaseApplication -ceq 'ATAPUtilities' -and $DatabasePackageId -ceq 'ATAPUtilities.Database' -and
+      $DatabaseStream.Length -gt 0 -and [string]::IsNullOrWhiteSpace($DatabaseStream)) {
+    throw 'Selected database identity cannot use a whitespace-only stream.'
+  }
+  $selected = $DatabaseApplication -ceq 'ATAPUtilities' -and
+    $DatabasePackageId -ceq 'ATAPUtilities.Database' -and $DatabaseStream -ceq ''
+  $capturedSelected = $null -ne $CapturedContext -and
+    @('DatabaseApplication', 'DatabasePackageId', 'DatabaseStream' | Where-Object { $CapturedContext.PSObject.Properties.Name -notcontains $_ }).Count -eq 0 -and
+    $CapturedContext.DatabaseApplication -ceq 'ATAPUtilities' -and
+    $CapturedContext.DatabasePackageId -ceq 'ATAPUtilities.Database' -and
+    $CapturedContext.DatabaseStream -is [string] -and $CapturedContext.DatabaseStream -ceq ''
+  if (($selected -or $capturedSelected) -and $null -ne $CapturedContext) {
+    if ($CapturedContext.DatabaseApplication -cne $DatabaseApplication -or
+        $CapturedContext.DatabasePackageId -cne $DatabasePackageId -or
+        $CapturedContext.DatabaseStream -cne $DatabaseStream) { throw 'Captured database identity changed.' }
+  }
+  if ($selected) { return @{ ExpectedDatabaseName = 'ATAPUtilities' } }
+  return @{}
+}
+
+function Get-DatabasePackageFixtureRehearsalParameters {
+  [CmdletBinding()]
+  param([string]$SourcePath, [object]$ExpectedPackageName, [object]$ExpectedPackageVersion)
+  begin {
+    $fn = 'Get-DatabasePackageFixtureRehearsalParameters'
+    $mn = 'ATAP.Utilities.BuildTooling.BuildMaster'
+  }
+  process {
+    if ([string]::IsNullOrWhiteSpace($SourcePath) -or $SourcePath -cne $SourcePath.Trim() -or
+        -not [IO.Path]::IsPathFullyQualified($SourcePath)) {
+      throw 'Selected fixture rehearsal requires an absolute trim-exact SourcePath.'
+    }
+    if ($ExpectedPackageName -isnot [string] -or $ExpectedPackageName -cne 'ATAPUtilities.Database') {
+      throw 'Selected fixture rehearsal requires the exact existing package identity.'
+    }
+    if ($ExpectedPackageVersion -isnot [string] -or [string]::IsNullOrWhiteSpace($ExpectedPackageVersion) -or
+        $ExpectedPackageVersion -cne $ExpectedPackageVersion.Trim()) {
+      throw 'Selected fixture rehearsal requires an actual nonempty trim-exact package version.'
+    }
+    return @{ SourcePath = $SourcePath; ExpectedPackageName = $ExpectedPackageName; ExpectedPackageVersion = $ExpectedPackageVersion }
+  }
+  end {}
+}
+
 function Invoke-DatabasePackageTierRehearsal {
   <#
   .SYNOPSIS
@@ -684,6 +749,13 @@ function Invoke-DatabasePackageTierRehearsal {
     enforce exact-package rehearsal in code. Throws when the rehearsal does
     not report Success, so the caller aborts before Experimental apply or
     later-tier promotion.
+  .PARAMETER SourcePath
+    Explicit source root for selected verifier paths and private definitions.
+    Requires ExpectedDatabaseName and exact ExpectedPackageName/ExpectedPackageVersion.
+  .PARAMETER ExpectedPackageName
+    Exact existing package identity for selected fixture rehearsal only.
+  .PARAMETER ExpectedPackageVersion
+    Actual raw immutable version, validated before selected wrapper invocation.
   .OUTPUTS
     [PSCustomObject] the rehearsal result (Success/PackagePath/...).
   .NOTES
@@ -697,13 +769,36 @@ function Invoke-DatabasePackageTierRehearsal {
     [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$Tier,
     [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$BuildId,
     [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ConnectionStringSecretName,
-    [AllowEmptyString()][string]$LogPath = ''
+    [AllowEmptyString()][string]$LogPath = '',
+    [ValidateNotNullOrEmpty()][string]$ExpectedDatabaseName,
+    [string]$SourcePath,
+    [object]$ExpectedPackageName,
+    [object]$ExpectedPackageVersion
   )
 
   BEGIN {
     $fn = 'Invoke-DatabasePackageTierRehearsal'
     $mn = 'ATAP.Utilities.BuildTooling.BuildMaster'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Starting $fn (Tier='$Tier')"
+    $fixtureParameters = @{}
+    if (-not $PSBoundParameters.ContainsKey('ExpectedDatabaseName') -and
+        ($PSBoundParameters.ContainsKey('SourcePath') -or $PSBoundParameters.ContainsKey('ExpectedPackageName') -or
+         $PSBoundParameters.ContainsKey('ExpectedPackageVersion'))) {
+      throw 'Fixture rehearsal metadata requires explicit ExpectedDatabaseName.'
+    }
+    if ($PSBoundParameters.ContainsKey('ExpectedDatabaseName')) {
+      if ($ExpectedDatabaseName -cne 'ATAPUtilities' -or $Application -cne $ExpectedDatabaseName) {
+        throw 'Expected rehearsal catalog does not match the selected application.'
+      }
+      $validatedFixture = Get-DatabasePackageFixtureRehearsalParameters -SourcePath $SourcePath `
+        -ExpectedPackageName $ExpectedPackageName -ExpectedPackageVersion $ExpectedPackageVersion
+      $fixtureParameters = @{
+        LoginFixturePath = Join-Path $validatedFixture.SourcePath 'Database/Verify/AceCommander/Verify_Login_V00160_ExactCatalog.sql'
+        DecryptFixturePath = Join-Path $validatedFixture.SourcePath 'Database/Verify/AceCommander/Verify_Decrypt_V00170_ExactCatalog.sql'
+        ExpectedPackageName = $validatedFixture.ExpectedPackageName
+        ExpectedPackageVersion = $validatedFixture.ExpectedPackageVersion
+      }
+    }
   }
 
   PROCESS {
@@ -717,11 +812,39 @@ function Invoke-DatabasePackageTierRehearsal {
       BuildId                      = ('{0}-{1}' -f $BuildId, $Tier)
       DBConnectionStringSecretName = $ConnectionStringSecretName
     }
+    if ($PSBoundParameters.ContainsKey('ExpectedDatabaseName')) {
+      $rehearsalParameters.ExpectedSourceDatabaseName = $ExpectedDatabaseName
+      $rehearsalParameters.FlywayAdditionalArgs = @('-defaultSchema=dbo', '-table=flyway_schema_history')
+      foreach ($fixtureKey in $fixtureParameters.Keys) { $rehearsalParameters[$fixtureKey] = $fixtureParameters[$fixtureKey] }
+    }
     if (-not [string]::IsNullOrWhiteSpace($LogPath)) {
       $rehearsalParameters['LogPath'] = $LogPath
     }
 
     if ($PSCmdlet.ShouldProcess("$Application ($Tier)", 'Invoke-DatabasePackageRehearsal')) {
+      if ($PSBoundParameters.ContainsKey('ExpectedDatabaseName')) {
+        $fixturePrivateRoot = Join-Path $SourcePath 'src/ATAP.Utilities.DatabaseManagement.Powershell/private'
+        foreach ($fixtureSource in @(
+            @{ File = 'DatabaseSqlConnection.Helpers.ps1'; Commands = @('Assert-DatabaseSqlConnectionIsOpen') }
+            @{ File = 'DatabaseSqlCommand.Helpers.ps1'; Commands = @('New-DatabaseSqlCommand', 'Invoke-DatabaseSqlQuery') }
+            @{ File = 'Invoke-AceCommanderLoginFixtureSequence.ps1'; Commands = @('Invoke-AceCommanderLoginFixtureSequence') }
+          )) {
+          $fixtureSourcePath = Join-Path $fixturePrivateRoot $fixtureSource.File
+          if (-not (Test-Path -LiteralPath $fixtureSourcePath -PathType Leaf)) { throw 'Selected fixture source helper is missing.' }
+          $priorBindingErrorAction = $ErrorActionPreference
+          try {
+            $ErrorActionPreference = 'Stop'
+            . $fixtureSourcePath
+          } finally { $ErrorActionPreference = $priorBindingErrorAction }
+          foreach ($fixtureCommandName in $fixtureSource.Commands) {
+            $fixtureCommand = Get-Command $fixtureCommandName -CommandType Function -ErrorAction Stop
+            if (-not [string]::Equals([IO.Path]::GetFullPath($fixtureCommand.ScriptBlock.File),
+                [IO.Path]::GetFullPath($fixtureSourcePath), [StringComparison]::OrdinalIgnoreCase)) {
+              throw 'Selected fixture helper did not bind from the explicit source root.'
+            }
+          }
+        }
+      }
       $rehearsalOutput = @(Invoke-DatabasePackageRehearsal @rehearsalParameters)
       $structuredResults = @($rehearsalOutput | Where-Object {
           $null -ne $_ -and $_.PSObject.Properties.Name -contains 'Success'
@@ -772,7 +895,8 @@ function Invoke-DatabasePackageTierApply {
     [Parameter(Mandatory)]
     [ValidateSet('Experimental', 'Development', 'Integration', 'QA', 'Production')]
     [string]$Tier,
-    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ConnectionStringSecretName
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ConnectionStringSecretName,
+    [ValidateNotNullOrEmpty()][string]$ExpectedDatabaseName
   )
 
   BEGIN {
@@ -792,6 +916,12 @@ function Invoke-DatabasePackageTierApply {
     $applied = $false
     $flywayResult = $null
     $expandedPath = $null
+
+    if ($PSBoundParameters.ContainsKey('ExpectedDatabaseName') -and
+        ($ExpectedDatabaseName -cne 'ATAPUtilities' -or $Application -cne $ExpectedDatabaseName -or
+         $DatabasePackageId -cne 'ATAPUtilities.Database')) {
+      throw 'Expected apply catalog does not match the selected package.'
+    }
 
     try {
       $expandedPath = Expand-DatabaseChangePackage -NupkgPath $NupkgPath
@@ -839,6 +969,11 @@ function Invoke-DatabasePackageTierApply {
         FlywayTomlPath               = (Join-Path $expandedPath 'flyway.toml')
         PackageName                  = $DatabasePackageId
         PackageVersion               = $PackageVersion
+      }
+      if ($PSBoundParameters.ContainsKey('ExpectedDatabaseName')) {
+        $flywayParameters.ExpectedDatabaseName = $ExpectedDatabaseName
+        $flywayParameters.FlywayAdditionalArgs = @('-defaultSchema=dbo', '-table=flyway_schema_history')
+        $flywayParameters.FlywaySharedSqlMigrationsPath = ''
       }
 
       if ($PSCmdlet.ShouldProcess("$applicationName ($Tier / $environment)", 'Invoke-Flyway migrate')) {
@@ -903,7 +1038,8 @@ function Invoke-DatabasePackageStageApply {
     [AllowEmptyString()][AllowNull()][string]$NupkgPath = '',
     [AllowEmptyString()][string]$ConnectionStringSecretName = '',
     [switch]$SkipApply,
-    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$TracePath
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$TracePath,
+    [ValidateNotNullOrEmpty()][string]$ExpectedDatabaseName
   )
 
   BEGIN {
@@ -913,6 +1049,12 @@ function Invoke-DatabasePackageStageApply {
   }
 
   PROCESS {
+    $expectedCatalogParameters = @{}
+    if ($PSBoundParameters.ContainsKey('ExpectedDatabaseName')) {
+      if ($ExpectedDatabaseName -cne 'ATAPUtilities' -or $DatabaseApplication -cne $ExpectedDatabaseName -or
+          $DatabasePackageId -cne 'ATAPUtilities.Database') { throw 'Expected stage catalog does not match the selected package.' }
+      $expectedCatalogParameters.ExpectedDatabaseName = $ExpectedDatabaseName
+    }
     if ([string]::IsNullOrWhiteSpace($ConnectionStringSecretName)) {
       throw "Per-tier apply is required for '$DatabasePackageId' tier '$Tier'; its connection-string secret name is not configured."
     }
@@ -934,6 +1076,7 @@ function Invoke-DatabasePackageStageApply {
 
     Add-DatabasePackagePublishTrace -Path $TracePath -Message "Applying '$DatabasePackageId' '$PackageVersion' to tier '$Tier' database."
     $applyResult = Invoke-DatabasePackageTierApply `
+      @expectedCatalogParameters `
       -NupkgPath $NupkgPath `
       -Application $DatabaseApplication `
       -DatabasePackageId $DatabasePackageId `
@@ -1117,6 +1260,11 @@ function Invoke-DatabasePackageBuildMasterStage {
 
     $databasePackageId = [string]$context.DatabasePackageId
     $databasePackageSourcePath = [string]$context.DatabasePackageSourcePath
+    $fixtureRehearsalParameters = @{}
+    if ($DatabaseApplication -ceq 'ATAPUtilities' -and $databasePackageId -ceq 'ATAPUtilities.Database' -and $DatabaseStream -ceq '') {
+      $fixtureRehearsalParameters = Get-DatabasePackageFixtureRehearsalParameters -SourcePath $SourcePath `
+        -ExpectedPackageName $databasePackageId -ExpectedPackageVersion $context.ResolvedPackageVersion
+    }
     $resolvedVersion = [string]$context.ResolvedPackageVersion
     $prereleaseLabel = [string]$context.PrereleaseLabel
     $effectiveCeilingTier = [string]$context.CeilingTier
@@ -1141,6 +1289,12 @@ function Invoke-DatabasePackageBuildMasterStage {
     }
 
     $existingContext = Read-BuildMasterRunContextJson -ContextDirectory $contextDirectory
+    $expectedCatalogParameters = Get-DatabasePackageExpectedCatalogParameters -DatabaseApplication $DatabaseApplication -DatabasePackageId $databasePackageId -DatabaseStream $DatabaseStream -CapturedContext $existingContext
+    if ($expectedCatalogParameters.ContainsKey('ExpectedDatabaseName') -and $null -ne $existingContext) {
+      $capturedFixtureRehearsalParameters = Get-DatabasePackageFixtureRehearsalParameters -SourcePath $SourcePath `
+        -ExpectedPackageName $databasePackageId -ExpectedPackageVersion $existingContext.ResolvedVersion
+      if ($Stage -ne 'Experimental') { $fixtureRehearsalParameters = $capturedFixtureRehearsalParameters }
+    }
     if ($Stage -ne 'Experimental') {
       if ($null -eq $existingContext -or [string]::IsNullOrWhiteSpace([string]$existingContext.ResolvedVersion)) {
         throw "BuildMaster run context '$contextDirectory' is missing a captured ResolvedVersion for build id '$BuildMasterBuildId'. Run the Experimental stage first or transfer the build-id context folder."
@@ -1310,6 +1464,8 @@ function Invoke-DatabasePackageBuildMasterStage {
         Add-DatabasePackagePublishTrace -Path $tracePath `
           -Message "Rehearsing exact captured package '$capturedNupkgPath' before Experimental apply."
         $rehearsalResult = Invoke-DatabasePackageTierRehearsal `
+          @fixtureRehearsalParameters `
+          @expectedCatalogParameters `
           -NupkgPath $capturedNupkgPath `
           -Application $DatabaseApplication `
           -Tier $Stage `
@@ -1320,6 +1476,7 @@ function Invoke-DatabasePackageBuildMasterStage {
           -Message "Experimental exact-package rehearsal passed (elapsed=$($rehearsalResult.ElapsedSeconds)s); apply may proceed."
 
         Invoke-DatabasePackageStageApply `
+          @expectedCatalogParameters `
           -ContextDirectory $contextDirectory `
           -DatabasePackageId $databasePackageId `
           -DatabaseApplication $DatabaseApplication `
@@ -1403,6 +1560,8 @@ function Invoke-DatabasePackageBuildMasterStage {
       Add-DatabasePackagePublishTrace -Path $tracePath `
         -Message "Rehearsing exact published package '$nupkgPath' before Experimental apply."
       $rehearsalResult = Invoke-DatabasePackageTierRehearsal `
+          @fixtureRehearsalParameters `
+        @expectedCatalogParameters `
         -NupkgPath $nupkgPath `
         -Application $DatabaseApplication `
         -Tier $Stage `
@@ -1417,6 +1576,7 @@ function Invoke-DatabasePackageBuildMasterStage {
       # against the empty Experimental SQL Server instance"). Enforced only
       # when an Experimental connection-string secret name is configured.
       Invoke-DatabasePackageStageApply `
+        @expectedCatalogParameters `
         -ContextDirectory $contextDirectory `
         -DatabasePackageId $databasePackageId `
         -DatabaseApplication $DatabaseApplication `
@@ -1468,6 +1628,8 @@ function Invoke-DatabasePackageBuildMasterStage {
         $rehearsalLogPath = Join-Path -Path $contextDirectory -ChildPath "$databasePackageId.$($Stage.ToLowerInvariant()).rehearsal.json"
         Add-DatabasePackagePublishTrace -Path $tracePath -Message "Rehearsing '$databasePackageId' '$resolvedVersion' before promotion to tier '$Stage'."
         $rehearsalResult = Invoke-DatabasePackageTierRehearsal `
+          @fixtureRehearsalParameters `
+          @expectedCatalogParameters `
           -NupkgPath $stageNupkgPath `
           -Application $DatabaseApplication `
           -Tier $Stage `
@@ -1501,6 +1663,7 @@ function Invoke-DatabasePackageBuildMasterStage {
     # Per-tier apply: the promotion only moved the immutable artifact between
     # feeds. Now migrate the tier's real database from that same artifact.
     Invoke-DatabasePackageStageApply `
+      @expectedCatalogParameters `
       -ContextDirectory $contextDirectory `
       -DatabasePackageId $databasePackageId `
       -DatabaseApplication $DatabaseApplication `

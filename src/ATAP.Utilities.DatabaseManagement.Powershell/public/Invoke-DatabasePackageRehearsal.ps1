@@ -60,6 +60,21 @@ function Invoke-DatabasePackageRehearsal {
 .PARAMETER LogPath
     Optional path where the rehearsal result summary is written as JSON.
 
+.PARAMETER LoginFixturePath
+    Explicit Login verifier path; requires DecryptFixturePath, an explicitly bound
+    ExpectedSourceDatabaseName and both exact package expectations. Forwarded unchanged.
+
+.PARAMETER DecryptFixturePath
+    Explicit Decrypt verifier path paired with LoginFixturePath.
+
+.PARAMETER ExpectedPackageName
+    Actual nonempty trim-exact string expected in raw manifest dbChangeUnit.
+    Required only for fixture opt-in; compared Ordinal before invoking the helper.
+
+.PARAMETER ExpectedPackageVersion
+    Actual nonempty trim-exact string expected in raw manifest appVersion.
+    No version is inferred or normalized for fixture opt-in.
+
 .OUTPUTS
     [PSCustomObject] @{
         Success        = [bool]
@@ -124,13 +139,32 @@ function Invoke-DatabasePackageRehearsal {
     [string[]]$FlywayAdditionalArgs,
 
     [Parameter(Mandatory = $false)]
-    [string]$ExpectedSourceDatabaseName
+    [string]$ExpectedSourceDatabaseName,
+
+    [string]$LoginFixturePath,
+    [string]$DecryptFixturePath,
+    [object]$ExpectedPackageName,
+    [object]$ExpectedPackageVersion
   )
 
   begin {
     $fn = 'Invoke-DatabasePackageRehearsal'
     $mn = 'ATAP.Utilities.DatabaseManagement.Powershell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn" -Tag 'Trace'
+    $fixtureRequested = $PSBoundParameters.ContainsKey('LoginFixturePath') -or
+      $PSBoundParameters.ContainsKey('DecryptFixturePath') -or
+      $PSBoundParameters.ContainsKey('ExpectedPackageName') -or
+      $PSBoundParameters.ContainsKey('ExpectedPackageVersion')
+    if ($fixtureRequested) {
+      foreach ($fixtureParameter in @('LoginFixturePath', 'DecryptFixturePath', 'ExpectedSourceDatabaseName', 'ExpectedPackageName', 'ExpectedPackageVersion')) {
+        $fixtureValue = $PSBoundParameters[$fixtureParameter]
+        if (-not $PSBoundParameters.ContainsKey($fixtureParameter) -or $fixtureValue -isnot [string] -or
+            [string]::IsNullOrWhiteSpace($fixtureValue) -or
+            -not [string]::Equals($fixtureValue, $fixtureValue.Trim(), [StringComparison]::Ordinal)) {
+          throw "Fixture rehearsal requires explicit nonempty trim-exact '$fixtureParameter'."
+        }
+      }
+    }
   }
 
   process {
@@ -160,6 +194,23 @@ function Invoke-DatabasePackageRehearsal {
     try {
       # Read manifest to derive Application name if not supplied
       $manifest = Get-DatabasePackageManifest -PackagePath $expandedPath
+
+      if ($fixtureRequested) {
+        foreach ($identityField in @('dbChangeUnit', 'appVersion')) {
+          if ($null -eq $manifest -or $manifest.PSObject.Properties.Name -notcontains $identityField) {
+            throw "Fixture package manifest is missing '$identityField'."
+          }
+          $identityValue = $manifest.$identityField
+          if ($identityValue -isnot [string] -or [string]::IsNullOrWhiteSpace($identityValue) -or
+              -not [string]::Equals($identityValue, $identityValue.Trim(), [StringComparison]::Ordinal)) {
+            throw "Fixture package manifest '$identityField' must be an actual nonempty trim-exact string."
+          }
+        }
+        if (-not [string]::Equals($manifest.dbChangeUnit, $ExpectedPackageName, [StringComparison]::Ordinal) -or
+            -not [string]::Equals($manifest.appVersion, $ExpectedPackageVersion, [StringComparison]::Ordinal)) {
+          throw 'Fixture package manifest identity does not match the explicit expectations.'
+        }
+      }
 
       $appName = $Application
       if ([string]::IsNullOrWhiteSpace($appName)) {
@@ -205,6 +256,12 @@ function Invoke-DatabasePackageRehearsal {
 
         if ($PSBoundParameters.ContainsKey('FlywayAdditionalArgs')) { $rehearsalParams['FlywayAdditionalArgs'] = $FlywayAdditionalArgs }
         if ($PSBoundParameters.ContainsKey('ExpectedSourceDatabaseName')) { $rehearsalParams['ExpectedSourceDatabaseName'] = $ExpectedSourceDatabaseName }
+        if ($fixtureRequested) {
+          $rehearsalParams['LoginFixturePath'] = $LoginFixturePath
+          $rehearsalParams['DecryptFixturePath'] = $DecryptFixturePath
+          $rehearsalParams['PackageName'] = $manifest.dbChangeUnit
+          $rehearsalParams['PackageVersion'] = $manifest.appVersion
+        }
 
         $rehearsalStarted = [datetime]::UtcNow
         $result = Invoke-FlywayRehearsal @rehearsalParams

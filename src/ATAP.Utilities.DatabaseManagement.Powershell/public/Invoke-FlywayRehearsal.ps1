@@ -49,6 +49,14 @@ function Invoke-FlywayRehearsal {
 
 .PARAMETER LogPath
     Optional path where the rehearsal result summary is written as JSON.
+
+.PARAMETER LoginFixturePath
+    Explicit paired Login/Decrypt verifier opt-in. Requires expected source and
+    exact package identity/paths. Runs the private six-phase sequence on the clone.
+
+.PARAMETER DecryptFixturePath
+    Paired with LoginFixturePath. A dedicated nonpooled, MARS-disabled verifier is
+    retired before clone cleanup, including when opening or the sequence fails.
 #>
   [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', 'CredentialsKey',
     Justification = 'CredentialsKey is a vault lookup key name, not a credential')]
@@ -150,10 +158,13 @@ function Invoke-FlywayRehearsal {
     [string[]]$Files,
 
     [Parameter(Mandatory = $false)]
-    [string]$PackageName,
+    [object]$PackageName,
 
     [Parameter(Mandatory = $false)]
-    [string]$PackageVersion,
+    [object]$PackageVersion,
+
+    [string]$LoginFixturePath,
+    [string]$DecryptFixturePath,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
     [switch]$IntegratedSecurity = $true,
@@ -166,6 +177,54 @@ function Invoke-FlywayRehearsal {
     $fn = 'Invoke-FlywayRehearsal'
     $mn = 'ATAP.Utilities.DatabaseManagement.Powershell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn" -Tag 'Trace'
+    $fixtureRequested = $PSBoundParameters.ContainsKey('LoginFixturePath') -or $PSBoundParameters.ContainsKey('DecryptFixturePath')
+    if (-not $fixtureRequested) {
+      # Use the original string parameter binder, not raw-object truthiness or an array-joining cast.
+      function Convert-GenericRehearsalPackageMetadata623 {
+        [CmdletBinding()]
+        param([string]$PackageName, [string]$PackageVersion)
+        @{ PackageName = $PackageName; PackageVersion = $PackageVersion }
+      }
+      $genericMetadata = Convert-GenericRehearsalPackageMetadata623 -PackageName $PackageName -PackageVersion $PackageVersion -ErrorAction Stop
+      $PackageName = $genericMetadata.PackageName
+      $PackageVersion = $genericMetadata.PackageVersion
+      foreach ($metadataKey in @('PackageName', 'PackageVersion')) {
+        if ($PSBoundParameters.ContainsKey($metadataKey)) { $PSBoundParameters[$metadataKey] = $genericMetadata[$metadataKey] }
+      }
+    }
+    if ($fixtureRequested) {
+      foreach ($fixtureKey in @('LoginFixturePath', 'DecryptFixturePath', 'ExpectedSourceDatabaseName',
+          'PackageName', 'PackageVersion', 'FlywayBasePath', 'FlywaySqlMigrationsPath', 'FlywayDataPath', 'FlywayTomlPath')) {
+        $fixtureValue = $PSBoundParameters[$fixtureKey]
+        if (-not $PSBoundParameters.ContainsKey($fixtureKey) -or $fixtureValue -isnot [string] -or
+            [string]::IsNullOrWhiteSpace($fixtureValue) -or $fixtureValue -cne $fixtureValue.Trim()) {
+          throw "Fixture rehearsal requires explicit nonempty trim-exact '$fixtureKey'."
+        }
+        if ($fixtureKey -like '*Path' -and -not [IO.Path]::IsPathFullyQualified($fixtureValue)) {
+          throw 'Fixture rehearsal requires absolute package and verifier paths.'
+        }
+      }
+      if ($Files -or -not [string]::IsNullOrEmpty($FlywaySharedSqlMigrationsPath)) {
+        throw 'Fixture rehearsal cannot use alternate files or shared migration locations.'
+      }
+      if ($PSBoundParameters.ContainsKey('FlywayExecutablePath') -and
+          ([string]::IsNullOrWhiteSpace($FlywayExecutablePath) -or
+           $FlywayExecutablePath -cne $FlywayExecutablePath.Trim() -or
+           -not [IO.Path]::IsPathFullyQualified($FlywayExecutablePath))) {
+        throw 'Fixture rehearsal requires an absolute exact Flyway executable path.'
+      }
+      foreach ($fixtureArg in $FlywayAdditionalArgs) {
+        if ($fixtureArg -cne '-defaultSchema=dbo' -and $fixtureArg -cne '-table=flyway_schema_history') {
+          throw 'Fixture rehearsal accepts only the exact dbo history arguments.'
+        }
+      }
+      # Bind the sibling source when absent or module-backed; no installed fallback.
+      $sequenceCommand = Get-Command Invoke-AceCommanderLoginFixtureSequence -CommandType Function -ErrorAction SilentlyContinue
+      if ($null -eq $sequenceCommand -or -not [string]::IsNullOrEmpty($sequenceCommand.ModuleName)) {
+        . (Join-Path (Split-Path -Parent $PSScriptRoot) 'private/Invoke-AceCommanderLoginFixtureSequence.ps1')
+      }
+      $null = Get-Command Invoke-AceCommanderLoginFixtureSequence -CommandType Function -ErrorAction Stop
+    }
 
     function Resolve-ServerInstance {
       param(
@@ -187,11 +246,37 @@ function Invoke-FlywayRehearsal {
     if (-not (Get-Command -Name Invoke-DatabaseSqlNonQuery -CommandType Function -ErrorAction SilentlyContinue)) {
       . (Join-Path -Path $privateDir -ChildPath 'DatabaseSqlCommand.Helpers.ps1')
     }
+    if ($fixtureRequested -and -not (Get-Command -Name New-DatabaseSqlCommand -CommandType Function -ErrorAction SilentlyContinue)) {
+      . (Join-Path -Path $privateDir -ChildPath 'DatabaseSqlCommand.Helpers.ps1')
+    }
     if (-not (Get-Command -Name Resolve-DatabaseSqlConnection -CommandType Function -ErrorAction SilentlyContinue)) {
       . (Join-Path -Path $PSScriptRoot -ChildPath 'Resolve-DatabaseSqlConnection.ps1')
     }
     if (-not (Get-Command -Name Invoke-Flyway -CommandType Function -ErrorAction SilentlyContinue)) {
       . (Join-Path -Path $PSScriptRoot -ChildPath 'Invoke-Flyway.ps1')
+    }
+    if ($fixtureRequested) {
+      foreach ($fixtureHelperGroup in @(
+          @{ File = 'DatabaseSqlConnection.Helpers.ps1'; Commands = @('Assert-DatabaseSqlConnectionIsOpen') }
+          @{ File = 'DatabaseSqlCommand.Helpers.ps1'; Commands = @('New-DatabaseSqlCommand', 'Invoke-DatabaseSqlQuery') }
+        )) {
+        $bindFixtureSource = $false
+        foreach ($fixtureDependency in $fixtureHelperGroup.Commands) {
+          $dependencyCommand = Get-Command $fixtureDependency -CommandType Function -ErrorAction SilentlyContinue
+          if ($null -eq $dependencyCommand -or -not [string]::IsNullOrEmpty($dependencyCommand.ModuleName)) {
+            $bindFixtureSource = $true
+          }
+        }
+        if ($bindFixtureSource) { . (Join-Path $privateDir $fixtureHelperGroup.File) }
+      }
+      $fixtureFlywayCommand = Get-Command Invoke-Flyway -CommandType Function -ErrorAction Stop
+      if (-not [string]::IsNullOrEmpty($fixtureFlywayCommand.ModuleName)) {
+        . (Join-Path $PSScriptRoot 'Invoke-Flyway.ps1')
+      }
+      foreach ($fixtureDependency in @('Assert-DatabaseSqlConnectionIsOpen', 'New-DatabaseSqlCommand',
+          'Invoke-DatabaseSqlQuery', 'Invoke-Flyway')) {
+        $null = Get-Command $fixtureDependency -CommandType Function -ErrorAction Stop
+      }
     }
 
     $resolvedSqlConnection = $null
@@ -281,6 +366,43 @@ function Invoke-FlywayRehearsal {
       if ($RehearsalDb -notmatch '\A[A-Za-z0-9_-]{1,64}\z') {
         throw 'Bound rehearsal database must be a safe exact catalog name.'
       }
+    }
+
+    $fixtureConnectionText = $null
+    $fixtureAuthentication = @{}
+    if ($fixtureRequested) {
+      if ($null -ne [Transactions.Transaction]::Current) { throw 'Fixture rehearsal cannot enlist in an ambient transaction.' }
+      $fixtureBuilder = [Data.Common.DbConnectionStringBuilder]::new()
+      try {
+        $fixtureBuilder.set_ConnectionString($resolvedSqlConnection.get_ConnectionString())
+        foreach ($authProperty in @('Credential', 'AccessToken', 'AccessTokenCallback')) {
+          if ($resolvedSqlConnection.PSObject.Properties.Name -contains $authProperty) {
+            $authValue = $resolvedSqlConnection.$authProperty
+            if ($null -ne $authValue -and $authValue -cne '') { $fixtureAuthentication[$authProperty] = $authValue }
+          }
+        }
+        $hasIntegratedAuth = $false
+        foreach ($authKey in @('Integrated Security', 'Trusted_Connection')) {
+          if ($fixtureBuilder.ContainsKey($authKey) -and
+              [string]$fixtureBuilder[$authKey] -match '\A(?i:true|sspi|yes)\z') { $hasIntegratedAuth = $true }
+        }
+        $hasPassword = $false
+        foreach ($authKey in @('Password', 'Pwd')) {
+          if ($fixtureBuilder.ContainsKey($authKey) -and -not [string]::IsNullOrEmpty([string]$fixtureBuilder[$authKey])) { $hasPassword = $true }
+        }
+        if (-not $hasIntegratedAuth -and -not $hasPassword -and $fixtureAuthentication.Count -eq 0) {
+          throw 'UnrecoverableAuthentication'
+        }
+        foreach ($catalogKey in @('Database', 'Initial Catalog')) { [void]$fixtureBuilder.Remove($catalogKey) }
+        $fixtureBuilder['Initial Catalog'] = $RehearsalDb
+        $fixtureBuilder['Pooling'] = 'False'
+        $fixtureBuilder['MultipleActiveResultSets'] = 'False'
+        $fixtureBuilder['Enlist'] = 'False'
+        $fixtureConnectionText = $fixtureBuilder.get_ConnectionString()
+      } catch {
+        $fixtureAuthentication.Clear()
+        throw 'Cannot preserve resolved authentication/settings for a dedicated clone verifier.'
+      } finally { $fixtureBuilder.Clear(); $authValue = $null }
     }
 
     $safeLiteral = $RehearsalDb.Replace("'", "''")
@@ -374,12 +496,54 @@ END;
       if ($PackageVersion) { $flywayParams.PackageVersion = $PackageVersion }
 
       if ($PSCmdlet.ShouldProcess($RehearsalDb, 'Run Flyway migrate rehearsal')) {
-        $flywayResult = Invoke-Flyway @flywayParams
+        if ($fixtureRequested) {
+          if (-not $created) { throw 'Fixture sequence requires a successfully created rehearsal clone.' }
+          $verifier = $null
+          try {
+            try {
+              $verifier = New-Object -TypeName $resolvedSqlConnection.GetType().AssemblyQualifiedName
+              if ([object]::ReferenceEquals($verifier, $resolvedSqlConnection) -or $null -eq $verifier) {
+                throw 'DedicatedVerifierRequired'
+              }
+              if ($verifier.GetType() -ne $resolvedSqlConnection.GetType()) { throw 'VerifierProviderMismatch' }
+              $verifier.set_ConnectionString($fixtureConnectionText)
+              foreach ($authProperty in $fixtureAuthentication.Keys) { $verifier.$authProperty = $fixtureAuthentication[$authProperty] }
+              $fixtureConnectionText = $null
+              $fixtureAuthentication.Clear()
+              $verifier.Open()
+            } catch { throw 'Dedicated clone verifier creation/open failed.' }
+            $sequenceParams = @{
+              DatabaseName = $RehearsalDb; ExpectedDatabaseName = $RehearsalDb; Environment = 'Experimental'
+              FlywayBasePath = $FlywayBasePath; FlywaySqlMigrationsPath = $FlywaySqlMigrationsPath
+              FlywayDataPath = $FlywayDataPath; FlywayTomlPath = $FlywayTomlPath
+              PackageName = $PackageName; PackageVersion = $PackageVersion
+              FlywayAdditionalArgs = @('-defaultSchema=dbo', '-table=flyway_schema_history')
+            }
+            if ($FlywayExecutablePath) { $sequenceParams.FlywayExecutablePath = $FlywayExecutablePath }
+            $flywayResult = Invoke-AceCommanderLoginFixtureSequence -SqlConnection $verifier `
+              -LoginFixturePath $LoginFixturePath -DecryptFixturePath $DecryptFixturePath `
+              -FlywayParameters $sequenceParams -Confirm:$false -ErrorAction Stop
+            if ($null -eq $flywayResult -or $flywayResult.Success -isnot [bool] -or -not $flywayResult.Success) {
+              throw 'Fixture sequence did not report success.'
+            }
+          } finally {
+            if ($null -ne $verifier -and -not [object]::ReferenceEquals($verifier, $resolvedSqlConnection)) {
+              try { $verifier.Close() } catch { throw 'Dedicated clone verifier close failed.' }
+              finally {
+                try { $verifier.Dispose() } catch { throw 'Dedicated clone verifier disposal failed.' }
+              }
+            }
+          }
+        } else {
+          $flywayResult = Invoke-Flyway @flywayParams
+        }
       }
     } catch {
       $errorText = $_.Exception.Message
       throw
     } finally {
+      $fixtureConnectionText = $null
+      $fixtureAuthentication.Clear()
       $dropQuery = @"
 USE [master];
 IF DB_ID(N'$safeLiteral') IS NOT NULL

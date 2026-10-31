@@ -5,8 +5,9 @@ function Invoke-AceCommanderLoginFixtureSequence {
   .DESCRIPTION
     Private source seam. Caller supplies an already-open, admitted isolated-copy
     verifier and approved immutable package inputs. This function grants no target,
-    clone, credential, history or release authority. Current fixtures still require
-    ATAPUtilities; clone-guard compatibility and pipeline placement remain separate.
+    clone, credential, history or release authority. The verifier must be dedicated,
+    nonpooled and MARS-disabled. It receives one immutable session catalog binding;
+    the owner must retire its session after this call, including failure.
 
     The verifier's physical session stays open across both native Flyway calls.
     Query uses direct parameterless Text batches; command/reader lifetime belongs
@@ -16,7 +17,8 @@ function Invoke-AceCommanderLoginFixtureSequence {
 
     FlywayParameters requires DatabaseName, Environment, FlywayBasePath,
     FlywaySqlMigrationsPath, FlywayDataPath, FlywayTomlPath, PackageName and
-    PackageVersion. Optional ExpectedDatabaseName must match DatabaseName.
+    PackageVersion and ExpectedDatabaseName. The explicit expected catalog must
+    match DatabaseName ordinally and satisfy the adopted ASCII1..64 grammar.
     Optional FlywayAdditionalArgs may contain only the matching dbo history pair;
     targets and other raw flags are owned by this sequence. No shared SQL location
     or alternate connection/configuration input is accepted. Native calls explicitly
@@ -24,9 +26,9 @@ function Invoke-AceCommanderLoginFixtureSequence {
   .PARAMETER SqlConnection
     Borrowed open Microsoft.Data.SqlClient connection, validated by existing helper.
   .PARAMETER LoginFixturePath
-    Absolute path to the unchanged accepted Login127 fixture with the pinned hash.
+    Absolute path to the pinned exact-catalog successor Login fixture.
   .PARAMETER DecryptFixturePath
-    Absolute path to the unchanged accepted decrypt fixture with the pinned hash.
+    Absolute path to the pinned exact-catalog successor decrypt fixture.
   .PARAMETER FlywayParameters
     Closed package/execution inputs described above, copied without modifying caller.
   .OUTPUTS
@@ -57,9 +59,9 @@ function Invoke-AceCommanderLoginFixtureSequence {
     $progress = @{ Phase = 'Validation'; Failure = 'InvalidInputs'; SessionId = $null }
     $completed = [Collections.Generic.List[string]]::new()
     try {
-      $required = @('DatabaseName', 'Environment', 'FlywayBasePath', 'FlywaySqlMigrationsPath',
+      $required = @('DatabaseName', 'ExpectedDatabaseName', 'Environment', 'FlywayBasePath', 'FlywaySqlMigrationsPath',
         'FlywayDataPath', 'FlywayTomlPath', 'PackageName', 'PackageVersion')
-      $optional = @('FlywayExecutablePath', 'ExpectedDatabaseName', 'GitTag', 'GitCommit', 'FlywayAdditionalArgs')
+      $optional = @('FlywayExecutablePath', 'GitTag', 'GitCommit', 'FlywayAdditionalArgs')
       $common = @{}
       foreach ($key in $FlywayParameters.Keys) {
         if ($key -isnot [string] -or $key -notin ($required + $optional) -or $common.ContainsKey($key)) {
@@ -79,10 +81,11 @@ function Invoke-AceCommanderLoginFixtureSequence {
       }
       if (-not [IO.Path]::IsPathFullyQualified($LoginFixturePath) -or
           -not [IO.Path]::IsPathFullyQualified($DecryptFixturePath)) { throw 'InvalidInputs' }
-      if ($common.ContainsKey('ExpectedDatabaseName') -and
+      if ($common.ExpectedDatabaseName -cnotmatch '\A[A-Za-z0-9_-]{1,64}\z' -or
           -not [string]::Equals($common.ExpectedDatabaseName, $common.DatabaseName, [StringComparison]::Ordinal)) {
         throw 'InvalidInputs'
       }
+      $capturedExpectedCatalog = $common.ExpectedDatabaseName
       $progress.Failure = 'ConflictingFlywayArguments'
       if ($common.ContainsKey('FlywayAdditionalArgs')) {
         if ($null -eq $common.FlywayAdditionalArgs -or
@@ -105,7 +108,7 @@ function Invoke-AceCommanderLoginFixtureSequence {
         }
       }
       $progress.Failure = 'DependencyUnavailable'
-      foreach ($dependency in @('Assert-DatabaseSqlConnectionIsOpen', 'Invoke-DatabaseSqlQuery', 'Invoke-Flyway')) {
+      foreach ($dependency in @('Assert-DatabaseSqlConnectionIsOpen', 'Invoke-DatabaseSqlQuery', 'New-DatabaseSqlCommand', 'Invoke-Flyway')) {
         $null = Get-Command $dependency -ErrorAction Stop
       }
       $progress.Failure = 'InvalidVerifier'
@@ -115,6 +118,19 @@ function Invoke-AceCommanderLoginFixtureSequence {
         throw 'InvalidVerifier'
       }
       $connectionId = $SqlConnection.ClientConnectionId
+      $progress.Failure = 'VerifierConnectionSettings'
+      $configuration = [Data.Common.DbConnectionStringBuilder]::new()
+      try {
+        $incomingText = $SqlConnection.get_ConnectionString()
+        if ($incomingText -isnot [string]) { throw 'VerifierConnectionSettings' }
+        $configuration.set_ConnectionString($incomingText)
+        foreach ($key in @('Pooling', 'MultipleActiveResultSets')) {
+          if (-not $configuration.ContainsKey($key) -or
+              -not [string]::Equals([string]$configuration[$key], 'false', [StringComparison]::OrdinalIgnoreCase)) {
+            throw 'VerifierConnectionSettings'
+          }
+        }
+      } finally { $configuration.Clear(); $incomingText = $null } # Never log/hash incoming connection text.
       $progress.Failure = 'FixturePinMismatch'
       $utf8 = [Text.UTF8Encoding]::new($false, $true)
       function readPinnedFixture([string]$Path, [string]$Hash) {
@@ -123,16 +139,16 @@ function Invoke-AceCommanderLoginFixtureSequence {
         if (-not [string]::Equals($actual, $Hash, [StringComparison]::Ordinal)) { throw 'FixturePinMismatch' }
         return $utf8.GetString($bytes)
       }
-      $login = readPinnedFixture $LoginFixturePath 'A8815D635C1427013C9995B8DA558DF644F8C59C49AB04969068D0FF7790ABB1'
-      $decrypt = readPinnedFixture $DecryptFixturePath '2E6C298EFFA2D764486CEB0C5441A0FF52CE070BDE4C06738B6CFDED5302AF8E'
+      $login = readPinnedFixture $LoginFixturePath '81C02B51F650D1E21036238B5D4574B20F8F4F0421050DEC4BDD83FDD36928A8'
+      $decrypt = readPinnedFixture $DecryptFixturePath 'CD79D47FDD8DF818B7C70A6B2FB8183D99C6CD8AC79CFA70E9255442225E0433'
 
-      function assertSession {
+      function assertSession([switch]$BeforeBinding) {
         $progress.Failure = 'VerifierSessionChanged'
         if ([string]$SqlConnection.State -cne 'Open' -or $SqlConnection.ClientConnectionId -ne $connectionId) {
           throw 'VerifierSessionChanged'
         }
         $progress.Failure = 'SessionObservationFailed'
-        $rows = @(Invoke-DatabaseSqlQuery -SqlConnection $SqlConnection -CommandText 'SELECT DB_NAME() AS DatabaseName, CAST(@@SPID AS int) AS SessionId, @@TRANCOUNT AS TransactionCount;' -ErrorAction Stop)
+        $rows = @(Invoke-DatabaseSqlQuery -SqlConnection $SqlConnection -CommandText "SELECT DB_NAME() AS DatabaseName, CAST(@@SPID AS int) AS SessionId, @@TRANCOUNT AS TransactionCount, SESSION_CONTEXT(N'ATAP.AceCommander.Fixture.ExpectedCatalog') AS ExpectedCatalog, CONVERT(nvarchar(128), SQL_VARIANT_PROPERTY(SESSION_CONTEXT(N'ATAP.AceCommander.Fixture.ExpectedCatalog'), 'BaseType')) AS CatalogType;" -ErrorAction Stop)
         $progress.Failure = 'InvalidSessionObservation'
         if ($rows.Count -ne 1 -or $rows[0].DatabaseName -isnot [string] -or
             $rows[0].SessionId -isnot [int] -or $rows[0].SessionId -le 0 -or
@@ -149,6 +165,29 @@ function Invoke-AceCommanderLoginFixtureSequence {
           throw 'VerifierSessionChanged'
         }
         $progress.SessionId = $rows[0].SessionId
+        if ($BeforeBinding) {
+          $progress.Failure = 'VerifierContextAlreadyBound'
+          if ($null -ne $rows[0].ExpectedCatalog -or $null -ne $rows[0].CatalogType) { throw 'VerifierContextAlreadyBound' }
+        } else {
+          $progress.Failure = 'VerifierCatalogBindingMismatch'
+          if ($rows[0].ExpectedCatalog -isnot [string] -or $rows[0].CatalogType -cne 'nvarchar' -or
+              -not [string]::Equals($rows[0].ExpectedCatalog, $capturedExpectedCatalog, [StringComparison]::Ordinal)) {
+            throw 'VerifierCatalogBindingMismatch'
+          }
+        }
+      }
+      function setCatalogBinding {
+        $progress.Phase = 'CatalogBinding'; $progress.Failure = 'CatalogBindingSetupFailed'
+        $command = $null
+        try {
+          $text = "IF SESSION_CONTEXT(N'ATAP.AceCommander.Fixture.ExpectedCatalog') IS NOT NULL THROW 61990, N'Fresh verifier binding required.', 1; EXEC sys.sp_set_session_context @key=N'ATAP.AceCommander.Fixture.ExpectedCatalog', @value=@ExpectedCatalog, @read_only=1;"
+          $command = New-DatabaseSqlCommand -SqlConnection $SqlConnection -CommandText $text -Parameters @{ ExpectedCatalog = $capturedExpectedCatalog } -CommandType ([Data.CommandType]::Text) -ErrorAction Stop
+          $parameter = $command.Parameters['@ExpectedCatalog']
+          if ($null -eq $parameter) { throw 'CatalogBindingSetupFailed' }
+          $parameter.SqlDbType = [Data.SqlDbType]::NVarChar
+          $parameter.Size = 128
+          [void]$command.ExecuteNonQuery()
+        } finally { if ($null -ne $command) { $command.Dispose() } }
       }
       function runFixture([string]$Phase, [string]$Text, [string]$Marker, [switch]$RequireCases) {
         $progress.Phase = $Phase; $progress.Failure = 'FixtureExecutionFailed'
@@ -168,6 +207,7 @@ function Invoke-AceCommanderLoginFixtureSequence {
         $progress.Phase = 'migrate' + $Version; $progress.Failure = 'FlywayExecutionFailed'
         $parameters = $common.Clone()
         $parameters.SqlConnection = $SqlConnection
+        $parameters.ExpectedDatabaseName = $capturedExpectedCatalog
         $parameters.FlywayCommand = 'migrate'
         $parameters.FlywaySharedSqlMigrationsPath = ''
         $parameters.FlywayAdditionalArgs = @('-defaultSchema=dbo', '-table=flyway_schema_history', ('-target=' + $Version))
@@ -179,6 +219,8 @@ function Invoke-AceCommanderLoginFixtureSequence {
         assertSession
         $completed.Add($progress.Phase)
       }
+      assertSession -BeforeBinding
+      setCatalogBinding
       assertSession
       runFixture 'before160' $login 'BeforeCaptured'
       migrate '00160'

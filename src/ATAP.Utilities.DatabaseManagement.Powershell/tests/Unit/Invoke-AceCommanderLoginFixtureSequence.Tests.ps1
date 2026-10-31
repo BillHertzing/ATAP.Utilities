@@ -19,20 +19,25 @@ BeforeAll {
       $FlywayExecutablePath, $GitTag, $GitCommit, $FlywayCommand, $FlywayAdditionalArgs)
     throw 'UnmockedFlyway'
   }
+  function New-DatabaseSqlCommand {
+    [CmdletBinding()]param($SqlConnection, $CommandText, $Parameters, $CommandType)
+    throw 'UnmockedCatalogSetup'
+  }
   . (Join-Path $PSScriptRoot '../../private/Invoke-AceCommanderLoginFixtureSequence.ps1')
   # Accepted immutable SQL is read as inert bytes only, never executed by this container.
-  $script:loginPath554 = 'D:/ATAPArtifacts/Sprint0017/Task17.68.e/SharedMigration127/PostState-Fixture.sql'
-  $script:decryptPath554 = 'D:/ATAPArtifacts/Sprint0017/Task17.68.e/SharedMigration127/Decrypt-PostState-Fixture.sql'
+  $script:loginPath554 = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../../../Database/Verify/AceCommander/Verify_Login_V00160_ExactCatalog.sql'))
+  $script:decryptPath554 = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../../../Database/Verify/AceCommander/Verify_Decrypt_V00170_ExactCatalog.sql'))
   $script:loginBytes554 = [IO.File]::ReadAllBytes($script:loginPath554)
   $script:decryptBytes554 = [IO.File]::ReadAllBytes($script:decryptPath554)
   $script:loginText554 = [Text.UTF8Encoding]::new($false, $true).GetString($script:loginBytes554)
   $script:decryptText554 = [Text.UTF8Encoding]::new($false, $true).GetString($script:decryptBytes554)
-  $script:guardSql554 = 'SELECT DB_NAME() AS DatabaseName, CAST(@@SPID AS int) AS SessionId, @@TRANCOUNT AS TransactionCount;'
+  $script:guardSql554 = "SELECT DB_NAME() AS DatabaseName, CAST(@@SPID AS int) AS SessionId, @@TRANCOUNT AS TransactionCount, SESSION_CONTEXT(N'ATAP.AceCommander.Fixture.ExpectedCatalog') AS ExpectedCatalog, CONVERT(nvarchar(128), SQL_VARIANT_PROPERTY(SESSION_CONTEXT(N'ATAP.AceCommander.Fixture.ExpectedCatalog'), 'BaseType')) AS CatalogType;"
 
   function Invoke-Sequence554 {
     param([switch]$WhatIfMode)
     Invoke-AceCommanderLoginFixtureSequence -SqlConnection $script:connection554 -LoginFixturePath $script:loginPath554 -DecryptFixturePath $script:decryptPath554 -FlywayParameters $script:parameters554 -WhatIf:$WhatIfMode -Confirm:$false
   }
+
 }
 
 Describe 'Pinned Login160/Decrypt170 private fixture sequence' -Tag 'Unit' {
@@ -44,12 +49,18 @@ Describe 'Pinned Login160/Decrypt170 private fixture sequence' -Tag 'Unit' {
     $script:loginCalls554 = 0; $script:decryptCalls554 = 0; $script:guardCalls554 = 0
     $script:closeCalls554 = 0
     $script:failAt554 = ''; $script:failureKind554 = ''
-    $script:guardFault554 = ''; $script:guardFaultAt554 = 3; $script:corrupt554 = ''
+    $script:guardFault554 = ''; $script:guardFaultAt554 = 4; $script:corrupt554 = ''
+    $script:binding578 = [PSCustomObject]@{ Value = $null; Type = $null; Created = 0; Disposed = 0; Executed = 0; Fault = ''; Parameter = $null; CommandText = $null; CommandType = $null }
+    $script:observedDatabase578 = 'ATAPUtilities'
+    $script:setupConnections578 = [Collections.Generic.List[object]]::new()
     $script:connection554 = [PSCustomObject]@{
       State = 'Open'; ClientConnectionId = [guid]'11111111-1111-1111-1111-111111111111'
+      ConnectionString = 'Pooling=False;MultipleActiveResultSets=False;Data Source=synthetic578'
     }
-    foreach ($name in @('Close', 'Dispose', 'Open', 'ChangeDatabase')) {
-      $script:connection554 | Add-Member -MemberType ScriptMethod -Name $name -Value {
+    $script:expectedConnectionString578 = $script:connection554.ConnectionString
+    $script:connection554 | Add-Member -MemberType ScriptMethod -Name get_ConnectionString -Value { return $this.ConnectionString }
+    foreach ($lifecycleMethodName592 in @('Close', 'Dispose', 'Open', 'ChangeDatabase')) {
+      $script:connection554 | Add-Member -MemberType ScriptMethod -Name $lifecycleMethodName592 -Value {
         $script:closeCalls554++; throw 'BorrowedLifetimeViolation'
       }
     }
@@ -65,6 +76,29 @@ Describe 'Pinned Login160/Decrypt170 private fixture sequence' -Tag 'Unit' {
     $script:originalParameters554 = ConvertTo-Json -InputObject $script:parameters554 -Compress
     Mock Write-PSFMessage {}
     Mock Assert-DatabaseSqlConnectionIsOpen { return $Connection }
+    Mock New-DatabaseSqlCommand {
+      $script:setupConnections578.Add($SqlConnection)
+      $binding = $script:binding578
+      if ($binding.Fault -eq 'create') { throw 'SENSITIVE-SETUP578' }
+      $parameter = [PSCustomObject]@{ Value = $Parameters.ExpectedCatalog; SqlDbType = [Data.SqlDbType]::Variant; Size = 0 }
+      $binding.Parameter = $parameter; $binding.CommandText = $CommandText; $binding.CommandType = $CommandType
+      $command = [PSCustomObject]@{ Parameters = @{ '@ExpectedCatalog' = $parameter }; Binding = $binding }
+      if ($binding.Fault -eq 'missing parameter') { $command.Parameters.Clear() }
+      $command | Add-Member -MemberType ScriptMethod -Name ExecuteNonQuery -Value {
+        $this.Binding.Executed++
+        switch ($this.Binding.Fault) {
+          'execute' { throw 'SENSITIVE-SETUP578' }
+          'no set' { return -1 }
+          'wrong name' { $this.Binding.Value = 'Other'; $this.Binding.Type = 'nvarchar'; return -1 }
+          'wrong type' { $this.Binding.Value = $this.Binding.Parameter.Value; $this.Binding.Type = 'varchar'; return -1 }
+        }
+        $this.Binding.Value = $this.Binding.Parameter.Value; $this.Binding.Type = 'nvarchar'
+        return -1
+      }
+      $command | Add-Member -MemberType ScriptMethod -Name Dispose -Value { $this.Binding.Disposed++ }
+      $binding.Created++
+      return $command
+    }
     Mock Get-Content {
       if ($LiteralPath -eq $script:loginPath554) {
         if ($script:corrupt554 -eq 'login') { return ,([byte[]]($script:loginBytes554 + [byte]0)) }
@@ -80,7 +114,7 @@ Describe 'Pinned Login160/Decrypt170 private fixture sequence' -Tag 'Unit' {
       $script:queryConnections554.Add($SqlConnection)
       if ($CommandText -ceq $script:guardSql554) {
         $script:guardCalls554++
-        $row = [PSCustomObject]@{ DatabaseName = 'ATAPUtilities'; SessionId = 42; TransactionCount = 0 }
+        $row = [PSCustomObject]@{ DatabaseName = $script:observedDatabase578; SessionId = 42; TransactionCount = 0; ExpectedCatalog = $script:binding578.Value; CatalogType = $script:binding578.Type }
         if ($script:guardCalls554 -eq $script:guardFaultAt554) {
           switch ($script:guardFault554) {
             'spid' { $row.SessionId = 43 }
@@ -90,6 +124,10 @@ Describe 'Pinned Login160/Decrypt170 private fixture sequence' -Tag 'Unit' {
             'empty' { return }
             'connection id' { $script:connection554.ClientConnectionId = [guid]'22222222-2222-2222-2222-222222222222' }
             'closed' { $script:connection554.State = 'Closed' }
+            'catalog case' { $row.ExpectedCatalog = 'ataputilities' }
+            'catalog trailing' { $row.ExpectedCatalog = 'ATAPUtilities ' }
+            'catalog missing' { $row.ExpectedCatalog = $null; $row.CatalogType = $null }
+            'catalog type' { $row.CatalogType = 'varchar' }
           }
         }
         return $row
@@ -132,16 +170,21 @@ Describe 'Pinned Login160/Decrypt170 private fixture sequence' -Tag 'Unit' {
   AfterEach {
     # Independent of expected exceptions, so refusal tests cannot hide a lifetime violation.
     $script:closeCalls554 | Should -Be 0
+    $script:binding578.Disposed | Should -Be $script:binding578.Created
+    $script:connection554.ConnectionString | Should -BeExactly $script:expectedConnectionString578
     foreach ($connection in $script:queryConnections554) {
       [object]::ReferenceEquals($connection, $script:connection554) | Should -BeTrue
     }
     foreach ($call in $script:nativeCalls554) {
       [object]::ReferenceEquals($call.Connection, $script:connection554) | Should -BeTrue
     }
+    foreach ($connection in $script:setupConnections578) {
+      [object]::ReferenceEquals($connection, $script:connection554) | Should -BeTrue
+    }
     (ConvertTo-Json -InputObject $script:parameters554 -Compress) | Should -BeExactly $script:originalParameters554
   }
 
-  It 'runs exactly six pinned phases, seven guards, two targets and the same immutable package' {
+  It 'runs exactly six pinned phases, eight guards, two targets and the same immutable package' {
     $result = Invoke-Sequence554
     $expected = @('before160', 'migrate00160', 'after160', 'before170', 'migrate00170', 'after170')
     ($script:trace554 -join '|') | Should -BeExactly ($expected -join '|')
@@ -149,7 +192,16 @@ Describe 'Pinned Login160/Decrypt170 private fixture sequence' -Tag 'Unit' {
     $result.Success | Should -BeTrue
     $result.Status | Should -BeExactly 'SequenceCompleted'
     $result.SessionId | Should -Be 42
-    $script:guardCalls554 | Should -Be 7
+    $script:guardCalls554 | Should -Be 8
+    $script:binding578.Executed | Should -Be 1
+    $script:binding578.Disposed | Should -Be 1
+    $script:binding578.Parameter.SqlDbType | Should -Be ([Data.SqlDbType]::NVarChar)
+    $script:binding578.Parameter.Size | Should -Be 128
+    $script:binding578.Parameter.Value | Should -BeExactly 'ATAPUtilities'
+    $script:binding578.CommandType | Should -Be ([Data.CommandType]::Text)
+    $script:binding578.CommandText | Should -Match '@value=@ExpectedCatalog, @read_only=1'
+    $script:binding578.CommandText | Should -Not -Match 'ATAPUtilities'
+    Should -Invoke New-DatabaseSqlCommand -Times 1 -Exactly
     $script:nativeCalls554.Count | Should -Be 2
     for ($index = 0; $index -lt 2; $index++) {
       $call = $script:nativeCalls554[$index]
@@ -167,7 +219,7 @@ Describe 'Pinned Login160/Decrypt170 private fixture sequence' -Tag 'Unit' {
       $call.PackageName | Should -BeExactly $script:parameters554.PackageName
       $call.Version | Should -BeExactly $script:parameters554.PackageVersion
     }
-    Should -Invoke Invoke-DatabaseSqlQuery -Times 11 -Exactly
+    Should -Invoke Invoke-DatabaseSqlQuery -Times 12 -Exactly
     Should -Invoke Get-Content -Times 2 -Exactly -ParameterFilter { $AsByteStream -and $Raw }
   }
 
@@ -181,6 +233,7 @@ Describe 'Pinned Login160/Decrypt170 private fixture sequence' -Tag 'Unit' {
     Should -Invoke Get-Content -Times 0 -Exactly
     Should -Invoke Invoke-DatabaseSqlQuery -Times 0 -Exactly
     Should -Invoke Invoke-Flyway -Times 0 -Exactly
+    Should -Invoke New-DatabaseSqlCommand -Times 0 -Exactly
   }
 
   It 'refuses changed pinned <Fixture> bytes before any SQL' -ForEach @(
@@ -294,5 +347,119 @@ Describe 'Pinned Login160/Decrypt170 private fixture sequence' -Tag 'Unit' {
     $completedPrefix = if ($Phase -eq 'migrate00160') { 'before160' } else { 'before160|migrate00160|after160|before170' }
     ($caught554.Exception.Data['CompletedPhases'] -join '|') | Should -BeExactly $completedPrefix
     ($script:trace554 -join '|') | Should -BeExactly $Prefix
+  }
+  It 'requires the explicit expected catalog before effects' {
+    $script:parameters554.Remove('ExpectedDatabaseName')
+    $script:originalParameters554 = ConvertTo-Json -InputObject $script:parameters554 -Compress
+    { Invoke-Sequence554 } | Should -Throw '*InvalidInputs*'
+    Should -Invoke New-DatabaseSqlCommand -Times 0 -Exactly
+    Should -Invoke Invoke-DatabaseSqlQuery -Times 0 -Exactly
+    Should -Invoke Invoke-Flyway -Times 0 -Exactly
+  }
+
+  It 'refuses invalid expected catalog grammar <Name> even under WhatIf' -ForEach @(
+    @{ Name = 'bad space' }
+    @{ Name = 'café' }
+    @{ Name = "ATAPUtilities'x" }
+    @{ Name = ('a' * 65) }
+  ) {
+    $script:parameters554.DatabaseName = $Name; $script:parameters554.ExpectedDatabaseName = $Name
+    $script:originalParameters554 = ConvertTo-Json -InputObject $script:parameters554 -Compress
+    { Invoke-Sequence554 -WhatIfMode } | Should -Throw '*InvalidInputs*'
+    Should -Invoke Get-Content -Times 0 -Exactly
+    Should -Invoke New-DatabaseSqlCommand -Times 0 -Exactly
+    Should -Invoke Invoke-DatabaseSqlQuery -Times 0 -Exactly
+  }
+
+  It 'refuses unsafe or implicit verifier configuration <Fault>' -ForEach @(
+    @{ Fault = 'pooling'; Text = 'Pooling=True;MultipleActiveResultSets=False' }
+    @{ Fault = 'MARS'; Text = 'Pooling=False;MultipleActiveResultSets=True' }
+    @{ Fault = 'missing pooling'; Text = 'MultipleActiveResultSets=False' }
+    @{ Fault = 'missing MARS'; Text = 'Pooling=False' }
+    @{ Fault = 'malformed'; Text = 'SENSITIVE-CONNECTION578' }
+  ) {
+    $script:connection554.ConnectionString = $Text
+    $script:expectedConnectionString578 = $Text
+    $caught578 = $null
+    try { Invoke-Sequence554 } catch { $caught578 = $_ }
+    $caught578 | Should -Not -BeNullOrEmpty
+    $caught578.Exception.Message | Should -Match 'VerifierConnectionSettings'
+    $caught578.Exception.Message | Should -Not -Match 'SENSITIVE-CONNECTION578'
+    Should -Invoke New-DatabaseSqlCommand -Times 0 -Exactly
+    Should -Invoke Invoke-DatabaseSqlQuery -Times 0 -Exactly
+    Should -Invoke Invoke-Flyway -Times 0 -Exactly
+    Should -Invoke Write-PSFMessage -Times 0 -Exactly -ParameterFilter { $Message -match 'SENSITIVE-CONNECTION578' }
+  }
+
+  It 'refuses any preexisting session binding <Value>' -ForEach @(
+    @{ Value = 'ATAPUtilities'; Type = 'nvarchar' }
+    @{ Value = 'Other'; Type = 'nvarchar' }
+    @{ Value = 17; Type = 'int' }
+  ) {
+    $script:binding578.Value = $Value; $script:binding578.Type = $Type
+    { Invoke-Sequence554 } | Should -Throw '*VerifierContextAlreadyBound*'
+    $script:trace554.Count | Should -Be 0
+    Should -Invoke New-DatabaseSqlCommand -Times 0 -Exactly
+    Should -Invoke Invoke-Flyway -Times 0 -Exactly
+  }
+
+  It 'stops before fixtures on setup/readback failure <Fault>' -ForEach @(
+    @{ Fault = 'create'; ExpectedCode = 'CatalogBindingSetupFailed' }
+    @{ Fault = 'missing parameter'; ExpectedCode = 'CatalogBindingSetupFailed' }
+    @{ Fault = 'execute'; ExpectedCode = 'CatalogBindingSetupFailed' }
+    @{ Fault = 'no set'; ExpectedCode = 'VerifierCatalogBindingMismatch' }
+    @{ Fault = 'wrong name'; ExpectedCode = 'VerifierCatalogBindingMismatch' }
+    @{ Fault = 'wrong type'; ExpectedCode = 'VerifierCatalogBindingMismatch' }
+  ) {
+    $script:binding578.Fault = $Fault
+    $caught578 = $null
+    try { Invoke-Sequence554 } catch { $caught578 = $_ }
+    $caught578 | Should -Not -BeNullOrEmpty
+    $caught578.Exception.Message | Should -Match $ExpectedCode
+    $caught578.Exception.Message | Should -Not -Match 'SENSITIVE-SETUP578'
+    $caught578.Exception.Data['FailedPhase'] | Should -BeExactly 'CatalogBinding'
+    @($caught578.Exception.Data['CompletedPhases']).Count | Should -Be 0
+    $script:trace554.Count | Should -Be 0
+    Should -Invoke Invoke-Flyway -Times 0 -Exactly
+    Should -Invoke Write-PSFMessage -Times 0 -Exactly -ParameterFilter { $Message -match 'SENSITIVE-SETUP578' }
+  }
+
+  It 'aborts a changed late binding <Fault> without rebind or later fixture' -ForEach @(
+    @{ Fault = 'catalog case' }
+    @{ Fault = 'catalog trailing' }
+    @{ Fault = 'catalog missing' }
+    @{ Fault = 'catalog type' }
+  ) {
+    $script:guardFault554 = $Fault
+    { Invoke-Sequence554 } | Should -Throw '*VerifierCatalogBindingMismatch*'
+    ($script:trace554 -join '|') | Should -BeExactly 'before160|migrate00160'
+    $script:binding578.Executed | Should -Be 1
+    Should -Invoke New-DatabaseSqlCommand -Times 1 -Exactly
+    Should -Invoke Invoke-Flyway -Times 1 -Exactly
+  }
+
+  It 'binds one exact clone name as parameter data and native expectation' {
+    $clone = 'ATAPUtilities-rehearsal-578'
+    $script:parameters554.DatabaseName = $clone; $script:parameters554.ExpectedDatabaseName = $clone
+    $script:observedDatabase578 = $clone
+    $script:originalParameters554 = ConvertTo-Json -InputObject $script:parameters554 -Compress
+    $result = Invoke-Sequence554
+    $result.Success | Should -BeTrue
+    $result.DatabaseName | Should -BeExactly $clone
+    $script:binding578.Parameter.Value | Should -BeExactly $clone
+    $script:binding578.CommandText | Should -Not -Match ([regex]::Escape($clone))
+    foreach ($call in $script:nativeCalls554) {
+      $call.DatabaseName | Should -BeExactly $clone
+      $call.Expected | Should -BeExactly $clone
+    }
+  }
+
+  It 'refuses a second run on the bound verifier instead of clearing or rebinding it' {
+    (Invoke-Sequence554).Success | Should -BeTrue
+    { Invoke-Sequence554 } | Should -Throw '*VerifierContextAlreadyBound*'
+    $script:binding578.Executed | Should -Be 1
+    $script:nativeCalls554.Count | Should -Be 2
+    $script:trace554.Count | Should -Be 6
+    Should -Invoke New-DatabaseSqlCommand -Times 1 -Exactly
   }
 }

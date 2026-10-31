@@ -1,6 +1,6 @@
 # Get-CoordResult
 
-`Get-CoordResult` is a local, read-only projection of one retained request in an established coordination state file. The current work is source-only: the command is not yet exported or installed. This note describes the selected contract, not a deployed capability.
+`Get-CoordResult` is a local, read-only projection of one retained request in an established coordination state file. The source manifest and loader declare this command as a public export. Packaging and installed-consumer verification of this source remain pending; this note describes the selected contract, not a deployed capability.
 
 ## Inputs
 
@@ -40,4 +40,4 @@ The local object has nine fields:
 
 Before reading, the caller must establish current permission for the protected resource and all referenced data, trusted state lineage and custody, and physical containment. This function does not authenticate the caller, grant access, resolve external evidence, or validate current publication health. Treat returned records as protected data.
 
-The projection is not a `result-v1` wire response and does not mint receipt references. Wire adaptation, export, packaging, and installed-consumer verification are separate work.
+The projection is not a `result-v1` wire response and does not mint receipt references. Wire adaptation, packaging, and installed-consumer verification are separate work.

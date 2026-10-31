@@ -1,6 +1,6 @@
 # Get-CoordClaims
 
-`Get-CoordClaims` is a local, read-only projection of recorded claims and reservations in an established coordination state file. This is source-only work: the command is not yet exported or installed, and runtime verification remains separate.
+`Get-CoordClaims` is a local, read-only projection of recorded claims and reservations in an established coordination state file. The source manifest and loader declare this command as a public export. Packaging and installed-consumer verification of this source remain pending.
 
 ## Inputs
 
@@ -37,4 +37,4 @@ Empty arrays are valid and have zero counts. Missing, unreadable, malformed, mis
 
 The caller must establish current permission for the protected resource and returned data, trusted state lineage and custody, physical containment, and an appropriate input-size bound before calling. The function does not establish those prerequisites.
 
-A recorded claim or reservation is not proof of current authority, expiry, takeover eligibility, or publication health. The function does not filter by time or generation and does not grant access. This local object is not a wire response; export, packaging, and installed-consumer verification are separate work.
+A recorded claim or reservation is not proof of current authority, expiry, takeover eligibility, or publication health. The function does not filter by time or generation and does not grant access. This local object is not a wire response; packaging and installed-consumer verification are separate work.

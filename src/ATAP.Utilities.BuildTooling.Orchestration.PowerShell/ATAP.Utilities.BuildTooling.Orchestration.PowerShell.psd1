@@ -9,7 +9,7 @@
   PowerShellVersion = '7.4'
   CompatiblePSEditions = @('Core')
   RequiredModules = @(@{ ModuleName = 'PSFramework'; ModuleVersion = '1.14.457' })
-  FunctionsToExport = @('Get-CoordTask')
+  FunctionsToExport = @('Get-CoordTask', 'Get-CoordResult', 'Get-CoordClaims')
   CmdletsToExport = @()
   VariablesToExport = @()
   AliasesToExport = @()

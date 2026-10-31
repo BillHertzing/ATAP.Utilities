@@ -53,6 +53,10 @@ function Invoke-DatabasePackageRehearsal {
 .PARAMETER FlywayAdditionalArgs
     Optional ordered Flyway arguments forwarded unchanged to the rehearsal.
 
+.PARAMETER ExpectedSourceDatabaseName
+    Optional explicit source catalog expectation forwarded to Invoke-FlywayRehearsal
+    only when bound. The helper validates the resolved source; this grants no authority.
+
 .PARAMETER LogPath
     Optional path where the rehearsal result summary is written as JSON.
 
@@ -117,7 +121,10 @@ function Invoke-DatabasePackageRehearsal {
 
     [Parameter(Mandatory = $false)]
     [AllowEmptyCollection()]
-    [string[]]$FlywayAdditionalArgs
+    [string[]]$FlywayAdditionalArgs,
+
+    [Parameter(Mandatory = $false)]
+    [string]$ExpectedSourceDatabaseName
   )
 
   begin {
@@ -197,6 +204,7 @@ function Invoke-DatabasePackageRehearsal {
         if (-not [string]::IsNullOrWhiteSpace($LogPath))             { $rehearsalParams['LogPath']             = $LogPath }
 
         if ($PSBoundParameters.ContainsKey('FlywayAdditionalArgs')) { $rehearsalParams['FlywayAdditionalArgs'] = $FlywayAdditionalArgs }
+        if ($PSBoundParameters.ContainsKey('ExpectedSourceDatabaseName')) { $rehearsalParams['ExpectedSourceDatabaseName'] = $ExpectedSourceDatabaseName }
 
         $rehearsalStarted = [datetime]::UtcNow
         $result = Invoke-FlywayRehearsal @rehearsalParams

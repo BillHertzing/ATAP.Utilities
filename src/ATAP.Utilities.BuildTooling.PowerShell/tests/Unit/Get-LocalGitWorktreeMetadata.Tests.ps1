@@ -27,6 +27,7 @@ Describe 'Get-LocalGitWorktreeMetadata bounded observations' {
       if ($args -contains '--porcelain') {
         $output = @("worktree $script:root", ('HEAD ' + ('a' * 40)), 'branch refs/heads/main')
         if ($script:scenario -eq 'locked') { $output += 'locked test' }
+        if ($script:scenario -eq 'valid-with-unknown-field') { $output += 'future-field value' }
         if ($script:scenario -eq 'unsupported') { return @("worktree $script:root", 'unrecognized') }
         return $output
       }
@@ -36,6 +37,14 @@ Describe 'Get-LocalGitWorktreeMetadata bounded observations' {
 
   It 'reports only checked metadata without findings for a consistent selected registration' {
     (Get-LocalGitWorktreeMetadata -RootPath $script:root).Status | Should -Be 'NoFindingsInCheckedMetadata'
+  }
+  It 'returns inconclusive only after adding an unsupported registration field to a valid registration' {
+    $script:scenario = 'good'
+    $control = Get-LocalGitWorktreeMetadata -RootPath $script:root
+    $script:scenario = 'valid-with-unknown-field'
+    $unsupported = Get-LocalGitWorktreeMetadata -RootPath $script:root
+    $control.Status | Should -Be 'NoFindingsInCheckedMetadata'
+    $unsupported.Status | Should -Be 'Inconclusive'
   }
   It 'reports a top-level mismatch as a finding' {
     $script:scenario = 'mismatch'

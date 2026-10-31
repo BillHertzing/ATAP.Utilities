@@ -50,6 +50,9 @@ function Invoke-DatabasePackageRehearsal {
     Bitwarden secure-note name whose password is a SQL connection string.
     Passed directly to Invoke-FlywayRehearsal.
 
+.PARAMETER FlywayAdditionalArgs
+    Optional ordered Flyway arguments forwarded unchanged to the rehearsal.
+
 .PARAMETER LogPath
     Optional path where the rehearsal result summary is written as JSON.
 
@@ -110,7 +113,11 @@ function Invoke-DatabasePackageRehearsal {
     [string]$DBConnectionStringSecretName,
 
     [Parameter(Mandatory = $false)]
-    [string]$LogPath
+    [string]$LogPath,
+
+    [Parameter(Mandatory = $false)]
+    [AllowEmptyCollection()]
+    [string[]]$FlywayAdditionalArgs
   )
 
   begin {
@@ -188,6 +195,8 @@ function Invoke-DatabasePackageRehearsal {
           $rehearsalParams['DatabaseHost'] = $DatabaseHost
         }
         if (-not [string]::IsNullOrWhiteSpace($LogPath))             { $rehearsalParams['LogPath']             = $LogPath }
+
+        if ($PSBoundParameters.ContainsKey('FlywayAdditionalArgs')) { $rehearsalParams['FlywayAdditionalArgs'] = $FlywayAdditionalArgs }
 
         $rehearsalStarted = [datetime]::UtcNow
         $result = Invoke-FlywayRehearsal @rehearsalParams

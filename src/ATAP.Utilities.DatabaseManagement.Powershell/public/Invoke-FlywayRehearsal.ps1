@@ -27,6 +27,11 @@ function Invoke-FlywayRehearsal {
     migrations require existing data. When omitted, an empty rehearsal database
     is created.
 
+.PARAMETER ExpectedSourceDatabaseName
+    Optional exact source binding. Omission preserves generic rehearsal behavior.
+    When bound, require the exact source and bind Flyway to the captured clone name.
+    This parameter grants no execution or copy/drop authority.
+
 .PARAMETER SqlInstance
     SQL Server named instance. Defaults to EXPWHERTZING for the ATAP
     Experimental rehearsal environment.
@@ -83,6 +88,11 @@ function Invoke-FlywayRehearsal {
 
     [Parameter(Mandatory = $false)]
     [string]$SourceDatabaseName,
+
+    [Parameter(Mandatory = $false)]
+    [ValidateNotNullOrEmpty()]
+    [ValidatePattern('\A[A-Za-z0-9_-]{1,64}\z')]
+    [string]$ExpectedSourceDatabaseName,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
     [string]$SqlInstance = 'EXPWHERTZING',
@@ -257,6 +267,22 @@ function Invoke-FlywayRehearsal {
       throw "RehearsalDb '$RehearsalDb' is $($RehearsalDb.Length) characters; DB names are capped at 64."
     }
 
+    # Refuse source aliases before entering any DROP path, including cleanup.
+    if (-not [string]::IsNullOrWhiteSpace($SourceDatabaseName) -and
+      [string]::Equals($SourceDatabaseName.TrimEnd([char]32), $RehearsalDb.TrimEnd([char]32),
+        [StringComparison]::OrdinalIgnoreCase)) {
+      throw 'Rehearsal database must differ from the source database.'
+    }
+    $hasExpectedSourceDatabaseName = $PSBoundParameters.ContainsKey('ExpectedSourceDatabaseName')
+    if ($hasExpectedSourceDatabaseName) {
+      if (-not [string]::Equals($SourceDatabaseName, $ExpectedSourceDatabaseName, [StringComparison]::Ordinal)) {
+        throw 'SourceDatabaseName does not match ExpectedSourceDatabaseName.'
+      }
+      if ($RehearsalDb -notmatch '\A[A-Za-z0-9_-]{1,64}\z') {
+        throw 'Bound rehearsal database must be a safe exact catalog name.'
+      }
+    }
+
     $safeLiteral = $RehearsalDb.Replace("'", "''")
     $safeIdentifier = $RehearsalDb.Replace(']', ']]')
     $serverInstance = $connectionDisplayName
@@ -332,6 +358,9 @@ END;
           if ($UseTrustedConnection) { $flywayParams.UseTrustedConnection = $true }
           if ($Settings) { $flywayParams.Settings = $Settings }
         }
+      }
+      if ($hasExpectedSourceDatabaseName) {
+        $flywayParams.ExpectedDatabaseName = $RehearsalDb
       }
       if ($FlywayExecutablePath) { $flywayParams.FlywayExecutablePath = $FlywayExecutablePath }
       if ($FlywayBasePath) { $flywayParams.FlywayBasePath = $FlywayBasePath }

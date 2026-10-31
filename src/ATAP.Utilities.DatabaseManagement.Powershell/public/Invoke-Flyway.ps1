@@ -29,6 +29,10 @@ function Invoke-Flyway {
   .PARAMETER DatabaseName
   The name of the database to migrate.
 
+  .PARAMETER ExpectedDatabaseName
+  Optional explicit exact catalog binding. When omitted, generic behavior is unchanged
+  and no reserved catalog placeholder is emitted. This parameter grants no authority.
+
   .PARAMETER Environment
   The target environment: 'Development', 'Testing', 'Production', or 'Experimental'.
   This parameter drives the value of SqlInstance:
@@ -113,6 +117,11 @@ function Invoke-Flyway {
     # region Database connection parameters
     [Parameter(Mandatory = $true, Position = 0, ValueFromPipelineByPropertyName = $true)]
     [string]$DatabaseName,
+
+    [Parameter(Mandatory = $false)]
+    [ValidateNotNullOrEmpty()]
+    [ValidatePattern('\A[A-Za-z0-9_-]{1,64}\z')]
+    [string]$ExpectedDatabaseName,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
     [string]$Environment,
@@ -319,6 +328,12 @@ function Invoke-Flyway {
     }
 
     $DatabaseName = Get-PVal -ParameterName 'DatabaseName' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseName" -Settings $databasesCollection -DefaultValue $DatabaseName
+    $hasExpectedDatabaseName = $PSBoundParameters.ContainsKey('ExpectedDatabaseName')
+    if ($hasExpectedDatabaseName -and
+      -not [string]::Equals($DatabaseName, $ExpectedDatabaseName, [StringComparison]::Ordinal)) {
+      throw 'Resolved database does not match ExpectedDatabaseName.'
+    }
+
     $Environment = Get-PVal -ParameterName 'Environment' -originalPSBoundParameters $PSBoundParameters -DefaultValue $Environment -ValidValues @('Production', 'Testing', 'Development', 'Experimental') -AllowMissing
     $DBConnectionStringSecretName = Get-PVal -ParameterName 'DBConnectionStringSecretName' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DBConnectionStringSecretName" -Settings $databasesCollection -DefaultValue $DBConnectionStringSecretName -AllowMissing
     $DBConnectionStringDBSecretName = Get-PVal -ParameterName 'DBConnectionStringDBSecretName' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DBConnectionStringDBSecretName" -Settings $databasesCollection -DefaultValue $DBConnectionStringDBSecretName -AllowMissing
@@ -360,6 +375,21 @@ function Invoke-Flyway {
     $FlywayDataPath = Get-PVal -ParameterName 'FlywayDataPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayDataPath" -Settings $databasesCollection -DefaultValue $FlywayDataPath
     $FlywayTomlPath = Get-PVal -ParameterName 'FlywayTomlPath' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayTomlPath" -Settings $databasesCollection -DefaultValue $FlywayTomlPath
     $FlywayAdditionalArgs = Get-PVal -ParameterName 'FlywayAdditionalArgs' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.FlywayAdditionalArgs" -Settings $databasesCollection -DefaultValue $FlywayAdditionalArgs -AllowMissing
+    if ($hasExpectedDatabaseName) {
+      foreach ($argument in $FlywayAdditionalArgs) {
+        if ([string]::IsNullOrWhiteSpace($argument) -or -not $argument.Trim().StartsWith('-')) {
+          throw 'Exact target binding requires individual Flyway option tokens.'
+        }
+        $option = ($argument.Trim().TrimStart('-') -split '=', 2)[0].Trim().ToLowerInvariant()
+        $option = $option -replace '^flyway\.', ''
+        if ($option -match '\s' -or $option -in @('url', 'configfiles', 'environment',
+            'placeholderreplacement', 'placeholderprefix', 'placeholdersuffix', 'placeholderseparator') -or
+          $option -eq 'placeholders.atap_required_catalog' -or $option -match '^environments\.') {
+          throw 'Flyway option conflicts with the explicit exact target binding.'
+        }
+      }
+    }
+
     $PackageName = Get-PVal -ParameterName 'PackageName' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.PackageName" -Settings $databasesCollection -DefaultValue $PackageName -AllowMissing
     $PackageVersion = Get-PVal -ParameterName 'PackageVersion' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.PackageVersion" -Settings $databasesCollection -DefaultValue $PackageVersion -AllowMissing
 
@@ -560,6 +590,9 @@ function Invoke-Flyway {
       # diagnostic output, so callers must explicitly opt in through FlywayAdditionalArgs.
       $flywayParams = @("-configFiles=$FlywayTomlPath", "-environment=$environmentKey")
       if ($FlywayAdditionalArgs) { $flywayParams += $FlywayAdditionalArgs }
+      if ($hasExpectedDatabaseName) {
+        $flywayParams += "-placeholders.atap_required_catalog=$ExpectedDatabaseName"
+      }
       $flywayParams += $FlywayCommand
 
       if ($PSCmdlet.ShouldProcess($FlywayTomlPath, "flyway $FlywayCommand [$environmentKey]")) {

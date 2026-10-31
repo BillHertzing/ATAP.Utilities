@@ -1,3 +1,4 @@
+#Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
 BeforeAll {
   $script:moduleName = 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell'
   $script:modulePath = Join-Path $PSScriptRoot '..\..\ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell.psd1'
@@ -9,10 +10,75 @@ Describe 'Convert-TasksMdToSprintBoard [public]' {
   BeforeAll {
     $script:tempDir = Join-Path ([System.IO.Path]::GetTempPath()) "tasksboard_test_$([guid]::NewGuid().ToString('N'))"
     New-Item -ItemType Directory -Path $script:tempDir -Force | Out-Null
+    function script:New-LfBoardFixture609([string]$Stem, [switch]$NoStatus) {
+      $lf = [string][char]10
+      $text = @('# Current Sprint: LF fixture', '', '## Goal', 'First paragraph.', '',
+        'Second paragraph.', '', '## Stream C - Fixture', '',
+        '- [ ] **Task 17.30** [ATAP.Utilities] - Mixed output remains readable.') -join $lf
+      if (-not $NoStatus) { $text += $lf + '  - Status: Planned.' }
+      $text += $lf
+      $text = $text.Replace('## Goal' + $lf, '## Goal' + [char]13 + [char]10)
+      $md = Join-Path $script:tempDir ($Stem + '.md')
+      [IO.File]::WriteAllText($md, $text, [Text.UTF8Encoding]::new($false))
+      [pscustomobject]@{ Markdown = $md; Html = (Join-Path $script:tempDir ($Stem + '.html')) }
+    }
+    function script:Assert-LfOutput609([string]$Path) {
+      $bytes = [IO.File]::ReadAllBytes($Path)
+      $bytes.Length | Should -BeGreaterThan 0
+      @($bytes | Where-Object { $_ -eq 13 }).Count | Should -Be 0
+      ($bytes.Length -ge 3 -and $bytes[0] -eq 239 -and $bytes[1] -eq 187 -and $bytes[2] -eq 191) | Should -BeFalse
+      $bytes[-1] | Should -Be 10
+      [Text.UTF8Encoding]::new($false, $true).GetString($bytes)
+    }
+    function script:Write-PriorResolution609([string]$Path, [string]$Resolution) {
+      $prior = @(@{ id = 'C'; name = 'Fixture'; tasks = @(@{ id = '17.30'; res = $Resolution }) }) | ConvertTo-Json -Depth 8
+      [IO.File]::WriteAllText($Path, ('const STREAMS=' + $prior + ';' + [char]10 + 'function esc(s){return s;}'), [Text.UTF8Encoding]::new($false))
+    }
   }
 
   AfterAll {
     Remove-Item -Path $script:tempDir -Recurse -Force -ErrorAction SilentlyContinue
+  }
+
+  It 'writes mixed-fragment HTML as LF UTF8 without BOM and final LF while preserving task content' {
+    $fixture609 = script:New-LfBoardFixture609 'LfHtml609'
+    $input609 = [IO.File]::ReadAllText($fixture609.Markdown)
+    $input609.Contains([string][char]13 + [char]10) | Should -BeTrue
+    $input609.Replace([string][char]13 + [char]10, '').Contains([string][char]10) | Should -BeTrue
+    $before609 = (Get-FileHash -LiteralPath $fixture609.Markdown).Hash
+    $result609 = Convert-TasksMdToSprintBoard -TasksFilePath $fixture609.Markdown -OutputPath $fixture609.Html
+    $html609 = script:Assert-LfOutput609 $fixture609.Html
+    $html609 | Should -Match '<p>First paragraph\.</p>\n<p>Second paragraph\.</p>'
+    $json609 = [regex]::Match($html609, 'const STREAMS=(?<json>.*?);\nfunction esc', [Text.RegularExpressions.RegexOptions]::Singleline).Groups['json'].Value
+    $streams609 = $json609 | ConvertFrom-Json
+    @($streams609)[0].tasks[0].id | Should -BeExactly '17.30'
+    @($streams609)[0].tasks[0].title | Should -BeExactly 'Mixed output remains readable.'
+    @($streams609)[0].tasks[0].res | Should -BeExactly 'Planned.'
+    $result609.TaskCount | Should -Be 1
+    (Get-FileHash -LiteralPath $fixture609.Markdown).Hash | Should -BeExactly $before609
+  }
+
+  It 'writes reconciliation JSON as LF UTF8 without BOM and final LF without changing recorded strings' {
+    $fixture609 = script:New-LfBoardFixture609 'LfReport609' -NoStatus
+    $resolution609 = 'Evidence: first' + [char]13 + [char]10 + 'second' + [char]10 + 'third'
+    script:Write-PriorResolution609 $fixture609.Html $resolution609
+    $result609 = Convert-TasksMdToSprintBoard -TasksFilePath $fixture609.Markdown -OutputPath $fixture609.Html -WarningAction SilentlyContinue
+    $null = script:Assert-LfOutput609 $fixture609.Html
+    $report609 = (script:Assert-LfOutput609 $result609.ReconciliationReportPath) | ConvertFrom-Json
+    $result609.LostResolutionCount | Should -Be 1
+    $report609.TaskId | Should -BeExactly '17.30'
+    $report609.ExistingRes | Should -BeExactly $resolution609
+    $report609.GeneratedRes | Should -BeNullOrEmpty
+  }
+
+  It 'WhatIf leaves existing mixed-line HTML bytes unchanged and creates no reconciliation JSON' {
+    $fixture609 = script:New-LfBoardFixture609 'LfWhatIf609' -NoStatus
+    script:Write-PriorResolution609 $fixture609.Html 'Evidence: retained'
+    $before609 = (Get-FileHash -LiteralPath $fixture609.Html).Hash
+    $result609 = Convert-TasksMdToSprintBoard -TasksFilePath $fixture609.Markdown -OutputPath $fixture609.Html -WhatIf -WarningAction SilentlyContinue
+    (Get-FileHash -LiteralPath $fixture609.Html).Hash | Should -BeExactly $before609
+    $result609.ReconciliationReportPath | Should -Not -BeNullOrEmpty
+    Test-Path -LiteralPath $result609.ReconciliationReportPath | Should -BeFalse
   }
 
   It 'Generates TASKS.html next to TASKS.md by default' {

@@ -698,15 +698,18 @@ render();
       $html = $html.Replace('@@STREAMS_JSON@@', $streamsJson)
 
       if ($PSCmdlet.ShouldProcess($resolvedOutputPath, 'Write generated sprint board HTML')) {
-        Set-Content -LiteralPath $resolvedOutputPath -Value $html -Encoding UTF8 -NoNewline
+        $html = $html.Replace([string][char]13 + [char]10, [string][char]10).Replace([char]13, [char]10)
+        if (-not $html.EndsWith([string][char]10)) { $html += [char]10 }
+        Set-Content -LiteralPath $resolvedOutputPath -Value $html -Encoding utf8NoBOM -NoNewline
         if ($reconciliationReportPath) {
           $reconciliationReportDirectory = Split-Path -Path $reconciliationReportPath -Parent
           if (-not (Test-Path -LiteralPath $reconciliationReportDirectory -PathType Container)) {
             New-Item -ItemType Directory -Path $reconciliationReportDirectory -Force | Out-Null
           }
-          $lostResolutionRecords |
-            ConvertTo-Json -Depth 4 |
-            Set-Content -LiteralPath $reconciliationReportPath -Encoding UTF8
+          $reconciliationJson = $lostResolutionRecords | ConvertTo-Json -Depth 4
+          $reconciliationJson = $reconciliationJson.Replace([string][char]13 + [char]10, [string][char]10).Replace([char]13, [char]10)
+          if (-not $reconciliationJson.EndsWith([string][char]10)) { $reconciliationJson += [char]10 }
+          Set-Content -LiteralPath $reconciliationReportPath -Value $reconciliationJson -Encoding utf8NoBOM -NoNewline
         }
       }
 

@@ -61,8 +61,17 @@ function Sync-BuildMasterPlans {
     Preserve relative subdirectory names in the BuildMaster raft item name.
   .PARAMETER SkipExistingLookup
     Skip the pre-upload lookup for an existing raft item id.
+  .PARAMETER RequireExisting
+    Opt-in single literal .otter file update. Requires ExpectedRemoteSha256, a unique
+    existing item with a positive integer ID and exact old bytes. Never permits creation.
+  .PARAMETER ExpectedRemoteSha256
+    Expected SHA-256 of the raw existing item bytes. Paired with RequireExisting.
+    The client-side check is not atomic compare-and-swap. A real update is followed by
+    a same-ID/new-byte verification; failures are not retried or compensated.
   .OUTPUTS
-    PSCustomObject describing uploaded files and errors.
+    PSCustomObject describing uploaded files and errors. Guarded calls additionally return
+    GuardedResults and GuardedSuccess; inspect these even when Errors is empty. WhatIf is
+    NotWritten, never a verified update. Shared global items affect all their consumers.
   .EXAMPLE
     Sync-BuildMasterPlans -Path .\BuildMasterPlans -ApplicationName 'ATAP.Utilities'
   .EXAMPLE
@@ -99,10 +108,25 @@ function Sync-BuildMasterPlans {
 
     [switch]$SkipExistingLookup,
 
-    [switch]$IncludePipelines
+    [switch]$IncludePipelines,
+
+    [switch]$RequireExisting,
+
+    [ValidatePattern('\A[0-9A-Fa-f]{64}\z')]
+    [string]$ExpectedRemoteSha256
   )
 
   begin {
+    # Validate the opt-in shape before logging, settings resolution, secrets or API calls.
+    $guarded = $PSBoundParameters.ContainsKey('RequireExisting') -or $PSBoundParameters.ContainsKey('ExpectedRemoteSha256')
+    if ($guarded) {
+      if (-not $RequireExisting -or -not $PSBoundParameters.ContainsKey('ExpectedRemoteSha256')) { throw 'GuardedParametersMustBePaired' }
+      if (-not $PSBoundParameters.ContainsKey('Path') -or [string]::IsNullOrWhiteSpace($Path) -or
+          [Management.Automation.WildcardPattern]::ContainsWildcardCharacters($Path) -or
+          $PSBoundParameters.ContainsKey('Recurse') -or $PSBoundParameters.ContainsKey('IncludePipelines') -or
+          $PSBoundParameters.ContainsKey('SkipExistingLookup')) { throw 'GuardedSingleLiteralFileRequired' }
+      if (-not (Test-Path -LiteralPath $Path -PathType Leaf) -or [IO.Path]::GetExtension($Path) -ine '.otter') { throw 'GuardedSingleLiteralFileRequired' }
+    }
     # SC-0288 / Task 13.66.b: the SecretName host suffix is derived from the service placement
     # host, never hard-coded. Resolution order is the authoritative host setting,
     # then the placement map; an unknown placement host fails closed.
@@ -201,7 +225,9 @@ function Sync-BuildMasterPlans {
 
         [int]$ResolvedApplicationId,
 
-        [int]$ItemTypeCode = $RaftItemTypeCode
+        [int]$ItemTypeCode = $RaftItemTypeCode,
+
+        [string]$RequiredSha256 = $ExpectedRemoteSha256
       )
 
       $body = @{
@@ -217,6 +243,40 @@ function Sync-BuildMasterPlans {
 
       $itemsUri = "$nativeApiBaseUrl/Rafts_GetRaftItems"
       $items = Invoke-RestMethod -Uri $itemsUri -Method Post -Body $body -ErrorAction Stop
+      if ($guarded) {
+        # Count all case-insensitive matches, then require the exact intended spelling.
+        # Never hide ambiguity with the legacy first-match selection below.
+        $guardedMatches = @($items | Where-Object { $_ -and $_.PSObject.Properties['RaftItem_Name'] -and $_.RaftItem_Name -ieq $RaftItemName })
+        if ($guardedMatches.Count -ne 1) { throw 'GuardedExistingNotUnique' }
+        $existing = $guardedMatches[0]
+        if ([string]$existing.RaftItem_Name -cne $RaftItemName) { throw 'GuardedExistingNameMismatch' }
+        $idProperty = $existing.PSObject.Properties['RaftItem_Id']
+        $rawId = if ($idProperty) { $idProperty.Value } else { $null }
+        $integerType = $rawId -is [byte] -or $rawId -is [sbyte] -or $rawId -is [int16] -or $rawId -is [uint16] -or
+          $rawId -is [int] -or $rawId -is [uint32] -or $rawId -is [long] -or $rawId -is [ulong]
+        $validatedId = 0
+        if (($rawId -isnot [string] -and -not $integerType) -or [string]$rawId -notmatch '\A[0-9]+\z' -or
+            -not [int]::TryParse([string]$rawId, [Globalization.NumberStyles]::None, [Globalization.CultureInfo]::InvariantCulture, [ref]$validatedId) -or
+            $validatedId -le 0) { throw 'GuardedExistingIdInvalid' }
+        $remoteBytes = $null
+        foreach ($propertyName in @('Content_Bytes', 'Content_Text', 'Content')) {
+          $property = $existing.PSObject.Properties[$propertyName]
+          if (-not $property -or $null -eq $property.Value) { continue }
+          if ($property.Value -is [byte[]]) { $remoteBytes = $property.Value; break }
+          if ($property.Value -isnot [string]) { throw 'GuardedExistingContentInvalid' }
+          $text = [string]$property.Value
+          if ($text.Length -eq 0) { continue }
+          if ($propertyName -ceq 'Content_Bytes') {
+            try { $remoteBytes = [Convert]::FromBase64String($text) }
+            catch { $remoteBytes = [Text.Encoding]::UTF8.GetBytes($text) }
+          } else { $remoteBytes = [Text.Encoding]::UTF8.GetBytes($text) }
+          break
+        }
+        if ($null -eq $remoteBytes -or $remoteBytes.Length -eq 0) { throw 'GuardedExistingContentInvalid' }
+        $remoteSha = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([byte[]]$remoteBytes))
+        if ($remoteSha -ine $RequiredSha256) { throw 'GuardedRemoteHashMismatch' }
+        return $validatedId
+      }
       $existing = @($items | Where-Object { $_.RaftItem_Name -eq $RaftItemName } | Select-Object -First 1)
 
       if ($existing.Count -eq 0 -or $null -eq $existing[0].RaftItem_Id) {
@@ -310,11 +370,18 @@ function Sync-BuildMasterPlans {
 
     $uploaded = [System.Collections.ArrayList]::new()
     $errors = [System.Collections.ArrayList]::new()
+    $guardedResults = [System.Collections.ArrayList]::new()
     $uploadUri = "$nativeApiBaseUrl/Rafts_CreateOrUpdateRaftItem"
 
     foreach ($file in $files) {
       $isPipeline = (Test-PipelineFile -File $file)
       $raftItemName = $null
+      $guardResult = $null
+      if ($guarded) {
+        $guardResult = [pscustomobject]@{ Name = $file.Name; Status = 'NotWritten'; ExistingRaftItemId = $null
+          ExpectedRemoteSha256 = $ExpectedRemoteSha256; IntendedSha256 = $null; WriteAttempted = $false; WriteCompleted = $false; PostReadVerified = $false }
+        [void]$guardedResults.Add($guardResult)
+      }
 
       try {
         if ($isPipeline) {
@@ -331,6 +398,7 @@ function Sync-BuildMasterPlans {
         }
 
         $contentBytes = [System.IO.File]::ReadAllBytes($file.FullName)
+        if ($guarded) { $guardResult.IntendedSha256 = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([byte[]]$contentBytes)) }
         $body = @{
           API_Key              = $ApiKey
           Raft_Id              = $RaftId
@@ -349,11 +417,19 @@ function Sync-BuildMasterPlans {
           $existingRaftItemId = Get-BuildMasterRaftItemId -RaftItemName $raftItemName -ResolvedApplicationId $resolvedApplicationId -ItemTypeCode $itemTypeCode
           if ($null -ne $existingRaftItemId) {
             $body['RaftItem_Id'] = $existingRaftItemId
+            if ($guarded) { $guardResult.ExistingRaftItemId = $existingRaftItemId }
           }
         }
 
         if ($PSCmdlet.ShouldProcess($raftItemName, "Upload $itemKind to BuildMaster raft $RaftId (type $itemTypeCode)")) {
+          if ($guarded) { $guardResult.WriteAttempted = $true; $guardResult.Status = 'WriteUnverified' }
           Invoke-RestMethod -Uri $uploadUri -Method Post -Body $body -ErrorAction Stop | Out-Null
+          if ($guarded) {
+            $guardResult.WriteCompleted = $true; $guardResult.Status = 'PostReadUnverified'
+            $postId = Get-BuildMasterRaftItemId -RaftItemName $raftItemName -ResolvedApplicationId $resolvedApplicationId -ItemTypeCode $itemTypeCode -RequiredSha256 $guardResult.IntendedSha256
+            if ($postId -ne $existingRaftItemId) { throw 'GuardedPostReadIdMismatch' }
+            $guardResult.PostReadVerified = $true; $guardResult.Status = 'Verified'
+          }
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Uploaded BuildMaster $itemKind '$raftItemName'"
         }
 
@@ -363,9 +439,10 @@ function Sync-BuildMasterPlans {
             RaftId           = $RaftId
             RaftItemTypeCode = $itemTypeCode
             ApplicationId    = if ($resolvedApplicationId -gt 0) { $resolvedApplicationId } else { $null }
-            Uploaded         = -not $WhatIfPreference
+            Uploaded         = $(if ($guarded) { $guardResult.WriteCompleted } else { -not $WhatIfPreference })
           })
       } catch {
+        if ($guarded -and -not $guardResult.WriteAttempted) { $guardResult.Status = 'RefusedBeforeWrite' }
         if ([string]::IsNullOrWhiteSpace($raftItemName)) { $raftItemName = $file.Name }
         $errMsg = "Failed to sync BuildMaster plan '$raftItemName'. Exception: $($_.Exception.Message)"
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errMsg
@@ -373,10 +450,15 @@ function Sync-BuildMasterPlans {
       }
     }
 
-    return [PSCustomObject]@{
+    $result = [PSCustomObject]@{
       PlansSynced = $uploaded.ToArray()
       Errors      = $errors.ToArray()
     }
+    if ($guarded) {
+      $result | Add-Member NoteProperty GuardedResults $guardedResults.ToArray()
+      $result | Add-Member NoteProperty GuardedSuccess ($guardedResults.Count -eq 1 -and $guardedResults[0].PostReadVerified -and $errors.Count -eq 0)
+    }
+    return $result
   }
 
   end {

@@ -52,6 +52,9 @@ Reads the CommonCIForBitwardenReadWrite token slot for a write/rotation workflow
 .NOTES
 AI assisted using Powershell.instructions.md as guidelines
 Runs as the owning Windows account itself (DPAPI is user-bound).
+Handled failures publish fixed ATAP.SecretRead.Token stage codes and a fresh
+ErrorRecord without the original message, target or inner exception. This does
+not clear internal PowerShell error history or sanitize errors inside other code.
 
 .LINK
 https://bitwarden.com/help/secrets-manager-cli/
@@ -76,44 +79,53 @@ function Get-BWSAccessToken {
     $fn = 'Get-BWSAccessToken'
     $mn = 'ATAP.Utilities.BuildTooling.Secrets.PowerShell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started' -Tag 'bws-token'
-
-    $tokenLabelByPurpose = @{
-      ReadOnly = 'CommonCIForBitwardenReadOnly'
-      ReadWrite = 'CommonCIForBitwardenReadWrite'
-    }
-    $tokenLabel = $tokenLabelByPurpose[$TokenPurpose]
-
-    $currentSamName = ([System.Security.Principal.WindowsIdentity]::GetCurrent().Name -split '\\') | Select-Object -Last 1
-    if ([string]::IsNullOrWhiteSpace($CredentialDirectory)) {
-      $CredentialDirectory = "C:\ProgramData\ATAP\BitwardenCredentials\$currentSamName"
-    }
-    $tokenFileName = "$env:COMPUTERNAME`_$currentSamName`_BWS_$tokenLabel`_AccessToken.xml"
-    $tokenPath = Join-Path $CredentialDirectory $tokenFileName
-    $legacyTokenFileName = "$env:COMPUTERNAME`_$currentSamName`_BWS_AccessToken.xml"
-    $legacyTokenPath = Join-Path $CredentialDirectory $legacyTokenFileName
   }
 
   PROCESS {
+    $failureStage = 'ResolvePath'
     try {
+      # Path/identity failures must not escape the public sanitizing boundary.
+      $tokenLabelByPurpose = @{
+        ReadOnly = 'CommonCIForBitwardenReadOnly'
+        ReadWrite = 'CommonCIForBitwardenReadWrite'
+      }
+      $tokenLabel = $tokenLabelByPurpose[$TokenPurpose]
+
+      $currentSamName = ([System.Security.Principal.WindowsIdentity]::GetCurrent().Name -split '\\') | Select-Object -Last 1
+      if ([string]::IsNullOrWhiteSpace($CredentialDirectory)) {
+        $CredentialDirectory = "C:\ProgramData\ATAP\BitwardenCredentials\$currentSamName"
+      }
+      $tokenFileName = "$env:COMPUTERNAME`_$currentSamName`_BWS_$tokenLabel`_AccessToken.xml"
+      $tokenPath = Join-Path $CredentialDirectory $tokenFileName
+      $legacyTokenFileName = "$env:COMPUTERNAME`_$currentSamName`_BWS_AccessToken.xml"
+      $legacyTokenPath = Join-Path $CredentialDirectory $legacyTokenFileName
+
+      $failureStage = 'LocateCredential'
       $resolvedTokenPath = $tokenPath
       if (-not (Test-Path -LiteralPath $resolvedTokenPath)) {
         if ($TokenPurpose -eq 'ReadOnly' -and (Test-Path -LiteralPath $legacyTokenPath)) {
           $resolvedTokenPath = $legacyTokenPath
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Using legacy BWS ReadOnly access-token file '$legacyTokenPath'. Re-provision CommonCIForBitwardenReadOnly with Initialize-BWSAccessToken -TokenPurpose ReadOnly." -Tag 'bws-token', 'migration'
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message 'Using legacy BWS ReadOnly access-token file. Re-provision CommonCIForBitwardenReadOnly with Initialize-BWSAccessToken -TokenPurpose ReadOnly.' -Tag 'bws-token', 'migration'
         }
         else {
-          $msg = "BWS $TokenPurpose access-token file for $tokenLabel not found at '$tokenPath'. Create and ACL the folder with Initialize-BWSCredentialDirectory, then provision the token with Initialize-BWSAccessToken -TokenPurpose $TokenPurpose (see NewComputerSetup.md section 9.4.10)."
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg -Tag 'bws-token'
-          throw $msg
+          throw 'BWS access-token credential file not found.'
         }
       }
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Loading BWS $TokenPurpose access token from '$resolvedTokenPath'" -Tag 'bws-token'
+      $failureStage = 'ReadCredential'
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Loading BWS access-token credential' -Tag 'bws-token'
       $credential = Import-Clixml -LiteralPath $resolvedTokenPath -ErrorAction Stop
       return $credential
     }
     catch {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Get-BWSAccessToken failed. Exception: $($_.Exception.Message)" -Tag 'bws-token'
-      throw
+      # Do not forward Import-Clixml/native provider data into PSF or public errors.
+      $failureCode = 'ATAP.SecretRead.Token.' + $failureStage
+      # Purpose labels come only from the fixed map and validated purpose set.
+      $errorMessage = "BWS $tokenLabel access-token read failed [$failureCode]."
+      $publicError = [System.Management.Automation.ErrorRecord]::new(
+        [System.InvalidOperationException]::new($errorMessage),
+        $failureCode, [System.Management.Automation.ErrorCategory]::InvalidOperation, $null)
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -ErrorRecord $publicError -Tag 'bws-token'
+      $PSCmdlet.ThrowTerminatingError($publicError)
     }
     finally {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving Function $fn in module $mn" -Tag 'bws-token'

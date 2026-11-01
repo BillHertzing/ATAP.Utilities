@@ -73,6 +73,9 @@ Sprint automation reads a per-sprint machine secret from Bitwarden Secrets Manag
 
 .NOTES
 AI assisted using Powershell.instructions.md as guidelines
+Provider failures are replaced with fixed ATAP.SecretRead.Wrapper stage codes.
+The replacement ErrorRecord has no original target or inner exception. This does
+not sanitize logging performed internally by an independently implemented provider.
 
 .LINK
 https://github.com/whertzing/ATAP.Utilities
@@ -101,6 +104,7 @@ function Get-SecretATAP {
   }
 
   PROCESS {
+    $failureStage = 'ResolveStore'
     try {
       $identityName = $null
       try {
@@ -147,37 +151,46 @@ function Get-SecretATAP {
           }
         }
       }
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Resolved secret store type: $storeType for process owner '$identityName'"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Secret store type resolved'
 
       switch ($storeType) {
         'Bitwarden' {
+          $failureStage = 'LoadProvider'
           if (-not (Get-Command -Name 'Get-SecretATAPBitwarden' -CommandType Function -ErrorAction SilentlyContinue)) {
             $sibling = Join-Path $PSScriptRoot 'Get-SecretATAPBitwarden.ps1'
             if (Test-Path -LiteralPath $sibling) { . $sibling }
           }
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Dispatching to Get-SecretATAPBitwarden for '$SecretName' field '$SecretField'"
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Dispatching to Password Manager provider'
+          $failureStage = 'ReadProvider'
           return Get-SecretATAPBitwarden -SecretName $SecretName -SecretField $SecretField
         }
         'BitwardenSecretsManager' {
+          $failureStage = 'LoadProvider'
           # Load the sibling provider from source when not already available as a cmdlet.
           if (-not (Get-Command -Name 'Get-SecretATAPBitwardenSecretsManager' -CommandType Function -ErrorAction SilentlyContinue)) {
             $sibling = Join-Path $PSScriptRoot 'Get-SecretATAPBitwardenSecretsManager.ps1'
             if (Test-Path -LiteralPath $sibling) { . $sibling }
           }
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Dispatching to Get-SecretATAPBitwardenSecretsManager for '$SecretName' field '$SecretField'"
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Dispatching to Secrets Manager provider'
+          $failureStage = 'ReadProvider'
           return Get-SecretATAPBitwardenSecretsManager -SecretName $SecretName -SecretField $SecretField
         }
         default {
-          $msg = "Secret store type '$storeType' is not implemented. Supported: 'Bitwarden' (Password Manager) and 'BitwardenSecretsManager' (Secrets Manager)."
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
-          throw $msg
+          $failureStage = 'UnsupportedStore'
+          throw 'Secret store type is not implemented.'
         }
       }
     }
     catch {
-      $errorMessage = "Get-SecretATAP failed for secret '$SecretName' field '$SecretField'. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-      throw
+      # Never chain or publish the provider ErrorRecord: its message, target and
+      # inner exception can contain native output or a secret value.
+      $failureCode = 'ATAP.SecretRead.Wrapper.' + $failureStage
+      $errorMessage = "Secret read failed [$failureCode]."
+      $publicError = [System.Management.Automation.ErrorRecord]::new(
+        [System.InvalidOperationException]::new($errorMessage),
+        $failureCode, [System.Management.Automation.ErrorCategory]::InvalidOperation, $null)
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -ErrorRecord $publicError
+      $PSCmdlet.ThrowTerminatingError($publicError)
     }
     finally {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving Function $fn in module $mn"

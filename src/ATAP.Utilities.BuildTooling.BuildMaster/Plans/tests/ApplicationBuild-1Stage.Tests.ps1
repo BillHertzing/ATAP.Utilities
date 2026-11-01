@@ -133,14 +133,14 @@ Describe 'ApplicationBuild-1Stage.otter is a thin runner plan' {
     $script:RunnerPath | Should -Exist
   }
 
-  It 'contains exactly one Exec block invoking profiled pwsh -File with the runner' {
+  It 'contains exactly one Exec block invoking pwsh -NoProfile -File with the runner' {
     ([regex]::Matches($script:PlanText, '(?im)^\s*(InedoCore::)?Exec\s*\(')).Count | Should -Be 1
     $script:PlanText | Should -Match 'FileName:\s*pwsh'
     $code = (($script:PlanText -split "`r?`n" | Where-Object { $_ -notmatch '^\s*#' }) -join "`n")
     $arguments = @([regex]::Matches($code, '(?im)^\s*Arguments:\s*>>(?<args>.*?)>>'))
     $arguments.Count | Should -Be 1
     $arguments[0].Groups['args'].Value | Should -Match '(?i)(?:^|\s)-File\s+"\$InvokeApplicationBuildStageScript"(?:\s|$)'
-    $arguments[0].Groups['args'].Value | Should -Not -Match '(?i)(?:^|\s)-NoProfile(?:\s|$)'
+    $arguments[0].Groups['args'].Value | Should -Match '(?i)(?:^|\s)-NoProfile(?:\s|$)'
   }
 
   It 'contains no Decrypt call, no API key value and no inline -Command (comment prose excluded)' {

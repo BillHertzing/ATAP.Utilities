@@ -54,9 +54,9 @@ function Register-ElevationBrokerTask {
     Register-ElevationBrokerTask -Verbose
 
   .NOTES
-    Encoding gotcha: the template declares encoding="UTF-16". schtasks /XML and
-    Register-ScheduledTask both fail or mis-parse when the declared encoding does not match the
-    file's actual bytes, so the resolved file is written as Unicode (UTF-16LE with BOM).
+    Registration passes resolved XML directly to the existing Task Scheduler COM API.
+    The exact TaskPath folder must already exist under separately approved bootstrap ACLs.
+    Task preimages are retained; failures never trigger an automatic restore.
 
     After this returns, run Grant-ElevationBrokerStartRights so the requester can start the
     task on demand. Registration alone is not sufficient: the task has no repeating timer.
@@ -111,6 +111,12 @@ function Register-ElevationBrokerTask {
   }
 
   process {
+    if ([string]::IsNullOrWhiteSpace($TaskName) -or $TaskName -cne $TaskName.Trim() -or
+      $TaskName -in @('.', '..') -or $TaskName.Contains('\') -or $TaskName.Contains('/') -or
+      [string]::IsNullOrWhiteSpace($TaskPath) -or -not $TaskPath.StartsWith('\') -or
+      $TaskPath -match '(^|\\)\.{1,2}(\\|$)') {
+      throw 'BrokerTaskTargetInvalid'
+    }
     $fullTaskName = ($TaskPath.TrimEnd('\')) + '\' + $TaskName
     if (-not (Test-Path -LiteralPath $TemplatePath)) { throw "Template not found: $TemplatePath" }
 
@@ -214,73 +220,193 @@ function Register-ElevationBrokerTask {
       throw "Unresolved placeholder remains in the template: $($Matches[0])"
     }
 
-    # ── Credential (never printed, never persisted) ──────────────────────────
-    if (-not (Get-Command Get-SecretATAP -ErrorAction SilentlyContinue)) {
-      throw 'Get-SecretATAP is unavailable. Start an elevated shell that loads the PowerShell profile.'
+    # Validate only nonsecret XML before the registration approval boundary.
+    $resolvedTask = [xml]::new()
+    $resolvedTask.XmlResolver = $null
+    try { $resolvedTask.LoadXml($xml) }
+    catch { throw 'BrokerTaskTemplateInvalid' }
+    if (-not $resolvedTask.Task -or
+      [string]$resolvedTask.Task.Principals.Principal.UserId -cne $ServiceAccount -or
+      [string]$resolvedTask.Task.Principals.Principal.LogonType -cne 'Password') {
+      throw 'BrokerTaskTemplatePrincipalInvalid'
     }
-    $password = Get-SecretATAP -SecretName $SecretName
-    if ([string]::IsNullOrWhiteSpace($password)) {
-      throw "Get-SecretATAP returned nothing for '$SecretName'."
+    $desiredEnabled = $false
+    if (-not [bool]::TryParse([string]$resolvedTask.Task.Settings.Enabled, [ref]$desiredEnabled)) {
+      throw 'BrokerTaskTemplateEnabledInvalid'
     }
 
-    # ── Register ─────────────────────────────────────────────────────────────
+    $registered = $false
+    $backupPath = $null
+    $statePath = $null
+    # Payload has its own earlier ShouldProcess. This is not a whole-function transaction.
     if ($PSCmdlet.ShouldProcess($fullTaskName, 'Register scheduled task')) {
-      # EXPORT BEFORE DELETE. Learned the hard way on 2026-07-27: an UNELEVATED
-      # `schtasks /query` reports "cannot find the path specified" for a task that actually
-      # exists, so "the task is missing" is not a safe conclusion from an unelevated shell,
-      # and an earlier version of this code deleted a live registration and then failed to
-      # recreate it. Never destroy a registration without a restorable copy on disk first.
-      $backupPath = $null
-      & schtasks /query /tn $fullTaskName 2>$null | Out-Null
-      if ($LASTEXITCODE -eq 0) {
-        $backupDir = Join-Path $BrokerRoot '_generated\task-backups'
-        if (-not (Test-Path -LiteralPath $backupDir)) { New-Item -ItemType Directory -Path $backupDir -Force | Out-Null }
-        $backupPath = Join-Path $backupDir ("{0}-{1}.xml" -f $TaskName, (Get-Date -Format 'yyyyMMdd-HHmmss'))
-
-        $exported = & schtasks /query /tn $fullTaskName /xml ONE 2>$null
-        if ($LASTEXITCODE -eq 0 -and $exported) {
-          $backupXml = ($exported -join "`n").Replace("`r`n", "`n").Replace("`r", "`n")
-          if (-not $backupXml.EndsWith("`n")) { $backupXml += "`n" }
-          [System.IO.File]::WriteAllText($backupPath, $backupXml,
-            [System.Text.UnicodeEncoding]::new($false, $true))
-          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Existing task exported to '$backupPath' before deletion."
-        }
-        else {
-          throw "Existing task '$fullTaskName' could not be exported for backup. Refusing to delete it. Export it manually (schtasks /query /tn '$fullTaskName' /xml ONE) before re-running."
-        }
-
-        & schtasks /delete /tn $fullTaskName /f | Out-Null
-        if ($LASTEXITCODE -ne 0) { throw "Failed to delete existing task '$fullTaskName' (exit $LASTEXITCODE); nothing was changed." }
-      }
-
-      # UTF-16LE with BOM, matching the template's own encoding declaration.
-      $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ("ATAP-broker-{0}.xml" -f ([Guid]::NewGuid().ToString('N')))
+      $password = $null
+      $service = $null
+      $folder = $null
+      $existing = $null
+      $current = $null
+      $verifiedTask = $null
+      $stage = 'SchedulerConnect'
+      $registrationAttempted = $false
       try {
-        [System.IO.File]::WriteAllText($tmp, $xml, [System.Text.UnicodeEncoding]::new($false, $true))
-        & schtasks /create /tn $fullTaskName /xml $tmp /ru $ServiceAccount /rp $password | Out-Null
-        if ($LASTEXITCODE -ne 0) {
-          $msg = "schtasks /create failed with exit code $LASTEXITCODE."
-          if ($backupPath) {
-            & schtasks /create /tn $fullTaskName /xml $backupPath /ru $ServiceAccount /rp $password 2>&1 | Out-Null
-            if ($LASTEXITCODE -eq 0) { $msg += " The PREVIOUS registration was restored from '$backupPath'." }
-            else { $msg += " RESTORE ALSO FAILED - the task is now absent. Re-register manually from '$backupPath'." }
+        $service = New-Object -ComObject 'Schedule.Service'
+        $service.Connect()
+        $stage = 'TaskFolder'
+        # Folder provisioning/ACL policy is a separate bootstrap effect; never guess or
+        # enumerate another location when the exact admitted folder is unavailable.
+        $folder = $service.GetFolder($TaskPath.TrimEnd('\'))
+        if ($null -eq $folder) { throw 'BrokerTaskFolderUnavailable' }
+        $stage = 'TaskLookup'
+        $readExactTask = {
+          try {
+            $task = $folder.GetTask($TaskName)
+            if ($null -eq $task) { throw 'BrokerTaskLookupUnresolved' }
+            return $task
           }
-          throw $msg
+          catch {
+            $notFound = $false
+            $lookupError = $_.Exception
+            for ($depth = 0; $null -ne $lookupError -and $depth -lt 8; $depth++) {
+              if ($lookupError -is [IO.FileNotFoundException] -or
+                $lookupError.HResult -eq -2147024894) { $notFound = $true; break }
+              $lookupError = $lookupError.InnerException
+            }
+            if (-not $notFound) { throw }
+            return $null
+          }
         }
+        $existing = & $readExactTask
+
+        $existingXml = $null
+        $existingSddl = $null
+        $existingEnabled = $null
+        if ($null -ne $existing) {
+          $stage = 'TaskPreimage'
+          $existingXml = [string]$existing.Xml
+          $existingEnabled = [bool]$existing.Enabled
+          $existingSddl = [string]$existing.GetSecurityDescriptor(7)
+          if ([string]::IsNullOrWhiteSpace($existingXml) -or [string]::IsNullOrWhiteSpace($existingSddl)) {
+            throw 'BrokerTaskPreimageUnavailable'
+          }
+          $previousTask = [xml]::new()
+          $previousTask.XmlResolver = $null
+          $previousTask.LoadXml($existingXml)
+          if ([string]$previousTask.Task.Principals.Principal.UserId -cne $ServiceAccount -or
+            [string]$previousTask.Task.Principals.Principal.LogonType -cne 'Password') {
+            throw 'BrokerTaskExistingPrincipalMismatch'
+          }
+          # The enabled template must never silently enable an existing disabled task.
+          $desiredEnabled = $existingEnabled
+          $resolvedTask.Task.Settings.Enabled = $desiredEnabled.ToString().ToLowerInvariant()
+
+          $backupDir = Join-Path $BrokerRoot '_generated\task-backups'
+          if (-not (Test-Path -LiteralPath $backupDir)) {
+            $null = New-Item -ItemType Directory -Path $backupDir -ErrorAction Stop
+          }
+          $backupName = '{0}-{1}-{2}' -f $TaskName, (Get-Date -Format 'yyyyMMdd-HHmmss'), ([guid]::NewGuid().ToString('N'))
+          $backupPath = Join-Path $backupDir ($backupName + '.xml')
+          $statePath = Join-Path $backupDir ($backupName + '.state.json')
+          # Keep the existing task-export serialization contract. The JSON preimage
+          # additionally preserves the exact scheduler XML string, SDDL and enabled state.
+          $backupXml = $existingXml.Replace(([string][char]13 + [char]10), [string][char]10).Replace([string][char]13, [string][char]10)
+          if (-not $backupXml.EndsWith([string][char]10)) { $backupXml += [char]10 }
+          $preimage = [ordered]@{
+            TaskName = $fullTaskName; Xml = $existingXml; Sddl = $existingSddl
+            Enabled = $existingEnabled; ServiceAccount = $ServiceAccount
+          } | ConvertTo-Json -Depth 6
+          foreach ($entry in @(
+              @{ Path = $backupPath; Bytes = [Text.UnicodeEncoding]::new($false, $true).GetBytes($backupXml); Preamble = [Text.UnicodeEncoding]::new($false, $true).GetPreamble() },
+              @{ Path = $statePath; Bytes = [Text.Encoding]::UTF8.GetBytes($preimage); Preamble = [byte[]]@() })) {
+            $stream = [IO.File]::Open($entry.Path, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+            try {
+              if ($entry.Preamble.Length) { $stream.Write($entry.Preamble) }
+              $stream.Write($entry.Bytes)
+              $stream.Flush($true)
+            }
+            finally { $stream.Dispose() }
+          }
+          if ([IO.File]::ReadAllText($statePath) -cne $preimage) { throw 'BrokerTaskPreimageReadback' }
+          $stage = 'TaskPreimageCurrent'
+          $current = $folder.GetTask($TaskName)
+          if ([string]$current.Xml -cne $existingXml -or
+            [bool]$current.Enabled -ne $existingEnabled -or
+            [string]$current.GetSecurityDescriptor(7) -cne $existingSddl) {
+            throw 'BrokerTaskPreimageChanged'
+          }
+        }
+
+        else {
+          $stage = 'TaskAbsenceCurrent'
+          $current = & $readExactTask
+          if ($null -ne $current) { throw 'BrokerTaskAppearedWithoutPreimage' }
+        }
+
+        # Select an operation that cannot silently switch from protected update to
+        # create, or from observed absence to overwriting an unpreimaged task.
+        $registrationFlags = if ($null -eq $existing) { 2 } else { 4 }
+        $stage = 'Credential'
+        if (-not (Get-Command Get-SecretATAP -ErrorAction SilentlyContinue)) {
+          throw 'BrokerTaskSecretGetterUnavailable'
+        }
+        $password = Get-SecretATAP -SecretName $SecretName
+        if ($password -isnot [string] -or [string]::IsNullOrWhiteSpace($password)) {
+          throw 'BrokerTaskCredentialUnavailable'
+        }
+
+        $stage = 'TaskStateCurrent'
+        $current = & $readExactTask
+        if ($registrationFlags -eq 2) {
+          if ($null -ne $current) { throw 'BrokerTaskAppearedWithoutPreimage' }
+        }
+        elseif ($null -eq $current -or [string]$current.Xml -cne $existingXml -or
+          [bool]$current.Enabled -ne $existingEnabled -or
+          [string]$current.GetSecurityDescriptor(7) -cne $existingSddl) {
+          throw 'BrokerTaskPreimageChanged'
+        }
+
+        $stage = 'Register'
+        $registrationAttempted = $true
+        $TASK_LOGON_PASSWORD = 1
+        # No native argv, temporary credential XML, delete-first or automatic restore.
+        # New-task enabled/BootTrigger policy requires separate live admission; this
+        # transport repair neither implements disabled-first nor authorizes a task start.
+        $null = $folder.RegisterTask(
+          $TaskName, $resolvedTask.OuterXml, $registrationFlags,
+          $ServiceAccount, $password, $TASK_LOGON_PASSWORD, $existingSddl)
+        $stage = 'TaskReadback'
+        $verifiedTask = $folder.GetTask($TaskName)
+        if ($null -eq $verifiedTask -or [bool]$verifiedTask.Enabled -ne $desiredEnabled) {
+          throw 'BrokerTaskReadbackState'
+        }
+        $readback = [xml]::new()
+        $readback.XmlResolver = $null
+        $readback.LoadXml([string]$verifiedTask.Xml)
+        if ([string]$readback.Task.Principals.Principal.UserId -cne $ServiceAccount -or
+          [string]$readback.Task.Principals.Principal.LogonType -cne 'Password' -or
+          ($null -ne $existingSddl -and [string]$verifiedTask.GetSecurityDescriptor(7) -cne $existingSddl)) {
+          throw 'BrokerTaskReadbackIdentity'
+        }
+        $registered = $true
+      }
+      catch {
+        # Provider/COM errors may contain credentials. Do not retain their message,
+        # InvocationInfo or inner exception in the public error or PSFramework logs.
+        $safeHresult = '0x{0:X8}' -f $_.Exception.HResult
+        $safeMessage = "BrokerTaskRegistrationFailed Stage=$stage HResult=$safeHresult PartialStatePossible=$registrationAttempted BackupPath=$backupPath StatePath=$statePath. Preserve evidence; no automatic retry or restore."
+        $safeError = [Management.Automation.ErrorRecord]::new(
+          [InvalidOperationException]::new($safeMessage), 'BrokerTaskRegistrationFailed',
+          [Management.Automation.ErrorCategory]::InvalidOperation, $null)
+        $PSCmdlet.ThrowTerminatingError($safeError)
       }
       finally {
         $password = $null
-        Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+        foreach ($reference in @($verifiedTask, $current, $existing, $folder, $service)) {
+          if ($null -ne $reference -and [Runtime.InteropServices.Marshal]::IsComObject($reference)) {
+            try { $null = [Runtime.InteropServices.Marshal]::ReleaseComObject($reference) } catch {}
+          }
+        }
       }
     }
-
-    # ── Verify ───────────────────────────────────────────────────────────────
-    # 'Repeat: Every' is deliberately no longer expected: as of 2026-07-28 the task has NO
-    # repeating time trigger. It is started on demand by Request-ElevatedInstall, with
-    # BootTrigger as the only unattended drain. A non-empty repeat interval here now means a
-    # STALE registration was resurrected from a backup XML.
-    & schtasks /query /tn $fullTaskName /fo LIST /v 2>&1 |
-      Select-String 'TaskName|Status|Scheduled Task State|Run As User|Last Result|Repeat: Every'
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message (
       "Registration alone does not make on-demand start work. Run: " +
@@ -288,11 +414,13 @@ function Register-ElevationBrokerTask {
 
     [PSCustomObject]@{
       TaskName           = $fullTaskName
-      Registered         = ($LASTEXITCODE -eq 0)
+      Registered         = $registered
       ServiceAccount     = $ServiceAccount
       SecretName         = $SecretName
       BrokerRoot         = $BrokerRoot
       BrokerScript       = $brokerScript
+      BackupPath         = $backupPath
+      StatePath          = $statePath
       RequesterPrincipal = $RequesterPrincipal
       NextStep           = "Grant-ElevationBrokerStartRights -Principal '$RequesterPrincipal'"
     }

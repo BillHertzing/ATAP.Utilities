@@ -5,6 +5,11 @@ Describe 'SystemParityMonitor scheduled package-manager profile configuration' -
     . (Join-Path $scriptsRoot 'Register-ParityScheduledTasks.ps1')
     . (Join-Path $scriptsRoot 'ParityScheduledTask.Common.ps1')
     . (Join-Path $scriptsRoot 'Invoke-ParityScheduledAuditTask.ps1')
+    . (Join-Path $scriptsRoot 'Invoke-ParityScheduledCompareTask.ps1')
+
+    function Compare-ParityAudits {
+      param($LeftStatePath, $RightStatePath, $LeftHostName, $RightHostName, $ExpectedCadence, $StaleMultiplier, $ExpectedSurfaceMinimumCounts, $PackageManagerIdentityMappings)
+    }
 
     function Invoke-ParityAudit {
       [CmdletBinding()]
@@ -107,6 +112,64 @@ Describe 'SystemParityMonitor scheduled package-manager profile configuration' -
   }
 
   Context 'registration materialization and action transport' {
+    It 'materializes explicit per-manager mappings and preserves them on a later registration' {
+      $mapping = @(
+        @{ HostName='utat022'; Identity='UTAT022\whertzing'; Manager='pip'; ComparisonIdentity='ATAP\Developer' },
+        @{ HostName='utat01'; Identity='UTAT01\whertzing'; Manager='pip'; ComparisonIdentity='ATAP\Developer' }
+      )
+      $profiles = @(@{ Identity='UTAT022\whertzing'; PipPath='C:\pip'; NpmPrefix='C:\user-npm'; NuGetToolPath='C:\tools' })
+      $credential = [pscredential]::new('UTAT022\SvcParityAudit', (ConvertTo-SecureString 'fixture-password' -AsPlainText -Force))
+      $registration = @{ TaskSet='AuditOnly'; StatePath=$statePath; HostName='utat022'; UserId='UTAT022\SvcParityAudit'; Credential=$credential; PackageManagerProfiles=$profiles; Confirm=$false }
+      Register-ParityScheduledTasks @registration -PackageManagerIdentityMappings $mapping
+      $path = Join-Path $statePath 'Configuration\PackageManagerProfiles.v1.json'
+      $configuration = Read-ParityPackageManagerProfilesRegistrationConfiguration -Path $path
+      @($configuration.PackageManagerIdentityMappings) | Should -HaveCount 2
+      $configuration.Profiles[0].Identity | Should -Be 'UTAT022\whertzing'
+      $configuration.Profiles[0].NpmPrefix | Should -Be 'C:\user-npm'
+      Register-ParityScheduledTasks @registration
+      @((Read-ParityPackageManagerProfilesRegistrationConfiguration -Path $path).PackageManagerIdentityMappings) | Should -HaveCount 2
+      Register-ParityScheduledTasks @registration -PackageManagerIdentityMappings @()
+      @((Read-ParityPackageManagerProfilesRegistrationConfiguration -Path $path).PackageManagerIdentityMappings | Where-Object { $null -ne $_ }) | Should -HaveCount 0
+    }
+
+    It 'rejects colliding target mappings before configuration is written' {
+      $mapping = @(
+        @{ HostName='utat022'; Identity='one'; Manager='pip'; ComparisonIdentity='ATAP\Developer' },
+        @{ HostName='utat022'; Identity='two'; Manager='pip'; ComparisonIdentity='ATAP\Developer' }
+      )
+      { Register-ParityScheduledTasks -TaskSet AuditOnly -StatePath $statePath -PackageManagerProfiles @() -PackageManagerIdentityMappings $mapping -Confirm:$false } | Should -Throw '*colliding target*'
+      Test-Path -LiteralPath (Join-Path $statePath 'Configuration\PackageManagerProfiles.v1.json') | Should -BeFalse
+    }
+
+    It 'accepts legacy schema-v1 configurations without mappings and rejects malformed mapping fields' {
+      $path = Join-Path $statePath 'Configuration\PackageManagerProfiles.v1.json'
+      Write-TestPackageManagerProfileConfiguration -Path $path -SchemaVersion 1 -Profiles @()
+      @((Read-ParityPackageManagerProfilesRegistrationConfiguration -Path $path).PackageManagerIdentityMappings | Where-Object { $null -ne $_ }) | Should -HaveCount 0
+      $invalid = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
+      $invalid | Add-Member -NotePropertyName PackageManagerIdentityMappings -NotePropertyValue 'invalid'
+      $invalid | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $path -Encoding utf8
+      { Read-ParityPackageManagerProfilesRegistrationConfiguration -Path $path } | Should -Throw '*must be an array*'
+    }
+
+    It 'passes configured mappings to the scheduled comparison and omits them for legacy files' {
+      $path = Join-Path $statePath 'Configuration\PackageManagerProfiles.v1.json'
+      $mapping = @(
+        @{ HostName='utat022'; Identity='UTAT022\whertzing'; Manager='pip'; ComparisonIdentity='ATAP\Developer' },
+        @{ HostName='utat01'; Identity='UTAT01\whertzing'; Manager='pip'; ComparisonIdentity='ATAP\Developer' }
+      )
+      Write-ParityPackageManagerProfilesConfiguration -Path $path -Profiles @() -ExpectedSurfaceMinimumCounts @{ PackageManager=1 } -PackageManagerIdentityMappings $mapping
+      Mock Compare-ParityAudits {
+        param($LeftStatePath, $RightStatePath, $LeftHostName, $RightHostName, $ExpectedCadence, $StaleMultiplier, $ExpectedSurfaceMinimumCounts, $PackageManagerIdentityMappings)
+        $script:receivedMapping = @($PackageManagerIdentityMappings | Where-Object { $null -ne $_ })
+        [pscustomobject]@{ ReportPath='fixture'; UndeclaredDrift=@(); DeclaredDrift=@(); WhitelistedDrift=@(); StaleSnapshots=@() }
+      }
+      $compareArgs = @{ LeftStatePath=$statePath; RightStatePath=$statePath; LeftHostName='utat022'; RightHostName='utat01'; PackageManagerProfilesPath=$path; ResultDirectory=$resultPath }
+      Invoke-ParityScheduledCompareTask @compareArgs
+      $script:receivedMapping | Should -HaveCount 2
+      Write-TestPackageManagerProfileConfiguration -Path $path -SchemaVersion 1 -Profiles @()
+      Invoke-ParityScheduledCompareTask @compareArgs
+      $script:receivedMapping | Should -HaveCount 0
+    }
     It 'auto-resolves profiles and minima from registered global settings and transports one JSON path to both tasks' {
       $savedSettings = $global:settings
       $savedKeys = $global:configRootKeys

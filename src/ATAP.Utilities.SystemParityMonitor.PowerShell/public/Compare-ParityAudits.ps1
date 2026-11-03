@@ -52,6 +52,12 @@ Optional shared-tool policy whose RequiredChanges records bind exact journal
 entries to peer acknowledgements. Missing, mismatched, or insufficient
 acknowledgement evidence is reported independently of ordinary surface drift.
 
+.PARAMETER PackageManagerIdentityMappings
+Explicit records with HostName, Identity, Manager and ComparisonIdentity. These
+map only the named host and package manager when comparing existing snapshots.
+The original snapshot rows and source paths are not changed. Omitted managers
+remain distinct, allowing user and machine installations to remain separate.
+
 .OUTPUTS
 PSCustomObject.
 
@@ -87,6 +93,8 @@ reported as undeclared drift for human escalation.
     [double] $StaleMultiplier = 1.5,
 
     [object] $SharedDotNetToolPolicy,
+
+    [object[]] $PackageManagerIdentityMappings = @(),
 
     [hashtable] $ExpectedSurfaceMinimumCounts = @{
       OS = 1
@@ -153,8 +161,67 @@ reported as undeclared drift for human escalation.
         }
       )
 
-      $leftMap = Get-ParitySurfaceMap -Surfaces @($leftSnapshot.Surfaces)
-      $rightMap = Get-ParitySurfaceMap -Surfaces @($rightSnapshot.Surfaces)
+      $identityMappings = @{}
+      $mappedProfiles = @{}
+      foreach ($mapping in @($PackageManagerIdentityMappings)) {
+        $mappingHost = ([string]$mapping.HostName).Trim()
+        $identity = ([string]$mapping.Identity).Trim()
+        $manager = ([string]$mapping.Manager).Trim()
+        $comparisonIdentity = ([string]$mapping.ComparisonIdentity).Trim()
+        if ($mappingHost -notin @($LeftHostName, $RightHostName) -or
+          [string]::IsNullOrWhiteSpace($identity) -or $identity -match '[/|]' -or
+          $manager -notin @('pip', 'npm', 'NuGet') -or
+          [string]::IsNullOrWhiteSpace($comparisonIdentity) -or $comparisonIdentity -match '[/|]') {
+          throw 'Package-manager identity mapping requires a compared HostName, valid Identity, pip/npm/NuGet Manager, and valid ComparisonIdentity.'
+        }
+        $mappingKey = "$mappingHost|$identity|$manager"
+        if ($identityMappings.ContainsKey($mappingKey)) { throw "Duplicate package-manager identity mapping: $mappingKey" }
+        $targetKey = "$mappingHost|$comparisonIdentity|$manager"
+        if ($mappedProfiles.ContainsKey($targetKey)) { throw "Package-manager identity mapping produced a duplicate profile: $targetKey" }
+        $mappedProfiles[$targetKey] = $identity
+        $identityMappings[$mappingKey] = $comparisonIdentity
+      }
+
+      $maps = foreach ($candidate in @(
+          [pscustomobject]@{ HostName = $LeftHostName; Surfaces = @($leftSnapshot.Surfaces) },
+          [pscustomobject]@{ HostName = $RightHostName; Surfaces = @($rightSnapshot.Surfaces) }
+        )) {
+        $seenProfiles = @{}
+        $mappedSurfaces = foreach ($surface in $candidate.Surfaces) {
+          $item = [string]$surface.Item
+          $mappedItem = $item
+          if ($surface.Category -in @('PackageManager', 'PackageManagerStatus')) {
+            $parts = $item -split '/', 3
+            if ($parts.Count -ge 2) {
+              $mappingKey = "$($candidate.HostName)|$($parts[0])|$($parts[1])"
+              if ($identityMappings.ContainsKey($mappingKey)) {
+                $parts[0] = $identityMappings[$mappingKey]
+                $mappedItem = $parts -join '/'
+              }
+              if ($identityMappings.Count -gt 0) {
+                $profileKey = "$($parts[0])|$($parts[1])"
+                $sourceIdentity = ($item -split '/', 2)[0]
+                if ($seenProfiles.ContainsKey($profileKey) -and $seenProfiles[$profileKey] -ne $sourceIdentity) {
+                  throw "Package-manager identity mapping produced a duplicate profile: $profileKey"
+                }
+                $seenProfiles[$profileKey] = $sourceIdentity
+              }
+            }
+          }
+          [pscustomobject]@{ Category = $surface.Category; Item = $mappedItem; Value = $surface.Value; Source = $surface.Source; OriginalItem = $item }
+        }
+        if ($identityMappings.Count -gt 0) {
+          $seen = @{}
+          foreach ($surface in $mappedSurfaces) {
+            $key = "$($surface.Category)|$($surface.Item)"
+            if ($seen.ContainsKey($key)) { throw "Package-manager identity mapping produced a duplicate surface: $key" }
+            $seen[$key] = $true
+          }
+        }
+        Get-ParitySurfaceMap -Surfaces @($mappedSurfaces)
+      }
+      $leftMap = $maps[0]
+      $rightMap = $maps[1]
       $coverageFailures = [System.Collections.Generic.List[object]]::new()
       foreach ($snapshotCandidate in @(
           [pscustomobject]@{ HostName = $LeftHostName.ToLowerInvariant(); Surfaces = @($leftSnapshot.Surfaces) },
@@ -193,8 +260,10 @@ reported as undeclared drift for human escalation.
           Category = $category
           Item = $item
           LeftHostName = $LeftHostName.ToLowerInvariant()
+          LeftOriginalItem = if ($leftSurface) { $leftSurface.OriginalItem } else { $null }
           LeftValue = $leftValue
           RightHostName = $RightHostName.ToLowerInvariant()
+          RightOriginalItem = if ($rightSurface) { $rightSurface.OriginalItem } else { $null }
           RightValue = $rightValue
           Classification = $classification
           JournalEntryId = if ($journalEntry) { $journalEntry.Id } else { $null }

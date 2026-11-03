@@ -211,6 +211,8 @@ function Read-ParityPackageManagerProfilesRegistrationConfiguration {
     [string] $Path
   )
 
+  . (Join-Path $PSScriptRoot 'ParityScheduledTask.Common.ps1')
+
   try {
     $configuration = Get-Content -LiteralPath $Path -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
   } catch {
@@ -241,10 +243,17 @@ function Read-ParityPackageManagerProfilesRegistrationConfiguration {
     $minimumCounts[$property.Name] = $property.Value
   }
   Assert-ParityExpectedSurfaceMinimumCounts -MinimumCounts $minimumCounts
+  $mappings = @()
+  if ($configuration.PSObject.Properties['PackageManagerIdentityMappings']) {
+    if ($configuration.PackageManagerIdentityMappings -isnot [array]) { throw 'PackageManagerIdentityMappings must be an array when present.' }
+    $mappings = @($configuration.PackageManagerIdentityMappings)
+    Assert-ParityPackageManagerIdentityMappings -Mappings $mappings
+  }
   return [pscustomobject]@{
     SchemaVersion = 1
     Profiles = $profiles
     ExpectedSurfaceMinimumCounts = $minimumCounts
+    PackageManagerIdentityMappings = $mappings
   }
 }
 
@@ -258,14 +267,20 @@ function Write-ParityPackageManagerProfilesConfiguration {
     [object[]] $Profiles = @(),
 
     [Parameter(Mandatory = $true)]
-    [hashtable] $ExpectedSurfaceMinimumCounts
+    [hashtable] $ExpectedSurfaceMinimumCounts,
+
+    [AllowEmptyCollection()]
+    [object[]] $PackageManagerIdentityMappings = @()
   )
+
+  . (Join-Path $PSScriptRoot 'ParityScheduledTask.Common.ps1')
 
   if (-not [IO.Path]::IsPathFullyQualified($Path)) {
     throw "Package-manager profile configuration path '$Path' must be fully qualified."
   }
   Assert-ParityPackageManagerProfiles -Profiles $Profiles
   Assert-ParityExpectedSurfaceMinimumCounts -MinimumCounts $ExpectedSurfaceMinimumCounts
+  Assert-ParityPackageManagerIdentityMappings -Mappings $PackageManagerIdentityMappings
   $orderedMinimumCounts = [ordered]@{}
   foreach ($category in @($ExpectedSurfaceMinimumCounts.Keys | Sort-Object)) {
     $orderedMinimumCounts[[string]$category] = [int]$ExpectedSurfaceMinimumCounts[$category]
@@ -280,6 +295,7 @@ function Write-ParityPackageManagerProfilesConfiguration {
       SchemaVersion = 1
       Profiles = @($Profiles)
       ExpectedSurfaceMinimumCounts = $orderedMinimumCounts
+      PackageManagerIdentityMappings = @($PackageManagerIdentityMappings)
     } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $temporaryPath -Encoding utf8 -ErrorAction Stop
 
     $null = Read-ParityPackageManagerProfilesRegistrationConfiguration -Path $temporaryPath
@@ -332,6 +348,9 @@ function Register-ParityScheduledTasks {
     [AllowEmptyCollection()]
     [object[]] $PackageManagerProfiles,
 
+    [AllowEmptyCollection()]
+    [object[]] $PackageManagerIdentityMappings,
+
     [hashtable] $ExpectedSurfaceMinimumCounts,
 
     [string] $PackageManagerProfilesPath,
@@ -359,12 +378,14 @@ function Register-ParityScheduledTasks {
   )
 
   begin {
+    . (Join-Path $PSScriptRoot 'ParityScheduledTask.Common.ps1')
     $fn = 'Register-ParityScheduledTasks'
     $mn = 'ATAP.Utilities.SystemParityMonitor.PowerShell'
     $scriptRoot = $PSScriptRoot
     $pwshPath = (Get-Command -Name 'pwsh' -CommandType Application -ErrorAction Stop).Source
     $packageManagerProfilesWereBound = $PSBoundParameters.ContainsKey('PackageManagerProfiles')
     $minimumCountsWereBound = $PSBoundParameters.ContainsKey('ExpectedSurfaceMinimumCounts')
+    $identityMappingsWereBound = $PSBoundParameters.ContainsKey('PackageManagerIdentityMappings')
     $sharedDotNetToolPolicyWasBound = $PSBoundParameters.ContainsKey('SharedDotNetToolPolicy')
     $defaultMinimumCounts = @{
       OS = 1
@@ -409,6 +430,9 @@ function Register-ParityScheduledTasks {
     }
 
     $configurationWasBound = $packageManagerProfilesWereBound -or $minimumCountsWereBound
+    if ($identityMappingsWereBound -and -not $configurationWasBound) {
+      throw 'PackageManagerIdentityMappings requires profiles or expected minimum counts for validated materialization.'
+    }
     if ($configurationWasBound) {
       if (-not $packageManagerProfilesWereBound) {
         $PackageManagerProfiles = @()
@@ -422,6 +446,11 @@ function Register-ParityScheduledTasks {
       if (-not [IO.Path]::IsPathFullyQualified($PackageManagerProfilesPath)) {
         throw "PackageManagerProfilesPath '$PackageManagerProfilesPath' must be fully qualified."
       }
+      if (-not $identityMappingsWereBound -and (Test-Path -LiteralPath $PackageManagerProfilesPath -PathType Leaf)) {
+        $existingConfiguration = Read-ParityPackageManagerProfilesRegistrationConfiguration -Path $PackageManagerProfilesPath
+        $PackageManagerIdentityMappings = @($existingConfiguration.PackageManagerIdentityMappings)
+      }
+      Assert-ParityPackageManagerIdentityMappings -Mappings @($PackageManagerIdentityMappings | Where-Object { $null -ne $_ })
       Assert-ParityPackageManagerProfiles -Profiles $PackageManagerProfiles
       Assert-ParityExpectedSurfaceMinimumCounts -MinimumCounts $ExpectedSurfaceMinimumCounts
     } elseif (-not [string]::IsNullOrWhiteSpace($PackageManagerProfilesPath)) {
@@ -474,7 +503,8 @@ function Register-ParityScheduledTasks {
         Write-ParityPackageManagerProfilesConfiguration `
           -Path $PackageManagerProfilesPath `
           -Profiles $PackageManagerProfiles `
-          -ExpectedSurfaceMinimumCounts $ExpectedSurfaceMinimumCounts
+          -ExpectedSurfaceMinimumCounts $ExpectedSurfaceMinimumCounts `
+          -PackageManagerIdentityMappings @($PackageManagerIdentityMappings | Where-Object { $null -ne $_ })
       }
       $auditArguments += " -PackageManagerProfilesPath `"$PackageManagerProfilesPath`""
     }

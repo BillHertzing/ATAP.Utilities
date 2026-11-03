@@ -76,6 +76,9 @@ function Invoke-ParityScheduledCompareTask {
     if (-not [string]::IsNullOrWhiteSpace($PackageManagerProfilesPath)) {
       $configuration = Read-ParityScheduledConfiguration -Path $PackageManagerProfilesPath
       $comparisonParameters['ExpectedSurfaceMinimumCounts'] = $configuration.ExpectedSurfaceMinimumCounts
+      if (@($configuration.PackageManagerIdentityMappings | Where-Object { $null -ne $_ }).Count -gt 0) {
+        $comparisonParameters['PackageManagerIdentityMappings'] = $configuration.PackageManagerIdentityMappings
+      }
     }
     if (-not [string]::IsNullOrWhiteSpace($SharedDotNetToolPolicyPath)) {
       $comparisonParameters['SharedDotNetToolPolicy'] = Read-ParitySharedDotNetToolPolicyConfiguration -Path $SharedDotNetToolPolicyPath

@@ -119,6 +119,18 @@ Set-ParityPrimaryRole `
   profile set produces `<profile-paths-not-configured>` without querying pip, npm, or
   dotnet. Chocolatey remains machine-scoped. Conflicts are scoped to identity plus
   normalized package name, so equal names under different identities do not conflict.
+- Source version `0.1.27` adds optional `PackageManagerIdentityMappings` records to
+  the existing schema-v1 profile configuration. Each record explicitly selects a
+  `HostName`, original `Identity`, `Manager` (`pip`, `npm`, or `NuGet`), and
+  `ComparisonIdentity`. Only the selected manager's comparison keys change; actual
+  accounts, SIDs, source paths, and audit snapshots remain unchanged. Use distinct
+  mappings where user and machine package scopes must not compare as equivalent.
+  Existing configurations without mappings retain their behavior. Registration
+  preserves existing mappings when the argument is omitted; an explicitly empty
+  mapping array clears them.
+- This mapping is source and local-package behavior until the new module is released,
+  installed, configured, and verified under the scheduled consumer identity on both
+  hosts. The observed scheduled consumers remain on version `0.1.23`.
 - The next-release audit requires at least one SQL and one `PackageManager` row by
   default. Missing or thin required categories are preserved as
   `AuditCoverageFinding` rows in the diagnostic snapshot before the audit fails.

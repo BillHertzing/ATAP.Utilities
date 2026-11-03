@@ -52,6 +52,65 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' -Tag 'Unit', 'Pa
   # Each test has a unique GUID directory under the run's evidence TEMP root.
   # Retain these fixtures with the test results; evidence retention owns cleanup.
 
+  It 'compares explicitly mapped package identities both ways while retaining real drift and raw items' {
+    $leftSnapshotPath = Join-Path $leftState 'left.json'
+    $rightSnapshotPath = Join-Path $rightState 'right.json'
+    $mapping = @(
+      @{ HostName='utat022'; Identity='UTAT022\whertzing'; Manager='pip'; ComparisonIdentity='ATAP\Developer' },
+      @{ HostName='utat01'; Identity='UTAT01\whertzing'; Manager='pip'; ComparisonIdentity='ATAP\Developer' },
+      @{ HostName='utat022'; Identity='UTAT022\whertzing'; Manager='NuGet'; ComparisonIdentity='ATAP\Developer' },
+      @{ HostName='utat01'; Identity='UTAT01\whertzing'; Manager='NuGet'; ComparisonIdentity='ATAP\Developer' }
+    )
+    foreach ($fixture in @(
+        @{ Path=$leftSnapshotPath; Identity='UTAT022\whertzing'; Version='1.0'; Npm='user-package' },
+        @{ Path=$rightSnapshotPath; Identity='UTAT01\whertzing'; Version='2.0'; Npm='machine-package' }
+      )) {
+      $id = $fixture.Identity
+      $snapshot = @{ CapturedAtUtc=[DateTime]::UtcNow.ToString('o'); Surfaces=@(
+        @{ Category='PackageManager'; Item="$id/pip/pyyaml"; Value='6.0.3'; Source="pip path for $id" },
+        @{ Category='PackageManager'; Item="$id/NuGet/microsoft-dataapibuilder"; Value='2.0.9'; Source="tool path for $id" },
+        @{ Category='PackageManager'; Item="$id/pip/different"; Value=$fixture.Version; Source="pip path for $id" },
+        @{ Category='PackageManager'; Item="$id/npm/$($fixture.Npm)"; Value='1.0'; Source="npm path for $id" },
+        @{ Category='PackageManagerStatus'; Item="$id/pip"; Value='Available;PackageCount=2'; Source='python' },
+        @{ Category='PackageManagerStatus'; Item="$id/NuGet"; Value='Available;PackageCount=1'; Source='dotnet' },
+        @{ Category='PackageManagerStatus'; Item="$id/npm"; Value='Available;PackageCount=1'; Source='npm' }
+      ) }
+      $snapshot | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $fixture.Path -Encoding utf8
+    }
+    foreach ($reverse in @($false, $true)) {
+      $args = if (-not $reverse) {
+        @{ LeftStatePath=$leftState; RightStatePath=$rightState; LeftHostName='utat022'; RightHostName='utat01'; LeftSnapshotPath=$leftSnapshotPath; RightSnapshotPath=$rightSnapshotPath }
+      } else {
+        @{ LeftStatePath=$rightState; RightStatePath=$leftState; LeftHostName='utat01'; RightHostName='utat022'; LeftSnapshotPath=$rightSnapshotPath; RightSnapshotPath=$leftSnapshotPath }
+      }
+      $comparison = Compare-ParityAudits @args -PackageManagerIdentityMappings $mapping -ExpectedSurfaceMinimumCounts @{ PackageManager=1 } -ReportPath (Join-Path $testRoot "report-$reverse.md")
+      @($comparison.Differences | Where-Object { $_.Item -match 'pyyaml|microsoft-dataapibuilder|/pip$|/NuGet$' }) | Should -HaveCount 0
+      $difference = @($comparison.Differences | Where-Object Item -eq 'ATAP\Developer/pip/different')
+      $difference | Should -HaveCount 1
+      @($difference[0].LeftValue, $difference[0].RightValue | Sort-Object) | Should -Be @('1.0','2.0')
+      $difference[0].LeftOriginalItem | Should -Match '^UTAT0(1|22)\\whertzing/pip/different$'
+      @($comparison.Differences | Where-Object { $_.Item -match '/npm' }) | Should -HaveCount 4
+    }
+    (Get-Content -LiteralPath $leftSnapshotPath -Raw) | Should -Match 'UTAT022\\\\whertzing'
+  }
+
+  It 'rejects identity mappings that collapse distinct same-host surfaces' {
+    $leftSnapshotPath = Join-Path $leftState 'collision-left.json'
+    $rightSnapshotPath = Join-Path $rightState 'collision-right.json'
+    @{ CapturedAtUtc=[DateTime]::UtcNow.ToString('o'); Surfaces=@(
+      @{ Category='PackageManager'; Item='host\one/pip/example'; Value='1'; Source='one' },
+      @{ Category='PackageManager'; Item='host\two/pip/example'; Value='2'; Source='two' }
+    ) } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $leftSnapshotPath -Encoding utf8
+    @{ CapturedAtUtc=[DateTime]::UtcNow.ToString('o'); Surfaces=@(
+      @{ Category='PackageManager'; Item='other/pip/example'; Value='1'; Source='other' }
+    ) } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $rightSnapshotPath -Encoding utf8
+    $mapping = @(
+      @{ HostName='utat022'; Identity='host\one'; Manager='pip'; ComparisonIdentity='ATAP\Developer' },
+      @{ HostName='utat022'; Identity='host\two'; Manager='pip'; ComparisonIdentity='ATAP\Developer' }
+    )
+    { Compare-ParityAudits -LeftStatePath $leftState -RightStatePath $rightState -LeftHostName 'utat022' -RightHostName 'utat01' -LeftSnapshotPath $leftSnapshotPath -RightSnapshotPath $rightSnapshotPath -PackageManagerIdentityMappings $mapping -ExpectedSurfaceMinimumCounts @{ PackageManager=1 } -ReportPath (Join-Path $testRoot 'collision.md') } | Should -Throw '*duplicate profile*'
+  }
+
   It 'keeps a single preloaded fixture identity without importing source again' {
     Mock Import-Module { throw 'Source import must not replace a preloaded fixture.' }
     $selected=Resolve-ParityFixtureModule -SourceManifest 'not-imported.psd1' -LoadedModules @($script:parityFixtureModule)

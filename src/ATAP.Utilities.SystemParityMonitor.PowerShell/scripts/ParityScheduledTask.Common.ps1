@@ -1,3 +1,30 @@
+function Assert-ParityPackageManagerIdentityMappings {
+  [CmdletBinding()]
+  param([AllowEmptyCollection()][object[]] $Mappings = @())
+
+  $sources = @{}
+  $targets = @{}
+  foreach ($mapping in $Mappings) {
+    $hostName = ([string]$mapping.HostName).Trim()
+    $identity = ([string]$mapping.Identity).Trim()
+    $manager = ([string]$mapping.Manager).Trim()
+    $comparisonIdentity = ([string]$mapping.ComparisonIdentity).Trim()
+    if ([string]::IsNullOrWhiteSpace($hostName) -or $hostName -match '[/|]' -or
+      [string]::IsNullOrWhiteSpace($identity) -or $identity -match '[/|]' -or
+      $manager -notin @('pip', 'npm', 'NuGet') -or
+      [string]::IsNullOrWhiteSpace($comparisonIdentity) -or $comparisonIdentity -match '[/|]') {
+      throw 'PackageManagerIdentityMappings requires non-empty HostName, Identity, pip/npm/NuGet Manager and ComparisonIdentity without slash or pipe.'
+    }
+    $source = "$hostName|$identity|$manager"
+    $target = "$hostName|$comparisonIdentity|$manager"
+    if ($sources.ContainsKey($source) -or $targets.ContainsKey($target)) {
+      throw 'PackageManagerIdentityMappings contains a duplicate source or colliding target profile.'
+    }
+    $sources[$source] = $true
+    $targets[$target] = $true
+  }
+}
+
 function Read-ParityScheduledConfiguration {
   [CmdletBinding()]
   param(
@@ -58,10 +85,20 @@ function Read-ParityScheduledConfiguration {
     throw 'ExpectedSurfaceMinimumCounts must contain at least one category.'
   }
 
+  $mappings = @()
+  if ($configuration.PSObject.Properties['PackageManagerIdentityMappings']) {
+    if ($configuration.PackageManagerIdentityMappings -isnot [array]) {
+      throw 'PackageManagerIdentityMappings must be an array when present.'
+    }
+    $mappings = @($configuration.PackageManagerIdentityMappings)
+    Assert-ParityPackageManagerIdentityMappings -Mappings $mappings
+  }
+
   [pscustomobject]@{
     SchemaVersion = 1
     Profiles = @($configuration.Profiles)
     ExpectedSurfaceMinimumCounts = $minimumCounts
+    PackageManagerIdentityMappings = $mappings
   }
 }
 

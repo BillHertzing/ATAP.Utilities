@@ -202,6 +202,7 @@ function Start-BuildMasterDeployment {
       }
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Started BuildMaster deployment id='$deploymentId' state='$deploymentState' for '$Application'/'$ReleaseNumber' build '$BuildNumber'" -Tag 'RestCall'
     } catch {
+      $failure = $_
       $statusCode = $null
       try {
         if ($null -ne $_.Exception.Response) {
@@ -212,10 +213,47 @@ function Start-BuildMasterDeployment {
       }
       if ($statusCode -eq 401 -or $statusCode -eq 403) {
         $msg = "BuildMaster authentication failed (HTTP $statusCode) for $uri. Check the secret named by BuildMasterAdminApiKeySecretName."
+        $msg = $msg.Replace($resolvedApiKey, '[REDACTED]')
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg -Tag 'RestCall'
         throw $msg
       }
-      $msg = "POST $uri failed: $($_.Exception.Message)$(Get-BuildMasterReleaseNumberLengthHint -ReleaseNumber $ReleaseNumber)"
+      $detailText = [string]$failure.ErrorDetails.Message
+      if ([string]::IsNullOrWhiteSpace($detailText)) {
+        try {
+          if ($failure.Exception.Response.Content -is [System.Net.Http.HttpContent]) {
+            $detailText = $failure.Exception.Response.Content.ReadAsStringAsync().GetAwaiter().GetResult()
+          }
+        } catch { $detailText = '' }
+      }
+      $reason = ''
+      if (-not [string]::IsNullOrWhiteSpace($detailText)) {
+        try {
+          $parsed = $detailText | ConvertFrom-Json -ErrorAction Stop
+          foreach ($property in @('message', 'error', 'detail', 'title')) {
+            if ($parsed.PSObject.Properties[$property] -and $parsed.$property -is [string]) {
+              $reason = [string]$parsed.$property
+              break
+            }
+          }
+        } catch {
+          if ($detailText -notmatch '[{}\[\]<>]' -and $detailText -notmatch '(?i)authorization|x-apikey|headers|payload') {
+            $reason = $detailText
+          }
+        }
+      }
+      if ($reason -match '[{}\[\]<>]' -or $reason -match '(?i)authorization|x-apikey|headers|payload') { $reason = '' }
+      $reason = $reason.Replace($resolvedApiKey, '[REDACTED]')
+      if ($null -ne $Variables) {
+        foreach ($value in $Variables.Values) {
+          if ($value -is [string] -and -not [string]::IsNullOrEmpty($value)) { $reason = $reason.Replace($value, '[REDACTED]') }
+        }
+      }
+      $reason = ([regex]::Replace($reason, '[\p{Cc}\p{Cf}]', ' ')).Trim()
+      if ($reason.Length -gt 512) { $reason = $reason.Substring(0, 512) }
+      $exceptionMessage = if ($null -ne $statusCode) { "HTTP $statusCode" } else { $failure.Exception.GetType().Name }
+      $detail = if ($reason) { " API reason: $reason" } else { '' }
+      $msg = "POST $uri failed: $exceptionMessage$detail$(Get-BuildMasterReleaseNumberLengthHint -ReleaseNumber $ReleaseNumber)"
+      $msg = $msg.Replace($resolvedApiKey, '[REDACTED]')
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg -Tag 'RestCall'
       throw $msg
     }

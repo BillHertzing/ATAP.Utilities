@@ -5,6 +5,9 @@
 BeforeAll {
   $publicDir = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'public'
   . (Join-Path $publicDir 'Start-BuildMasterPipeline.ps1')
+  . (Join-Path $publicDir 'Start-BuildMasterDeployment.ps1')
+
+  function Get-BuildMasterReleaseNumberLengthHint { param([string]$ReleaseNumber) '' }
 
   if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
     function global:Write-PSFMessage { param([Parameter(ValueFromRemainingArguments = $true)]$rest) }
@@ -51,6 +54,48 @@ BeforeAll {
 
   $script:oldConfigRootKeys = $global:configRootKeys
   $script:oldSettings = $global:settings
+}
+
+Describe 'Start-BuildMasterDeployment sanitized API failures' -Tag 'Unit' {
+  BeforeEach {
+    $global:configRootKeys = @{ BuildMasterBaseUrlConfigRootKey='BuildMasterBaseUrl'; BuildMasterAdminApiKeySecretNameConfigRootKey='BuildMasterAdminApiKeySecretName' }
+    $global:settings = @{ BuildMasterBaseUrl='https://buildmaster.example.test'; BuildMasterAdminApiKeySecretName='Fixture.Key' }
+    $script:messages = [Collections.Generic.List[string]]::new()
+    Mock Get-SecretATAP { 'fixture-api-key-123' }
+    Mock Write-PSFMessage { $script:messages.Add([string]$Message) }
+  }
+
+  It 'retains a 400 response reason without logging request payload fields' {
+    Mock Invoke-RestMethod {
+      $ex=[Exception]::new('HTTP 400 Bad Request')
+      $ex | Add-Member -NotePropertyName Response -NotePropertyValue ([pscustomobject]@{StatusCode=400})
+      $record=[Management.Automation.ErrorRecord]::new($ex,'Fixture400',[Management.Automation.ErrorCategory]::InvalidOperation,$null)
+      $record.ErrorDetails=[Management.Automation.ErrorDetails]::new('{"message":"Production stage is blocked","payload":"do-not-echo"}')
+      throw $record
+    }
+    $caught = $null
+    try { Start-BuildMasterDeployment -Application 'A' -ReleaseNumber '1' -BuildNumber '2' -ToStage 'Production' -Confirm:$false } catch { $caught = $_.Exception.Message }
+    $caught | Should -Match 'Production stage is blocked'
+    $caught | Should -Not -Match 'do-not-echo|payload'
+    ($script:messages -join ' ') | Should -Not -Match 'do-not-echo|payload'
+    Should -Invoke Invoke-RestMethod -Times 1 -Exactly
+  }
+
+  It 'redacts the resolved key from response content, exception text and PSF logs' {
+    Mock Invoke-RestMethod {
+      $response=[Net.Http.HttpResponseMessage]::new([Net.HttpStatusCode]::BadRequest)
+      $response.Content=[Net.Http.StringContent]::new('{"message":"Rejected fixture-api-key-123"}')
+      $ex=[Exception]::new('HTTP 400 fixture-api-key-123')
+      $ex | Add-Member -NotePropertyName Response -NotePropertyValue $response
+      throw $ex
+    }
+    $caught = $null
+    try { Start-BuildMasterDeployment -Application 'A' -ReleaseNumber '1' -BuildNumber '2' -ToStage 'Production' -Confirm:$false } catch { $caught = $_.Exception.Message }
+    $caught | Should -Match 'Rejected \[REDACTED\]'
+    $caught | Should -Not -Match 'fixture-api-key-123'
+    ($script:messages -join ' ') | Should -Not -Match 'fixture-api-key-123'
+    Should -Invoke Invoke-RestMethod -Times 1 -Exactly
+  }
 }
 
 AfterAll {

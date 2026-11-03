@@ -107,7 +107,7 @@ AfterAll {
 }
 Describe 'Actual coordination producer under disposable protected custody' -Tag 'Integration' {
 
-  It 'renders and publishes one authorized annotation after an applied report' {
+  It 'renders and publishes one authorized annotation after an applied report' -Tag 'C1637' {
     $null = Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false
     $null = Invoke-CoordClerk -HolderId Coordinator -SessionId session-1 -Confirm:$false
     $board = [IO.Path]::GetDirectoryName($state.committedOutputManifest.markdown.path)
@@ -132,12 +132,17 @@ Describe 'Actual coordination producer under disposable protected custody' -Tag 
     [IO.File]::ReadAllText($state.committedOutputManifest.accomplishedHtml.path) | Should -BeExactly 'fixture'
   }
 
-  It 'recovers a durable pending queue write forward after interruption' {
+  It 'recovers a durable pending queue write forward after interruption' -Tag 'C1637' {
     # An actual open handle permits reads but denies atomic replacement.
     $hold = [IO.File]::Open($statePath, 'Open', 'Read', 'ReadWrite')
+    $failure = $null
     try {
-      { Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false } | Should -Throw
+      try {
+        $null = Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false
+      } catch { $failure = $_ }
     } finally { $hold.Dispose() }
+    $failure | Should -Not -BeNullOrEmpty
+    $failure.Exception.ToString() | Should -Match '(?i)(used by another process|sharing violation)'
     $captured = [IO.File]::ReadAllText($witnessPath) | ConvertFrom-Json -AsHashtable
     $captured.pendingWrite.kind | Should -BeExactly 'State'
     $result = Invoke-CoordClerk -HolderId Coordinator -SessionId session-1 -Confirm:$false

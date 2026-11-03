@@ -67,4 +67,10 @@ Describe 'Get-CurrentTierFromStage' -Tag 'Unit' {
       { Get-CurrentTierFromStage -Stage $Stage } | Should -Throw -ExpectedMessage "*Unknown BuildMaster stage*"
     }
   }
+
+  Context 'Whitespace-only stage throws' {
+    It 'Throws for whitespace-only stage' {
+      { Get-CurrentTierFromStage -Stage '   ' } | Should -Throw -ExpectedMessage '*Unknown BuildMaster stage*'
+    }
+  }
 }

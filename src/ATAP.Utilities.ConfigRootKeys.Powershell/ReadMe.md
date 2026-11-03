@@ -18,11 +18,20 @@ folder as optional, so profile-time `Import-Module` works from an AllUsers
 PowerShell 7 profile without requiring an empty placeholder directory (Task 12.63).
 
 `Set-GlobalConfigRootKeys` is the single entry point. It invokes each section
-function — `Set-CoreConfigRootKeys`, `Add-DatabasesConfigRootKeys` (which in turn
+function — `Set-CoreConfigRootKeys`, `Set-OrchestrationConfigRootKeys`, then
+`Add-DatabasesConfigRootKeys` (which in turn
 invokes the per-database `Set-Databases*ConfigRootKeys` functions),
-`Set-SqlInstanceTopologyConfigRootKeys`, `Set-BuildMasterConfigRootKeys`,
+`Set-SqlInstanceTopologyConfigRootKeys`, `Set-SystemParityMonitorConfigRootKeys`,
+`Set-BuildMasterConfigRootKeys`,
 `Set-RulesManagementConfigRootKeys`, and
 `Add-PackageRepositoriesConfigRootKeys` — **by name, in a fixed order**.
+
+The orchestration section defines sixteen flat setting-name constants immediately
+after Core. This is a **source candidate only, not deployed**. It supplies no
+host settings, defaults, measured bounds, custody choices or producer admission.
+Direct calls require an initialized Hashtable; matching repeat calls are safe,
+and conflicting mappings are refused before any additions. `-WhatIf` does not
+mutate the dictionary.
 
 The SQL topology section defines only host-invariant schema keys. ATAP.IAC's
 `HostSettings.IAC.Fragment.SqlInstanceTopology.ps1` remains the single source of
@@ -55,7 +64,8 @@ sibling-resolution guard, and how to add a new section.
 ## Tests
 
 ```powershell
-Invoke-Pester -Path ./tests/Unit -Output Detailed
+Import-Module Pester -RequiredVersion 6.2.0
+Invoke-Pester -Path ./tests/Unit -Output Minimal
 ```
 
 - Version bumped to 0.1.4 in Sprint 11

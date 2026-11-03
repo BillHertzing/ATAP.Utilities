@@ -84,6 +84,7 @@
     'Set-DatabasesAceCommanderConfigRootKeys',
     'Set-DatabasesATAPUtilitiesConfigRootKeys',
     'Set-GlobalConfigRootKeys',
+    'Set-OrchestrationConfigRootKeys',
     'Set-RulesManagementConfigRootKeys',
     'Set-SqlInstanceTopologyConfigRootKeys',
     'Set-SystemParityMonitorConfigRootKeys'
@@ -147,4 +148,3 @@
     # DefaultCommandPrefix = ''
 
 }
-

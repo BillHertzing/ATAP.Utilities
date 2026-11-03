@@ -16,17 +16,15 @@ Invocation order (each step depends on the hashtable created by the first):
   1. Set-CoreConfigRootKeys            — creates $global:configRootKeys and registers
                                          the core / non-domain key constants. Must run
                                          first.
-  2. Add-DatabasesConfigRootKeys       — adds database connection key constants and
-                                         invokes the per-database section functions
-                                         (Set-DatabasesATAPUtilitiesConfigRootKeys,
-                                         Set-DatabasesAceCommanderConfigRootKeys).
-  3. Set-SqlInstanceTopologyConfigRootKeys — SQL host/instance topology schema keys.
-  4. Set-SystemParityMonitorConfigRootKeys — SystemParityMonitor section, schema, and
-                                         identity-explicit package-profile keys.
-  5. Set-BuildMasterConfigRootKeys     — BuildMaster automation-path / endpoint keys.
-  6. Set-RulesManagementConfigRootKeys — Rules-Management framework keys.
-  7. Add-PackageRepositoriesConfigRootKeys — single source of truth for ProGet / NuGet /
-                                         PowerShellGet feed key constants.
+  2. Set-OrchestrationConfigRootKeys   — sixteen flat orchestration name constants;
+                                         source candidate, no settings or defaults.
+  3. Add-DatabasesConfigRootKeys       — database connection constants and the
+                                         per-database section functions.
+  4. Set-SqlInstanceTopologyConfigRootKeys — SQL host/instance topology schema keys.
+  5. Set-SystemParityMonitorConfigRootKeys — parity schema and package-profile keys.
+  6. Set-BuildMasterConfigRootKeys     — BuildMaster automation-path / endpoint keys.
+  7. Set-RulesManagementConfigRootKeys — Rules-Management framework keys.
+  8. Add-PackageRepositoriesConfigRootKeys — ProGet / NuGet / PowerShellGet keys.
 
 In-module sibling resolution (development-from-source guard)
 ------------------------------------------------------------
@@ -98,6 +96,7 @@ function Set-GlobalConfigRootKeys {
     # is shared across the begin/process/end blocks of this same invocation.
     $configRootKeySectionFunctions = @(
       'Set-CoreConfigRootKeys'
+      'Set-OrchestrationConfigRootKeys'
       'Add-DatabasesConfigRootKeys'
       'Set-SqlInstanceTopologyConfigRootKeys'
       'Set-SystemParityMonitorConfigRootKeys'

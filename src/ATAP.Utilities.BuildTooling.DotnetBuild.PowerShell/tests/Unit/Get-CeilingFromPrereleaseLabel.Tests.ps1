@@ -83,6 +83,10 @@ Describe 'Get-CeilingFromPrereleaseLabel' -Tag 'Unit' {
     It 'Strips leading hyphen from -Alpha.3 and returns Development' {
       Get-CeilingFromPrereleaseLabel -PrereleaseLabel '-Alpha.3' | Should -Be 'Development'
     }
+
+    It 'Strips leading hyphen from -beta.3 and returns Integration' {
+      Get-CeilingFromPrereleaseLabel -PrereleaseLabel '-beta.3' | Should -Be 'Integration'
+    }
   }
 
   Context 'NBGV height-0 git-hash suffix is handled' {

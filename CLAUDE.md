@@ -12,9 +12,9 @@ Entity Framework Core abstractions, Flyway migration helpers
 
 | Source File    | Last Modified            |
 | -------------- | ------------------------ |
-| main-instructions.md | 2026-10-21 16:37:56 |
-| ai-local.md | 2026-10-15 22:40:26 |
-| CLAUDE.md (combined) | 2026-10-21 16:56:47 |
+| main-instructions.md | 2026-11-01 10:07:06 |
+| ai-local.md | 2026-10-24 23:03:09 |
+| CLAUDE.md (combined) | 2026-11-02 20:13:12 |
 
 ---
 
@@ -222,10 +222,7 @@ merge.
 
 ## Boundary Enforcement
 
-If you find yourself about to edit a file whose path begins with a repo root
-**other than this one**, STOP and confirm with the user before proceeding. The
-single exception is `C:/Dropbox/whertzing/github/TASKS.md`, which is always
-safe to read and update.
+Cross-repo writes to all repositories listed in the Ecosystem Overview are allowed.
 
 **Never create files in another repository's stable branch worktree for ordinary sprint work.**
 If a task requires creating files in a different repo, target that repo's most recent sprint

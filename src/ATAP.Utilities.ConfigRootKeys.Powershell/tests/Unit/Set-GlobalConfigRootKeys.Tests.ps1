@@ -21,7 +21,9 @@ BeforeAll {
   }
 
   # Preserve any globals the surrounding session may already hold.
-  $script:savedConfigRootKeys = $global:configRootKeys
+  $savedVariable = Get-Variable -Name configRootKeys -Scope Global -ErrorAction SilentlyContinue
+  $script:savedConfigRootKeysPresent = $null -ne $savedVariable
+  $script:savedConfigRootKeys = if ($script:savedConfigRootKeysPresent) { $savedVariable.Value } else { $null }
 
   # Dot-source ONLY the orchestrator. The section functions must be resolved by the
   # orchestrator's in-module sibling-resolution block, not pre-loaded here.
@@ -29,7 +31,11 @@ BeforeAll {
 }
 
 AfterAll {
-  $global:configRootKeys = $script:savedConfigRootKeys
+  if ($script:savedConfigRootKeysPresent) {
+    $global:configRootKeys = $script:savedConfigRootKeys
+  } else {
+    Remove-Variable -Name configRootKeys -Scope Global -ErrorAction SilentlyContinue
+  }
   if ($script:createdWritePSFMessageStub) {
     Remove-Item -LiteralPath 'Function:\Write-PSFMessage' -ErrorAction SilentlyContinue
   }
@@ -45,6 +51,7 @@ Describe 'Set-GlobalConfigRootKeys population' -Tag 'Unit' {
 
     $global:configRootKeys | Should -BeOfType ([hashtable])
     $global:configRootKeys.Count | Should -BeGreaterThan 100
+    $global:configRootKeys['OrchestrationMaxRequestBytesConfigRootKey'] | Should -BeExactly 'OrchestrationMaxRequestBytes'
 
     # one representative key from each section function
     $global:configRootKeys.ContainsKey('SYSTEMDRIVEConfigRootKey') | Should -BeTrue                       # Set-CoreConfigRootKeys
@@ -144,10 +151,11 @@ Describe 'Set-GlobalConfigRootKeys in-module sibling resolution' -Tag 'Unit' {
 
   It 'throws an actionable error when a section function has neither a co-located source nor a loaded definition' {
     $global:configRootKeys = $null
-    $emptyDir = Join-Path ([System.IO.Path]::GetTempPath()) ('crk-empty-' + [guid]::NewGuid().ToString('N'))
-    New-Item -ItemType Directory -Path $emptyDir -Force | Out-Null
+    $fixtureRoot = Join-Path (Split-Path -Parent (Split-Path -Parent $script:moduleRoot)) '_generated/Sprint0017/Task17.19.a/RegistrationTests951'
+    $emptyDir = Join-Path $fixtureRoot ('crk-empty-' + [guid]::NewGuid().ToString('N'))
     $stagedFunctions = @(
       'Set-CoreConfigRootKeys'
+      'Set-OrchestrationConfigRootKeys'
       'Add-DatabasesConfigRootKeys'
       'Set-SqlInstanceTopologyConfigRootKeys'
       'Set-SystemParityMonitorConfigRootKeys'
@@ -163,10 +171,18 @@ Describe 'Set-GlobalConfigRootKeys in-module sibling resolution' -Tag 'Unit' {
       Microsoft.PowerShell.Core\Get-Command -Name $Name -CommandType $CommandType -ErrorAction $ErrorAction
     }
     try {
+      $null = New-Item -ItemType Directory -Path $emptyDir -Force
       { Set-GlobalConfigRootKeys -Path $emptyDir -Confirm:$false } |
         Should -Throw -ExpectedMessage '*is not defined and its source file was not found*'
     } finally {
-      Remove-Item -LiteralPath $emptyDir -Recurse -Force -ErrorAction SilentlyContinue
+      if (Test-Path -LiteralPath $emptyDir) {
+        $resolvedFixture = [IO.Path]::GetFullPath((Resolve-Path -LiteralPath $emptyDir -ErrorAction Stop).ProviderPath)
+        $allowedPrefix = [IO.Path]::GetFullPath($fixtureRoot).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
+        if (-not $resolvedFixture.StartsWith($allowedPrefix, [StringComparison]::OrdinalIgnoreCase)) {
+          throw 'Unsafe empty-fixture cleanup path'
+        }
+        Remove-Item -LiteralPath $resolvedFixture -Recurse -Force
+      }
     }
   }
 }
@@ -197,5 +213,38 @@ Describe 'ConfigRootKeys section functions precondition guard' -Tag 'Unit' {
   It 'Set-SystemParityMonitorConfigRootKeys throws when $global:configRootKeys is null' {
     $global:configRootKeys = $null
     { Set-SystemParityMonitorConfigRootKeys -Confirm:$false } | Should -Throw -ExpectedMessage '*not initialized*'
+  }
+}
+
+Describe 'Orchestration section source integration' -Tag 'Unit' {
+  It 'orders Orchestration immediately after Core while preserving the prior seven sections' {
+    $source = Get-Content -LiteralPath (Join-Path $script:publicDir 'Set-GlobalConfigRootKeys.ps1') -Raw
+    $block = [regex]::Match($source, '(?s)\$configRootKeySectionFunctions\s*=\s*@\((.*?)\)').Groups[1].Value
+    $sections = @([regex]::Matches($block, "'([^']+)'") | ForEach-Object { $_.Groups[1].Value })
+    $sections | Should -Be @(
+      'Set-CoreConfigRootKeys'
+      'Set-OrchestrationConfigRootKeys'
+      'Add-DatabasesConfigRootKeys'
+      'Set-SqlInstanceTopologyConfigRootKeys'
+      'Set-SystemParityMonitorConfigRootKeys'
+      'Set-BuildMasterConfigRootKeys'
+      'Set-RulesManagementConfigRootKeys'
+      'Add-PackageRepositoriesConfigRootKeys'
+    )
+  }
+
+  It 'reinitializes all sixteen exact orchestration names on repeated global initialization' {
+    Set-GlobalConfigRootKeys -Confirm:$false
+    $first = @{}
+    foreach ($entry in $global:configRootKeys.GetEnumerator()) {
+      if ($entry.Key -clike 'Orchestration*ConfigRootKey') { $first.Add($entry.Key, $entry.Value) }
+    }
+
+    Set-GlobalConfigRootKeys -Confirm:$false
+
+    $first.Count | Should -Be 16
+    foreach ($entry in $first.GetEnumerator()) {
+      $global:configRootKeys[$entry.Key] | Should -BeExactly $entry.Value
+    }
   }
 }

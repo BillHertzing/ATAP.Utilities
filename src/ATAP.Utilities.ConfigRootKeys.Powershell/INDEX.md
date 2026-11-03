@@ -32,13 +32,15 @@ Every file in `public/` is an **eponymous advanced function** (cmdlet shape with
 | ----------------------------------------------------- | ----- | ------------------------------------------------------------------------------------------------- |
 | `public/Set-GlobalConfigRootKeys.ps1`                 |  —    | Entry-point orchestrator. Invokes the section functions below, by name, in a fixed order.         |
 | `public/Set-CoreConfigRootKeys.ps1`                   |  1    | Bootstrap. Creates `$global:configRootKeys` and registers core/non-domain keys. Must run first.   |
-| `public/Add-DatabasesConfigRootKeys.ps1`              |  2    | Adds database connection key constants, then invokes the per-database section functions by name.  |
-| `public/Set-DatabasesATAPUtilitiesConfigRootKeys.ps1` |  2a   | Per-database section function for the ATAPUtilities database name key.                             |
-| `public/Set-DatabasesAceCommanderConfigRootKeys.ps1`  |  2b   | Per-database section function for the AceCommander database name key.                              |
-| `public/Set-SqlInstanceTopologyConfigRootKeys.ps1`    |  3    | Host-invariant schema keys for the ATAP.IAC SQL host/instance topology map (identity, lifecycle, paths, and fixed TCP port fields). |
-| `public/Set-BuildMasterConfigRootKeys.ps1`            |  4    | BuildMaster automation paths, endpoint, and the module→application map (`BuildMasterApplicationByModuleConfigRootKey`) key constants. |
-| `public/Set-RulesManagementConfigRootKeys.ps1`        |  5    | Rules-Management framework key constants.                                                          |
-| `public/Add-PackageRepositoriesConfigRootKeys.ps1`    |  6    | **Single source of truth** for ProGet / NuGet / PowerShellGet feed key constants, including canonical ProGet admin and BuildMaster API-key SecretName setting keys. Five-tier canonical set (Experimental / Development / Integration / QA / Stable). Loads no sub-fragments. |
+| `public/Set-OrchestrationConfigRootKeys.ps1` | 2 | Sixteen flat orchestration name constants; source candidate only, no host settings or defaults. |
+| `public/Add-DatabasesConfigRootKeys.ps1`              |  3    | Adds database connection key constants, then invokes the per-database section functions by name.  |
+| `public/Set-DatabasesATAPUtilitiesConfigRootKeys.ps1` |  3a   | Per-database section function for the ATAPUtilities database name key.                             |
+| `public/Set-DatabasesAceCommanderConfigRootKeys.ps1`  |  3b   | Per-database section function for the AceCommander database name key.                              |
+| `public/Set-SqlInstanceTopologyConfigRootKeys.ps1`    |  4    | Host-invariant schema keys for the ATAP.IAC SQL host/instance topology map (identity, lifecycle, paths, and fixed TCP port fields). |
+| `public/Set-SystemParityMonitorConfigRootKeys.ps1` | 5 | SystemParityMonitor schema and package-profile key constants. |
+| `public/Set-BuildMasterConfigRootKeys.ps1`            |  6    | BuildMaster automation paths, endpoint, and the module→application map (`BuildMasterApplicationByModuleConfigRootKey`) key constants. |
+| `public/Set-RulesManagementConfigRootKeys.ps1`        |  7    | Rules-Management framework key constants.                                                          |
+| `public/Add-PackageRepositoriesConfigRootKeys.ps1`    |  8    | **Single source of truth** for ProGet / NuGet / PowerShellGet feed key constants, including canonical ProGet admin and BuildMaster API-key SecretName setting keys. Five-tier canonical set (Experimental / Development / Integration / QA / Stable). Loads no sub-fragments. |
 
 ### Explicit loading — no fragment discovery
 
@@ -123,3 +125,19 @@ other ATAP PowerShell modules.
 
 - Version bumped to 0.1.4 in Sprint 11
 
+
+
+## Orchestration source candidate (Task 17.19.a)
+
+`Set-OrchestrationConfigRootKeys` follows Core immediately and registers exactly
+the sixteen flat `NConfigRootKey` to `N` mappings selected from the orchestration
+configuration catalogue. It requires an initialized Hashtable, checks all conflicts
+before adding missing keys, preserves unrelated keys, and permits repeat calls.
+`-WhatIf` adds nothing. Importing the module defines functions without registering
+these names. A source candidate is not installed or deployed: host values,
+measurements, policy approval and producer admission remain separate.
+
+The focused tests cover exact mappings, conflicts, idempotency and `-WhatIf`.
+The global and structural suites cover explicit order, repeated initialization,
+exports, import nonmutation and a missing section using a disposable fixture under
+the repository's `_generated/` directory.

@@ -398,6 +398,17 @@ Task StageContent BuildPSM1, BuildManifest, {
     }
   }
 
+  # The coordination annotation seam reads this exact source file from the package.
+  if ($script:ModuleName -eq 'ATAP.Utilities.BuildTooling.Orchestration.PowerShell') {
+    $readerSourcePath = Join-Path $script:ModuleRoot 'private/Read-CoordBoard.ps1'
+    if (-not (Test-Path -LiteralPath $readerSourcePath -PathType Leaf)) {
+      throw "Required coordination reader source was not found at '$readerSourcePath'."
+    }
+    $readerDestinationDirectory = Join-Path $script:PackageSrcDir 'private'
+    $null = New-Item -ItemType Directory -Path $readerDestinationDirectory -Force -ErrorAction Stop
+    Copy-Item -LiteralPath $readerSourcePath -Destination (Join-Path $readerDestinationDirectory 'Read-CoordBoard.ps1') -Force -ErrorAction Stop
+  }
+
   # Normalize generated staged metadata before signing; copied static payload is raw.
   $stagedTextEncoding = [Text.UTF8Encoding]::new($false, $true)
   foreach ($generatedPath in @($script:GeneratedPsm1Path, $script:GeneratedManifestPath)) {

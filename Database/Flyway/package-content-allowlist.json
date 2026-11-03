@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageId": "ATAPUtilities.Database",
-  "sourceVersion": "0.1.18-Sprint.1",
+  "sourceVersion": "0.1.19-Sprint.1",
   "files": [
     {
       "path": "SQL/V00010__Create_ATAPUtilities_Initial_Schema_And_Seed.sql",
@@ -82,6 +82,26 @@
       "path": "SQL/V00170__Create_ACE_UserInformation_Decrypt_Procedure.sql",
       "kind": "migration",
       "sha256": "7EF06E2052238BFC18BB97430E70BB2CCA6E99F63C71F2ECC7F6AF7713A6BB89"
+    },
+    {
+      "path": "SQL/V00180__Create_Organization_Eligibility_Schema.sql",
+      "kind": "migration",
+      "sha256": "002E113E83F29402772BE01F22D5F2B1A457A3C3C1379533560B728E34384A86"
+    },
+    {
+      "path": "SQL/V00190__Create_ReadOrganizationEligibility_Procedure.sql",
+      "kind": "migration",
+      "sha256": "51E6DEE5A6EDF82EE15674BCDA9B2A14A20C755A3CB6E910021BDBA1E135B6F2"
+    },
+    {
+      "path": "SQL/V00200__Create_Organization_Bootstrap.sql",
+      "kind": "migration",
+      "sha256": "E14208B3C42292E7038FCB0FCAF848BD07805D7259B0085F7CAD2908CC401821"
+    },
+    {
+      "path": "SQL/V00210__Create_ReadOrganizationProject_Procedure.sql",
+      "kind": "migration",
+      "sha256": "766F0C02571364808D05C4BD76810A2906C8B72E4F68A1C3D9D311066A79F4DB"
     },
     {
       "path": "Data/BuildSet.csv",

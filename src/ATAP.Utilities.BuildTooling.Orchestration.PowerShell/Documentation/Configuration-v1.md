@@ -2,7 +2,14 @@
 
 Status: SOURCE DESIGN PROPOSAL, pending distinct review and coordinator acceptance.
 Task 17.19.a / C17.1a remains open. This document selects no measured values,
-creates no configuration entries and proves no runtime consumption on either host.
+creates no host settings and proves no runtime consumption on either host.
+
+Source-candidate note (Unit 943): the sixteen flat `NConfigRootKey` to `N` name
+mappings below are now selected for `Set-OrchestrationConfigRootKeys`, immediately
+after Core in the ConfigRootKeys source registrar. This is **SOURCE_ONLY_NOT_DEPLOYED**:
+the section and export are source changes; no registration, host values, defaults,
+measured bounds, policy/custody decisions or producer admission are established.
+The remaining configuration design and per-host evidence gates stay open.
 
 ## Authority and evidence boundary
 
@@ -15,7 +22,8 @@ accepts exactly SHA256
 
 The adopted C17.1a requires keys, units/ranges, source entries on both hosts,
 human-reviewed measured values, actual pilot profiled consumption and explicit
-missing/invalid failure. Only the documentary design portion is supplied here.
+missing/invalid failure. This document describes the source candidate and the
+remaining documentary design; it proves no host or runtime outcome.
 The request schema is being authored separately; state/result schemas, concrete
 storage representations and numeric implementation ceilings remain downstream.
 Do not treat this document as approval of those representations. [P290; C580]
@@ -40,17 +48,17 @@ Verified existing mechanisms are the two-tier globals, `Get-PVal` alias and its
 resolution implementation, explicit key-section registration and the host
 settings builder. The source examples `CloudBasePathConfigRootKey` and
 `SecretVaultNameConfigRootKey` exist; neither supplies clerk custody or a clerk
-limit. No existing orchestration key is asserted by this document. [H; V; K; E]
+limit. The selected orchestration key-name mappings exist in the current
+source candidate; no host registration or installed vocabulary is claimed.
+[H; V; K; E]
 
-Every setting name in the catalogue below is DESIGN-PROPOSED. Names were checked
-against the current ConfigRootKeys public sources only; no registration or
-installed vocabulary is claimed. For each Level 2 name `N` below, its proposed
-Level 1 constant is exactly `NConfigRootKey`, mapping to the literal string `N`.
-The suffix convention is explicit here, not a rule that consumers may infer:
-future consumers must resolve the actual Level 1 mapping. For example, the
-proposed mapping is `OrchestrationMaxRequestBytesConfigRootKey` to
-`OrchestrationMaxRequestBytes`. Neither is authored into configuration by this
-document. [H46-72, H153-164]
+The sixteen catalogue names and their Level 1 mappings are selected for the
+source candidate. For each Level 2 name `N` below, the Level 1 constant is
+`NConfigRootKey`, mapping to the literal string `N`. The suffix convention is
+explicit here, not a rule that consumers may infer: future consumers must
+resolve the actual Level 1 mapping. For example, the source candidate maps
+`OrchestrationMaxRequestBytesConfigRootKey` to `OrchestrationMaxRequestBytes`.
+This document authors no host settings. [H46-72, H153-164]
 
 All proposed keys are required before the affected pilot operation can run.
 `UNMEASURED`, `UNBOUND` and `NOT_VERIFIED` are documentary status labels, never
@@ -121,12 +129,10 @@ C255-264; C396-432; C491-512]
 
 ## Resolution and failure contract for later consumers
 
-This is a design requirement, not an implementation or runnable setup recipe.
-Register key names through an explicitly invoked ConfigRootKeys section, update
-its exported/ordered registration using the existing workflow, and provide
-per-host/user Level 2 values in the admitted ATAP.IAC HostSettings source.
-The section and IAC fragment write scopes must be separately bound; this unit
-chooses neither an existing section to mutate nor a new fragment to discover.
+This is a design requirement, not a runnable setup recipe. The current source
+candidate implements the key-name section and its exported/ordered registration.
+Per-host/user Level 2 values in the admitted ATAP.IAC HostSettings source remain
+to be bound and verified; any further source write scope must be separately bound.
 The documentation's older five-section list is not the current inventory:
 current source K lines 99-107 also names SQL topology and parity sections.
 The explicit-registration convention is what is reused. [H85-116; H316-336; K]
@@ -168,7 +174,8 @@ C219-236; C330-362]
 
 ## Per-host source-entry and measurement register
 
-This register applies individually to all sixteen proposed keys above. The
+This register applies individually to all sixteen keys above. Tier 1 entries in
+the table describe host verification, not the existing source candidate. The
 author report enumerates each row with separate UTAT022 and UTAT01 fields.
 
 | Host | Measurement / approved reference values | Tier 1 registration | Tier 2 source entry | Effective profiled consumption |
@@ -199,13 +206,14 @@ Distinct review and coordinator acceptance of this design must precede any
 consumer treating these names/accounting choices as approved. The following
 remain unmet for 17.19.a and the parent outcome:
 
-1. Accept exact key names, counter/byte accounting and relation to accepted
-   request/state/result schemas without changing S1-S4 semantics.
+1. Review the full document and remaining counter/byte accounting and relation
+   to accepted request/state/result schemas without changing S1-S4 semantics;
+   the key-name mappings are selected for the source candidate as noted above.
 2. Bind and review measured finite operational bounds and all protected reference
    values independently for UTAT022 and UTAT01; preserve UNMEASURED/UNBOUND until
    those receipts exist.
-3. Separately authorize and implement exact ConfigRootKeys and HostSettings
-   source entries; verify resulting source identities for both hosts/users.
+3. Bind and review remaining HostSettings source entries; verify ConfigRootKeys
+   and HostSettings source identities and registration for both hosts/users.
 4. Prove missing/invalid/override/overflow/near-bound cases fail before effects,
    including zero/unlimited, unit confusion, escaping aliases, absent established
    state, copied witness and invalid conversion yielding null.

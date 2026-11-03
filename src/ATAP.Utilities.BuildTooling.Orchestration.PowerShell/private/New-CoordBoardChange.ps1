@@ -16,7 +16,14 @@ function New-CoordBoardChange {
     this preview edits one line only. Consumer policy changes require contract/test
     revalidation; this is not a shared runtime classifier.
 
-    Snapshot is the unchanged Read-CoordBoard F9906DCA snapshot. Request and
+    Snapshot is from Read-CoordBoard with pinned function-code identity D80978CB.
+    snapshotParserSha256 remains the ACTUAL adjacent reader file's whole-file SHA,
+    including its signature. This function re-reads that file, checks that binding,
+    then parses without execution and requires only the exact pinned function.
+    Standard Authenticode comments outside the function do not change code identity;
+    different code or additional top-level script constructs are refused. Package
+    signature/custody verification remains the trusted caller's responsibility.
+    Request and
     AppliedReport are caller-validated accepted request/state-record JsonElements.
     Context is a PRIVATE trusted-caller binding, not a grant. Required keys:
     coordinatorId, resourceId, sprintId, generation, committedRevision, taskId,
@@ -43,7 +50,8 @@ function New-CoordBoardChange {
     Reservations is the complete caller-validated original inventory, including
     reservations absent from the board. It is cloned unchanged, never allocated,
     filtered, freed or inferred from visible tasks. Neither tasks nor state are
-    mutated. No disk access, renderer, revision or preparation receipt is produced.
+    mutated. Only the adjacent parser file is read; no renderer, revision or
+    preparation receipt is produced.
   .PARAMETER Snapshot
     Original caller-bound Read-CoordBoard object with Text/RawBytes/Sha256/Tasks.
   .PARAMETER Request
@@ -80,6 +88,29 @@ function New-CoordBoardChange {
     function equalText {
       param([string]$Left, [string]$Right)
       [string]::Equals($Left, $Right, [System.StringComparison]::Ordinal)
+    }
+    function assertParserIdentity {
+      param([string]$ActualFileSha256)
+      try {
+        $moduleRoot = if ((Split-Path $PSScriptRoot -Leaf) -ieq 'private') { Split-Path $PSScriptRoot -Parent } else { $PSScriptRoot }
+        $parserPath = Join-Path $moduleRoot 'private/Read-CoordBoard.ps1'
+        $parserBytes = [IO.File]::ReadAllBytes($parserPath)
+        $fileSha256 = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($parserBytes)).ToLowerInvariant()
+        if (-not (equalText $ActualFileSha256 $fileSha256)) { throw 'SnapshotMismatch' }
+        $tokens = $null; $errors = $null
+        $ast = [Management.Automation.Language.Parser]::ParseInput($utf8.GetString($parserBytes), $parserPath, [ref]$tokens, [ref]$errors)
+        $statements = @($ast.EndBlock.Statements)
+        if ($errors.Count -ne 0 -or $null -ne $ast.ParamBlock -or $null -ne $ast.BeginBlock -or
+            $null -ne $ast.ProcessBlock -or $null -ne $ast.CleanBlock -or $null -ne $ast.DynamicParamBlock -or
+            $null -ne $ast.ScriptRequirements -or $ast.Attributes.Count -ne 0 -or $ast.UsingStatements.Count -ne 0 -or
+            $null -eq $ast.EndBlock -or -not $ast.EndBlock.Unnamed -or $ast.EndBlock.Traps.Count -ne 0 -or
+            $statements.Count -ne 1 -or $statements[0] -isnot [Management.Automation.Language.FunctionDefinitionAst] -or
+            $statements[0].Name -cne 'Read-CoordBoard' -or $statements[0].IsFilter -or $statements[0].IsWorkflow) {
+          throw 'SnapshotMismatch'
+        }
+        $codeSha256 = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($utf8.GetBytes($statements[0].Extent.Text))).ToLowerInvariant()
+        if (-not (equalText $codeSha256 'd80978cbdad2daed364ac171ddfafe5c4db27a5c7b9acf2407496e62e4f55898')) { throw 'SnapshotMismatch' }
+      } catch { throw 'SnapshotMismatch' }
     }
     function derivedStatus {
       param([string]$Checkbox, [string]$StatusText)
@@ -139,7 +170,7 @@ function New-CoordBoardChange {
         'taskId', 'authorizationReference', 'holder', 'scope', 'claimId', 'reportRequestId', 'reportDigest',
         'evidence', 'snapshotSha256', 'snapshotParserSha256')
       $null = textValue $Context 'coordinatorId'
-      if (-not (equalText (textValue $Context 'snapshotParserSha256') 'f9906dca95317b2fc4b2364ddea0e6aa7c5512e7f2d04fcb98eb9f0fd79f2e88')) { throw 'SnapshotMismatch' }
+      assertParserIdentity (textValue $Context 'snapshotParserSha256')
       if (-not (equalText (textValue $Request 'protocolVersion') 'Coordination-v1') -or
           -not (equalText (textValue $Request 'category') 'AcceptChange')) { throw 'UnsupportedChange' }
       $payload = $Request.GetProperty('payload')

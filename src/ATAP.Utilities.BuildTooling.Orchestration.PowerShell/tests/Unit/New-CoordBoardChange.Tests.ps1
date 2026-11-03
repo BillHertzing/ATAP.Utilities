@@ -1,6 +1,13 @@
 BeforeAll {
   $null = Get-Command -Name 'Write-PSFMessage' -ErrorAction Stop
-  . (Join-Path $PSScriptRoot '../../private/New-CoordBoardChange.ps1')
+  $script:sourceReader1618 = Join-Path $PSScriptRoot '../../private/Read-CoordBoard.ps1'
+  $script:identityRoot1618 = Join-Path ([IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../../..'))) ('_generated/Sprint0017/CloseStreams/C1618/Unit-' + [guid]::NewGuid().ToString('N'))
+  $private1618 = Join-Path $script:identityRoot1618 'private'
+  $null = New-Item -ItemType Directory -Path $private1618 -Force
+  $script:readerCopy1618 = Join-Path $private1618 'Read-CoordBoard.ps1'
+  Copy-Item -LiteralPath $script:sourceReader1618 -Destination $script:readerCopy1618
+  Copy-Item -LiteralPath (Join-Path $PSScriptRoot '../../private/New-CoordBoardChange.ps1') -Destination $private1618
+  . (Join-Path $private1618 'New-CoordBoardChange.ps1')
   $script:utf8 = [System.Text.UTF8Encoding]::new($false, $true)
   $script:headings = @(
     '- [ ] **Task 17.26** [ATAP.Utilities] - Parent fixture',
@@ -73,6 +80,7 @@ BeforeAll {
 Describe 'New-CoordBoardChange annotation-only source boundary' -Tag 'Unit' {
   BeforeEach {
     Mock Write-PSFMessage {}
+    Copy-Item -LiteralPath $script:sourceReader1618 -Destination $script:readerCopy1618 -Force
     $script:snapshot = New-TestBoardSnapshot
     $evidence = @(
       [ordered]@{ reference = 'synthetic-evidence-A'; digest = [ordered]@{ algorithm = 'SHA256'; value = '0' * 64 } },
@@ -111,7 +119,7 @@ Describe 'New-CoordBoardChange annotation-only source boundary' -Tag 'Unit' {
       authorizationReference = 'synthetic-coordinator-approval'; holder = $holder; scope = $scope
       claimId = 'C-one'; reportRequestId = 'R-one'; reportDigest = '2' * 64; evidence = $evidence
       snapshotSha256 = $script:snapshot.Sha256
-      snapshotParserSha256 = 'f9906dca95317b2fc4b2364ddea0e6aa7c5512e7f2d04fcb98eb9f0fd79f2e88'
+      snapshotParserSha256 = (Get-FileHash -LiteralPath $script:readerCopy1618 -Algorithm SHA256).Hash.ToLowerInvariant()
     }
     # An older unpublished reservation survives even though its task is not visible.
     $script:reservations = @([ordered]@{
@@ -363,6 +371,48 @@ Describe 'New-CoordBoardChange annotation-only source boundary' -Tag 'Unit' {
     if ($Variant -eq 'missing') { $script:context.Remove('coordinatorId') }
     else { $script:context['grant'] = $true }
     { Invoke-TestBoardPreview } | Should -Throw '*InvalidInput*'
+  }
+
+  It 'binds parser identity for <Variant> without executing reader file code' -Tag 'ParserIdentity1618' -ForEach @(
+    @{ Variant = 'source'; Allowed = $true },
+    @{ Variant = 'signed014'; Allowed = $true },
+    @{ Variant = 'changed-function'; Allowed = $false },
+    @{ Variant = 'unknown-function'; Allowed = $false },
+    @{ Variant = 'extra-statement'; Allowed = $false },
+    @{ Variant = 'script-parameter'; Allowed = $false },
+    @{ Variant = 'using-statement'; Allowed = $false },
+    @{ Variant = 'script-requirement'; Allowed = $false },
+    @{ Variant = 'stale-whole-file-hash'; Allowed = $false }
+  ) {
+    $sentinel = Join-Path $script:identityRoot1618 'must-not-execute.txt'
+    if ($Variant -in @('signed014', 'stale-whole-file-hash')) {
+      $signed = 'C:/Program Files/PowerShell/Modules/ATAP.Utilities.BuildTooling.Orchestration.PowerShell/0.1.4/private/Read-CoordBoard.ps1'
+      Copy-Item -LiteralPath $signed -Destination $script:readerCopy1618 -Force
+    } else {
+      $text = [IO.File]::ReadAllText($script:readerCopy1618, $script:utf8)
+      $text = switch ($Variant) {
+        'changed-function' { $text.Replace('Duplicate task ID:', 'Changed task ID:') }
+        'unknown-function' { 'function Read-CoordBoard { param() }' }
+        'extra-statement' { $text + [char]10 + "Set-Content -LiteralPath '$sentinel' -Value Executed" }
+        'script-parameter' { 'param()' + [char]10 + $text }
+        'using-statement' { 'using namespace System' + [char]10 + $text }
+        'script-requirement' { '#Requires -Version 7.0' + [char]10 + $text }
+        default { $text }
+      }
+      [IO.File]::WriteAllText($script:readerCopy1618, $text, $script:utf8)
+    }
+    $actual = (Get-FileHash -LiteralPath $script:readerCopy1618 -Algorithm SHA256).Hash.ToLowerInvariant()
+    $script:context.snapshotParserSha256 = $actual
+    if ($Variant -eq 'stale-whole-file-hash') {
+      $script:context.snapshotParserSha256 = (Get-FileHash -LiteralPath $script:sourceReader1618 -Algorithm SHA256).Hash.ToLowerInvariant()
+      $script:context.snapshotParserSha256 | Should -Not -BeExactly $actual
+    }
+    if ($Allowed) {
+      (Invoke-TestBoardPreview).Stage | Should -BeExactly 'ProposedNotPrepared'
+      $script:context.snapshotParserSha256 | Should -BeExactly $actual
+      if ($Variant -eq 'signed014') { $actual | Should -BeExactly '345a33e5816f559a53b704f81d0e6fb3aa27baf74c310f7d60a90e79498c73e1' }
+    } else { { Invoke-TestBoardPreview } | Should -Throw '*SnapshotMismatch*' }
+    Test-Path -LiteralPath $sentinel | Should -BeFalse
   }
 
   It 'does not use a scalar reservation value as an empty inventory' {

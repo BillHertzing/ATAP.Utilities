@@ -1,19 +1,19 @@
 param(
   [Parameter()]
   [ValidateNotNullOrEmpty()]
-  [string]$FixtureRoot = $(if ([Environment]::MachineName -ieq 'UTAT022') { 'D:\ATAPArtifacts\Sprint0017\Task17.26\ReaderPreview268\PackageTests' } else { throw 'FixtureRoot must be supplied explicitly on this host.' })
+  [string]$FixtureRoot = (Join-Path ([IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../../..'))) '_generated/Sprint0017/CloseStreams/C1618/PreviewIntegration')
 )
 
 # Integration test: a GENUINE Read-CoordBoard snapshot is passed straight into the
 # GENUINE New-CoordBoardChange, and the genuine output bytes are read back through
 # Read-CoordBoard. Neither helper is mocked; only PSFramework logging is mocked.
-# FixtureRoot is mandatory and must be under the D: Task 17.26 ReaderPreview268 packet.
+# FixtureRoot stays beneath this repository's _generated directory.
 
 BeforeAll {
   $null = Get-Command -Name 'Write-PSFMessage' -ErrorAction Stop
-  $allowedRoot = 'D:\ATAPArtifacts\Sprint0017\Task17.26\ReaderPreview268'
+  $allowedRoot = Join-Path ([IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../../..'))) '_generated'
   if (-not [System.IO.Path]::IsPathFullyQualified($FixtureRoot)) {
-    throw 'FixtureRoot must be an explicit absolute D: artifact directory.'
+    throw 'FixtureRoot must be an explicit absolute repository-generated directory.'
   }
   $resolvedRoot = [System.IO.Path]::GetFullPath($FixtureRoot).TrimEnd('\')
   if (-not ($resolvedRoot.Equals($allowedRoot, [System.StringComparison]::OrdinalIgnoreCase) -or
@@ -23,8 +23,14 @@ BeforeAll {
   $script:fixtureBase = Join-Path $resolvedRoot ([guid]::NewGuid().ToString('N'))
   $null = New-Item -ItemType Directory -Path $script:fixtureBase -Force
 
-  . (Join-Path $PSScriptRoot '../../private/Read-CoordBoard.ps1')
-  . (Join-Path $PSScriptRoot '../../private/New-CoordBoardChange.ps1')
+  $script:sourceReader1618 = Join-Path $PSScriptRoot '../../private/Read-CoordBoard.ps1'
+  $private1618 = Join-Path $script:fixtureBase 'ModuleCopy/private'
+  $null = New-Item -ItemType Directory -Path $private1618 -Force
+  $script:readerCopy1618 = Join-Path $private1618 'Read-CoordBoard.ps1'
+  Copy-Item -LiteralPath $script:sourceReader1618 -Destination $script:readerCopy1618
+  Copy-Item -LiteralPath (Join-Path $PSScriptRoot '../../private/New-CoordBoardChange.ps1') -Destination $private1618
+  . $script:readerCopy1618
+  . (Join-Path $private1618 'New-CoordBoardChange.ps1')
 
   $script:utf8 = [System.Text.UTF8Encoding]::new($false, $true)
   $script:oldStatus = 'Planned.'
@@ -119,7 +125,7 @@ BeforeAll {
       authorizationReference = 'synthetic-coordinator-approval'; holder = $holder; scope = $scope
       claimId = 'C-one'; reportRequestId = 'R-one'; reportDigest = '2' * 64; evidence = $evidence
       snapshotSha256 = $Snapshot.Sha256
-      snapshotParserSha256 = 'f9906dca95317b2fc4b2364ddea0e6aa7c5512e7f2d04fcb98eb9f0fd79f2e88'
+      snapshotParserSha256 = (Get-FileHash -LiteralPath $script:readerCopy1618 -Algorithm SHA256).Hash.ToLowerInvariant()
     }
     # An older unpublished reservation survives even though its task is not on the board.
     $reservations = @([ordered]@{
@@ -156,7 +162,7 @@ BeforeAll {
     $reservationJson = (ConvertTo-BoardElement $inputs.Reservations).GetRawText()
     $preview = Invoke-IntegrationPreview -Snapshot $snapshot -Inputs $inputs
 
-    # Genuine output bytes go to a separate D: directory and back through the genuine reader.
+    # Genuine output bytes go to a separate generated directory and back through the genuine reader.
     $outputDirectory = New-IntegrationDirectory
     $null = Write-IntegrationBoard -Directory $outputDirectory -Bytes $preview.AfterBytes
     $after = Read-CoordBoard -PlanningRoot $outputDirectory -SprintNumber 17
@@ -227,6 +233,32 @@ BeforeAll {
 Describe 'Read-CoordBoard to New-CoordBoardChange integration' -Tag 'Unit' {
   BeforeEach {
     Mock Write-PSFMessage {}
+    Copy-Item -LiteralPath $script:sourceReader1618 -Destination $script:readerCopy1618 -Force
+  }
+
+  It 'round-trips annotation using adjacent <Reader> code and truthful file identity' -Tag 'ParserIdentity1618' -ForEach @(
+    @{ Reader = 'source' }, @{ Reader = 'signed014' }
+  ) {
+    if ($Reader -eq 'signed014') {
+      Copy-Item -LiteralPath 'C:/Program Files/PowerShell/Modules/ATAP.Utilities.BuildTooling.Orchestration.PowerShell/0.1.4/private/Read-CoordBoard.ps1' -Destination $script:readerCopy1618 -Force
+    }
+    . $script:readerCopy1618
+    $directory = New-IntegrationDirectory
+    $inputPath = Write-IntegrationBoard -Directory $directory -Bytes ($script:utf8.GetBytes($script:boardTextLf))
+    $snapshot = Read-CoordBoard -PlanningRoot $directory -SprintNumber 17
+    $inputs = New-TrustedCallerInputs -Snapshot $snapshot -ApprovedChange @{ annotation = $script:annotation }
+    $actual = (Get-FileHash -LiteralPath $script:readerCopy1618 -Algorithm SHA256).Hash.ToLowerInvariant()
+    $inputs.Context.snapshotParserSha256 | Should -BeExactly $actual
+    if ($Reader -eq 'signed014') { $actual | Should -BeExactly '345a33e5816f559a53b704f81d0e6fb3aa27baf74c310f7d60a90e79498c73e1' }
+    $preview = Invoke-IntegrationPreview -Snapshot $snapshot -Inputs $inputs
+    $preview.Stage | Should -BeExactly 'ProposedNotPrepared'
+    $outputDirectory = New-IntegrationDirectory
+    $null = Write-IntegrationBoard -Directory $outputDirectory -Bytes $preview.AfterBytes
+    $after = Read-CoordBoard -PlanningRoot $outputDirectory -SprintNumber 17
+    $after.Text | Should -BeExactly $script:boardTextLf.Replace('  - Status: Planned.', '  - Status: ' + $script:annotation)
+    ($after.Tasks.Id -join '|') | Should -BeExactly ($snapshot.Tasks.Id -join '|')
+    ($after.Tasks.Checkbox -join '|') | Should -BeExactly ($snapshot.Tasks.Checkbox -join '|')
+    [Convert]::ToBase64String([IO.File]::ReadAllBytes($inputPath)) | Should -BeExactly ([Convert]::ToBase64String($snapshot.RawBytes))
   }
 
   It 'CoordBoardPreviewIntegration_LfInput_RoundTripsAnnotationAndPreservesEverythingElse' {

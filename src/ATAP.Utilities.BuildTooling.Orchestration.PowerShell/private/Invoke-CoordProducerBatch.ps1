@@ -74,6 +74,7 @@ function Invoke-CoordProducerBatch {
             claimId = $report.GetProperty('request').GetProperty('payload').GetProperty('claimId').GetString()
             reportRequestId = $reportId; reportDigest = $report.GetProperty('digest').GetString()
             evidence = $payload.GetProperty('evidence'); snapshotSha256 = $snapshot.Sha256
+            # Truthful whole-file provenance, including Authenticode; the preview separately pins parser code.
             snapshotParserSha256 = (Get-FileHash (Join-Path $Context.ModuleRoot 'private/Read-CoordBoard.ps1') -Algorithm SHA256).Hash.ToLowerInvariant()
           }
           $next = New-CoordBoardChange -Snapshot $snapshot -Request $request -AppliedReport $report -Context $binding -Reservations $Context.State.GetProperty('reservations') -Confirm:$false

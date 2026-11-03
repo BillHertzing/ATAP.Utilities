@@ -173,4 +173,43 @@ Describe 'Incremental clone lifetime' -Tag @('UL1617','UL1617Lifecycle') {
     Should -Invoke Invoke-Flyway -Times 0 -Exactly
     Should -Invoke Invoke-DatabaseSqlQuery -Times 0 -Exactly
   }
+  It 'allows pending only before migrate and explicitly validates strictly afterward' -Tag 'Pending1636' {
+    $script:operations1636 = [Collections.Generic.List[object]]::new()
+    Mock Invoke-Flyway {
+      $script:operations1636.Add([pscustomobject]@{ Command=$FlywayCommand; Arguments=@($FlywayAdditionalArgs) })
+      [pscustomobject]@{ Success=$true }
+    }
+    (Invoke-FlywayRehearsal @script:helperParameters1617).Success | Should -BeTrue
+    ($script:operations1636.Command -join '|') | Should -BeExactly 'validate|migrate|validate'
+    ($script:operations1636[0].Arguments -join '|') | Should -BeExactly '-defaultSchema=dbo|-table=flyway_schema_history|-target=00210|-ignoreMigrationPatterns=*:pending'
+    ($script:operations1636[1].Arguments -join '|') | Should -BeExactly '-defaultSchema=dbo|-table=flyway_schema_history|-target=00210'
+    ($script:operations1636[2].Arguments -join '|') | Should -BeExactly '-defaultSchema=dbo|-table=flyway_schema_history|-target=00210|-ignoreMigrationPatterns='
+    ($script:events1617 | Select-Object -Last 3) -join '|' | Should -BeExactly 'Close|Dispose|Drop'
+  }
+  It 'still blocks a nonpending pre-validation failure without any migrate' -Tag 'Pending1636' {
+    Mock Invoke-Flyway { [pscustomobject]@{ Success=$false; ValidateOutput='Synthetic checksum mismatch' } }
+    { Invoke-FlywayRehearsal @script:helperParameters1617 } | Should -Throw '*validate failed*'
+    Should -Invoke Invoke-Flyway -Times 1 -Exactly -ParameterFilter {
+      $FlywayCommand -ceq 'validate' -and $FlywayAdditionalArgs -contains '-ignoreMigrationPatterns=*:pending'
+    }
+    Should -Invoke Invoke-Flyway -Times 0 -Exactly -ParameterFilter { $FlywayCommand -ceq 'migrate' }
+    ($script:events1617 | Select-Object -Last 3) -join '|' | Should -BeExactly 'Close|Dispose|Drop'
+  }
+  It 'rejects a strict post-migration failure and cleans the clone without post-state success' -Tag 'Pending1636' {
+    $script:validations1636=0
+    Mock Invoke-Flyway {
+      if ($FlywayCommand -ceq 'validate') {
+        $script:validations1636++
+        return [pscustomobject]@{ Success=($script:validations1636 -eq 1) }
+      }
+      [pscustomobject]@{ Success=$true }
+    }
+    { Invoke-FlywayRehearsal @script:helperParameters1617 } | Should -Throw '*validate failed*'
+    Should -Invoke Invoke-Flyway -Times 1 -Exactly -ParameterFilter { $FlywayCommand -ceq 'migrate' }
+    Should -Invoke Invoke-Flyway -Times 1 -Exactly -ParameterFilter {
+      $FlywayCommand -ceq 'validate' -and $FlywayAdditionalArgs -contains '-ignoreMigrationPatterns='
+    }
+    $script:events1617 | Should -Not -Contain 'After'
+    ($script:events1617 | Select-Object -Last 3) -join '|' | Should -BeExactly 'Close|Dispose|Drop'
+  }
 }

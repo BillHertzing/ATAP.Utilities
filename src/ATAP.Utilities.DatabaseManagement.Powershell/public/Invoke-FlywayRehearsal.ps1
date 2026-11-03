@@ -562,9 +562,21 @@ END;
               if ($before.Count -ne 1 -or $before[0].FixturePhase -cne 'Before210') { throw 'Organization predecessor verification failed.' }
               $organizationParameters = $sequenceParams.Clone()
               $organizationParameters.SqlConnection = $verifier
-              $organizationParameters.FlywayAdditionalArgs = @('-defaultSchema=dbo', '-table=flyway_schema_history', '-target=00210')
+              $firstValidation = $true
               foreach ($operation in @('validate', 'migrate', 'validate')) {
                 $organizationParameters.FlywayCommand = $operation
+                $organizationParameters.FlywayAdditionalArgs = @('-defaultSchema=dbo', '-table=flyway_schema_history', '-target=00210')
+                # Manifest selection permits only V180-V210 beyond the exact sixteen
+                # predecessor rows proved above. Only this first validate may ignore
+                # those pending migrations; never carry the option into migrate.
+                if ($firstValidation) {
+                  $organizationParameters.FlywayAdditionalArgs += '-ignoreMigrationPatterns=*:pending'
+                }
+                elseif ($operation -ceq 'validate') {
+                  # Explicitly clear inherited/default ignore patterns after migrate.
+                  $organizationParameters.FlywayAdditionalArgs += '-ignoreMigrationPatterns='
+                }
+                $firstValidation = $false
                 $summaries = @(Invoke-Flyway @organizationParameters -Confirm:$false -ErrorAction Stop)
                 if ($summaries.Count -ne 1 -or $summaries[0].Success -isnot [bool] -or -not $summaries[0].Success) {
                   throw "Organization rehearsal $operation failed."

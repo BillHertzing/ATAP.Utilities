@@ -11,6 +11,7 @@ BeforeAll {
   $null = [IO.Directory]::CreateDirectory($fixtureRoot)
   $script:priorSettings = $global:settings
   $script:priorKeys = $global:configRootKeys
+  $script:lockLifetimeObservations = [Collections.Generic.List[object]]::new()
   function Protect-FixturePath([string]$Path) {
     $acl = Get-Acl -LiteralPath $Path
     $acl.SetOwner([Security.Principal.SecurityIdentifier]::new($sid))
@@ -104,8 +105,111 @@ BeforeAll {
 AfterAll {
   $global:settings = $script:priorSettings
   $global:configRootKeys = $script:priorKeys
+  if ($script:lockLifetimeObservations.Count) {
+    $script:lockLifetimeObservations | ConvertTo-Json -Depth 8 |
+      Set-Content -LiteralPath (Join-Path $script:fixtureRoot 'C1687-LockLifetime.json')
+  }
 }
 Describe 'Actual coordination producer under disposable protected custody' -Tag 'Integration' {
+
+  It 'distinguishes retained custody from interrupted state replacement and recovers after both owners release' -Tag 'C1687' {
+    $owner = Read-CoordProducerContext -HolderId Coordinator -SessionId session-1
+    $stateHold = $null
+    $beforeState = Get-CoordHash ([IO.File]::ReadAllBytes($statePath))
+    $beforeWitness = Get-CoordHash ([IO.File]::ReadAllBytes($witnessPath))
+    try {
+      $stateHold = [IO.File]::Open($statePath, 'Open', 'Read', 'ReadWrite')
+      $custodyFailure = $null
+      try {
+        $null = Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false
+      } catch { $custodyFailure = $_ }
+      $custodyFailure | Should -Not -BeNullOrEmpty
+      $custodyFailure.ScriptStackTrace | Should -Match 'Enter-CoordResourceLease'
+      $custodyFailure.Exception.ToString() | Should -Match '(?i)(used by another process|sharing violation)'
+      $owner.Lease.CanRead | Should -BeTrue
+      (Get-CoordHash ([IO.File]::ReadAllBytes($statePath))) | Should -BeExactly $beforeState
+      (Get-CoordHash ([IO.File]::ReadAllBytes($witnessPath))) | Should -BeExactly $beforeWitness
+      ([IO.File]::ReadAllText($witnessPath) | ConvertFrom-Json).pendingWrite | Should -BeNullOrEmpty
+      $script:lockLifetimeObservations.Add([pscustomobject]@{
+        Stage = 'Known retained custody owner; state replacement also blocked'
+        KnownOwnerProcessId = [Environment]::ProcessId; CustodyLeasePath = $owner.Lease.Name
+        BoardLeasePath = $owner.BoardLease.Name; StateHandlePath = $stateHold.Name
+        Failure = $custodyFailure.Exception.ToString(); Stack = $custodyFailure.ScriptStackTrace
+        PendingWrite = $null; StateAndWitnessUnchanged = $true
+      })
+
+      $owner.BoardLease.Dispose()
+      $owner.Lease.Dispose()
+      $owner = $null
+      $stateFailure = $null
+      try {
+        $null = Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false
+      } catch { $stateFailure = $_ }
+      $stateFailure | Should -Not -BeNullOrEmpty
+      $stateFailure.ScriptStackTrace | Should -Match 'Write-CoordAtomicBytes'
+      $stateFailure.Exception.ToString() | Should -Match '(?i)(used by another process|sharing violation)'
+      $pending = [IO.File]::ReadAllText($witnessPath) | ConvertFrom-Json
+      $pending.pendingWrite.kind | Should -BeExactly 'State'
+      # Failure released producer custody even while the independently held state file remains open.
+      $probe = Enter-CoordResourceLease -StateDirectory ([IO.Path]::GetDirectoryName($witnessPath))
+      try { $probe.CanWrite | Should -BeTrue } finally { $probe.Dispose() }
+      $script:lockLifetimeObservations.Add([pscustomobject]@{
+        Stage = 'Custody owner released; known state replacement owner retained'
+        KnownOwnerProcessId = [Environment]::ProcessId; StateHandlePath = $stateHold.Name
+        Failure = $stateFailure.Exception.ToString(); Stack = $stateFailure.ScriptStackTrace
+        PendingWrite = $pending.pendingWrite.kind; CustodyReleasedAfterFailure = $true
+      })
+    } finally {
+      if ($owner) { $owner.BoardLease.Dispose(); $owner.Lease.Dispose() }
+      if ($stateHold) { $stateHold.Dispose() }
+    }
+    (Invoke-CoordClerk -HolderId Coordinator -SessionId session-1 -Confirm:$false).Applied | Should -Be 1
+    (Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false).Status | Should -BeExactly 'Applied'
+    $recovered = Read-CoordJsonBytes ([IO.File]::ReadAllBytes($statePath))
+    $recovered.GetProperty('requests').GetArrayLength() | Should -Be 1
+    $recovered.GetProperty('commitReceipts').GetArrayLength() | Should -Be 1
+  }
+
+  It 'releases custody after early rejection and only after a synchronous result consumer finishes' -Tag 'C1687' {
+    $rejection = $null
+    try {
+      $null = Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Unregistered -SessionId session-1 -Confirm:$false
+    } catch { $rejection = $_ }
+    $rejection.Exception.Message | Should -Match 'ActorNotAuthorized'
+    $probe = Enter-CoordResourceLease -StateDirectory ([IO.Path]::GetDirectoryName($witnessPath))
+    try { $probe.CanWrite | Should -BeTrue } finally { $probe.Dispose() }
+
+    $consumerFailure = $null
+    $submission = Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false |
+      ForEach-Object {
+        # Output reaches downstream code before the producer's finally block runs.
+        # A reentrant submit here contends with its own still-active producer.
+        try {
+          $null = Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false
+        } catch { $consumerFailure = $_ }
+        $_
+      }
+    $submission.Status | Should -BeExactly 'Pending'
+    $consumerFailure | Should -Not -BeNullOrEmpty
+    $consumerFailure.ScriptStackTrace | Should -Match 'Enter-CoordResourceLease'
+    $consumerFailure.Exception.ToString() | Should -Match '(?i)(used by another process|sharing violation)'
+    # Once the result pipeline has completed, both leases must be available again.
+    $probe = Enter-CoordResourceLease -StateDirectory ([IO.Path]::GetDirectoryName($witnessPath))
+    try { $probe.CanWrite | Should -BeTrue } finally { $probe.Dispose() }
+    $boardProbe = [IO.File]::Open($witness.boardLockPath, 'Open', 'ReadWrite', 'None')
+    try { $boardProbe.CanWrite | Should -BeTrue } finally { $boardProbe.Dispose() }
+    $retry = Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false
+    $retry.Decision | Should -BeExactly 'Retained'
+    $retry.Status | Should -BeExactly 'Pending'
+    (Read-CoordJsonBytes ([IO.File]::ReadAllBytes($statePath))).GetProperty('requests').GetArrayLength() | Should -Be 1
+    $script:lockLifetimeObservations.Add([pscustomobject]@{
+      Stage = 'Reentrant synchronous result consumer before producer finally'
+      ProcessId = [Environment]::ProcessId; CustodyDirectory = [IO.Path]::GetDirectoryName($witnessPath)
+      Rejection = $rejection.Exception.ToString(); RejectionStack = $rejection.ScriptStackTrace
+      Failure = $consumerFailure.Exception.ToString(); Stack = $consumerFailure.ScriptStackTrace
+      CustodyAndBoardReleasedAfterPipeline = $true; RetryDecision = $retry.Decision
+    })
+  }
 
   It 'renders and publishes one authorized annotation after an applied report' -Tag 'C1637' {
     $null = Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false

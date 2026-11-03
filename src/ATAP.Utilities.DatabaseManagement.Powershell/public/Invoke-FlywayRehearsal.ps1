@@ -57,6 +57,10 @@ function Invoke-FlywayRehearsal {
 .PARAMETER DecryptFixturePath
     Paired with LoginFixturePath. A dedicated nonpooled, MARS-disabled verifier is
     retired before clone cleanup, including when opening or the sequence fails.
+
+.PARAMETER OrganizationFixturePath
+    Mutually exclusive V170-to-V210 before/after verifier, run on the same
+    dedicated clone connection around one validate/migrate210/validate sequence.
 #>
   [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', 'CredentialsKey',
     Justification = 'CredentialsKey is a vault lookup key name, not a credential')]
@@ -165,6 +169,7 @@ function Invoke-FlywayRehearsal {
 
     [string]$LoginFixturePath,
     [string]$DecryptFixturePath,
+    [string]$OrganizationFixturePath,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
     [switch]$IntegratedSecurity = $true,
@@ -177,7 +182,10 @@ function Invoke-FlywayRehearsal {
     $fn = 'Invoke-FlywayRehearsal'
     $mn = 'ATAP.Utilities.DatabaseManagement.Powershell'
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn" -Tag 'Trace'
-    $fixtureRequested = $PSBoundParameters.ContainsKey('LoginFixturePath') -or $PSBoundParameters.ContainsKey('DecryptFixturePath')
+    $legacyFixtureRequested = $PSBoundParameters.ContainsKey('LoginFixturePath') -or $PSBoundParameters.ContainsKey('DecryptFixturePath')
+    $organizationRequested = $PSBoundParameters.ContainsKey('OrganizationFixturePath')
+    if ($legacyFixtureRequested -and $organizationRequested) { throw 'Organization and legacy fixture flows are mutually exclusive.' }
+    $fixtureRequested = $legacyFixtureRequested -or $organizationRequested
     if (-not $fixtureRequested) {
       # Use the original string parameter binder, not raw-object truthiness or an array-joining cast.
       function Convert-GenericRehearsalPackageMetadata623 {
@@ -193,8 +201,10 @@ function Invoke-FlywayRehearsal {
       }
     }
     if ($fixtureRequested) {
-      foreach ($fixtureKey in @('LoginFixturePath', 'DecryptFixturePath', 'ExpectedSourceDatabaseName',
-          'PackageName', 'PackageVersion', 'FlywayBasePath', 'FlywaySqlMigrationsPath', 'FlywayDataPath', 'FlywayTomlPath')) {
+      $fixtureKeys = @('ExpectedSourceDatabaseName', 'PackageName', 'PackageVersion',
+        'FlywayBasePath', 'FlywaySqlMigrationsPath', 'FlywayDataPath', 'FlywayTomlPath')
+      $fixtureKeys += if ($organizationRequested) { @('OrganizationFixturePath') } else { @('LoginFixturePath', 'DecryptFixturePath') }
+      foreach ($fixtureKey in $fixtureKeys) {
         $fixtureValue = $PSBoundParameters[$fixtureKey]
         if (-not $PSBoundParameters.ContainsKey($fixtureKey) -or $fixtureValue -isnot [string] -or
             [string]::IsNullOrWhiteSpace($fixtureValue) -or $fixtureValue -cne $fixtureValue.Trim()) {
@@ -218,12 +228,21 @@ function Invoke-FlywayRehearsal {
           throw 'Fixture rehearsal accepts only the exact dbo history arguments.'
         }
       }
-      # Bind the sibling source when absent or module-backed; no installed fallback.
-      $sequenceCommand = Get-Command Invoke-AceCommanderLoginFixtureSequence -CommandType Function -ErrorAction SilentlyContinue
-      if ($null -eq $sequenceCommand -or -not [string]::IsNullOrEmpty($sequenceCommand.ModuleName)) {
-        . (Join-Path (Split-Path -Parent $PSScriptRoot) 'private/Invoke-AceCommanderLoginFixtureSequence.ps1')
+      if ($organizationRequested) {
+        if ($ExpectedSourceDatabaseName -cne 'ATAPUtilities' -or $PackageName -cne 'ATAPUtilities.Database') {
+          throw 'Organization rehearsal requires the existing ATAPUtilities package/catalog.'
+        }
+        $organizationVerifier = [IO.File]::ReadAllText($OrganizationFixturePath)
+        if ([string]::IsNullOrWhiteSpace($organizationVerifier)) { throw 'Organization verifier is empty.' }
       }
-      $null = Get-Command Invoke-AceCommanderLoginFixtureSequence -CommandType Function -ErrorAction Stop
+      else {
+        # Bind the sibling source when absent or module-backed; no installed fallback.
+        $sequenceCommand = Get-Command Invoke-AceCommanderLoginFixtureSequence -CommandType Function -ErrorAction SilentlyContinue
+        if ($null -eq $sequenceCommand -or -not [string]::IsNullOrEmpty($sequenceCommand.ModuleName)) {
+          . (Join-Path (Split-Path -Parent $PSScriptRoot) 'private/Invoke-AceCommanderLoginFixtureSequence.ps1')
+        }
+        $null = Get-Command Invoke-AceCommanderLoginFixtureSequence -CommandType Function -ErrorAction Stop
+      }
     }
 
     function Resolve-ServerInstance {
@@ -246,7 +265,7 @@ function Invoke-FlywayRehearsal {
     if (-not (Get-Command -Name Invoke-DatabaseSqlNonQuery -CommandType Function -ErrorAction SilentlyContinue)) {
       . (Join-Path -Path $privateDir -ChildPath 'DatabaseSqlCommand.Helpers.ps1')
     }
-    if ($fixtureRequested -and -not (Get-Command -Name New-DatabaseSqlCommand -CommandType Function -ErrorAction SilentlyContinue)) {
+      if ($fixtureRequested -and -not (Get-Command -Name New-DatabaseSqlCommand -CommandType Function -ErrorAction SilentlyContinue)) {
       . (Join-Path -Path $privateDir -ChildPath 'DatabaseSqlCommand.Helpers.ps1')
     }
     if (-not (Get-Command -Name Resolve-DatabaseSqlConnection -CommandType Function -ErrorAction SilentlyContinue)) {
@@ -409,11 +428,20 @@ function Invoke-FlywayRehearsal {
     $safeIdentifier = $RehearsalDb.Replace(']', ']]')
     $serverInstance = $connectionDisplayName
     $created = $false
+    $organizationCloneAttempted = $false
     $dropped = $false
     $flywayResult = $null
     $errorText = $null
 
     try {
+      if ($organizationRequested) {
+        $presence = @(Invoke-DatabaseSqlQuery -SqlConnection $resolvedSqlConnection `
+          -CommandText 'SELECT CASE WHEN DB_ID(@CloneName) IS NULL THEN 1 ELSE 0 END AS Absent;' `
+          -Parameters @{ CloneName = $RehearsalDb } -ErrorAction Stop)
+        if ($presence.Count -ne 1 -or $presence[0].Absent -ne 1) {
+          throw 'Organization rehearsal requires a previously absent, exclusively owned clone name.'
+        }
+      }
       $dropExistingQuery = @"
 USE [master];
 IF DB_ID(N'$safeLiteral') IS NOT NULL
@@ -425,7 +453,9 @@ END;
 
       if ($PSCmdlet.ShouldProcess("$serverInstance/$RehearsalDb", 'Prepare ephemeral Flyway rehearsal database')) {
         if (-not [string]::IsNullOrWhiteSpace($SourceDatabaseName)) {
-          [void](Invoke-DatabaseSqlNonQuery -SqlConnection $resolvedSqlConnection -CommandText $dropExistingQuery)
+          if (-not $organizationRequested) {
+            [void](Invoke-DatabaseSqlNonQuery -SqlConnection $resolvedSqlConnection -CommandText $dropExistingQuery)
+          }
           $stagingRoot = $env:ATAP_DATABASE_PACKAGE_STAGING_ROOT
           if ([string]::IsNullOrWhiteSpace($stagingRoot) -or
             -not (Test-Path -LiteralPath $stagingRoot -PathType Container)) {
@@ -439,17 +469,12 @@ END;
             -SqlInstance $serverInstance `
             -TrustServerCertificate `
             -AllowTrustServerCertificate
-          Copy-DbaDatabase `
-            -Source $rehearsalServer `
-            -Destination $rehearsalServer `
-            -Database $SourceDatabaseName `
-            -NewName $RehearsalDb `
-            -BackupRestore `
-            -SharedPath $stagingRoot `
-            -WithReplace `
-            -Force `
-            -EnableException `
-            -Confirm:$false | Out-Null
+          $copyParameters = @{ Source = $rehearsalServer; Destination = $rehearsalServer
+            Database = $SourceDatabaseName; NewName = $RehearsalDb; BackupRestore = $true
+            SharedPath = $stagingRoot; EnableException = $true; Confirm = $false }
+          if (-not $organizationRequested) { $copyParameters.WithReplace = $true; $copyParameters.Force = $true }
+          if ($organizationRequested) { $organizationCloneAttempted = $true }
+          Copy-DbaDatabase @copyParameters | Out-Null
         }
         else {
           $createQuery = "$dropExistingQuery`nCREATE DATABASE [$safeIdentifier];"
@@ -520,9 +545,44 @@ END;
               FlywayAdditionalArgs = @('-defaultSchema=dbo', '-table=flyway_schema_history')
             }
             if ($FlywayExecutablePath) { $sequenceParams.FlywayExecutablePath = $FlywayExecutablePath }
-            $flywayResult = Invoke-AceCommanderLoginFixtureSequence -SqlConnection $verifier `
-              -LoginFixturePath $LoginFixturePath -DecryptFixturePath $DecryptFixturePath `
-              -FlywayParameters $sequenceParams -Confirm:$false -ErrorAction Stop
+            if ($organizationRequested) {
+              $clientConnectionId = $verifier.ClientConnectionId
+              $bindingCommand = $null
+              try {
+                $bindingCommand = New-DatabaseSqlCommand -SqlConnection $verifier -CommandText "IF SESSION_CONTEXT(N'ATAP.Organization210.ExpectedCatalog') IS NOT NULL THROW 62911, N'Fresh verifier required.', 1; EXEC sys.sp_set_session_context @key=N'ATAP.Organization210.ExpectedCatalog', @value=@ExpectedCatalog, @read_only=1;" -Parameters @{ ExpectedCatalog = $RehearsalDb } -ErrorAction Stop
+                $bindingCommand.Parameters['@ExpectedCatalog'].SqlDbType = [Data.SqlDbType]::NVarChar
+                $bindingCommand.Parameters['@ExpectedCatalog'].Size = 128
+                [void]$bindingCommand.ExecuteNonQuery()
+              }
+              finally { if ($null -ne $bindingCommand) { $bindingCommand.Dispose() } }
+              # Plain batches keep local temporary snapshots in the verifier session;
+              # a parameterized sp_executesql scope would discard those on return.
+              $before = @(Invoke-DatabaseSqlQuery -SqlConnection $verifier `
+                -CommandText ("DECLARE @VerificationPhase nvarchar(8)=N'Before';" + [Environment]::NewLine + $organizationVerifier) -ErrorAction Stop)
+              if ($before.Count -ne 1 -or $before[0].FixturePhase -cne 'Before210') { throw 'Organization predecessor verification failed.' }
+              $organizationParameters = $sequenceParams.Clone()
+              $organizationParameters.SqlConnection = $verifier
+              $organizationParameters.FlywayAdditionalArgs = @('-defaultSchema=dbo', '-table=flyway_schema_history', '-target=00210')
+              foreach ($operation in @('validate', 'migrate', 'validate')) {
+                $organizationParameters.FlywayCommand = $operation
+                $summaries = @(Invoke-Flyway @organizationParameters -Confirm:$false -ErrorAction Stop)
+                if ($summaries.Count -ne 1 -or $summaries[0].Success -isnot [bool] -or -not $summaries[0].Success) {
+                  throw "Organization rehearsal $operation failed."
+                }
+              }
+              if ($verifier.State -cne 'Open' -or $verifier.ClientConnectionId -ne $clientConnectionId) {
+                throw 'Organization verifier session changed.'
+              }
+              $after = @(Invoke-DatabaseSqlQuery -SqlConnection $verifier `
+                -CommandText ("DECLARE @VerificationPhase nvarchar(8)=N'After';" + [Environment]::NewLine + $organizationVerifier) -ErrorAction Stop)
+              if ($after.Count -ne 1 -or $after[0].FixturePhase -cne 'After210') { throw 'Organization post-state verification failed.' }
+              $flywayResult = [pscustomobject]@{ Success = $true; CompletedPhases = @('before210', 'validate', 'migrate210', 'validate', 'after210') }
+            }
+            else {
+              $flywayResult = Invoke-AceCommanderLoginFixtureSequence -SqlConnection $verifier `
+                -LoginFixturePath $LoginFixturePath -DecryptFixturePath $DecryptFixturePath `
+                -FlywayParameters $sequenceParams -Confirm:$false -ErrorAction Stop
+            }
             if ($null -eq $flywayResult -or $flywayResult.Success -isnot [bool] -or -not $flywayResult.Success) {
               throw 'Fixture sequence did not report success.'
             }
@@ -553,7 +613,8 @@ BEGIN
 END
 "@
       try {
-        if ($PSCmdlet.ShouldProcess("$serverInstance/$RehearsalDb", 'Drop ephemeral Flyway rehearsal database')) {
+        if ((-not $organizationRequested -or $organizationCloneAttempted) -and
+            $PSCmdlet.ShouldProcess("$serverInstance/$RehearsalDb", 'Drop ephemeral Flyway rehearsal database')) {
           [void](Invoke-DatabaseSqlNonQuery -SqlConnection $resolvedSqlConnection -CommandText $dropQuery)
           $dropped = $true
         }
@@ -561,6 +622,11 @@ END
         $dropError = $_.Exception.Message
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Failed to drop rehearsal database '$RehearsalDb': $dropError"
         if ($null -eq $errorText) { $errorText = $dropError }
+      }
+
+      if ($organizationRequested -and $resolvedConnectionOwnedByFunction -and $null -ne $resolvedSqlConnection) {
+        try { $resolvedSqlConnection.Close() }
+        finally { $resolvedSqlConnection.Dispose(); $resolvedSqlConnection = $null }
       }
 
       if ($LogPath) {

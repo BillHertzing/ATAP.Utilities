@@ -67,6 +67,11 @@ function Invoke-DatabasePackageRehearsal {
 .PARAMETER DecryptFixturePath
     Explicit Decrypt verifier path paired with LoginFixturePath.
 
+.PARAMETER OrganizationFixturePath
+    Explicit V170-to-V210 verifier. Selected only by the immutable manifest's
+    target00210 and exact four organization migration names; older boundaries
+    retain the paired Login/Decrypt flow. No new package is built here.
+
 .PARAMETER ExpectedPackageName
     Actual nonempty trim-exact string expected in raw manifest dbChangeUnit.
     Required only for fixture opt-in; compared Ordinal before invoking the helper.
@@ -143,6 +148,7 @@ function Invoke-DatabasePackageRehearsal {
 
     [string]$LoginFixturePath,
     [string]$DecryptFixturePath,
+    [string]$OrganizationFixturePath,
     [object]$ExpectedPackageName,
     [object]$ExpectedPackageVersion
   )
@@ -153,6 +159,7 @@ function Invoke-DatabasePackageRehearsal {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn" -Tag 'Trace'
     $fixtureRequested = $PSBoundParameters.ContainsKey('LoginFixturePath') -or
       $PSBoundParameters.ContainsKey('DecryptFixturePath') -or
+      $PSBoundParameters.ContainsKey('OrganizationFixturePath') -or
       $PSBoundParameters.ContainsKey('ExpectedPackageName') -or
       $PSBoundParameters.ContainsKey('ExpectedPackageVersion')
     if ($fixtureRequested) {
@@ -212,6 +219,31 @@ function Invoke-DatabasePackageRehearsal {
         }
       }
 
+      $organizationRequested = $false
+      if ($fixtureRequested -and ($PSBoundParameters.ContainsKey('OrganizationFixturePath') -or
+          $manifest.PSObject.Properties.Name -contains 'flywayTargetVersion')) {
+        $target = [string]$manifest.flywayTargetVersion
+        if ($target -ceq '00210') {
+          if ($ExpectedPackageName -cne 'ATAPUtilities.Database' -or $ExpectedSourceDatabaseName -cne 'ATAPUtilities' -or
+              [string]::IsNullOrWhiteSpace($OrganizationFixturePath) -or
+              -not [IO.Path]::IsPathFullyQualified($OrganizationFixturePath)) {
+            throw 'Organization rehearsal requires its exact package/catalog and absolute verifier path.'
+          }
+          $expectedNew = @('V00180__Create_Organization_Eligibility_Schema.sql',
+            'V00190__Create_ReadOrganizationEligibility_Procedure.sql',
+            'V00200__Create_Organization_Bootstrap.sql', 'V00210__Create_ReadOrganizationProject_Procedure.sql')
+          $migrationNames = @($manifest.files | Where-Object kind -EQ 'migration' | ForEach-Object { [IO.Path]::GetFileName($_.path) })
+          $newNames = @($migrationNames | Where-Object { $_ -cmatch '^V00(180|190|200|210)__' } | Sort-Object)
+          if ($migrationNames.Count -ne 20 -or ($newNames -join '|') -cne ($expectedNew -join '|')) {
+            throw 'Organization rehearsal requires the sixteen predecessors and exact four V180-V210 migrations.'
+          }
+          $organizationRequested = $true
+        }
+        elseif ($target -cnotin @('00160', '00170')) {
+          throw 'Selected fixture rehearsal does not support this manifest migration boundary.'
+        }
+      }
+
       $appName = $Application
       if ([string]::IsNullOrWhiteSpace($appName)) {
         $appName = if ($manifest.PSObject.Properties.Name -contains 'dbChangeUnit') {
@@ -257,8 +289,13 @@ function Invoke-DatabasePackageRehearsal {
         if ($PSBoundParameters.ContainsKey('FlywayAdditionalArgs')) { $rehearsalParams['FlywayAdditionalArgs'] = $FlywayAdditionalArgs }
         if ($PSBoundParameters.ContainsKey('ExpectedSourceDatabaseName')) { $rehearsalParams['ExpectedSourceDatabaseName'] = $ExpectedSourceDatabaseName }
         if ($fixtureRequested) {
-          $rehearsalParams['LoginFixturePath'] = $LoginFixturePath
-          $rehearsalParams['DecryptFixturePath'] = $DecryptFixturePath
+          if ($organizationRequested) {
+            $rehearsalParams['OrganizationFixturePath'] = $OrganizationFixturePath
+          }
+          else {
+            $rehearsalParams['LoginFixturePath'] = $LoginFixturePath
+            $rehearsalParams['DecryptFixturePath'] = $DecryptFixturePath
+          }
           $rehearsalParams['PackageName'] = $manifest.dbChangeUnit
           $rehearsalParams['PackageVersion'] = $manifest.appVersion
         }

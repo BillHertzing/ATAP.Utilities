@@ -1,6 +1,6 @@
 /*
   V00200__Create_Organization_Bootstrap.sql: forward organization migration.
-  Body copied from Database/Schema/ACE/BootstrapOrganization.sql without semantic changes.
+  Body copied from Database/Schema/ACE/BootstrapOrganization.sql with an exact caller-bound DDL catalog guard.
   No DROP, enrollment execution, grants or existing shared-identity adoption.
   Release/execution authority remains separately bound to the Experimental target.
 */
@@ -8,7 +8,7 @@ SET NOCOUNT ON;
 SET XACT_ABORT ON;
 BEGIN TRY
     BEGIN TRANSACTION;
-    IF DB_NAME() <> N'ATAPUtilities' OR OBJECT_ID(N'ACE.OrganizationFactProvenance', N'U') IS NULL
+    IF (DB_NAME() IS NULL OR DB_NAME() COLLATE Latin1_General_100_BIN2 <> N'${atap_required_catalog}' COLLATE Latin1_General_100_BIN2 OR DATALENGTH(DB_NAME()) <> DATALENGTH(N'${atap_required_catalog}')) OR OBJECT_ID(N'ACE.OrganizationFactProvenance', N'U') IS NULL
        OR OBJECT_ID(N'ACE.UserIdentityBindingState', N'U') IS NULL OR COL_LENGTH(N'ACE.User', N'PersonId') IS NULL
         THROW 62700, N'The selected organization eligibility schema is required.', 1;
     IF OBJECT_ID(N'ACE.Household') IS NOT NULL OR OBJECT_ID(N'ACE.CombinedHouseholdLink') IS NOT NULL

@@ -86,7 +86,7 @@
     {
       "path": "SQL/V00180__Create_Organization_Eligibility_Schema.sql",
       "kind": "migration",
-      "sha256": "002E113E83F29402772BE01F22D5F2B1A457A3C3C1379533560B728E34384A86"
+      "sha256": "7E3C794B7642497E933E7556B85E50AEA6A1388E975092D7D0C5816ED575C829"
     },
     {
       "path": "SQL/V00190__Create_ReadOrganizationEligibility_Procedure.sql",
@@ -96,7 +96,7 @@
     {
       "path": "SQL/V00200__Create_Organization_Bootstrap.sql",
       "kind": "migration",
-      "sha256": "E14208B3C42292E7038FCB0FCAF848BD07805D7259B0085F7CAD2908CC401821"
+      "sha256": "07CBDBF635CCC08473348C4C14051D25DFE1E1F5D0D669ADEEE8146D8C583A21"
     },
     {
       "path": "SQL/V00210__Create_ReadOrganizationProject_Procedure.sql",

@@ -36,13 +36,34 @@ Describe 'Forward organization migration source package' {
       Should -BeLessThan ([array]::IndexOf($active.Name, $migrations[0].File))
   }
 
-  It 'preserves every accepted component body including transaction and Guest/shared-identity protections' {
+  It 'preserves accepted bodies apart from the explicit caller-bound DDL catalog guard' -Tag 'UL1617Catalog' {
     foreach ($migration in $migrations) {
       $actual = [IO.File]::ReadAllText((Join-Path $sqlRoot $migration.File))
       $source = [IO.File]::ReadAllText((Join-Path $componentRoot $migration.Source))
-      [regex]::Replace($actual, '\A/\*[\s\S]*?\*/', '') |
-        Should -BeExactly ([regex]::Replace($source, '\A/\*[\s\S]*?\*/', ''))
+      $expectedBody = [regex]::Replace($source, '\A/\*[\s\S]*?\*/', '')
+      if ($migration.Source -in @('OrganizationEligibility.sql','BootstrapOrganization.sql')) {
+        $literal = "DB_NAME() <> N'ATAPUtilities'"
+        $catalogGuard = '(DB_NAME() IS NULL OR DB_NAME() COLLATE Latin1_General_100_BIN2 <> N''${atap_required_catalog}'' COLLATE Latin1_General_100_BIN2 OR DATALENGTH(DB_NAME()) <> DATALENGTH(N''${atap_required_catalog}''))'
+        $position = $expectedBody.IndexOf($literal, [StringComparison]::Ordinal)
+        $position | Should -BeGreaterOrEqual 0
+        $expectedBody = $expectedBody.Substring(0,$position) + $catalogGuard + $expectedBody.Substring($position+$literal.Length)
+      }
+      [regex]::Replace($actual, '\A/\*[\s\S]*?\*/', '') | Should -BeExactly $expectedBody
     }
+  }
+
+  It 'binds the two unapplied DDL guards and allowlist hashes while retaining the runtime bootstrap catalog guard' -Tag 'UL1617Catalog' {
+    $allowlist = Get-Content -LiteralPath (Join-Path $repositoryRoot 'Database/Flyway/package-content-allowlist.json') -Raw | ConvertFrom-Json
+    foreach ($file in @('V00180__Create_Organization_Eligibility_Schema.sql','V00200__Create_Organization_Bootstrap.sql')) {
+      $text = [IO.File]::ReadAllText((Join-Path $sqlRoot $file))
+      ([regex]::Matches($text,[regex]::Escape('${atap_required_catalog}'))).Count | Should -Be 2
+      $entry = @($allowlist.files | Where-Object path -CEQ ('SQL/' + $file))
+      $entry.Count | Should -Be 1
+      $entry[0].sha256 | Should -BeExactly (Get-FileHash -LiteralPath (Join-Path $sqlRoot $file) -Algorithm SHA256).Hash
+    }
+    $bootstrap = [IO.File]::ReadAllText((Join-Path $sqlRoot 'V00200__Create_Organization_Bootstrap.sql'))
+    ([regex]::Matches($bootstrap,[regex]::Escape("DB_NAME() <> N'ATAPUtilities'"))).Count | Should -Be 1
+    $bootstrap.Substring($bootstrap.IndexOf('CREATE PROCEDURE')) | Should -Match "IF DB_NAME\(\) <> N'ATAPUtilities' OR @@TRANCOUNT <> 1"
   }
 
   It 'parses all five SQL batches with the SQL Server 2022 grammar' {

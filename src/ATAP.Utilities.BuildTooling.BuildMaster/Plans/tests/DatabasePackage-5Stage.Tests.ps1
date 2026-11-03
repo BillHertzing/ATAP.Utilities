@@ -13,6 +13,30 @@ BeforeAll {
     $script:RunnerText = Get-Content -LiteralPath $script:RunnerPath -Raw
 }
 
+Describe 'Organization boundary stage forwarding' -Tag 'UL1617' {
+    BeforeEach {
+        $script:seenOrganization1617 = $null
+        Mock Write-PSFMessage {}
+        Mock Test-Path { $true }
+        Mock Invoke-DatabasePackageRehearsal {
+            $script:seenOrganization1617 = @{} + $PesterBoundParameters
+            [pscustomobject]@{ Success = $true }
+        }
+    }
+    It 'supplies the explicit organization verifier and raw immutable identity to the package selector' {
+        Invoke-DatabasePackageTierRehearsal -NupkgPath 'C:/mock1617.nupkg' -Application ATAPUtilities -Tier Experimental -BuildId 1617 -ConnectionStringSecretName Test.Secret -ExpectedDatabaseName ATAPUtilities -SourcePath $script:fixtureSource631 -ExpectedPackageName ATAPUtilities.Database -ExpectedPackageVersion '0.1.19-Sprint.1' -Confirm:$false | Out-Null
+        $script:seenOrganization1617.OrganizationFixturePath | Should -BeExactly (Join-Path $script:fixtureSource631 'Database/Verify/AceCommander/Verify_Organization_V00210.sql')
+        $script:seenOrganization1617.ExpectedPackageVersion | Should -BeExactly '0.1.19-Sprint.1'
+        $script:seenOrganization1617.LoginFixturePath | Should -Not -BeNullOrEmpty
+        $script:seenOrganization1617.DecryptFixturePath | Should -Not -BeNullOrEmpty
+        Should -Invoke Invoke-DatabasePackageRehearsal -Times 1 -Exactly
+    }
+    It 'blocks the stage when incremental rehearsal reports failure' {
+        Mock Invoke-DatabasePackageRehearsal { [pscustomobject]@{ Success = $false; ValidateOutput = 'synthetic failure' } }
+        { Invoke-DatabasePackageTierRehearsal -NupkgPath 'C:/mock1617.nupkg' -Application ATAPUtilities -Tier Experimental -BuildId 1617 -ConnectionStringSecretName Test.Secret -ExpectedDatabaseName ATAPUtilities -SourcePath $script:fixtureSource631 -ExpectedPackageName ATAPUtilities.Database -ExpectedPackageVersion '0.1.19-Sprint.1' -Confirm:$false } | Should -Throw '*rehearsal FAILED*'
+    }
+}
+
 Describe 'V4-E08 plan shape: DatabaseChangePackage-5Stage.otter is a thin runner plan' {
 
     It 'plan and runner files both exist' {

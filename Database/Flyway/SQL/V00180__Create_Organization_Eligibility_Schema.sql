@@ -1,6 +1,6 @@
 /*
   V00180__Create_Organization_Eligibility_Schema.sql: forward organization migration.
-  Body copied from Database/Schema/ACE/OrganizationEligibility.sql without semantic changes.
+  Body copied from Database/Schema/ACE/OrganizationEligibility.sql with an exact caller-bound DDL catalog guard.
   No DROP, enrollment execution, grants or existing shared-identity adoption.
   Release/execution authority remains separately bound to the Experimental target.
 */
@@ -9,7 +9,7 @@ SET XACT_ABORT ON;
 
 BEGIN TRY
     BEGIN TRANSACTION;
-    IF DB_NAME() <> N'ATAPUtilities' OR SCHEMA_ID(N'ACE') IS NULL
+    IF (DB_NAME() IS NULL OR DB_NAME() COLLATE Latin1_General_100_BIN2 <> N'${atap_required_catalog}' COLLATE Latin1_General_100_BIN2 OR DATALENGTH(DB_NAME()) <> DATALENGTH(N'${atap_required_catalog}')) OR SCHEMA_ID(N'ACE') IS NULL
        OR OBJECT_ID(N'ACE.User', N'U') IS NULL
        OR OBJECT_ID(N'ATAPUtilities.Philote', N'U') IS NULL
        OR OBJECT_ID(N'ATAPUtilities.PhiloteValidityPeriod', N'U') IS NULL

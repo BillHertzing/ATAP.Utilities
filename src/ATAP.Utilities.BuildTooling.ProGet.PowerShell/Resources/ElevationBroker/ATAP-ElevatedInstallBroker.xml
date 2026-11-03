@@ -30,9 +30,9 @@
   registration, so a caller granted start rights cannot influence WHAT runs. It can only ask
   the broker to drain a folder it already validates. The escalation surface is unchanged.
 
-  BootTrigger is retained deliberately, as the catch-up path for a request staged while the
-  broker could not run (crash, reboot, revoked start rights). It is the only remaining
-  unattended drain.
+  BootTrigger is retained as the catch-up path for a request staged while the broker could
+  not run (crash, reboot, revoked start rights). New registration keeps both the task and
+  BootTrigger disabled; enabling either is a separate reviewed operator action.
 
   MultipleInstancesPolicy MUST be Queue, not IgnoreNew. Under -Once the broker enumerates
   the requests folder exactly once and exits. With IgnoreNew, a request staged after a
@@ -57,7 +57,7 @@
       BootTrigger is the catch-up path for requests staged while the broker could not run.
     -->
     <BootTrigger>
-      <Enabled>true</Enabled>
+      <Enabled>false</Enabled>
     </BootTrigger>
   </Triggers>
   <Principals>
@@ -80,7 +80,7 @@
       <RestartOnIdle>false</RestartOnIdle>
     </IdleSettings>
     <AllowStartOnDemand>true</AllowStartOnDemand>
-    <Enabled>true</Enabled>
+    <Enabled>false</Enabled>
     <Hidden>false</Hidden>
     <RunOnlyIfIdle>false</RunOnlyIfIdle>
     <WakeToRun>false</WakeToRun>

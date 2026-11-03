@@ -3,11 +3,12 @@
 Describe 'Scheduled task new text writers' -Tag 'Unit' {
 BeforeAll {
   $moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+  $repositoryRoot = Split-Path -Parent (Split-Path -Parent $moduleRoot)
   if (Get-Module -Name ProGetWriterLF341) { throw 'Dedicated fixture module already loaded.' }
   $publicDirectory = Join-Path $moduleRoot 'public'
   # Keep every mock in this fixture module so Pester's own commands stay native.
-  $fixtureModule = New-Module -Name ProGetWriterLF341 -ArgumentList $publicDirectory -ScriptBlock {
-    param([string]$PublicDirectory)
+  $fixtureModule = New-Module -Name ProGetWriterLF341 -ArgumentList $publicDirectory, $repositoryRoot -ScriptBlock {
+    param([string]$PublicDirectory, [string]$RepositoryRoot)
     . (Join-Path $PublicDirectory 'Register-ATAPParityScheduledTasks.ps1')
     . (Join-Path $PublicDirectory 'Register-ElevationBrokerTask.ps1')
 
@@ -19,6 +20,11 @@ BeforeAll {
 
     function ConvertTo-WriterTestPath {
       param([string]$Path)
+      $fullPath = [IO.Path]::GetFullPath($Path)
+      $fullCaseRoot = [IO.Path]::GetFullPath($script:caseRoot)
+      if ($fullPath -eq $fullCaseRoot -or $fullPath.StartsWith($fullCaseRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+        return $fullPath
+      }
       if ($Path.StartsWith('C:\', [StringComparison]::OrdinalIgnoreCase)) {
         return [IO.Path]::Combine($script:caseRoot, 'C-drive', $Path.Substring(3))
       }
@@ -32,7 +38,7 @@ BeforeAll {
           $full -ne $script:caseRoot) { throw "Filesystem escape: $Path" }
     }
 
-    $script:runRoot = 'D:\ATAPArtifacts\Sprint0017\Task17.9.b\ProGetHarnessFix341\TestRuns\' + [guid]::NewGuid().ToString('N')
+    $script:runRoot = Join-Path $RepositoryRoot ('_generated\Sprint0017\Task17.9.b\ProGetHarnessFix341\TestRuns\' + [guid]::NewGuid().ToString('N'))
     [void][IO.Directory]::CreateDirectory($script:runRoot)
     $script:originalComputerName = $env:COMPUTERNAME
     Export-ModuleMember -Function @() -Alias @() -Variable @()
@@ -72,7 +78,8 @@ AfterAll {
         param($Path, $ChildPath)
         # Includes the broker's static GetTempPath call: its actual writer stays genuine.
         if ([string]$Path -eq [IO.Path]::GetTempPath()) { $Path = $script:caseRoot }
-        [IO.Path]::Combine((ConvertTo-WriterTestPath $Path), [string]$ChildPath)
+        $parent = ConvertTo-WriterTestPath $Path
+        [IO.Path]::Combine($parent, [string]$ChildPath)
       }
       Mock -ModuleName ProGetWriterLF341 New-Item {
         param($Path, $ItemType, $Force)
@@ -83,6 +90,17 @@ AfterAll {
       }
       Mock -ModuleName ProGetWriterLF341 Test-Path {
         param($LiteralPath, $PathType)
+        $fullLiteralPath = [IO.Path]::GetFullPath([string]$LiteralPath)
+        $fullCaseRoot = [IO.Path]::GetFullPath($script:caseRoot)
+        $fixtureInstall = [IO.Path]::Combine($script:caseRoot, 'C-drive', 'Program Files\PowerShell\Modules\ATAP.Utilities.SystemParityMonitor.PowerShell')
+        $fixtureConfiguration = [IO.Path]::Combine($script:caseRoot, 'C-drive', 'ProgramData\ATAP\ParityState\Configuration')
+        if ($fullLiteralPath -eq $fullCaseRoot -or $fullLiteralPath.StartsWith($fullCaseRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+          Assert-WriterTestPath $fullLiteralPath
+          if ([string]$LiteralPath -like "$fixtureInstall\*" -or [string]$LiteralPath -like "$fixtureConfiguration\*") { return $true }
+          if ($PathType -eq 'Container') { return [IO.Directory]::Exists($fullLiteralPath) }
+          if ($PathType -eq 'Leaf') { return [IO.File]::Exists($fullLiteralPath) }
+          return [IO.File]::Exists($fullLiteralPath) -or [IO.Directory]::Exists($fullLiteralPath)
+        }
         if ([string]$LiteralPath -like 'C:\*') {
           if ($LiteralPath -eq 'C:\Program Files\ATAP\ParityDispatchers') { return $false }
           if ($LiteralPath -like 'C:\Program Files\PowerShell\Modules\ATAP.Utilities.SystemParityMonitor.PowerShell\*' -or
@@ -91,8 +109,6 @@ AfterAll {
           throw "Unexpected external read: $LiteralPath"
         }
         Assert-WriterTestPath $LiteralPath
-        $fixtureInstall = [IO.Path]::Combine($script:caseRoot, 'C-drive', 'Program Files\PowerShell\Modules\ATAP.Utilities.SystemParityMonitor.PowerShell')
-        $fixtureConfiguration = [IO.Path]::Combine($script:caseRoot, 'C-drive', 'ProgramData\ATAP\ParityState\Configuration')
         if ([string]$LiteralPath -like "$fixtureInstall\*" -or [string]$LiteralPath -like "$fixtureConfiguration\*") { return $true }
         if ($PathType -eq 'Container') { return [IO.Directory]::Exists($LiteralPath) }
         return [IO.File]::Exists($LiteralPath) -or [IO.Directory]::Exists($LiteralPath)
@@ -134,7 +150,7 @@ AfterAll {
       [IO.File]::WriteAllText([IO.Path]::Combine($script:brokerRoot, 'bin', 'Invoke-ElevationBrokerRequest.ps1'), '# fixture' + [char]10)
       [IO.File]::WriteAllText([IO.Path]::Combine($script:brokerRoot, 'config.json'), '{}' + [char]10)
       $script:templatePath = [IO.Path]::Combine($script:caseRoot, 'template.xml')
-      $script:templateXml = '<?xml version="1.0" encoding="UTF-16"?><Task><Actions><Exec><Command>__BROKER_SCRIPT__</Command></Exec></Actions><Principals><Principal><UserId>__SERVICE_ACCOUNT__</UserId><LogonType>Password</LogonType></Principal></Principals><Settings><Enabled>true</Enabled></Settings></Task>'
+      $script:templateXml = '<?xml version="1.0" encoding="UTF-16"?><Task><Actions><Exec><Command>__BROKER_SCRIPT__</Command></Exec></Actions><Principals><Principal><UserId>__SERVICE_ACCOUNT__</UserId><LogonType>Password</LogonType></Principal></Principals><Settings><Enabled>false</Enabled></Settings><Triggers><BootTrigger><Enabled>false</Enabled></BootTrigger></Triggers></Task>'
       [IO.File]::WriteAllText($script:templatePath, $script:templateXml, [Text.UnicodeEncoding]::new($false, $true))
       $script:brokerArguments = @{
         TemplatePath = $script:templatePath; BrokerRoot = $script:brokerRoot
@@ -229,7 +245,11 @@ AfterAll {
       ([xml]$decoded).Task.Description | Should -Be 'café λ'
       [Convert]::ToHexString([IO.File]::ReadAllBytes($script:historicalPath)) | Should -Be ([Convert]::ToHexString($script:historicalBytes))
       $expectedCreate = $script:templateXml.Replace('__BROKER_SCRIPT__', [IO.Path]::Combine($script:brokerRoot, 'bin\Invoke-ElevationBrokerRequest.ps1')).Replace('__SERVICE_ACCOUNT__', 'FIXTURE\SvcAnsibleAdmin')
-      $script:createdXml | Should -Be ([xml]$expectedCreate).OuterXml
+      $expectedUpdate = [xml]$expectedCreate
+      $expectedUpdate.Task.Settings.Enabled = 'true'
+      $templateTriggers = $expectedUpdate.Task.SelectSingleNode("./*[local-name()='Triggers']")
+      [void]$expectedUpdate.Task.RemoveChild($templateTriggers)
+      $script:createdXml | Should -Be $expectedUpdate.OuterXml
       Should -Invoke Test-ElevationBrokerAdministrator -ModuleName ProGetWriterLF341 -Times 1 -Exactly
       Should -Invoke Resolve-ElevationBrokerAccountSid -ModuleName ProGetWriterLF341 -Times 1 -Exactly -ParameterFilter { $ServiceAccount -eq 'FIXTURE\SvcAnsibleAdmin' }
       Should -Invoke schtasks -ModuleName ProGetWriterLF341 -Times 0 -Exactly
@@ -297,9 +317,9 @@ Describe 'Registrar credential transport and state preservation' -Tag 'Registrar
       [IO.File]::WriteAllText((Join-Path $script:brokerRoot 'bin\Invoke-ElevationBrokerRequest.ps1'), '# inert fixture')
       [IO.File]::WriteAllText((Join-Path $script:brokerRoot 'config.json'), '{}')
       $script:templatePath = Join-Path $script:caseRoot 'template.xml'
-      $script:template = '<Task><Principals><Principal><UserId>__SERVICE_ACCOUNT__</UserId><LogonType>Password</LogonType><RunLevel>HighestAvailable</RunLevel></Principal></Principals><Settings><Enabled>true</Enabled><MultipleInstancesPolicy>Queue</MultipleInstancesPolicy></Settings><Triggers><BootTrigger><Enabled>true</Enabled></BootTrigger></Triggers><Actions><Exec><Command>__BROKER_SCRIPT__</Command></Exec></Actions></Task>'
+      $script:template = '<Task><Principals><Principal><UserId>__SERVICE_ACCOUNT__</UserId><LogonType>Password</LogonType><RunLevel>HighestAvailable</RunLevel></Principal></Principals><Settings><Enabled>false</Enabled><MultipleInstancesPolicy>Queue</MultipleInstancesPolicy></Settings><Triggers><BootTrigger><Enabled>false</Enabled></BootTrigger></Triggers><Actions><Exec><Command>__BROKER_SCRIPT__</Command></Exec></Actions></Task>'
       [IO.File]::WriteAllText($script:templatePath, $script:template)
-      $oldXml = $script:template.Replace('__SERVICE_ACCOUNT__', 'FIXTURE\SvcAnsibleAdmin').Replace('__BROKER_SCRIPT__', (Join-Path $script:brokerRoot 'bin\Invoke-ElevationBrokerRequest.ps1'))
+      $oldXml = $script:template.Replace('__SERVICE_ACCOUNT__', 'FIXTURE\SvcAnsibleAdmin').Replace('__BROKER_SCRIPT__', (Join-Path $script:brokerRoot 'bin\Invoke-ElevationBrokerRequest.ps1')).Replace('<Enabled>false</Enabled>', '<Enabled>true</Enabled>')
       $script:state = @{
         Exists = $true; GetCalls = 0; Attempts = 0; Calls = [Collections.Generic.List[object]]::new()
         Messages = [Collections.Generic.List[string]]::new(); Sddl = 'O:SYG:SYD:(A;;FA;;;SY)'
@@ -456,6 +476,12 @@ Describe 'Registrar credential transport and state preservation' -Tag 'Registrar
       $call.User | Should -BeExactly 'FIXTURE\SvcAnsibleAdmin'
       $call.Password | Should -BeExactly $script:sentinel
       $call.Sddl | Should -BeNullOrEmpty
+      $registeredXml = [xml]$call.Xml
+      $registeredXml.Task.Settings.Enabled | Should -BeExactly 'false'
+      $registeredXml.Task.Triggers.BootTrigger.Enabled | Should -BeExactly 'false'
+      $registeredXml.Task.Actions.Exec.Command | Should -BeExactly (Join-Path $script:brokerRoot 'bin\Invoke-ElevationBrokerRequest.ps1')
+      $call.Xml | Should -Not -Match '__BROKER_(ROOT|SCRIPT)__|__SERVICE_ACCOUNT__'
+      $script:state.Task.Enabled | Should -BeFalse
       $result.BackupPath | Should -BeNullOrEmpty
       ($result | ConvertTo-Json) | Should -Not -Match ([regex]::Escape($script:sentinel))
       Should -Invoke Get-SecretATAP -ModuleName ProGetRegistrarCredential1437 -Times 1 -Exactly -ParameterFilter { $SecretName -eq 'Fixture.Secret' }
@@ -480,7 +506,7 @@ Describe 'Registrar credential transport and state preservation' -Tag 'Registrar
       $script:state.Attempts | Should -Be 1
     }
   }
-  It 'preserves an existing disabled task despite enabled BootTrigger template' {
+  It 'preserves an existing disabled task and its enabled BootTrigger on update' {
     InModuleScope ProGetRegistrarCredential1437 {
       $script:state.Task.Enabled = $false
       $script:state.Task.Xml = $script:state.Task.Xml.Replace('<Settings><Enabled>true</Enabled>', '<Settings><Enabled>false</Enabled>')
@@ -489,6 +515,25 @@ Describe 'Registrar credential transport and state preservation' -Tag 'Registrar
       $script:state.Task.Enabled | Should -BeFalse
       ([xml]$script:state.Calls[0].Xml).Task.Settings.Enabled | Should -BeExactly 'false'
       ([xml]$script:state.Calls[0].Xml).Task.Triggers.BootTrigger.Enabled | Should -BeExactly 'true'
+    }
+  }
+  It 'preserves an existing enabled task with a disabled BootTrigger on update' {
+    InModuleScope ProGetRegistrarCredential1437 {
+      $script:state.Task.Xml = $script:state.Task.Xml.Replace('<BootTrigger><Enabled>true</Enabled>', '<BootTrigger><Enabled>false</Enabled>')
+      $result = Register-ElevationBrokerTask @script:arguments
+      $result.Registered | Should -BeTrue
+      ([xml]$script:state.Calls[0].Xml).Task.Settings.Enabled | Should -BeExactly 'true'
+      ([xml]$script:state.Calls[0].Xml).Task.Triggers.BootTrigger.Enabled | Should -BeExactly 'false'
+      $script:state.Task.Enabled | Should -BeTrue
+    }
+  }
+  It 'does not add a BootTrigger when updating a task with no triggers' {
+    InModuleScope ProGetRegistrarCredential1437 {
+      $script:state.Task.Xml = $script:state.Task.Xml.Replace('<Triggers><BootTrigger><Enabled>true</Enabled></BootTrigger></Triggers>', '')
+      $result = Register-ElevationBrokerTask @script:arguments
+      $result.Registered | Should -BeTrue
+      ([xml]$script:state.Calls[0].Xml).Task.SelectSingleNode("./*[local-name()='Triggers']") | Should -BeNullOrEmpty
+      $script:state.Task.Enabled | Should -BeTrue
     }
   }
   It 'preserves enabled BootTrigger semantics without adding a policy flag or starting a task' {

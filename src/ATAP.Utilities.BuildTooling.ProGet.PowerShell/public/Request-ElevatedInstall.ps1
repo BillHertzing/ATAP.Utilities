@@ -116,7 +116,7 @@ function Request-ElevatedInstall {
 
     foreach ($dir in $requestsDir, $resultsDir) {
       if (-not (Test-Path -LiteralPath $dir -PathType Container)) {
-        throw "Elevation broker folder '$dir' does not exist. The broker is not provisioned on this machine; run Register-ElevationBrokerTask (elevated) or fall back to a single documented elevation attempt with transcript capture, then hand off to the user."
+        throw "Elevation broker folder '$dir' does not exist. The broker is not provisioned on this machine; stop and hand off for separately authorized administrator provisioning with Register-ElevationBrokerTask. Do not fall back to UAC or retry an AllUsers install."
       }
     }
 

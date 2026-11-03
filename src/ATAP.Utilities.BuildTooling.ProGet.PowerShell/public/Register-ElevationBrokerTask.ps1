@@ -234,6 +234,33 @@ function Register-ElevationBrokerTask {
     if (-not [bool]::TryParse([string]$resolvedTask.Task.Settings.Enabled, [ref]$desiredEnabled)) {
       throw 'BrokerTaskTemplateEnabledInvalid'
     }
+    $templateBootTriggers = @($resolvedTask.Task.SelectNodes("./*[local-name()='Triggers']/*[local-name()='BootTrigger']"))
+    if ($templateBootTriggers.Count -ne 1) {
+      throw 'BrokerTaskTemplateBootTriggerInvalid'
+    }
+    $templateBootTriggerEnabled = $templateBootTriggers[0].SelectSingleNode("./*[local-name()='Enabled']")
+    $parsedTemplateBootTriggerEnabled = $false
+    if ($null -eq $templateBootTriggerEnabled -or
+      -not [bool]::TryParse([string]$templateBootTriggerEnabled.InnerText, [ref]$parsedTemplateBootTriggerEnabled)) {
+      throw 'BrokerTaskTemplateBootTriggerInvalid'
+    }
+
+    $getTriggerStateSignature = {
+      param([System.Xml.XmlNode]$TaskNode)
+      $triggersNode = $TaskNode.SelectSingleNode("./*[local-name()='Triggers']")
+      $states = @(
+        if ($null -ne $triggersNode) {
+          foreach ($triggerNode in @($triggersNode.ChildNodes | Where-Object { $_.NodeType -eq [System.Xml.XmlNodeType]::Element })) {
+            $enabledNode = $triggerNode.SelectSingleNode("./*[local-name()='Enabled']")
+            [ordered]@{
+              Type = $triggerNode.LocalName
+              Enabled = if ($null -eq $enabledNode) { $null } else { $enabledNode.InnerText.ToLowerInvariant() }
+            }
+          }
+        }
+      )
+      ConvertTo-Json -InputObject $states -Compress -Depth 4
+    }
 
     $registered = $false
     $backupPath = $null
@@ -280,6 +307,7 @@ function Register-ElevationBrokerTask {
         $existingXml = $null
         $existingSddl = $null
         $existingEnabled = $null
+      $existingTriggerStateSignature = $null
         if ($null -ne $existing) {
           $stage = 'TaskPreimage'
           $existingXml = [string]$existing.Xml
@@ -295,7 +323,23 @@ function Register-ElevationBrokerTask {
             [string]$previousTask.Task.Principals.Principal.LogonType -cne 'Password') {
             throw 'BrokerTaskExistingPrincipalMismatch'
           }
-          # The enabled template must never silently enable an existing disabled task.
+          $existingTriggerStateSignature = & $getTriggerStateSignature $previousTask.Task
+          $previousTriggersNode = $previousTask.Task.SelectSingleNode("./*[local-name()='Triggers']")
+          $resolvedTriggersNode = $resolvedTask.Task.SelectSingleNode("./*[local-name()='Triggers']")
+          if ($null -ne $previousTriggersNode) {
+            $importedTriggersNode = $resolvedTask.ImportNode($previousTriggersNode, $true)
+            if ($null -ne $resolvedTriggersNode) {
+              [void]$resolvedTask.Task.ReplaceChild($importedTriggersNode, $resolvedTriggersNode)
+            }
+            else {
+              [void]$resolvedTask.Task.AppendChild($importedTriggersNode)
+            }
+          }
+          elseif ($null -ne $resolvedTriggersNode) {
+            [void]$resolvedTask.Task.RemoveChild($resolvedTriggersNode)
+          }
+
+          # Preserve both task enabled state and the complete existing trigger subtree.
           $desiredEnabled = $existingEnabled
           $resolvedTask.Task.Settings.Enabled = $desiredEnabled.ToString().ToLowerInvariant()
 
@@ -339,6 +383,12 @@ function Register-ElevationBrokerTask {
           $stage = 'TaskAbsenceCurrent'
           $current = & $readExactTask
           if ($null -ne $current) { throw 'BrokerTaskAppearedWithoutPreimage' }
+          # A newly registered task is inert until a separately reviewed operator action.
+          $desiredEnabled = $false
+          $resolvedTask.Task.Settings.Enabled = 'false'
+          $newBootTrigger = $resolvedTask.Task.SelectSingleNode("./*[local-name()='Triggers']/*[local-name()='BootTrigger']/*[local-name()='Enabled']")
+          if ($null -eq $newBootTrigger) { throw 'BrokerTaskTemplateBootTriggerInvalid' }
+          $newBootTrigger.InnerText = 'false'
         }
 
         # Select an operation that cannot silently switch from protected update to
@@ -368,8 +418,8 @@ function Register-ElevationBrokerTask {
         $registrationAttempted = $true
         $TASK_LOGON_PASSWORD = 1
         # No native argv, temporary credential XML, delete-first or automatic restore.
-        # New-task enabled/BootTrigger policy requires separate live admission; this
-        # transport repair neither implements disabled-first nor authorizes a task start.
+        # New tasks are registered disabled with a disabled BootTrigger; enabling either
+        # remains a separate reviewed operator action.
         $null = $folder.RegisterTask(
           $TaskName, $resolvedTask.OuterXml, $registrationFlags,
           $ServiceAccount, $password, $TASK_LOGON_PASSWORD, $existingSddl)
@@ -381,6 +431,16 @@ function Register-ElevationBrokerTask {
         $readback = [xml]::new()
         $readback.XmlResolver = $null
         $readback.LoadXml([string]$verifiedTask.Xml)
+        $expectedTriggerStateSignature = if ($null -ne $existing) {
+          $existingTriggerStateSignature
+        }
+        else {
+          & $getTriggerStateSignature $resolvedTask.Task
+        }
+        $actualTriggerStateSignature = & $getTriggerStateSignature $readback.Task
+        if ($actualTriggerStateSignature -cne $expectedTriggerStateSignature) {
+          throw 'BrokerTaskReadbackTriggerState'
+        }
         if ([string]$readback.Task.Principals.Principal.UserId -cne $ServiceAccount -or
           [string]$readback.Task.Principals.Principal.LogonType -cne 'Password' -or
           ($null -ne $existingSddl -and [string]$verifiedTask.GetSecurityDescriptor(7) -cne $existingSddl)) {

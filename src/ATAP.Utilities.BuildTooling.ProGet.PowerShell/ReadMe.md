@@ -34,3 +34,12 @@ pin for each module being changed.
 
 See [Sync-ProGetPowerShellModules](Documentation/Sync-ProGetPowerShellModules.md) for the
 operator contract, generic host/feed examples, and safety boundaries.
+
+## Elevation broker
+
+Use the [elevation broker operator guide](Documentation/ElevationBroker.md) for
+bootstrap, task state, request handling and the BuildMaster-to-AllUsers release
+sequence. A new registration leaves both the task and its boot trigger disabled;
+registration alone does not enable or start the broker. Existing task enabled and
+trigger states are preserved on update. Enablement, start rights and release are
+separate administrative actions.

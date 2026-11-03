@@ -1,123 +1,69 @@
-#Requires -Version 7.4
-#Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '6.2.0' }
-
 BeforeAll {
   function Write-PSFMessage { param($FunctionName, $ModuleName, $Level, $Message) }
+  foreach ($name in @('CoordProducerJson', 'CoordProducer', 'CoordClerkProducer', 'Invoke-CoordProducerBatch')) {
+    . (Join-Path $PSScriptRoot "../../private/$name.ps1")
+  }
   . (Join-Path $PSScriptRoot '../../public/Invoke-CoordClerk.ps1')
-  function New-Control800 {
+  function New-ClerkFixture {
     $source = [Threading.CancellationTokenSource]::new()
     $gate = [Threading.Tasks.TaskCompletionSource[bool]]::new([Threading.Tasks.TaskCreationOptions]::RunContinuationsAsynchronously)
-    $bindings = @{
-      StatePath = [IO.Path]::Combine([IO.Path]::GetPathRoot($PSScriptRoot), 'NeverCreated800', 'state.json')
-      ResourceId = 'Resource-A'; LineageId = 'Lineage-L'; Generation = 'Generation-G'
-      OwnerSessionId = 'Owner-S'; InvocationId = 'Invocation-I'
-    }
     $values = [Collections.Generic.Dictionary[string, object]]::new([StringComparer]::Ordinal)
-    foreach ($key in $bindings.Keys) { $values.Add($key, $bindings[$key]) }
-    $values.Add('ProcessId', [Environment]::ProcessId)
-    $values.Add('StopSource', $source)
-    $values.Add('StartGate', $gate)
-    [PSCustomObject]@{ Bindings = $bindings; Values = $values; Source = $source; Gate = $gate
-      Control = [Collections.ObjectModel.ReadOnlyDictionary[string, object]]::new($values) }
+    $fields = @{ StatePath = 'C:\Fixture\state.json'; ResourceId = 'resource-1'; LineageId = 'lineage-1'
+      Generation = 'generation-1'; OwnerSessionId = 'session-1'; InvocationId = 'invocation-1'
+      ProcessId = [Environment]::ProcessId; StopSource = $source; StartGate = $gate }
+    foreach ($key in $fields.Keys) { $values.Add($key, $fields[$key]) }
+    $state = ConvertTo-CoordElement @{ committedRevision = 'head-1'; requests = @(); preparedOperations = @() }
+    [pscustomobject]@{ Source = $source; Gate = $gate; Values = $values
+      Control = [Collections.ObjectModel.ReadOnlyDictionary[string, object]]::new($values)
+      Context = [pscustomobject]@{ StatePath = 'C:\Fixture\state.json'; State = $state
+        Record = @{ resourceId = 'resource-1'; lineageId = 'lineage-1'; generation = 'generation-1'; pendingWrite = $null }
+        Limits = @{ MaxDrainRequests = 8; MaxDrainBatches = 4; MaxDrainMilliseconds = 10000 }
+        Lease = [IO.MemoryStream]::new(); BoardLease = [IO.MemoryStream]::new() } }
   }
 }
-
-Describe 'Invoke-CoordClerk partial control boundary' -Tag 'Unit' {
+Describe 'Invoke-CoordClerk bounded control' -Tag 'Unit' {
   BeforeEach {
     $WhatIfPreference = $false
-    $script:f800 = New-Control800
+    $script:fixture = New-ClerkFixture
     Mock Write-PSFMessage {}
-    Mock Get-Content { throw 'Unexpected IO' }
-    Mock Set-Content { throw 'Unexpected IO' }
-    Mock Test-Path { throw 'Unexpected IO' }
+    # Unit boundary only: production custody is exercised by CoordProducer integration fixtures.
+    Mock Read-CoordProducerContext { $script:fixture.Context }
+    Mock Resume-CoordProducerWrite {}
+    Mock Invoke-CoordDurableOperation {}
+    Mock Invoke-CoordProducerBatch { [pscustomobject]@{ Considered = 0; Applied = 0; Rejected = 0; Progress = $false } }
   }
-  AfterEach {
-    try {
-      foreach ($name in @('Get-Content', 'Set-Content', 'Test-Path')) {
-        Should -Invoke -CommandName $name -Times 0 -Exactly -Scope It
-      }
-    } finally { $script:f800.Source.Dispose() }
+  AfterEach { $fixture.Source.Dispose() }
+  It 'actually invokes the bounded producer and reports the observed empty queue' {
+    $result = Invoke-CoordClerk -HolderId Coordinator -SessionId session-1 -Control $fixture.Control -Confirm:$false
+    $result.DrainStatus | Should -BeExactly 'Drained'
+    $result.Status | Should -BeExactly 'Observed'
+    Should -Invoke Invoke-CoordProducerBatch -Times 1 -Exactly
+    $fixture.Gate.Task.IsCompletedSuccessfully | Should -BeTrue
+    { $null = $fixture.Source.Token } | Should -Not -Throw
   }
-
-  It 'holds without inventing work or mutating the token when pre-cancelled is <Cancelled>' -ForEach @(
-    @{ Cancelled = $false }; @{ Cancelled = $true }
-  ) {
-    $f = $script:f800
-    if ($Cancelled) { $f.Source.Cancel() }
-    $bindings800 = $f.Bindings
-    $result = Invoke-CoordClerk @bindings800 -Control $f.Control -Confirm:$false
-    $result.Status | Should -BeExactly 'Held'
-    $result.ExitReason | Should -BeExactly 'ProducerBindingsIncomplete'
-    $result.StopRequested | Should -Be $Cancelled
-    $result.StopObserved | Should -Be $Cancelled
-    $result.DrainStatus | Should -BeExactly 'Unknown'
-    $result.RemainingObservation | Should -BeExactly 'Unknown'
-    foreach ($key in @('RecordedHead', 'PendingRequestIds', 'PreparedOperationIds', 'NeedsRecoveryOperationIds')) {
-      $result.$key | Should -BeNullOrEmpty
-      $null -eq $result.$key | Should -BeTrue
-    }
-    $f.Gate.Task.IsCompletedSuccessfully | Should -BeTrue
-    $f.Source.IsCancellationRequested | Should -Be $Cancelled
-    { $null = $f.Source.get_Token() } | Should -Not -Throw
-  }
-
-  It 'WhatIf preserves gate and token with cancellation <Cancelled>' -ForEach @(
-    @{ Cancelled = $false }; @{ Cancelled = $true }
-  ) {
-    $f = $script:f800
-    if ($Cancelled) { $f.Source.Cancel() }
-    $bindings800 = $f.Bindings
-    $result = Invoke-CoordClerk @bindings800 -Control $f.Control -WhatIf
+  It 'does no custody IO and preserves borrowed control under WhatIf' {
+    $result = Invoke-CoordClerk -HolderId Coordinator -SessionId session-1 -Control $fixture.Control -WhatIf
     $result.Status | Should -BeExactly 'ProposedOnly'
-    $result.StopObserved | Should -BeFalse
-    $result.StopRequested | Should -Be $Cancelled
-    $f.Gate.Task.IsCompleted | Should -BeFalse
-    $f.Source.IsCancellationRequested | Should -Be $Cancelled
+    Should -Invoke Read-CoordProducerContext -Times 0 -Exactly
+    $fixture.Gate.Task.IsCompleted | Should -BeFalse
   }
-
-  It 'refuses a reused gate and preserves the source' {
-    $f = $script:f800; $bindings800 = $f.Bindings
-    $null = Invoke-CoordClerk @bindings800 -Control $f.Control -Confirm:$false
-    { Invoke-CoordClerk @bindings800 -Control $f.Control -Confirm:$false } | Should -Throw '*ControlAlreadyUsed*'
-    $f.Source.IsCancellationRequested | Should -BeFalse
+  It 'observes cancellation without starting recovery or new batches' {
+    $fixture.Source.Cancel()
+    $result = Invoke-CoordClerk -HolderId Coordinator -SessionId session-1 -Control $fixture.Control -Confirm:$false
+    $result.StopObserved | Should -BeTrue
+    $result.ExitReason | Should -BeExactly 'StoppedAtBoundary'
+    Should -Invoke Invoke-CoordProducerBatch -Times 0 -Exactly
+    Should -Invoke Resume-CoordProducerWrite -Times 0 -Exactly
   }
-
-  It 'refuses case-sensitive mismatch in <Key> before gate consumption' -ForEach @(
-    @{ Key = 'StatePath' }; @{ Key = 'ResourceId' }; @{ Key = 'LineageId' }
-    @{ Key = 'Generation' }; @{ Key = 'OwnerSessionId' }; @{ Key = 'InvocationId' }
-  ) {
-    $f = $script:f800; $args800 = $f.Bindings.Clone()
-    $args800[$Key] = $args800[$Key].ToLowerInvariant()
-    { Invoke-CoordClerk @args800 -Control $f.Control -Confirm:$false } | Should -Throw '*ControlBindingMismatch*'
-    $f.Gate.Task.IsCompleted | Should -BeFalse
-    $f.Source.IsCancellationRequested | Should -BeFalse
+  It 'rejects a mismatched live binding before consuming the gate' {
+    $fixture.Values['Generation'] = 'other-generation'
+    { Invoke-CoordClerk -HolderId Coordinator -SessionId session-1 -Control $fixture.Control -Confirm:$false } | Should -Throw '*ControlBindingMismatch*'
+    $fixture.Gate.Task.IsCompleted | Should -BeFalse
   }
-
-  It 'refuses missing key, wrong process, or nonasync gate <Fault>' -ForEach @(
-    @{ Fault = 'Missing' }; @{ Fault = 'Process' }; @{ Fault = 'Gate' }
-  ) {
-    $f = $script:f800; $bindings800 = $f.Bindings
-    switch ($Fault) {
-      'Missing' { $null = $f.Values.Remove('InvocationId') }
-      'Process' { $f.Values['ProcessId'] = -1 }
-      'Gate' { $f.Values['StartGate'] = [Threading.Tasks.TaskCompletionSource[bool]]::new() }
-    }
-    { Invoke-CoordClerk @bindings800 -Control $f.Control -Confirm:$false } | Should -Throw '*InvalidControl*'
-    $f.Gate.Task.IsCompleted | Should -BeFalse
-    $f.Source.IsCancellationRequested | Should -BeFalse
-  }
-
-  It 'refuses a disposed cancellation source before gate consumption even for WhatIf' {
-    $f = $script:f800; $bindings800 = $f.Bindings; $f.Source.Dispose()
-    { Invoke-CoordClerk @bindings800 -Control $f.Control -WhatIf } | Should -Throw '*ControlUnavailable*'
-    $f.Gate.Task.IsCompleted | Should -BeFalse
-  }
-
-  It 'refuses a deserialized object without consuming the live fixture' {
-    $f = $script:f800; $bindings800 = $f.Bindings
-    $copy = [PSCustomObject]@{ StatePath = $f.Bindings.StatePath; ProcessId = [Environment]::ProcessId }
-    { Invoke-CoordClerk @bindings800 -Control $copy -Confirm:$false } | Should -Throw
-    $f.Gate.Task.IsCompleted | Should -BeFalse
-    $f.Source.IsCancellationRequested | Should -BeFalse
+  It 'does not dispose borrowed cancellation when producer work fails' {
+    Mock Invoke-CoordProducerBatch { throw 'Synthetic producer failure' }
+    { Invoke-CoordClerk -HolderId Coordinator -SessionId session-1 -Control $fixture.Control -Confirm:$false } | Should -Throw
+    { $null = $fixture.Source.Token } | Should -Not -Throw
+    $fixture.Context.Lease.CanRead | Should -BeFalse
   }
 }

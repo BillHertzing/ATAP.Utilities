@@ -73,6 +73,9 @@ function New-CoordQuartetCandidate {
     $null = Get-Command Write-PSFMessage -ErrorAction Stop
     $utf8 = [Text.UTF8Encoding]::new($false, $true)
     $slots = @('markdown', 'boardHtml', 'proceduralDetailsHtml', 'accomplishedHtml')
+    if (-not (Get-Command Assert-CoordOrdinaryPath -ErrorAction SilentlyContinue)) {
+      . (Join-Path $PSScriptRoot 'CoordProducer.ps1')
+    }
     function sameText([string]$Left, [string]$Right) {
       [string]::Equals($Left, $Right, [StringComparison]::Ordinal)
     }
@@ -106,10 +109,10 @@ function New-CoordQuartetCandidate {
         if ($null -eq $link -or $link.Value -or $item.PSProvider.Name -cne 'FileSystem' -or
             $item.PSIsContainer -isnot [bool] -or $item.PSIsContainer -ne $isDirectory -or
             $item.Attributes -isnot [IO.FileAttributes] -or
-            ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0 -or
             -not [string]::Equals([IO.Path]::GetFullPath($item.FullName), $current, [StringComparison]::OrdinalIgnoreCase)) {
           throw 'UnsafePathMetadata'
         }
+        if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { Assert-CoordCloudPlaceholder $current }
         $current = [IO.Path]::GetDirectoryName($current)
         $isDirectory = $true
       }

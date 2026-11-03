@@ -1,105 +1,76 @@
 function Invoke-CoordClerk {
   <#
   .SYNOPSIS
-    Observes a borrowed clerk control at a no-work boundary.
+    Drains a bounded queue using established Windows-account custody.
   .DESCRIPTION
-    PARTIAL: this function never admits work, opens state, schedules, recovers,
-    renders or establishes authority or custody. The trusted caller supplies the
-    original live control and separately establishes authority. Matching values do
-    not authenticate control references. Every real invocation is held because
-    producer bindings remain incomplete. Borrowed objects are never disposed.
-  .PARAMETER StatePath
-    Caller-resolved absolute state path; not accessed.
-  .PARAMETER ResourceId
-    Caller-supplied resource identity.
-  .PARAMETER LineageId
-    Caller-supplied lineage identity.
-  .PARAMETER Generation
-    Caller-supplied generation.
-  .PARAMETER OwnerSessionId
-    Caller-supplied owner session.
-  .PARAMETER InvocationId
-    Caller-supplied single-use invocation identity.
-  .PARAMETER Control
-    Original borrowed nine-key same-process control.
-  .OUTPUTS
-    PSCustomObject reporting proposed or held control observation, never drain.
-  .EXAMPLE
-    Invoke-CoordClerk @bindings -Control $control -WhatIf
-  .NOTES
-    Control-only partial source; not an operational producer.
-  .LINK
-    ../Documentation/Coordination-v1.md
+    Recovers existing prepared work before new batches. The optional borrowed
+    same-process control retains Stop-CoordClerk's nine-key cancellation contract.
+    Chat IDs are registered cooperative roles, not OS-authenticated principals.
   #>
-  [CmdletBinding(SupportsShouldProcess = $true)]
-  [OutputType([PSCustomObject])]
-  param(
-    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$StatePath,
-    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ResourceId,
-    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$LineageId,
-    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$Generation,
-    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$OwnerSessionId,
-    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$InvocationId,
-    [Parameter(Mandatory)][ValidateNotNull()]
-    [Collections.ObjectModel.ReadOnlyDictionary[string, object]]$Control
-  )
+  [CmdletBinding(SupportsShouldProcess)]
+  param([Parameter(Mandatory)][string]$HolderId, [Parameter(Mandatory)][string]$SessionId,
+    [Collections.ObjectModel.ReadOnlyDictionary[string, object]]$Control)
   begin {
-    $fn = 'Invoke-CoordClerk'
-    $mn = 'ATAP.Utilities.BuildTooling.Orchestration.PowerShell'
+    $fn = 'Invoke-CoordClerk'; $mn = 'ATAP.Utilities.BuildTooling.Orchestration.PowerShell'
     $null = Get-Command Write-PSFMessage -ErrorAction Stop
+    if (-not (Get-Command Read-CoordProducerContext -ErrorAction SilentlyContinue)) {
+      foreach ($file in Get-ChildItem (Join-Path $PSScriptRoot '../private') -Filter '*.ps1' -File) { . $file.FullName }
+    }
   }
   process {
-    $failure = 'InvalidControl'
+    if (-not $PSCmdlet.ShouldProcess($HolderId, 'Drain configured coordination resource')) {
+      return [pscustomobject]@{ Status = 'ProposedOnly'; Applied = 0; Rejected = 0; DrainStatus = 'NotStarted' }
+    }
+    $context = $null; $clock = [Diagnostics.Stopwatch]::StartNew()
     try {
-      if ($Control.GetType() -ne [Collections.ObjectModel.ReadOnlyDictionary[string, object]]) { throw 'InvalidControl' }
-      $bindings = [ordered]@{
-        StatePath = $StatePath; ResourceId = $ResourceId; LineageId = $LineageId
-        Generation = $Generation; OwnerSessionId = $OwnerSessionId; InvocationId = $InvocationId
-      }
-      $expected = @($bindings.Keys) + @('ProcessId', 'StopSource', 'StartGate')
-      $keys = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
-      foreach ($key in $Control.Keys) { $null = $keys.Add($key) }
-      if ($Control.Count -ne $expected.Count) { throw 'InvalidControl' }
-      foreach ($key in $expected) { if (-not $keys.Contains($key)) { throw 'InvalidControl' } }
-      foreach ($key in $bindings.Keys) {
-        if ($Control[$key] -isnot [string] -or [string]::IsNullOrWhiteSpace($Control[$key]) -or
-            [string]::IsNullOrWhiteSpace($bindings[$key])) { throw 'InvalidControl' }
-      }
-      if (-not [IO.Path]::IsPathFullyQualified($StatePath)) { throw 'InvalidControl' }
-      if ($Control['ProcessId'] -isnot [int] -or $Control['ProcessId'] -ne [Environment]::ProcessId -or
-          $null -eq $Control['StopSource'] -or $Control['StopSource'].GetType() -ne [Threading.CancellationTokenSource] -or
-          $null -eq $Control['StartGate'] -or $Control['StartGate'].GetType() -ne [Threading.Tasks.TaskCompletionSource[bool]]) {
-        throw 'InvalidControl'
-      }
-      $asyncFlag = [Threading.Tasks.TaskCreationOptions]::RunContinuationsAsynchronously
-      if (($Control['StartGate'].Task.CreationOptions -band $asyncFlag) -ne $asyncFlag) { throw 'InvalidControl' }
-      $failure = 'ControlBindingMismatch'
-      foreach ($key in $bindings.Keys) {
-        if (-not [string]::Equals($bindings[$key], $Control[$key], [StringComparison]::Ordinal)) { throw 'ControlBindingMismatch' }
-      }
-      $failure = 'ControlUnavailable'
-      $token = $Control['StopSource'].get_Token()
-      $status = 'ProposedOnly'
-      $exitReason = 'ShouldProcessDeclined'
-      $observed = $false
-      if ($PSCmdlet.ShouldProcess($InvocationId, 'Observe partial clerk control')) {
-        $failure = 'ControlAlreadyUsed'
+      $context = Read-CoordProducerContext -HolderId $HolderId -SessionId $SessionId -Role Clerk -AllowPending
+      $token = [Threading.CancellationToken]::None
+      if ($Control) {
+        $expected = @('StatePath', 'ResourceId', 'LineageId', 'Generation', 'OwnerSessionId', 'InvocationId', 'ProcessId', 'StopSource', 'StartGate')
+        if ($Control.Count -ne 9) { throw 'InvalidControl' }
+        foreach ($key in $expected) { if (-not $Control.ContainsKey($key)) { throw 'InvalidControl' } }
+        $values = @{ StatePath = $context.StatePath; ResourceId = $context.Record.resourceId
+          LineageId = $context.Record.lineageId; Generation = $context.Record.generation; OwnerSessionId = $SessionId }
+        foreach ($key in $values.Keys) { if ($Control[$key] -cne $values[$key]) { throw 'ControlBindingMismatch' } }
+        if ($Control['ProcessId'] -ne [Environment]::ProcessId -or
+            $Control['StopSource'] -isnot [Threading.CancellationTokenSource] -or
+            $Control['StartGate'] -isnot [Threading.Tasks.TaskCompletionSource[bool]] -or
+            [string]::IsNullOrWhiteSpace($Control['InvocationId'])) { throw 'InvalidControl' }
+        $token = $Control['StopSource'].Token
+        if (($Control['StartGate'].Task.CreationOptions -band [Threading.Tasks.TaskCreationOptions]::RunContinuationsAsynchronously) -eq 0) { throw 'InvalidControl' }
         if (-not $Control['StartGate'].TrySetResult($true)) { throw 'ControlAlreadyUsed' }
-        $observed = $token.IsCancellationRequested
-        $status = 'Held'
-        $exitReason = 'ProducerBindingsIncomplete'
       }
-      [PSCustomObject]@{
-        ResourceId = $ResourceId; LineageId = $LineageId; Generation = $Generation
-        OwnerSessionId = $OwnerSessionId; InvocationId = $InvocationId
-        Status = $status; ExitReason = $exitReason; StopRequested = $token.IsCancellationRequested
-        StopObserved = $observed; DrainStatus = 'Unknown'; RemainingObservation = 'Unknown'
-        RecordedHead = $null; PendingRequestIds = $null; PreparedOperationIds = $null
-        NeedsRecoveryOperationIds = $null
+      $applied = 0; $rejected = 0; $considered = [long]0; $batches = 0
+      $exitReason = 'QueueObserved'
+      if (-not $token.IsCancellationRequested) {
+        Resume-CoordProducerWrite $context
+        foreach ($operation in @($context.State.GetProperty('preparedOperations').EnumerateArray())) {
+          if ($operation.GetProperty('status').GetString() -cin @('Prepared', 'NeedsRecovery')) {
+            Invoke-CoordDurableOperation -Context $context -Phase Complete -OperationId $operation.GetProperty('operationId').GetString()
+          }
+        }
+        while (-not $token.IsCancellationRequested -and $considered -lt $context.Limits.MaxDrainRequests -and
+            $batches -lt $context.Limits.MaxDrainBatches -and $clock.ElapsedMilliseconds -lt $context.Limits.MaxDrainMilliseconds) {
+          $batch = Invoke-CoordProducerBatch -Context $context -MaximumRequests ($context.Limits.MaxDrainRequests - $considered)
+          $considered += $batch.Considered; $applied += $batch.Applied; $rejected += $batch.Rejected
+          if (-not $batch.Progress) { break }
+          $batches++
+        }
       }
-    } catch {
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Clerk control refused: $failure."
-      throw [InvalidOperationException]::new("Invoke-CoordClerk: $failure.")
+      $pending = @($context.State.GetProperty('requests').EnumerateArray() | Where-Object {
+        $_.GetProperty('status').GetString() -cin @('Pending', 'Prepared', 'NeedsRecovery') })
+      $recovering = [bool]$context.Record.pendingWrite -or @($context.State.GetProperty('preparedOperations').EnumerateArray() |
+        Where-Object { $_.GetProperty('status').GetString() -cin @('Prepared', 'NeedsRecovery') }).Count -gt 0
+      if ($token.IsCancellationRequested) { $exitReason = 'StoppedAtBoundary' }
+      elseif ($pending.Count) { $exitReason = 'BudgetOrPredecessorBoundary' }
+      [pscustomobject]@{ Status = 'Observed'; ResourceId = $context.Record.resourceId; Applied = $applied; Rejected = $rejected
+        Considered = $considered; Batches = $batches; Remaining = $pending.Count
+        DrainStatus = if ($recovering) { 'NeedsRecovery' } elseif ($pending.Count -eq 0) { 'Drained' } else { 'RemainingWork' }
+        ExitReason = $exitReason; StopObserved = $token.IsCancellationRequested
+        RecordedHead = $context.State.GetProperty('committedRevision').GetString(); ElapsedMilliseconds = $clock.ElapsedMilliseconds }
+    } finally {
+      $clock.Stop()
+      if ($context) { $context.BoardLease.Dispose(); $context.Lease.Dispose() }
     }
   }
   end {}

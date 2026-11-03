@@ -386,12 +386,24 @@ migration route and actual rollback matrix entries require later evidence;
 S4 specifies the minimum compatibility/admission predicate.
 [I: INT04; P: C17.13-14]
 
-### Proposal S4: external first-use witness and compatibility predicate
+### S4: external first-use witness and compatibility predicate
 
 Basis: P C17.1/9/13, D11 and I INT04 require distinguishing first use from state
 loss, Bill's custody and compatible restoration. The following is a logical
 admission protocol; exact protected locations/envelopes are downstream. It adds
 no service, automatic provisioning or permission grant.
+
+The coordinator subsequently selected file-based Bill/Windows-account custody:
+the custodian maintains a protected record under ProgramData, outside Dropbox and
+the replaceable state directory. Runtime verification must check the configured
+Bill SID, actual Windows identity, record ownership and ACL, and the bindings
+below. Chat identifiers are cooperative correlation and role identifiers, not
+OS-authenticated identities. An exclusive FileStream lease serializes resource
+access, and manual-to-clerk handoff also observes CoordinatorBoard.lock. First use
+requires explicit custodian approval and setup; absence of a directory is not
+approval. This decision does not itself establish the record or authorize pilot
+admission. The previously accepted contract digest refers to the earlier frozen
+text; this paragraph records the subsequent mechanism decision.
 
 Admission requires a trusted custodian-authorized resource custody record
 outside the replaceable clerk state root and the synced board/ephemeral worktree.

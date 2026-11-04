@@ -76,6 +76,7 @@ FunctionsToExport = @(
     'Build-AGENTSPerRepository',
     'Build-AIInstructionsPerRepository',
     'Build-CLAUDEPerRepository',
+    'Build-DocumentationOverview',
     'Convert-DiagramsToImages',
     'Get-NumberOfFailingTestsFromTRX',
     'Invoke-FailureAcknowledgedGate',

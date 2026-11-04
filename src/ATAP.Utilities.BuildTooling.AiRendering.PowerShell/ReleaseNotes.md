@@ -9,6 +9,18 @@
   omitted when the canonical file is absent or whitespace-only, so existing callers
   compose unchanged. This replaces the direct manifest render that clobbered the
   composed carrier on 2026-07-25.
+## 0.1.7 (source candidate, not installed)
+
+- Add `Build-DocumentationOverview`: catalogs tracked documentation across one or more
+  repository roots and writes a catalog CSV, an unresolved-link CSV, a JSON summary and a
+  statistics page under `_generated/DocumentationOverview` (SC-0033). Read-only;
+  supports -WhatIf.
+- Protect maintained output destinations, require PSFramework, retain headers for
+  empty catalogs, separate Git diagnostics from file/revision data, and support
+  relative links with angle-bracket destinations while excluding absolute URI schemes.
+- Windows source verification passed 31 cases: 27 command cases and four child-module
+  contract cases. Built-package and installed-consumer acceptance are separate gates;
+  this entry does not claim publication or installation.
 
 ## 0.1.2
 

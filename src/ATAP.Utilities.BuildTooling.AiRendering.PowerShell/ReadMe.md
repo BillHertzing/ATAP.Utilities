@@ -2,12 +2,26 @@
 
 This child owns BuildTooling's repository instruction combiners, diagram rendering,
 failure-acknowledgement gates, SharedVSCode reset wrapper, Claude settings render helper,
-TRX failure count reader, and AgentText validation suite.
+TRX failure count reader, AgentText validation suite, and cross-repository documentation
+overview.
 
-The public surface contains eleven commands. `Set-ClaudeSettingsSymlink` is child-public
+The public surface contains twelve commands. `Set-ClaudeSettingsSymlink` is child-public
 so the compatibility parent and later SprintLifecycle child can call it across module
 scope, but it is intentionally omitted from the compatibility parent's legacy export
 surface.
+
+## Documentation overview
+
+`Build-DocumentationOverview` catalogs tracked documentation in explicitly supplied
+repository roots and reports unresolved relative Markdown links. It writes its
+catalog, link report, summary and statistics under the first repository's
+`_generated/DocumentationOverview` by default and supports `-WhatIf`.
+
+An explicit output directory must stay inside a repository's `_generated` directory
+or the resolved `ARTIFACTS_PATH` area. Maintained repository content stays protected
+even when a repository is nested under that artifact area. Existing reparse points
+in the output path are rejected. PSFramework is required and is loaded on demand;
+the command fails explicitly if it is unavailable.
 
 ## AGENTS.md composition (Task 13.76.b)
 

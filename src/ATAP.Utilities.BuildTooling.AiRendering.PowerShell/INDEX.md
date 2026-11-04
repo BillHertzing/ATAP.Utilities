@@ -7,6 +7,8 @@
   AI-CORE, and (Task 13.76.b) AI-AGENT-CODEX. See ReadMe "AGENTS.md composition".
 - `Build-AIInstructionsPerRepository`
 - `Build-CLAUDEPerRepository`
+- `Build-DocumentationOverview` — read-only catalog, unresolved-link report, summary and
+  statistics for tracked documentation across repository roots.
 - `Convert-DiagramsToImages`
 - `Get-NumberOfFailingTestsFromTRX`
 - `Invoke-FailureAcknowledgedGate`

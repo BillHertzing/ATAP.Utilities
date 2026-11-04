@@ -7,7 +7,8 @@ BeforeAll {
   . (Join-Path $moduleRoot 'public/Get-CoordResult.ps1')
   . (Join-Path $moduleRoot 'public/Export-CoordState.ps1')
   $script:sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-  $script:fixtureRoot = Join-Path ([IO.Path]::GetFullPath((Join-Path $moduleRoot '../..'))) ('_generated/Sprint0017/CloseStreams/C/Producer-' + [guid]::NewGuid().ToString('N'))
+  $fixtureBase = if ($env:C1754_FIXTURE_ROOT) { $env:C1754_FIXTURE_ROOT } else { Join-Path ([IO.Path]::GetFullPath((Join-Path $moduleRoot '../..'))) '_generated/Sprint0017/CloseStreams/C' }
+  $script:fixtureRoot = Join-Path $fixtureBase ('Producer-' + [guid]::NewGuid().ToString('N'))
   $null = [IO.Directory]::CreateDirectory($fixtureRoot)
   $script:priorSettings = $global:settings
   $script:priorKeys = $global:configRootKeys
@@ -212,6 +213,7 @@ Describe 'Actual coordination producer under disposable protected custody' -Tag 
   }
 
   It 'renders and publishes one authorized annotation after an applied report' -Tag 'C1637' {
+    try {
     $null = Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false
     $null = Invoke-CoordClerk -HolderId Coordinator -SessionId session-1 -Confirm:$false
     $board = [IO.Path]::GetDirectoryName($state.committedOutputManifest.markdown.path)
@@ -224,7 +226,8 @@ Describe 'Actual coordination producer under disposable protected custody' -Tag 
     $null = Invoke-CoordClerk -HolderId Coordinator -SessionId session-1 -Confirm:$false
     Set-FixtureRequest -Id 'accept-1' -Category AcceptChange -Predecessors @('report-1') -Payload @{
       reportRequestId = 'report-1'; evidence = $evidence; approvedChange = @{ annotation = 'Implementation awaiting consuming pilot.' } }
-    $witness.scratchRoot = Join-Path 'D:/ATAPArtifacts/_generated/Sprint0017/CloseStreams/C' ([guid]::NewGuid().ToString('N'))
+    $scratchBase = if ($env:C1754_FIXTURE_ROOT) { $fixtureRoot } else { 'D:/ATAPArtifacts/_generated/Sprint0017/CloseStreams/C' }
+    $witness.scratchRoot = Join-Path $scratchBase ([guid]::NewGuid().ToString('N'))
     $null = [IO.Directory]::CreateDirectory($witness.scratchRoot)
     Write-FixtureJson $witnessPath $witness
     $null = Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false
@@ -234,6 +237,10 @@ Describe 'Actual coordination producer under disposable protected custody' -Tag 
     [IO.File]::ReadAllText($state.committedOutputManifest.boardHtml.path) | Should -Match 'Implementation awaiting consuming pilot\.'
     [IO.File]::ReadAllText($state.committedOutputManifest.proceduralDetailsHtml.path) | Should -BeExactly 'fixture'
     [IO.File]::ReadAllText($state.committedOutputManifest.accomplishedHtml.path) | Should -BeExactly 'fixture'
+    } catch {
+      if ($env:C1754_FIXTURE_ROOT) { [IO.File]::WriteAllText((Join-Path $fixtureRoot 'C1754-annotation-failure.txt'), ($_.Exception.ToString() + "`n" + $_.ScriptStackTrace)) }
+      throw
+    }
   }
 
   It 'recovers a durable pending queue write forward after interruption' -Tag 'C1637' {
@@ -245,6 +252,7 @@ Describe 'Actual coordination producer under disposable protected custody' -Tag 
         $null = Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false
       } catch { $failure = $_ }
     } finally { $hold.Dispose() }
+    if ($env:C1754_FIXTURE_ROOT -and $failure) { [IO.File]::WriteAllText((Join-Path $fixtureRoot 'C1754-pending-caught.txt'), ($failure.Exception.ToString() + "`n" + $failure.ScriptStackTrace)) }
     $failure | Should -Not -BeNullOrEmpty
     $failure.Exception.ToString() | Should -Match '(?i)(used by another process|sharing violation)'
     $captured = [IO.File]::ReadAllText($witnessPath) | ConvertFrom-Json -AsHashtable

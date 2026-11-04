@@ -1,5 +1,13 @@
 # Release Notes — ATAP.Utilities.SystemParityMonitor.PowerShell
 
+## 0.1.28 (source only)
+
+- Add a configuration-only update for explicit package-manager identity mappings
+  in an existing profile JSON file. It preserves profiles, minimum counts, and
+  unrelated fields without changing scheduled tasks, credentials, or dispatchers.
+  The path must be absolute and exist; `WhatIf` validates without writing. Coordinate
+  a single writer. This version is not installed, and no live comparison is claimed.
+
 ## 0.1.23
 
 - Keep Task 15.167 tests bound to the module instance selected by the promoted-package

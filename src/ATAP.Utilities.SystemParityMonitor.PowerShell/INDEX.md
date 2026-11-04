@@ -13,7 +13,7 @@
 | `scripts\Invoke-ParityScheduledAuditTask.ps1` | Token-free local scheduled audit wrapper; imports this module, writes a snapshot, and records metadata-only task-result JSON with `SecretAccessRequired = false` |
 | `scripts\Invoke-ParityScheduledCompareTask.ps1` | Token-free primary-host scheduled compare wrapper; reads local + peer snapshots, writes a drift report, records metadata-only task-result JSON, and flags stale snapshots using the cadence threshold |
 | `scripts\Invoke-ParityTaskAndWait.ps1` | Interactive first-run helper; starts one parity task, waits for a newly recorded run, and fails on timeout or a non-zero Task Scheduler result |
-| `scripts\Register-ParityScheduledTasks.ps1` | Registers token-free audit-only or audit+compare scheduled tasks for `SvcParityAudit`, with daily or biweekly cadence and optional Windows registration/SMB credentials that are unrelated to vault access |
+| `scripts\Register-ParityScheduledTasks.ps1` | Registers scheduled tasks, or uses `ConfigurationOnly` to update mappings in an existing profile configuration without changing tasks or dispatchers |
 | `tests\Unit\Parity.Tests.ps1` | Pester suite (journal round-trip, audit snapshot, Chocolatey/pip/npm/NuGet collection, cross-manager conflicts, drift comparison, stale snapshots, token-free wrapper guards, scheduled-task registration contracts) |
 | `tests\Unit\Task15167SharedDotNetTools.Tests.ps1` | Focused shared .NET tool, consumer identity/evidence, required journal acknowledgement, public comparison, and scheduled-alert regressions |
 | `tests\Unit\PrimaryRole.Tests.ps1` | Focused Pester coverage for canonical DPOM marker creation, validation, idempotence, exit, and WhatIf behavior |

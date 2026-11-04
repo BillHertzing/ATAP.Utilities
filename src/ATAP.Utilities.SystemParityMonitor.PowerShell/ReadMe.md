@@ -128,9 +128,29 @@ Set-ParityPrimaryRole `
   Existing configurations without mappings retain their behavior. Registration
   preserves existing mappings when the argument is omitted; an explicitly empty
   mapping array clears them.
-- This mapping is source and local-package behavior until the new module is released,
-  installed, configured, and verified under the scheduled consumer identity on both
-  hosts. The observed scheduled consumers remain on version `0.1.23`.
+- Version `0.1.27` is installed on both hosts; observed scheduled dispatchers still
+  select `0.1.23`. A scheduled mapped comparison remains unverified.
+- Source version `0.1.28` adds `ConfigurationOnly` to the registration script. It
+  requires an absolute path to an existing profile JSON file and explicit mappings,
+  preserving profiles, minimum counts, and unrelated JSON fields. It validates
+  before an atomic replacement and does not access or change tasks, credentials,
+  or dispatchers. Use `-WhatIf` to validate without writing and coordinate a single
+  writer; concurrent updates are not locked. An empty mapping array clears mappings.
+  This version is source-only and has not been installed or verified in a live
+  scheduled comparison.
+
+  ```powershell
+  . 'C:\path\to\0.1.28\scripts\Register-ParityScheduledTasks.ps1'
+  $mappings = @(
+    @{ HostName='utat022'; Identity='UTAT022\whertzing'; Manager='pip'; ComparisonIdentity='ATAP\Developer' },
+    @{ HostName='utat01'; Identity='UTAT01\whertzing'; Manager='pip'; ComparisonIdentity='ATAP\Developer' }
+  )
+  Register-ParityScheduledTasks -ConfigurationOnly `
+    -PackageManagerProfilesPath 'C:\ProgramData\ATAP\ParityState\Configuration\PackageManagerProfiles.v1.json' `
+    -PackageManagerIdentityMappings $mappings -WhatIf
+  ```
+
+  This example maps only pip; supply each intended manager and host explicitly.
 - The next-release audit requires at least one SQL and one `PackageManager` row by
   default. Missing or thin required categories are preserved as
   `AuditCoverageFinding` rows in the diagnostic snapshot before the audit fails.

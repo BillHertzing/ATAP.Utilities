@@ -11,6 +11,8 @@ Describe 'SystemParityMonitor scheduled package-manager profile configuration' -
       param($LeftStatePath, $RightStatePath, $LeftHostName, $RightHostName, $ExpectedCadence, $StaleMultiplier, $ExpectedSurfaceMinimumCounts, $PackageManagerIdentityMappings)
     }
 
+    function Get-SecretATAP { throw 'Secret resolution is forbidden in this test.' }
+
     function Invoke-ParityAudit {
       [CmdletBinding()]
       param(
@@ -108,6 +110,74 @@ Describe 'SystemParityMonitor scheduled package-manager profile configuration' -
         LogName = $LogName
         Source = $Source
       }
+    }
+  }
+
+  Context 'configuration-only mapping updates' {
+    BeforeEach {
+      Mock Get-SecretATAP { throw 'Unexpected secret resolution.' }
+      Mock Get-ScheduledTask { throw 'Unexpected task read.' }
+      $configPath = Join-Path $statePath 'profiles.json'
+      $original = [ordered]@{
+        SchemaVersion = 1
+        Profiles = @(@{ Identity='UTAT022\whertzing'; PipPath='C:\pip'; NpmPrefix='C:\user-npm'; NuGetToolPath='C:\tools'; Extra='keep' })
+        ExpectedSurfaceMinimumCounts = @{ SQL=2; PackageManager=1 }
+        PackageManagerIdentityMappings = @()
+        Other = @{ Nested=@('one','two'); Timestamp='2026-11-04T09:00:03.000Z' }
+      }
+      $original | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $configPath -Encoding utf8
+      $mappings = @(
+        @{ HostName='utat022'; Identity='UTAT022\whertzing'; Manager='pip'; ComparisonIdentity='ATAP\Developer' },
+        @{ HostName='utat022'; Identity='UTAT022\whertzing'; Manager='NuGet'; ComparisonIdentity='ATAP\Developer' },
+        @{ HostName='utat01'; Identity='UTAT01\whertzing'; Manager='pip'; ComparisonIdentity='ATAP\Developer' },
+        @{ HostName='utat01'; Identity='UTAT01\whertzing'; Manager='NuGet'; ComparisonIdentity='ATAP\Developer' }
+      )
+    }
+
+    It 'updates four mappings while preserving all other fields and never touches task APIs' {
+      Register-ParityScheduledTasks -ConfigurationOnly -PackageManagerProfilesPath $configPath -PackageManagerIdentityMappings $mappings -Confirm:$false
+      $actual = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json
+      $actual.PackageManagerIdentityMappings | Should -HaveCount 4
+      @($actual.PackageManagerIdentityMappings | Where-Object Manager -eq 'npm') | Should -HaveCount 0
+      $actual.Profiles[0].NpmPrefix | Should -Be 'C:\user-npm'
+      $actual.Profiles[0].Extra | Should -Be 'keep'
+      $actual.ExpectedSurfaceMinimumCounts.SQL | Should -Be 2
+      $actual.Other.Nested | Should -Be @('one','two')
+      ([System.Text.Json.Nodes.JsonNode]::Parse([IO.File]::ReadAllText($configPath)))['Other']['Timestamp'].GetValue[string]() | Should -Be '2026-11-04T09:00:03.000Z'
+      Should -Invoke New-ScheduledTaskAction -Times 0 -Exactly
+      Should -Invoke New-ScheduledTaskTrigger -Times 0 -Exactly
+      Should -Invoke New-ScheduledTaskPrincipal -Times 0 -Exactly
+      Should -Invoke Register-ScheduledTask -Times 0 -Exactly
+      Should -Invoke Register-ParityScheduledTaskS4U -Times 0 -Exactly
+      Should -Invoke Get-ScheduledTask -Times 0 -Exactly
+      Should -Invoke Get-SecretATAP -Times 0 -Exactly
+    }
+
+    It 'rejects invalid mappings without changing the file' {
+      $before = Get-FileHash -LiteralPath $configPath
+      $invalid = @(@{ HostName='utat022'; Identity='one'; Manager='pip'; ComparisonIdentity='shared' }, @{ HostName='utat022'; Identity='two'; Manager='pip'; ComparisonIdentity='shared' })
+      { Register-ParityScheduledTasks -ConfigurationOnly -PackageManagerProfilesPath $configPath -PackageManagerIdentityMappings $invalid -Confirm:$false } | Should -Throw '*colliding target*'
+      (Get-FileHash -LiteralPath $configPath).Hash | Should -Be $before.Hash
+    }
+
+    It 'honors WhatIf without changing the file or registering tasks' {
+      $before = Get-FileHash -LiteralPath $configPath
+      Register-ParityScheduledTasks -ConfigurationOnly -PackageManagerProfilesPath $configPath -PackageManagerIdentityMappings $mappings -WhatIf
+      (Get-FileHash -LiteralPath $configPath).Hash | Should -Be $before.Hash
+      Should -Invoke Register-ScheduledTask -Times 0 -Exactly
+    }
+
+    It 'requires explicit mappings and rejects unrelated registration parameters' {
+      { Register-ParityScheduledTasks -ConfigurationOnly -PackageManagerProfilesPath $configPath } | Should -Throw '*requires explicit PackageManagerIdentityMappings*'
+      { Register-ParityScheduledTasks -ConfigurationOnly -PackageManagerProfilesPath $configPath -PackageManagerIdentityMappings $mappings -LogonType Password } | Should -Throw '*not supported with ConfigurationOnly*'
+    }
+
+    It 'refuses a missing existing configuration without creating one' {
+      $missing = Join-Path $statePath 'missing.json'
+      { Register-ParityScheduledTasks -ConfigurationOnly -PackageManagerProfilesPath $missing -PackageManagerIdentityMappings $mappings -Confirm:$false } | Should -Throw
+      Test-Path -LiteralPath $missing | Should -BeFalse
+      Should -Invoke Get-SecretATAP -Times 0 -Exactly
+      Should -Invoke Get-ScheduledTask -Times 0 -Exactly
     }
   }
 

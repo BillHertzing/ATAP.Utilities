@@ -270,7 +270,9 @@ function Write-ParityPackageManagerProfilesConfiguration {
     [hashtable] $ExpectedSurfaceMinimumCounts,
 
     [AllowEmptyCollection()]
-    [object[]] $PackageManagerIdentityMappings = @()
+    [object[]] $PackageManagerIdentityMappings = @(),
+
+    [switch] $PreserveExisting
   )
 
   . (Join-Path $PSScriptRoot 'ParityScheduledTask.Common.ps1')
@@ -291,12 +293,24 @@ function Write-ParityPackageManagerProfilesConfiguration {
   $temporaryPath = "$Path.$([guid]::NewGuid().ToString('N')).tmp"
   $backupPath = "$Path.$([guid]::NewGuid().ToString('N')).bak"
   try {
-    [ordered]@{
-      SchemaVersion = 1
-      Profiles = @($Profiles)
-      ExpectedSurfaceMinimumCounts = $orderedMinimumCounts
-      PackageManagerIdentityMappings = @($PackageManagerIdentityMappings)
-    } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $temporaryPath -Encoding utf8 -ErrorAction Stop
+    $json = if ($PreserveExisting) {
+      $null = Read-ParityPackageManagerProfilesRegistrationConfiguration -Path $Path
+      $existing = [System.Text.Json.Nodes.JsonNode]::Parse([IO.File]::ReadAllText($Path))
+      $mappingJson = ConvertTo-Json -InputObject @($PackageManagerIdentityMappings) -Depth 8 -ErrorAction Stop
+      $existing['PackageManagerIdentityMappings'] = [System.Text.Json.Nodes.JsonNode]::Parse($mappingJson)
+      $options = [System.Text.Json.JsonSerializerOptions]::new()
+      $options.WriteIndented = $true
+      $options.MaxDepth = 100
+      $existing.ToJsonString($options)
+    } else {
+      [ordered]@{
+        SchemaVersion = 1
+        Profiles = @($Profiles)
+        ExpectedSurfaceMinimumCounts = $orderedMinimumCounts
+        PackageManagerIdentityMappings = @($PackageManagerIdentityMappings)
+      } | ConvertTo-Json -Depth 8 -ErrorAction Stop
+    }
+    $json | Set-Content -LiteralPath $temporaryPath -Encoding utf8 -ErrorAction Stop
 
     $null = Read-ParityPackageManagerProfilesRegistrationConfiguration -Path $temporaryPath
     if (Test-Path -LiteralPath $Path -PathType Leaf) {
@@ -355,6 +369,8 @@ function Register-ParityScheduledTasks {
 
     [string] $PackageManagerProfilesPath,
 
+    [switch] $ConfigurationOnly,
+
     [object] $SharedDotNetToolPolicy,
 
     [string] $SharedDotNetToolPolicyPath,
@@ -382,6 +398,7 @@ function Register-ParityScheduledTasks {
     $fn = 'Register-ParityScheduledTasks'
     $mn = 'ATAP.Utilities.SystemParityMonitor.PowerShell'
     $scriptRoot = $PSScriptRoot
+    if (-not $ConfigurationOnly) {
     $pwshPath = (Get-Command -Name 'pwsh' -CommandType Application -ErrorAction Stop).Source
     $packageManagerProfilesWereBound = $PSBoundParameters.ContainsKey('PackageManagerProfiles')
     $minimumCountsWereBound = $PSBoundParameters.ContainsKey('ExpectedSurfaceMinimumCounts')
@@ -494,9 +511,22 @@ function Register-ParityScheduledTasks {
         'Highest'
       }
     }
+    }
   }
-
   process {
+    if ($ConfigurationOnly) {
+      if (-not $PSBoundParameters.ContainsKey('PackageManagerProfilesPath') -or [string]::IsNullOrWhiteSpace($PackageManagerProfilesPath)) { throw 'ConfigurationOnly requires an explicit PackageManagerProfilesPath.' }
+      if (-not [IO.Path]::IsPathFullyQualified($PackageManagerProfilesPath)) { throw 'PackageManagerProfilesPath must be fully qualified.' }
+      if (-not $PSBoundParameters.ContainsKey('PackageManagerIdentityMappings')) { throw 'ConfigurationOnly requires explicit PackageManagerIdentityMappings.' }
+      $allowed = @('ConfigurationOnly', 'PackageManagerProfilesPath', 'PackageManagerIdentityMappings', 'WhatIf', 'Confirm', 'ErrorAction', 'WarningAction', 'InformationAction', 'Verbose', 'Debug', 'ErrorVariable', 'WarningVariable', 'InformationVariable', 'OutVariable', 'OutBuffer', 'PipelineVariable')
+      foreach ($key in $PSBoundParameters.Keys) { if ($key -notin $allowed) { throw "Parameter '$key' is not supported with ConfigurationOnly." } }
+      Assert-ParityPackageManagerIdentityMappings -Mappings $PackageManagerIdentityMappings
+      $existingConfiguration = Read-ParityPackageManagerProfilesRegistrationConfiguration -Path $PackageManagerProfilesPath
+      if ($PSCmdlet.ShouldProcess($PackageManagerProfilesPath, 'Update package-manager identity mappings')) {
+        Write-ParityPackageManagerProfilesConfiguration -Path $PackageManagerProfilesPath -Profiles $existingConfiguration.Profiles -ExpectedSurfaceMinimumCounts $existingConfiguration.ExpectedSurfaceMinimumCounts -PackageManagerIdentityMappings $PackageManagerIdentityMappings -PreserveExisting
+      }
+      return
+    }
     $auditArguments = "-StatePath `"$StatePath`" -HostName `"$HostName`""
     if ($configurationWasBound) {
       if ($PSCmdlet.ShouldProcess($PackageManagerProfilesPath, 'Write package-manager profile configuration')) {

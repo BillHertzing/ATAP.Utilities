@@ -354,7 +354,7 @@ Describe 'Task 16.78 build runner sprint defaults and release-context reconcilia
   }
 }
 
-Describe 'Database bytes are admitted before the immutable application boundary' {
+Describe 'Database bytes are admitted before the immutable application boundary' -Tag 'Admission1729' {
   BeforeAll {
     $bindingText = [regex]::Match($script:RunnerText, '(?s)# 4\. Bind the admitted database bytes[^\r\n]*(?:\r\n|\n|\r)(?<body>.*?)# 4b\. Bundle').Groups['body'].Value
     if (-not $bindingText) { throw 'Expected the production prearchive binding block.' }
@@ -370,9 +370,13 @@ Describe 'Database bytes are admitted before the immutable application boundary'
     function Invoke-DatabaseBoundaryFixture {
       # Execute the actual parser/binding and parameter code, with no production bundler loaded.
       $ProductId = 'AceCommander'; $DatabasePackageId = 'ATAPUtilities.Database'
-      $DatabasePackagePinnedVersion = '0.1.18-Sprint.1'; $DatabasePackageCompatibleVersionRange = '[0.1.18-Sprint.1]'
+      $DatabasePackagePinnedVersion = '0.1.19-Sprint.1'; $DatabasePackageCompatibleVersionRange = '[0.1.19-Sprint.1]'
       $DatabasePackageLifecycleCeiling = 'database-experimental'
       if ($script:dbVariant -eq 'WrongReference') { $DatabasePackagePinnedVersion = '0.1.6' }
+      if ($script:dbVariant -eq 'RetiredReference') {
+        $DatabasePackagePinnedVersion = '0.1.18-Sprint.1'
+        $DatabasePackageCompatibleVersionRange = '[0.1.18-Sprint.1]'
+      }
       $ProGetUrl = 'https://example.invalid'; $ProGetApiKeySecretName = 'SYNTHETIC.KEY'
       $buildEvidence = $script:dbFixture; $fn = 'fixture'; $mn = 'fixture'
       . $script:DatabaseBindingFragment
@@ -404,15 +408,15 @@ Describe 'Database bytes are admitted before the immutable application boundary'
     $script:dbFixture = Join-Path $script:FixtureRoot ('database_' + [guid]::NewGuid().ToString('N'))
     $null = New-Item -ItemType Directory -Path $script:dbFixture -Force
     $script:dbPackage = Join-Path $script:dbFixture 'synthetic.nupkg'
-    Write-DatabaseFixturePackage $script:dbPackage 'ATAPUtilities.Database' '0.1.18-Sprint.1'
-    $script:dbAdmission = [pscustomobject]@{ Id = 'ATAPUtilities.Database'; PinnedVersion = '0.1.18-Sprint.1'; CompatibleVersionRange = '[0.1.18-Sprint.1]'; LifecycleCeiling = 'database-experimental'; Feed = 'database-experimental'; NupkgSha256 = '789CC87195813DE4B40ED0A2AD4AB0DC9B2520F06149DC914D9C92216CD3269B' }
+    Write-DatabaseFixturePackage $script:dbPackage 'ATAPUtilities.Database' '0.1.19-Sprint.1'
+    $script:dbAdmission = [pscustomobject]@{ Id = 'ATAPUtilities.Database'; PinnedVersion = '0.1.19-Sprint.1'; CompatibleVersionRange = '[0.1.19-Sprint.1]'; LifecycleCeiling = 'database-experimental'; Feed = 'database-experimental'; NupkgSha256 = 'BA6ACB51DA41103D52A99C676096E9F1A35BBD1C9A4016F99633D96CE7828A2D' }
     $script:dbVariant = ''; $script:dbEvents = [Collections.Generic.List[string]]::new()
     $script:dbBundlerCalls = 0; $script:dbArchiveCalls = 0; $script:dbUploadCalls = 0
     Mock Get-ApplicationReleaseDatabaseAdmission { $script:dbAdmission }
     Mock Get-SecretATAP { 'SYNTHETIC-NOT-A-CREDENTIAL' }
     Mock Invoke-WebRequest {
       $script:dbEvents.Add('download')
-      $Uri | Should -BeExactly 'https://example.invalid/nuget/database-experimental/v3/flatcontainer/ataputilities.database/0.1.18-Sprint.1/ataputilities.database.0.1.18-Sprint.1.nupkg'
+      $Uri | Should -BeExactly 'https://example.invalid/nuget/database-experimental/v3/flatcontainer/ataputilities.database/0.1.19-Sprint.1/ataputilities.database.0.1.19-Sprint.1.nupkg'
       if ($script:dbVariant -ne 'MissingPackage') { Copy-Item -LiteralPath $script:dbPackage -Destination $OutFile -Force }
     }
     Mock Get-FileHash {
@@ -442,14 +446,15 @@ Describe 'Database bytes are admitted before the immutable application boundary'
   }
   It 'refuses <Variant> with zero bundler/archive/upload effects' -ForEach @(
     @{ Variant = 'WrongReference' }, @{ Variant = 'MissingAdmissionHash' }, @{ Variant = 'WrongHash' },
-    @{ Variant = 'MissingPackage' }, @{ Variant = 'WrongIdentity' }, @{ Variant = 'WrongVersion' }) {
+    @{ Variant = 'MissingPackage' }, @{ Variant = 'WrongIdentity' }, @{ Variant = 'WrongVersion' },
+    @{ Variant = 'RetiredReference' }) {
     param($Variant)
     $script:dbVariant = $Variant
     if ($Variant -eq 'MissingAdmissionHash') { $script:dbAdmission.NupkgSha256 = $null }
     if ($Variant -in @('WrongIdentity', 'WrongVersion')) {
       Remove-Item -LiteralPath $script:dbPackage -Force
       $id = if ($Variant -eq 'WrongIdentity') { 'Other.Database' } else { 'ATAPUtilities.Database' }
-      $version = if ($Variant -eq 'WrongVersion') { '0.1.6' } else { '0.1.18-Sprint.1' }
+      $version = if ($Variant -eq 'WrongVersion') { '0.1.6' } else { '0.1.19-Sprint.1' }
       Write-DatabaseFixturePackage $script:dbPackage $id $version
     }
     { Invoke-DatabaseBoundaryFixture } | Should -Throw

@@ -18,18 +18,19 @@ BeforeAll {
 }
 
 Describe 'ApplicationReleaseAuthenticodeSigning boundary (Task 15.196.q, q.1)' {
-  Context 'database admission' {
+  Context 'database admission' -Tag 'Admission1729' {
     It 'returns only the selected AceCommander experimental database tuple' {
       $admission = Get-ApplicationReleaseDatabaseAdmission -ProductId 'AceCommander'
       $admission.ProductId | Should -BeExactly 'AceCommander'
       $admission.Id | Should -BeExactly 'ATAPUtilities.Database'
-      $admission.PinnedVersion | Should -BeExactly '0.1.18-Sprint.1'
-      $admission.CompatibleVersionRange | Should -BeExactly '[0.1.18-Sprint.1]'
+      $admission.PinnedVersion | Should -BeExactly '0.1.19-Sprint.1'
+      $admission.CompatibleVersionRange | Should -BeExactly '[0.1.19-Sprint.1]'
       $admission.LifecycleCeiling | Should -BeExactly 'database-experimental'
       $admission.Feed | Should -BeExactly 'database-experimental'
-      $admission.NupkgSha256 | Should -BeExactly '789CC87195813DE4B40ED0A2AD4AB0DC9B2520F06149DC914D9C92216CD3269B'
+      $admission.NupkgSha256 | Should -BeExactly 'BA6ACB51DA41103D52A99C676096E9F1A35BBD1C9A4016F99633D96CE7828A2D'
       # The lookup returns a fixed tuple; downstream stages enforce candidate mismatch.
       $admission.PinnedVersion | Should -Not -BeExactly '0.1.6'
+      $admission.PinnedVersion | Should -Not -BeExactly '0.1.18-Sprint.1'
       $admission.LifecycleCeiling | Should -Not -BeExactly 'database-stable'
     }
 

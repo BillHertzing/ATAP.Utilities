@@ -104,18 +104,18 @@ function Invoke-ApplicationReleaseStage {
     # Unit 845: this exact dependency cannot enter the legacy Production-ceiling path,
     # even if a caller changes its context ceiling or omits the context reference.
     $experimentalCommander = $productId -ceq 'AceCommander' -and (
-      $databaseAdmission.PinnedVersion -ceq '0.1.18-Sprint.1' -or
-      [string]$contextDatabase.pinnedVersion -ceq '0.1.18-Sprint.1' -or $context.ceilingTier -ceq 'Experimental')
+      $databaseAdmission.PinnedVersion -ceq '0.1.19-Sprint.1' -or
+      [string]$contextDatabase.pinnedVersion -ceq '0.1.19-Sprint.1' -or $context.ceilingTier -ceq 'Experimental')
     if ($experimentalCommander) {
       if ($context.ceilingTier -cne 'Experimental' -or
           [string]$contextDatabase.id -cne 'ATAPUtilities.Database' -or
-          [string]$contextDatabase.pinnedVersion -cne '0.1.18-Sprint.1' -or
-          [string]$contextDatabase.compatibleVersionRange -cne '[0.1.18-Sprint.1]' -or
+          [string]$contextDatabase.pinnedVersion -cne '0.1.19-Sprint.1' -or
+          [string]$contextDatabase.compatibleVersionRange -cne '[0.1.19-Sprint.1]' -or
           [string]$contextDatabase.lifecycleCeiling -cne 'database-experimental' -or
           [string]$contextDatabase.feed -cne 'database-experimental' -or
-          [string]$contextDatabase.nupkgSha256 -ine '789CC87195813DE4B40ED0A2AD4AB0DC9B2520F06149DC914D9C92216CD3269B' -or
+          [string]$contextDatabase.nupkgSha256 -ine 'BA6ACB51DA41103D52A99C676096E9F1A35BBD1C9A4016F99633D96CE7828A2D' -or
           $databaseAdmission.Feed -cne 'database-experimental' -or
-          $databaseAdmission.NupkgSha256 -ine '789CC87195813DE4B40ED0A2AD4AB0DC9B2520F06149DC914D9C92216CD3269B') {
+          $databaseAdmission.NupkgSha256 -ine 'BA6ACB51DA41103D52A99C676096E9F1A35BBD1C9A4016F99633D96CE7828A2D') {
         throw 'AceCommander experimental database requires the exact adopted context reference, feed, hash, and Experimental ceiling.'
       }
       if ($Stage -cne 'Experimental') { throw 'AceCommander experimental database dependency permits only the Experimental stage.' }

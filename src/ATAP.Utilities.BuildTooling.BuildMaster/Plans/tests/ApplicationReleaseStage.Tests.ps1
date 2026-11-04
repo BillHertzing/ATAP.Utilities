@@ -25,7 +25,7 @@ BeforeAll {
     }
     if ($ProductId -ceq 'AceCommander') {
       $context.ceilingTier = 'Experimental'
-      $context.databasePackageReference = [ordered]@{ id='ATAPUtilities.Database'; pinnedVersion='0.1.18-Sprint.1'; compatibleVersionRange='[0.1.18-Sprint.1]'; lifecycleCeiling='database-experimental'; feed='database-experimental'; nupkgSha256='789CC87195813DE4B40ED0A2AD4AB0DC9B2520F06149DC914D9C92216CD3269B' }
+      $context.databasePackageReference = [ordered]@{ id='ATAPUtilities.Database'; pinnedVersion='0.1.19-Sprint.1'; compatibleVersionRange='[0.1.19-Sprint.1]'; lifecycleCeiling='database-experimental'; feed='database-experimental'; nupkgSha256='BA6ACB51DA41103D52A99C676096E9F1A35BBD1C9A4016F99633D96CE7828A2D' }
     }
     $path = Join-Path $root 'context.json'
     $context | ConvertTo-Json -Depth 5 | Set-Content $path
@@ -233,7 +233,7 @@ Describe 'Task 16.78 generalized product admission' {
   }
 }
 
-Describe 'Unit 845 exact Experimental-only AceCommander database dependency' {
+Describe 'Unit 845 exact Experimental-only AceCommander database dependency' -Tag 'Admission1729' {
   BeforeEach {
     Mock Import-Module { throw 'Unexpected module import' }
     Mock Resolve-ApplicationReleaseSecret { throw 'Unexpected secret lookup' }
@@ -253,6 +253,15 @@ Describe 'Unit 845 exact Experimental-only AceCommander database dependency' {
     { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 -WhatIf } | Should -Not -Throw
     Test-Path $fixture.Context.evidenceRoot | Should -BeFalse
   }
+  It 'refuses the retired 018 immutable tuple before any effects' {
+    $fixture = New-ReleaseContextFixture
+    $fixture.Context.databasePackageReference.pinnedVersion = '0.1.18-Sprint.1'
+    $fixture.Context.databasePackageReference.compatibleVersionRange = '[0.1.18-Sprint.1]'
+    $fixture.Context.databasePackageReference.nupkgSha256 = '789CC87195813DE4B40ED0A2AD4AB0DC9B2520F06149DC914D9C92216CD3269B'
+    Save-FixtureContext $fixture
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 } | Should -Throw '*exact adopted context*'
+    Test-Path $fixture.Context.evidenceRoot | Should -BeFalse
+  }
   It 'refuses the candidate before any effects in <Stage>' -ForEach @(
     @{ Stage='Development' }, @{ Stage='Integration' }, @{ Stage='QA' }, @{ Stage='Production' }
   ) {
@@ -264,7 +273,7 @@ Describe 'Unit 845 exact Experimental-only AceCommander database dependency' {
   It 'refuses an altered reference field: <Field>' -ForEach @(
     @{ Field='id'; Value='ATAPUtilities.Other' },
     @{ Field='pinnedVersion'; Value='0.1.6' },
-    @{ Field='compatibleVersionRange'; Value='[0.1.18-Sprint.1,0.1.19)' },
+    @{ Field='compatibleVersionRange'; Value='[0.1.19-Sprint.1,0.1.19)' },
     @{ Field='lifecycleCeiling'; Value='database-stable' },
     @{ Field='feed'; Value='database-stable' },
     @{ Field='nupkgSha256'; Value=('c' * 64) }

@@ -317,10 +317,10 @@ function Invoke-ApplicationBuildMasterStage {
         $DatabasePackageLifecycleCeiling -cne $databaseAdmission.Feed) { throw 'Database reference is outside the admitted application release pin.' }
     $applicationCeiling = 'Production'
     if ($ProductId -ceq 'AceCommander') {
-      if ($databaseAdmission.Id -cne 'ATAPUtilities.Database' -or $databaseAdmission.PinnedVersion -cne '0.1.18-Sprint.1' -or
-          $databaseAdmission.CompatibleVersionRange -cne '[0.1.18-Sprint.1]' -or $databaseAdmission.LifecycleCeiling -cne 'database-experimental' -or
+      if ($databaseAdmission.Id -cne 'ATAPUtilities.Database' -or $databaseAdmission.PinnedVersion -cne '0.1.19-Sprint.1' -or
+          $databaseAdmission.CompatibleVersionRange -cne '[0.1.19-Sprint.1]' -or $databaseAdmission.LifecycleCeiling -cne 'database-experimental' -or
           $databaseAdmission.Feed -cne 'database-experimental' -or
-          $databaseAdmission.NupkgSha256 -ine '789CC87195813DE4B40ED0A2AD4AB0DC9B2520F06149DC914D9C92216CD3269B') { throw 'AceCommander requires the exact source-adopted Experimental database admission.' }
+          $databaseAdmission.NupkgSha256 -ine 'BA6ACB51DA41103D52A99C676096E9F1A35BBD1C9A4016F99633D96CE7828A2D') { throw 'AceCommander requires the exact source-adopted Experimental database admission.' }
       $applicationCeiling = 'Experimental'
     }
     if ($databaseAdmission.NupkgSha256 -and $databaseAdmission.NupkgSha256 -notmatch '\A[0-9a-fA-F]{64}\z') { throw 'Invalid admitted database package hash.' }

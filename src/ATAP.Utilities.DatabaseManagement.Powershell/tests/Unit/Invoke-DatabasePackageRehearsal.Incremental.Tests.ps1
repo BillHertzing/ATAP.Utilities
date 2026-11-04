@@ -44,11 +44,11 @@ Describe 'Incremental package manifest selection' -Tag 'UL1617' {
     Mock Get-DatabasePackageManifest { $script:manifest1617 }
     Mock Invoke-FlywayRehearsal { $script:forwarded1617 = @{} + $PesterBoundParameters; [pscustomobject]@{ Success = $true } }
   }
-  It 'selects only the organization verifier for target210' {
+  It 'UNIT1745 forwards paired predecessor paths with the organization verifier for target210' {
     (Invoke-DatabasePackageRehearsal @wrapperParameters).Success | Should -BeTrue
     $script:forwarded1617.OrganizationFixturePath | Should -BeExactly $verifierPath
-    $script:forwarded1617.ContainsKey('LoginFixturePath') | Should -BeFalse
-    $script:forwarded1617.ContainsKey('DecryptFixturePath') | Should -BeFalse
+    $script:forwarded1617.LoginFixturePath | Should -BeExactly $wrapperParameters.LoginFixturePath
+    $script:forwarded1617.DecryptFixturePath | Should -BeExactly $wrapperParameters.DecryptFixturePath
     $script:forwarded1617.ExpectedSourceDatabaseName | Should -BeExactly 'ATAPUtilities'
   }
   It 'retains the legacy paired fixture path at the original170 boundary' {
@@ -109,6 +109,9 @@ Describe 'Incremental clone lifetime' -Tag @('UL1617','UL1617Lifecycle') {
     }
     Mock Invoke-DatabaseSqlQuery {
       if ($null -ne $Parameters -and $Parameters.ContainsKey('CloneName')) { return [pscustomobject]@{ Absent = [int](-not $script:present1617) } }
+      if ($CommandText -ceq 'SELECT [version], [success] FROM dbo.flyway_schema_history ORDER BY [installed_rank];') {
+        return @('00010','00030','00040','00050','00060','00070','00080','00090','00100','00110','00120','00130','00140','00150','00160','00170') | ForEach-Object { [pscustomobject]@{ version = $_; success = $true } }
+      }
       $phase = if ($CommandText.Contains("=N'Before';")) { 'Before' } else { 'After' }
       $script:events1617.Add($phase)
       if ($script:fault1617 -ceq $phase) { throw "Verifier $phase failed" }

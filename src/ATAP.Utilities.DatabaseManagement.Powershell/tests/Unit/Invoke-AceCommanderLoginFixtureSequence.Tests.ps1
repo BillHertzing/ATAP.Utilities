@@ -19,6 +19,15 @@ BeforeAll {
       $FlywayExecutablePath, $GitTag, $GitCommit, $FlywayCommand, $FlywayAdditionalArgs)
     throw 'UnmockedFlyway'
   }
+  # FunctionInfo invocation bypasses Pester's name proxy. Capture this safe adapter
+  # so the existing native mock still observes every parameter and failure case.
+  function Invoke-CapturedFlyway554 {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param($SqlConnection, $DatabaseName, $Environment, $FlywayBasePath, $FlywaySqlMigrationsPath, $FlywaySharedSqlMigrationsPath,
+      $FlywayDataPath, $FlywayTomlPath, $PackageName, $PackageVersion, $ExpectedDatabaseName,
+      $FlywayExecutablePath, $GitTag, $GitCommit, $FlywayCommand, $FlywayAdditionalArgs)
+    Invoke-Flyway @PSBoundParameters
+  }
   function New-DatabaseSqlCommand {
     [CmdletBinding()]param($SqlConnection, $CommandText, $Parameters, $CommandType)
     throw 'UnmockedCatalogSetup'
@@ -189,6 +198,16 @@ Describe 'Pinned Login160/Decrypt170 private fixture sequence' -Tag 'Unit' {
       }
       return [PSCustomObject]@{ Success = $true }
     }
+    $script:dependencyCommands1745 = @{}
+    foreach ($dependency1745 in @('Write-PSFMessage', 'Assert-DatabaseSqlConnectionIsOpen', 'Invoke-DatabaseSqlQuery', 'New-DatabaseSqlCommand')) {
+      $script:dependencyCommands1745[$dependency1745] = Get-Command $dependency1745 -ErrorAction Stop
+    }
+    $script:capturedNativeCommand1745 = Get-Command Invoke-CapturedFlyway554 -CommandType Function
+    Mock Get-Command {
+      if (-not $script:dependencyCommands1745.ContainsKey([string]$Name)) { throw 'UnexpectedDependencyLookup' }
+      $script:dependencyCommands1745[[string]$Name]
+    }
+    Mock Get-Command { $script:capturedNativeCommand1745 } -ParameterFilter { $Name -eq 'Invoke-Flyway' }
   }
   AfterEach {
     # Independent of expected exceptions, so refusal tests cannot hide a lifetime violation.
@@ -244,6 +263,7 @@ Describe 'Pinned Login160/Decrypt170 private fixture sequence' -Tag 'Unit' {
     }
     Should -Invoke Invoke-DatabaseSqlQuery -Times 12 -Exactly
     Should -Invoke Get-Content -Times 2 -Exactly -ParameterFilter { $AsByteStream -and $Raw }
+    Should -Invoke Get-Command -Times 2 -Exactly -ParameterFilter { $Name -eq 'Invoke-Flyway' }
   }
 
   It 'WhatIf has no verifier validation, file, SQL, native or lifetime effects' {

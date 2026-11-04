@@ -291,6 +291,8 @@ function Invoke-DatabasePackageRehearsal {
         if ($fixtureRequested) {
           if ($organizationRequested) {
             $rehearsalParams['OrganizationFixturePath'] = $OrganizationFixturePath
+            $rehearsalParams['LoginFixturePath'] = $LoginFixturePath
+            $rehearsalParams['DecryptFixturePath'] = $DecryptFixturePath
           }
           else {
             $rehearsalParams['LoginFixturePath'] = $LoginFixturePath

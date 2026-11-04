@@ -30,6 +30,18 @@ BeforeAll {
       })
     [pscustomobject]@{ Success = $true }
   }
+  function Invoke-CapturedFlyway1745 {
+    [CmdletBinding(SupportsShouldProcess)]
+    param($DatabaseName, $ExpectedDatabaseName, $SqlConnection, $Environment,
+      $FlywayBasePath, $FlywaySqlMigrationsPath, $FlywayDataPath, $FlywayTomlPath,
+      $PackageName, $PackageVersion, $FlywayAdditionalArgs, $FlywayCommand)
+    $script:events605.Add($FlywayCommand)
+    $script:routeCalls1745.Add(@{
+        DatabaseName = $DatabaseName; ExpectedDatabaseName = $ExpectedDatabaseName
+        SqlConnection = $SqlConnection; FlywayAdditionalArgs = $FlywayAdditionalArgs
+      })
+    [pscustomobject]@{ Success = $true }
+  }
 }
 
 Describe 'Invoke-FlywayRehearsal exact source and clone safety' -Tag 'Unit' {
@@ -337,6 +349,9 @@ Describe 'Fixture sequence inside captured clone lifetime (605)' -Tag 'Unit' {
     $script:inputs605.OrganizationFixturePath = [IO.Path]::GetFullPath((Join-Path $public '../../../Database/Verify/AceCommander/Verify_Organization_V00210.sql'))
     Mock Invoke-DatabaseSqlQuery {
       if ($CommandText -like '*DB_ID(@CloneName)*') { return [pscustomobject]@{ Absent = 1 } }
+      if ($CommandText -ceq 'SELECT [version], [success] FROM dbo.flyway_schema_history ORDER BY [installed_rank];') {
+        return @('00010','00030','00040','00050','00060','00070','00080','00090','00100','00110','00120','00130','00140','00150','00160','00170','00180','00190','00200','00210') | ForEach-Object { [pscustomobject]@{ version = $_; success = $true } }
+      }
       if ($CommandText.StartsWith("DECLARE @VerificationPhase nvarchar(8)=N'Before';")) { return [pscustomobject]@{ FixturePhase = 'Before210' } }
       if ($CommandText.StartsWith("DECLARE @VerificationPhase nvarchar(8)=N'After';")) { return [pscustomobject]@{ FixturePhase = 'After210' } }
       throw 'Unexpected organization query'
@@ -372,6 +387,121 @@ Describe 'Fixture sequence inside captured clone lifetime (605)' -Tag 'Unit' {
     Should -Invoke Resolve-DatabaseSqlConnection -Times 0 -Exactly -Scope It
     Should -Invoke Copy-DbaDatabase -Times 0 -Exactly -Scope It
     Should -Invoke Invoke-DatabaseSqlNonQuery -Times 0 -Exactly -Scope It
+  }
+
+  Context 'UNIT1745 organization predecessor route' {
+    BeforeEach {
+      $script:verifier605 | Add-Member NoteProperty ClientConnectionId ([guid]::NewGuid())
+      $script:inputs605.OrganizationFixturePath = [IO.Path]::GetFullPath((Join-Path $public '../../../Database/Verify/AceCommander/Verify_Organization_V00210.sql'))
+      $script:versions1745 = @('00010','00030','00040','00050','00060','00070','00080','00090','00100','00110','00120','00130','00140','00150','00160','00170','00180','00190','00200','00210')
+      $script:history1745 = @($script:versions1745[0..13] | ForEach-Object { [pscustomobject]@{ version = $_; success = $true } })
+      $script:predecessorFault1745 = ''; $script:routeCalls1745 = [Collections.Generic.List[hashtable]]::new()
+      $script:routeCommand1745 = Get-Command Invoke-CapturedFlyway1745 -CommandType Function
+      Mock Get-Command {
+        if (-not $script:dependencyCommands1738.ContainsKey([string]$Name)) { throw 'Unexpected dependency lookup' }
+        $script:dependencyCommands1738[[string]$Name]
+      }
+      Mock Get-Command { $script:routeCommand1745 } -ParameterFilter { $Name -eq 'Invoke-Flyway' }
+      Mock Invoke-DatabaseSqlQuery {
+        if ($CommandText -like '*DB_ID(@CloneName)*') { return [pscustomobject]@{ Absent = 1 } }
+        if ($CommandText -ceq 'SELECT [version], [success] FROM dbo.flyway_schema_history ORDER BY [installed_rank];') {
+          $script:events605.Add('History'); return $script:history1745
+        }
+        if ($CommandText.StartsWith("DECLARE @VerificationPhase nvarchar(8)=N'Before';")) {
+          $script:events605.Add('Before210'); return [pscustomobject]@{ FixturePhase = 'Before210' }
+        }
+        if ($CommandText.StartsWith("DECLARE @VerificationPhase nvarchar(8)=N'After';")) {
+          $script:events605.Add('After210'); return [pscustomobject]@{ FixturePhase = 'After210' }
+        }
+        throw 'Unexpected organization query'
+      }
+      Mock New-DatabaseSqlCommand {
+        $command1745 = [pscustomobject]@{ Parameters = @{ '@ExpectedCatalog' = [pscustomobject]@{ SqlDbType = $null; Size = 0 } } }
+        $command1745 | Add-Member ScriptMethod ExecuteNonQuery { 0 }
+        $command1745 | Add-Member ScriptMethod Dispose {}
+        $command1745
+      }
+      Mock Invoke-AceCommanderLoginFixtureSequence {
+        [object]::ReferenceEquals($SqlConnection, $script:verifier605) | Should -BeTrue
+        $SqlConnection.State | Should -BeExactly 'Open'
+        $FlywayParameters.ExpectedDatabaseName | Should -BeExactly 'ATAPUtilities-rehearsal-553'
+        $LoginFixturePath | Should -BeExactly $script:inputs605.LoginFixturePath
+        $DecryptFixturePath | Should -BeExactly $script:inputs605.DecryptFixturePath
+        if ($script:predecessorFault1745 -eq 'GuestConflict') { throw 'Pinned predecessor Guest conflict' }
+        $script:events605.Add('Login160'); $script:events605.Add('Decrypt170')
+        if ($script:predecessorFault1745 -eq 'SessionChanged') { $SqlConnection.ClientConnectionId = [guid]::NewGuid() }
+        $outcome1745 = [pscustomobject]@{
+          Success = ($script:predecessorFault1745 -ne 'ReportedFailure')
+          CompletedPhases = @('before160','migrate00160','after160','before170','migrate00170','after170')
+        }
+        $outcome1745
+        if ($script:predecessorFault1745 -eq 'MultipleResults') { $outcome1745 }
+      }
+    }
+
+    It 'routes exact V<Baseline> through its existing phases on the same clone session' -ForEach @(
+      @{ Baseline = 150; Count = 14; PredecessorCalls = 1 }
+      @{ Baseline = 170; Count = 16; PredecessorCalls = 0 }
+      @{ Baseline = 210; Count = 20; PredecessorCalls = 0 }
+    ) {
+      $script:history1745 = @($script:versions1745[0..($Count-1)] | ForEach-Object { [pscustomobject]@{ version = $_; success = $true } })
+      if ($Baseline -ne 150) { $script:inputs605.Remove('LoginFixturePath'); $script:inputs605.Remove('DecryptFixturePath') }
+
+      (Invoke-ExactRehearsal553Fixture $script:inputs605).Success | Should -BeTrue
+
+      $expected1745 = 'Copy|Allocate|Configure|Open|History|'
+      if ($Baseline -eq 150) { $expected1745 += 'Login160|Decrypt170|' }
+      $expected1745 += 'Before210|validate|migrate|validate|After210|Close|Dispose|DROP'
+      ($script:events605 -join '|') | Should -BeExactly $expected1745
+      Should -Invoke Invoke-AceCommanderLoginFixtureSequence -Times $PredecessorCalls -Exactly -Scope It
+      $script:routeCalls1745.Count | Should -Be 3
+      foreach ($call1745 in $script:routeCalls1745) {
+        $call1745.DatabaseName | Should -BeExactly 'ATAPUtilities-rehearsal-553'
+        $call1745.ExpectedDatabaseName | Should -BeExactly 'ATAPUtilities-rehearsal-553'
+        [object]::ReferenceEquals($call1745.SqlConnection, $script:verifier605) | Should -BeTrue
+        $call1745.FlywayAdditionalArgs | Should -Contain '-target=00210'
+      }
+      Should -Invoke Copy-DbaDatabase -Times 1 -Exactly -Scope It
+      Should -Invoke Invoke-DatabaseSqlNonQuery -Times 1 -Exactly -Scope It
+      $script:master605.Retired | Should -Be 0
+    }
+
+    It 'refuses unsupported or unsuccessful clone history <Fault> before migrations' -ForEach @(
+      @{ Fault = 'V160' }; @{ Fault = 'V200' }; @{ Fault = 'WrongVersion' }
+      @{ Fault = 'FailedRow' }; @{ Fault = 'NullSuccess' }
+    ) {
+      switch ($Fault) {
+        'V160' { $script:history1745 += [pscustomobject]@{ version = '00160'; success = $true } }
+        'V200' { $script:history1745 = @($script:versions1745[0..18] | ForEach-Object { [pscustomobject]@{ version = $_; success = $true } }) }
+        'WrongVersion' { $script:history1745[13].version = '00140' }
+        'FailedRow' { $script:history1745[13].success = $false }
+        'NullSuccess' { $script:history1745[13].success = $null }
+      }
+      { Invoke-ExactRehearsal553Fixture $script:inputs605 } | Should -Throw '*Organization rehearsal requires*'
+      Should -Invoke Invoke-AceCommanderLoginFixtureSequence -Times 0 -Exactly -Scope It
+      $script:routeCalls1745.Count | Should -Be 0
+      ($script:events605 | Select-Object -Last 3) -join '|' | Should -BeExactly 'Close|Dispose|DROP'
+    }
+
+    It 'stops after predecessor refusal <Fault> without organization migration or retry' -ForEach @(
+      @{ Fault = 'GuestConflict' }; @{ Fault = 'ReportedFailure' }
+      @{ Fault = 'MultipleResults' }; @{ Fault = 'SessionChanged' }
+    ) {
+      $script:predecessorFault1745 = $Fault
+      { Invoke-ExactRehearsal553Fixture $script:inputs605 } | Should -Throw
+      Should -Invoke Invoke-AceCommanderLoginFixtureSequence -Times 1 -Exactly -Scope It
+      $script:routeCalls1745.Count | Should -Be 0
+      $script:events605 | Should -Not -Contain 'Before210'
+      ($script:events605 | Select-Object -Last 3) -join '|' | Should -BeExactly 'Close|Dispose|DROP'
+    }
+
+    It 'refuses V150 without predecessor paths before migrations and still cleans the clone' {
+      $script:inputs605.Remove('LoginFixturePath'); $script:inputs605.Remove('DecryptFixturePath')
+      { Invoke-ExactRehearsal553Fixture $script:inputs605 } | Should -Throw '*requires paired Login/Decrypt*'
+      Should -Invoke Invoke-AceCommanderLoginFixtureSequence -Times 0 -Exactly -Scope It
+      $script:routeCalls1745.Count | Should -Be 0
+      ($script:events605 | Select-Object -Last 3) -join '|' | Should -BeExactly 'Close|Dispose|DROP'
+    }
   }
 
   It 'refuses missing opt-in field <Missing> before resolver or clone effects' -ForEach @(

@@ -59,8 +59,9 @@ function Invoke-FlywayRehearsal {
     retired before clone cleanup, including when opening or the sequence fails.
 
 .PARAMETER OrganizationFixturePath
-    Mutually exclusive V170-to-V210 before/after verifier, run on the same
-    dedicated clone connection around one validate/migrate210/validate sequence.
+    V170-to-V210 before/after verifier, run on the same dedicated clone connection.
+    A V150 clone first requires the paired Login/Decrypt verifiers to reach V170;
+    an already-V170 or V210 clone keeps the existing organization sequence.
 #>
   [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', 'CredentialsKey',
     Justification = 'CredentialsKey is a vault lookup key name, not a credential')]
@@ -184,7 +185,6 @@ function Invoke-FlywayRehearsal {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn" -Tag 'Trace'
     $legacyFixtureRequested = $PSBoundParameters.ContainsKey('LoginFixturePath') -or $PSBoundParameters.ContainsKey('DecryptFixturePath')
     $organizationRequested = $PSBoundParameters.ContainsKey('OrganizationFixturePath')
-    if ($legacyFixtureRequested -and $organizationRequested) { throw 'Organization and legacy fixture flows are mutually exclusive.' }
     $fixtureRequested = $legacyFixtureRequested -or $organizationRequested
     if (-not $fixtureRequested) {
       # Use the original string parameter binder, not raw-object truthiness or an array-joining cast.
@@ -204,6 +204,7 @@ function Invoke-FlywayRehearsal {
       $fixtureKeys = @('ExpectedSourceDatabaseName', 'PackageName', 'PackageVersion',
         'FlywayBasePath', 'FlywaySqlMigrationsPath', 'FlywayDataPath', 'FlywayTomlPath')
       $fixtureKeys += if ($organizationRequested) { @('OrganizationFixturePath') } else { @('LoginFixturePath', 'DecryptFixturePath') }
+      if ($organizationRequested -and $legacyFixtureRequested) { $fixtureKeys += @('LoginFixturePath', 'DecryptFixturePath') }
       foreach ($fixtureKey in $fixtureKeys) {
         $fixtureValue = $PSBoundParameters[$fixtureKey]
         if (-not $PSBoundParameters.ContainsKey($fixtureKey) -or $fixtureValue -isnot [string] -or
@@ -235,7 +236,7 @@ function Invoke-FlywayRehearsal {
         $organizationVerifier = [IO.File]::ReadAllText($OrganizationFixturePath)
         if ([string]::IsNullOrWhiteSpace($organizationVerifier)) { throw 'Organization verifier is empty.' }
       }
-      else {
+      if ($legacyFixtureRequested) {
         # Bind the sibling source when absent or module-backed; no installed fallback.
         $sequenceCommand = Get-Command Invoke-AceCommanderLoginFixtureSequence -CommandType Function -ErrorAction SilentlyContinue
         if ($null -eq $sequenceCommand -or -not [string]::IsNullOrEmpty($sequenceCommand.ModuleName)) {
@@ -557,6 +558,33 @@ END;
             if ($FlywayExecutablePath) { $sequenceParams.FlywayExecutablePath = $FlywayExecutablePath }
             if ($organizationRequested) {
               $clientConnectionId = $verifier.ClientConnectionId
+              # Route only the three admitted boundaries. The existing pinned
+              # verifiers still prove exact history/checksums and schema/data shape.
+              $history = @(Invoke-DatabaseSqlQuery -SqlConnection $verifier -CommandText 'SELECT [version], [success] FROM dbo.flyway_schema_history ORDER BY [installed_rank];' -ErrorAction Stop)
+              $expectedVersions = @('00010', '00030', '00040', '00050', '00060', '00070', '00080', '00090',
+                '00100', '00110', '00120', '00130', '00140', '00150', '00160', '00170', '00180', '00190', '00200', '00210')
+              if ($history.Count -notin @(14, 16, 20)) { throw 'Organization rehearsal requires a V150, V170 or V210 baseline.' }
+              for ($historyIndex = 0; $historyIndex -lt $history.Count; $historyIndex++) {
+                if ($history[$historyIndex].version -isnot [string] -or
+                    $history[$historyIndex].version -cne $expectedVersions[$historyIndex] -or
+                    $history[$historyIndex].success -isnot [bool] -or -not $history[$historyIndex].success) {
+                  throw 'Organization rehearsal requires exact successful predecessor versions.'
+                }
+              }
+              $predecessorPhases = @()
+              if ($history.Count -eq 14) {
+                if (-not $legacyFixtureRequested) { throw 'V150 organization rehearsal requires paired Login/Decrypt fixture paths.' }
+                $predecessor = @(Invoke-AceCommanderLoginFixtureSequence -SqlConnection $verifier `
+                  -LoginFixturePath $LoginFixturePath -DecryptFixturePath $DecryptFixturePath `
+                  -FlywayParameters $sequenceParams -Confirm:$false -ErrorAction Stop)
+                if ($predecessor.Count -ne 1 -or $predecessor[0].Success -isnot [bool] -or -not $predecessor[0].Success) {
+                  throw 'Login/Decrypt predecessor sequence did not report success.'
+                }
+                $predecessorPhases = @($predecessor[0].CompletedPhases)
+                if ($verifier.State -cne 'Open' -or $verifier.ClientConnectionId -ne $clientConnectionId) {
+                  throw 'Organization predecessor verifier session changed.'
+                }
+              }
               $bindingCommand = $null
               try {
                 $bindingCommand = New-DatabaseSqlCommand -SqlConnection $verifier -CommandText "IF SESSION_CONTEXT(N'ATAP.Organization210.ExpectedCatalog') IS NOT NULL THROW 62911, N'Fresh verifier required.', 1; EXEC sys.sp_set_session_context @key=N'ATAP.Organization210.ExpectedCatalog', @value=@ExpectedCatalog, @read_only=1;" -Parameters @{ ExpectedCatalog = $RehearsalDb } -ErrorAction Stop
@@ -598,7 +626,7 @@ END;
               $after = @(Invoke-DatabaseSqlQuery -SqlConnection $verifier `
                 -CommandText ("DECLARE @VerificationPhase nvarchar(8)=N'After';" + [Environment]::NewLine + $organizationVerifier) -ErrorAction Stop)
               if ($after.Count -ne 1 -or $after[0].FixturePhase -cne 'After210') { throw 'Organization post-state verification failed.' }
-              $flywayResult = [pscustomobject]@{ Success = $true; CompletedPhases = @('before210', 'validate', 'migrate210', 'validate', 'after210') }
+              $flywayResult = [pscustomobject]@{ Success = $true; CompletedPhases = @($predecessorPhases) + @('before210', 'validate', 'migrate210', 'validate', 'after210') }
             }
             else {
               $flywayResult = Invoke-AceCommanderLoginFixtureSequence -SqlConnection $verifier `

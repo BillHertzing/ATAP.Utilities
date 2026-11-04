@@ -108,7 +108,17 @@ function Invoke-AceCommanderLoginFixtureSequence {
         }
       }
       $progress.Failure = 'DependencyUnavailable'
-      foreach ($dependency in @('Assert-DatabaseSqlConnectionIsOpen', 'Invoke-DatabaseSqlQuery', 'New-DatabaseSqlCommand', 'Invoke-Flyway')) {
+      $fixtureFlywayCommand = Get-Command Invoke-Flyway -CommandType Function -ErrorAction SilentlyContinue
+      if ($null -eq $fixtureFlywayCommand -or -not [string]::IsNullOrEmpty($fixtureFlywayCommand.ModuleName) -or
+          -not $fixtureFlywayCommand.Parameters.ContainsKey('ExpectedDatabaseName') -or
+          -not $fixtureFlywayCommand.Parameters.ContainsKey('SqlConnection')) {
+        . (Join-Path (Split-Path -Parent $PSScriptRoot) 'public/Invoke-Flyway.ps1')
+      }
+      $fixtureFlywayCommand = Get-Command Invoke-Flyway -CommandType Function -ErrorAction Stop
+      if (-not [string]::IsNullOrEmpty($fixtureFlywayCommand.ModuleName) -or
+          -not $fixtureFlywayCommand.Parameters.ContainsKey('ExpectedDatabaseName') -or
+          -not $fixtureFlywayCommand.Parameters.ContainsKey('SqlConnection')) { throw 'DependencyUnavailable' }
+      foreach ($dependency in @('Assert-DatabaseSqlConnectionIsOpen', 'Invoke-DatabaseSqlQuery', 'New-DatabaseSqlCommand')) {
         $null = Get-Command $dependency -ErrorAction Stop
       }
       $progress.Failure = 'InvalidVerifier'
@@ -211,7 +221,7 @@ function Invoke-AceCommanderLoginFixtureSequence {
         $parameters.FlywayCommand = 'migrate'
         $parameters.FlywaySharedSqlMigrationsPath = ''
         $parameters.FlywayAdditionalArgs = @('-defaultSchema=dbo', '-table=flyway_schema_history', ('-target=' + $Version))
-        $summaries = @(Invoke-Flyway @parameters -Confirm:$false -ErrorAction Stop)
+        $summaries = @(& $fixtureFlywayCommand @parameters -Confirm:$false -ErrorAction Stop)
         $progress.Failure = 'FlywayNotSuccessful'
         if ($summaries.Count -ne 1 -or $summaries[0].Success -isnot [bool] -or -not $summaries[0].Success) {
           throw 'FlywayNotSuccessful'

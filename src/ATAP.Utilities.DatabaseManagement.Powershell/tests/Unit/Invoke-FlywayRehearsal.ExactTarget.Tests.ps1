@@ -18,6 +18,18 @@ BeforeAll {
     foreach ($key in $Extra.Keys) { $parameters[$key] = $Extra[$key] }
     Invoke-FlywayRehearsal @parameters -Confirm:$false
   }
+  # A safe command-info target exercises captured invocation without running Flyway.
+  function Invoke-CapturedFlyway1738 {
+    [CmdletBinding(SupportsShouldProcess)]
+    param($DatabaseName, $ExpectedDatabaseName, $SqlConnection, $Environment,
+      $FlywayBasePath, $FlywaySqlMigrationsPath, $FlywayDataPath, $FlywayTomlPath,
+      $PackageName, $PackageVersion, $FlywayAdditionalArgs, $FlywayCommand)
+    $script:bindingCalls1738.Add(@{
+        DatabaseName = $DatabaseName; ExpectedDatabaseName = $ExpectedDatabaseName
+        SqlConnection = $SqlConnection; Operation = $FlywayCommand
+      })
+    [pscustomobject]@{ Success = $true }
+  }
 }
 
 Describe 'Invoke-FlywayRehearsal exact source and clone safety' -Tag 'Unit' {
@@ -227,6 +239,12 @@ Describe 'Fixture sequence inside captured clone lifetime (605)' -Tag 'Unit' {
       if ($script:sequenceFailure605) { throw 'SyntheticSequenceFailure' }
       [pscustomobject]@{ Success = (-not $script:sequenceRefusal605); Status = 'SequenceCompleted' }
     }
+    $script:dependencyCommands1738 = @{}
+    foreach ($name1738 in @('Invoke-AceCommanderLoginFixtureSequence', 'New-DatabaseConnectionParameterMap',
+        'Invoke-DatabaseSqlNonQuery', 'New-DatabaseSqlCommand', 'Resolve-DatabaseSqlConnection',
+        'Assert-DatabaseSqlConnectionIsOpen', 'Invoke-DatabaseSqlQuery', 'Copy-DbaDatabase', 'Connect-DbaInstance')) {
+      $script:dependencyCommands1738[$name1738] = Get-Command $name1738 -CommandType Function -ErrorAction Stop
+    }
   }
   AfterEach {
     $env:ATAP_DATABASE_PACKAGE_STAGING_ROOT = $script:oldStaging605
@@ -273,6 +291,87 @@ Describe 'Fixture sequence inside captured clone lifetime (605)' -Tag 'Unit' {
     }
     Should -Invoke Invoke-AceCommanderLoginFixtureSequence -Times 1 -Exactly -Scope It
     Should -Invoke Invoke-Flyway -Times 0 -Exactly -Scope It
+  }
+
+  It 'binds and retains the fixture Flyway command before clone effects for <Binding>' -ForEach @(
+    @{ Binding = 'current source'; Reload = $false }
+    @{ Binding = 'absent'; Reload = $true }
+    @{ Binding = 'module-backed missing expected target'; Reload = $true }
+    @{ Binding = 'stale source missing expected target'; Reload = $true }
+    @{ Binding = 'stale source missing SQL connection'; Reload = $true }
+  ) {
+    $script:bindingCalls1738 = [Collections.Generic.List[hashtable]]::new()
+    $script:bindingLookups1738 = 0; $script:bindingAfterClone1738 = $false
+    $script:bindingCase1738 = $Binding
+    $script:currentCommand1738 = Get-Command Invoke-CapturedFlyway1738 -CommandType Function
+    $script:siblingPath1738 = Join-Path $public 'Invoke-Flyway.ps1'
+    Mock Join-Path { [IO.Path]::Combine([string]$Path, [string]$ChildPath) }
+    Mock Join-Path { $script:siblingPath1738 } -ParameterFilter { $ChildPath -eq 'Invoke-Flyway.ps1' }
+    Mock Get-Command {
+      if (-not $script:dependencyCommands1738.ContainsKey([string]$Name)) { throw 'Unexpected dependency lookup' }
+      $script:dependencyCommands1738[[string]$Name]
+    }
+    Mock Get-Command {
+      $script:bindingLookups1738++
+      if ($script:bindingAfterClone1738) { throw 'Unexpected late name lookup after clone effects' }
+      if ($script:bindingLookups1738 -gt 1 -or $script:bindingCase1738 -eq 'current source') {
+        return $script:currentCommand1738
+      }
+      if ($script:bindingCase1738 -eq 'absent') { return $null }
+      $parameters1738 = @{}
+      if ($script:bindingCase1738 -eq 'stale source missing SQL connection') {
+        $parameters1738.ExpectedDatabaseName = $true
+      } else { $parameters1738.SqlConnection = $true }
+      [pscustomobject]@{
+        ModuleName = $(if ($script:bindingCase1738 -like 'module-backed*') { 'OldDatabaseModule' } else { '' })
+        Parameters = $parameters1738
+      }
+    } -ParameterFilter { $Name -eq 'Invoke-Flyway' }
+    Mock Copy-DbaDatabase {
+      $script:bindingLookups1738 | Should -Be 2
+      $script:bindingAfterClone1738 = $true
+      $script:events605.Add('Copy')
+    }
+    $script:verifier605 | Add-Member NoteProperty ClientConnectionId ([guid]::NewGuid())
+    $script:inputs605.Remove('LoginFixturePath'); $script:inputs605.Remove('DecryptFixturePath')
+    $script:inputs605.OrganizationFixturePath = [IO.Path]::GetFullPath((Join-Path $public '../../../Database/Verify/AceCommander/Verify_Organization_V00210.sql'))
+    Mock Invoke-DatabaseSqlQuery {
+      if ($CommandText -like '*DB_ID(@CloneName)*') { return [pscustomobject]@{ Absent = 1 } }
+      if ($CommandText.StartsWith("DECLARE @VerificationPhase nvarchar(8)=N'Before';")) { return [pscustomobject]@{ FixturePhase = 'Before210' } }
+      if ($CommandText.StartsWith("DECLARE @VerificationPhase nvarchar(8)=N'After';")) { return [pscustomobject]@{ FixturePhase = 'After210' } }
+      throw 'Unexpected organization query'
+    }
+    Mock New-DatabaseSqlCommand {
+      $command1738 = [pscustomobject]@{ Parameters = @{ '@ExpectedCatalog' = [pscustomobject]@{ SqlDbType = $null; Size = 0 } } }
+      $command1738 | Add-Member ScriptMethod ExecuteNonQuery { 0 }
+      $command1738 | Add-Member ScriptMethod Dispose {}
+      $command1738
+    }
+
+    (Invoke-ExactRehearsal553Fixture $script:inputs605).Success | Should -BeTrue
+
+    ($script:bindingCalls1738.Operation -join '|') | Should -BeExactly 'validate|migrate|validate'
+    foreach ($call1738 in $script:bindingCalls1738) {
+      $call1738.DatabaseName | Should -BeExactly 'ATAPUtilities-rehearsal-553'
+      $call1738.ExpectedDatabaseName | Should -BeExactly 'ATAPUtilities-rehearsal-553'
+      [object]::ReferenceEquals($call1738.SqlConnection, $script:verifier605) | Should -BeTrue
+    }
+    Should -Invoke Join-Path -Times ([int]$Reload) -Exactly -Scope It -ParameterFilter { $ChildPath -eq 'Invoke-Flyway.ps1' }
+    Should -Invoke Get-Command -Times 2 -Exactly -Scope It -ParameterFilter { $Name -eq 'Invoke-Flyway' }
+    Should -Invoke Copy-DbaDatabase -Times 1 -Exactly -Scope It
+    ($script:events605 | Select-Object -Last 3) -join '|' | Should -BeExactly 'Close|Dispose|DROP'
+  }
+
+  It 'refuses a still-incompatible sibling contract before resolver and clone effects' {
+    Mock Get-Command {
+      if (-not $script:dependencyCommands1738.ContainsKey([string]$Name)) { throw 'Unexpected dependency lookup' }
+      $script:dependencyCommands1738[[string]$Name]
+    }
+    Mock Get-Command { [pscustomobject]@{ ModuleName = ''; Parameters = @{ SqlConnection = $true } } } -ParameterFilter { $Name -eq 'Invoke-Flyway' }
+    { Invoke-ExactRehearsal553Fixture $script:inputs605 } | Should -Throw '*current sibling Invoke-Flyway source contract*'
+    Should -Invoke Resolve-DatabaseSqlConnection -Times 0 -Exactly -Scope It
+    Should -Invoke Copy-DbaDatabase -Times 0 -Exactly -Scope It
+    Should -Invoke Invoke-DatabaseSqlNonQuery -Times 0 -Exactly -Scope It
   }
 
   It 'refuses missing opt-in field <Missing> before resolver or clone effects' -ForEach @(

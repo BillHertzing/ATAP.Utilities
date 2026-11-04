@@ -271,7 +271,7 @@ function Invoke-FlywayRehearsal {
     if (-not (Get-Command -Name Resolve-DatabaseSqlConnection -CommandType Function -ErrorAction SilentlyContinue)) {
       . (Join-Path -Path $PSScriptRoot -ChildPath 'Resolve-DatabaseSqlConnection.ps1')
     }
-    if (-not (Get-Command -Name Invoke-Flyway -CommandType Function -ErrorAction SilentlyContinue)) {
+    if (-not $fixtureRequested -and -not (Get-Command -Name Invoke-Flyway -CommandType Function -ErrorAction SilentlyContinue)) {
       . (Join-Path -Path $PSScriptRoot -ChildPath 'Invoke-Flyway.ps1')
     }
     if ($fixtureRequested) {
@@ -288,12 +288,22 @@ function Invoke-FlywayRehearsal {
         }
         if ($bindFixtureSource) { . (Join-Path $privateDir $fixtureHelperGroup.File) }
       }
-      $fixtureFlywayCommand = Get-Command Invoke-Flyway -CommandType Function -ErrorAction Stop
-      if (-not [string]::IsNullOrEmpty($fixtureFlywayCommand.ModuleName)) {
+      $fixtureFlywayCommand = Get-Command Invoke-Flyway -CommandType Function -ErrorAction SilentlyContinue
+      if ($null -eq $fixtureFlywayCommand -or -not [string]::IsNullOrEmpty($fixtureFlywayCommand.ModuleName) -or
+          -not $fixtureFlywayCommand.Parameters.ContainsKey('ExpectedDatabaseName') -or
+          -not $fixtureFlywayCommand.Parameters.ContainsKey('SqlConnection')) {
         . (Join-Path $PSScriptRoot 'Invoke-Flyway.ps1')
       }
+      # Capture the selected source command before clone effects. Later autoloading
+      # must not replace the organization calls with an installed, older contract.
+      $fixtureFlywayCommand = Get-Command Invoke-Flyway -CommandType Function -ErrorAction Stop
+      if (-not [string]::IsNullOrEmpty($fixtureFlywayCommand.ModuleName) -or
+          -not $fixtureFlywayCommand.Parameters.ContainsKey('ExpectedDatabaseName') -or
+          -not $fixtureFlywayCommand.Parameters.ContainsKey('SqlConnection')) {
+        throw 'Fixture rehearsal requires the current sibling Invoke-Flyway source contract.'
+      }
       foreach ($fixtureDependency in @('Assert-DatabaseSqlConnectionIsOpen', 'New-DatabaseSqlCommand',
-          'Invoke-DatabaseSqlQuery', 'Invoke-Flyway')) {
+          'Invoke-DatabaseSqlQuery')) {
         $null = Get-Command $fixtureDependency -CommandType Function -ErrorAction Stop
       }
     }
@@ -577,7 +587,7 @@ END;
                   $organizationParameters.FlywayAdditionalArgs += '-ignoreMigrationPatterns='
                 }
                 $firstValidation = $false
-                $summaries = @(Invoke-Flyway @organizationParameters -Confirm:$false -ErrorAction Stop)
+                $summaries = @(& $fixtureFlywayCommand @organizationParameters -Confirm:$false -ErrorAction Stop)
                 if ($summaries.Count -ne 1 -or $summaries[0].Success -isnot [bool] -or -not $summaries[0].Success) {
                   throw "Organization rehearsal $operation failed."
                 }

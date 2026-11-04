@@ -30,14 +30,15 @@ BeforeAll {
     [IO.File]::WriteAllBytes($Path, (ConvertTo-CoordStateBytes (ConvertTo-CoordElement $Value)))
   }
   function Set-FixtureRequest([string]$Id = 'request-1', [string]$ScopePath = 'work.ps1',
-      [string]$Category = 'Claim', [hashtable]$Payload = @{}, [string[]]$Predecessors = @()) {
+      [string]$Category = 'Claim', [hashtable]$Payload = @{}, [string[]]$Predecessors = @(),
+      [string]$ExpectedRevision) {
     if ([IO.File]::Exists($script:witnessPath)) {
       $script:witness = [IO.File]::ReadAllText($script:witnessPath) | ConvertFrom-Json -AsHashtable -Depth 100
     }
     $script:request = [ordered]@{ protocolVersion = 'Coordination-v1'; resourceId = 'board-S17'; sprintId = '0017'
       requestId = $Id; category = $Category; taskId = '17.24'; scope = @(@{ registeredRootId = 'fixture'; path = $ScopePath })
       holder = @{ holderId = 'Coordinator'; sessionId = 'session-1' }; authorizationReference = 'grant-' + $Id
-      generation = 'epoch-1'; expectedRevision = ([IO.File]::ReadAllText($statePath) | ConvertFrom-Json).committedRevision
+      generation = 'epoch-1'; expectedRevision = $(if ($PSBoundParameters.ContainsKey('ExpectedRevision')) { $ExpectedRevision } else { ([IO.File]::ReadAllText($statePath) | ConvertFrom-Json).committedRevision })
       predecessors = $Predecessors; payload = $Payload }
     $draft = [Text.Encoding]::UTF8.GetBytes((@{ request = $request; digest = ('0' * 64) } | ConvertTo-Json -Depth 30 -Compress))
     $canonical = ConvertTo-CoordCanonicalRequest -EnvelopeBytes $draft -MaxRequestBytes 65536 -DeferDigestComparison
@@ -325,6 +326,18 @@ Describe 'Actual coordination producer under disposable protected custody' -Tag 
     $null = Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false
     Set-FixtureRequest -ScopePath 'other.ps1'
     (Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false).Status | Should -BeExactly 'IdentityConflict'
+  }
+  It 'refuses a valid new request with a stale expected revision without persistence' -Tag 'C1822' {
+    Set-FixtureRequest -Id 'stale-request' -ExpectedRevision 'stale-head'
+    $beforeState = Get-CoordHash ([IO.File]::ReadAllBytes($statePath))
+    $beforeWitness = Get-CoordHash ([IO.File]::ReadAllBytes($witnessPath))
+
+    { Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false } | Should -Throw '*RevisionConflict*'
+
+    (Get-CoordHash ([IO.File]::ReadAllBytes($statePath))) | Should -BeExactly $beforeState
+    (Get-CoordHash ([IO.File]::ReadAllBytes($witnessPath))) | Should -BeExactly $beforeWitness
+    (Read-CoordJsonBytes ([IO.File]::ReadAllBytes($statePath))).GetProperty('requests').GetArrayLength() | Should -Be 0
+    ([IO.File]::ReadAllText($witnessPath) | ConvertFrom-Json).pendingWrite | Should -BeNullOrEmpty
   }
   It 'does not bootstrap a lost established state' {
     Remove-Item -LiteralPath $statePath

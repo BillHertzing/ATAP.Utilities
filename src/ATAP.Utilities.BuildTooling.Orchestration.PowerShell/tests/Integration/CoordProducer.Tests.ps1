@@ -352,6 +352,18 @@ Describe 'Actual coordination producer under disposable protected custody' -Tag 
   It 'refuses unregistered actors and self-asserted caller authority' {
     { Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Unregistered -SessionId session-1 -Confirm:$false } | Should -Throw '*ActorNotAuthorized*'
   }
+  It 'refuses a registered holder with an unregistered current caller session without persistence' -Tag 'C1825' {
+    Set-FixtureRequest -Id 'session-request'
+    $beforeState = Get-CoordHash ([IO.File]::ReadAllBytes($statePath))
+    $beforeWitness = Get-CoordHash ([IO.File]::ReadAllBytes($witnessPath))
+
+    { Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-other -Confirm:$false } | Should -Throw '*ActorNotAuthorized*'
+
+    (Get-CoordHash ([IO.File]::ReadAllBytes($statePath))) | Should -BeExactly $beforeState
+    (Get-CoordHash ([IO.File]::ReadAllBytes($witnessPath))) | Should -BeExactly $beforeWitness
+    (Read-CoordJsonBytes ([IO.File]::ReadAllBytes($statePath))).GetProperty('requests').GetArrayLength() | Should -Be 0
+    ([IO.File]::ReadAllText($witnessPath) | ConvertFrom-Json).pendingWrite | Should -BeNullOrEmpty
+  }
   It 'checks Int64 ordinal overflow before persistence' {
     $null = Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false
     $value = [IO.File]::ReadAllText($statePath) | ConvertFrom-Json -AsHashtable -Depth 100

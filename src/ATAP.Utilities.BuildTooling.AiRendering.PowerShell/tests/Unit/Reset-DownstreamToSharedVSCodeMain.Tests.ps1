@@ -57,6 +57,12 @@ Describe 'Reset-DownstreamToSharedVSCodeMain [public]' -Tag 'Unit' {
       }
     } | ConvertTo-Json -Depth 10 | Set-Content -Path $script:wsFile -Encoding UTF8
 
+    Mock Get-SharedVSCodeContext {
+      if ($ContextMode -ne 'Normal' -or @($WorkspaceFiles).Count -ne 1 -or $WorkspaceFiles[0] -ne $script:wsFile) {
+        throw 'Unexpected synthetic workspace context request.'
+      }
+      [pscustomobject]@{ Plan = [pscustomobject]@{ Role = 'DownstreamSprint' } }
+    }
     Mock Set-DownstreamSharedVSCodeContext { }
   }
 

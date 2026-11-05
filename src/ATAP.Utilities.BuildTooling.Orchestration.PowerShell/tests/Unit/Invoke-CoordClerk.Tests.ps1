@@ -66,4 +66,14 @@ Describe 'Invoke-CoordClerk bounded control' -Tag 'Unit' {
     { $null = $fixture.Source.Token } | Should -Not -Throw
     $fixture.Context.Lease.CanRead | Should -BeFalse
   }
+  It 'preserves an Int64 drain request budget beyond Int32 without narrowing' {
+    $fixture.Context.Limits.MaxDrainRequests = [long]2147483648
+    $result = Invoke-CoordClerk -HolderId Coordinator -SessionId session-1 -Control $fixture.Control -Confirm:$false
+    $result.Considered | Should -Be 0
+    $result.Applied | Should -Be 0
+    $result.Rejected | Should -Be 0
+    Should -Invoke Invoke-CoordProducerBatch -Times 1 -Exactly -ParameterFilter {
+      $MaximumRequests -is [long] -and $MaximumRequests -eq [long]2147483648
+    }
+  }
 }

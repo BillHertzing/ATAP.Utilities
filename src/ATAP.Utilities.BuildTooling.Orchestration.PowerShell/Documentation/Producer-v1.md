@@ -1,6 +1,6 @@
 # Producer, drain and recovery v1
 
-Module source version: 0.1.4. Source/disposable fixture results do not mean installed or live-board acceptance.
+The development source manifest and version.json report version 0.1.5. This is not the final shipping version or authority to release. Source/disposable fixture results do not mean installed or live-board acceptance.
 
 ## Actual entrypoints
 
@@ -34,7 +34,7 @@ The external JSON record has schemaVersion Coordination-custody-v1 and these bin
 
 - admissionMode Established, custodianSid, resourceId, lineageId, generation, sprintId, coordinatorId.
 - statePath and current stateSha256; pendingWrite is null outside an incomplete write.
-- boardLockPath; scratchRoot is an existing D:/ATAPArtifacts descendant for the existing quartet candidate.
+- boardLockPath; scratchRoot is a fresh, not-yet-existing proper descendant of `C:/ProgramData/ATAP/AICoordinator/_generated` for the quartet candidate. The former D-only guard is superseded in the C1926 source change.
 - actors: holderId, sessionId, windowsSid and role Coordinator or Worker.
 - authorizations: reference, requestId, exact canonical digest, plus a unique assigned claimId for Claim.
 - existingTasks: taskId and explicit transitive ancestorTaskIds. No ancestry is inferred from task-ID spelling.
@@ -46,8 +46,8 @@ The exact installed package file inventory can be constructed by enumerating tho
 
 ## First use and consuming pilot — root only
 
-1. Root uses the normal BuildMaster module release workflow for this exact module/version; no direct feed publication. Resolve the final NBGV version after the release commit, test/install that exact package, and import it in a fresh profiled shell. Worker source evidence is not deployment.
-2. With actual Bill approval for the concrete ProgramData paths/baseline/imports, create protected state, witness and backup directories, the selected scratch root, and bind the current Windows SID. Obtain the manual board handoff while holding the existing coordinator lock.
+1. Root resolves the release and runtime boundaries before a consuming pilot. C1927 is prepared, not ready: the module application mapping is absent, the pinned SprintLifecycle 0.1.61 renderer dependency closure is unverified, and the final version and release authority are unbound. Resolve the final NBGV version and approved release/install route before testing the exact package. Worker source evidence is not deployment.
+2. The approved empty protected directories and configuration source establish the intended state root `C:/ProgramData/ATAP/AICoordinator/State` and custody record `C:/ProgramData/ATAP/AICoordinator/Custody/custody.json`; configuration source and IAC remain development work. These empty directories are not initialized state or a witness. With actual Bill approval for the concrete baseline and imports, establish the required protected backup and scratch paths, bind the current Windows SID, and obtain the manual board handoff while holding the existing coordinator lock.
 3. Before initial state creation, durably consume the unique FIRST_USE/bootstrap ID in the protected witness as Establishing. Preserve it on interruption. An absent directory or missing state never authorizes re-bootstrap.
 4. Establish the accepted state-v1 baseline with exact quartet digests, registered roots, imported claims/reservations and immutable lineage/epoch. Bind package files and actor/grant registry. Publish Established only after validating the state and its exact stateSha256. No module public command silently performs these setup steps.
 5. Register each exact pilot request digest in authorizations under the witness lease. Run Claim, ReportResult, an explicit annotation AcceptChange, then Release for an existing task. Each request binds the observed current revision and Applied predecessors. The public calls above are the actual consuming commands.
@@ -65,4 +65,20 @@ Exports contain exact state/custody byte images plus all observed quartet bytes,
 
 ## Verification
 
-Run the focused Manifest, Invoke-CoordClerk and CoordProducer tests with Pester6.2.0 in a profiled shell. Disposable custody uses a substituted ProgramData location under repository _generated, actual Windows identity/ACL/leases and real persistence. Annotation scratch uses the already-selected D-only candidate path. No actual ProgramData, live planning board or installed module is changed by these fixtures.
+C1926 verified only the source scratch guard: 15 passed and 35 were not run in an isolated ProgramData snapshot with synthetic file and renderer mocks. It did not exercise the real renderer, a live board or an installed module. Other historical fixtures still refer to repository or D-based locations; they have not all been migrated, and the full suite has not been proved compatible with the current root boundary.
+
+Required producer-runtime I/O must remain under the approved `C:/ProgramData/ATAP/AICoordinator` root. The release and consuming-runtime closure, including launcher/profile behavior, package dependencies and test paths, remains to be reviewed and authorized. Do not infer a permitted profile or execution exception from the C1926 synthetic evidence.
+
+## Established witness updates
+
+Update-CoordWitness -HolderId <coordinator> -SessionId <session> -ExpectedWitnessBytes <before> -ProposedWitnessBytes <after> -UpdateId <guid> -ApprovalReference <reference> appends exactly one actor OR one exact-request authorization. Root must independently verify approval of the exact delta; the reference is audit correlation only. Existing custodian/coordinator admission and both locks are reused, and HolderId must equal coordinatorId. This does not transfer the active writer, establish custody or bootstrap missing state.
+
+All prior entries/order and every other raw JSON subtree (including unknown top-level fields) are frozen. Number lexemes, string escapes and nested whitespace must match literally; top-level property order is also fixed. Actors/grants are closed objects; duplicate holder/session identities, reused reference or request ID, role/SID edits, removals, multi-appends and no-ops refuse. Digests are exact lowercase SHA256; claimId, when supplied, is nonempty. IDs and grants are supplied, never invented. Later request admission still validates the canonical digest and request category.
+
+The resource must be Admitted and idle: pendingWrite must be exactly null; no Pending/Prepared/NeedsRecovery requests or Prepared/NeedsRecovery operations may exist. Historical terminal entries remain unchanged. Supply the next grant only after earlier work has settled. State bytes, watermark, package, paths, lineage, generation and existing journals are untouched.
+
+The command retains CreateNew/flush/readback exact before/after images and an intent beside the protected witness, named custody.json.update-<GUID>.before.bin, .after.bin and .intent.json. It reuses Write-CoordAtomicBytes and checks exact witness readback, protection and unchanged state before retaining a .receipt.json and returning Updated. Files inherit the protected parent; this command never edits ACLs or creates roots. WhatIf performs no admission/file I/O and reports only ProposedOnly, not validated authority.
+
+Failures before entering the atomic writer do not request witness replacement. The existing writer exposes no failure phase, so EVERY error after entering it is conservatively WitnessUpdateOutcomeUncertain, even a possible stage or snapshot failure. The approved change may already exist after an exception. Preserve sidecars/stages, stop cooperative work, and reconcile exact before/after/third-state under separately authorized custody; do not retry, restore or delete evidence automatically. No new durable consumer-hold marker or cross-file/power-loss guarantee is added.
+
+Land and review this command before final release packaging. The new public export, manifest and built module change the final signed installed inventory. This append API cannot update package pins; existing-resource upgrades still require a separate approved compatibility/re-admission procedure. Source tests do not establish installed consumption, FIRST_USE, operational authority or pilot acceptance.

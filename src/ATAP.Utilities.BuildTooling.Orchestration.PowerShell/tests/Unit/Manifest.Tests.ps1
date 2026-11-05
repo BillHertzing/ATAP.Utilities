@@ -4,7 +4,7 @@ Describe 'Orchestration module source manifest' -Tag 'Unit' {
     $script:manifestPath = Join-Path $script:moduleRoot 'ATAP.Utilities.BuildTooling.Orchestration.PowerShell.psd1'
     $script:manifest = Import-PowerShellDataFile -LiteralPath $script:manifestPath
     $script:version = Get-Content -LiteralPath (Join-Path $script:moduleRoot 'version.json') -Raw | ConvertFrom-Json
-    $script:expectedExports = @('Export-CoordState', 'Get-CoordClaims', 'Get-CoordResult', 'Get-CoordTask', 'Invoke-CoordClerk', 'Stop-CoordClerk', 'Submit-CoordRequest')
+    $script:expectedExports = @('Export-CoordState', 'Get-CoordClaims', 'Get-CoordResult', 'Get-CoordTask', 'Invoke-CoordClerk', 'Stop-CoordClerk', 'Submit-CoordRequest', 'Update-CoordWitness')
   }
   It 'pins the module identity and PowerShell platform' {
     $script:manifest.RootModule | Should -BeExactly 'ATAP.Utilities.BuildTooling.Orchestration.PowerShell.psm1'

@@ -110,6 +110,8 @@ No layer substitutes fixture, cached, guessed, or generated text for an empty re
 
 ## Frozen Rules and Instantiation
 
+*[V5: in this section "Instantiation" and `CS-I01` mean the **materialization specification** (DEC-7/8). The rules and codes are unchanged and built; the asserted counterpart is `CS-A00` (V5-CS-A02).]*
+
 Task 15.60.c SHALL register semantic identities for these codes and implement exact
 immutable variants. GUID allocation occurs only in that implementation task.
 

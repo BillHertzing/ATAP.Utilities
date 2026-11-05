@@ -29,7 +29,7 @@ V4-2 retains every V4 core entity and adds three bounded integration aggregates:
 | AISupervisor telemetry | Ace plus bounded Outpost buffer | `AISupervisorExchange`, `AISupervisorHeader`, `AISupervisorMetric` |
 | Scheduled work and synchronization | Outpost-local with central acknowledgments | run/checkpoint, outbound envelope, cursor, acknowledgment, failure |
 
-- **V5-CORE-080:** These aggregates SHALL attach to existing tenant and provenance contracts without granting plugins direct database access.
+- **V5-CORE-080:** These aggregates SHALL attach to existing owner *[V5; V4-2: tenant]* and provenance contracts without granting plugins direct database access.
 - **V5-CORE-081:** ContentSummary Tag associations SHALL reference durable ATAPUtilities `TagId` roots and resolve `TagState` as-of.
 - **V5-CORE-082:** AISupervisor mutable telemetry SHALL reside in `Ace` and SHALL not become authoritative reference data.
 - **V5-CORE-083:** Controlled child metrics SHALL absorb provider metadata evolution; an unbounded JSON property bag SHALL not replace typed primary exchange fields.

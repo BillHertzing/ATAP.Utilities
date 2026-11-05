@@ -223,7 +223,7 @@ The following requirements and exclusions are binding:
 - C-16 fixtures SHALL use opaque `PrincipalId`, require active namespace stewardship for
   initial authoring, and carry source reference plus occurred-at and recorded-at UTC.
 - C-20 fixtures SHALL use one authoritative `ATAPUtilities` catalog and no tenant
-  discriminator.
+  discriminator. *[V5: applies to the `ATAPUtilities` template catalog only; `Ace` copies carry owner columns (DEC-3, amended C-20).]*
 - C-26 comparison fixtures SHALL use `Latin1_General_100_CI_AS_SC` for canonical and alias
   Tag codes.
 - FU-4 validation SHALL target SQL Server Express and cover the required trigger's

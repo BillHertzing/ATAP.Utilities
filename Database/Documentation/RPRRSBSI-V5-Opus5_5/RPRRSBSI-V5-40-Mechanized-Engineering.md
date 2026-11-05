@@ -219,7 +219,7 @@ Server Express validation, and the ruled successor semantics.
 Tags never authorize; Tags have no intrinsic ordering; relation traversal stays deferred
 to Task 15.50.b; assignment codes initially include `rule` and `instantiation`; relations
 use durable roots; localization, legacy taxonomy, and confidence are omitted initially;
-and recorded metadata inventory remains a separately authorized pre-live gate.
+and recorded metadata inventory remains a separately authorized pre-live gate. *[V5: applies to the `ATAPUtilities` template catalog only; `Ace` copies carry owner columns (DEC-3, amended C-20).]*
 
 Close variants outside the first manifestation include:
 

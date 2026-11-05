@@ -27,7 +27,7 @@ Status: design contract for an Ace-owned AI-agent proxy. It does not authorize t
 
 | Logical table | Minimum purpose |
 | --- | --- |
-| `Ace.AISupervisorExchange` | Tenant, agent descriptor fields, conversation/session, timestamps, outcome, endpoint classification, and primary request/response token counts. |
+| `Ace.AISupervisorExchange` | Owner [V5; V4-2: tenant], agent descriptor fields, conversation/session, timestamps, outcome, endpoint classification, and primary request/response token counts. |
 | `Ace.AISupervisorHeader` | Direction, normalized header name, disposition, optional safe value or hash, and classification. |
 | `Ace.AISupervisorMetric` | Direction, controlled metric code, numeric value, unit, source field, and whether provider-reported or derived. |
 
@@ -42,7 +42,7 @@ Request and response bodies are not required for the initial token visualizer. B
 
 ## Query contract
 
-AceCommander SHALL be able to aggregate token counts over explicit UTC buckets by harness, model, effort, tenant-authorized scope, and outcome. A graph point SHALL identify whether counts are complete, partial, missing, or derived.
+AceCommander SHALL be able to aggregate token counts over explicit UTC buckets by harness, model, effort, owner [V5; V4-2: tenant]-authorized scope, and outcome. A graph point SHALL identify whether counts are complete, partial, missing, or derived.
 
 ## HITL decisions
 

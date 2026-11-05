@@ -150,7 +150,7 @@ C-22 confirms D-6/C-05 and C-12: Tag relationships and assignments point to dura
 - **C-16:** Opaque `PrincipalId`, active-steward initial-authoring gate, source reference,
   and separate occurred-at/recorded-at UTC timestamps; generalized approval is deferred.
 - **C-20:** One authoritative logical catalog in `ATAPUtilities`; no initial tenant
-  discriminator.
+  discriminator. *[V5: applies to the `ATAPUtilities` template catalog only; `Ace` copies carry owner columns (DEC-3, amended C-20).]*
 - **C-26:** Canonical and alias Tag-code comparison uses
   `Latin1_General_100_CI_AS_SC`.
 - **FU-4:** SQL Server Express is the target; trigger behavior and performance are

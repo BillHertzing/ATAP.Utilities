@@ -177,6 +177,9 @@ function Test-SprintCheckpointCoverage {
         'Unrecorded'
       } elseif ([string]$entry.ConversationSkipKind -eq 'NotFound') {
         'NotCaptured'
+      } elseif ([string]$entry.ConversationSelectionRule -in @('ExplicitSessionId', 'EnvironmentSessionId', 'SessionIdCrossStore') -and
+        -not [string]::IsNullOrWhiteSpace([string]$entry.ConversationSkipKind)) {
+        'InvalidSelectionReceipt'
       } elseif ([string]$entry.ConversationSelectionRule -in @('ExplicitSessionId', 'EnvironmentSessionId', 'SessionIdCrossStore')) {
         'VerifiedSession'
       } else {
@@ -187,6 +190,8 @@ function Test-SprintCheckpointCoverage {
         [void]$failures.Add(
           "$worktreeName latest checkpoint archived no conversation: $([string]$entry.ConversationSkipReason)"
         )
+      } elseif ($conversationState -eq 'InvalidSelectionReceipt') {
+        [void]$failures.Add("$worktreeName latest checkpoint has session selection '$([string]$entry.ConversationSelectionRule)' with nonempty ConversationSkipKind '$([string]$entry.ConversationSkipKind)'.")
       } elseif ($conversationState -eq 'UnverifiedSession') {
         # Not a failure: agents that expose no session id legitimately land here, and
         # failing would strand them. But it must be visible, because the archive cannot
@@ -331,7 +336,7 @@ function Test-SprintCheckpointCoverage {
         ExternalDurabilityState = $externalDurabilityState
         ExternalDurabilityFailures = $externalFailures.ToArray()
         OperatorOverride = if ($externalDurabilityState -eq 'OperatorOverride') { $ExternalDurabilityOverride } else { $null }
-        Ok = ($archiveReachable -and $conversationState -ne 'NotCaptured' -and $memoryState -notin @(
+        Ok = ($archiveReachable -and $conversationState -notin @('NotCaptured', 'InvalidSelectionReceipt') -and $memoryState -notin @(
             'MissingCanonicalMemory',
             'MemoryNotCaptured'
           ) -and $externalDurabilityState -in @('Verified', 'OperatorOverride'))

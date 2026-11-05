@@ -19,7 +19,7 @@ BeforeAll {
 
   $script:sprintNumber = 15
   $script:fixtureRoots = [System.Collections.Generic.List[string]]::new()
-  $script:fixtureBase = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../../../_generated/Sprint0016/Task16.41/MemoryArchiveContract/Fixtures'))
+  $script:fixtureBase = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../../../_generated/Sprint0017/Task17.51.a/CheckpointCoverageFixtures'))
 
   function script:Remove-CoverageFixture {
     param([Parameter(Mandatory)][string]$Path)
@@ -168,6 +168,42 @@ Describe 'Test-SprintCheckpointCoverage — SC-0327 conversation state' {
     try {
       $r = script:Invoke-Coverage -Fixture $fixture
       $r.PerWorktree[0].ConversationState | Should -Be 'VerifiedSession'
+      $r.Ok | Should -BeTrue
+    } finally {
+      script:Remove-CoverageFixture -Path $fixture.PlanRoot
+    }
+  }
+
+  It 'rejects <Rule> with nonempty skip <Skip>' -TestCases @(
+    @{ Rule='ExplicitSessionId'; Skip='Ambiguous' }, @{ Rule='ExplicitSessionId'; Skip='Unexpected' },
+    @{ Rule='EnvironmentSessionId'; Skip='Ambiguous' }, @{ Rule='EnvironmentSessionId'; Skip='Unexpected' },
+    @{ Rule='SessionIdCrossStore'; Skip='Ambiguous' }, @{ Rule='SessionIdCrossStore'; Skip='Unexpected' }
+  ) {
+    param($Rule, $Skip)
+    $fixture = script:New-CoverageFixture -ConversationFields @{
+      ConversationSelectionRule = $Rule
+      ConversationSkipKind = $Skip
+    }
+    try {
+      $r = script:Invoke-Coverage -Fixture $fixture
+      $r.PerWorktree[0].ConversationState | Should -Be 'InvalidSelectionReceipt'
+      $r.PerWorktree[0].Ok | Should -BeFalse
+      $r.Ok | Should -BeFalse
+      ($r.Failures -join ' ') | Should -Match ([regex]::Escape($Skip))
+    } finally {
+      script:Remove-CoverageFixture -Path $fixture.PlanRoot
+    }
+  }
+
+  It 'accepts an explicit session selection with whitespace-only skip' {
+    $fixture = script:New-CoverageFixture -ConversationFields @{
+      ConversationSelectionRule = 'ExplicitSessionId'
+      ConversationSkipKind = '  '
+    }
+    try {
+      $r = script:Invoke-Coverage -Fixture $fixture
+      $r.PerWorktree[0].ConversationState | Should -Be 'VerifiedSession'
+      $r.PerWorktree[0].Ok | Should -BeTrue
       $r.Ok | Should -BeTrue
     } finally {
       script:Remove-CoverageFixture -Path $fixture.PlanRoot

@@ -14,9 +14,13 @@ function Export-CoordState {
     $context = $null
     try {
       $context = Read-CoordProducerContext -HolderId $HolderId -SessionId $SessionId -Role Export -AllowPending
-      $root = [IO.Path]::GetFullPath((Get-CoordSetting 'OrchestrationProtectedBackupRootPath'))
+      $root = [IO.Path]::TrimEndingDirectorySeparator([IO.Path]::GetFullPath((Get-CoordSetting 'OrchestrationProtectedBackupRootPath')))
       $path = [IO.Path]::GetFullPath($DestinationPath)
-      if ([IO.Path]::GetDirectoryName($path) -ine $root -or (Test-CoordDescendant $root ([IO.Path]::GetDirectoryName($context.StatePath)))) { throw 'BackupLocationConflict' }
+      if ([IO.Path]::GetDirectoryName($path) -ine $root) { throw 'BackupLocationConflict' }
+      foreach ($protectedPath in @($context.StatePath, $context.RecordPath)) {
+        $protectedDirectory = [IO.Path]::TrimEndingDirectorySeparator([IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($protectedPath)))
+        if ($root -ieq $protectedDirectory -or (Test-CoordDescendant $root $protectedDirectory)) { throw 'BackupLocationConflict' }
+      }
       Assert-CoordProtection $root $context.Record.custodianSid
       $null = Assert-CoordOrdinaryPath $path
       $outputs = [ordered]@{}

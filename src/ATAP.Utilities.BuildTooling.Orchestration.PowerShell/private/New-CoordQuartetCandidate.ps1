@@ -35,7 +35,7 @@ function New-CoordQuartetCandidate {
     No live file contents are read or written. Exact live paths and ancestors
     receive metadata checks only; links/unknown metadata refuse. This is not
     hostile-race protection, continuous custody or admission.
-    ScratchRoot is an explicit fresh canonical descendant of D:/ATAPArtifacts.
+    ScratchRoot is an explicit fresh canonical descendant of C:/ProgramData/ATAP/AICoordinator/_generated.
     Existing finite Invoke-CoordOperationFileIo Stage/ReadBack operations write
     exact candidate Markdown/prior board scratch bytes and capture output. Installed SprintLifecycle0.1.61
     renders once; no replacement callback, retry or cleanup is provided.
@@ -48,7 +48,7 @@ function New-CoordQuartetCandidate {
   .PARAMETER BeforeImages
     Existing closed stateQuartetImages JsonElement, with canonical base64/SHA256.
   .PARAMETER ScratchRoot
-    Fresh fully qualified D-only artifact directory, never overlapping live paths.
+    Fresh fully qualified Coordinator _generated descendant directory, never overlapping live paths.
   .OUTPUTS
     Local CandidateNotPrepared Stage/Action, cloned BeforeOutputs and resulting
     AfterOutputs stateQuartetImages, plus ScratchRoot. WhatIf has null AfterOutputs.
@@ -176,7 +176,7 @@ function New-CoordQuartetCandidate {
       $null = lfText $previewBefore
       $null = lfText $decoded.boardHtml -AllowEmpty
       $root = canonicalPath $ScratchRoot
-      if (-not $root.StartsWith('D:\ATAPArtifacts\', [StringComparison]::OrdinalIgnoreCase)) { throw 'InvalidScratchRoot' }
+      if (-not $root.StartsWith('C:\ProgramData\ATAP\AICoordinator\_generated\', [StringComparison]::OrdinalIgnoreCase)) { throw 'InvalidScratchRoot' }
       foreach ($path in $paths.Values) {
         if ([string]::Equals($root, $path, [StringComparison]::OrdinalIgnoreCase) -or
             $path.StartsWith($root + '\', [StringComparison]::OrdinalIgnoreCase) -or

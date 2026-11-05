@@ -78,6 +78,23 @@ function Assert-CoordProtection {
   }
 }
 
+function Assert-CoordPackageInventory {
+  param([string]$ModuleRoot, $Package)
+  $manifest = Import-PowerShellDataFile (Join-Path $ModuleRoot 'ATAP.Utilities.BuildTooling.Orchestration.PowerShell.psd1')
+  if ($Package.moduleVersion -cne $manifest.ModuleVersion) { throw 'IncompatiblePackage' }
+  $required = @(Get-ChildItem -LiteralPath $ModuleRoot -File -Recurse | Where-Object {
+    $_.Extension -in @('.ps1', '.psm1', '.psd1', '.json') -and -not (Test-CoordDescendant $_.FullName (Join-Path $ModuleRoot 'tests')) })
+  $relativePaths = @($required | ForEach-Object { [IO.Path]::GetRelativePath($ModuleRoot, $_.FullName).Replace('\', '/') })
+  foreach ($pin in @($Package.files)) {
+    if ($pin.path -isnot [string] -or $pin.path -cnotin $relativePaths) { throw 'IncompatiblePackage' }
+  }
+  foreach ($file in $required) {
+    $relative = [IO.Path]::GetRelativePath($ModuleRoot, $file.FullName).Replace('\', '/')
+    $pins = @($Package.files | Where-Object { $_.path -ceq $relative })
+    if ($pins.Count -ne 1 -or (Get-CoordHash ([IO.File]::ReadAllBytes($file.FullName))) -cne $pins[0].digest) { throw 'IncompatiblePackage' }
+  }
+}
+
 function Read-CoordProducerContext {
   [CmdletBinding()]
   param([Parameter(Mandatory)][string]$HolderId, [Parameter(Mandatory)][string]$SessionId,
@@ -114,15 +131,7 @@ function Read-CoordProducerContext {
     $null = Assert-CoordOrdinaryPath $statePath -MustExist
     Assert-CoordProtection $statePath $sid
     $moduleRoot = if ((Split-Path $PSScriptRoot -Leaf) -ieq 'private') { Split-Path $PSScriptRoot -Parent } else { $PSScriptRoot }
-    $manifest = Import-PowerShellDataFile (Join-Path $moduleRoot 'ATAP.Utilities.BuildTooling.Orchestration.PowerShell.psd1')
-    if ($r.package.moduleVersion -cne $manifest.ModuleVersion) { throw 'IncompatiblePackage' }
-    $required = @(Get-ChildItem -LiteralPath $moduleRoot -File -Recurse | Where-Object {
-      $_.Extension -in @('.ps1', '.psm1', '.psd1', '.json') -and -not (Test-CoordDescendant $_.FullName (Join-Path $moduleRoot 'tests')) })
-    foreach ($file in $required) {
-      $relative = [IO.Path]::GetRelativePath($moduleRoot, $file.FullName).Replace('\', '/')
-      $pins = @($r.package.files | Where-Object { $_.path -ceq $relative })
-      if ($pins.Count -ne 1 -or (Get-CoordHash ([IO.File]::ReadAllBytes($file.FullName))) -cne $pins[0].digest) { throw 'IncompatiblePackage' }
-    }
+    Assert-CoordPackageInventory -ModuleRoot $moduleRoot -Package $r.package
     if ($r.pendingWrite -and -not $AllowPending) { throw 'NeedsRecovery' }
     $raw = [IO.File]::ReadAllBytes($statePath)
     if (-not $r.pendingWrite -and (Get-CoordHash $raw) -cne $r.stateSha256) { throw 'StateLossOrExternalReplacement' }

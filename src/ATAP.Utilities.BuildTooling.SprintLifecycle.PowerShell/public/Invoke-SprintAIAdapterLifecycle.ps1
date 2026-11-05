@@ -245,7 +245,75 @@ function Invoke-SprintAIAdapterLifecycle {
       }
 
       $lifecycleCommand = Get-Command -Name Invoke-AIAdapterLifecycle -CommandType Function -ErrorAction Stop
-      return Invoke-AIAdapterLifecycle @parameters -WhatIf:$WhatIfPreference
+      $lifecycleResult = Invoke-AIAdapterLifecycle @parameters -WhatIf:$WhatIfPreference
+      if ($Boundary -eq 'Start') {
+        # The delegate may already have changed targets. Validate its declared
+        # renderer evidence before accepting its optimistic DriftClean flag.
+        $resultProblems = [Collections.Generic.List[string]]::new()
+        $rawRenderResult = $null
+        if ($null -eq $lifecycleResult -or $lifecycleResult -is [array]) {
+          $resultProblems.Add('Expected one non-null lifecycle result.')
+        } else {
+          $cleanProperty = $lifecycleResult.PSObject.Properties['DriftClean']
+          if ($null -eq $cleanProperty -or $cleanProperty.Value -isnot [bool] -or -not $cleanProperty.Value) {
+            $resultProblems.Add('Lifecycle DriftClean must explicitly be Boolean true.')
+          }
+          $renderProperty = $lifecycleResult.PSObject.Properties['RenderResult']
+          if ($null -eq $renderProperty -or $null -eq $renderProperty.Value -or $renderProperty.Value -is [array]) {
+            $resultProblems.Add('Expected one non-null RenderResult.')
+          } else {
+            $rawRenderResult = $renderProperty.Value
+            foreach ($countName in @('ErrorCount', 'ChangedCount')) {
+              $countProperty = $rawRenderResult.PSObject.Properties[$countName]
+              $countIsInteger = $null -ne $countProperty -and (
+                $countProperty.Value -is [byte] -or $countProperty.Value -is [sbyte] -or
+                $countProperty.Value -is [int16] -or $countProperty.Value -is [uint16] -or
+                $countProperty.Value -is [int32] -or $countProperty.Value -is [uint32] -or
+                $countProperty.Value -is [int64] -or $countProperty.Value -is [uint64])
+              if (-not $countIsInteger -or $countProperty.Value -lt 0) {
+                $resultProblems.Add("RenderResult.$countName must explicitly be a nonnegative integer.")
+              } elseif ($countName -eq 'ErrorCount' -and $countProperty.Value -ne 0) {
+                $resultProblems.Add('RenderResult reports one or more errors.')
+              }
+            }
+            $nextPassProperty = $rawRenderResult.PSObject.Properties['SecondRunWouldBeClean']
+            if ($null -eq $nextPassProperty -or $nextPassProperty.Value -isnot [bool] -or -not $nextPassProperty.Value) {
+              $resultProblems.Add('RenderResult.SecondRunWouldBeClean must explicitly be Boolean true.')
+            }
+            $rowsProperty = $rawRenderResult.PSObject.Properties['Results']
+            if ($null -eq $rowsProperty -or $rowsProperty.Value -isnot [array]) {
+              $resultProblems.Add('RenderResult.Results must explicitly be an array, including when empty.')
+            } else {
+              foreach ($row in $rowsProperty.Value) {
+                $actionProperty = if ($null -ne $row) { $row.PSObject.Properties['Action'] } else { $null }
+                if ($null -eq $actionProperty -or $actionProperty.Value -isnot [string] -or [string]::IsNullOrWhiteSpace($actionProperty.Value)) {
+                  $resultProblems.Add('A renderer result row has no valid Action.')
+                } elseif ($actionProperty.Value -eq 'error') {
+                  $resultProblems.Add('A renderer result row reports an error.')
+                }
+              }
+            }
+          }
+        }
+        if ($resultProblems.Count -gt 0) {
+          $failure = [pscustomobject]@{
+            Status = 'HELD_RECOVERY'
+            Boundary = $Boundary
+            Reasons = $resultProblems.ToArray()
+            RawLifecycleResult = $lifecycleResult
+            RawRenderResult = $rawRenderResult
+            ObservedEffects = 'The delegate was invoked; retain its raw results. Target effects may already have occurred and are not rolled back here.'
+            RollbackAttempted = $false
+          }
+          $errorRecord = [Management.Automation.ErrorRecord]::new(
+            [InvalidOperationException]::new('Normal Start adapter result is not verified clean; retain the reported effects for recovery.'),
+            'SprintAIAdapterStartResultUnverified',
+            [Management.Automation.ErrorCategory]::InvalidResult,
+            $failure)
+          $PSCmdlet.ThrowTerminatingError($errorRecord)
+        }
+      }
+      return $lifecycleResult
     }
   }
 

@@ -37,7 +37,10 @@ function Set-AIAgentMemoryJunction {
 
   .OUTPUTS
     PSCustomObject with Success, Skipped, SkipReason, MemoryRoot, RepositoryName,
-    JunctionsCreated, Junctions, and Errors.
+    JunctionsCreated, Junctions, and Errors. Additive Disposition, Changed,
+    HasUncertainEffects, DeclinedActions, FilesMoved and Progress describe command
+    progress, not verified filesystem convergence. Planned/declined work is not
+    Success. A configuration-unavailable skip retains the legacy explicit skip.
 
   .NOTES
     AI assisted using Powershell.instructions.md as guidelines.
@@ -80,10 +83,53 @@ function Set-AIAgentMemoryJunction {
       JunctionsCreated = 0
       Junctions        = @()
       Errors           = @()
+      Disposition      = 'Failed'
+      Changed          = $false
+      HasUncertainEffects = $false
+      DeclinedActions  = 0
+      FilesMoved       = @()
+      Progress         = @()
+    }
+
+    $activeAction = $null
+    $beginAction = {
+      param([string]$Kind, [string]$Source, [string]$Target)
+      $entry = [PSCustomObject]@{
+        Kind = $Kind; Source = $Source; Target = $Target
+        State = 'Attempted'; Error = $null; Evidence = 'CommandReturnOnly'
+      }
+      $result.Progress += $entry
+      return $entry
+    }
+    $finishAction = {
+      param([object]$Entry)
+      # Reached only after an explicit per-command ErrorAction Stop boundary.
+      # A return proves command completion, not a verified filesystem postimage.
+      $Entry.State = 'Completed'
+      $result.Changed = $true
+    }
+    $readBoundary = {
+      param([string]$Kind, [string]$Path, [scriptblock]$Read)
+      try { & $Read } catch {
+        $result.Progress += [PSCustomObject]@{
+          Kind = $Kind; Source = $Path; Target = $null
+          State = 'Failed'; Error = $_.Exception.Message; Evidence = 'ReadCommandError'
+        }
+        throw
+      }
+    }
+    $recordDeclined = {
+      param([string]$Kind, [string]$Target)
+      $result.DeclinedActions++
+      $result.Progress += [PSCustomObject]@{
+        Kind = $Kind; Source = $null; Target = $Target
+        State = $(if ($WhatIfPreference) { 'Planned' } else { 'Declined' })
+        Error = $null; Evidence = 'ShouldProcessDeclined'
+      }
     }
 
     try {
-      if (-not (Test-Path -LiteralPath $WorktreePath -PathType Container)) {
+      if (-not (& $readBoundary 'ReadWorktreePath' $WorktreePath { Test-Path -LiteralPath $WorktreePath -PathType Container -ErrorAction Stop })) {
         throw "Worktree path not found: '$WorktreePath'"
       }
 
@@ -91,14 +137,17 @@ function Set-AIAgentMemoryJunction {
       # For a worktree this is '<main>\.git\worktrees\<name>', so the main repo
       # root is the parent of the '.git' directory. Never assume the worktree
       # name can be string-trimmed back to the main repo.
-      $commonDir = (& git -C $WorktreePath rev-parse --git-common-dir 2>&1 | Out-String).Trim()
-      if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($commonDir)) {
-        throw "git rev-parse --git-common-dir failed for '$WorktreePath': $commonDir"
+      $commonDir = & $readBoundary 'ReadGitCommonDirectory' $WorktreePath {
+        $value = (& git -C $WorktreePath rev-parse --git-common-dir 2>&1 | Out-String).Trim()
+        if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($value)) {
+          throw "git rev-parse --git-common-dir failed for '$WorktreePath': $value"
+        }
+        $value
       }
       if (-not [System.IO.Path]::IsPathRooted($commonDir)) {
         $commonDir = Join-Path $WorktreePath $commonDir
       }
-      $mainRepoPath = (Resolve-Path -LiteralPath (Split-Path -Path $commonDir -Parent)).Path.TrimEnd('\')
+      $mainRepoPath = (& $readBoundary 'ResolveMainRepository' $commonDir { Resolve-Path -LiteralPath (Split-Path -Path $commonDir -Parent) -ErrorAction Stop }).Path.TrimEnd('\')
       $repoName = Split-Path -Path $mainRepoPath -Leaf
       $result.RepositoryName = $repoName
 
@@ -112,6 +161,7 @@ function Set-AIAgentMemoryJunction {
           $result.Skipped = $true
           $result.SkipReason = 'DropboxBasePathConfigRootKey is unavailable ($global:settings is empty, e.g. a shell started without the PowerShell profile). Memory junction not provisioned; no path was guessed.'
           $result.Success = $true
+          $result.Disposition = 'Skipped'
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $result.SkipReason
           return [PSCustomObject]$result
         }
@@ -122,10 +172,15 @@ function Set-AIAgentMemoryJunction {
       $result.MemoryRoot = $memoryTarget
 
       if ($PSCmdlet.ShouldProcess($memoryTarget, 'Ensure durable AI agent memory store')) {
-        if (-not (Test-Path -LiteralPath $memoryTarget -PathType Container)) {
-          New-Item -ItemType Directory -Path $memoryTarget -Force | Out-Null
+        if (-not (& $readBoundary 'ReadMemoryStore' $memoryTarget { Test-Path -LiteralPath $memoryTarget -PathType Container -ErrorAction Stop })) {
+          $activeAction = & $beginAction 'CreateStore' $null $memoryTarget
+          New-Item -ItemType Directory -Path $memoryTarget -Force -ErrorAction Stop | Out-Null
+          & $finishAction $activeAction
+          $activeAction = $null
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Created memory store '$memoryTarget'"
         }
+      } else {
+        & $recordDeclined 'EnsureStore' $memoryTarget
       }
 
       # --- Junction both slugs at the one store ---------------------------
@@ -137,43 +192,85 @@ function Set-AIAgentMemoryJunction {
         $memLink = Join-Path $projDir 'memory'
 
         if ($PSCmdlet.ShouldProcess($memLink, "Junction -> $memoryTarget")) {
-          if (-not (Test-Path -LiteralPath $projDir -PathType Container)) {
-            New-Item -ItemType Directory -Path $projDir -Force | Out-Null
+          if (-not (& $readBoundary 'ReadProjectDirectory' $projDir { Test-Path -LiteralPath $projDir -PathType Container -ErrorAction Stop })) {
+            $activeAction = & $beginAction 'CreateProjectDirectory' $null $projDir
+            New-Item -ItemType Directory -Path $projDir -Force -ErrorAction Stop | Out-Null
+            & $finishAction $activeAction
+            $activeAction = $null
           }
 
-          if (Test-Path -LiteralPath $memLink) {
-            $existing = Get-Item -LiteralPath $memLink -Force
+          if (& $readBoundary 'ReadMemoryLinkPath' $memLink { Test-Path -LiteralPath $memLink -ErrorAction Stop }) {
+            $existing = & $readBoundary 'ReadMemoryLinkItem' $memLink { Get-Item -LiteralPath $memLink -Force -ErrorAction Stop }
             if ($existing.LinkType) {
               # Already a link: replace so the target is guaranteed current.
-              Remove-Item -LiteralPath $memLink -Force
+              $activeAction = & $beginAction 'RemoveExistingLink' $memLink $null
+              Remove-Item -LiteralPath $memLink -Force -ErrorAction Stop
+              & $finishAction $activeAction
+              $activeAction = $null
             } else {
               # A REAL directory holding real memory files. Never clobber it;
               # migrate its contents into the durable store first.
-              Get-ChildItem -LiteralPath $memLink -File -ErrorAction SilentlyContinue | ForEach-Object {
+              # Complete the read before migration; failed enumeration is not empty.
+              $memoryFiles = @(& $readBoundary 'ReadMemoryFiles' $memLink { Get-ChildItem -LiteralPath $memLink -File -ErrorAction Stop })
+              $memoryFiles | ForEach-Object {
                 $dest = Join-Path $memoryTarget $_.Name
-                if (-not (Test-Path -LiteralPath $dest)) {
-                  Move-Item -LiteralPath $_.FullName -Destination $dest
+                if (-not (& $readBoundary 'ReadMigrationDestination' $dest { Test-Path -LiteralPath $dest -ErrorAction Stop })) {
+                  $activeAction = & $beginAction 'MoveMemoryFile' $_.FullName $dest
+                  Move-Item -LiteralPath $_.FullName -Destination $dest -ErrorAction Stop
+                  & $finishAction $activeAction
+                  if ($activeAction.State -eq 'Completed') {
+                    $result.FilesMoved += [PSCustomObject]@{ Source = $_.FullName; Target = $dest }
+                  }
+                  $activeAction = $null
                   Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Migrated pre-existing memory file '$($_.Name)' into '$memoryTarget'"
                 }
               }
-              if (@(Get-ChildItem -LiteralPath $memLink -Force -ErrorAction SilentlyContinue).Count -gt 0) {
+              if (@(& $readBoundary 'ReadRemainingMemoryEntries' $memLink { Get-ChildItem -LiteralPath $memLink -Force -ErrorAction Stop }).Count -gt 0) {
                 throw "Refusing to replace non-empty real directory '$memLink' with a junction; migrate its contents manually."
               }
-              Remove-Item -LiteralPath $memLink -Recurse -Force
+              $activeAction = & $beginAction 'RemoveEmptyMemoryDirectory' $memLink $null
+              Remove-Item -LiteralPath $memLink -Recurse -Force -ErrorAction Stop
+              & $finishAction $activeAction
+              $activeAction = $null
             }
           }
 
+          $activeAction = & $beginAction 'CreateJunction' $null $memLink
           New-Item -ItemType Junction -Path $memLink -Target $memoryTarget -ErrorAction Stop | Out-Null
-          $result.JunctionsCreated++
-          $junctions.Add([PSCustomObject]@{ Slug = $slug; Link = $memLink; Target = $memoryTarget })
+          & $finishAction $activeAction
+          if ($activeAction.State -eq 'Completed') {
+            $result.JunctionsCreated++
+            $junctions.Add([PSCustomObject]@{ Slug = $slug; Link = $memLink; Target = $memoryTarget })
+            $result.Junctions = $junctions.ToArray()
+          }
+          $activeAction = $null
           Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Junction '$memLink' -> '$memoryTarget'"
+        } else {
+          & $recordDeclined 'Junction' $memLink
         }
       }
 
       $result.Junctions = $junctions.ToArray()
-      $result.Success = $true
+      if ($result.HasUncertainEffects) {
+        $result.Disposition = 'PartialFailure'
+      } elseif ($result.DeclinedActions -gt 0) {
+        $result.Disposition = if ($result.Changed) { 'PartialFailure' } elseif ($WhatIfPreference) { 'Planned' } else { 'Declined' }
+      } else {
+        $result.Success = $true
+        $result.Disposition = if ($result.Changed) { 'Completed' } else { 'NoChange' }
+      }
     } catch {
       $result.Success = $false
+      if ($null -ne $activeAction -and $activeAction.State -eq 'Attempted') {
+        $activeAction.State = 'Uncertain'
+        $activeAction.Error = $_.Exception.Message
+        $result.HasUncertainEffects = $true
+      }
+      $result.Disposition = if ($result.Changed -or $result.HasUncertainEffects) { 'PartialFailure' } else { 'Failed' }
+      $result.Progress += [PSCustomObject]@{
+        Kind = 'FailureBoundary'; Source = $null; Target = $WorktreePath
+        State = 'Failed'; Error = $_.Exception.Message; Evidence = 'CaughtException'
+      }
       $result.Errors += $_.Exception.Message
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "$fn failed for '$WorktreePath': $($_.Exception.Message)"
     }

@@ -22,6 +22,12 @@ Describe 'Invoke-SprintAIAdapterLifecycle [public]' {
       '    EvidenceRoot = $EvidenceRoot'
       '    OmitSprintWorktrees = [bool]$OmitSprintWorktrees'
       '    DriftClean = $true'
+      '    RenderResult = [pscustomobject]@{'
+      '      ErrorCount = [int]0'
+      '      ChangedCount = [int]0'
+      '      SecondRunWouldBeClean = [bool]$true'
+      '      Results = [object[]]@()'
+      '    }'
       '  }'
       '}'
     ) -join "`n"

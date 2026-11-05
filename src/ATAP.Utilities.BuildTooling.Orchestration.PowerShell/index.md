@@ -6,3 +6,11 @@
 - [Configuration](Documentation/Configuration-v1.md)
 - [Public commands](public)
 - [Focused integration fixtures](tests/Integration/CoordProducer.Tests.ps1)
+
+## Orchestration flowcharts
+
+- [Four-chart overview](Documentation/Orchestration-Flowchart.md)
+- [Chart 1 SVG](Documentation/images/Orchestration-Flowchart-1.svg)
+- [Chart 2 SVG](Documentation/images/Orchestration-Flowchart-2.svg)
+- [Chart 3 SVG](Documentation/images/Orchestration-Flowchart-3.svg)
+- [Chart 4 SVG](Documentation/images/Orchestration-Flowchart-4.svg)

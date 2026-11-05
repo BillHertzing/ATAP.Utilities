@@ -1,0 +1,29 @@
+@startuml
+title RPRRSBSI-V5 Ownership and the Ace Copy (Opus5_5, 2026-11-05)
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 10
+package "ATAPUtilities (open templates, no owner columns)" #EEF6EE {
+  rectangle "Template table T" as AT
+  rectangle "Philote / PhiloteValidityPeriod\n(shared registry)" as PH
+  rectangle "PublisherAttribution" as PA
+}
+package "Ace (full copy + Ace-only tables)" #FFF5E6 {
+  rectangle "Ace.T (generated twin)\n+ OwnerUserId xor OwnerOrganizationId\n+ CreatedByUserId" as ACT
+  rectangle "RowOwnershipState\n(temporal owner changes)" as ROS
+  rectangle "RLS security policy per table\n(SESSION_CONTEXT caller)" as RLS
+  rectangle "Ace-only tables\n(User, Organization, progress, ...)" as AO
+  rectangle "AceDev_<user> developer schemas\n(DDL Authoring, owner-only)" as DEV
+}
+package "AceAuth (protected, outside Ace)" #FFE8E8 {
+  rectangle "UserCredential, SignInAttempt, SignInEvent" as AUTH
+}
+AT ..> ACT : generator (SQL-kind materializer)\ncopy manifest + drift check
+ACT ..> PH : PhiloteId
+ACT ..> AT : derived-from-template (TemplateId, revision)
+ROS ..> ACT
+RLS ..> ACT
+DEV ..> AT : bolt-on submission promotes\n(tables + selected template rows)
+DEV ..> ACT : private rows moved at runtime
+AT ..> PA
+note bottom of AT : No foreign key from ATAPUtilities into Ace (V5-CORE-072)
+@enduml

@@ -202,4 +202,4 @@ issue or bind a certificate, grant a private-key ACL, change Bitwarden, configur
 modify a service, apply a migration, write a database, send provider traffic, or authorize
 deployment.
 
-See [the initial delivery diagram](../RPRRSBSI-V5-Initial-Capability-Slice.puml) and the [Ace integration design](Ace-Outpost-Commander-Integration/README.md).
+See [the initial delivery diagram](../RPRRSBSI-V4-2-Initial-Capability-Slice.puml) and the [Ace integration design](Ace-Outpost-Commander-Integration/README.md).

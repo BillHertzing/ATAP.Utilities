@@ -27,7 +27,7 @@ deployment.
 - **V5-TAG-083:** Inferred Tags Rules and ContentSummary Rules remain Ace overlays or publication candidates. Ingestion SHALL NOT mutate immutable reference Rules.
 
 The editable diagram source is
-[RPRRSBSI-V5-Tags-Expert-System.puml](../RPRRSBSI-V5-Tags-Expert-System.puml).
+[RPRRSBSI-V5-Tags-Expert-System.puml](../RPRRSBSI-V4-2-Tags-Expert-System.puml).
 The tracked SVG is not embedded because the PlantUML source changed during this
 source-only reconciliation and no render was authorized for this worker unit.
 

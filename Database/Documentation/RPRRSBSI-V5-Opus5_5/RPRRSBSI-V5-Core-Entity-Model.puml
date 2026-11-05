@@ -1,0 +1,201 @@
+@startuml
+title RPRRSBSI-V5 Core Entity Model (Opus5_5, 2026-11-05)
+' V5: V00010 Instantiation renamed MaterializationSpecification (DEC-8); new Instantiation = produced file or row (DEC-6)
+skinparam linetype ortho
+skinparam roundcorner 5
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 10
+skinparam entity {
+  BackgroundColor #F0F4FF
+  BorderColor #3366CC
+  FontColor #1A1A2E
+}
+skinparam arrow {
+  Color #3366CC
+  FontSize 8
+}
+
+package "V3 retained identity backbone" #EEF6EE {
+  entity Philote {
+  * PhiloteId : uniqueidentifier <<PK>>
+}
+  entity PhiloteValidityPeriod {
+  * PhiloteValidityPeriodId : uniqueidentifier <<PK>>
+  --
+  PhiloteId : uniqueidentifier <<FK>>
+  ValidFromUtc : datetime2
+  ValidToUtc : datetime2 [NULL]
+}
+  entity Rule {
+  * RuleId : uniqueidentifier <<PK>>
+  --
+  PhiloteId : uniqueidentifier <<FK>>
+  RuleKindId : uniqueidentifier <<FK>>
+  RulePrimitiveId : uniqueidentifier <<FK>>
+  RuleCode : varchar(128)
+}
+  entity RuleSet {
+  * RuleSetId : uniqueidentifier <<PK>>
+  --
+  PhiloteId : uniqueidentifier <<FK>>
+  RuleSetCode : varchar(128)
+}
+  entity BuildSet {
+  * BuildSetId : uniqueidentifier <<PK>>
+  --
+  PhiloteId : uniqueidentifier <<FK>>
+  BuildSetCode : varchar(128)
+}
+  entity MaterializationSpecification {
+  * MaterializationSpecificationId : uniqueidentifier <<PK>>
+  --
+  PhiloteId : uniqueidentifier <<FK>>
+  BuildSetId : uniqueidentifier <<FK>>
+}
+}
+
+package "V4 definition and overlay model" #FFF5E6 {
+  entity EntityType {
+  * EntityTypeId : uniqueidentifier <<PK>>
+  --
+  EntityTypeCode : varchar(128) <<UQ>>
+}
+  entity Entity {
+  * EntityId : uniqueidentifier <<PK>>
+  --
+  PhiloteId : uniqueidentifier <<FK>>
+  EntityTypeId : uniqueidentifier <<FK>>
+}
+  entity ExpertSystem {
+  * ExpertSystemId : uniqueidentifier <<PK>>
+  --
+  PhiloteId : uniqueidentifier <<FK>>
+  ExpertSystemCode : varchar(128) <<UQ>>
+}
+  entity ExpertSystemState {
+  * ExpertSystemStateId : uniqueidentifier <<PK>>
+  --
+  ExpertSystemId : uniqueidentifier <<FK>>
+  PhiloteValidityPeriodId : uniqueidentifier <<FK>>
+  Name : nvarchar(256)
+}
+  entity RuleVariant {
+  * RuleVariantId : uniqueidentifier <<PK>>
+  --
+  PhiloteId : uniqueidentifier <<FK>>
+  RuleId : uniqueidentifier <<FK>>
+  OwningRuleSetId : uniqueidentifier <<FK>>
+}
+  entity RuleVariantState {
+  * RuleVariantStateId : uniqueidentifier <<PK>>
+  --
+  RuleVariantId : uniqueidentifier <<FK>>
+  PhiloteValidityPeriodId : uniqueidentifier <<FK>>
+  ExecutorContractId : uniqueidentifier <<FK>>
+}
+  entity RuleSetRuleOccurrence {
+  * RuleSetRuleOccurrenceId : uniqueidentifier <<PK>>
+  --
+  RuleSetId : uniqueidentifier <<FK>>
+  RuleVariantId : uniqueidentifier <<FK>>
+  MembershipRoleId : uniqueidentifier <<FK>>
+  Ordinal : int
+}
+  entity BuildSetRuleSetOccurrence {
+  * BuildSetRuleSetOccurrenceId : uniqueidentifier <<PK>>
+  --
+  BuildSetId : uniqueidentifier <<FK>>
+  RuleSetId : uniqueidentifier <<FK>>
+  Ordinal : int
+}
+}
+
+Philote ||--o{ PhiloteValidityPeriod : has
+Philote ||--o| Entity : identifies
+EntityType ||--o{ Entity : classifies
+Philote ||--o| ExpertSystem : identifies
+ExpertSystem ||--o{ ExpertSystemState : has state
+PhiloteValidityPeriod ||--o{ ExpertSystemState : effective during
+Philote ||--o| RuleVariant : identifies
+Rule ||--o{ RuleVariant : basic rule
+RuleSet ||--o{ RuleVariant : owns
+RuleVariant ||--o{ RuleVariantState : has state
+PhiloteValidityPeriod ||--o{ RuleVariantState : effective during
+RuleSet ||--o{ RuleSetRuleOccurrence : contains
+RuleVariant ||--o{ RuleSetRuleOccurrence : selects
+BuildSet ||--o{ BuildSetRuleSetOccurrence : contains
+RuleSet ||--o{ BuildSetRuleSetOccurrence : layers
+BuildSet ||--o{ MaterializationSpecification : configured by
+
+note right of BuildSetRuleSetOccurrence
+  D-2 RATIFIED:
+  resolve by Ordinal DESC;
+  higher Ordinal = higher precedence;
+  duplicate ordinals in one BuildSet are invalid.
+end note
+note bottom of RuleVariant
+  D-4 RATIFIED:
+  an overlay RuleVariant reuses the same basic RuleId.
+  Its occurrence role is Override.
+  An overlay does not copy the basic Rule.
+end note
+note right of Entity
+  D-6 RATIFIED for Tags:
+  relations and assignments target durable TagId;
+  TagState is resolved as-of, not used as the endpoint.
+end note
+note bottom of ExpertSystemState
+  D-7 RATIFIED:
+  internal semantic history uses State or Variant,
+  not Version.
+end note
+
+package "V4-2 focused integration aggregates" #E8F4FA {
+  entity "Ace.ContentSummaryIngestion / Item / ItemTag" as CS
+  entity "Ace.AISupervisorExchange / Header / Metric" as AIS
+  entity "Outpost Run / Checkpoint / OutboundEnvelope" as OUT
+}
+CS ..> Entity : typed content endpoint
+CS ..> Philote : durable TagId resolves through focused Tags model
+AIS ..> Entity : owner-authorized observation
+OUT ..> CS : idempotent projection and sync
+
+note bottom of AIS
+  Detailed columns live in the focused V4-2 diagrams.
+  Request/response body capture is off initially.
+end note
+
+package "V5 materialization and instantiation (DEC-6/7/8)" #F3E8FF {
+  entity Materialization {
+  * MaterializationId : uniqueidentifier <<PK>>
+  --
+  MaterializationSpecificationId : <<FK>>
+  AsOfUtc : datetime2
+  MaterializerCode / MaterializerVersion
+  ActingUserId
+  OwnerUserId xor OwnerOrganizationId
+}
+  entity "Instantiation (V5)" as InstantiationV5 {
+  * InstantiationId : uniqueidentifier <<PK>>
+  --
+  OriginKindCode : Asserted | Generated
+  TargetKindCode : File | Row
+  MaterializationId [NULL iff Asserted]
+  SourceArtifactVersionId [File]
+  EntityTypeId, EntityId [Row]
+}
+  entity InstantiationSupersession {
+  * Predecessor (Asserted) / Successor (Generated)
+}
+}
+note as OWN
+  V5 (DEC-3): every table above exists in ATAPUtilities
+  (template rows, no owner columns) and as a generated
+  Ace twin with OwnerUserId xor OwnerOrganizationId and
+  CreatedByUserId. Philote and PhiloteValidityPeriod are shared.
+end note
+MaterializationSpecification ||--o{ Materialization : runs
+Materialization ||--o{ InstantiationV5 : produces (Generated)
+InstantiationV5 ||--o{ InstantiationSupersession
+InstantiationV5 ..> Entity : row target
+@enduml

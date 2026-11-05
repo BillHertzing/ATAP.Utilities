@@ -1,0 +1,38 @@
+@startuml
+title RPRRSBSI-V5 ContentSummary Data Model (built V00100-V00140 + V5 changes)
+skinparam linetype ortho
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 10
+entity Repository
+entity RepositoryRootRegistration
+entity SourceArtifact
+entity SourceArtifactVersion
+entity ContentSummary
+entity ContentSummaryVersion {
+  LifecycleCode
+  6 x RuleVariantId (NOT NULL)
+  PromptRuleVariantId (NOT NULL)
+  MaterializationSpecificationId (renamed from InstantiationId)
+  GeneratorKindCode -> Asserted | Generated
+}
+entity ContentSummaryDependency
+entity ContentSummaryRefreshAttempt
+entity ContentSummaryIngestionRequest
+entity "MaterializationSpecification\nCS-I01 (generated) / CS-A00 (asserted)" as MS
+entity "RuleVariant\nCS-R01..R06 / CS-A01..A06" as RV
+entity "Instantiation (V5)" as INST
+entity TagAssignment
+Repository ||--o{ RepositoryRootRegistration
+Repository ||--o{ SourceArtifact
+SourceArtifact ||--o{ SourceArtifactVersion
+SourceArtifact ||--o{ ContentSummary
+ContentSummary ||--o{ ContentSummaryVersion
+SourceArtifactVersion ||--o{ ContentSummaryVersion
+ContentSummaryVersion ||--o{ ContentSummaryDependency
+ContentSummary ||--o{ ContentSummaryRefreshAttempt
+MS ||--o{ ContentSummaryVersion
+RV ||--o{ ContentSummaryVersion
+ContentSummaryVersion ||--|| INST : registered as row instantiation
+TagAssignment }o--|| ContentSummaryVersion : content-summary-version
+note "DEC-3: every table also exists as an owned Ace twin;\nqueries union ATAPUtilities + visible Ace rows" as N1
+@enduml

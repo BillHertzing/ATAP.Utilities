@@ -54,4 +54,4 @@ The transport contract carries contract version, operation ID, tenant, source de
 | V5-H-EDGE-03 | Projection algorithm, conflict policy, deletion semantics, retention, and compaction by entity type. |
 | V5-H-EDGE-04 | Transport, authentication, cursor, batching, compression, and retry protocol. |
 
-See [the edge synchronization diagram](../RPRRSBSI-V5-Edge-Synchronization.puml).
+See [the edge synchronization diagram](../RPRRSBSI-V4-2-Edge-Synchronization.puml).

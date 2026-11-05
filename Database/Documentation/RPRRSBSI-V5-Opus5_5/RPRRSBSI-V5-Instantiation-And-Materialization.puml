@@ -1,0 +1,62 @@
+@startuml
+title RPRRSBSI-V5 Instantiation and Materialization (Opus5_5, 2026-11-05)
+skinparam linetype ortho
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 10
+entity BuildSet
+entity MaterializationSpecification {
+  * MaterializationSpecificationId <<PK>>
+  --
+  BuildSetId <<FK>>
+  MaterializationSpecificationCode <<UQ>>
+  MaterializerCode
+  ' renamed from V00010 Instantiation (DEC-8)
+}
+entity MaterializationSpecificationState
+entity Materialization {
+  * MaterializationId <<PK>>
+  --
+  MaterializationSpecificationId <<FK>>
+  AsOfUtc, MaterializerVersion
+  NormalizedInputSha256
+  ActingUserId, Owner*
+  StatusCode
+}
+entity MaterializationAttempt
+entity MaterializationRuleBinding
+entity MaterializationInputValue
+entity InstantiationOriginKind {
+  Asserted
+  Generated
+}
+entity Instantiation {
+  * InstantiationId <<PK>>
+  --
+  OriginKindCode <<FK>>
+  TargetKindCode : File | Row
+  MaterializationId [Generated only]
+  IntendedMaterializationSpecificationId [Asserted, optional]
+  AssertedByUserId, AssertedAtUtc, SourceReference
+}
+entity InstantiationState
+entity InstantiationSupersession {
+  PredecessorInstantiationId (Asserted)
+  SuccessorInstantiationId (Generated)
+  ComparisonCode, EvidenceSha256
+}
+entity SourceArtifactVersion
+entity "EntityType / Entity" as Ent
+BuildSet ||--o{ MaterializationSpecification
+MaterializationSpecification ||--o{ MaterializationSpecificationState
+MaterializationSpecification ||--o{ Materialization
+Materialization ||--o{ MaterializationAttempt
+Materialization ||--o{ MaterializationRuleBinding
+Materialization ||--o{ MaterializationInputValue
+Materialization ||--o{ Instantiation : Generated
+InstantiationOriginKind ||--o{ Instantiation
+Instantiation ||--o{ InstantiationState
+Instantiation ||--o{ InstantiationSupersession
+Instantiation }o--o| SourceArtifactVersion : file target
+Instantiation }o--o| Ent : row target
+Instantiation }o..o| MaterializationSpecification : intended (Asserted)
+@enduml

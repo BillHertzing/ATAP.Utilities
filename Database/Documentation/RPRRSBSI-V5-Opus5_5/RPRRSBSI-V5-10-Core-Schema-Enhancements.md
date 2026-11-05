@@ -110,7 +110,7 @@ V3 has a basic `Rule` and set-membership joins. V4 keeps the basic identity and 
 - **V5-CORE-034:** D-2 is normative: effective resolution SHALL order BuildSet RuleSet occurrences by `Ordinal DESC`; the higher ordinal has higher precedence.
 
 Authoritative diagram source:
-[RPRRSBSI-V5-Rule-Overlay-Resolution.puml](../RPRRSBSI-V5-Rule-Overlay-Resolution.puml).
+[RPRRSBSI-V5-Rule-Overlay-Resolution.puml](../RPRRSBSI-V4-2-Rule-Overlay-Resolution.puml).
 The tracked SVG is not embedded here because it was not regenerated during this
 source-only reconciliation.
 

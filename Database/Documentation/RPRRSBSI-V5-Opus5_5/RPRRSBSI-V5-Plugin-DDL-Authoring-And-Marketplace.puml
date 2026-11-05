@@ -1,0 +1,34 @@
+@startuml
+title RPRRSBSI-V5 DDL Authoring and Marketplace Bolt-on Submission (Opus5_5, 2026-11-05)
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 10
+|Developer|
+start
+:Enter DDL Authoring mode (capability DdlAuthoring);
+:Define tables as data (AceDdl.*Definition) in an EditSession;
+|DDL Authoring service|
+:Validate (types, names, PK, owner columns, FK scope, quotas);
+:Generate and apply CREATE/ALTER in AceDev_<user>;
+:Record materialization + DDL SHA-256 (outside Flyway);
+|Developer|
+:Enter seed and working data (owner-only);
+:Submit bolt-on (capability MarketplaceDeveloper);
+:Select template rows (default none);
+|Automated checks|
+:Scan template rows (PII, secrets, closure, licence);
+:Lint, collision check, disposable rehearsal;
+|Reviewer + ATAP maintainer|
+:Approve content, licence, data; approve ATAPUtilities change;
+|Release|
+:Generate forward Flyway migration\n(ATAPUtilities tables + template rows + Ace twins + RLS);
+:Promote package through five tiers;
+|Data move (runtime)|
+:Verified backup of developer tables;
+:Copy private rows into Ace twins (owner = developer);
+:Verify counts and hashes; record Generated instantiations;
+:Retire and drop developer tables; BoltOnPromotionReceipt;
+|Marketplace|
+:Publish MarketplaceOffering, Plan, Price;
+:Buyer purchase -> Entitlement -> BoltOnActivation (buyer-owned rows);
+stop
+@enduml

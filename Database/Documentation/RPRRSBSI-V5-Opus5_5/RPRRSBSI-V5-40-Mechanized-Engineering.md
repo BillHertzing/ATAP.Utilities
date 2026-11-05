@@ -23,7 +23,7 @@ service. This preserves the D-8 validated-plan boundary and prevents purchasing 
 provisioning from widening the first Tags/ContentSummary and token-telemetry slice.
 
 Editable source:
-[RPRRSBSI-V5-Computer-Configuration.puml](../RPRRSBSI-V5-Computer-Configuration.puml).
+[RPRRSBSI-V5-Computer-Configuration.puml](../RPRRSBSI-V4-2-Computer-Configuration.puml).
 The previously rendered SVG is not embedded because the source changed; rendering is a
 coordinator-owned step.
 

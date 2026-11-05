@@ -59,7 +59,7 @@ broader expert systems, and external-effecting manifestation. See
 [the initial slice](RPRRSBSI-V5-55-Initial-Capability-Slice.md).
 
 Editable diagram source:
-[RPRRSBSI-V5-Layered-Delivery.puml](../RPRRSBSI-V5-Layered-Delivery.puml). The previously
+[RPRRSBSI-V5-Layered-Delivery.puml](../RPRRSBSI-V4-2-Layered-Delivery.puml). The previously
 rendered SVG is not embedded because this source changed and rendering is a
 coordinator-owned step.
 

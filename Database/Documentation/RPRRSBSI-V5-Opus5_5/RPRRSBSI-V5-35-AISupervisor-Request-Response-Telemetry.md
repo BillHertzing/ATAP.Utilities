@@ -54,4 +54,4 @@ AceCommander SHALL be able to aggregate token counts over explicit UTC buckets b
 | V5-H-AIS-04 | Metric-code governance and semantics for thinking/reasoning and cache tokens. |
 | V5-H-AIS-05 | Fail-open/fail-closed behavior and backpressure when telemetry storage is unavailable. |
 
-See [the AISupervisor data model](../RPRRSBSI-V5-AISupervisor-Telemetry.puml).
+See [the AISupervisor data model](../RPRRSBSI-V4-2-AISupervisor-Telemetry.puml).

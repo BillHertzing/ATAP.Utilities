@@ -55,7 +55,7 @@ New requirements recorded as V5 scope (designs proposed, decisions open where ma
   ingestion or synchronization SHALL NOT publish authoritative ATAPUtilities definitions.
 
 Layered delivery is maintained in the editable diagram source:
-[RPRRSBSI-V5-Layered-Delivery.puml](../RPRRSBSI-V5-Layered-Delivery.puml). A rendered SVG
+[RPRRSBSI-V5-Layered-Delivery.puml](../RPRRSBSI-V4-2-Layered-Delivery.puml). A rendered SVG
 is intentionally not embedded here because the tracked render may lag the editable
 source until the coordinator-owned render gate runs.
 

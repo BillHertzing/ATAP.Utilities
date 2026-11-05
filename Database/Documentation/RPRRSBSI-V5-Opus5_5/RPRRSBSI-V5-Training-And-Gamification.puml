@@ -1,0 +1,71 @@
+@startuml
+title RPRRSBSI-V5 Training and Gamification (Opus5_5, 2026-11-05)
+skinparam linetype ortho
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 10
+package "Catalog: ATAPUtilities templates + owned Ace copies" #EEF6EE {
+  entity TrainingProgram
+  entity TrainingModule {
+    Ordinal
+    RewardValueTierId
+  }
+  entity TrainingModulePrerequisite
+  entity TrainingWizardStep {
+    Ordinal
+    StepKind
+  }
+  entity TrainingModuleReward {
+    RewardKind: ValueTier | SpecificItem | Scene
+  }
+  entity GamificationValueTier {
+    Rank
+  }
+  entity GamificationScheme {
+    theme
+  }
+  entity GamificationScene {
+    base image
+    (the scheme's images)
+  }
+  entity GamificationItem {
+    ValueTierId
+    allowed zones
+    max per scene
+  }
+  entity GamificationSceneUnlockRule
+  entity GamificationAsset {
+    SHA-256
+    locator
+  }
+}
+package "Per user: Ace-only, OwnerUserId = user" #FFF5E6 {
+  entity UserTrainingModuleProgress {
+    NotStarted | InProgress | Completed | Abandoned
+  }
+  entity UserTrainingStepCompletion
+  entity UserGamificationUnlock
+  entity UserGamificationThemeSelection {
+    temporal
+  }
+  entity UserScenePlacement {
+    x, y, scale, rotation, z-order
+  }
+}
+TrainingProgram ||--o{ TrainingModule
+TrainingModule ||--o{ TrainingWizardStep
+TrainingModule ||--o{ TrainingModulePrerequisite
+TrainingModule ||--o{ TrainingModuleReward
+GamificationScheme ||--o{ GamificationScene
+GamificationScheme ||--o{ GamificationItem
+GamificationScene |o--o{ GamificationItem : scene-specific
+GamificationValueTier ||--o{ GamificationItem
+GamificationScene ||--o{ GamificationSceneUnlockRule
+GamificationScene }o--|| GamificationAsset
+GamificationItem }o--|| GamificationAsset
+TrainingModule ||--o{ UserTrainingModuleProgress
+TrainingWizardStep ||--o{ UserTrainingStepCompletion
+TrainingModuleReward ..> UserGamificationUnlock : on module completion
+GamificationScheme ||--o{ UserGamificationThemeSelection
+GamificationScene ||--o{ UserScenePlacement
+GamificationItem ||--o{ UserScenePlacement
+@enduml

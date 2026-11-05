@@ -2,6 +2,32 @@
 
 > **V5 revision (RPRRSBSI-V5-Opus5_5, 2026-11-05).** Successor of `Database/Documentation/RPRRSBSI-V4-2-25-ContentSummary-Data-Contract.md`. Requirement and decision IDs keep their V4-2 numbers with the prefix `V5-` (for example `V4-2-CORE-034` is now `V5-CORE-034`); a V4-2 ID that is not repeated here is withdrawn only where the "V5 changes" section says so. The V5 decisions DEC-1 to DEC-6 and the 2026-11-05 training and gamification requirements are summarised in [the V5 overview](RPRRSBSI-V5-00-Specification-Overview.md#v5-decisions); open items are in [HANDOFF-V5.md](HANDOFF-V5.md). **Terminology (DEC-6):** an *Instantiation* is a produced file or row; the run of an executor that produces instantiations is a *Materialization*; the reusable configuration it runs is a *materialization specification*. Where carried-forward V4-2 text uses "Instantiation" for the configured act, read "materialization specification".
 
+## V5 changes
+
+| Change | Source |
+| --- | --- |
+| **Build status:** this contract is built almost verbatim in `V00100`/`V00110` (rule codes `CS-R01`…`CS-R06`, `CS-I01`, ranking contract `content-summary-rank-v1`, lifecycle values, `CurrentOnly`/`IncludeStale`, `Any`/`All`, limit 1–100, `Latin1_General_100_BIN2`, derivation fingerprint, error codes, input types, procedure signature). `V00100` was the version allocated after `V00090`. | SQL, 2026-11-05 |
+| **Terminology (DEC-6/7/8):** `CS-I01-contentsummary-initial-v1` is a *materialization specification*. After the DEC-8 rename, `ContentSummaryVersion.InstantiationId` becomes `MaterializationSpecificationId`. Each `ContentSummaryVersion` row **is** an instantiation (a produced row) and is registered in `Instantiation` with origin `Asserted` or `Generated`. | [V5-12](RPRRSBSI-V5-12-Instantiation-And-Materialization.md) |
+| **Asserted summaries (DEC-2):** see "Asserted content summaries" below. | DEC-2 |
+| **Ownership (DEC-3):** every ContentSummary table has an owned `Ace` copy. `ATAPUtilities` holds template summaries (open); `Ace` holds user- and organization-owned summaries. Invariant INV-10 of `PlanContentSummary.md` (ATAPUtilities only) is superseded. | [V5-60](RPRRSBSI-V5-60-Ownership-And-Ace-Copy.md) |
+| **Query (DEC-3):** `QueryContentSummaryCandidatesAsOfV1` and its MCP facade union the `ATAPUtilities` and `Ace` candidates, applying owner filtering before matching, counting, ranking and truncation. A new versioned signature (`…V2`) is required; V1 stays for compatibility. | V5-CORE-073 |
+| **Origin vocabulary:** `GeneratorKindCode` (free text in V00100) SHALL take values from `InstantiationOriginKind`; generated summaries additionally record the generator kind/name/model as today. | V5-INST-008 |
+
+### Asserted content summaries (DEC-2)
+
+A person may hard-code a content summary for given Tags, recording that no materializer produced it.
+
+- **V5-CS-A01:** A forward migration seeds one **asserted rule set**: RuleVariants for source identity, normalization, classification, summary render, freshness and query ranking, plus an asserted prompt RuleVariant, each declared "no materializer; asserted by a person". Suggested codes `CS-A01-asserted-source-identity-v1` … `CS-A06-asserted-query-ranking-v1` and `CS-A-PROMPT-asserted-v1`; GUIDs allocated by the implementing task (V5-CORE-046A).
+- **V5-CS-A02:** The same migration seeds one **asserted materialization specification**, suggested code `CS-A00-contentsummary-asserted-v1`.
+- **V5-CS-A03:** An asserted `ContentSummaryVersion` fills the seven `NOT NULL` RuleVariant columns and the specification column with the asserted set, sets `GeneratorKindCode = 'Asserted'`, leaves model fields null, and is registered as an `Asserted` row instantiation with the asserting user and source reference. No V00100 constraint is relaxed.
+- **V5-CS-A04:** Asserted summaries are tagged through the existing `content-summary-version` Tag-assignment type and are returned by the same candidate query, so an AI agent calling `Get-ContentSummary` receives them like generated ones.
+- **V5-CS-A05:** Freshness for an asserted summary is `current` until a newer source version is observed or the summary is superseded; the asserted freshness RuleVariant defines this.
+- **V5-CS-A06:** When the ContentSummary materializer produces the same summary, the generated version supersedes the asserted one through `InstantiationSupersession` ([V5-12](RPRRSBSI-V5-12-Instantiation-And-Materialization.md)).
+
+### Gather-content flow (developer description, 2026-11-04; unchanged and built)
+
+An AI agent preparing a prompt supplies Tags to `Get-ContentSummary` (the "gather content summary" function), which calls the AceOutpost service (`POST /api/v1/gather-content`). AceOutpost records the submission and Tags (`Ace.GatherContentSubmission`, V00060), resolves Tags, queries the candidate summaries for the caller's authorized scope, and returns them in the public envelope to the function, which passes them back to the agent as context for its prompt. V5 changes only the query's scope (owned `Ace` summaries) and adds asserted summaries.
+
 
 Status: Frozen logical and interface contract for Sprint 0015 Tasks 15.60.b-.f.
 Physical DDL, GUIDs, the next Flyway number, package version, deployment, and live values

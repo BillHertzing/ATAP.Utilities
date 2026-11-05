@@ -2,6 +2,16 @@
 
 > **V5 revision (RPRRSBSI-V5-Opus5_5, 2026-11-05).** Successor of `Database/Documentation/RPRRSBSI-V4-2-30-Tags-Expert-System.md`. Requirement and decision IDs keep their V4-2 numbers with the prefix `V5-` (for example `V4-2-CORE-034` is now `V5-CORE-034`); a V4-2 ID that is not repeated here is withdrawn only where the "V5 changes" section says so. The V5 decisions DEC-1 to DEC-6 and the 2026-11-05 training and gamification requirements are summarised in [the V5 overview](RPRRSBSI-V5-00-Specification-Overview.md#v5-decisions); open items are in [HANDOFF-V5.md](HANDOFF-V5.md). **Terminology (DEC-6):** an *Instantiation* is a produced file or row; the run of an executor that produces instantiations is a *Materialization*; the reusable configuration it runs is a *materialization specification*. Where carried-forward V4-2 text uses "Instantiation" for the configured act, read "materialization specification".
 
+## V5 changes
+
+| Change | Source |
+| --- | --- |
+| **Build status:** the contract is fully reflected in `V00050` and `V00090` (collation `Latin1_General_100_CI_AS_SC`, opaque `PrincipalId`, steward gate, source reference, occurred/recorded UTC, no tenant column, no `TagVersion`, no confidence or localization, multi-hop successors with cycle rejection, relation weight in (0,1] defaulting to 1.0, assignment types `rule` and `instantiation`; `content-summary-version` added by V00100). | SQL, 2026-11-05 |
+| **C-20 amended (DEC-3):** `ATAPUtilities` holds one authoritative, tenant-free catalog of *template* Tags; its Tag tables have no owner or tenant column. `Ace` holds a full copy of every Tag table with owner columns; Ace Tags are owned by a user or an organization and are visible according to that ownership. Resolution across both uses the D-5 union contract with explicit source authority. Wherever the carried-forward text below says "one authoritative `ATAPUtilities` catalog with no tenant discriminator", read it as applying to the template catalog only. | DEC-3, [V5-60](RPRRSBSI-V5-60-Ownership-And-Ace-Copy.md) |
+| **Existing `Ace.Tag` / `Ace.TagNamespace` (V00060)** are a different, simpler shape used by gather-content capture and collide with the copies' names. They are renamed (proposed `Ace.GatherContentSubmittedTag`, `Ace.GatherContentTagNamespace`) or folded into the copies by forward migration. | V5-60 §7 |
+| **Assignment target `instantiation`** now means the new `Instantiation` table (produced files and rows); a `materialization-specification` target is added for the renamed V00010 table. | DEC-6, DEC-8 |
+| **Steward gate in `Ace`:** an owner's namespaces are stewarded by that owner (user or organization members with a steward role); the C-16 opaque `PrincipalId` maps to `CreatedByUserId`. | DEC-3 |
+
 
 Status: reconciled documentation-only design contract for Task 15.140.b. This document
 defines no SQL, migration, CSV identity, live inventory, package/feed action, or

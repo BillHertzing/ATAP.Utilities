@@ -2,6 +2,15 @@
 
 > **V5 revision (RPRRSBSI-V5-Opus5_5, 2026-11-05).** Successor of `Database/Documentation/RPRRSBSI-V4-2-40-Mechanized-Engineering.md`. Requirement and decision IDs keep their V4-2 numbers with the prefix `V5-` (for example `V4-2-CORE-034` is now `V5-CORE-034`); a V4-2 ID that is not repeated here is withdrawn only where the "V5 changes" section says so. The V5 decisions DEC-1 to DEC-6 and the 2026-11-05 training and gamification requirements are summarised in [the V5 overview](RPRRSBSI-V5-00-Specification-Overview.md#v5-decisions); open items are in [HANDOFF-V5.md](HANDOFF-V5.md). **Terminology (DEC-6):** an *Instantiation* is a produced file or row; the run of an executor that produces instantiations is a *Materialization*; the reusable configuration it runs is a *materialization specification*. Where carried-forward V4-2 text uses "Instantiation" for the configured act, read "materialization specification".
 
+## V5 changes
+
+| Change | Source |
+| --- | --- |
+| **Not built.** No Mechanized Engineering object exists in the migrations. | SQL |
+| **Vocabulary:** the validated configuration plan is produced by a *materialization*; the plan and each generated document are *instantiations* (DEC-6, DEC-7). | [V5-12](RPRRSBSI-V5-12-Instantiation-And-Materialization.md) |
+| **Ownership:** ATAP reference components are `ATAPUtilities` template rows; a user's or organization's overlays, inputs and plans are owned `Ace` rows (DEC-3). | [V5-60](RPRRSBSI-V5-60-Ownership-And-Ace-Copy.md) |
+| **Relation to software products:** "a software product built with a development process" ([V5-62](RPRRSBSI-V5-62-Organization-Identity-Products-And-Estates.md)) applies the same pattern to software; a computer configuration is a candidate marketplace bolt-on. | 2026-11-04 note |
+
 
 Status: reconciled documentation-only contract. It defines no SQL, allocates no GUID,
 and grants no live-system authority.

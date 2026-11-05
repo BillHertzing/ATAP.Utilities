@@ -2,6 +2,15 @@
 
 > **V5 revision (RPRRSBSI-V5-Opus5_5, 2026-11-05).** Successor of `Database/Documentation/RPRRSBSI-V4-Tags-Traversal-Contract.md`. Requirement and decision IDs keep their V4-2 numbers with the prefix `V5-` (for example `V4-2-CORE-034` is now `V5-CORE-034`); a V4-2 ID that is not repeated here is withdrawn only where the "V5 changes" section says so. The V5 decisions DEC-1 to DEC-6 and the 2026-11-05 training and gamification requirements are summarised in [the V5 overview](RPRRSBSI-V5-00-Specification-Overview.md#v5-decisions); open items are in [HANDOFF-V5.md](HANDOFF-V5.md). **Terminology (DEC-6):** an *Instantiation* is a produced file or row; the run of an executor that produces instantiations is a *Materialization*; the reusable configuration it runs is a *materialization specification*. Where carried-forward V4-2 text uses "Instantiation" for the configured act, read "materialization specification".
 
+## V5 changes
+
+| Change | Source |
+| --- | --- |
+| **Build status:** implemented by `ATAPUtilities.QueryTagLogicalEdgesAsOf` (V00090) and used by the ContentSummary query and runtime role (V00100–V00140). | SQL |
+| **Union traversal (DEC-3):** traversal may run over `ATAPUtilities` template Tags and the caller's visible `Ace` Tags. Ownership filtering SHALL be applied **before** traversal, so an invisible Tag cannot affect neighbour order, width truncation, depth, path weight or the empty/non-empty result (same rule as the existing Authorization boundary). Edges between a template Tag and an owned Tag are owned by the edge's owner. | V5-CORE-073, V5-OWN-022 |
+| **Result provenance:** each returned edge states its source authority (`ATAPUtilities` or `Ace`). | D-5 |
+| The algorithm, ordering, cycle and truncation rules below are unchanged. | — |
+
 
 Status: normative, database-neutral design contract for Sprint 0015 Task 15.50.b.
 This document defines traversal behavior and acceptance inputs only. It creates no SQL,

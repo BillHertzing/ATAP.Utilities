@@ -2,6 +2,17 @@
 
 > **V5 revision (RPRRSBSI-V5-Opus5_5, 2026-11-05).** Successor of `Database/Documentation/RPRRSBSI-V4-2-20-Seed-Data-And-Loaders.md`. Requirement and decision IDs keep their V4-2 numbers with the prefix `V5-` (for example `V4-2-CORE-034` is now `V5-CORE-034`); a V4-2 ID that is not repeated here is withdrawn only where the "V5 changes" section says so. The V5 decisions DEC-1 to DEC-6 and the 2026-11-05 training and gamification requirements are summarised in [the V5 overview](RPRRSBSI-V5-00-Specification-Overview.md#v5-decisions); open items are in [HANDOFF-V5.md](HANDOFF-V5.md). **Terminology (DEC-6):** an *Instantiation* is a produced file or row; the run of an executor that produces instantiations is a *Materialization*; the reusable configuration it runs is a *materialization specification*. Where carried-forward V4-2 text uses "Instantiation" for the configured act, read "materialization specification".
 
+## V5 changes
+
+| Change | Source |
+| --- | --- |
+| **Seed classes under DEC-3:** (1) `ATAPUtilities` template rows: open, no owner columns, deterministic GUIDs; (2) `Ace` owned rows: owner columns, created by users or by activation of a bolt-on; (3) derived-from-template rows in `Ace`, which record the template id and revision (`OrganizationFactProvenance` pattern). | [V5-60](RPRRSBSI-V5-60-Ownership-And-Ace-Copy.md) |
+| **Common initial load (DEC-9):** the first load seeds both schemas; afterwards `Ace` is the place where data changes start. | DEC-9 |
+| **Bolt-on template rows (DEC-5):** rows a developer selects during submission become `ATAPUtilities` seed rows inside the generated migration, with deterministic GUIDs and `PublisherAttribution`; private developer data is moved at runtime and never enters a migration or package. | [V5-15](RPRRSBSI-V5-15-Plugin-DDL-Authoring-And-Marketplace.md) |
+| **New reference seeds:** `InstantiationOriginKind` (`Asserted`, `Generated`); the asserted ContentSummary rule set and specification (DEC-2); capability codes; training and gamification catalog (value tiers, first schemes, scenes, items, first training program) for [V5-70](RPRRSBSI-V5-70-Training-And-Gamification.md). | DEC-1, DEC-2, V5-70 |
+| **Built status:** loader phases are not implemented as a loader; seed rows are embedded in migrations (`V00010` consolidated seed with eleven CSV inputs; targeted seeds in `V00030`–`V00210`). | SQL |
+| **Terminology:** "Instantiation" seed rows in V3/V4-2 text (for example the `HelloWorld` row and `CS-I01`) are materialization specifications after DEC-8. | DEC-8 |
+
 
 Status: reconciled documentation-only seed and loader contract. This document allocates
 no GUID, creates no CSV or SQL, authorizes no migration, and performs no database or

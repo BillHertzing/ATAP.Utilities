@@ -2,6 +2,42 @@
 
 > **V5 revision (RPRRSBSI-V5-Opus5_5, 2026-11-05).** Successor of `Database/Documentation/RPRRSBSI-V4-2-50-Layered-Implementation-Handoff.md`. Requirement and decision IDs keep their V4-2 numbers with the prefix `V5-` (for example `V4-2-CORE-034` is now `V5-CORE-034`); a V4-2 ID that is not repeated here is withdrawn only where the "V5 changes" section says so. The V5 decisions DEC-1 to DEC-6 and the 2026-11-05 training and gamification requirements are summarised in [the V5 overview](RPRRSBSI-V5-00-Specification-Overview.md#v5-decisions); open items are in [HANDOFF-V5.md](HANDOFF-V5.md). **Terminology (DEC-6):** an *Instantiation* is a produced file or row; the run of an executor that produces instantiations is a *Materialization*; the reusable configuration it runs is a *materialization specification*. Where carried-forward V4-2 text uses "Instantiation" for the configured act, read "materialization specification".
 
+## V5 changes
+
+### V5 build baseline
+
+Built in source (`ATAP.Utilities` branch `150-Sprint-0017-work-items`): `V00010`, `V00030`–`V00210`. Evidenced in Production: `V00010`–`V00070` (package `0.1.6`, 2026-09-01). Experimental only: everything later, accepted as `0.1.19-Sprint.1`. Layers 0–2 and 4 below are partly built (`V00080` overlay, `V00050`/`V00090` Tags); Layers 3 and 5–8 are not built.
+
+### V5 delivery slices (Experimental only, forward-only, smallest first)
+
+| Slice | Content | Decisions | Documents |
+| --- | --- | --- | --- |
+| V5-S1 | Rename V00010 `Instantiation` → `MaterializationSpecification`; new `Instantiation`, `InstantiationOriginKind`, `Materialization`, `MaterializationAttempt`, `InstantiationSupersession`; `OrganizationFactProvenance.OriginKind` `Manual` → `Asserted` | DEC-1, DEC-6, DEC-7, DEC-8 | V5-12 |
+| V5-S2 | Asserted ContentSummary rule set and specification; pilot one hand-entered summary and `main-instructions.md` as an asserted file instantiation | DEC-2, DEC-10 | V5-25, V5-12 |
+| V5-S3 | Protected `AceAuth` schema; viewer exclusion; first security items (S1, S2, S3, S5, S7) | open (H-AUTH) | V5-65 |
+| V5-S4 | Owner-column pattern and RLS on **new** `Ace` tables first: capabilities, software products and processes, training and gamification | DEC-3 | V5-60, V5-62, V5-70 |
+| V5-S5 | Ace-copy generator; owned twins of the 53 `ATAPUtilities` tables; retrofit owner columns to existing `Ace`/`ACE` tables; rename `Ace.Tag*`; union reads for Tags and ContentSummary | DEC-3, DEC-9 | V5-60, V5-30, V5-31, V5-25 |
+| V5-S6 | DDL Authoring service, per-developer schemas, viewer visibility | DEC-4 | V5-15 |
+| V5-S7 | Bolt-on submission, review, generated migration, backup and data move, retirement, offering, entitlement, activation | DEC-5 | V5-15 |
+| V5-S8 | Estates and assets; identity-binding write-time check | open | V5-62 |
+| V5-S9 | Consolidated baseline once the shape settles | churn policy | below |
+
+AceCommander UI work that depends on these slices: theme step in the login workflow and the gamification home page ([Ace-Outpost-Commander-Integration/40](Ace-Outpost-Commander-Integration/40-Gamification-Home-And-Login-Theme.md)) after V5-S4; DDL Authoring mode after V5-S6.
+
+### Churn policy (developer note 2026-11-04: the design will change a lot)
+
+- **V5-HANDOFF-010:** Keep every migration after `V00070` Experimental-only until the DEC-3 Ace-copy shape and the DEC-8 rename settle; Experimental and Development databases are cleared every sprint, so experimental churn costs only migration numbers.
+- **V5-HANDOFF-011:** When the shape settles, consolidate into a new baseline (precedent: the V3/PTV consolidation of 2026-08-08) and promote that baseline, rather than promoting dozens of experimental increments.
+- **V5-HANDOFF-012:** The DEC-8 rename touches a Production table; it SHOULD ship to Production only inside that consolidated baseline.
+
+### Three delivery paths
+
+| Path | What | Lineage |
+| --- | --- | --- |
+| Core migration | ATAP maintainers' changes to `ATAPUtilities` and generated `Ace` twins | Flyway, five tiers (protocol below, unchanged) |
+| Developer DDL authoring | A developer's own `Ace` tables | **Outside** Flyway; each apply recorded as a materialization with DDL hash (V5-PDB-037) |
+| Bolt-on promotion | A submitted bolt-on's new `ATAPUtilities` tables, template rows and `Ace` twins | Generated Flyway migration, five tiers; private data moved at runtime (V5-PDB-040) |
+
 
 Status: reconciled task-authoring handoff for Task 15.140.b. This document authorizes
 documentation and task decomposition only. It does not authorize SQL, Flyway changes,

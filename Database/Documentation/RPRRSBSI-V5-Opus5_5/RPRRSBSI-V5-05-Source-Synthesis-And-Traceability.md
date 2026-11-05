@@ -2,6 +2,29 @@
 
 > **V5 revision (RPRRSBSI-V5-Opus5_5, 2026-11-05).** Successor of `Database/Documentation/RPRRSBSI-V4-2-05-Source-Synthesis-And-Traceability.md`. Requirement and decision IDs keep their V4-2 numbers with the prefix `V5-` (for example `V4-2-CORE-034` is now `V5-CORE-034`); a V4-2 ID that is not repeated here is withdrawn only where the "V5 changes" section says so. The V5 decisions DEC-1 to DEC-6 and the 2026-11-05 training and gamification requirements are summarised in [the V5 overview](RPRRSBSI-V5-00-Specification-Overview.md#v5-decisions); open items are in [HANDOFF-V5.md](HANDOFF-V5.md). **Terminology (DEC-6):** an *Instantiation* is a produced file or row; the run of an executor that produces instantiations is a *Materialization*; the reusable configuration it runs is a *materialization specification*. Where carried-forward V4-2 text uses "Instantiation" for the configured act, read "materialization specification".
 
+## V5 changes
+
+V5 adds three evidence classes to the V4-2 synthesis: the developer notes of 2026-11-03 and 2026-11-04 (`_Planning/InformationForTheFuture/Sprint0018/DatabaseEnhancements/DeveloperNotes-2026-11-03.md`, `DeveloperNotes-2026-11-04.md`), the developer decisions of 2026-11-05 recorded in `Claude-v1/Requirements-Impact-2026-11-04.md` (revision 2) and in this set's overview, and a check of every V4-2 table name against migrations `V00010`–`V00210`.
+
+### V5 traceability
+
+| V5 source requirement | Decision | V4-2 rule affected | Disposition | V5 document |
+| --- | --- | --- | --- | --- |
+| Instantiation is a produced file or row; executor run is a Materialization | DEC-6, DEC-7, DEC-8 | V4-2-CORE-060…063 runtime tables; V3 `Instantiation` table meaning | **adapted** (renamed; V00010 table renamed by forward migration) | V5-10, V5-12 |
+| Asserted/Generated origin; manual instantiations replaced later by generated ones | DEC-1 | none (new) | **added** | V5-12 |
+| Hand-entered content summaries for Tags | DEC-2 | ContentSummary frozen contract | **added** without relaxing V00100 | V5-25 |
+| Ace is a full copy with owner columns | DEC-3 | C-20, V4-2-CORE-074, ADR-125, INV-10 | **superseded** (amended texts) | V5-60, V5-10, V5-30 |
+| Changes start in Ace after a common initial load | DEC-9 | V4 Ace/Mobile parity direction | **superseded**; parity structure reused | V5-60 |
+| Developers author DDL for tables they own | DEC-4 | V4-2-PDB-002 | **superseded** (amended text) | V5-15 |
+| Marketplace bolt-on submission | DEC-5 | `productionPublishNewOrModifiedPlugin` | **superseded** by the submission process | V5-15 |
+| AI agent rules as instantiations | DEC-10 (ADR-018) | none | **added** | V5-12 |
+| Software products, development processes | 2026-11-04 note | none | **added (proposal)** | V5-62 |
+| Deceased persons, estates, assets | 2026-11-04 note | none | **added (proposal)** | V5-62 |
+| Windows accounts belong to hosts | 2026-11-04 note | V00180/V00190 (already built that way) | **confirmed** | V5-62 |
+| Protected sign-in table; access tiers | 2026-11-04 note | V00160 | **added (proposal)** | V5-65 |
+| Training wizards and gamification | 2026-11-05 requirement | none | **added (proposal)** | V5-70 |
+| Design will change a lot | 2026-11-04 note | V4-2-HANDOFF delivery protocol | **adapted** (churn policy) | V5-50 |
+
 
 ## Evidence reviewed
 

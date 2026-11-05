@@ -2,6 +2,13 @@
 
 > **V5 revision (RPRRSBSI-V5-Opus5_5, 2026-11-05).** Successor of `Database/Documentation/RPRRSBSI-V4-2-55-Initial-Capability-Slice.md`. Requirement and decision IDs keep their V4-2 numbers with the prefix `V5-` (for example `V4-2-CORE-034` is now `V5-CORE-034`); a V4-2 ID that is not repeated here is withdrawn only where the "V5 changes" section says so. The V5 decisions DEC-1 to DEC-6 and the 2026-11-05 training and gamification requirements are summarised in [the V5 overview](RPRRSBSI-V5-00-Specification-Overview.md#v5-decisions); open items are in [HANDOFF-V5.md](HANDOFF-V5.md). **Terminology (DEC-6):** an *Instantiation* is a produced file or row; the run of an executor that produces instantiations is a *Materialization*; the reusable configuration it runs is a *materialization specification*. Where carried-forward V4-2 text uses "Instantiation" for the configured act, read "materialization specification".
 
+## V5 changes
+
+| Change | Source |
+| --- | --- |
+| **Built.** The three vertical paths of this slice exist in source: gather-content capture and query (`V00060`), AISupervisor telemetry (`V00070`, `V00150`), ContentSummary storage and query (`V00100`–`V00140`); AceCommander timeline queries in `V00070`. | SQL |
+| **Follow-on in V5:** asserted content summaries (DEC-2) and owned `Ace` summaries (DEC-3) extend this slice; the next slices are listed in [V5-50](RPRRSBSI-V5-50-Layered-Implementation-Handoff.md). | V5-25 |
+
 
 Status: candidate input to Task 15.140.b and prioritized implementation handoff. It
 defines the narrowest planned capability, not executable DDL, a ratified V4 authority,

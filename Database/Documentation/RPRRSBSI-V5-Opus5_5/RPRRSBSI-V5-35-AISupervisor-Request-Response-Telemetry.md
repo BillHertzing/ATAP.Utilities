@@ -2,6 +2,15 @@
 
 > **V5 revision (RPRRSBSI-V5-Opus5_5, 2026-11-05).** Successor of `Database/Documentation/RPRRSBSI-V4-2-35-AISupervisor-Request-Response-Telemetry.md`. Requirement and decision IDs keep their V4-2 numbers with the prefix `V5-` (for example `V4-2-CORE-034` is now `V5-CORE-034`); a V4-2 ID that is not repeated here is withdrawn only where the "V5 changes" section says so. The V5 decisions DEC-1 to DEC-6 and the 2026-11-05 training and gamification requirements are summarised in [the V5 overview](RPRRSBSI-V5-00-Specification-Overview.md#v5-decisions); open items are in [HANDOFF-V5.md](HANDOFF-V5.md). **Terminology (DEC-6):** an *Instantiation* is a produced file or row; the run of an executor that produces instantiations is a *Materialization*; the reusable configuration it runs is a *materialization specification*. Where carried-forward V4-2 text uses "Instantiation" for the configured act, read "materialization specification".
 
+## V5 changes
+
+| Change | Source |
+| --- | --- |
+| **Build status:** built in `V00070`/`V00150` with a different shape: `AISupervisorExchange`, `AISupervisorPrompt`, `AISupervisorExchangeTag`, `AISupervisorAttempt`, `AISupervisorUsage` (token counts, `CacheTokens`), `AISupervisorMetricCatalog`, `AISupervisorMetric`; header values and bodies excluded. `AISupervisorHeader` and tenant columns were **not** built. `V00070` reached Production (package 0.1.6). | SQL, release records |
+| **Ownership (DEC-3):** the spec's "tenant" is replaced by owner columns; an exchange is owned by the user whose agent produced it, or by that user's organization when run on its behalf. | [V5-60](RPRRSBSI-V5-60-Ownership-And-Ace-Copy.md) |
+| **Instantiation (DEC-6):** a captured exchange row is a `Generated` instantiation of the capture procedure's materialization only if traceability is needed; by default telemetry rows are operational data, not instantiations. | [V5-12](RPRRSBSI-V5-12-Instantiation-And-Materialization.md) |
+| The HITL decisions V5-H-AIS-01…05 remain open. | HANDOFF-V5 |
+
 
 Status: design contract for an Ace-owned AI-agent proxy. It does not authorize traffic interception, credential capture, or payload retention.
 

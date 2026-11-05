@@ -2,6 +2,17 @@
 
 > **V5 revision (RPRRSBSI-V5-Opus5_5, 2026-11-05).** Successor of `Database/Documentation/RPRRSBSI-V4-Ace-Mobile-Integration/40-Data-Tenancy-And-Synchronization.md`. Requirement and decision IDs keep their V4-2 numbers with the prefix `V5-` (for example `V4-2-CORE-034` is now `V5-CORE-034`); a V4-2 ID that is not repeated here is withdrawn only where the "V5 changes" section says so. The V5 decisions DEC-1 to DEC-6 and the 2026-11-05 training and gamification requirements are summarised in [the V5 overview](RPRRSBSI-V5-00-Specification-Overview.md#v5-decisions); open items are in [HANDOFF-V5.md](HANDOFF-V5.md). **Terminology (DEC-6):** an *Instantiation* is a produced file or row; the run of an executor that produces instantiations is a *Materialization*; the reusable configuration it runs is a *materialization specification*. Where carried-forward V4-2 text uses "Instantiation" for the configured act, read "materialization specification".
 
+## V5 changes (applies to the whole Ace and Mobile suite)
+
+| Change | Source |
+| --- | --- |
+| **Ace copy confirmed and extended (DEC-3).** The 2026-08-28 operator requirement "Ace duplicates all ATAP tables except User" is retained and strengthened: `Ace` holds every `ATAPUtilities` table (same shape) **plus owner columns on every row** (`OwnerUserId` xor `OwnerOrganizationId`, `CreatedByUserId`), enforced by row-level security. The identity registry (`Philote`, `PhiloteValidityPeriod`) stays shared. | [V5-60](../RPRRSBSI-V5-60-Ownership-And-Ace-Copy.md) |
+| **Direction reversed (DEC-9).** After a common initial load, changes start in `Ace`; selected changes are promoted to `ATAPUtilities`. The parity manifest becomes the *copy manifest* with disposition `mirrored-with-owner` for every template table and `ace-only` for Ace-only tables; a new `ATAPUtilities` table still fails the gate until its `Ace` twin exists, and the twin is generated, not hand-written. | V5-60 §6 |
+| **User table.** "`User` is absent from Ace" is outdated: `ACE.User` and the login tables exist since `V00160`. V5 moves credentials into a protected `AceAuth` schema outside `Ace`. | [V5-65](../RPRRSBSI-V5-65-Protected-Authentication.md) |
+| **Publication path replaced (DEC-5).** `productionPublishNewOrModifiedPLugin` (AM-GOAL-005, UC-11, document 50) is replaced by the marketplace bolt-on submission process; its security checks become steps of that process. Developers may author DDL for tables they own (DEC-4); the "Apply an approved change to the shared Ace schema" path (UC-09) remains for core changes. | [V5-15](../RPRRSBSI-V5-15-Plugin-DDL-Authoring-And-Marketplace.md) |
+| **Tenancy.** "User-segmented data" and "tenant" are implemented by owner columns. | V5-60 |
+| **Vocabulary.** Instantiation = produced file or row; Materialization = the run that produces it (DEC-6, DEC-7). | [V5-12](../RPRRSBSI-V5-12-Instantiation-And-Materialization.md) |
+
 
 Status: normative logical data contract; physical DDL remains future work.
 

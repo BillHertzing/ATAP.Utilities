@@ -26,6 +26,11 @@
 # (-OmitSprintWorktrees) so the round trip stays idempotent.
 [sandbox_workspace_write]
 writable_roots = [
+  "C:\\Dropbox\\whertzing\\GitHub\\SharedVSCode-wt-70-Sprint-0017-work-items",
+  "C:\\Dropbox\\whertzing\\GitHub\\_Planning-wt-44-Sprint-0017-work-items",
+  "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities-wt-150-Sprint-0017-work-items",
+  "C:\\Dropbox\\whertzing\\GitHub\\ATAP.IAC-wt-27-Sprint-0017-work-items",
+  "C:\\Dropbox\\whertzing\\GitHub\\Ace-wt-49-Sprint-0017-work-items",
   "C:\\Users\\whertzing\\AppData\\Local\\PSResourceGet",
   "C:\\Dropbox\\whertzing\\GitHub\\SharedVSCode\\.git",
   "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities\\.git",

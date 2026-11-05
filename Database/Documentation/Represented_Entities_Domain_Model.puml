@@ -1,0 +1,470 @@
+@startuml Represented_Entities_Domain_Model
+!theme plain
+title Domain Entities Represented by the RRSBS, Ace & Codex-V3 Organizational Schemas
+' Comprehensive semantic domain model instantiated across ATAPUtilities, Ace, and Organizational schemas
+
+skinparam linetype ortho
+skinparam roundcorner 5
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 9
+skinparam packageStyle rectangle
+skinparam nodesep 30
+skinparam ranksep 30
+
+skinparam entity {
+  BackgroundColor #FAFAFC
+  BorderColor #2C3E50
+  FontColor #1A1A2E
+}
+skinparam arrow {
+  Color #2471A3
+  FontSize 8
+}
+
+package "Universal Identity, Temporal Validity & Governance Foundation" #F4F6F6 {
+  entity "PhiloteEntity" as PhiloteEntity <<table>> {
+    * EntityId : uniqueidentifier <<PK>>
+    --
+    EntityTypeCode : varchar(64) <<UQ>>
+    ValidFromUtc : datetime2(7)
+    ValidToUtc : datetime2(7) [NULL]
+    PredecessorEntityId : uniqueidentifier [NULL, FK]
+  }
+
+  entity "TaxonomyTag" as TaxonomyTag <<table>> {
+    * TagId : uniqueidentifier <<PK, FK>>
+    --
+    NamespaceCode : nvarchar(128)
+    TagCode : nvarchar(256)
+    IsDeprecated : bit
+    FirstRecordedAtUtc : datetime2(7)
+  }
+
+  entity "TagRelationship" as TagRelationship <<table>> {
+    * RelationId : uniqueidentifier <<PK>>
+    --
+    SubjectTagId : uniqueidentifier <<FK>>
+    ObjectTagId : uniqueidentifier <<FK>>
+    RelationKindCode : varchar(64)
+  }
+
+  entity "EntityTagAssignment" as EntityTagAssignment <<table>> {
+    * AssignmentId : uniqueidentifier <<PK>>
+    --
+    EntityId : uniqueidentifier <<FK>>
+    TagId : uniqueidentifier <<FK>>
+    AssignedAtUtc : datetime2(7)
+  }
+}
+
+package "Organizational, People & Household Hierarchy (Codex-V3)" #FEF9E7 {
+  entity "Person" as Person <<table>> {
+    * PersonId : uniqueidentifier <<PK, FK>>
+    --
+    DisplayName : nvarchar(128)
+    LegalName : nvarchar(128) [NULL]
+  }
+
+  entity "Household" as Household <<table>> {
+    * HouseholdId : uniqueidentifier <<PK, FK>>
+    --
+    DisplayName : nvarchar(128)
+    HouseholdKindCode : varchar(32)
+  }
+
+  entity "HouseholdMembership" as HouseholdMembership <<table>> {
+    * MembershipId : uniqueidentifier <<PK>>
+    --
+    PersonId : uniqueidentifier <<FK>>
+    HouseholdId : uniqueidentifier <<FK>>
+    IsPrimary : bit
+    RoleTitle : varchar(64)
+    ValidFromUtc : datetime2(7)
+    ValidToUtc : datetime2(7) [NULL]
+  }
+
+  entity "HouseholdLink" as HouseholdLink <<table>> {
+    * LinkId : uniqueidentifier <<PK>>
+    --
+    SourceHouseholdId : uniqueidentifier <<FK>>
+    CombinedHouseholdId : uniqueidentifier <<FK>>
+    LinkTypeCode : varchar(32)
+  }
+
+  entity "AceUser" as AceUser <<table>> {
+    * UserId : uniqueidentifier <<PK, FK>>
+    --
+    PersonId : uniqueidentifier <<FK, UQ>>
+    UserName : nvarchar(64) <<UQ>>
+    UserStatusCode : varchar(32)
+    IanaTimeZone : varchar(64)
+  }
+
+  entity "WindowsLocalAccountBinding" as WindowsLocalAccountBinding <<table>> {
+    * BindingId : uniqueidentifier <<PK>>
+    --
+    UserId : uniqueidentifier <<FK>>
+    HostId : uniqueidentifier <<FK>>
+    SecurityIdentifier : varchar(128) [NULL]
+    AccountName : nvarchar(64)
+    VerificationStatus : varchar(32)
+  }
+
+  entity "Project" as Project <<table>> {
+    * ProjectId : uniqueidentifier <<PK, FK>>
+    --
+    ProjectCode : varchar(64) <<UQ>>
+    DisplayName : nvarchar(128)
+    OwnerEntityId : uniqueidentifier <<FK>>
+    OwnerEntityTypeCode : varchar(32)
+    StatusCode : varchar(32)
+  }
+
+  entity "ProjectRoleAssignment" as ProjectRoleAssignment <<table>> {
+    * AssignmentId : uniqueidentifier <<PK>>
+    --
+    PersonId : uniqueidentifier <<FK>>
+    ProjectId : uniqueidentifier <<FK>>
+    RoleCode : varchar(32)
+    ValidFromUtc : datetime2(7)
+    ValidToUtc : datetime2(7) [NULL]
+  }
+}
+
+package "RRSBS Rule Engine, Decision Logic & Manifestation Plans" #FFF9E6 {
+  entity "RuleKind" as RuleKind <<table>> {
+    * RuleKindId : uniqueidentifier <<PK, FK>>
+    --
+    RuleKindCode : varchar(64) <<UQ>>
+    RuleKindName : nvarchar(128)
+  }
+
+  entity "RuleDefinition" as RuleDefinition <<table>> {
+    * RuleId : uniqueidentifier <<PK, FK>>
+    --
+    RuleKindId : uniqueidentifier <<FK>>
+    RuleCode : varchar(128) <<UQ>>
+    RuleBody : nvarchar(max)
+  }
+
+  entity "RuleVariant" as RuleVariant <<table>> {
+    * RuleVariantId : uniqueidentifier <<PK, FK>>
+    --
+    RuleId : uniqueidentifier <<FK>>
+    OwningRuleSetId : uniqueidentifier <<FK>>
+    VariantTypeCode : varchar(64)
+  }
+
+  entity "BuildSetSpecification" as BuildSetSpecification <<table>> {
+    * BuildSetId : uniqueidentifier <<PK, FK>>
+    --
+    BuildSetCode : varchar(128) <<UQ>>
+    PrecedenceRank : int
+  }
+
+  entity "ConfigurationPlan" as ConfigurationPlan <<table>> {
+    * PlanId : uniqueidentifier <<PK, FK>>
+    --
+    BuildSetId : uniqueidentifier <<FK>>
+    PlanFingerprint : binary(32) <<UQ>>
+    ValidationStatus : varchar(32)
+    PlannedAtUtc : datetime2(7)
+  }
+}
+
+package "Mechanized Engineering: BOM, Assembly & Configuration" #EAF2F8 {
+  ' Mechanized Engineering: Mechanical generation of the parts list (BOM), assembly instructions,
+  ' and installation and configuration instructions for anything that can be assembled from parts,
+  ' including software products. Outputs are generated by Rules arranged in BuildSets.
+  entity "ComputerHost" as ComputerHost <<table>> {
+    * HostId : uniqueidentifier <<PK, FK>>
+    --
+    HostName : varchar(64) <<UQ>>
+    TargetWorkload : varchar(64)
+    FormFactor : varchar(32)
+  }
+
+  entity "HostAffiliation" as HostAffiliation <<table>> {
+    * AffiliationId : uniqueidentifier <<PK>>
+    --
+    HostId : uniqueidentifier <<FK>>
+    HouseholdId : uniqueidentifier <<FK>>
+    AffiliationKindCode : varchar(32)
+  }
+
+  entity "ChassisEnclosure" as ChassisEnclosure <<table>> {
+    * ChassisId : uniqueidentifier <<PK, FK>>
+    --
+    ModelName : varchar(128)
+    FormFactor : varchar(32)
+    MaxGpuLengthMm : int
+    MaxCoolerHeightMm : int
+  }
+
+  entity "Motherboard" as Motherboard <<table>> {
+    * MotherboardId : uniqueidentifier <<PK, FK>>
+    --
+    ModelName : varchar(128)
+    SocketType : varchar(32)
+    ChipsetCode : varchar(32)
+    MemorySlots : int
+    MaxMemoryBytes : bigint
+  }
+
+  entity "ProcessorCpu" as ProcessorCpu <<table>> {
+    * CpuId : uniqueidentifier <<PK, FK>>
+    --
+    ModelName : varchar(128)
+    SocketType : varchar(32)
+    CoreCount : int
+    ThreadCount : int
+    TdpWatts : int
+    PcieLanesCount : int
+  }
+
+  entity "MemoryModuleRam" as MemoryModuleRam <<table>> {
+    * MemoryId : uniqueidentifier <<PK, FK>>
+    --
+    CapacityBytes : bigint
+    MemoryType : varchar(16)
+    SpeedMhz : int
+    IsEcc : bit
+  }
+
+  entity "GraphicsAcceleratorGpu" as GraphicsAcceleratorGpu <<table>> {
+    * GpuId : uniqueidentifier <<PK, FK>>
+    --
+    ModelName : varchar(128)
+    VramBytes : bigint
+    PowerDrawWatts : int
+    TensorCoresCount : int
+  }
+
+  entity "StorageDevice" as StorageDevice <<table>> {
+    * StorageId : uniqueidentifier <<PK, FK>>
+    --
+    InterfaceType : varchar(32)
+    CapacityBytes : bigint
+    ReadSpeedMbSec : int
+  }
+
+  entity "PowerSupplyPsu" as PowerSupplyPsu <<table>> {
+    * PsuId : uniqueidentifier <<PK, FK>>
+    --
+    WattageRating : int
+    EfficiencyRating : varchar(32)
+    IsModular : bit
+  }
+
+  entity "CoolingUnit" as CoolingUnit <<table>> {
+    * CoolerId : uniqueidentifier <<PK, FK>>
+    --
+    CoolerType : varchar(32)
+    TdpDissipationWatts : int
+  }
+}
+
+package "Software Architecture, Repositories & Worktrees" #E8F8F5 {
+  entity "CodeRepository" as CodeRepository <<table>> {
+    * RepositoryId : uniqueidentifier <<PK, FK>>
+    --
+    RepositoryCode : varchar(64) <<UQ>>
+    DisplayName : nvarchar(128)
+    VcsUrl : varchar(256)
+  }
+
+  entity "ProjectRepositoryLink" as ProjectRepositoryLink <<table>> {
+    * ProjectId : uniqueidentifier <<PK, FK>>
+    * RepositoryId : uniqueidentifier <<PK, FK>>
+    --
+    Ord : int
+    AssignedAtUtc : datetime2(7)
+  }
+
+  entity "RepositoryClone" as RepositoryClone <<table>> {
+    * CloneId : uniqueidentifier <<PK, FK>>
+    --
+    RepositoryId : uniqueidentifier <<FK>>
+    HostId : uniqueidentifier <<FK>>
+    CanonicalCommonGitDirectory : nvarchar(512)
+  }
+
+  entity "GitWorktree" as GitWorktree <<table>> {
+    * WorktreeId : uniqueidentifier <<PK, FK>>
+    --
+    CloneId : uniqueidentifier <<FK>>
+    CanonicalPath : nvarchar(512) <<UQ>>
+    PurposeCode : varchar(32)
+    SprintKey : varchar(32) [NULL]
+  }
+
+  entity "WorktreeObservation" as WorktreeObservation <<table>> {
+    * ObservationId : uniqueidentifier <<PK>>
+    --
+    WorktreeId : uniqueidentifier <<FK>>
+    ObservedAtUtc : datetime2(7)
+    BranchRef : varchar(128) [NULL]
+    HeadCommitSha : varchar(64)
+    ObservationStatusCode : varchar(32)
+  }
+
+  entity "SourceArtifact" as SourceArtifact <<table>> {
+    * ArtifactId : uniqueidentifier <<PK, FK>>
+    --
+    RepositoryId : uniqueidentifier <<FK>>
+    RelativePath : varchar(512)
+    ArtifactType : varchar(64)
+  }
+
+  entity "ContentSummary" as ContentSummary <<table>> {
+    * SummaryId : uniqueidentifier <<PK, FK>>
+    --
+    ArtifactId : uniqueidentifier <<FK>>
+    ExtractedSymbolsSummary : nvarchar(max)
+    NaturalLanguageSummary : nvarchar(max)
+  }
+}
+
+package "AI Supervision, Telemetry & Agent Execution" #EBF5FB {
+  entity "AIAgentHarness" as AIAgentHarness <<table>> {
+    * AgentId : uniqueidentifier <<PK, FK>>
+    --
+    HarnessName : varchar(64)
+    ModelFamily : varchar(64)
+    EffortProfile : varchar(32)
+  }
+
+  entity "SupervisedExchange" as SupervisedExchange <<table>> {
+    * ExchangeId : uniqueidentifier <<PK, FK>>
+    --
+    AgentId : uniqueidentifier <<FK>>
+    UserId : uniqueidentifier [NULL, FK]
+    ConversationId : varchar(128)
+    StartedAtUtc : datetime2(7)
+  }
+
+  entity "PromptContextEnvelope" as PromptContextEnvelope <<table>> {
+    * PromptId : uniqueidentifier <<PK, FK>>
+    --
+    ExchangeId : uniqueidentifier <<FK>>
+    SanitizedContent : nvarchar(max)
+    IncludedSummariesCount : int
+  }
+
+  entity "ExecutionAttempt" as ExecutionAttempt <<table>> {
+    * AttemptId : uniqueidentifier <<PK, FK>>
+    --
+    ExchangeId : uniqueidentifier <<FK>>
+    OutcomeCode : varchar(32)
+    ExecutionDurationMs : int
+  }
+
+  entity "TokenUsageTelemetry" as TokenUsageTelemetry <<table>> {
+    * AttemptId : uniqueidentifier <<PK, FK>>
+    --
+    RequestTokens : bigint
+    ResponseTokens : bigint
+    CacheHitTokens : bigint
+    EstimatedCostUsd : decimal(12, 4)
+  }
+}
+
+' =============================================================
+' Relationships: Foundation
+' =============================================================
+PhiloteEntity ||--o{ PhiloteEntity : "temporal predecessor"
+PhiloteEntity ||--o{ EntityTagAssignment : "tagged"
+TaxonomyTag ||--o{ EntityTagAssignment : "categorizes"
+TaxonomyTag ||--o{ TagRelationship : "subject"
+TaxonomyTag ||--o{ TagRelationship : "object"
+
+' =============================================================
+' Relationships: Subtypes of PhiloteEntity
+' =============================================================
+PhiloteEntity ||--|| Person : "subtype (1:1)"
+PhiloteEntity ||--|| Household : "subtype (1:1)"
+PhiloteEntity ||--|| AceUser : "subtype (1:1)"
+PhiloteEntity ||--|| ComputerHost : "subtype (1:1)"
+PhiloteEntity ||--|| Project : "subtype (1:1)"
+PhiloteEntity ||--|| CodeRepository : "subtype (1:1)"
+PhiloteEntity ||--|| RepositoryClone : "subtype (1:1)"
+PhiloteEntity ||--|| GitWorktree : "subtype (1:1)"
+PhiloteEntity ||--|| RuleKind : "subtype (1:1)"
+PhiloteEntity ||--|| RuleDefinition : "subtype (1:1)"
+PhiloteEntity ||--|| RuleVariant : "subtype (1:1)"
+PhiloteEntity ||--|| BuildSetSpecification : "subtype (1:1)"
+PhiloteEntity ||--|| ConfigurationPlan : "subtype (1:1)"
+PhiloteEntity ||--|| ChassisEnclosure : "subtype (1:1)"
+PhiloteEntity ||--|| Motherboard : "subtype (1:1)"
+PhiloteEntity ||--|| ProcessorCpu : "subtype (1:1)"
+PhiloteEntity ||--|| MemoryModuleRam : "subtype (1:1)"
+PhiloteEntity ||--|| GraphicsAcceleratorGpu : "subtype (1:1)"
+PhiloteEntity ||--|| StorageDevice : "subtype (1:1)"
+PhiloteEntity ||--|| PowerSupplyPsu : "subtype (1:1)"
+PhiloteEntity ||--|| CoolingUnit : "subtype (1:1)"
+PhiloteEntity ||--|| SourceArtifact : "subtype (1:1)"
+PhiloteEntity ||--|| ContentSummary : "subtype (1:1)"
+PhiloteEntity ||--|| AIAgentHarness : "subtype (1:1)"
+PhiloteEntity ||--|| SupervisedExchange : "subtype (1:1)"
+
+' =============================================================
+' Relationships: Organizational Model (Codex-V3)
+' =============================================================
+Person ||--o{ HouseholdMembership : "member of"
+Household ||--o{ HouseholdMembership : "household members"
+Household ||--o{ HouseholdLink : "source household"
+Household ||--o{ HouseholdLink : "combined household"
+Person ||--|| AceUser : "1:1 user account"
+AceUser ||--o{ WindowsLocalAccountBinding : "verified bindings"
+ComputerHost ||--o{ WindowsLocalAccountBinding : "local account host"
+ComputerHost ||--o{ HostAffiliation : "affiliations"
+Household ||--o{ HostAffiliation : "owner / shared with"
+Person ||--o{ Project : "owns project"
+Household ||--o{ Project : "owns project"
+Person ||--o{ ProjectRoleAssignment : "holds project role"
+Project ||--o{ ProjectRoleAssignment : "assigned roles"
+Project ||--o{ ProjectRepositoryLink : "associated repositories"
+CodeRepository ||--o{ ProjectRepositoryLink : "projects"
+CodeRepository ||--o{ RepositoryClone : "clones"
+ComputerHost ||--o{ RepositoryClone : "clone host"
+RepositoryClone ||--o{ GitWorktree : "worktrees"
+GitWorktree ||--o{ WorktreeObservation : "observations"
+
+' =============================================================
+' Relationships: Rules & Plans
+' =============================================================
+RuleKind ||--o{ RuleDefinition : "governs"
+RuleDefinition ||--o{ RuleVariant : "variant / overlay"
+BuildSetSpecification ||--o{ RuleVariant : "composes variants"
+BuildSetSpecification ||--o{ ConfigurationPlan : "generates plan"
+
+' =============================================================
+' Relationships: Mechanized Engineering
+' =============================================================
+ConfigurationPlan ||--|| ComputerHost : "defines valid system (1:1)"
+ComputerHost ||--|| ChassisEnclosure : "housed in (1:1)"
+ComputerHost ||--|| Motherboard : "system board (1:1)"
+Motherboard ||--|| ProcessorCpu : "socketed CPU (1:1)"
+Motherboard ||--o{ MemoryModuleRam : "installed RAM (1..N)"
+Motherboard ||--o{ GraphicsAcceleratorGpu : "installed GPU (0..N)"
+Motherboard ||--o{ StorageDevice : "connected storage (1..N)"
+ComputerHost ||--|| PowerSupplyPsu : "powered by (1:1)"
+ProcessorCpu ||--|| CoolingUnit : "cooled by (1:1)"
+
+' =============================================================
+' Relationships: Software & ContentSummary
+' =============================================================
+CodeRepository ||--o{ SourceArtifact : "contains"
+SourceArtifact ||--|| ContentSummary : "summarized by (1:1)"
+
+' =============================================================
+' Relationships: AI Supervision & Telemetry
+' =============================================================
+AceUser ||--o{ SupervisedExchange : "initiates"
+AIAgentHarness ||--o{ SupervisedExchange : "executes"
+ContentSummary ||--o{ PromptContextEnvelope : "injected context"
+SupervisedExchange ||--|| PromptContextEnvelope : "context envelope (1:1)"
+SupervisedExchange ||--o{ ExecutionAttempt : "execution attempts"
+ExecutionAttempt ||--|| TokenUsageTelemetry : "token telemetry (1:1)"
+
+@enduml

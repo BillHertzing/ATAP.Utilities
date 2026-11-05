@@ -1,0 +1,819 @@
+@startuml ATAPUtilities_Schema
+!theme plain
+title ATAPUtilities Schema - Entity Relationship Diagram
+' Generated from Flyway migrations: V00010 - V00140
+' Comprehensive RRSBS, Temporal Validity, Tags, and ContentSummary Schema
+
+skinparam linetype ortho
+skinparam roundcorner 5
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 9
+skinparam packageStyle rectangle
+skinparam nodesep 40
+skinparam ranksep 40
+skinparam entity {
+  BackgroundColor #FAFAFC
+  BorderColor #2C3E50
+  FontColor #1A1A2E
+}
+skinparam arrow {
+  Color #2471A3
+  FontSize 8
+}
+
+package "Philote Identity & Core RRSBS Backbone (V00010, V00040)" #EEF6EE {
+  entity "Philote" as ATAP_Philote <<table>> {
+    * PhiloteId : uniqueidentifier <<PK>>
+    --
+    AdditionalIdsStub : nvarchar(max) [NULL]
+  }
+
+  entity "PhiloteValidityPeriod" as ATAP_PhiloteValidityPeriod <<table>> {
+    * PhiloteValidityPeriodId : uniqueidentifier <<PK>>
+    --
+    PhiloteId : uniqueidentifier <<FK, UQ>>
+    PreviousValidToUtc : datetime2(7) [NULL] <<FK, UQ>>
+    ValidFromUtc : datetime2(7) <<UQ>>
+    ValidToUtc : datetime2(7) [NULL] <<UQ>>
+  }
+
+  entity "RuleKind" as ATAP_RuleKind <<table>> {
+    * RuleKindId : uniqueidentifier <<PK>>
+    --
+    PhiloteId : uniqueidentifier <<FK, UQ>>
+    RuleKindCode : varchar(64) <<UQ>>
+    RuleKindName : nvarchar(128) <<UQ>>
+  }
+
+  entity "RulePrimitive" as ATAP_RulePrimitive <<table>> {
+    * RulePrimitiveId : uniqueidentifier <<PK>>
+    --
+    PhiloteId : uniqueidentifier <<FK, UQ>>
+    RuleKindId : uniqueidentifier <<FK, UQ>>
+    RulePrimitiveCode : nvarchar(128) <<UQ>>
+  }
+
+  entity "RulePrimitiveInput" as ATAP_RulePrimitiveInput <<table>> {
+    * RulePrimitiveInputId : uniqueidentifier <<PK>>
+    --
+    RulePrimitiveId : uniqueidentifier <<FK, UQ>>
+    InputName : nvarchar(128) <<UQ>>
+    InputType : nvarchar(256)
+    InputDescription : nvarchar(1024)
+    DefaultValue : nvarchar(4000) [NULL]
+    IsRequired : bit
+    Ordinal : int <<UQ>>
+  }
+
+  entity "Rule" as ATAP_Rule <<table>> {
+    * RuleId : uniqueidentifier <<PK>>
+    --
+    PhiloteId : uniqueidentifier <<FK, UQ>>
+    RuleKindId : uniqueidentifier <<FK, UQ>>
+    RulePrimitiveId : uniqueidentifier <<FK>>
+    RuleCode : varchar(128) <<UQ>>
+    RuleBody : nvarchar(max)
+  }
+
+  entity "RuleSet" as ATAP_RuleSet <<table>> {
+    * RuleSetId : uniqueidentifier <<PK>>
+    --
+    PhiloteId : uniqueidentifier <<FK, UQ>>
+    RuleSetCode : varchar(128) <<UQ>>
+  }
+
+  entity "RuleSetRule" as ATAP_RuleSetRule <<table>> {
+    * RuleSetId : uniqueidentifier <<PK, FK>>
+    * RuleId : uniqueidentifier <<PK, FK>>
+    --
+    Ordinal : int <<UQ>>
+  }
+
+  entity "BuildSet" as ATAP_BuildSet <<table>> {
+    * BuildSetId : uniqueidentifier <<PK>>
+    --
+    PhiloteId : uniqueidentifier <<FK, UQ>>
+    BuildSetCode : varchar(128) <<UQ>>
+  }
+
+  entity "BuildSetRuleSet" as ATAP_BuildSetRuleSet <<table>> {
+    * BuildSetId : uniqueidentifier <<PK, FK>>
+    * RuleSetId : uniqueidentifier <<PK, FK>>
+    --
+    Ordinal : int <<UQ>>
+  }
+
+  entity "Instantiation" as ATAP_Instantiation <<table>> {
+    * InstantiationId : uniqueidentifier <<PK>>
+    --
+    PhiloteId : uniqueidentifier <<FK, UQ>>
+    BuildSetId : uniqueidentifier <<FK>>
+    InstantiationCode : varchar(128) <<UQ>>
+  }
+
+}
+
+package "Tag Expert System & Relations (V00050, V00090)" #F5EEF8 {
+  entity "TagNamespace" as ATAP_TagNamespace <<table>> {
+    * TagNamespaceId : uniqueidentifier <<PK>>
+    --
+    NamespaceCode : nvarchar(128) <<UQ>>
+    PrincipalId : uniqueidentifier
+    SourceReference : nvarchar(512)
+    OccurredAtUtc : datetime2(7)
+    RecordedAtUtc : datetime2(7)
+  }
+
+  entity "TagNamespaceSteward" as ATAP_TagNamespaceSteward <<table>> {
+    * TagNamespaceStewardId : uniqueidentifier <<PK>>
+    --
+    TagNamespaceId : uniqueidentifier <<FK>>
+    PrincipalId : uniqueidentifier
+    ValidFromUtc : datetime2(7)
+    ValidToUtc : datetime2(7) [NULL]
+    SourceReference : nvarchar(512)
+    OccurredAtUtc : datetime2(7)
+    RecordedAtUtc : datetime2(7)
+  }
+
+  entity "Tag" as ATAP_Tag <<table>> {
+    * TagId : uniqueidentifier <<PK, FK>>
+    --
+    TagNamespaceId : uniqueidentifier <<FK, UQ>>
+    TagCode : nvarchar(128) <<UQ>>
+    PrincipalId : uniqueidentifier
+    SourceReference : nvarchar(512)
+    OccurredAtUtc : datetime2(7)
+    RecordedAtUtc : datetime2(7)
+  }
+
+  entity "TagAliasType" as ATAP_TagAliasType <<table>> {
+    * TagAliasTypeId : uniqueidentifier <<PK>>
+    --
+    AliasTypeCode : nvarchar(64) <<UQ>>
+    PrincipalId : uniqueidentifier
+    SourceReference : nvarchar(512)
+    OccurredAtUtc : datetime2(7)
+    RecordedAtUtc : datetime2(7)
+  }
+
+  entity "TagAlias" as ATAP_TagAlias <<table>> {
+    * TagAliasId : uniqueidentifier <<PK>>
+    --
+    TagId : uniqueidentifier <<FK, UQ>>
+    TagAliasTypeId : uniqueidentifier <<FK>>
+    AliasCode : nvarchar(128) <<UQ>>
+    ValidFromUtc : datetime2(7) <<UQ>>
+    ValidToUtc : datetime2(7) [NULL]
+    PrincipalId : uniqueidentifier
+    SourceReference : nvarchar(512)
+    OccurredAtUtc : datetime2(7)
+    RecordedAtUtc : datetime2(7)
+  }
+
+  entity "TagState" as ATAP_TagState <<table>> {
+    * TagStateId : uniqueidentifier <<PK>>
+    --
+    TagId : uniqueidentifier <<FK>>
+    PhiloteValidityPeriodId : uniqueidentifier <<FK>>
+    ValidFromUtc : datetime2(7)
+    ValidToUtc : datetime2(7) [NULL]
+    Label : nvarchar(256)
+    Description : nvarchar(2048) [NULL]
+    TagStateKindCode : varchar(32)
+    SuccessorTagId : uniqueidentifier [NULL] <<FK>>
+    WithdrawalReason : nvarchar(1024) [NULL]
+    PrincipalId : uniqueidentifier
+    SourceReference : nvarchar(512)
+    OccurredAtUtc : datetime2(7)
+    RecordedAtUtc : datetime2(7)
+    IsDeprecated : bit
+  }
+
+  entity "TagRelationType" as ATAP_TagRelationType <<table>> {
+    * TagRelationTypeId : uniqueidentifier <<PK>>
+    --
+    RoleCode : nvarchar(64) <<UQ>>
+    InverseTagRelationTypeId : uniqueidentifier <<FK>>
+    DirectionCode : varchar(16)
+    RelationFamilyCode : nvarchar(64)
+    CyclePolicyCode : varchar(16)
+    IsTraversable : bit
+    PrincipalId : uniqueidentifier
+    SourceReference : nvarchar(512)
+    OccurredAtUtc : datetime2(7)
+    RecordedAtUtc : datetime2(7)
+  }
+
+  entity "TagAssignmentEntityType" as ATAP_TagAssignmentEntityType <<table>> {
+    * EntityTypeCode : nvarchar(64) <<PK>>
+    --
+    TargetSchemaName : sysname
+    TargetTableName : sysname
+    TargetIdColumnName : sysname
+    IsClassificationOnly : bit
+    PrincipalId : uniqueidentifier
+    SourceReference : nvarchar(512)
+    OccurredAtUtc : datetime2(7)
+    RecordedAtUtc : datetime2(7)
+  }
+
+  entity "TagRelation" as ATAP_TagRelation <<table>> {
+    * TagRelationId : uniqueidentifier <<PK, FK>>
+    --
+    SourceTagId : uniqueidentifier <<FK, UQ>>
+    TargetTagId : uniqueidentifier <<FK, UQ>>
+    TagRelationTypeId : uniqueidentifier <<FK, UQ>>
+    Weight : decimal(5,4)
+    PrincipalId : uniqueidentifier
+    SourceReference : nvarchar(512)
+    OccurredAtUtc : datetime2(7)
+    RecordedAtUtc : datetime2(7)
+  }
+
+  entity "TagAssignment" as ATAP_TagAssignment <<table>> {
+    * TagAssignmentId : uniqueidentifier <<PK>>
+    --
+    TagId : uniqueidentifier <<FK, UQ>>
+    EntityTypeCode : nvarchar(64) <<FK, UQ>>
+    EntityId : uniqueidentifier <<UQ>>
+    ValidFromUtc : datetime2(7) <<UQ>>
+    ValidToUtc : datetime2(7) [NULL]
+    IsClassificationOnly : bit
+    PrincipalId : uniqueidentifier
+    SourceReference : nvarchar(512)
+    OccurredAtUtc : datetime2(7)
+    RecordedAtUtc : datetime2(7)
+  }
+
+}
+
+package "RRSBS V4 Rule Overlay & Execution Model (V00080)" #FFF5E6 {
+  entity "ValueType" as ATAP_ValueType <<table>> {
+    * ValueTypeId : uniqueidentifier <<PK>>
+    --
+    ValueTypeCode : nvarchar(64) <<UQ>>
+    StorageKindCode : varchar(16) <<UQ>>
+    IsCollection : bit
+    ObjectTypeCode : nvarchar(256) [NULL]
+  }
+
+  entity "InputNormalizationContract" as ATAP_InputNormalizationContract <<table>> {
+    * InputNormalizationContractId : uniqueidentifier <<PK>>
+    --
+    NormalizationContractCode : nvarchar(128) <<UQ>>
+    ContractText : nvarchar(max)
+  }
+
+  entity "RuleInputDefinition" as ATAP_RuleInputDefinition <<table>> {
+    * RuleInputDefinitionId : uniqueidentifier <<PK>>
+    --
+    RuleId : uniqueidentifier <<FK, UQ>>
+    InputCode : nvarchar(128) <<UQ>>
+    ValueTypeId : uniqueidentifier <<FK, UQ>>
+    StorageKindCode : varchar(16) <<FK, UQ>>
+    IsRequired : bit
+    AllowsNull : bit
+    Ordinal : int <<UQ>>
+    InputNormalizationContractId : uniqueidentifier <<FK>>
+    SecretPolicyCode : varchar(24)
+  }
+
+  entity "RuleInputDefinitionState" as ATAP_RuleInputDefinitionState <<table>> {
+    * RuleInputDefinitionStateId : uniqueidentifier <<PK>>
+    --
+    RuleInputDefinitionId : uniqueidentifier <<FK, UQ>>
+    ValidFromUtc : datetime2(7) <<UQ>>
+    ValidToUtc : datetime2(7) [NULL]
+    DisplayName : nvarchar(256)
+    Description : nvarchar(2048)
+  }
+
+  entity "RuleDefaultInputValue" as ATAP_RuleDefaultInputValue <<table>> {
+    * RuleDefaultInputValueId : uniqueidentifier <<PK>>
+    --
+    RuleInputDefinitionId : uniqueidentifier <<FK, UQ>>
+    ValueTypeId : uniqueidentifier <<FK>>
+    StorageKindCode : varchar(16) <<FK>>
+    ValidFromUtc : datetime2(7) <<UQ>>
+    ValidToUtc : datetime2(7) [NULL]
+    BitValue : bit [NULL]
+    Int64Value : bigint [NULL]
+    DecimalValue : decimal(38,12) [NULL]
+    TextValue : nvarchar(4000) [NULL]
+    GuidValue : uniqueidentifier [NULL]
+    DateTimeUtcValue : datetime2(7) [NULL]
+    DurationTicksValue : bigint [NULL]
+    JsonValue : nvarchar(max) [NULL]
+  }
+
+  entity "RuleOutputDefinition" as ATAP_RuleOutputDefinition <<table>> {
+    * RuleOutputDefinitionId : uniqueidentifier <<PK>>
+    --
+    RuleId : uniqueidentifier <<FK, UQ>>
+    OutputCode : nvarchar(128) <<UQ>>
+    ValueTypeId : uniqueidentifier <<FK>>
+    StorageKindCode : varchar(16) <<FK>>
+    AllowsNull : bit
+    Ordinal : int <<UQ>>
+    DispositionCode : varchar(24)
+  }
+
+  entity "RuleOutputDefinitionState" as ATAP_RuleOutputDefinitionState <<table>> {
+    * RuleOutputDefinitionStateId : uniqueidentifier <<PK>>
+    --
+    RuleOutputDefinitionId : uniqueidentifier <<FK, UQ>>
+    ValidFromUtc : datetime2(7) <<UQ>>
+    ValidToUtc : datetime2(7) [NULL]
+    DisplayName : nvarchar(256)
+    Description : nvarchar(2048)
+  }
+
+  entity "RuleValueConstraint" as ATAP_RuleValueConstraint <<table>> {
+    * RuleValueConstraintId : uniqueidentifier <<PK>>
+    --
+    RuleInputDefinitionId : uniqueidentifier [NULL] <<FK>>
+    RuleOutputDefinitionId : uniqueidentifier [NULL] <<FK>>
+    ConstraintKindCode : varchar(32)
+    NumericPrecision : tinyint [NULL]
+    NumericScale : tinyint [NULL]
+    MaximumTextLength : int [NULL]
+    ElementValueTypeId : uniqueidentifier [NULL] <<FK>>
+    MinimumCardinality : int [NULL]
+    MaximumCardinality : int [NULL]
+    CollectionShapeCode : nvarchar(128) [NULL]
+    DeclaredContractTypeCode : nvarchar(256) [NULL]
+    DomainConstraintCode : nvarchar(256) [NULL]
+    ContractText : nvarchar(max) [NULL]
+  }
+
+  entity "RuleVariant" as ATAP_RuleVariant <<table>> {
+    * RuleVariantId : uniqueidentifier <<PK>>
+    --
+    PhiloteId : uniqueidentifier <<FK, UQ>>
+    RuleId : uniqueidentifier <<FK, UQ>>
+    OwningRuleSetId : uniqueidentifier <<FK, UQ>>
+    RuleVariantCode : nvarchar(128) <<UQ>>
+  }
+
+  entity "RuleVariantState" as ATAP_RuleVariantState <<table>> {
+    * RuleVariantStateId : uniqueidentifier <<PK>>
+    --
+    RuleVariantId : uniqueidentifier <<FK, UQ>>
+    ValidFromUtc : datetime2(7) <<UQ>>
+    ValidToUtc : datetime2(7) [NULL]
+    Purpose : nvarchar(1024)
+    ExecutorContractCode : nvarchar(128)
+    NormalizedBody : nvarchar(max)
+    LifecycleStatusCode : varchar(16)
+  }
+
+  entity "RuleVariantInputDefinition" as ATAP_RuleVariantInputDefinition <<table>> {
+    * RuleVariantId : uniqueidentifier <<PK, FK>>
+    * RuleInputDefinitionId : uniqueidentifier <<PK, FK>>
+    --
+    RuleId : uniqueidentifier <<FK>>
+    InputCode : nvarchar(128) <<FK, UQ>>
+    Ordinal : int <<FK, UQ>>
+  }
+
+  entity "RuleVariantOutputDefinition" as ATAP_RuleVariantOutputDefinition <<table>> {
+    * RuleVariantId : uniqueidentifier <<PK, FK>>
+    * RuleOutputDefinitionId : uniqueidentifier <<PK, FK>>
+    --
+    RuleId : uniqueidentifier <<FK>>
+    OutputCode : nvarchar(128) <<FK, UQ>>
+    Ordinal : int <<FK, UQ>>
+  }
+
+  entity "RuleSetMembershipRole" as ATAP_RuleSetMembershipRole <<table>> {
+    * RuleSetMembershipRoleCode : varchar(16) <<PK>>
+    --
+  }
+
+  entity "RuleSetRuleOccurrence" as ATAP_RuleSetRuleOccurrence <<table>> {
+    * RuleSetRuleOccurrenceId : uniqueidentifier <<PK>>
+    --
+    RuleSetId : uniqueidentifier <<FK, UQ>>
+    RuleVariantId : uniqueidentifier <<FK>>
+    RuleSetMembershipRoleCode : varchar(16) <<FK>>
+    Ordinal : int <<UQ>>
+    ConditionExpression : nvarchar(2048) [NULL]
+    ValidFromUtc : datetime2(7)
+    ValidToUtc : datetime2(7) [NULL]
+  }
+
+  entity "BuildSetRuleSetOccurrence" as ATAP_BuildSetRuleSetOccurrence <<table>> {
+    * BuildSetRuleSetOccurrenceId : uniqueidentifier <<PK>>
+    --
+    BuildSetId : uniqueidentifier <<FK, UQ>>
+    RuleSetId : uniqueidentifier <<FK>>
+    Ordinal : int <<UQ>>
+    ConditionExpression : nvarchar(2048) [NULL]
+    ValidFromUtc : datetime2(7)
+    ValidToUtc : datetime2(7) [NULL]
+  }
+
+}
+
+package "ContentSummary & Repository Management (V00100, V00110, V00120)" #EBF5FB {
+  entity "Repository" as ATAP_Repository <<table>> {
+    * RepositoryId : uniqueidentifier <<PK>>
+    --
+    PhiloteId : uniqueidentifier <<FK, UQ>>
+    OrganizationId : uniqueidentifier <<UQ>>
+    CanonicalRepositoryName : nvarchar(256) <<UQ>>
+    ClassificationPolicyId : uniqueidentifier
+    CreatedAtUtc : datetime2(7)
+    RetiredAtUtc : datetime2(7) [NULL]
+    PrincipalId : uniqueidentifier
+    SourceReference : nvarchar(512)
+    RecordedAtUtc : datetime2(7)
+  }
+
+  entity "RepositoryRootRegistration" as ATAP_RepositoryRootRegistration <<table>> {
+    * RepositoryRootRegistrationId : uniqueidentifier <<PK>>
+    --
+    RepositoryId : uniqueidentifier <<FK>>
+    NormalizedRoot : nvarchar(1024)
+    RootKindCode : varchar(16)
+    RegisteredAtUtc : datetime2(7)
+    RetiredAtUtc : datetime2(7) [NULL]
+    RegistrarEntityId : uniqueidentifier
+    EvidenceEntityId : uniqueidentifier
+    RecordedAtUtc : datetime2(7)
+  }
+
+  entity "RepositoryRootCanonicalIdentity" as ATAP_RepositoryRootCanonicalIdentity <<table>> {
+    * RepositoryRootRegistrationId : uniqueidentifier <<PK, FK>>
+    --
+    CanonicalWindowsRoot : nvarchar(1024)
+    RecordedAtUtc : datetime2(7)
+    CanonicalWindowsRootSha256 : AS [NULL] <<UQ>>
+  }
+
+  entity "RepositoryOriginEvidence" as ATAP_RepositoryOriginEvidence <<table>> {
+    * RepositoryId : uniqueidentifier <<PK, FK>>
+    --
+    CanonicalOriginUri : nvarchar(2048)
+    EvidenceEntityId : uniqueidentifier <<FK>>
+    RecordedAtUtc : datetime2(7)
+    EvidenceKindCode : AS (CONVERT(varchar(32) [NULL] <<FK>>
+    CanonicalOriginUriSha256 : AS [NULL] <<UQ>>
+  }
+
+  entity "SourceArtifact" as ATAP_SourceArtifact <<table>> {
+    * SourceArtifactId : uniqueidentifier <<PK>>
+    --
+    PhiloteId : uniqueidentifier <<FK, UQ>>
+    RepositoryId : uniqueidentifier <<FK, UQ>>
+    LocatorKindCode : varchar(32)
+    RepoRelativePath : nvarchar(1024) <<UQ>>
+    CreatedAtUtc : datetime2(7)
+    RetiredAtUtc : datetime2(7) [NULL]
+  }
+
+  entity "SourceArtifactVersion" as ATAP_SourceArtifactVersion <<table>> {
+    * SourceArtifactVersionId : uniqueidentifier <<PK>>
+    --
+    SourceArtifactId : uniqueidentifier <<FK, UQ>>
+    RepositoryId : uniqueidentifier <<FK>>
+    VersionSequence : bigint <<UQ>>
+    RunId : uniqueidentifier <<UQ>>
+    RepositoryRootRegistrationId : uniqueidentifier <<FK>>
+    HarvesterEntityId : uniqueidentifier
+    ByteSha256 : binary(32)
+    NormalizedContentSha256 : binary(32)
+    ByteCount : bigint
+    EncodingCode : varchar(32)
+    HasBom : bit
+    LineEndingCode : varchar(8)
+    FinalNewline : bit
+    ObservedAtUtc : datetime2(7)
+    RecordedAtUtc : datetime2(7)
+  }
+
+  entity "ContentSummary" as ATAP_ContentSummary <<table>> {
+    * ContentSummaryId : uniqueidentifier <<PK>>
+    --
+    PhiloteId : uniqueidentifier <<FK, UQ>>
+    SourceArtifactId : uniqueidentifier <<FK, UQ>>
+    SummaryProfileCode : varchar(64) <<UQ>>
+    ClassificationPolicyId : uniqueidentifier <<UQ>>
+    CreatedAtUtc : datetime2(7)
+    RetiredAtUtc : datetime2(7) [NULL]
+  }
+
+  entity "ContentSummaryVersion" as ATAP_ContentSummaryVersion <<table>> {
+    * ContentSummaryVersionId : uniqueidentifier <<PK>>
+    --
+    ContentSummaryId : uniqueidentifier <<FK, UQ>>
+    SourceArtifactId : uniqueidentifier <<FK>>
+    SourceArtifactVersionId : uniqueidentifier <<FK>>
+    VersionSequence : bigint <<UQ>>
+    PriorContentSummaryVersionId : uniqueidentifier [NULL] <<FK>>
+    LifecycleCode : varchar(16)
+    LifecycleReasonCode : varchar(64) [NULL]
+    SourceIdentityRuleVariantId : uniqueidentifier <<FK>>
+    NormalizationRuleVariantId : uniqueidentifier <<FK>>
+    ClassificationRuleVariantId : uniqueidentifier <<FK>>
+    SummaryRenderRuleVariantId : uniqueidentifier <<FK>>
+    FreshnessRuleVariantId : uniqueidentifier <<FK>>
+    QueryRankingRuleVariantId : uniqueidentifier <<FK>>
+    InstantiationId : uniqueidentifier <<FK>>
+    PromptRuleVariantId : uniqueidentifier <<FK>>
+    GeneratorKindCode : varchar(32) [NULL]
+    GeneratorName : nvarchar(128) [NULL]
+    GeneratorVersion : nvarchar(64) [NULL]
+    ModelProvider : nvarchar(64) [NULL]
+    ModelId : nvarchar(128) [NULL]
+    ModelRevision : nvarchar(128) [NULL]
+    ModelEffort : varchar(16) [NULL]
+    SafeSummaryText : nvarchar(max) [NULL]
+    SafeLocator : nvarchar(2048) [NULL]
+    WasRedacted : bit
+    RedactionEvidenceId : uniqueidentifier [NULL]
+    SummaryContentSha256 : binary(32) [NULL]
+    ExclusionEvidenceId : uniqueidentifier [NULL]
+    DerivationFingerprint : binary(32) <<UQ>>
+    GeneratedAtUtc : datetime2(7) [NULL]
+    RecordedAtUtc : datetime2(7)
+  }
+
+  entity "ContentSummaryDependency" as ATAP_ContentSummaryDependency <<table>> {
+    * ContentSummaryDependencyId : uniqueidentifier <<PK>>
+    --
+    ContentSummaryVersionId : uniqueidentifier <<FK, UQ>>
+    DependencyOrdinal : int <<UQ>>
+    DependencyKindCode : varchar(32)
+    SourceArtifactVersionId : uniqueidentifier [NULL] <<FK>>
+    ExternalReferenceKindCode : varchar(32) [NULL]
+    ExternalReferenceSha256 : binary(32) [NULL]
+    CapturedAtUtc : datetime2(7)
+    EvidenceEntityId : uniqueidentifier
+  }
+
+  entity "ContentSummaryRefreshAttempt" as ATAP_ContentSummaryRefreshAttempt <<table>> {
+    * ContentSummaryRefreshAttemptId : uniqueidentifier <<PK>>
+    --
+    ContentSummaryId : uniqueidentifier <<FK, UQ>>
+    RefreshSequence : bigint <<UQ>>
+    RequestedAtUtc : datetime2(7)
+    StartedAtUtc : datetime2(7) [NULL]
+    CompletedAtUtc : datetime2(7) [NULL]
+    ResultCode : varchar(24)
+    ProducedContentSummaryVersionId : uniqueidentifier [NULL] <<FK>>
+    ErrorCode : varchar(32) [NULL]
+    DiagnosticSha256 : binary(32) [NULL]
+    PrincipalId : uniqueidentifier
+  }
+
+  entity "ContentSummaryIngestionRequest" as ATAP_ContentSummaryIngestionRequest <<table>> {
+    * IdempotencyKey : uniqueidentifier <<PK>>
+    --
+    CanonicalRequestSha256 : binary(32)
+    RequestStatusCode : varchar(16)
+    SourceArtifactVersionId : uniqueidentifier <<FK>>
+    ContentSummaryVersionId : uniqueidentifier <<FK>>
+    RecordedAtUtc : datetime2(7)
+    CompletedAtUtc : datetime2(7)
+  }
+
+  entity "ContentSummaryDatabasePrincipalRepositoryAuthorization" as ATAP_ContentSummaryDatabasePrincipalRepositoryAuthorization <<table>> {
+    * AuthorizationId : uniqueidentifier <<PK>>
+    --
+    DatabasePrincipalName : sysname
+    DatabasePrincipalSid : varbinary(85)
+    InstanceCode : varchar(16)
+    RepositoryId : uniqueidentifier <<FK>>
+    ValidFromUtc : datetime2(7)
+    ValidToUtc : datetime2(7) [NULL]
+    SourceReference : nvarchar(512)
+    RecordedAtUtc : datetime2(7)
+  }
+
+  entity "ContentSummaryOperationalIdentity" as ATAP_ContentSummaryOperationalIdentity <<table>> {
+    * OperationalIdentityId : uniqueidentifier <<PK>>
+    --
+    PhiloteId : uniqueidentifier <<FK, UQ>>
+    IdentityKindCode : varchar(32) <<UQ>>
+    IdentityCode : nvarchar(128) <<UQ>>
+    SourceReference : nvarchar(512)
+    RecordedAtUtc : datetime2(7)
+  }
+
+  entity "ContentSummaryRepositoryRootCorrection" as ATAP_ContentSummaryRepositoryRootCorrection <<table>> {
+    * CorrectionId : uniqueidentifier <<PK>>
+    --
+    RepositoryId : uniqueidentifier <<FK>>
+    PriorRepositoryRootRegistrationId : uniqueidentifier <<FK, UQ>>
+    SuccessorRepositoryRootRegistrationId : uniqueidentifier <<FK, UQ>>
+    PrincipalId : uniqueidentifier <<FK>>
+    EvidenceEntityId : uniqueidentifier <<FK>>
+    Reason : nvarchar(1024)
+    RecordedAtUtc : datetime2(7)
+    PrincipalKindCode : AS (CONVERT(varchar(32) [NULL] <<FK>>
+    EvidenceKindCode : AS (CONVERT(varchar(32) [NULL] <<FK>>
+  }
+
+  entity "ContentSummaryRepositoryRetirementEvidence" as ATAP_ContentSummaryRepositoryRetirementEvidence <<table>> {
+    * RepositoryId : uniqueidentifier <<PK, FK>>
+    --
+    RetiredAtUtc : datetime2(7)
+    PrincipalId : uniqueidentifier <<FK>>
+    EvidenceEntityId : uniqueidentifier <<FK>>
+    Reason : nvarchar(1024)
+    RecordedAtUtc : datetime2(7)
+    PrincipalKindCode : AS (CONVERT(varchar(32) [NULL] <<FK>>
+    EvidenceKindCode : AS (CONVERT(varchar(32) [NULL] <<FK>>
+  }
+
+  entity "ContentSummaryAuthorizationRetirementEvidence" as ATAP_ContentSummaryAuthorizationRetirementEvidence <<table>> {
+    * AuthorizationId : uniqueidentifier <<PK, FK>>
+    --
+    RetiredAtUtc : datetime2(7)
+    PrincipalId : uniqueidentifier <<FK>>
+    EvidenceEntityId : uniqueidentifier <<FK>>
+    Reason : nvarchar(1024)
+    SourceReference : nvarchar(512)
+    RecordedAtUtc : datetime2(7)
+    PrincipalKindCode : AS (CONVERT(varchar(32) [NULL] <<FK>>
+    EvidenceKindCode : AS (CONVERT(varchar(32) [NULL] <<FK>>
+  }
+
+}
+
+
+package "Organizational Model Templates & Authority (Org Schema - Codex-V3 Design)" #FAF9E6 {
+  entity "Org.EntityType" as ATAP_Org_EntityType <<table>> {
+    * EntityTypeCode : varchar(32) <<PK>>
+    --
+    OwningSliceCode : varchar(32)
+    IsVersionType : bit
+    DisplayName : nvarchar(128)
+  }
+
+  entity "Org.RelationshipRolePolicy" as ATAP_Org_RelationshipRolePolicy <<table>> {
+    * RelationshipRolePolicyId : bigint <<PK>>
+    --
+    RelationshipKindCode : varchar(32)
+    RelationshipRoleCode : varchar(32)
+    IsClassificationOnly : bit
+    IsAuthorizationRole : bit
+  }
+
+  entity "Org.ProjectTemplate" as ATAP_Org_ProjectTemplate <<table>> {
+    * TemplateId : uniqueidentifier <<PK>>
+    --
+    PhiloteId : uniqueidentifier <<FK>>
+    TemplateCode : varchar(64) <<UQ>>
+    AllowedOwnerTypeCodes : varchar(128)
+    InitialRoleCodes : varchar(128)
+    VersionLabel : varchar(32)
+    ContentHash : binary(32)
+  }
+
+  entity "Org.HouseholdTemplate" as ATAP_Org_HouseholdTemplate <<table>> {
+    * TemplateId : uniqueidentifier <<PK>>
+    --
+    PhiloteId : uniqueidentifier <<FK>>
+    TemplateCode : varchar(64) <<UQ>>
+    RequiredRoleCodes : varchar(128)
+    AllowsCombinedLink : bit
+    VersionLabel : varchar(32)
+  }
+
+  entity "Org.TemplateManifest" as ATAP_Org_TemplateManifest <<table>> {
+    * ManifestId : uniqueidentifier <<PK>>
+    --
+    ManifestVersion : varchar(32) <<UQ>>
+    ContentHash : binary(32)
+    PublishedAtUtc : datetime2(7)
+  }
+
+  entity "Org.WorktreePurposeCatalog" as ATAP_Org_WorktreePurposeCatalog <<table>> {
+    * PurposeCode : varchar(32) <<PK>>
+    --
+    Description : nvarchar(256)
+    RequiresSprintKey : bit
+  }
+}
+
+package "Prototypes & Outpost Integration (V00030)" #F2F4F4 {
+  entity "AceOutpostContentSummaryPrototype" as ATAP_AceOutpostContentSummaryPrototype <<table>> {
+    * OperationId : uniqueidentifier <<PK>>
+    --
+    Payload : nvarchar(4000)
+  }
+}
+
+' =============================================================
+' Relationships: Philote & Core RRSBS Backbone
+' =============================================================
+ATAP_Philote ||--o{ ATAP_PhiloteValidityPeriod : "validity history"
+ATAP_Philote ||--o{ ATAP_RuleKind : "identifies"
+ATAP_Philote ||--o{ ATAP_RulePrimitive : "identifies"
+ATAP_RuleKind ||--o{ ATAP_RulePrimitive : "categorizes"
+ATAP_RulePrimitive ||--o{ ATAP_RulePrimitiveInput : "inputs"
+ATAP_Philote ||--o{ ATAP_Rule : "identifies"
+ATAP_RulePrimitive ||--o{ ATAP_Rule : "specializes"
+ATAP_RuleKind ||--o{ ATAP_Rule : "classifies"
+ATAP_Philote ||--o{ ATAP_RuleSet : "identifies"
+ATAP_RuleSet ||--o{ ATAP_RuleSetRule : "contains"
+ATAP_Rule ||--o{ ATAP_RuleSetRule : "included in"
+ATAP_Philote ||--o{ ATAP_BuildSet : "identifies"
+ATAP_BuildSet ||--o{ ATAP_BuildSetRuleSet : "composes"
+ATAP_RuleSet ||--o{ ATAP_BuildSetRuleSet : "assigned to"
+ATAP_Philote ||--o{ ATAP_Instantiation : "identifies"
+ATAP_BuildSet ||--o{ ATAP_Instantiation : "instantiates"
+
+' =============================================================
+' Relationships: Tag Expert System
+' =============================================================
+ATAP_TagNamespace ||--o{ ATAP_TagNamespaceSteward : "stewarded by"
+ATAP_TagNamespace ||--o{ ATAP_Tag : "namespaces"
+ATAP_Philote ||--o{ ATAP_Tag : "identifies (1:1)"
+ATAP_Tag ||--o{ ATAP_TagState : "temporal states"
+ATAP_PhiloteValidityPeriod ||--o{ ATAP_TagState : "aligned to validity"
+ATAP_Tag ||--o{ ATAP_TagState : "predecessor of"
+ATAP_Tag ||--o{ ATAP_TagAlias : "aliases"
+ATAP_TagAliasType ||--o{ ATAP_TagAlias : "classified by"
+ATAP_TagRelationType ||--o{ ATAP_TagRelation : "relation kind"
+ATAP_Tag ||--o{ ATAP_TagRelation : "subject tag"
+ATAP_Tag ||--o{ ATAP_TagRelation : "object tag"
+ATAP_Tag ||--o{ ATAP_TagAssignment : "assigned tag"
+ATAP_TagAssignmentEntityType ||--o{ ATAP_TagAssignment : "entity type"
+
+' =============================================================
+' Relationships: RRSBS V4 Overlay Model
+' =============================================================
+ATAP_Rule ||--o{ ATAP_RuleInputDefinition : "declares inputs"
+ATAP_ValueType ||--o{ ATAP_RuleInputDefinition : "type validation"
+ATAP_InputNormalizationContract ||--o{ ATAP_RuleInputDefinition : "normalizes"
+ATAP_RuleInputDefinition ||--o{ ATAP_RuleInputDefinitionState : "lifecycle states"
+ATAP_RuleInputDefinition ||--o{ ATAP_RuleDefaultInputValue : "default values"
+ATAP_Rule ||--o{ ATAP_RuleOutputDefinition : "declares outputs"
+ATAP_ValueType ||--o{ ATAP_RuleOutputDefinition : "type validation"
+ATAP_RuleOutputDefinition ||--o{ ATAP_RuleOutputDefinitionState : "lifecycle states"
+ATAP_RuleInputDefinition ||--o{ ATAP_RuleValueConstraint : "input constraints"
+ATAP_RuleOutputDefinition ||--o{ ATAP_RuleValueConstraint : "output constraints"
+ATAP_ValueType ||--o{ ATAP_RuleValueConstraint : "element type"
+ATAP_Philote ||--o{ ATAP_RuleVariant : "identifies"
+ATAP_Rule ||--o{ ATAP_RuleVariant : "variant of"
+ATAP_RuleSet ||--o{ ATAP_RuleVariant : "owned by"
+ATAP_RuleVariant ||--o{ ATAP_RuleVariantState : "variant states"
+ATAP_RuleVariant ||--o{ ATAP_RuleVariantInputDefinition : "binds input"
+ATAP_RuleInputDefinition ||--o{ ATAP_RuleVariantInputDefinition : "defined input"
+ATAP_RuleVariant ||--o{ ATAP_RuleVariantOutputDefinition : "binds output"
+ATAP_RuleOutputDefinition ||--o{ ATAP_RuleVariantOutputDefinition : "defined output"
+ATAP_RuleSet ||--o{ ATAP_RuleSetRuleOccurrence : "contains occurrences"
+ATAP_RuleVariant ||--o{ ATAP_RuleSetRuleOccurrence : "executes variant"
+ATAP_RuleSetMembershipRole ||--o{ ATAP_RuleSetRuleOccurrence : "role in set"
+ATAP_BuildSet ||--o{ ATAP_BuildSetRuleSetOccurrence : "contains occurrences"
+ATAP_RuleSet ||--o{ ATAP_BuildSetRuleSetOccurrence : "occurs in build set"
+
+' =============================================================
+' Relationships: ContentSummary & Repository Management
+' =============================================================
+ATAP_Philote ||--o{ ATAP_Repository : "identifies"
+ATAP_Repository ||--o{ ATAP_RepositoryRootRegistration : "root registrations"
+ATAP_RepositoryRootRegistration ||--|| ATAP_RepositoryRootCanonicalIdentity : "canonical path (1:1)"
+ATAP_Repository ||--|| ATAP_RepositoryOriginEvidence : "provenance (1:1)"
+ATAP_Philote ||--o{ ATAP_SourceArtifact : "identifies"
+ATAP_Repository ||--o{ ATAP_SourceArtifact : "houses artifact"
+ATAP_SourceArtifact ||--o{ ATAP_SourceArtifactVersion : "versions"
+ATAP_RepositoryRootRegistration ||--o{ ATAP_SourceArtifactVersion : "relative to root"
+ATAP_Philote ||--o{ ATAP_ContentSummary : "identifies"
+ATAP_SourceArtifact ||--o{ ATAP_ContentSummary : "summarizes"
+ATAP_ContentSummary ||--o{ ATAP_ContentSummaryVersion : "summary versions"
+ATAP_SourceArtifactVersion ||--o{ ATAP_ContentSummaryVersion : "source snapshot"
+ATAP_ContentSummaryVersion ||--o{ ATAP_ContentSummaryVersion : "prior version"
+ATAP_RuleVariant ||--o{ ATAP_ContentSummaryVersion : "pipeline rule variants"
+ATAP_Instantiation ||--o{ ATAP_ContentSummaryVersion : "instantiation context"
+ATAP_ContentSummaryVersion ||--o{ ATAP_ContentSummaryDependency : "dependencies"
+ATAP_SourceArtifactVersion ||--o{ ATAP_ContentSummaryDependency : "target artifact"
+ATAP_ContentSummary ||--o{ ATAP_ContentSummaryRefreshAttempt : "refresh history"
+ATAP_ContentSummaryVersion ||--o{ ATAP_ContentSummaryRefreshAttempt : "produced version"
+ATAP_SourceArtifactVersion ||--o{ ATAP_ContentSummaryIngestionRequest : "ingestion request"
+ATAP_Repository ||--o{ ATAP_ContentSummaryDatabasePrincipalRepositoryAuthorization : "authorizations"
+ATAP_Philote ||--o{ ATAP_ContentSummaryOperationalIdentity : "identifies"
+ATAP_ContentSummaryOperationalIdentity ||--o{ ATAP_RepositoryOriginEvidence : "origin actor"
+ATAP_Repository ||--o{ ATAP_ContentSummaryRepositoryRootCorrection : "root corrections"
+ATAP_RepositoryRootRegistration ||--o{ ATAP_ContentSummaryRepositoryRootCorrection : "prior root"
+ATAP_RepositoryRootRegistration ||--o{ ATAP_ContentSummaryRepositoryRootCorrection : "successor root"
+ATAP_ContentSummaryOperationalIdentity ||--o{ ATAP_ContentSummaryRepositoryRootCorrection : "corrected by"
+ATAP_Repository ||--|| ATAP_ContentSummaryRepositoryRetirementEvidence : "retirement evidence (1:1)"
+ATAP_ContentSummaryOperationalIdentity ||--o{ ATAP_ContentSummaryRepositoryRetirementEvidence : "retired by"
+ATAP_ContentSummaryDatabasePrincipalRepositoryAuthorization ||--|| ATAP_ContentSummaryAuthorizationRetirementEvidence : "auth retirement (1:1)"
+ATAP_ContentSummaryOperationalIdentity ||--o{ ATAP_ContentSummaryAuthorizationRetirementEvidence : "revoked by"
+
+
+' =============================================================
+' Relationships: Organizational Model Templates & Authority
+' =============================================================
+ATAP_Philote ||--o{ ATAP_Org_ProjectTemplate : "identifies"
+ATAP_Philote ||--o{ ATAP_Org_HouseholdTemplate : "identifies"
+ATAP_Org_TemplateManifest ||--o{ ATAP_Org_ProjectTemplate : "manifest items"
+ATAP_Org_TemplateManifest ||--o{ ATAP_Org_HouseholdTemplate : "manifest items"
+
+@enduml

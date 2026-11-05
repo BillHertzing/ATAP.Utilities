@@ -1,0 +1,438 @@
+@startuml Ace_Schema
+!theme plain
+title Ace Schema - Entity Relationship Diagram
+' Incorporates Flyway migrations (V00060, V00070, V00150) and Codex-V3 Organizational Model
+
+skinparam linetype ortho
+skinparam roundcorner 5
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 9
+skinparam packageStyle rectangle
+skinparam nodesep 30
+skinparam ranksep 30
+
+skinparam entity {
+  BackgroundColor #F9F9FB
+  BorderColor #2C3E50
+  FontColor #1A1A2E
+}
+skinparam arrow {
+  Color #2980B9
+  FontSize 8
+}
+
+package "Ace GatherContent & Tagging Subsystem (V00060)" #E8F8F5 {
+  entity "TagNamespace" as Ace_TagNamespace <<table>> {
+    * TagNamespaceId : uniqueidentifier <<PK>>
+    --
+    NamespaceCode : nvarchar(128) <<UQ>>
+    RecordedAtUtc : datetime2(7)
+  }
+
+  entity "Tag" as Ace_Tag <<table>> {
+    * TagId : uniqueidentifier <<PK>>
+    --
+    TagNamespaceId : uniqueidentifier <<FK, UQ>>
+    TagCode : nvarchar(256) <<UQ>>
+    FirstRecordedAtUtc : datetime2(7)
+  }
+
+  entity "GatherContentSubmission" as Ace_GatherContentSubmission <<table>> {
+    * GatherContentSubmissionId : uniqueidentifier <<PK>>
+    --
+    IdempotencyKey : uniqueidentifier <<UQ>>
+    CanonicalRequestHash : binary(32)
+    ApiVersion : smallint
+    Instance : nvarchar(64)
+    Depth : int
+    Width : int
+    CallerPrincipalName : nvarchar(256)
+    CorrelationId : nvarchar(128)
+    ReceivedAtUtc : datetime2(7)
+  }
+
+  entity "GatherContentSubmissionTag" as Ace_GatherContentSubmissionTag <<table>> {
+    * GatherContentSubmissionId : uniqueidentifier <<PK, FK>>
+    * Ordinal : tinyint <<PK>>
+    --
+    TagId : uniqueidentifier <<FK>>
+    SubmittedTagText : nvarchar(256)
+  }
+}
+
+package "Ace AISupervisor Telemetry Subsystem (V00070, V00150)" #EBF5FB {
+  entity "AISupervisorExchange" as Ace_AISupervisorExchange <<table>> {
+    * ExchangeId : uniqueidentifier <<PK>>
+    --
+    IdempotencyKey : uniqueidentifier <<UQ>>
+    CanonicalEnvelopeHash : binary(32)
+    Harness : nvarchar(64)
+    HarnessVersion : nvarchar(64) [NULL]
+    Provider : nvarchar(64)
+    Model : nvarchar(128) [NULL]
+    ModelVersion : nvarchar(128) [NULL]
+    Effort : nvarchar(64) [NULL]
+    ConversationId : nvarchar(256) [NULL]
+    SessionId : nvarchar(256) [NULL]
+    CorrelationId : nvarchar(128)
+    EndpointClassification : nvarchar(128)
+    ConsentVersion : nvarchar(64)
+    StartedAtUtc : datetime2(7)
+    RecordedAtUtc : datetime2(7)
+  }
+
+  entity "AISupervisorPrompt" as Ace_AISupervisorPrompt <<table>> {
+    * ExchangeId : uniqueidentifier <<PK, FK>>
+    --
+    SanitizedPrompt : nvarchar(max)
+    PromptHash : binary(32)
+    ClassificationCode : nvarchar(64)
+    RecordedAtUtc : datetime2(7)
+  }
+
+  entity "AISupervisorExchangeTag" as Ace_AISupervisorExchangeTag <<table>> {
+    * ExchangeTagId : uniqueidentifier <<PK>>
+    --
+    ExchangeId : uniqueidentifier <<FK>>
+    Ordinal : int
+    TagId : uniqueidentifier <<FK>>
+    SubmittedTagText : nvarchar(256)
+  }
+
+  entity "AISupervisorAttempt" as Ace_AISupervisorAttempt <<table>> {
+    * AttemptId : uniqueidentifier <<PK>>
+    --
+    ExchangeId : uniqueidentifier <<FK>>
+    AttemptOrdinal : int
+    CanonicalAttemptHash : binary(32)
+    OutcomeCode : nvarchar(32)
+    ProviderStatusCode : int [NULL]
+    StartedAtUtc : datetime2(7)
+    CompletedAtUtc : datetime2(7)
+    ResponseByteCount : bigint [NULL]
+    ResponseChunkCount : bigint [NULL]
+  }
+
+  entity "AISupervisorUsage" as Ace_AISupervisorUsage <<table>> {
+    * AttemptId : uniqueidentifier <<PK, FK>>
+    --
+    RequestTokens : bigint [NULL]
+    ResponseTokens : bigint [NULL]
+    AvailabilityCode : nvarchar(16)
+    AvailabilityReason : nvarchar(256) [NULL]
+    ProviderReported : bit
+    RecordedAtUtc : datetime2(7)
+    CacheTokens : bigint [NULL]
+  }
+
+  entity "AISupervisorMetricCatalog" as Ace_AISupervisorMetricCatalog <<table>> {
+    * MetricCode : nvarchar(64) <<PK>>
+    --
+    UnitCode : nvarchar(32)
+    Description : nvarchar(256)
+    RecordedAtUtc : datetime2(7)
+  }
+
+  entity "AISupervisorMetric" as Ace_AISupervisorMetric <<table>> {
+    * MetricId : uniqueidentifier <<PK>>
+    --
+    AttemptId : uniqueidentifier <<FK>>
+    MetricOrdinal : int
+    DirectionCode : nvarchar(16)
+    MetricCode : nvarchar(64) <<FK>>
+    NumericValue : decimal(38, 9)
+    SourceField : nvarchar(128) [NULL]
+    ProviderReported : bit
+    RecordedAtUtc : datetime2(7)
+  }
+}
+
+package "Ace Organizational & Workspace Model (Org Schema - Codex-V3 Design)" #FEF9E7 {
+  entity "Org.Person" as Ace_Org_Person <<table>> {
+    * PersonId : uniqueidentifier <<PK>>
+    --
+    PhiloteId : uniqueidentifier <<FK>>
+    DisplayName : nvarchar(128)
+    CreatedAtUtc : datetime2(7)
+  }
+
+  entity "Org.Organization" as Ace_Org_Organization <<table>> {
+    * OrganizationId : uniqueidentifier <<PK>>
+    --
+    PhiloteId : uniqueidentifier <<FK>>
+    OrganizationTypeCode : varchar(32)
+    DisplayName : nvarchar(128)
+    CreatedAtUtc : datetime2(7)
+  }
+
+  entity "Org.HouseholdMembership" as Ace_Org_HouseholdMembership <<table>> {
+    * MembershipId : uniqueidentifier <<PK>>
+    --
+    PersonId : uniqueidentifier <<FK>>
+    OrganizationId : uniqueidentifier <<FK>>
+    IsPrimary : bit
+    MembershipKindCode : varchar(32)
+    ValidFromUtc : datetime2(7)
+    ValidToUtc : datetime2(7) [NULL]
+  }
+
+  entity "Org.HouseholdLink" as Ace_Org_HouseholdLink <<table>> {
+    * LinkId : uniqueidentifier <<PK>>
+    --
+    SourceHouseholdId : uniqueidentifier <<FK>>
+    CombinedHouseholdId : uniqueidentifier <<FK>>
+    LinkTypeCode : varchar(32)
+    ValidFromUtc : datetime2(7)
+    ValidToUtc : datetime2(7) [NULL]
+  }
+
+  entity "Org.Host" as Ace_Org_Host <<table>> {
+    * HostId : uniqueidentifier <<PK>>
+    --
+    PhiloteId : uniqueidentifier <<FK>>
+    HostName : varchar(64) <<UQ>>
+    HostJoinTypeCode : varchar(32)
+    CreatedAtUtc : datetime2(7)
+  }
+
+  entity "Org.HostAffiliation" as Ace_Org_HostAffiliation <<table>> {
+    * AffiliationId : uniqueidentifier <<PK>>
+    --
+    HostId : uniqueidentifier <<FK>>
+    OrganizationId : uniqueidentifier <<FK>>
+    AffiliationKindCode : varchar(32)
+    ValidFromUtc : datetime2(7)
+    ValidToUtc : datetime2(7) [NULL]
+  }
+
+  entity "Org.User" as Ace_Org_User <<table>> {
+    * UserId : uniqueidentifier <<PK>>
+    --
+    PhiloteId : uniqueidentifier <<FK>>
+    PersonId : uniqueidentifier <<FK, UQ>>
+    UserName : nvarchar(64) <<UQ>>
+    UserStatusCode : varchar(32)
+    IanaTimeZone : varchar(64)
+    CreatedAtUtc : datetime2(7)
+  }
+
+  entity "Org.UserIdentityBinding" as Ace_Org_UserIdentityBinding <<table>> {
+    * BindingId : uniqueidentifier <<PK>>
+    --
+    UserId : uniqueidentifier <<FK>>
+    HostId : uniqueidentifier <<FK>>
+    IdentityKindCode : varchar(32)
+    SecurityIdentifier : varchar(128) [NULL]
+    AccountName : nvarchar(64)
+    AuthorityLabel : nvarchar(64)
+  }
+
+  entity "Org.UserIdentityBindingState" as Ace_Org_UserIdentityBindingState <<table>> {
+    * StateId : uniqueidentifier <<PK>>
+    --
+    BindingId : uniqueidentifier <<FK>>
+    VerificationStatusCode : varchar(32)
+    ObservedSid : varchar(128) [NULL]
+    VerifiedByActorId : uniqueidentifier [NULL]
+    ObservedAtUtc : datetime2(7)
+    EvidenceReference : nvarchar(256) [NULL]
+  }
+
+  entity "Org.Project" as Ace_Org_Project <<table>> {
+    * ProjectId : uniqueidentifier <<PK>>
+    --
+    PhiloteId : uniqueidentifier <<FK>>
+    ProjectCode : varchar(64) <<UQ>>
+    DisplayName : nvarchar(128)
+    IsTemplate : bit
+    OriginKindCode : varchar(32)
+    DerivedFromTemplateId : uniqueidentifier [NULL]
+    CreatedAtUtc : datetime2(7)
+  }
+
+  entity "Org.ProjectState" as Ace_Org_ProjectState <<table>> {
+    * ProjectStateId : uniqueidentifier <<PK>>
+    --
+    ProjectId : uniqueidentifier <<FK>>
+    StatusCode : varchar(32)
+    ValidFromUtc : datetime2(7)
+    ValidToUtc : datetime2(7) [NULL]
+  }
+
+  entity "Org.ProjectOwnership" as Ace_Org_ProjectOwnership <<table>> {
+    * OwnershipId : uniqueidentifier <<PK>>
+    --
+    ProjectId : uniqueidentifier <<FK>>
+    OwnerEntityId : uniqueidentifier <<FK>>
+    OwnerEntityTypeCode : varchar(32)
+    ValidFromUtc : datetime2(7)
+    ValidToUtc : datetime2(7) [NULL]
+  }
+
+  entity "Org.RoleAssignment" as Ace_Org_RoleAssignment <<table>> {
+    * RoleAssignmentId : uniqueidentifier <<PK>>
+    --
+    PersonId : uniqueidentifier <<FK>>
+    RoleCode : varchar(32)
+    ScopeEntityTypeCode : varchar(32)
+    ScopeEntityId : uniqueidentifier
+    ValidFromUtc : datetime2(7)
+    ValidToUtc : datetime2(7) [NULL]
+  }
+
+  entity "Org.RoleResponsibility" as Ace_Org_RoleResponsibility <<table>> {
+    * ResponsibilityId : uniqueidentifier <<PK>>
+    --
+    RoleCode : varchar(32)
+    ScopeEntityTypeCode : varchar(32)
+    ResponsibilityCode : varchar(64)
+  }
+
+  entity "Org.Repository" as Ace_Org_Repository <<table>> {
+    * RepositoryId : uniqueidentifier <<PK>>
+    --
+    PhiloteId : uniqueidentifier <<FK>>
+    RepositoryCode : varchar(64) <<UQ>>
+    DisplayName : nvarchar(128)
+    ProviderKindCode : varchar(32) [NULL]
+    RemoteUrl : varchar(256) [NULL]
+  }
+
+  entity "Org.ProjectRepository" as Ace_Org_ProjectRepository <<table>> {
+    * ProjectId : uniqueidentifier <<PK, FK>>
+    * RepositoryId : uniqueidentifier <<PK, FK>>
+    --
+    Ord : int
+    AssignedAtUtc : datetime2(7)
+  }
+
+  entity "Org.RepositoryClone" as Ace_Org_RepositoryClone <<table>> {
+    * CloneId : uniqueidentifier <<PK>>
+    --
+    RepositoryId : uniqueidentifier <<FK>>
+    HostId : uniqueidentifier <<FK>>
+    CanonicalCommonGitDirectory : nvarchar(512)
+    CreatedAtUtc : datetime2(7)
+  }
+
+  entity "Org.Worktree" as Ace_Org_Worktree <<table>> {
+    * WorktreeId : uniqueidentifier <<PK>>
+    --
+    CloneId : uniqueidentifier <<FK>>
+    CanonicalPath : nvarchar(512) <<UQ>>
+    PurposeCode : varchar(32)
+    SprintKey : varchar(32) [NULL]
+    CreatedAtUtc : datetime2(7)
+  }
+
+  entity "Org.WorktreeObservation" as Ace_Org_WorktreeObservation <<table>> {
+    * ObservationId : uniqueidentifier <<PK>>
+    --
+    WorktreeId : uniqueidentifier <<FK>>
+    ObservedAtUtc : datetime2(7)
+    BranchRef : varchar(128) [NULL]
+    HeadCommitSha : varchar(64)
+    ObservationStatusCode : varchar(32)
+  }
+}
+
+
+package "Ace Project ContentSummary Subsystem (Antigravity-V5)" #E8F8F5 {
+  entity "Ace.ProjectContentSummary" as Ace_ProjectContentSummary <<table>> {
+    * ContentSummaryId : uniqueidentifier <<PK>>
+    --
+    ProjectId : uniqueidentifier <<FK>>
+    DeveloperPersonId : uniqueidentifier <<FK>>
+    HostId : uniqueidentifier <<FK>>
+    RepositoryId : uniqueidentifier <<FK>>
+    WorktreeId : uniqueidentifier [NULL, FK]
+    ContentSummaryCode : varchar(128) <<UQ>>
+    SourceArtifactPath : nvarchar(512)
+    ArtifactKindCode : varchar(64)
+    DisplayName : nvarchar(128)
+    Description : nvarchar(512) [NULL]
+    CreatedAtUtc : datetime2(7)
+  }
+
+  entity "Ace.ProjectContentSummaryVersion" as Ace_ProjectContentSummaryVersion <<table>> {
+    * ContentSummaryVersionId : uniqueidentifier <<PK>>
+    --
+    ContentSummaryId : uniqueidentifier <<FK, UQ>>
+    VersionOrdinal : int <<UQ>>
+    SourceCommitSha : varchar(64)
+    SourceContentHash : binary(32) <<UQ>>
+    SummaryHash : binary(32)
+    SummaryPayload : nvarchar(max)
+    SymbolsPayload : nvarchar(max) [NULL]
+    GeneratedByHarness : varchar(64)
+    GeneratedAtUtc : datetime2(7)
+  }
+
+  entity "Ace.ProjectContentSummaryTag" as Ace_ProjectContentSummaryTag <<table>> {
+    * ContentSummaryId : uniqueidentifier <<PK, FK>>
+    * Ordinal : tinyint <<PK>>
+    --
+    TagId : uniqueidentifier <<FK, UQ>>
+    AppliedByPersonId : uniqueidentifier <<FK>>
+    AppliedAtUtc : datetime2(7)
+  }
+
+  entity "Ace.ProjectContentSummaryDependency" as Ace_ProjectContentSummaryDependency <<table>> {
+    * DependencyId : uniqueidentifier <<PK>>
+    --
+    ContentSummaryVersionId : uniqueidentifier <<FK>>
+    DependsOnContentSummaryId : uniqueidentifier <<FK>>
+    DependencyKindCode : varchar(32)
+    TargetLocator : nvarchar(512) [NULL]
+  }
+}
+
+' --- GatherContent Relationships ---
+Ace_TagNamespace ||--o{ Ace_Tag : "namespaces"
+Ace_GatherContentSubmission ||--o{ Ace_GatherContentSubmissionTag : "tagged with"
+Ace_Tag ||--o{ Ace_GatherContentSubmissionTag : "referenced by"
+
+' --- AISupervisor Relationships ---
+Ace_AISupervisorExchange ||--|| Ace_AISupervisorPrompt : "1:1 sanitized prompt"
+Ace_AISupervisorExchange ||--o{ Ace_AISupervisorExchangeTag : "exchange tags"
+Ace_Tag ||--o{ Ace_AISupervisorExchangeTag : "referenced by"
+Ace_AISupervisorExchange ||--o{ Ace_AISupervisorAttempt : "execution attempts"
+Ace_AISupervisorAttempt ||--o| Ace_AISupervisorUsage : "attempt usage (1:0..1)"
+Ace_AISupervisorAttempt ||--o{ Ace_AISupervisorMetric : "captured metrics"
+Ace_AISupervisorMetricCatalog ||--o{ Ace_AISupervisorMetric : "catalog metadata"
+
+' --- Organizational Model Relationships (Codex-V3) ---
+Ace_Org_Person ||--o{ Ace_Org_HouseholdMembership : "holds"
+Ace_Org_Organization ||--o{ Ace_Org_HouseholdMembership : "members"
+Ace_Org_Organization ||--o{ Ace_Org_HouseholdLink : "source household"
+Ace_Org_Organization ||--o{ Ace_Org_HouseholdLink : "combined household"
+Ace_Org_Host ||--o{ Ace_Org_HostAffiliation : "affiliations"
+Ace_Org_Organization ||--o{ Ace_Org_HostAffiliation : "affiliated org"
+Ace_Org_Person ||--|| Ace_Org_User : "1:1 user account"
+Ace_Org_User ||--o{ Ace_Org_UserIdentityBinding : "local bindings"
+Ace_Org_Host ||--o{ Ace_Org_UserIdentityBinding : "host boundary"
+Ace_Org_UserIdentityBinding ||--o{ Ace_Org_UserIdentityBindingState : "verification history"
+Ace_Org_Project ||--o{ Ace_Org_ProjectState : "lifecycle states"
+Ace_Org_Project ||--o{ Ace_Org_ProjectOwnership : "ownership history"
+Ace_Org_Person ||--o{ Ace_Org_RoleAssignment : "role holder"
+Ace_Org_Project ||--o{ Ace_Org_ProjectRepository : "includes repository"
+Ace_Org_Repository ||--o{ Ace_Org_ProjectRepository : "associated projects"
+Ace_Org_Repository ||--o{ Ace_Org_RepositoryClone : "clones"
+Ace_Org_Host ||--o{ Ace_Org_RepositoryClone : "hosted clone"
+Ace_Org_RepositoryClone ||--o{ Ace_Org_Worktree : "worktrees"
+Ace_Org_Worktree ||--o{ Ace_Org_WorktreeObservation : "observations"
+
+
+' --- ContentSummary Relationships (Antigravity-V5) ---
+Ace_Org_Project ||--o{ Ace_ProjectContentSummary : "scopes"
+Ace_Org_Person ||--o{ Ace_ProjectContentSummary : "developer attribution"
+Ace_Org_Host ||--o{ Ace_ProjectContentSummary : "workstation"
+Ace_Org_Repository ||--o{ Ace_ProjectContentSummary : "repository"
+Ace_Org_Worktree ||--o{ Ace_ProjectContentSummary : "worktree"
+Ace_ProjectContentSummary ||--o{ Ace_ProjectContentSummaryVersion : "versions"
+Ace_ProjectContentSummary ||--o{ Ace_ProjectContentSummaryTag : "tagged with"
+Ace_Tag ||--o{ Ace_ProjectContentSummaryTag : "referenced tag"
+Ace_ProjectContentSummaryVersion ||--o{ Ace_ProjectContentSummaryDependency : "dependencies"
+Ace_ProjectContentSummary ||--o{ Ace_ProjectContentSummaryDependency : "target summary"
+
+@enduml

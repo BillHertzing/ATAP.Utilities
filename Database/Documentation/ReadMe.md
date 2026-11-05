@@ -67,6 +67,9 @@ for the exact command and renderer prerequisites.
 | You need… | Look in… |
 | --- | --- |
 | Exact V3 physical contract | `RPRRSBSI-V3-Data-Dictionary.md` |
+| Domain entities represented by schema (ER diagram) | `Represented_Entities_Domain_Model.puml` |
+| Full ATAPUtilities schema ER diagram (all 53 tables) | `ATAPUtilities_Schema.puml` |
+| Full Ace schema ER diagram (all 11 tables) | `Ace_Schema.puml` |
 | Philote validity diagram | `CoreSchema_Philote.puml` |
 | Exact-target rebuild runbook | `RebuildDatabase.md` |
 | Schema ER diagram for the Rules tables | `CoreSchema_Rules.puml` |

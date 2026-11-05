@@ -4,6 +4,10 @@ function Get-CoordProgramDataPath {
 
 function Get-CoordSetting {
   param([Parameter(Mandatory)][string]$Name)
+  if ($null -eq (Get-Variable -Name 'configRootKeys' -Scope Global -ValueOnly -ErrorAction SilentlyContinue) -or
+    $null -eq (Get-Variable -Name 'settings' -Scope Global -ValueOnly -ErrorAction SilentlyContinue)) {
+    throw "Missing coordination setting: $Name"
+  }
   $key = $global:configRootKeys[$Name + 'ConfigRootKey']
   if ([string]::IsNullOrWhiteSpace($key) -or -not $global:settings.ContainsKey($key) -or $null -eq $global:settings[$key]) {
     throw "Missing coordination setting: $Name"

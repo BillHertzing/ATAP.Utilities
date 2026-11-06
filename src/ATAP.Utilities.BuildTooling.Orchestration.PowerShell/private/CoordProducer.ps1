@@ -221,11 +221,12 @@ function Resolve-CoordScopeBindings {
     $relative = $entry.GetProperty('path').GetString()
     $roots = @($State.GetProperty('registeredRoots').EnumerateArray() | Where-Object { $_.GetProperty('registeredRootId').GetString() -ceq $id })
     if ($roots.Count -ne 1 -or [IO.Path]::IsPathRooted($relative) -or $relative.Contains(':') -or $relative.Contains('~')) { throw 'ScopeConflict' }
-    $root = Assert-CoordOrdinaryPath $roots[0].GetProperty('path').GetString() -MustExist
+    $declaredRoot = $roots[0].GetProperty('path').GetString()
+    $root = Assert-CoordOrdinaryPath $declaredRoot -MustExist
     $full = Assert-CoordOrdinaryPath ([IO.Path]::Combine($root, $relative))
     if (-not (Test-CoordDescendant $full $root) -and $full -ine $root) { throw 'ScopeEscape' }
     $volume = [IO.Path]::GetPathRoot($full)
-    $bindings += [ordered]@{ registeredRootId = $id; path = $relative; registeredRootPath = $root
+    $bindings += [ordered]@{ registeredRootId = $id; path = $relative; registeredRootPath = $declaredRoot
       identityDomain = $volume.ToUpperInvariant()
       segments = @($full.Substring($volume.Length).Split([char[]]@('\', '/'), [StringSplitOptions]::RemoveEmptyEntries))
       comparison = 'OrdinalIgnoreCase' }

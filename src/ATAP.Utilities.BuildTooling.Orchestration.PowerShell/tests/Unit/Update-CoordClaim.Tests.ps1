@@ -142,6 +142,74 @@ Describe 'Update-CoordClaim pure proposal boundary (synthetic caller-validated i
     }
   }
 
+  Context 'registered root declaration resolver-to-claim regression' -Tag 'RootDeclarationRegression' {
+    BeforeAll {
+      . (Join-Path $PSScriptRoot '../../private/CoordProducerJson.ps1')
+      . (Join-Path $PSScriptRoot '../../private/CoordProducer.ps1')
+      . (Join-Path $PSScriptRoot '../../private/CoordClerkProducer.ps1')
+      # Existing source directories only: no live producer context or fixture writes.
+      $script:resolverFixtureRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
+
+      function Set-ResolverRootFixture {
+        param([string]$RootStyle)
+        $declared = if ($RootStyle -ceq 'Forward') {
+          $script:resolverFixtureRoot.Replace('\', '/')
+        } else {
+          $script:resolverFixtureRoot.Replace('/', '\')
+        }
+        $script:state.registeredRoots[0].path = $declared
+        $script:request.scope[0].path = 'tests/Unit/Update-CoordClaim.Tests.ps1'
+      }
+
+      function Get-ResolvedTestContext {
+        $stateElement = ConvertTo-ClaimElement $script:state
+        $requestElement = ConvertTo-ClaimElement $script:request
+        $syntheticProducer = [pscustomobject]@{ Record = $script:context }
+        [pscustomobject]@{
+          State = $stateElement
+          Request = $requestElement
+          Context = Get-CoordClaimContext $syntheticProducer $requestElement $stateElement
+        }
+      }
+    }
+
+    It 'preserves the <RootStyle> declaration through real resolution and accepts the pure claim proposal' -ForEach @(
+      @{ RootStyle = 'Forward' }, @{ RootStyle = 'Backslash' }
+    ) {
+      Set-ResolverRootFixture $RootStyle
+      $resolved = Get-ResolvedTestContext
+      $binding = $resolved.Context.GetProperty('requestScopeBindings')[0]
+      $binding.GetProperty('registeredRootPath').GetString() | Should -BeExactly $script:state.registeredRoots[0].path
+      $binding.GetProperty('identityDomain').GetString() | Should -BeExactly ([IO.Path]::GetPathRoot($script:resolverFixtureRoot).ToUpperInvariant())
+      $segments = @($binding.GetProperty('segments').EnumerateArray() | ForEach-Object GetString)
+      $segments[-1] | Should -BeExactly 'Update-CoordClaim.Tests.ps1'
+      $proposal = Update-CoordClaim -State $resolved.State -Request $resolved.Request -Context $resolved.Context -ClaimId 'C-resolver-regression'
+      $proposal.Stage | Should -BeExactly 'ProposedNotApplied'
+      $proposal.ProposedState.GetProperty('claims').GetArrayLength() | Should -Be 1
+      $resolved.State.GetProperty('claims').GetArrayLength() | Should -Be 0
+    }
+
+    It 'still refuses a real binding from a materially different root with <RootStyle> spelling' -ForEach @(
+      @{ RootStyle = 'Forward' }, @{ RootStyle = 'Backslash' }
+    ) {
+      Set-ResolverRootFixture $RootStyle
+      $resolved = Get-ResolvedTestContext
+      $differentState = ConvertFrom-Json -InputObject $resolved.State.GetRawText() -AsHashtable
+      $differentState.registeredRoots[0].path = Join-Path $script:resolverFixtureRoot 'tests'
+      $wrongContext = Get-CoordClaimContext ([pscustomobject]@{ Record = $script:context }) $resolved.Request (ConvertTo-ClaimElement $differentState)
+      { Update-CoordClaim -State $resolved.State -Request $resolved.Request -Context $wrongContext -ClaimId 'C-wrong-root' } | Should -Throw '*BindingConflict*'
+    }
+
+    It 'still refuses actual resolver containment escape <RelativeEscape>' -ForEach @(
+      @{ RelativeEscape = '../outside.ps1' }, @{ RelativeEscape = '..\outside.ps1' }
+    ) {
+      Set-ResolverRootFixture 'Forward'
+      $script:request.scope[0].path = $RelativeEscape
+      { Get-ResolvedTestContext } | Should -Throw '*ScopeEscape*'
+      $script:state.claims.Count | Should -Be 0
+    }
+  }
+
   It 'uses explicit distinct claim identity, preserves wire shape and returns a schema-shaped clone only' {
     $inputState = ConvertTo-ClaimElement $script:state
     $before = $inputState.GetRawText()

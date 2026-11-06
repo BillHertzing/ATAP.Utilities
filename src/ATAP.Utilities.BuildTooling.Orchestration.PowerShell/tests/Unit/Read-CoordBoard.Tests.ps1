@@ -311,8 +311,17 @@ Describe 'Read-CoordBoard private snapshot' -Tag 'Unit' {
     $after.Tasks[1].Text | Should -BeExactly $before.Tasks[1].Text
     $after.Tasks[0].Text | Should -Match 'CLAIMED / source-ready'
 
-    $renderer = Get-Command -Name 'Convert-TasksMdToSprintBoard' -CommandType Function -ErrorAction Stop
+    # The BuildTooling facade also exports this command. Select the same exact
+    # installed child module as the production candidate renderer, not ambient lookup.
+    Import-Module -FullyQualifiedName @{
+      ModuleName = 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell'; RequiredVersion = '0.1.61'
+    } -ErrorAction Stop
+    $renderer = Get-Command -Name 'Convert-TasksMdToSprintBoard' -FullyQualifiedModule @{
+      ModuleName = 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell'; RequiredVersion = '0.1.61'
+    } -CommandType Function -ErrorAction Stop
     $renderer.ModuleName | Should -BeExactly 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell'
+    $renderer.Module.Version | Should -Be ([version]'0.1.61')
+    $renderer.Module.Path | Should -BeExactly 'C:\Program Files\PowerShell\Modules\ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell\0.1.61\ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell.psm1'
     $renderer.Module.ModuleBase | Should -Not -Match '-wt-'
     $htmlPath = Join-Path $directory 'Disposable.Sprint0017.html'
     $beforeRenderHash = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash

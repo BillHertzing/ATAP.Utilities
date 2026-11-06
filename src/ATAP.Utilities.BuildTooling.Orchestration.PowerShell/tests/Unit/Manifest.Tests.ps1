@@ -72,11 +72,11 @@ Describe 'Orchestration selected module manifest' -Tag 'Unit' {
   }
   It 'pins the module identity and PowerShell platform' {
     $script:manifest.RootModule | Should -BeExactly 'ATAP.Utilities.BuildTooling.Orchestration.PowerShell.psm1'
-    $script:manifest.ModuleVersion | Should -BeExactly '0.1.6'
+    $script:manifest.ModuleVersion | Should -BeExactly '0.1.7'
     $script:manifest.GUID | Should -BeExactly '01131809-7fd2-4b6d-8a34-f584b55ad4fa'
     $script:manifest.PowerShellVersion | Should -BeExactly '7.4'
     @($script:manifest.CompatiblePSEditions).Count | Should -Be 1
-    $script:manifest.CompatiblePSEditions[0] | Should -BeExactly 'Core'
+    @($script:manifest.CompatiblePSEditions)[0] | Should -BeExactly 'Core'
     $script:version.version | Should -BeExactly $script:manifest.ModuleVersion
     $script:manifest.CompanyName | Should -BeExactly 'ATAP'
     $script:manifest.Copyright | Should -BeExactly '(c) Bill Hertzing for ATAPUtilities.org. All rights reserved.'
@@ -116,7 +116,9 @@ Describe 'Orchestration selected module manifest' -Tag 'Unit' {
     @{ Key = 'VariablesToExport' }, @{ Key = 'AliasesToExport' }
   ) {
     $script:manifest.ContainsKey($Key) | Should -BeTrue
-    @($script:manifest[$Key]).Count | Should -Be 0
+    # Accept empty-array/empty-string encodings, never wildcard declarations.
+    # The imported module's zero actual exports are checked independently above.
+    @($script:manifest[$Key] | Where-Object { $null -ne $_ -and $_ -cne '' }).Count | Should -Be 0
   }
 }
 

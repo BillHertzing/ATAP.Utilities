@@ -1,6 +1,6 @@
 # Producer, drain and recovery v1
 
-The development source manifest and version.json report version 0.1.6. This is not the final shipping version or authority to release. Source/disposable fixture results do not mean installed or live-board acceptance.
+The development source manifest and version.json report version 0.1.7. This is not the final shipping version or authority to release. Source/disposable fixture results do not mean installed or live-board acceptance.
 
 ## Actual entrypoints
 
@@ -46,7 +46,7 @@ The exact installed package file inventory can be constructed by enumerating tho
 
 ## First use and consuming pilot — root only
 
-1. Root resolves the release and runtime boundaries before a consuming pilot. C1927 is prepared, not ready: the module application mapping is absent, the pinned SprintLifecycle 0.1.61 renderer dependency closure is unverified, and the final version and release authority are unbound. Resolve the final NBGV version and approved release/install route before testing the exact package. Worker source evidence is not deployment.
+1. Root resolves the release and runtime boundaries before a consuming pilot. C1927 is prepared, not ready: the module application mapping is absent, the pinned SprintLifecycle 0.1.71 renderer dependency closure is unverified, and the final version and release authority are unbound. Resolve the final NBGV version and approved release/install route before testing the exact package. Worker source evidence is not deployment.
 2. The approved empty protected directories and configuration source establish the intended state root `C:/ProgramData/ATAP/AICoordinator/State` and custody record `C:/ProgramData/ATAP/AICoordinator/Custody/custody.json`; configuration source and IAC remain development work. These empty directories are not initialized state or a witness. With actual Bill approval for the concrete baseline and imports, establish the required protected backup path and existing generated scratch parent, bind the current Windows SID, and obtain the manual board handoff while holding the existing coordinator lock.
 3. Before initial state creation, durably consume the unique FIRST_USE/bootstrap ID in the protected witness as Establishing. Preserve it on interruption. An absent directory or missing state never authorizes re-bootstrap.
 4. Establish the accepted state-v1 baseline with exact quartet digests, registered roots, imported claims/reservations and immutable lineage/epoch. Bind package files and actor/grant registry. Publish Established only after validating the state and its exact stateSha256. No module public command silently performs these setup steps.
@@ -59,7 +59,7 @@ Submission starts queue ordinals at string0, uses checked signed-Int64 capacity 
 
 State writes first retain the exact proposed image in the protected external pendingWrite journal, then atomically replace/flush/read back state and advance the witness watermark. Prepare/Complete phases instead retain their exact immutable plan/operation identity before calling the existing Save-CoordOperation/Complete-CoordOperation seams. A later authorized clerk resumes that SAME work; third-state outputs hold recovery. No directory-loss reset, renumbering, identity reuse, delete cleanup or implicit retry is added.
 
-Independent eligible requests share a base head and are selected by durable ordinal with explicit task/scope/reservation conflicts. Causal chains wait for already Applied predecessors. Claim/release use Update-CoordClaim; report validates its owned claim and actual file SHA256 evidence. AcceptChange currently supports the EXISTING annotation-only New-CoordBoardChange contract, not arbitrary checkbox/status/completion edits. Multiple annotation previews compose before one installed SprintLifecycle0.1.61 candidate render; unchanged quartet batches render zero times. Existing Save/Complete retain immutable prepared plans and receipts.
+Independent eligible requests share a base head and are selected by durable ordinal with explicit task/scope/reservation conflicts. Causal chains wait for already Applied predecessors. Claim/release use Update-CoordClaim; report validates its owned claim and actual file SHA256 evidence. AcceptChange currently supports the EXISTING annotation-only New-CoordBoardChange contract, not arbitrary checkbox/status/completion edits. Multiple annotation previews compose before one installed SprintLifecycle0.1.71 candidate render; unchanged quartet batches render zero times. Existing Save/Complete retain immutable prepared plans and receipts.
 
 Exports contain exact state/custody byte images plus all observed quartet bytes, including pending/prepared/recovery history. Export is not restore approval. An incomplete protected write or prepared operation cannot be reported as a drained queue, even if cancellation arrives after a state receipt.
 

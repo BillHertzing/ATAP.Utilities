@@ -51,6 +51,60 @@ Describe 'Build-PSModuleManifest' {
     }
   }
 
+  Context 'explicit export declaration boundaries' {
+    It 'preserves <Field> when source declaration is <Kind>' -ForEach @(
+      @{ Field = 'CmdletsToExport'; Kind = 'empty'; Declaration = '@()'; Expected = @() },
+      @{ Field = 'VariablesToExport'; Kind = 'empty'; Declaration = '@()'; Expected = @() },
+      @{ Field = 'AliasesToExport'; Kind = 'empty'; Declaration = '@()'; Expected = @() },
+      @{ Field = 'CmdletsToExport'; Kind = 'absent'; Declaration = $null; Expected = @('*') },
+      @{ Field = 'VariablesToExport'; Kind = 'absent'; Declaration = $null; Expected = @('*') },
+      @{ Field = 'AliasesToExport'; Kind = 'absent'; Declaration = $null; Expected = @('*') },
+      @{ Field = 'CmdletsToExport'; Kind = 'nonempty'; Declaration = "@('Get-Example', 'Set-Example')"; Expected = @('Get-Example', 'Set-Example') },
+      @{ Field = 'VariablesToExport'; Kind = 'nonempty'; Declaration = "@('Example', 'OtherExample')"; Expected = @('Example', 'OtherExample') },
+      @{ Field = 'AliasesToExport'; Kind = 'nonempty'; Declaration = "@('example', 'otherExample')"; Expected = @('example', 'otherExample') }
+    ) {
+      $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
+      $fixtureRoot = Join-Path $repoRoot ('_generated/Sprint0017/ManifestExportRegression/' + [guid]::NewGuid().ToString('N'))
+      $null = New-Item -ItemType Directory -Path $fixtureRoot -Force
+      $source = Join-Path $fixtureRoot 'Source.psd1'
+      $output = Join-Path $fixtureRoot 'Output.psd1'
+      $fieldText = if ($null -eq $Declaration) { '' } else { "$Field = $Declaration" }
+      [IO.File]::WriteAllText($source, "@{ ModuleVersion = '0.0.1'; GUID = '7d0e649e-cd04-4c97-a64d-773e2c13f67a'; Author = 'test'; Description = 'export boundary'; $fieldText }")
+      $null = Build-PSModuleManifest -SourceManifestPath $source -OutputManifestPath $output -ModuleVersion ([version]'1.2.3') -Confirm:$false
+      $actual = Import-PowerShellDataFile -LiteralPath $output
+      if ($Kind -eq 'absent') {
+        # Compare omission with this engine's native default, which differs
+        # across PowerShell versions; never impose a new source declaration.
+        $baselinePath = Join-Path $fixtureRoot 'NativeDefault.psd1'
+        New-ModuleManifest -Path $baselinePath -ModuleVersion '1.2.3'
+        $baseline = Import-PowerShellDataFile -LiteralPath $baselinePath
+        $actual.ContainsKey($Field) | Should -Be $baseline.ContainsKey($Field)
+        $Expected = @($baseline[$Field] | Where-Object { $null -ne $_ -and $_ -cne '' })
+      } else {
+        $actual.ContainsKey($Field) | Should -BeTrue
+      }
+      $names = @($actual[$Field] | Where-Object { $null -ne $_ -and $_ -cne '' })
+      $names.Count | Should -Be $Expected.Count
+      for ($index = 0; $index -lt $Expected.Count; $index++) {
+        $names[$index] | Should -BeExactly $Expected[$index]
+      }
+      { Test-ModuleManifest -Path $output -ErrorAction Stop } | Should -Not -Throw
+    }
+
+    It 'keeps nonempty explicit alias arguments authoritative over source aliases' {
+      $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
+      $fixtureRoot = Join-Path $repoRoot ('_generated/Sprint0017/ManifestExportRegression/' + [guid]::NewGuid().ToString('N'))
+      $null = New-Item -ItemType Directory -Path $fixtureRoot -Force
+      $source = Join-Path $fixtureRoot 'Source.psd1'
+      $output = Join-Path $fixtureRoot 'Output.psd1'
+      [IO.File]::WriteAllText($source, "@{ ModuleVersion = '0.0.1'; GUID = '7d0e649e-cd04-4c97-a64d-773e2c13f67a'; Author = 'test'; Description = 'alias override'; AliasesToExport = @('sourceAlias') }")
+      $null = Build-PSModuleManifest -SourceManifestPath $source -OutputManifestPath $output -ModuleVersion ([version]'1.2.3') -Aliases @('argumentAlias') -Confirm:$false
+      $data = Import-PowerShellDataFile -LiteralPath $output
+      @($data.AliasesToExport).Count | Should -Be 1
+      @($data.AliasesToExport)[0] | Should -BeExactly 'argumentAlias'
+    }
+  }
+
   Context 'stable version (no Prerelease)' {
     BeforeEach {
       $script:Root = New-TempManifestRoot

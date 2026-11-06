@@ -261,8 +261,21 @@ function Build-PSModuleManifest {
         $params['Prerelease'] = $Prerelease
       }
       $params['FunctionsToExport'] = $resolvedPublicFunctions
+      # Omission lets New-ModuleManifest supply '*'. Preserve an explicitly
+      # empty source declaration instead of widening the shipping contract.
+      foreach ($exportKey in @('CmdletsToExport', 'VariablesToExport')) {
+        if ($sourceManifest.ContainsKey($exportKey)) {
+          $exportNames = [string[]]@($sourceManifest[$exportKey] | Where-Object { $null -ne $_ -and $_ -cne '' })
+          # New-ModuleManifest comments out VariablesToExport for @(); an
+          # explicit empty string preserves the key and exports no names.
+          $params[$exportKey] = if ($exportNames.Count) { $exportNames } else { [string[]]@('') }
+        }
+      }
       if ($Aliases -and $Aliases.Count -gt 0) {
         $params['AliasesToExport'] = $Aliases
+      } elseif ($sourceManifest.ContainsKey('AliasesToExport')) {
+        $aliasNames = [string[]]@($sourceManifest.AliasesToExport | Where-Object { $null -ne $_ -and $_ -cne '' })
+        $params['AliasesToExport'] = if ($aliasNames.Count) { $aliasNames } else { [string[]]@('') }
       }
       if ($RequiredAssemblies -and $RequiredAssemblies.Count -gt 0) {
         $params['RequiredAssemblies'] = $RequiredAssemblies

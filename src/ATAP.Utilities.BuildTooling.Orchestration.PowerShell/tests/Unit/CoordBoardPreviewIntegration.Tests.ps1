@@ -210,13 +210,15 @@ BeforeAll {
   function Assert-GenuineConsumerStatus292 {
     param([string]$Path, [string]$ExpectedTarget)
     # Explicit frozen consumer contract, not a shared production classifier.
-    $modulePath = 'C:/Program Files/PowerShell/Modules/ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell/0.1.60/ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell.psm1'
+    $modulePath = 'C:/Program Files/PowerShell/Modules/ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell/0.1.61/ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell.psm1'
     $manifestPath = [IO.Path]::ChangeExtension($modulePath, '.psd1')
-    (Get-FileHash -LiteralPath $modulePath -Algorithm SHA256).Hash | Should -BeExactly '5DAED847D11AE6142C1D9FC8F8ABB0CB50618865EE827B9B8A122A6A570C3D3E'
-    (Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256).Hash | Should -BeExactly 'F4AD6EC0A3E1DFD73E77F4915F275CE4B5656AF39039ED349E7F0A30F56564F3'
-    Import-Module -Name $manifestPath -RequiredVersion 0.1.60 -ErrorAction Stop
-    $consumer = Get-Command -Name Convert-TasksMdToSprintBoard -Module ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell -CommandType Function -ErrorAction Stop
-    $consumer.Module.Version.ToString() | Should -BeExactly '0.1.60'
+    (Get-FileHash -LiteralPath $modulePath -Algorithm SHA256).Hash | Should -BeExactly 'C1CC53413DAE15EEE5A6BBEEB18F590B7F48C3DDA6904C75D8EAE99D1DF55037'
+    (Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256).Hash | Should -BeExactly 'B4BA2D50EA3A33A27C2B21D957B270F810ED9BA74545AA6AE08F522314473EF1'
+    Import-Module -Name $manifestPath -RequiredVersion 0.1.61 -ErrorAction Stop
+    $consumer = Get-Command -Name Convert-TasksMdToSprintBoard -FullyQualifiedModule @{
+      ModuleName = 'ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell'; RequiredVersion = '0.1.61'
+    } -CommandType Function -ErrorAction Stop
+    $consumer.Module.Version.ToString() | Should -BeExactly '0.1.61'
     $consumer.Module.Path.Replace('\', '/') | Should -Be $modulePath
     $output = [IO.Path]::ChangeExtension($Path, '.html')
     $result = & $consumer -TasksFilePath $Path -OutputPath $output -WhatIf:$true -Confirm:$false

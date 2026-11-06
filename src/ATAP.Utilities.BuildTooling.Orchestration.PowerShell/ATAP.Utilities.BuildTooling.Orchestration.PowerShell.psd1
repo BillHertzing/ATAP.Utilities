@@ -1,6 +1,6 @@
 @{
   RootModule = 'ATAP.Utilities.BuildTooling.Orchestration.PowerShell.psm1'
-  ModuleVersion = '0.1.5'
+  ModuleVersion = '0.1.6'
   GUID = '01131809-7fd2-4b6d-8a34-f584b55ad4fa'
   Author = 'ATAP'
   CompanyName = 'ATAP'

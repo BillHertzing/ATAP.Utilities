@@ -807,6 +807,13 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell scheduled task scripts' 
   }
 
   BeforeEach {
+    # Registration writes its configuration below StatePath whenever profile settings supply it,
+    # so every case owns a state root under the run's TEMP and never names the live root.
+    $script:fixtureStatePath = [IO.Path]::GetFullPath((Join-Path ([IO.Path]::GetTempPath()) ('ATAP-ParityRegistration-' + [guid]::NewGuid().ToString('N') + '\ParityState')))
+    if ($script:fixtureStatePath.StartsWith('C:\ProgramData\ATAP\ParityState', [StringComparison]::OrdinalIgnoreCase)) {
+      throw "Refusing a Parity registration fixture inside the live state root: $script:fixtureStatePath"
+    }
+    New-Item -ItemType Directory -Path $script:fixtureStatePath -Force | Out-Null
     $script:scheduledTaskRegistrations = @()
     $script:s4uRegistrations = @()
     Mock Get-Command { $null } -ParameterFilter { $Name -eq 'Write-PSFMessage' }
@@ -852,7 +859,7 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell scheduled task scripts' 
   It 'Register-ParityScheduledTasks creates only the local audit task for AuditOnly' {
     Register-ParityScheduledTasks `
       -TaskSet AuditOnly `
-      -StatePath 'C:\ProgramData\ATAP\ParityState' `
+      -StatePath $script:fixtureStatePath `
       -HostName 'utat01' `
       -TaskPath '\ATAP-Test\' `
       -UserId 'UTAT01\SvcParityAudit' `
@@ -877,7 +884,7 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell scheduled task scripts' 
       -TaskSet AuditAndCompare `
       -Cadence BiWeekly `
       -BiWeeklyDaysOfWeek Wednesday `
-      -StatePath 'C:\ProgramData\ATAP\ParityState' `
+      -StatePath $script:fixtureStatePath `
       -RightStatePath '\\utat01\ParityState' `
       -HostName 'utat022' `
       -RightHostName 'utat01' `
@@ -917,7 +924,7 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell scheduled task scripts' 
 
     Register-ParityScheduledTasks `
       -TaskSet AuditAndCompare `
-      -StatePath 'C:\ProgramData\ATAP\ParityState' `
+      -StatePath $script:fixtureStatePath `
       -RightStatePath '\\utat01\ParityState' `
       -HostName 'utat022' `
       -RightHostName 'utat01' `
@@ -946,7 +953,7 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell scheduled task scripts' 
 
     Register-ParityScheduledTasks `
       -TaskSet AuditOnly `
-      -StatePath 'C:\ProgramData\ATAP\ParityState' `
+      -StatePath $script:fixtureStatePath `
       -HostName 'utat01' `
       -TaskPath '\ATAP-Test\' `
       -LogonType S4U `
@@ -962,6 +969,77 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell scheduled task scripts' 
     $registration.Credential.GetNetworkCredential().Password | Should -Be 'not-a-real-password'
     $registration.RunLevel | Should -Be 'Limited'
     $registration.Arguments | Should -Match 'Invoke-ParityScheduledAuditTask\.ps1'
+  }
+
+  It 'every registration fixture in this file passes the owned state root explicitly' {
+    $parseErrors = $null
+    $tokens = $null
+    $ast = [System.Management.Automation.Language.Parser]::ParseFile($PSCommandPath, [ref] $tokens, [ref] $parseErrors)
+    $parseErrors | Should -BeNullOrEmpty
+    $calls = @($ast.FindAll({
+          param($node)
+          $node -is [System.Management.Automation.Language.CommandAst] -and
+          $node.GetCommandName() -eq 'Register-ParityScheduledTasks'
+        }, $true))
+
+    $calls.Count | Should -BeGreaterThan 0
+    foreach ($call in $calls) {
+      $elements = @($call.CommandElements)
+      $stateIndex = @(0..($elements.Count - 1) | Where-Object {
+          $elements[$_] -is [System.Management.Automation.Language.CommandParameterAst] -and
+          $elements[$_].ParameterName -eq 'StatePath'
+        })
+      $stateIndex | Should -HaveCount 1 -Because "line $($call.Extent.StartLineNumber) must not fall back to the live default"
+      $elements[$stateIndex[0] + 1].Extent.Text |
+        Should -BeExactly '$script:fixtureStatePath' -Because "line $($call.Extent.StartLineNumber) must use the owned root"
+    }
+  }
+
+  It 'keeps configuration written from profile settings inside the owned state root' {
+    $savedSettings = $global:settings
+    $savedKeys = $global:configRootKeys
+    try {
+      $global:configRootKeys = @{
+        SystemParityMonitorConfigRootKey = 'SystemParityMonitor'
+        SystemParityMonitorPackageManagerProfilesConfigRootKey = 'PackageManagerProfiles'
+        SystemParityMonitorSharedDotNetToolPolicyConfigRootKey = 'SharedDotNetToolPolicy'
+        SystemParityMonitorExpectedSurfaceMinimumCountsConfigRootKey = 'ExpectedSurfaceMinimumCounts'
+      }
+      $global:settings = @{
+        SystemParityMonitor = @{
+          PackageManagerProfiles = @([pscustomobject]@{ Identity = 'ATAP\Developer'; PipPath = 'C:\pip' })
+          SharedDotNetToolPolicy = [pscustomobject]@{
+            SchemaVersion = 1
+            SharedPath = 'C:\ProgramData\dotnet\tools'
+            Tools = @([pscustomobject]@{ PackageId = 'dotnet-trace'; CommandName = 'dotnet-trace.exe'; ExpectedVersion = '10.0.731102' })
+            Consumers = @([pscustomobject]@{ LogicalIdentity = 'ParityAudit'; ActualIdentity = 'UTAT022\SvcParityAudit'; EvidenceMode = 'CurrentProcess' })
+            RequiredChanges = @([pscustomobject]@{ LogicalChangeId = 'fixture'; EntryId = 'fixture-entry'; JournalHostName = 'utat022'; AckHostName = 'utat01'; Category = 'Packages'; Item = 'dotnet-trace/shared'; MinimumAckStatus = 'Verified' })
+          }
+          ExpectedSurfaceMinimumCounts = @{ SQL = 2; PackageManager = 1 }
+        }
+      }
+
+      Register-ParityScheduledTasks `
+        -TaskSet AuditOnly `
+        -StatePath $script:fixtureStatePath `
+        -HostName 'utat01' `
+        -TaskPath '\ATAP-Test\' `
+        -UserId 'UTAT01\SvcParityAudit' `
+        -Confirm:$false
+
+      $profilesPath = Join-Path $script:fixtureStatePath 'Configuration\PackageManagerProfiles.v1.json'
+      $policyPath = Join-Path $script:fixtureStatePath 'Configuration\SharedDotNetTools.v1.json'
+      Test-Path -LiteralPath $profilesPath -PathType Leaf | Should -BeTrue
+      Test-Path -LiteralPath $policyPath -PathType Leaf | Should -BeTrue
+      $script:scheduledTaskRegistrations | Should -HaveCount 1
+      $arguments = $script:scheduledTaskRegistrations[0].Action.Arguments
+      $arguments | Should -Match ([regex]::Escape($profilesPath))
+      $arguments | Should -Match ([regex]::Escape($policyPath))
+      $arguments | Should -Not -Match 'ProgramData\\ATAP\\ParityState'
+    } finally {
+      $global:settings = $savedSettings
+      $global:configRootKeys = $savedKeys
+    }
   }
 
   It 'scheduled task wrappers require no vault command token or credential directory' {

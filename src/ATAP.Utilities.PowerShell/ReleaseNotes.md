@@ -1,5 +1,26 @@
 # Release Notes for ATAP.Utilities.PowerShell
 
+## [Unreleased]
+
+### Changed
+
+- `Start-AceOutpostMeteredHarness` now appends the lowercase short host name to the child's
+  `NO_PROXY` entry by default, unless `-NoProxy` already lists it in any casing, so a child's
+  intranet calls to this host do not go through the metered proxy. Use
+  `-ExcludeCurrentHostFromNoProxy` to keep the entry exactly as `-NoProxy` supplies it.
+- `Invoke-AceOutpostMeteredPrompt` forwards `-ExcludeCurrentHostFromNoProxy` when it is set.
+- `Set-AceOutpostProxyEnvironment` applies the same default when enabling and accepts the same
+  switch. A `User` or `Machine` scope enable now persists the host name in `NO_PROXY`.
+
+### Known limits
+
+- Chromium traffic on the `-ChromiumProxyBridge` path follows its own proxy switches, not
+  `NO_PROXY`, so calls to this host from that traffic still use the proxy.
+- A packaged app started through `-PackagedAppUserModelId` without
+  `-PackagedAppBootstrapExecutablePath`, such as metered Claude Desktop, receives no environment
+  block from the harness, so this `NO_PROXY` entry does not reach it or its children.
+- Only the short host name is added, so a call to a fully qualified name still uses the proxy.
+
 ## [0.2.10] — 2026-09-13
 
 ### Fixed

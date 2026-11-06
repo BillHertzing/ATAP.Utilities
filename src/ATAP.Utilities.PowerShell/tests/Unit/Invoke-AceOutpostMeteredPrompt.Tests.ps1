@@ -72,7 +72,7 @@ class Probe {
     var record = new StringBuilder();
     int exitCode = 0;
     foreach (var a in args) { record.AppendLine("ARG:" + Convert.ToBase64String(Encoding.UTF8.GetBytes(a))); }
-    foreach (var n in new[] { "ACEOUTPOST_METERED_INVOCATION", "ACEOUTPOST_METERED_PARENT_INVOCATION", "HTTPS_PROXY" }) {
+    foreach (var n in new[] { "ACEOUTPOST_METERED_INVOCATION", "ACEOUTPOST_METERED_PARENT_INVOCATION", "HTTPS_PROXY", "NO_PROXY" }) {
       var v = Environment.GetEnvironmentVariable(n);
       record.AppendLine("ENV:" + n + "=" + (v == null ? "<null>" : Convert.ToBase64String(Encoding.UTF8.GetBytes(v))));
     }
@@ -530,6 +530,43 @@ $result | Select-Object InvocationId, ParentInvocationId, IsNested, NestingEvide
       $result.ExitCode | Should -BeNullOrEmpty
       $result.InvocationId | Should -Not -BeNullOrEmpty
       Test-Path -LiteralPath $outPath | Should -BeFalse
+    }
+  }
+
+  Context 'Current host in the NO_PROXY entry' {
+
+    It 'gives the child the core default, with the host appended, when the switch is not set' {
+      $outPath = Join-Path $TestDrive 'noproxy-default.txt'
+      $null = Invoke-AceOutpostMeteredPrompt -Client Codex -Prompt 'p' -ProxyPort $script:proxyPort `
+        -StateDirectory $script:stateDirectory -HarnessPath $script:probeExe -Confirm:$false -ArgumentList @($outPath)
+      (ConvertFrom-ProbeRecord -Path $outPath).Env['NO_PROXY'] |
+        Should -BeExactly "localhost,127.0.0.1,::1,$([Environment]::MachineName.ToLowerInvariant())"
+    }
+
+    It 'gives the child the value without the host when the switch is set' {
+      $outPath = Join-Path $TestDrive 'noproxy-excluded.txt'
+      $null = Invoke-AceOutpostMeteredPrompt -Client Codex -Prompt 'p' -ProxyPort $script:proxyPort `
+        -StateDirectory $script:stateDirectory -HarnessPath $script:probeExe -Confirm:$false `
+        -ExcludeCurrentHostFromNoProxy -ArgumentList @($outPath)
+      (ConvertFrom-ProbeRecord -Path $outPath).Env['NO_PROXY'] | Should -BeExactly 'localhost,127.0.0.1,::1'
+    }
+
+    It 'passes the switch to the core when set' {
+      Mock Start-AceOutpostMeteredHarness { [pscustomobject]@{ Started = $true; ProxyEndpoint = 'http://127.0.0.1:50055' } }
+      $null = Invoke-AceOutpostMeteredPrompt -Client Codex -Prompt 'p' -ProxyPort $script:proxyPort `
+        -StateDirectory $script:stateDirectory -HarnessPath $script:probeExe -Confirm:$false -ExcludeCurrentHostFromNoProxy
+      Should -Invoke Start-AceOutpostMeteredHarness -Times 1 -Exactly -ParameterFilter {
+        $PesterBoundParameters.ContainsKey('ExcludeCurrentHostFromNoProxy') -and [bool]$ExcludeCurrentHostFromNoProxy
+      }
+    }
+
+    It 'omits the switch from the core call when not set' {
+      Mock Start-AceOutpostMeteredHarness { [pscustomobject]@{ Started = $true; ProxyEndpoint = 'http://127.0.0.1:50055' } }
+      $null = Invoke-AceOutpostMeteredPrompt -Client Codex -Prompt 'p' -ProxyPort $script:proxyPort `
+        -StateDirectory $script:stateDirectory -HarnessPath $script:probeExe -Confirm:$false
+      Should -Invoke Start-AceOutpostMeteredHarness -Times 1 -Exactly -ParameterFilter {
+        -not $PesterBoundParameters.ContainsKey('ExcludeCurrentHostFromNoProxy')
+      }
     }
   }
 }

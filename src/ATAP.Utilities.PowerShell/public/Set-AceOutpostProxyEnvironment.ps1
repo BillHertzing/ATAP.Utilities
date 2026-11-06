@@ -30,6 +30,10 @@ function Set-AceOutpostProxyEnvironment {
   .PARAMETER AllowPersistentCredential
     Required when enabling User or Machine scope because those scopes persist the proxy's Basic
     credential outside this PowerShell process.
+  .PARAMETER ExcludeCurrentHostFromNoProxy
+    Leaves the current host name out of NO_PROXY when enabling. By default the lowercase short
+    host name follows the loopback entries, so intranet calls to this host do not go through the
+    proxy. A fully qualified name is not added. Ignored when disabling.
   .OUTPUTS
     PSCustomObject with redacted operation metadata.
   .EXAMPLE
@@ -67,7 +71,9 @@ function Set-AceOutpostProxyEnvironment {
     [ValidateNotNullOrEmpty()]
     [string]$StateDirectory = 'C:\ProgramData\ATAP\AceOutpostService\state',
 
-    [switch]$AllowPersistentCredential
+    [switch]$AllowPersistentCredential,
+
+    [switch]$ExcludeCurrentHostFromNoProxy
   )
 
   begin {
@@ -114,10 +120,16 @@ function Set-AceOutpostProxyEnvironment {
         $username = [Uri]::EscapeDataString(([string]$credential).Substring(0, $separator))
         $secret = [Uri]::EscapeDataString(([string]$credential).Substring($separator + 1))
         $proxyUrl = "http://${username}:${secret}@127.0.0.1:$ProxyPort"
+        # Lowercase because URL parsers lowercase the host, so the entry also matches in a client
+        # that compares NO_PROXY case-sensitively.
+        $noProxy = 'localhost,127.0.0.1,::1'
+        if (-not $ExcludeCurrentHostFromNoProxy) {
+          $noProxy = "$noProxy,$([Environment]::MachineName.ToLowerInvariant())"
+        }
         $values = @{
           HTTP_PROXY = $proxyUrl
           HTTPS_PROXY = $proxyUrl
-          NO_PROXY = 'localhost,127.0.0.1,::1'
+          NO_PROXY = $noProxy
           $clientSetting.TrustVariable = $rootPem
         }
 

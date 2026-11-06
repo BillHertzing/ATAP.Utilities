@@ -43,11 +43,24 @@ Describe 'Set-AceOutpostProxyEnvironment' -Tag 'Unit' {
 
     [Environment]::GetEnvironmentVariable('HTTP_PROXY', 'Process') | Should -Be 'http://test-user:test-secret@127.0.0.1:50055'
     [Environment]::GetEnvironmentVariable('HTTPS_PROXY', 'Process') | Should -Be 'http://test-user:test-secret@127.0.0.1:50055'
-    [Environment]::GetEnvironmentVariable('NO_PROXY', 'Process') | Should -Be 'localhost,127.0.0.1,::1'
+    [Environment]::GetEnvironmentVariable('NO_PROXY', 'Process') | Should -BeExactly "localhost,127.0.0.1,::1,$([Environment]::MachineName.ToLowerInvariant())"
     [Environment]::GetEnvironmentVariable('SSL_CERT_FILE', 'Process') | Should -Be (Join-Path $script:stateDirectory 'AceOutpost-Interception-Root.pem')
     [Environment]::GetEnvironmentVariable('NODE_EXTRA_CA_CERTS', 'Process') | Should -BeNullOrEmpty
     $result.ProxyEndpoint | Should -Be 'http://127.0.0.1:50055'
     $result.PersistentCredential | Should -BeFalse
+  }
+
+  It 'leaves the host out of NO_PROXY when the switch is set' {
+    $null = Set-AceOutpostProxyEnvironment -State Enabled -Client Codex -StateDirectory $script:stateDirectory -ExcludeCurrentHostFromNoProxy -Confirm:$false
+
+    [Environment]::GetEnvironmentVariable('NO_PROXY', 'Process') | Should -BeExactly 'localhost,127.0.0.1,::1'
+  }
+
+  It 'still removes NO_PROXY when disabling with the switch set' {
+    $null = Set-AceOutpostProxyEnvironment -State Enabled -Client Codex -StateDirectory $script:stateDirectory -Confirm:$false
+    $null = Set-AceOutpostProxyEnvironment -State Disabled -Client Codex -ExcludeCurrentHostFromNoProxy -Confirm:$false
+
+    [Environment]::GetEnvironmentVariable('NO_PROXY', 'Process') | Should -BeNullOrEmpty
   }
 
   It 'enables Claude Code with the documented Node trust setting' {

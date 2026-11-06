@@ -123,7 +123,9 @@ foreach ($n in $names) { $captured[$n] = [Environment]::GetEnvironmentVariable($
       [int]$Port = $script:proxyPort,
       [switch]$ChromiumProxyBridge,
       [string]$InvocationId,
-      [string]$ParentInvocationId
+      [string]$ParentInvocationId,
+      [string]$NoProxy,
+      [switch]$ExcludeCurrentHostFromNoProxy
     )
     $outPath = Join-Path $TestDrive ("probe-{0}.json" -f ([guid]::NewGuid().ToString('N')))
     $arguments = @('-NonInteractive', '-File', $script:stubPath, $outPath) + $ExtraArguments
@@ -132,6 +134,8 @@ foreach ($n in $names) { $captured[$n] = [Environment]::GetEnvironmentVariable($
     $markerParameters = @{}
     if ($PSBoundParameters.ContainsKey('InvocationId')) { $markerParameters['InvocationId'] = $InvocationId }
     if ($PSBoundParameters.ContainsKey('ParentInvocationId')) { $markerParameters['ParentInvocationId'] = $ParentInvocationId }
+    if ($PSBoundParameters.ContainsKey('NoProxy')) { $markerParameters['NoProxy'] = $NoProxy }
+    if ($ExcludeCurrentHostFromNoProxy) { $markerParameters['ExcludeCurrentHostFromNoProxy'] = $true }
     $result = Start-AceOutpostMeteredHarness `
       -Client $Client `
       -LaunchMode $LaunchMode `
@@ -419,6 +423,72 @@ Describe 'Start-AceOutpostMeteredHarness' -Tag 'Unit' {
     }
   }
 
+  Context 'Current host in the NO_PROXY entry' {
+
+    BeforeAll {
+      $script:lowerHost = [Environment]::MachineName.ToLowerInvariant()
+      $script:upperHost = [Environment]::MachineName.ToUpperInvariant()
+    }
+
+    It 'appends the lowercase host to the default value by default' {
+      $launch = Invoke-ProbeLaunch
+      $launch.Captured.Env.NO_PROXY | Should -BeExactly "localhost,127.0.0.1,::1,$($script:lowerHost)"
+    }
+
+    It 'appends the host to an explicit value and keeps its entries as supplied' {
+      $launch = Invoke-ProbeLaunch -NoProxy 'Example.TEST, .local'
+      $launch.Captured.Env.NO_PROXY | Should -BeExactly "Example.TEST, .local,$($script:lowerHost)"
+    }
+
+    It 'leaves the default value unchanged when the switch is set' {
+      $launch = Invoke-ProbeLaunch -ExcludeCurrentHostFromNoProxy
+      $launch.Captured.Env.NO_PROXY | Should -BeExactly 'localhost,127.0.0.1,::1'
+    }
+
+    It 'leaves an explicit value unchanged when the switch is set' {
+      $launch = Invoke-ProbeLaunch -NoProxy 'Example.TEST' -ExcludeCurrentHostFromNoProxy
+      $launch.Captured.Env.NO_PROXY | Should -BeExactly 'Example.TEST'
+    }
+
+    It 'does not duplicate a host the value already lists in the same casing' {
+      $value = "localhost,$($script:lowerHost),::1"
+      $launch = Invoke-ProbeLaunch -NoProxy $value
+      $launch.Captured.Env.NO_PROXY | Should -BeExactly $value
+    }
+
+    It 'does not duplicate a host listed in another casing and keeps the caller spelling' {
+      $value = "localhost,$($script:upperHost)"
+      $launch = Invoke-ProbeLaunch -NoProxy $value
+      $launch.Captured.Env.NO_PROXY | Should -BeExactly $value
+    }
+
+    It 'does not duplicate a host entry surrounded by whitespace' {
+      $value = "localhost, $($script:upperHost) ,::1"
+      $launch = Invoke-ProbeLaunch -NoProxy $value
+      $launch.Captured.Env.NO_PROXY | Should -BeExactly $value
+    }
+
+    It 'still appends when entries only contain the host name as part of a longer name' {
+      $value = "x$($script:lowerHost),$($script:lowerHost).example.test"
+      $launch = Invoke-ProbeLaunch -NoProxy $value
+      $launch.Captured.Env.NO_PROXY | Should -BeExactly "$value,$($script:lowerHost)"
+    }
+
+    It 'replaces an inherited no_proxy, and a child reading the lowercase spelling sees the same value' {
+      $launch = Invoke-WithProcessEnvironment -Variables @{ no_proxy = 'inherited.example.test' } -ScriptBlock {
+        Invoke-ProbeLaunch
+      }
+      $launch.Captured.Env.no_proxy | Should -BeExactly "localhost,127.0.0.1,::1,$($script:lowerHost)"
+      $launch.Captured.Env.no_proxy | Should -BeExactly $launch.Captured.Env.NO_PROXY
+    }
+
+    It 'does not write the entry to this process' {
+      $before = [Environment]::GetEnvironmentVariable('NO_PROXY', 'Process')
+      $null = Invoke-ProbeLaunch
+      [Environment]::GetEnvironmentVariable('NO_PROXY', 'Process') | Should -BeExactly $before
+    }
+  }
+
   Context 'Environment composition (G1 - positive, child)' {
 
     It 'composes the documented proxy variables in the Codex child with the OpenSSL trust variable' {
@@ -429,7 +499,7 @@ Describe 'Start-AceOutpostMeteredHarness' -Tag 'Unit' {
       $expectedUrl = "http://test-user:test-secret@127.0.0.1:$($script:proxyPort)"
       $launch.Captured.Env.HTTP_PROXY | Should -Be $expectedUrl
       $launch.Captured.Env.HTTPS_PROXY | Should -Be $expectedUrl
-      $launch.Captured.Env.NO_PROXY | Should -Be 'localhost,127.0.0.1,::1'
+      $launch.Captured.Env.NO_PROXY | Should -BeExactly "localhost,127.0.0.1,::1,$([Environment]::MachineName.ToLowerInvariant())"
       $launch.Captured.Env.SSL_CERT_FILE | Should -Be $script:rootPem
     }
 

@@ -64,6 +64,9 @@ function Invoke-AceOutpostMeteredPrompt {
     Passed through to the core when bound. Otherwise the core's own default applies.
   .PARAMETER NoProxy
     Passed through to the core when bound. Otherwise the core's own default applies.
+  .PARAMETER ExcludeCurrentHostFromNoProxy
+    Passed through to the core when bound. Otherwise the core appends the current host name to
+    the child's NO_PROXY entry.
   .PARAMETER CredentialSecretName
     SecretName passed through to the core when bound, untouched. This function never resolves it.
   .PARAMETER StateDirectory
@@ -126,6 +129,8 @@ function Invoke-AceOutpostMeteredPrompt {
 
     [ValidateNotNullOrEmpty()]
     [string]$NoProxy,
+
+    [switch]$ExcludeCurrentHostFromNoProxy,
 
     [ValidateNotNullOrEmpty()]
     [string]$CredentialSecretName,
@@ -257,7 +262,7 @@ function Invoke-AceOutpostMeteredPrompt {
       StateDirectory = $StateDirectory
       Confirm        = $false
     }
-    foreach ($name in @('ProxyPort', 'NoProxy', 'CredentialSecretName', 'WorkingDirectory', 'HarnessPath')) {
+    foreach ($name in @('ProxyPort', 'NoProxy', 'ExcludeCurrentHostFromNoProxy', 'CredentialSecretName', 'WorkingDirectory', 'HarnessPath')) {
       if ($PSBoundParameters.ContainsKey($name)) { $coreParameters[$name] = $PSBoundParameters[$name] }
     }
 

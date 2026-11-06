@@ -29,7 +29,13 @@ function Start-AceOutpostMeteredHarness {
   .PARAMETER ProxyPort
     AceOutpost's loopback proxy listener port. The documented default is 50055.
   .PARAMETER NoProxy
-    Value written to the child's NO_PROXY entry.
+    Base value for the child's NO_PROXY entry. Its entries are kept exactly as supplied. The
+    current host name is appended unless ExcludeCurrentHostFromNoProxy is set.
+  .PARAMETER ExcludeCurrentHostFromNoProxy
+    Leaves the current host name out of the child's NO_PROXY entry, so the entry is exactly the
+    NoProxy value. By default the lowercase short host name is appended, unless NoProxy already
+    lists it in any casing, so a child's intranet calls to this host do not go through the
+    metered proxy. A fully qualified name is not added.
   .PARAMETER CredentialSecretName
     SecretName resolved through Get-SecretATAP. Defaults to the documented per-client name.
     Only a name is accepted; there is deliberately no credential, password, or proxy-URL
@@ -127,6 +133,8 @@ function Start-AceOutpostMeteredHarness {
 
     [ValidateNotNullOrEmpty()]
     [string]$NoProxy = 'localhost,127.0.0.1,::1',
+
+    [switch]$ExcludeCurrentHostFromNoProxy,
 
     [ValidateNotNullOrEmpty()]
     [string]$CredentialSecretName,
@@ -378,10 +386,22 @@ function Start-AceOutpostMeteredHarness {
         $null = $startInfo.ArgumentList.Add($argument)
       }
 
+      # Lowercase because URL parsers lowercase the host, so the entry also matches in a client
+      # that compares NO_PROXY case-sensitively. -notcontains is case-insensitive, so a caller's
+      # own spelling of this host is kept rather than duplicated.
+      $effectiveNoProxy = $NoProxy
+      if (-not $ExcludeCurrentHostFromNoProxy) {
+        $currentHostName = [Environment]::MachineName.ToLowerInvariant()
+        if (@($NoProxy -split ',' | ForEach-Object { $_.Trim() }) -notcontains $currentHostName) {
+          $effectiveNoProxy = "$NoProxy,$currentHostName"
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Appended current host '$currentHostName' to the child's NO_PROXY entry."
+        }
+      }
+
       $composed = [ordered]@{
         HTTP_PROXY  = $proxyUrl
         HTTPS_PROXY = $proxyUrl
-        NO_PROXY    = $NoProxy
+        NO_PROXY    = $effectiveNoProxy
       }
       $composed[$clientSetting.TrustVariable] = $rootPem
       if ($Client -eq 'ClaudeCode') {

@@ -221,7 +221,9 @@ This ensures the generated `.psd1` remains in sync with actual code-level alias 
 [Start-AceOutpostMeteredHarness.ps1](public/Start-AceOutpostMeteredHarness.ps1) is the
 metered launch CORE; [Invoke-AceOutpostMeteredPrompt.ps1](public/Invoke-AceOutpostMeteredPrompt.ps1)
 is its terminal adapter. A child marker overwrites the inherited marker and records
-its parent marker. The launch and prompt contracts are covered by
+its parent marker. The core appends the current host name to the child's `NO_PROXY`
+entry unless `-ExcludeCurrentHostFromNoProxy` is set; the adapter forwards that switch.
+The launch and prompt contracts are covered by
 [Start-AceOutpostMeteredHarness.Tests.ps1](tests/Unit/Start-AceOutpostMeteredHarness.Tests.ps1)
 and [Invoke-AceOutpostMeteredPrompt.Tests.ps1](tests/Unit/Invoke-AceOutpostMeteredPrompt.Tests.ps1).
 For Claude Code, the prompt adapter automatically supplies invocation-scoped Node CA

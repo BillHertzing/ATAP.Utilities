@@ -40,7 +40,7 @@ BeforeAll {
 
 Describe 'Scratch-only quartet candidate construction' -Tag 'Unit' {
   BeforeEach {
-    $script:scratch570 = 'C:\ProgramData\ATAP\AICoordinator\_generated\QuartetCandidate570\Scratch-570'
+    $script:scratch570 = 'D:\ATAPArtifacts\QuartetCandidate570\Scratch-570'
     $script:markdown570 = Join-Path $script:scratch570 'Tasks.Sprint0017.md'
     $script:html570 = Join-Path $script:scratch570 'Tasks.Sprint0017.html'
     $script:rootMade570 = $false; $script:alreadyExists570 = $false
@@ -157,7 +157,7 @@ Describe 'Scratch-only quartet candidate construction' -Tag 'Unit' {
     (ConvertTo-Json -InputObject $script:images570 -Compress -Depth 6) | Should -BeExactly $script:originalMap570
   }
 
-  It 'renders once from exact staged preview bytes and preserves both opaque companions' -Tag 'C1926' {
+  It 'renders once from exact staged preview bytes and preserves both opaque companions' -Tag 'C1955' {
     $result = Invoke-Candidate570
     $result.Stage | Should -BeExactly 'CandidateNotPrepared'
     $result.Action | Should -BeExactly 'Rendered'
@@ -248,10 +248,10 @@ Describe 'Scratch-only quartet candidate construction' -Tag 'Unit' {
     Should -Invoke Invoke-CoordQuartetCandidateRender -Times 0 -Exactly -Scope It
   }
 
-  It 'accepts canonical Coordinator scratch spelling <Label> without I/O in WhatIf' -Tag 'C1926' -ForEach @(
-    @{ Label = 'ordinary'; Path = 'C:\ProgramData\ATAP\AICoordinator\_generated\fresh' }
-    @{ Label = 'case'; Path = 'c:\programdata\atap\aicoordinator\_GENERATED\fresh' }
-    @{ Label = 'forward slash'; Path = 'C:/ProgramData/ATAP/AICoordinator/_generated/fresh' }
+  It 'accepts canonical artifact scratch spelling <Label> without I/O in WhatIf' -Tag 'C1955' -ForEach @(
+    @{ Label = 'ordinary'; Path = 'D:\ATAPArtifacts\fresh' }
+    @{ Label = 'case'; Path = 'd:\atapartifacts\fresh' }
+    @{ Label = 'forward slash'; Path = 'D:/ATAPArtifacts/fresh' }
   ) {
     $script:scratch570 = $Path
     (Invoke-Candidate570 -PreviewOnly).Action | Should -BeExactly 'ProposedOnly'
@@ -261,17 +261,18 @@ Describe 'Scratch-only quartet candidate construction' -Tag 'Unit' {
     Should -Invoke Invoke-CoordQuartetCandidateRender -Times 0 -Exactly -Scope It
   }
 
-  It 'rejects scratch boundary <Label> before any metadata or I/O' -Tag 'C1926' -ForEach @(
-    @{ Label = 'old D root'; Path = 'D:\ATAPArtifacts\fresh' }
+  It 'rejects scratch boundary <Label> before any metadata or I/O' -Tag 'C1955' -ForEach @(
+    @{ Label = 'durable ProgramData'; Path = 'C:\ProgramData\ATAP\AICoordinator\_generated\fresh' }
     @{ Label = 'Dropbox'; Path = 'C:\Dropbox\fresh' }
-    @{ Label = 'generated root equality'; Path = 'C:\ProgramData\ATAP\AICoordinator\_generated' }
-    @{ Label = 'generated root trailing slash'; Path = 'C:\ProgramData\ATAP\AICoordinator\_generated\' }
-    @{ Label = 'sibling prefix'; Path = 'C:\ProgramData\ATAP\AICoordinator\_generated-other\fresh' }
-    @{ Label = 'parent traversal'; Path = 'C:\ProgramData\ATAP\AICoordinator\_generated\..\State\fresh' }
-    @{ Label = 'interior traversal'; Path = 'C:\ProgramData\ATAP\AICoordinator\_generated\a\..\fresh' }
-    @{ Label = 'dot segment'; Path = 'C:\ProgramData\ATAP\AICoordinator\_generated\.\fresh' }
-    @{ Label = 'alternate stream'; Path = 'C:\ProgramData\ATAP\AICoordinator\_generated\fresh:stream' }
-    @{ Label = 'device path'; Path = '\\?\C:\ProgramData\ATAP\AICoordinator\_generated\fresh' }
+    @{ Label = 'generated root equality'; Path = 'D:\ATAPArtifacts' }
+    @{ Label = 'generated root trailing slash'; Path = 'D:\ATAPArtifacts\' }
+    @{ Label = 'sibling prefix'; Path = 'D:\ATAPArtifacts-other\fresh' }
+    @{ Label = 'parent traversal'; Path = 'D:\ATAPArtifacts\..\State\fresh' }
+    @{ Label = 'interior traversal'; Path = 'D:\ATAPArtifacts\a\..\fresh' }
+    @{ Label = 'dot segment'; Path = 'D:\ATAPArtifacts\.\fresh' }
+    @{ Label = 'alternate stream'; Path = 'D:\ATAPArtifacts\fresh:stream' }
+    @{ Label = 'device path'; Path = '\\?\D:\ATAPArtifacts\fresh' }
+    @{ Label = 'reserved device leaf'; Path = 'D:\ATAPArtifacts\NUL' }
   ) {
     $script:scratch570 = $Path
     { Invoke-Candidate570 -PreviewOnly } | Should -Throw '*refused at Validation*'
@@ -281,12 +282,12 @@ Describe 'Scratch-only quartet candidate construction' -Tag 'Unit' {
     Should -Invoke Invoke-CoordQuartetCandidateRender -Times 0 -Exactly -Scope It
   }
 
-  It 'rejects a Coordinator scratch ancestor reparse point before staging' -Tag 'C1926' {
+  It 'rejects an artifact scratch ancestor reparse point before staging' -Tag 'C1955' {
     Mock Assert-CoordCloudPlaceholder { throw 'SyntheticUnverifiedScratchReparse' }
-    $script:metadata570['C:\ProgramData\ATAP\AICoordinator\_generated'].Attributes = [IO.FileAttributes]::ReparsePoint
+    $script:metadata570['D:\ATAPArtifacts'].Attributes = [IO.FileAttributes]::ReparsePoint
     { Invoke-Candidate570 } | Should -Throw '*refused at ScratchValidation*'
     Should -Invoke Assert-CoordCloudPlaceholder -Times 1 -Exactly -Scope It -ParameterFilter {
-      $Path -eq 'C:\ProgramData\ATAP\AICoordinator\_generated'
+      $Path -eq 'D:\ATAPArtifacts'
     }
     Should -Invoke New-Item -Times 0 -Exactly -Scope It
     Should -Invoke Invoke-CoordOperationFileIo -Times 0 -Exactly -Scope It

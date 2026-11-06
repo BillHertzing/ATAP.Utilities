@@ -139,13 +139,30 @@ function Reset-DownstreamToSharedVSCodeMain {
       try { $stream.Write($bytes, 0, $bytes.Length); $stream.Flush($true) } finally { $stream.Dispose() }
     }
     function projectionGit([string[]]$Arguments, [int[]]$AllowedExit = @(0)) {
-      # PowerShell drains the native pipeline; no explicit redirected-buffer wait.
-      # Native exit handling is owned here; do not change the caller/global policy.
-      $PSNativeCommandUseErrorActionPreference = $false
-      $output = @(& $gitApplication @Arguments 2>&1)
-      $code = $LASTEXITCODE
+      # Decode as UTF-8 explicitly: `& git` decodes through [Console]::OutputEncoding, which
+      # corrupts non-ASCII paths and config values under an OEM code page. Both redirected
+      # streams are drained before waiting (R-34). Native exit handling is owned here.
+      $startInfo = [System.Diagnostics.ProcessStartInfo]::new($gitApplication)
+      foreach ($argument in $Arguments) { $startInfo.ArgumentList.Add($argument) }
+      $startInfo.UseShellExecute = $false
+      $startInfo.RedirectStandardOutput = $true
+      $startInfo.RedirectStandardError = $true
+      $startInfo.StandardOutputEncoding = [System.Text.UTF8Encoding]::new($false)
+      $startInfo.StandardErrorEncoding = [System.Text.UTF8Encoding]::new($false)
+      $process = [System.Diagnostics.Process]::Start($startInfo)
+      try {
+        $stderrTask = $process.StandardError.ReadToEndAsync()
+        $stdout = $process.StandardOutput.ReadToEnd()
+        $process.WaitForExit()
+        $stderr = $stderrTask.GetAwaiter().GetResult()
+        $code = $process.ExitCode
+      }
+      finally { $process.Dispose() }
       if ($code -notin $AllowedExit) { throw "Projection Git boundary failed (exit $code)." }
-      return [pscustomobject]@{ ExitCode = $code; Text = (($output | ForEach-Object { [string]$_ }) -join [char]10) }
+      # Keep the previous contract: stdout then stderr lines, joined by LF.
+      $lines = @(($stdout + $stderr) -split "`r?`n")
+      if ($lines.Count -gt 0 -and $lines[-1] -eq '') { $lines = @($lines | Select-Object -SkipLast 1) }
+      return [pscustomobject]@{ ExitCode = $code; Text = ($lines -join [char]10) }
     }
     function assertProjectionIdentity($Target) {
       foreach ($path in @($Target.TopLevel, $Target.GitDir, $Target.CommonDir)) { assertProjectionPath $path }

@@ -139,12 +139,28 @@ function Build-DocumentationOverview {
         [Parameter(Mandatory = $true)] [string] $Root,
         [Parameter(Mandatory = $true)] [string[]] $Arguments
       )
-      # Native diagnostics are not document names or revision data.
-      $output = & git -C $Root -c core.quotepath=off @Arguments 2>$null
-      if ($LASTEXITCODE -ne 0) {
-        throw "git $($Arguments -join ' ') failed in '$Root' (exit $LASTEXITCODE); stderr was discarded."
+      # Native diagnostics are not document names or revision data. Decode stdout as
+      # UTF-8 explicitly: `& git` decodes through [Console]::OutputEncoding, which turns
+      # non-ASCII tracked paths into names that do not exist under an OEM code page.
+      $startInfo = [System.Diagnostics.ProcessStartInfo]::new('git')
+      foreach ($argument in @('-C', $Root, '-c', 'core.quotepath=off') + $Arguments) { $startInfo.ArgumentList.Add($argument) }
+      $startInfo.UseShellExecute = $false
+      $startInfo.RedirectStandardOutput = $true
+      $startInfo.RedirectStandardError = $true
+      $startInfo.StandardOutputEncoding = [System.Text.UTF8Encoding]::new($false)
+      $process = [System.Diagnostics.Process]::Start($startInfo)
+      try {
+        # Drain both redirected streams before waiting (R-34).
+        $stderrTask = $process.StandardError.ReadToEndAsync()
+        $stdout = $process.StandardOutput.ReadToEnd()
+        $process.WaitForExit()
+        [void]$stderrTask.GetAwaiter().GetResult()
+        if ($process.ExitCode -ne 0) {
+          throw "git $($Arguments -join ' ') failed in '$Root' (exit $($process.ExitCode)); stderr was discarded."
+        }
       }
-      return @($output | ForEach-Object { [string]$_ })
+      finally { $process.Dispose() }
+      return @($stdout.Split([char]10, [System.StringSplitOptions]::RemoveEmptyEntries) | ForEach-Object { $_.TrimEnd([char]13) })
     }
 
     function Get-DocumentHeader {

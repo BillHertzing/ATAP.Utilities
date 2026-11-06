@@ -1,6 +1,68 @@
 BeforeAll {
   $null = Get-Command -Name 'Write-PSFMessage' -ErrorAction Stop
-  . (Join-Path $PSScriptRoot '../../private/Update-CoordClaim.ps1')
+  $script:claimCandidate = $null
+  $promoted = [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'Process')
+  if ($null -eq $promoted) {
+    . (Join-Path $PSScriptRoot '../../private/Update-CoordClaim.ps1')
+  } else {
+    $sourceRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
+    $moduleName = 'ATAP.Utilities.BuildTooling.Orchestration.PowerShell'
+    if ([string]::IsNullOrWhiteSpace($promoted) -or $promoted -notmatch '^[A-Za-z]:[\\/]' -or
+        $promoted.Substring(2).Contains(':') -or [Management.Automation.WildcardPattern]::ContainsWildcardCharacters($promoted) -or
+        -not [string]::Equals([IO.Path]::GetFullPath($promoted), $promoted.Replace('/', '\'), [StringComparison]::OrdinalIgnoreCase)) { throw 'PromotedTestManifestMustBeCanonical' }
+    $manifestPath = [IO.Path]::GetFullPath($promoted)
+    if ([string]::Equals($manifestPath, (Join-Path $sourceRoot ($moduleName + '.psd1')), [StringComparison]::OrdinalIgnoreCase)) { throw 'PromotedManifestCannotBeDevelopmentSource' }
+    $ancestor = $manifestPath
+    while ($ancestor) {
+      if ((Get-Item -LiteralPath $ancestor -Force -ErrorAction Stop).LinkType) { throw 'PromotedTestManifestCannotTraverseLinks' }
+      $ancestor = [IO.Path]::GetDirectoryName($ancestor)
+    }
+    $item = Get-Item -LiteralPath $manifestPath -Force -ErrorAction Stop
+    $data = Import-PowerShellDataFile -LiteralPath $manifestPath
+    $sourceVersion = [string](Get-Content -LiteralPath (Join-Path $sourceRoot 'version.json') -Raw | ConvertFrom-Json).version
+    $expectedVersion = [version](($sourceVersion -split '[-+]')[0])
+    if ($item.PSIsContainer -or $item.Name -cne ($moduleName + '.psd1') -or
+        $data.RootModule -cne ($moduleName + '.psm1') -or [version]$data.ModuleVersion -ne $expectedVersion) { throw 'SelectedTestModuleVersionOrManifestMismatch' }
+    $moduleBase = [IO.Path]::GetDirectoryName($manifestPath)
+    $expectedModulePath = Join-Path $moduleBase $data.RootModule
+    $loaded = @(Get-Module -Name $moduleName -All)
+    if (@($loaded | Where-Object { $_.Version -ne $expectedVersion -or
+          -not [string]::Equals([IO.Path]::GetFullPath($_.Path), $expectedModulePath, [StringComparison]::OrdinalIgnoreCase) }).Count) { throw 'ConflictingLoadedTestModule' }
+    $selected = if ($loaded.Count -eq 1) { $loaded[0] } elseif ($loaded.Count -eq 0) {
+      Import-Module -Name $manifestPath -PassThru -ErrorAction Stop
+    } else { throw 'AmbiguousSelectedTestModule' }
+    if ($selected.Version -ne $expectedVersion -or $selected.Name -cne $moduleName -or
+        -not [string]::Equals($selected.Path, $expectedModulePath, [StringComparison]::OrdinalIgnoreCase) -or
+        -not [string]::Equals($selected.ModuleBase, $moduleBase, [StringComparison]::OrdinalIgnoreCase)) { throw 'SelectedTestModuleIdentityMismatch' }
+    $moduleHash = (Get-FileHash -LiteralPath $expectedModulePath -Algorithm SHA256).Hash
+    & $selected {
+      param($expectedPath, $expectedHash)
+      foreach ($name in 'Resolve-CoordScopeBindings', 'Get-CoordClaimContext', 'Update-CoordClaim', 'ConvertTo-CoordElement') {
+        $command = Get-Command -Name $name -CommandType Function -ErrorAction Stop
+        if ($null -eq $command.Module -or
+            -not [string]::Equals($command.Module.Path, $expectedPath, [StringComparison]::OrdinalIgnoreCase) -or
+            -not [string]::Equals($command.ScriptBlock.File, $expectedPath, [StringComparison]::OrdinalIgnoreCase) -or
+            (Get-FileHash -LiteralPath $command.ScriptBlock.File -Algorithm SHA256).Hash -cne $expectedHash) { throw 'SelectedTestFunctionIdentityMismatch' }
+      }
+    } $expectedModulePath $moduleHash
+    $script:claimCandidate = $selected
+    # Test-scope proxies preserve existing case bodies; shipping calls execute
+    # in the selected package's module scope, never source or name-only fallback.
+    function Update-CoordClaim {
+      [CmdletBinding()]
+      param(
+        [Parameter(Mandatory)][Text.Json.JsonElement]$State,
+        [Parameter(Mandatory)][Text.Json.JsonElement]$Request,
+        [Parameter(Mandatory)][Text.Json.JsonElement]$Context,
+        [ValidateNotNullOrEmpty()][string]$ClaimId
+      )
+      & $script:claimCandidate { param($arguments) Update-CoordClaim @arguments } $PSBoundParameters
+    }
+    function Get-CoordClaimContext {
+      param($Context, [Text.Json.JsonElement]$Request, [Text.Json.JsonElement]$State)
+      & $script:claimCandidate { param($c, $r, $s) Get-CoordClaimContext $c $r $s } $Context $Request $State
+    }
+  }
   $script:stateSchema = Join-Path $PSScriptRoot '../../schemas/state-v1.schema.json'
 
   function ConvertTo-ClaimElement {
@@ -77,6 +139,7 @@ BeforeAll {
 Describe 'Update-CoordClaim pure proposal boundary (synthetic caller-validated inputs only)' -Tag 'Unit' {
   BeforeEach {
     Mock Write-PSFMessage {}
+    if ($null -ne $script:claimCandidate) { Mock Write-PSFMessage {} -ModuleName $script:claimCandidate.Name }
     $digest = '0' * 64
     $manifest = [ordered]@{}
     foreach ($name in @('markdown', 'boardHtml', 'proceduralDetailsHtml', 'accomplishedHtml')) {
@@ -144,9 +207,11 @@ Describe 'Update-CoordClaim pure proposal boundary (synthetic caller-validated i
 
   Context 'registered root declaration resolver-to-claim regression' -Tag 'RootDeclarationRegression' {
     BeforeAll {
-      . (Join-Path $PSScriptRoot '../../private/CoordProducerJson.ps1')
-      . (Join-Path $PSScriptRoot '../../private/CoordProducer.ps1')
-      . (Join-Path $PSScriptRoot '../../private/CoordClerkProducer.ps1')
+      if ($null -eq $script:claimCandidate) {
+        . (Join-Path $PSScriptRoot '../../private/CoordProducerJson.ps1')
+        . (Join-Path $PSScriptRoot '../../private/CoordProducer.ps1')
+        . (Join-Path $PSScriptRoot '../../private/CoordClerkProducer.ps1')
+      }
       # Existing source directories only: no live producer context or fixture writes.
       $script:resolverFixtureRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 

@@ -32,7 +32,7 @@ Every file in `public/` is an **eponymous advanced function** (cmdlet shape with
 | ----------------------------------------------------- | ----- | ------------------------------------------------------------------------------------------------- |
 | `public/Set-GlobalConfigRootKeys.ps1`                 |  —    | Entry-point orchestrator. Invokes the section functions below, by name, in a fixed order.         |
 | `public/Set-CoreConfigRootKeys.ps1`                   |  1    | Bootstrap. Creates `$global:configRootKeys` and registers core/non-domain keys. Must run first.   |
-| `public/Set-OrchestrationConfigRootKeys.ps1` | 2 | Sixteen flat orchestration name constants; source candidate only, no host settings or defaults. |
+| `public/Set-OrchestrationConfigRootKeys.ps1` | 2 | Seventeen flat orchestration name constants; source candidate only, no host settings or defaults. |
 | `public/Add-DatabasesConfigRootKeys.ps1`              |  3    | Adds database connection key constants, then invokes the per-database section functions by name.  |
 | `public/Set-DatabasesATAPUtilitiesConfigRootKeys.ps1` |  3a   | Per-database section function for the ATAPUtilities database name key.                             |
 | `public/Set-DatabasesAceCommanderConfigRootKeys.ps1`  |  3b   | Per-database section function for the AceCommander database name key.                              |
@@ -130,7 +130,7 @@ other ATAP PowerShell modules.
 ## Orchestration source candidate (Task 17.19.a)
 
 `Set-OrchestrationConfigRootKeys` follows Core immediately and registers exactly
-the sixteen flat `NConfigRootKey` to `N` mappings selected from the orchestration
+the seventeen flat `NConfigRootKey` to `N` mappings selected from the orchestration
 configuration catalogue. It requires an initialized Hashtable, checks all conflicts
 before adding missing keys, preserves unrelated keys, and permits repeat calls.
 `-WhatIf` adds nothing. Importing the module defines functions without registering

@@ -17,7 +17,7 @@ fragment files). Functional area: Environment / Workstation Setup — START HERE
 
 
 The source candidate `Set-OrchestrationConfigRootKeys` is explicitly ordered
-immediately after Core and exported by the manifest. It registers sixteen flat
+immediately after Core and exported by the manifest. It registers seventeen flat
 orchestration name constants only. An initialized Hashtable is required; all
 conflicts are checked before additions, equivalent repeat calls are idempotent,
 and `-WhatIf` leaves keys unchanged. The candidate has not been deployed and

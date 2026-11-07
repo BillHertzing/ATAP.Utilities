@@ -233,7 +233,7 @@ Describe 'Orchestration section source integration' -Tag 'Unit' {
     )
   }
 
-  It 'reinitializes all sixteen exact orchestration names on repeated global initialization' {
+  It 'reinitializes all seventeen exact orchestration names on repeated global initialization' {
     Set-GlobalConfigRootKeys -Confirm:$false
     $first = @{}
     foreach ($entry in $global:configRootKeys.GetEnumerator()) {
@@ -242,7 +242,7 @@ Describe 'Orchestration section source integration' -Tag 'Unit' {
 
     Set-GlobalConfigRootKeys -Confirm:$false
 
-    $first.Count | Should -Be 16
+    $first.Count | Should -Be 17
     foreach ($entry in $first.GetEnumerator()) {
       $global:configRootKeys[$entry.Key] | Should -BeExactly $entry.Value
     }

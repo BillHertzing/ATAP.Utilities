@@ -26,7 +26,7 @@ invokes the per-database `Set-Databases*ConfigRootKeys` functions),
 `Set-RulesManagementConfigRootKeys`, and
 `Add-PackageRepositoriesConfigRootKeys` — **by name, in a fixed order**.
 
-The orchestration section defines sixteen flat setting-name constants immediately
+The orchestration section defines seventeen flat setting-name constants immediately
 after Core. This is a **source candidate only, not deployed**. It supplies no
 host settings, defaults, measured bounds, custody choices or producer admission.
 Direct calls require an initialized Hashtable; matching repeat calls are safe,

@@ -16,7 +16,7 @@ Invocation order (each step depends on the hashtable created by the first):
   1. Set-CoreConfigRootKeys            — creates $global:configRootKeys and registers
                                          the core / non-domain key constants. Must run
                                          first.
-  2. Set-OrchestrationConfigRootKeys   — sixteen flat orchestration name constants;
+  2. Set-OrchestrationConfigRootKeys   — seventeen flat orchestration name constants;
                                          source candidate, no settings or defaults.
   3. Add-DatabasesConfigRootKeys       — database connection constants and the
                                          per-database section functions.

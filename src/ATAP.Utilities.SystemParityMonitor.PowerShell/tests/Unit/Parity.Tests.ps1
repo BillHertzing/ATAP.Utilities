@@ -94,6 +94,93 @@ Describe 'ATAP.Utilities.SystemParityMonitor.PowerShell module' -Tag 'Unit', 'Pa
     (Get-Content -LiteralPath $leftSnapshotPath -Raw) | Should -Match 'UTAT022\\\\whertzing'
   }
 
+  It 'keeps a package present on only one mapped host as drift in both directions' -Tag 'U2020X' {
+    $utat022SnapshotPath = Join-Path $leftState 'one-host-package.json'
+    $utat01SnapshotPath = Join-Path $rightState 'one-host-package.json'
+    $mapping = @(
+      @{ HostName='utat022'; Identity='UTAT022\whertzing'; Manager='pip'; ComparisonIdentity='ATAP\Developer' },
+      @{ HostName='utat01'; Identity='UTAT01\whertzing'; Manager='pip'; ComparisonIdentity='ATAP\Developer' }
+    )
+    @{ CapturedAtUtc=[DateTime]::UtcNow.ToString('o'); Surfaces=@(
+      @{ Category='PackageManager'; Item='UTAT022\whertzing/pip/shared'; Value='1.0'; Source='pip path for utat022' },
+      @{ Category='PackageManager'; Item='UTAT022\whertzing/pip/only-on-utat022'; Value='3.0'; Source='pip path for utat022' }
+    ) } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $utat022SnapshotPath -Encoding utf8
+    @{ CapturedAtUtc=[DateTime]::UtcNow.ToString('o'); Surfaces=@(
+      @{ Category='PackageManager'; Item='UTAT01\whertzing/pip/shared'; Value='1.0'; Source='pip path for utat01' }
+    ) } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $utat01SnapshotPath -Encoding utf8
+
+    foreach ($reverse in @($false, $true)) {
+      $compareArguments = if (-not $reverse) {
+        @{ LeftStatePath=$leftState; RightStatePath=$rightState; LeftHostName='utat022'; RightHostName='utat01'; LeftSnapshotPath=$utat022SnapshotPath; RightSnapshotPath=$utat01SnapshotPath }
+      } else {
+        @{ LeftStatePath=$rightState; RightStatePath=$leftState; LeftHostName='utat01'; RightHostName='utat022'; LeftSnapshotPath=$utat01SnapshotPath; RightSnapshotPath=$utat022SnapshotPath }
+      }
+      $comparison = Compare-ParityAudits @compareArguments -PackageManagerIdentityMappings $mapping -ExpectedSurfaceMinimumCounts @{ PackageManager=1 } -ReportPath (Join-Path $testRoot "one-host-package-$reverse.md")
+
+      @($comparison.Differences | Where-Object Item -Match 'whertzing') | Should -HaveCount 0
+      @($comparison.Differences | Where-Object Item -EQ 'ATAP\Developer/pip/shared') | Should -HaveCount 0
+      $difference = @($comparison.Differences | Where-Object Item -EQ 'ATAP\Developer/pip/only-on-utat022')
+      $difference | Should -HaveCount 1
+      $difference[0].Classification | Should -Be 'UndeclaredDrift'
+      if (-not $reverse) {
+        $difference[0].LeftValue | Should -Be '3.0'
+        $difference[0].RightValue | Should -Be '<missing>'
+        $difference[0].LeftOriginalItem | Should -Be 'UTAT022\whertzing/pip/only-on-utat022'
+        $difference[0].RightOriginalItem | Should -BeNullOrEmpty
+      } else {
+        $difference[0].LeftValue | Should -Be '<missing>'
+        $difference[0].RightValue | Should -Be '3.0'
+        $difference[0].LeftOriginalItem | Should -BeNullOrEmpty
+        $difference[0].RightOriginalItem | Should -Be 'UTAT022\whertzing/pip/only-on-utat022'
+      }
+    }
+  }
+
+  It 'keeps a failed manager status on one mapped host as drift in both directions' -Tag 'U2020X' {
+    $utat022SnapshotPath = Join-Path $leftState 'one-host-status.json'
+    $utat01SnapshotPath = Join-Path $rightState 'one-host-status.json'
+    $mapping = @(
+      @{ HostName='utat022'; Identity='UTAT022\whertzing'; Manager='pip'; ComparisonIdentity='ATAP\Developer' },
+      @{ HostName='utat01'; Identity='UTAT01\whertzing'; Manager='pip'; ComparisonIdentity='ATAP\Developer' },
+      @{ HostName='utat022'; Identity='UTAT022\whertzing'; Manager='NuGet'; ComparisonIdentity='ATAP\Developer' },
+      @{ HostName='utat01'; Identity='UTAT01\whertzing'; Manager='NuGet'; ComparisonIdentity='ATAP\Developer' }
+    )
+    @{ CapturedAtUtc=[DateTime]::UtcNow.ToString('o'); Surfaces=@(
+      @{ Category='PackageManager'; Item='UTAT022\whertzing/NuGet/shared'; Value='1.0'; Source='tool path for utat022' },
+      @{ Category='PackageManagerStatus'; Item='UTAT022\whertzing/NuGet'; Value='Available;PackageCount=1'; Source='dotnet' },
+      @{ Category='PackageManagerStatus'; Item='UTAT022\whertzing/pip'; Value='Available;PackageCount=0'; Source='python' }
+    ) } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $utat022SnapshotPath -Encoding utf8
+    @{ CapturedAtUtc=[DateTime]::UtcNow.ToString('o'); Surfaces=@(
+      @{ Category='PackageManager'; Item='UTAT01\whertzing/NuGet/shared'; Value='1.0'; Source='tool path for utat01' },
+      @{ Category='PackageManagerStatus'; Item='UTAT01\whertzing/NuGet'; Value='Available;PackageCount=1'; Source='dotnet' },
+      @{ Category='PackageManagerStatus'; Item='UTAT01\whertzing/pip'; Value='<not-installed>'; Source='Get-Command' }
+    ) } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $utat01SnapshotPath -Encoding utf8
+
+    foreach ($reverse in @($false, $true)) {
+      $compareArguments = if (-not $reverse) {
+        @{ LeftStatePath=$leftState; RightStatePath=$rightState; LeftHostName='utat022'; RightHostName='utat01'; LeftSnapshotPath=$utat022SnapshotPath; RightSnapshotPath=$utat01SnapshotPath }
+      } else {
+        @{ LeftStatePath=$rightState; RightStatePath=$leftState; LeftHostName='utat01'; RightHostName='utat022'; LeftSnapshotPath=$utat01SnapshotPath; RightSnapshotPath=$utat022SnapshotPath }
+      }
+      $comparison = Compare-ParityAudits @compareArguments -PackageManagerIdentityMappings $mapping -ExpectedSurfaceMinimumCounts @{ PackageManager=1 } -ReportPath (Join-Path $testRoot "one-host-status-$reverse.md")
+
+      @($comparison.Differences | Where-Object Item -Match 'whertzing') | Should -HaveCount 0
+      @($comparison.Differences | Where-Object Item -EQ 'ATAP\Developer/NuGet') | Should -HaveCount 0
+      $difference = @($comparison.Differences | Where-Object { $_.Category -eq 'PackageManagerStatus' -and $_.Item -eq 'ATAP\Developer/pip' })
+      $difference | Should -HaveCount 1
+      $difference[0].Classification | Should -Be 'UndeclaredDrift'
+      if (-not $reverse) {
+        $difference[0].LeftValue | Should -Be 'Available;PackageCount=0'
+        $difference[0].RightValue | Should -Be '<not-installed>'
+        $difference[0].RightOriginalItem | Should -Be 'UTAT01\whertzing/pip'
+      } else {
+        $difference[0].LeftValue | Should -Be '<not-installed>'
+        $difference[0].RightValue | Should -Be 'Available;PackageCount=0'
+        $difference[0].LeftOriginalItem | Should -Be 'UTAT01\whertzing/pip'
+      }
+    }
+  }
+
   It 'rejects identity mappings that collapse distinct same-host surfaces' {
     $leftSnapshotPath = Join-Path $leftState 'collision-left.json'
     $rightSnapshotPath = Join-Path $rightState 'collision-right.json'

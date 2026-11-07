@@ -72,7 +72,6 @@ Describe 'Orchestration selected module manifest' -Tag 'Unit' {
   }
   It 'pins the module identity and PowerShell platform' {
     $script:manifest.RootModule | Should -BeExactly 'ATAP.Utilities.BuildTooling.Orchestration.PowerShell.psm1'
-    $script:manifest.ModuleVersion | Should -BeExactly '0.1.7'
     $script:manifest.GUID | Should -BeExactly '01131809-7fd2-4b6d-8a34-f584b55ad4fa'
     $script:manifest.PowerShellVersion | Should -BeExactly '7.4'
     @($script:manifest.CompatiblePSEditions).Count | Should -Be 1

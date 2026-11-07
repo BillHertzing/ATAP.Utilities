@@ -1,6 +1,6 @@
 # Producer, drain and recovery v1
 
-The development source manifest and version.json report version 0.1.9. This is not the final shipping version or authority to release. Source/disposable fixture results do not mean installed or live-board acceptance.
+The development source manifest and version.json report version 0.1.10. This is not the final shipping version or authority to release. Source/disposable fixture results do not mean installed or live-board acceptance.
 
 ## Actual entrypoints
 

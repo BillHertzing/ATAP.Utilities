@@ -68,7 +68,9 @@ BeforeAll {
   $script:testModuleName = $script:C1956Binding.Module.Name
   $script:realIo = (Get-Command Invoke-CoordOperationFileIo).ScriptBlock
   $script:realAtomic = (Get-Command Write-CoordAtomicBytes).ScriptBlock
-  $script:fixtureBase = [IO.Path]::GetFullPath((Join-Path $moduleRoot '../../_generated/Sprint0017/C1938/Fixtures'))
+  # Mitigation, not a root-cause claim: exclusive opens on Dropbox-synced fixtures were intermittently refused (C2041).
+  $script:fixtureBase = if ([Environment]::MachineName -ieq 'UTAT022') { 'D:/ATAPArtifacts/_generated/Sprint0017/C1938/Fixtures' }
+    else { [IO.Path]::GetFullPath((Join-Path $moduleRoot '../../_generated/Sprint0017/C1938/Fixtures')) }
   function New-TestLease {
     $lease = [pscustomobject]@{ Disposed = $false }
     $lease | Add-Member ScriptMethod Dispose { $this.Disposed = $true }

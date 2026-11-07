@@ -7,7 +7,10 @@ BeforeAll {
   . (Join-Path $moduleRoot 'public/Get-CoordResult.ps1')
   . (Join-Path $moduleRoot 'public/Export-CoordState.ps1')
   $script:sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-  $fixtureBase = if ($env:C1754_FIXTURE_ROOT) { $env:C1754_FIXTURE_ROOT } else { Join-Path ([IO.Path]::GetFullPath((Join-Path $moduleRoot '../..'))) '_generated/Sprint0017/CloseStreams/C' }
+  # Mitigation, not a root-cause claim: exclusive opens on Dropbox-synced fixtures were intermittently refused (C2041).
+  $fixtureBase = if ($env:C1754_FIXTURE_ROOT) { $env:C1754_FIXTURE_ROOT }
+    elseif ([Environment]::MachineName -ieq 'UTAT022') { 'D:/ATAPArtifacts/_generated/Sprint0017/CloseStreams/C' }
+    else { throw 'No default fixture root is approved on this host; set C1754_FIXTURE_ROOT to a non-synced local folder.' }
   $script:fixtureRoot = Join-Path $fixtureBase ('Producer-' + [guid]::NewGuid().ToString('N'))
   $null = [IO.Directory]::CreateDirectory($fixtureRoot)
   $script:priorSettings = $global:settings

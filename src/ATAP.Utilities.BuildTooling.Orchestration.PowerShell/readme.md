@@ -1,7 +1,7 @@
 # PowerShell coordination module
 
 Bounded existing-task coordination with Windows-account custody, immutable requests,
-prepared publication and lossless export. Source version 0.1.9.
+prepared publication and lossless export. Source version 0.1.10.
 
 Start with [Producer-v1](Documentation/Producer-v1.md) for the actual submission,
 drain, custody and root-only consuming pilot procedure. The semantic contract is

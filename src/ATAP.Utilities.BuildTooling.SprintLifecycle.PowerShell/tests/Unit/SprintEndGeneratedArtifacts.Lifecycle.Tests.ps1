@@ -26,7 +26,7 @@ BeforeAll {
   function Test-SprintEndCommandSurface { throw 'Unmocked command surface' }
   function Test-SprintPrerequisites { param($RequiredRepoWorktrees, $BuiltModule) throw 'Unmocked prerequisites' }
   function Test-SprintEndWorktreeState { param($WorktreePaths) throw 'Unmocked worktree state' }
-  function Get-SprintGeneratedArtifactState { param($WorktreePaths, $PlanningRoot) throw 'Unmocked gate' }
+  function Get-SprintGeneratedArtifactState { param($WorktreePaths, $PlanningRoot, $GeneratedArtifactDisposition) throw 'Unmocked gate' }
   function Clear-SprintGeneratedArtifacts {
     [CmdletBinding(SupportsShouldProcess)]
     param($SprintNumber, $GitRoot, $WorktreePaths, $PlanningRoot, [switch]$Force)
@@ -37,6 +37,8 @@ BeforeAll {
     param($RepoPath, $CreateIfMissing, $Merge)
     throw 'Unmocked GitHub close'
   }
+  . (Join-Path $PSScriptRoot '../../public/Clear-SprintGeneratedArtifacts.ps1')
+  $script:realClear = ${function:Clear-SprintGeneratedArtifacts}
   . (Join-Path $PSScriptRoot '../../public/Invoke-SprintEndLifecycle.ps1')
 }
 
@@ -147,5 +149,18 @@ Describe 'SprintEnd GeneratedArtifacts gate and pre-merge clear' -Tag 'Unit' {
 
     $result.DryRun | Should -BeTrue
     Should -Invoke Clear-SprintGeneratedArtifacts -Times 1 -Exactly -ParameterFilter { $WhatIf }
+  }
+
+  It 'forwards a bound disposition through both guards on the normal path' {
+    $disposition = Join-Path $TestDrive 'disposition.json'
+    Set-Content -LiteralPath $disposition -Value '{}'
+    Mock Clear-SprintGeneratedArtifacts {
+      & $script:realClear -SprintNumber $SprintNumber -GitRoot $GitRoot -WorktreePaths $WorktreePaths `
+        -PlanningRoot $PlanningRoot -GeneratedArtifactDisposition $GeneratedArtifactDisposition -Force
+    }
+    $result = Invoke-SprintEndLifecycle @lifecycleParameters -ClearGeneratedArtifacts -GeneratedArtifactDisposition $disposition
+    $result.Ok | Should -BeTrue
+    Should -Invoke Get-SprintGeneratedArtifactState -Times 2 -Exactly -ParameterFilter { $GeneratedArtifactDisposition -eq $disposition }
+    Should -Invoke Clear-SprintGeneratedArtifacts -Times 1 -Exactly -ParameterFilter { $GeneratedArtifactDisposition -eq $disposition }
   }
 }

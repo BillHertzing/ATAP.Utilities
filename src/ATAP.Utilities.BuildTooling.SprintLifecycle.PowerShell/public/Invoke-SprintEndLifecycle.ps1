@@ -49,6 +49,8 @@ function Invoke-SprintEndLifecycle {
   Clears every selected sprint worktree's `_generated/` before any pull request
   is created or merged (R-38, Task 16.91.a). Refused while the
   GeneratedArtifacts gate fails.
+  .PARAMETER GeneratedArtifactDisposition
+  Optional path to a generated-artifact disposition passed to each clear guard.
 
   .PARAMETER CreatePullRequests
   Creates missing draft PRs and ensures closing keywords. Like every close
@@ -163,6 +165,9 @@ function Invoke-SprintEndLifecycle {
 
     [Parameter()]
     [switch]$ClearGeneratedArtifacts,
+
+    [Parameter()]
+    [string]$GeneratedArtifactDisposition,
 
     [Parameter()]
     [switch]$CreatePullRequests,
@@ -472,7 +477,9 @@ function Invoke-SprintEndLifecycle {
         if (-not (Get-Command -Name 'Get-SprintGeneratedArtifactState' -ErrorAction SilentlyContinue)) {
           . (Join-Path $PSScriptRoot '../private/Get-SprintGeneratedArtifactState.ps1')
         }
-        $phases.GeneratedArtifacts = Get-SprintGeneratedArtifactState -WorktreePaths $worktreeFullPaths -PlanningRoot $planningRootFull
+        $generatedParameters = @{ WorktreePaths = $worktreeFullPaths; PlanningRoot = $planningRootFull }
+        if ($PSBoundParameters.ContainsKey('GeneratedArtifactDisposition')) { $generatedParameters.GeneratedArtifactDisposition = $GeneratedArtifactDisposition }
+        $phases.GeneratedArtifacts = Get-SprintGeneratedArtifactState @generatedParameters
         if (-not $phases.GeneratedArtifacts.Ok) { [void]$failures.Add('GeneratedArtifacts') }
       } catch {
         $phases.GeneratedArtifacts = [PSCustomObject]@{ Ok = $false; Failures = @($_.Exception.Message) }
@@ -492,6 +499,7 @@ function Invoke-SprintEndLifecycle {
         Force         = $true
         Confirm       = $false
       }
+      if ($PSBoundParameters.ContainsKey('GeneratedArtifactDisposition')) { $clearParameters.GeneratedArtifactDisposition = $GeneratedArtifactDisposition }
       if ($WhatIfPreference) { $clearParameters.WhatIf = $true }
       try {
         $phases.GeneratedClear = Clear-SprintGeneratedArtifacts @clearParameters

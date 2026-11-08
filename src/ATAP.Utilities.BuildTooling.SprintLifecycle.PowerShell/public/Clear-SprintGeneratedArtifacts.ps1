@@ -58,6 +58,8 @@ function Clear-SprintGeneratedArtifacts {
   .PARAMETER Force
     Bypasses the Medium-impact confirmation prompt.  Use for agent/pipeline
     invocations.
+  .PARAMETER GeneratedArtifactDisposition
+    Optional path to the disposition verified by the independent artifact guard.
   .OUTPUTS
     [PSCustomObject] with fields:
       sprintNumber          [string]   — sprint passed in
@@ -100,6 +102,9 @@ function Clear-SprintGeneratedArtifacts {
     [Parameter(Mandatory = $false)]
     [ValidateNotNullOrEmpty()]
     [string]$PlanningRoot,
+
+    [Parameter(Mandatory = $false)]
+    [string]$GeneratedArtifactDisposition,
 
     [Parameter(Mandatory = $false)]
     [switch]$Force
@@ -167,8 +172,9 @@ function Clear-SprintGeneratedArtifacts {
     # whole clear; nothing is removed from any worktree.
     $generatedArtifactState = $null
     if ($workTrees.Count -gt 0) {
-      $generatedArtifactState = Get-SprintGeneratedArtifactState `
-        -WorktreePaths @($workTrees.FullName) -PlanningRoot $PlanningRoot
+      $generatedParameters = @{ WorktreePaths = @($workTrees.FullName); PlanningRoot = $PlanningRoot }
+      if ($PSBoundParameters.ContainsKey('GeneratedArtifactDisposition')) { $generatedParameters.GeneratedArtifactDisposition = $GeneratedArtifactDisposition }
+      $generatedArtifactState = Get-SprintGeneratedArtifactState @generatedParameters
       if (-not $generatedArtifactState.Ok) {
         $msg = "Refusing to clear _generated/: $($generatedArtifactState.Failures -join ', ') " +
           "($(@($generatedArtifactState.TrackedPaths).Count) tracked, $(@($generatedArtifactState.CitedPaths).Count) cited). " +

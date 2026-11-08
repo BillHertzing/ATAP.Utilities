@@ -155,4 +155,55 @@ Describe 'Get-SprintGeneratedArtifactState' {
     $result.Ok | Should -BeFalse
     $result.Failures | Should -Contain 'PlanningRootMissing'
   }
+
+  It 'accepts only an exact preserved file while retaining raw citations and unrelated failures' {
+    $original = Join-Path $script:planning '_generated/Sprint0016/evidence.txt'
+    New-FixtureFile $original 'proof'
+    New-FixtureFile (Join-Path $script:planning 'Tasks.Sprint0016.md') '_generated/Sprint0016/evidence.txt'
+    $raw = Get-SprintGeneratedArtifactState -WorktreePaths $script:worktrees -PlanningRoot $script:planning
+    $proof = Join-Path $script:root 'proof'
+    New-Item -ItemType Directory -Path $proof | Out-Null
+    $raw | ConvertTo-Json -Depth 10 | Set-Content (Join-Path $proof 'raw.json')
+    Copy-Item $original (Join-Path $proof 'preserved.txt')
+    $manifest = @{ schemaVersion = '1.0.0'; files = @(@{ worktree = (Split-Path $script:planning -Leaf); relativePath = 'Sprint0016/evidence.txt'; preservedPath = 'preserved.txt'; sha256 = (Get-FileHash $original).Hash; bytes = (Get-Item $original).Length }) }
+    $manifest | ConvertTo-Json -Depth 10 | Set-Content (Join-Path $proof 'manifest.json')
+    $disposition = @{ schemaVersion = '1.0.0'; SprintNumber = '0016'; GateName = 'CitedGeneratedArtifacts'; RawFailure = @{ path = 'raw.json'; sha256 = (Get-FileHash (Join-Path $proof 'raw.json')).Hash }; ExternalManifest = @{ path = 'manifest.json'; sha256 = (Get-FileHash (Join-Path $proof 'manifest.json')).Hash }; AuthorityReference = 'fixture'; ExpiresAfterSprint = '0016' }
+    $record = Join-Path $proof 'disposition.json'
+    $disposition | ConvertTo-Json -Depth 10 | Set-Content $record
+    $result = Get-SprintGeneratedArtifactState -WorktreePaths $script:worktrees -PlanningRoot $script:planning -GeneratedArtifactDisposition $record
+    $result.Ok | Should -BeTrue
+    $result.CitedPaths.Count | Should -Be 1
+    $result.DispositionedPaths.Count | Should -Be 1
+    $result.OriginalFailures | Should -Contain 'CitedGeneratedArtifacts'
+    $ephemeralCopy = Join-Path $script:planning '_generated/Sprint0016/copy.txt'
+    Copy-Item $original $ephemeralCopy
+    Copy-Item (Join-Path $proof 'raw.json') (Join-Path $script:planning 'raw-proof.json')
+    $manifest.files[0].preservedPath = '_generated/Sprint0016/copy.txt'
+    $manifest | ConvertTo-Json -Depth 10 | Set-Content (Join-Path $script:planning 'manifest-proof.json')
+    $ephemeralDisposition = @{ schemaVersion = '1.0.0'; SprintNumber = '0016'; GateName = 'CitedGeneratedArtifacts'; RawFailure = @{ path = 'raw-proof.json'; sha256 = (Get-FileHash (Join-Path $script:planning 'raw-proof.json')).Hash }; ExternalManifest = @{ path = 'manifest-proof.json'; sha256 = (Get-FileHash (Join-Path $script:planning 'manifest-proof.json')).Hash }; AuthorityReference = 'fixture'; ExpiresAfterSprint = '0016' }
+    $ephemeralRecord = Join-Path $script:planning 'disposition-proof.json'
+    $ephemeralDisposition | ConvertTo-Json -Depth 10 | Set-Content $ephemeralRecord
+    $ephemeral = Get-SprintGeneratedArtifactState -WorktreePaths $script:worktrees -PlanningRoot $script:planning -GeneratedArtifactDisposition $ephemeralRecord
+    $ephemeral.Ok | Should -BeFalse
+    $ephemeral.Failures | Should -Contain 'InvalidGeneratedArtifactDisposition'
+    $ephemeral.DispositionError | Should -Be 'NonDurableProofPath'
+    $ephemeral.CitedPaths.Count | Should -Be 1
+    $ephemeral.DispositionedPaths.Count | Should -Be 0
+    New-FixtureFile (Join-Path $script:ace '_generated/Sprint0016/tracked.txt')
+    & git -C $script:ace add -f '_generated/Sprint0016/tracked.txt' 2>&1 | Out-Null
+    $unrelated = Get-SprintGeneratedArtifactState -WorktreePaths $script:worktrees -PlanningRoot $script:planning -GeneratedArtifactDisposition $record
+    $unrelated.Ok | Should -BeFalse
+    $unrelated.Failures | Should -Contain 'TrackedGeneratedArtifacts'
+    $unrelated.DispositionedPaths.Count | Should -Be 1
+    New-FixtureFile (Join-Path $proof 'preserved.txt') 'tampered'
+    $bad = Get-SprintGeneratedArtifactState -WorktreePaths $script:worktrees -PlanningRoot $script:planning -GeneratedArtifactDisposition $record
+    $bad.Ok | Should -BeFalse
+    $bad.Failures | Should -Contain 'CitedGeneratedArtifacts'
+    $bad.Failures | Should -Contain 'InvalidGeneratedArtifactDisposition'
+    $bad.DispositionedPaths.Count | Should -Be 0
+    $legacy = Get-SprintGeneratedArtifactState -WorktreePaths $script:worktrees -PlanningRoot $script:planning
+    $legacy.Ok | Should -BeFalse
+    $legacy.Failures | Should -Contain 'CitedGeneratedArtifacts'
+    $legacy.CitedPaths.Count | Should -Be 1
+  }
 }

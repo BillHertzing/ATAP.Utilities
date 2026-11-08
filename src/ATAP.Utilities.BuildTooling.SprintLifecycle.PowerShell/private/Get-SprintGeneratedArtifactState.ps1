@@ -43,7 +43,9 @@ function Get-SprintGeneratedArtifactState {
 
     [Parameter(Mandatory)]
     [ValidateNotNullOrEmpty()]
-    [string]$PlanningRoot
+    [string]$PlanningRoot,
+
+    [string]$GeneratedArtifactDisposition
   )
 
   begin {
@@ -143,7 +145,98 @@ function Get-SprintGeneratedArtifactState {
         }
       }
     }
+    $dispositionedPaths = [System.Collections.Generic.List[object]]::new()
+    $dispositionError = $null
     if ($citedPaths.Count -gt 0) { [void]$failures.Add('CitedGeneratedArtifacts') }
+    $originalFailures = $failures.ToArray()
+    if ($PSBoundParameters.ContainsKey('GeneratedArtifactDisposition')) {
+      try {
+        # Resolve each untrusted component under its declared base, rejecting redirects.
+        $checkAncestors = {
+          param([string]$Path)
+          $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+          while ($null -ne $item) {
+            if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'ReparsePoint' }
+            $item = $item.Parent
+          }
+        }
+        $safePath = {
+          param([string]$Base, [string]$Relative)
+          if ([string]::IsNullOrWhiteSpace($Relative) -or $Relative -notmatch '^(?!/)(?!.*(?:^|/)\.{1,2}(?:/|$))(?!.*//)[^\\:\x00-\x1F]+(?<!/)$') { throw 'InvalidRelativePath' }
+          $current = [IO.Path]::GetFullPath($Base)
+          & $checkAncestors $current
+          foreach ($part in $Relative.Split('/')) {
+            $current = Join-Path $current $part
+            $item = Get-Item -LiteralPath $current -Force -ErrorAction Stop
+            if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'ReparsePoint' }
+          }
+          return [IO.Path]::GetFullPath($current)
+        }
+        $keysAre = { param($Object, [string[]]$Keys) return ($Object -is [System.Collections.IDictionary] -and @($Object.Keys).Count -eq $Keys.Count -and @($Keys | Where-Object { -not $Object.Contains($_) }).Count -eq 0) }
+        $assertDurable = {
+          param([string]$Path)
+          $full = [IO.Path]::GetFullPath($Path)
+          foreach ($worktree in $worktrees) {
+            $root = [IO.Path]::GetFullPath((Join-Path $worktree '_generated')).TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+            if ($full.Equals($root, [StringComparison]::OrdinalIgnoreCase) -or $full.StartsWith($root + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw 'NonDurableProofPath' }
+          }
+        }
+        $recordPath = [IO.Path]::GetFullPath($GeneratedArtifactDisposition)
+        & $assertDurable $recordPath
+        $recordItem = Get-Item -LiteralPath $recordPath -Force -ErrorAction Stop
+        if ($recordItem.PSIsContainer -or ($recordItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'InvalidDispositionPath' }
+        & $checkAncestors $recordPath
+        $record = Get-Content -LiteralPath $recordPath -Raw -ErrorAction Stop | ConvertFrom-Json -AsHashtable -ErrorAction Stop
+        if (-not (& $keysAre $record @('schemaVersion','SprintNumber','GateName','RawFailure','ExternalManifest','AuthorityReference','ExpiresAfterSprint')) -or $record.schemaVersion -cne '1.0.0' -or $record.GateName -cne 'CitedGeneratedArtifacts' -or $record.SprintNumber -cnotmatch '^\d{4}$' -or $record.ExpiresAfterSprint -cne $record.SprintNumber -or $record.AuthorityReference -isnot [string] -or $record.AuthorityReference.Length -eq 0) { throw 'InvalidDisposition' }
+        foreach ($worktree in $worktrees) {
+          if ((Split-Path $worktree -Leaf) -notmatch "(?i)Sprint-?$($record.SprintNumber)(?:-|$)") { throw 'SprintMismatch' }
+        }
+        $base = Split-Path $recordPath -Parent
+        $references = @{}
+        foreach ($name in @('RawFailure','ExternalManifest')) {
+          $ref = $record[$name]
+          if (-not (& $keysAre $ref @('path','sha256')) -or $ref.path -isnot [string] -or $ref.sha256 -isnot [string] -or $ref.sha256 -notmatch '^[a-fA-F0-9]{64}$') { throw 'InvalidReference' }
+          $path = & $safePath $base $ref.path
+          & $assertDurable $path
+          if ([string]::Equals($path, $recordPath, [StringComparison]::OrdinalIgnoreCase) -or -not (Test-Path -LiteralPath $path -PathType Leaf) -or (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash -ine $ref.sha256) { throw 'ReferenceMismatch' }
+          $references[$name] = $path
+        }
+        if ($references.RawFailure -ieq $references.ExternalManifest) { throw 'SelfReference' }
+        $raw = Get-Content -LiteralPath $references.RawFailure -Raw | ConvertFrom-Json -AsHashtable -ErrorAction Stop
+        if ($raw.Ok -ne $false -or @($raw.Failures) -notcontains 'CitedGeneratedArtifacts' -or $null -eq $raw.CitedPaths) { throw 'InvalidRawFailure' }
+        $manifest = Get-Content -LiteralPath $references.ExternalManifest -Raw | ConvertFrom-Json -AsHashtable -ErrorAction Stop
+        if (-not (& $keysAre $manifest @('schemaVersion','files')) -or $manifest.schemaVersion -cne '1.0.0' -or $manifest.files -isnot [array] -or $manifest.files.Count -eq 0) { throw 'InvalidManifest' }
+        $manifestBase = Split-Path $references.ExternalManifest -Parent
+        $entries = @{}
+        foreach ($entry in $manifest.files) {
+          if (-not (& $keysAre $entry @('worktree','relativePath','preservedPath','sha256','bytes')) -or $entry.worktree -isnot [string] -or $entry.worktree -notmatch '^[^/\\:]+$' -or $entry.relativePath -isnot [string] -or $entry.preservedPath -isnot [string] -or $entry.sha256 -isnot [string] -or $entry.sha256 -notmatch '^[a-fA-F0-9]{64}$' -or $entry.bytes -isnot [long] -or $entry.bytes -lt 0) { throw 'InvalidManifestEntry' }
+          $selected = @($worktrees | Where-Object { (Split-Path $_ -Leaf) -ieq $entry.worktree })
+          if ($selected.Count -ne 1) { throw 'InvalidWorktree' }
+          $key = "$($entry.worktree)|$($entry.relativePath)"
+          if ($entries.ContainsKey($key)) { throw 'DuplicateManifestEntry' }
+          $original = & $safePath (Join-Path $selected[0] '_generated') $entry.relativePath
+          $preserved = & $safePath $manifestBase $entry.preservedPath
+          & $assertDurable $preserved
+          if ($preserved -ieq $original -or $preserved -ieq $recordPath -or $preserved -ieq $references.ExternalManifest -or $preserved -ieq $references.RawFailure -or -not (Test-Path -LiteralPath $original -PathType Leaf) -or -not (Test-Path -LiteralPath $preserved -PathType Leaf)) { throw 'InvalidPreservedFile' }
+          foreach ($file in @($original, $preserved)) {
+            if ((Get-Item -LiteralPath $file).Length -ne $entry.bytes -or (Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash -ine $entry.sha256) { throw 'PreservedFileMismatch' }
+          }
+          $entries[$key] = $original
+        }
+        foreach ($citation in $citedPaths) {
+          $rawMatch = @($raw.CitedPaths | Where-Object { $_.ResolvedPath -ieq $citation.ResolvedPath -and $_.SourcePath -ieq $citation.SourcePath -and $_.LineNumber -eq $citation.LineNumber -and $_.Citation -ceq $citation.Citation })
+          if ($rawMatch.Count -ne 1) { continue }
+          foreach ($original in $entries.Values) {
+            if ($original -ieq $citation.ResolvedPath) { [void]$dispositionedPaths.Add($citation); break }
+          }
+        }
+        if ($citedPaths.Count -gt 0 -and $dispositionedPaths.Count -eq $citedPaths.Count) { [void]$failures.Remove('CitedGeneratedArtifacts') }
+      } catch {
+        $dispositionedPaths.Clear()
+        $dispositionError = $_.Exception.Message
+        [void]$failures.Add('InvalidGeneratedArtifactDisposition')
+      }
+    }
 
     [PSCustomObject]@{
       Ok           = ($failures.Count -eq 0)
@@ -151,6 +244,9 @@ function Get-SprintGeneratedArtifactState {
       PlanningRoot = $planningRootFull
       TrackedPaths = $trackedPaths.ToArray()
       CitedPaths   = $citedPaths.ToArray()
+      DispositionedPaths = $dispositionedPaths.ToArray()
+      DispositionError = $dispositionError
+      OriginalFailures = $originalFailures
       Failures     = $failures.ToArray()
     }
   }

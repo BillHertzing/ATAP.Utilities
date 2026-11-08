@@ -580,6 +580,64 @@ subject, issuer, and thumbprint are the direct ATAP Foundation values recorded i
 `Avast Web/Mail Shield` certificate. A successful HTTP status alone is insufficient PKI
 evidence because an intercepting certificate can still produce HTTP 200.
 
+#### Known limitation: AI desktop app child processes are still intercepted (SC-0541)
+
+The browser-processes-only setting does not cover processes launched by Claude Desktop
+(`Claude.exe`) or Codex Desktop. Both are desktop AI applications; the likely cause, not
+yet confirmed, is that Avast classifies these Electron/Chromium-based apps as browsers
+and applies that to their child processes. On utat022 (2026-11-07/08), with the setting
+enabled:
+
+- From an operator terminal, ProGet (`utat022:50000`), BuildMaster (`utat022:50017`), and
+  `web.whatsapp.com` presented their real certificates (ATAP Foundation Root CA 2026 and
+  DigiCert).
+- From `pwsh.exe` and `node.exe` launched by Claude Desktop, including the shells that
+  Claude Code sessions use and local MCP servers, all three endpoints presented an
+  `Avast Web/Mail Shield Root` certificate.
+- A Codex Desktop session saw the same `Avast Web/Mail Shield Root` issuer on all three
+  endpoints.
+- Restarting Claude Desktop did not change the result. Avast **Exceptions** entries for
+  `Claude.exe` and `node.exe` did not change it either; they appear to stop file scanning
+  only, not Web Guard HTTPS inspection.
+- Disabling Web Guard made every check pass, and re-enabling it made every check fail
+  again, which isolates Web Guard as the cause.
+- Avast **Exceptions > Website / Domain** rejects single-label host names and ports
+  (`utat022`, `https://utat022`, `https://utat022:50000`, `https://utat022/*`) and
+  accepts an IP address such as `192.168.1.22`. The exception matches by IP: a
+  connection to `192.168.1.22` then received the real ATAP Foundation certificate.
+- That IP exception does not fix a host's connections to its own services by name.
+  Windows answers its own computer name with all local interface addresses and bypasses
+  the hosts file for it, so on utat022 the name `utat022` connects first to an IPv6
+  link-local address (`fe80::…`) that Avast still intercepts. The hosts-file name
+  `utat022-wired` resolves only to `192.168.1.22` but fails certificate validation,
+  because the certificate SAN is `DNS:utat022` only. Excepting every local address is
+  fragile: the Hyper-V/WSL switch address (`172.21.192.1` here) usually changes on
+  restart, and Avast may not accept IPv6 addresses. Keep the LAN IP exception for
+  peer-host traffic (utat01 to utat022), but do not rely on exceptions for same-host
+  traffic.
+
+The failure is loud only for Node.js. Avast installs its root in the Windows certificate
+store, so PowerShell and .NET trust the Avast chain and return TLS-trusted HTTP 200
+responses while talking to Avast. Node.js uses its own CA bundle and rejects the same
+certificate (`UNABLE_TO_VERIFY_LEAF_SIGNATURE` / `unable to verify the first certificate`).
+
+Effects:
+
+- Node-based local MCP servers that these apps launch fail to connect, for example the
+  WhatsApp MCP server and the `npx` memory and github servers.
+- PowerShell automation run from these apps succeeds silently against an Avast leaf
+  instead of the ATAP Foundation PKI. A trusted chain or an HTTP 200 is therefore not
+  evidence that interception is off.
+
+Verify from inside both a Claude Desktop session and a Codex Desktop session, not only
+from a terminal, with a read-only leaf check that reports the issuer, such as
+`D:\ATAPArtifacts\Sprint0017\WhatsAppMcp\Test-TlsLeafIssuer.ps1`. Pass only when the
+issuer is ATAP Foundation Root CA 2026 for `utat022:50000` and `utat022:50017`, and a
+public CA for external sites.
+A durable fix is tracked as SC-0541. Until it lands, `NODE_OPTIONS=--use-system-ca` on a
+specific Node MCP server is an approved-only, per-server workaround: it makes Node trust
+the Avast root, so the traffic is still intercepted.
+
 ### 2.3.2 Install the deterministic C# package build toolchain
 
 Production C# packages require a stable NuGet implementation that honors

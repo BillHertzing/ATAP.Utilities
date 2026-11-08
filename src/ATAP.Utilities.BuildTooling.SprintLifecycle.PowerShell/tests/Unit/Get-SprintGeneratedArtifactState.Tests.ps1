@@ -206,4 +206,54 @@ Describe 'Get-SprintGeneratedArtifactState' {
     $legacy.Failures | Should -Contain 'CitedGeneratedArtifacts'
     $legacy.CitedPaths.Count | Should -Be 1
   }
+
+  It 'rejects nonconforming v1 <Case> while retaining the citation failure' -ForEach @(
+    @{ Case = 'numeric sprint and expiry'; RecordSprint = 1234; RecordExpiry = 1234; RawOutcome = $false; ExpectedError = 'InvalidDisposition' }
+    @{ Case = 'numeric expiry'; RecordSprint = '0016'; RecordExpiry = 16; RawOutcome = $false; ExpectedError = 'InvalidDisposition' }
+    @{ Case = 'non-ASCII sprint and expiry'; RecordSprint = '٠٠١٦'; RecordExpiry = '٠٠١٦'; RawOutcome = $false; ExpectedError = 'InvalidDisposition' }
+    @{ Case = 'trailing line feed'; RecordSprint = ('0016' + [char]10); RecordExpiry = ('0016' + [char]10); RawOutcome = $false; ExpectedError = 'InvalidDisposition' }
+    @{ Case = 'string false raw outcome'; RecordSprint = '0016'; RecordExpiry = '0016'; RawOutcome = 'false'; ExpectedError = 'InvalidRawFailure' }
+  ) {
+    $original = Join-Path $script:planning '_generated/Sprint0016/evidence.txt'
+    New-FixtureFile $original 'proof'
+    New-FixtureFile (Join-Path $script:planning 'Tasks.Sprint0016.md') '_generated/Sprint0016/evidence.txt'
+    $raw = Get-SprintGeneratedArtifactState -WorktreePaths $script:worktrees -PlanningRoot $script:planning
+    $raw.Ok = $RawOutcome
+    $proof = Join-Path $script:root 'proof'
+    $rawPath = Join-Path $proof 'raw.json'
+    New-FixtureFile $rawPath ($raw | ConvertTo-Json -Depth 10)
+    Copy-Item -LiteralPath $original -Destination (Join-Path $proof 'preserved.txt')
+    $manifest = @{
+      schemaVersion = '1.0.0'
+      files = @(@{
+        worktree = Split-Path $script:planning -Leaf
+        relativePath = 'Sprint0016/evidence.txt'
+        preservedPath = 'preserved.txt'
+        sha256 = (Get-FileHash -LiteralPath $original).Hash
+        bytes = (Get-Item -LiteralPath $original).Length
+      })
+    }
+    $manifestPath = Join-Path $proof 'manifest.json'
+    New-FixtureFile $manifestPath ($manifest | ConvertTo-Json -Depth 10)
+    $disposition = @{
+      schemaVersion = '1.0.0'
+      SprintNumber = $RecordSprint
+      GateName = 'CitedGeneratedArtifacts'
+      RawFailure = @{ path = 'raw.json'; sha256 = (Get-FileHash -LiteralPath $rawPath).Hash }
+      ExternalManifest = @{ path = 'manifest.json'; sha256 = (Get-FileHash -LiteralPath $manifestPath).Hash }
+      AuthorityReference = 'fixture'
+      ExpiresAfterSprint = $RecordExpiry
+    }
+    $record = Join-Path $proof 'disposition.json'
+    New-FixtureFile $record ($disposition | ConvertTo-Json -Depth 10)
+
+    $result = Get-SprintGeneratedArtifactState -WorktreePaths $script:worktrees -PlanningRoot $script:planning -GeneratedArtifactDisposition $record
+
+    $result.Ok | Should -BeFalse
+    $result.Failures | Should -Contain 'CitedGeneratedArtifacts'
+    $result.Failures | Should -Contain 'InvalidGeneratedArtifactDisposition'
+    $result.DispositionError | Should -BeExactly $ExpectedError
+    $result.CitedPaths.Count | Should -Be 1
+    $result.DispositionedPaths.Count | Should -Be 0
+  }
 }

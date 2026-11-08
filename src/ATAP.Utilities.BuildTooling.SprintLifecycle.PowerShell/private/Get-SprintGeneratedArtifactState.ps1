@@ -187,7 +187,12 @@ function Get-SprintGeneratedArtifactState {
         if ($recordItem.PSIsContainer -or ($recordItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'InvalidDispositionPath' }
         & $checkAncestors $recordPath
         $record = Get-Content -LiteralPath $recordPath -Raw -ErrorAction Stop | ConvertFrom-Json -AsHashtable -ErrorAction Stop
-        if (-not (& $keysAre $record @('schemaVersion','SprintNumber','GateName','RawFailure','ExternalManifest','AuthorityReference','ExpiresAfterSprint')) -or $record.schemaVersion -cne '1.0.0' -or $record.GateName -cne 'CitedGeneratedArtifacts' -or $record.SprintNumber -cnotmatch '^\d{4}$' -or $record.ExpiresAfterSprint -cne $record.SprintNumber -or $record.AuthorityReference -isnot [string] -or $record.AuthorityReference.Length -eq 0) { throw 'InvalidDisposition' }
+        if (-not (& $keysAre $record @('schemaVersion','SprintNumber','GateName','RawFailure','ExternalManifest','AuthorityReference','ExpiresAfterSprint')) -or
+            $record.schemaVersion -cne '1.0.0' -or $record.GateName -cne 'CitedGeneratedArtifacts' -or
+            $record.SprintNumber -isnot [string] -or $record.SprintNumber -cnotmatch '\A[0-9]{4}\z' -or
+            $record.ExpiresAfterSprint -isnot [string] -or $record.ExpiresAfterSprint -cnotmatch '\A[0-9]{4}\z' -or
+            $record.ExpiresAfterSprint -cne $record.SprintNumber -or
+            $record.AuthorityReference -isnot [string] -or $record.AuthorityReference.Length -eq 0) { throw 'InvalidDisposition' }
         foreach ($worktree in $worktrees) {
           if ((Split-Path $worktree -Leaf) -notmatch "(?i)Sprint-?$($record.SprintNumber)(?:-|$)") { throw 'SprintMismatch' }
         }
@@ -203,7 +208,7 @@ function Get-SprintGeneratedArtifactState {
         }
         if ($references.RawFailure -ieq $references.ExternalManifest) { throw 'SelfReference' }
         $raw = Get-Content -LiteralPath $references.RawFailure -Raw | ConvertFrom-Json -AsHashtable -ErrorAction Stop
-        if ($raw.Ok -ne $false -or @($raw.Failures) -notcontains 'CitedGeneratedArtifacts' -or $null -eq $raw.CitedPaths) { throw 'InvalidRawFailure' }
+        if ($raw.Ok -isnot [bool] -or $raw.Ok -ne $false -or @($raw.Failures) -notcontains 'CitedGeneratedArtifacts' -or $null -eq $raw.CitedPaths) { throw 'InvalidRawFailure' }
         $manifest = Get-Content -LiteralPath $references.ExternalManifest -Raw | ConvertFrom-Json -AsHashtable -ErrorAction Stop
         if (-not (& $keysAre $manifest @('schemaVersion','files')) -or $manifest.schemaVersion -cne '1.0.0' -or $manifest.files -isnot [array] -or $manifest.files.Count -eq 0) { throw 'InvalidManifest' }
         $manifestBase = Split-Path $references.ExternalManifest -Parent

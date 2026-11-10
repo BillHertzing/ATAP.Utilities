@@ -168,16 +168,16 @@ Describe 'Forward organization migration source package' {
       Should -BeExactly '7EF06E2052238BFC18BB97430E70BB2CCA6E99F63C71F2ECC7F6AF7713A6BB89'
   }
 
-  It 'selects the new Experimental source version without changing package identity' {
+  It 'selects the production candidate version without changing package identity' {
     $version = Get-Content -LiteralPath (Join-Path $repositoryRoot 'Database/Flyway/version.json') -Raw | ConvertFrom-Json
-    $version.version | Should -BeExactly '0.1.19-Sprint.1'
+    $version.version | Should -BeExactly '0.1.20'
     $allowlist = Get-Content -LiteralPath (Join-Path $repositoryRoot 'Database/Flyway/package-content-allowlist.json') -Raw | ConvertFrom-Json
     $allowlist.packageId | Should -BeExactly 'ATAPUtilities.Database'
   }
 
   It 'binds all four new migrations to the exact source-version allowlist' -Tag 'Allowlist' {
     $allowlist = Get-Content -LiteralPath (Join-Path $repositoryRoot 'Database/Flyway/package-content-allowlist.json') -Raw | ConvertFrom-Json
-    $allowlist.sourceVersion | Should -BeExactly '0.1.19-Sprint.1'
+    $allowlist.sourceVersion | Should -BeExactly '0.1.20'
     @($allowlist.files).Count | Should -Be 31
     foreach ($migration in $migrations) {
       $entries = @($allowlist.files | Where-Object path -EQ ('SQL/' + $migration.File))

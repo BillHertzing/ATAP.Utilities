@@ -241,6 +241,11 @@ param(
   [AllowEmptyString()]
   [string]$DatabaseDeploymentApprovedDatabaseNames = '',
 
+  [ValidateSet('Normal','Capture','Resume')]
+  [string]$LFReleasePhase = 'Normal',
+  [AllowEmptyString()][string]$LFReleaseApprovalPath = '',
+  [AllowEmptyString()][string]$LFReleaseApprovalSha256 = '',
+
   [switch]$SkipRehearsal,
 
   [switch]$SkipApply
@@ -1145,6 +1150,9 @@ function Invoke-DatabasePackageBuildMasterStage {
     [AllowEmptyString()][string]$IntegrationDatabaseDBConnectionStringSecretName = '',
     [AllowEmptyString()][string]$QADatabaseDBConnectionStringSecretName = '',
     [AllowEmptyString()][string]$ProductionDatabaseDBConnectionStringSecretName = '',
+    [ValidateSet('Normal','Capture','Resume')][string]$LFReleasePhase = 'Normal',
+    [AllowEmptyString()][string]$LFReleaseApprovalPath = '',
+    [AllowEmptyString()][string]$LFReleaseApprovalSha256 = '',
     [switch]$SkipRehearsal,
     [switch]$SkipApply
   )
@@ -1380,6 +1388,30 @@ function Invoke-DatabasePackageBuildMasterStage {
       -ApprovedDatabaseName $approvedDatabaseNames `
       -DatabaseApplication $DatabaseApplication
 
+    # Only 0.1.21 uses this exception. No default path may fall through it.
+    $lfHelper = Join-Path $PSScriptRoot 'DatabasePackageLFReleaseGate.ps1'
+    if (-not (Test-Path -LiteralPath $lfHelper -PathType Leaf)) { throw 'LF release gate source is missing.' }
+    . $lfHelper
+    if ($WhatIfPreference -and ($resolvedVersion -ceq '0.1.21' -or $LFReleasePhase -cne 'Normal')) {
+      throw 'LF capture/resume requires explicit execution; WhatIf performs no receipt or package writes.'
+    }
+    if ($resolvedVersion -ceq '0.1.21' -and ($excludedMigrations.Count -ne 0 -or $DatabaseStream -cne '' -or $effectiveCeilingTier -cne 'Production')) {
+      throw 'LF release requires the complete main database package and Production ceiling.'
+    }
+    $lfGate = Enter-DatabaseLFReleaseGate -Phase $LFReleasePhase -Version $resolvedVersion -Stage $Stage `
+      -DatabasePackageId $databasePackageId -BuildId $BuildMasterBuildId -SourcePath $SourcePath `
+      -ContextDirectory $contextDirectory -SqlInstance $databaseDeploymentSqlInstance `
+      -ConnectionSecretName $tierConnectionSecretName -ApprovalPath $LFReleaseApprovalPath -ApprovalSha256 $LFReleaseApprovalSha256
+    try {
+    if ($null -ne $lfGate -and $lfGate.Phase -ceq 'Resume') {
+      if ($null -eq $existingContext -or [string]$existingContext.NupkgPath -cne [string]$lfGate.Capture.NupkgPath -or [string]$existingContext.ResolvedVersion -cne '0.1.21') {
+        throw 'LF resume context does not bind the exact captured archive.'
+      }
+    }
+    if ($null -ne $lfGate -and $lfGate.Phase -ceq 'Capture' -and $null -ne $existingContext -and -not [string]::IsNullOrWhiteSpace([string]$existingContext.NupkgPath)) {
+      throw 'Capture cannot rebuild or adopt an existing archive; require reviewed forward correction.'
+    }
+
     $stateFiles = [ordered]@{
       CeilingTier       = Join-Path -Path $contextDirectory -ChildPath "$databasePackageId.ceiling-tier.tmp"
       CurrentTier       = Join-Path -Path $contextDirectory -ChildPath "$databasePackageId.current-tier.tmp"
@@ -1558,6 +1590,14 @@ function Invoke-DatabasePackageBuildMasterStage {
           PackageVersion      = $resolvedVersion
         } | Out-Null
 
+      if ($null -ne $lfGate -and $lfGate.Phase -ceq 'Capture') {
+        $pendingCapture = Complete-DatabaseLFCapture -Gate $lfGate -NupkgPath $nupkgPath
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
+          -Message 'LF artifact captured. Pending approved reconciliation; rehearsal/apply and stage completion are held.'
+        $pendingCapture
+        return
+      }
+
       Add-DatabasePackagePublishTrace -Path $tracePath `
         -Message "Rehearsing exact published package '$nupkgPath' before Experimental apply."
       $rehearsalResult = Invoke-DatabasePackageTierRehearsal `
@@ -1678,6 +1718,7 @@ function Invoke-DatabasePackageBuildMasterStage {
     Set-DatabasePackageStageCompleted -ContextDirectory $contextDirectory -DatabasePackageId $databasePackageId -Tier $Stage -PackageVersion $resolvedVersion
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
       -Message "Promoted '$databasePackageId' '$resolvedVersion' to '$toFeed'. Ceiling='$effectiveCeilingTier'."
+    } finally { if ($null -ne $lfGate -and $null -ne $lfGate.Lock) { $lfGate.Lock.Dispose() } }
   }
 
   END {
@@ -1709,5 +1750,8 @@ Invoke-DatabasePackageBuildMasterStage `
   -IntegrationDatabaseDBConnectionStringSecretName $IntegrationDatabaseDBConnectionStringSecretName `
   -QADatabaseDBConnectionStringSecretName $QADatabaseDBConnectionStringSecretName `
   -ProductionDatabaseDBConnectionStringSecretName $ProductionDatabaseDBConnectionStringSecretName `
+  -LFReleasePhase $LFReleasePhase `
+  -LFReleaseApprovalPath $LFReleaseApprovalPath `
+  -LFReleaseApprovalSha256 $LFReleaseApprovalSha256 `
   -SkipRehearsal:$SkipRehearsal `
   -SkipApply:$SkipApply

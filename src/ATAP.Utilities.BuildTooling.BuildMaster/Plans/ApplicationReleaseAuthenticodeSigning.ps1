@@ -204,6 +204,7 @@ function Get-ApplicationReleaseDatabaseAdmission {
     [pscustomobject]@{ ProductId = 'AceOutpost'; Id = 'ATAPUtilities.Database'; PinnedVersion = '0.1.17'; CompatibleVersionRange = '[0.1.17,0.1.18)'; LifecycleCeiling = 'database-stable'; Feed = 'database-stable'; NupkgSha256 = $null }
     [pscustomobject]@{ ProductId = 'AceCommander'; Id = 'ATAPUtilities.Database'; PinnedVersion = '0.1.19-Sprint.1'; CompatibleVersionRange = '[0.1.19-Sprint.1]'; LifecycleCeiling = 'database-experimental'; Feed = 'database-experimental'; NupkgSha256 = 'BA6ACB51DA41103D52A99C676096E9F1A35BBD1C9A4016F99633D96CE7828A2D' }
     [pscustomobject]@{ ProductId = 'AceCommander'; Id = 'ATAPUtilities.Database'; PinnedVersion = '0.1.20'; CompatibleVersionRange = '[0.1.20]'; LifecycleCeiling = 'database-stable'; Feed = 'database-stable'; NupkgSha256 = '33850F533FA266705EC017778BD45A35E9067CC57860E798139992C3C674CFF7' }
+    [pscustomobject]@{ ProductId = 'AceCommander'; Id = 'ATAPUtilities.Database'; PinnedVersion = '0.1.21'; CompatibleVersionRange = '[0.1.21]'; LifecycleCeiling = 'database-stable'; Feed = 'database-stable'; NupkgSha256 = 'PENDING_VERIFIED_0_1_21_DATABASE_STABLE_SHA256' }
   )
   # Omission preserves legacy callers; an explicitly empty or unknown selector
   # must never fall back to an older, less restrictive database contract.
@@ -220,6 +221,11 @@ function Get-ApplicationReleaseDatabaseAdmission {
   })
   if ($match.Count -ne 1) {
     throw "Product '$ProductId' has no admitted release database pin for version '$selectedVersion'."
+  }
+  if ([string]::Equals($ProductId, 'AceCommander', [StringComparison]::Ordinal) -and
+      [string]::Equals($selectedVersion, '0.1.21', [StringComparison]::Ordinal) -and
+      [string]$match[0].NupkgSha256 -notmatch '\A[0-9a-fA-F]{64}\z') {
+    throw 'LF-only database 0.1.21 admission awaits the verified immutable database-stable package hash.'
   }
   return $match[0]
 }

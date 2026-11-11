@@ -1,0 +1,170 @@
+{
+  "Name": "DatabaseChangePackage-LF021-Gated",
+  "Description": "Isolated 0.1.21 pipeline: separate artifact capture then manual approved reconciliation and exact-byte per-tier Resume. No automatic listeners or approval.",
+  "Stages": [
+    {
+      "Name": "CaptureArtifact",
+      "Description": "Capture only; no Experimental acceptance or automatic advance. Manual approved reconciliation must complete before explicitly queueing Experimental Resume.",
+      "Targets": [
+        {
+          "ScriptId": "global::DatabaseLF021-CaptureArtifact.otter",
+          "EnvironmentName": "Experimental",
+          "ServerNames": [
+            "localhost"
+          ],
+          "ServerRoleNames": [],
+          "DefaultServerContext": 1
+        }
+      ],
+      "Gate": {
+        "UserApprovals": [],
+        "GroupApprovals": [],
+        "DeploymentWindows": [],
+        "AutomatedChecks": {
+          "Issues": {
+            "Statuses": []
+          }
+        },
+        "AutomaticApprovals": []
+      },
+      "AllowMultipleActiveBuilds": false
+    },
+    {
+      "Name": "Experimental",
+      "Description": "Manual operator-approved Resume with exact capture, before-sample, backup, clone and maintenance receipts; no automatic approval.",
+      "Targets": [
+        {
+          "ScriptId": "global::DatabaseLF021-ExperimentalResume.otter",
+          "EnvironmentName": "Experimental",
+          "ServerNames": [
+            "localhost"
+          ],
+          "ServerRoleNames": [],
+          "DefaultServerContext": 1
+        }
+      ],
+      "Gate": {
+        "UserApprovals": [],
+        "GroupApprovals": [],
+        "DeploymentWindows": [],
+        "AutomatedChecks": {
+          "Issues": {
+            "Statuses": []
+          }
+        },
+        "AutomaticApprovals": []
+      },
+      "AllowMultipleActiveBuilds": false
+    },
+    {
+      "Name": "Development",
+      "Description": "Manual operator-approved Resume with exact capture, before-sample, backup, clone and maintenance receipts; no automatic approval.",
+      "Targets": [
+        {
+          "ScriptId": "global::DatabaseLF021-DevelopmentResume.otter",
+          "EnvironmentName": "Development",
+          "ServerNames": [
+            "localhost"
+          ],
+          "ServerRoleNames": [],
+          "DefaultServerContext": 1
+        }
+      ],
+      "Gate": {
+        "UserApprovals": [],
+        "GroupApprovals": [],
+        "DeploymentWindows": [],
+        "AutomatedChecks": {
+          "Issues": {
+            "Statuses": []
+          }
+        },
+        "AutomaticApprovals": []
+      },
+      "AllowMultipleActiveBuilds": false
+    },
+    {
+      "Name": "Integration",
+      "Description": "Manual operator-approved Resume with exact capture, before-sample, backup, clone and maintenance receipts; no automatic approval.",
+      "Targets": [
+        {
+          "ScriptId": "global::DatabaseLF021-IntegrationResume.otter",
+          "EnvironmentName": "Integration",
+          "ServerNames": [
+            "localhost"
+          ],
+          "ServerRoleNames": [],
+          "DefaultServerContext": 1
+        }
+      ],
+      "Gate": {
+        "UserApprovals": [],
+        "GroupApprovals": [],
+        "DeploymentWindows": [],
+        "AutomatedChecks": {
+          "Issues": {
+            "Statuses": []
+          }
+        },
+        "AutomaticApprovals": []
+      },
+      "AllowMultipleActiveBuilds": false
+    },
+    {
+      "Name": "QA",
+      "Description": "Manual operator-approved Resume with exact capture, before-sample, backup, clone and maintenance receipts; no automatic approval.",
+      "Targets": [
+        {
+          "ScriptId": "global::DatabaseLF021-QAResume.otter",
+          "EnvironmentName": "QA",
+          "ServerNames": [
+            "localhost"
+          ],
+          "ServerRoleNames": [],
+          "DefaultServerContext": 1
+        }
+      ],
+      "Gate": {
+        "UserApprovals": [],
+        "GroupApprovals": [],
+        "DeploymentWindows": [],
+        "AutomatedChecks": {
+          "Issues": {
+            "Statuses": []
+          }
+        },
+        "AutomaticApprovals": []
+      },
+      "AllowMultipleActiveBuilds": false
+    },
+    {
+      "Name": "Production",
+      "Description": "Manual operator-approved Resume with exact capture, before-sample, backup, clone and maintenance receipts; no automatic approval.",
+      "Targets": [
+        {
+          "ScriptId": "global::DatabaseLF021-ProductionResume.otter",
+          "EnvironmentName": "Production",
+          "ServerNames": [
+            "localhost"
+          ],
+          "ServerRoleNames": [],
+          "DefaultServerContext": 1
+        }
+      ],
+      "Gate": {
+        "UserApprovals": [],
+        "GroupApprovals": [],
+        "DeploymentWindows": [],
+        "AutomatedChecks": {
+          "Issues": {
+            "Statuses": []
+          }
+        },
+        "AutomaticApprovals": []
+      },
+      "AllowMultipleActiveBuilds": false
+    }
+  ],
+  "TemplateVariables": [],
+  "EventListeners": []
+}

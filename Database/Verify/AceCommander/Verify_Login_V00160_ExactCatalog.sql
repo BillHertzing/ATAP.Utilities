@@ -49,7 +49,7 @@ BEGIN
         (N'00120', N'V00120__Add_ContentSummary_Provisioning_And_Correction.sql', -685970708),
         (N'00130', N'V00130__Create_ContentSummary_Runtime_Query_Boundary.sql', 2009181215),
         (N'00140', N'V00140__Correct_ContentSummary_Runtime_Query_Denials.sql', -1589047792),
-        (N'00150', N'V00150__Add_AISupervisor_CacheTokens.sql', 910403273);
+        (N'00150', N'V00150__Add_AISupervisor_CacheTokens.sql', 155333537);
     IF EXISTS
     (
         SELECT 1 FROM @FixtureExpectedHistory AS e

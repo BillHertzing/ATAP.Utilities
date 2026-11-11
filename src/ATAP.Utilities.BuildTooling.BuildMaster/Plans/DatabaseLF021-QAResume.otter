@@ -1,0 +1,18 @@
+# Isolated LF021 QA operation; only the new 0.1.21 release uses this plan.
+# CaptureArtifact success is pending and cannot mean Experimental acceptance.
+# BuildTooling module used by every stage command.
+set $BuildToolingModuleManifest = $PathCombine($SourcePath, src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.psd1);
+set $BuildMasterPlanScriptDir = $PathCombine($SourcePath, src\ATAP.Utilities.BuildTooling.BuildMaster\Plans);
+set $InvokeDatabasePackageStageScript = $PathCombine($BuildMasterPlanScriptDir, Invoke-DatabasePackageBuildMasterStage.ps1);
+
+set $BuildMasterBuildId = $BuildMasterId(build);
+set $BuildMasterBuildNumber = $BuildNumber;
+set $BuildMasterExecutionId = $ExecutionId;
+
+InedoCore::Exec
+(
+    FileName: pwsh,
+    Arguments: >>-File "$InvokeDatabasePackageStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -DatabaseApplication "$DatabaseApplication" -DatabaseStream "$DatabaseStream" -ExcludedMigrationFileNames "$ExcludedMigrationFileNames" -Branch "$Branch" -Stage "QA" -LFReleasePhase Resume -LFReleaseApprovalPath "$LF021QAResumeApprovalPath" -LFReleaseApprovalSha256 "$LF021QAResumeApprovalSha256" -ProGetUrl "$ProGetBaseUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName" -ExperimentalDatabaseDBConnectionStringSecretName "$LF021ExperimentalConnectionSecretName" -DevelopmentDatabaseDBConnectionStringSecretName "$DevelopmentDatabaseDBConnectionStringSecretName" -IntegrationDatabaseDBConnectionStringSecretName "$IntegrationDatabaseDBConnectionStringSecretName" -QADatabaseDBConnectionStringSecretName "$QADatabaseDBConnectionStringSecretName" -ProductionDatabaseDBConnectionStringSecretName "$ProductionDatabaseDBConnectionStringSecretName" -ExperimentalDatabaseDeploymentSqlInstance "$ExperimentalDatabaseDeploymentSqlInstance" -DevelopmentDatabaseDeploymentSqlInstance "$DevelopmentDatabaseDeploymentSqlInstance" -IntegrationDatabaseDeploymentSqlInstance "$IntegrationDatabaseDeploymentSqlInstance" -QADatabaseDeploymentSqlInstance "$QADatabaseDeploymentSqlInstance" -ProductionDatabaseDeploymentSqlInstance "$ProductionDatabaseDeploymentSqlInstance" -DatabaseDeploymentExpectedHostName "$DatabaseDeploymentExpectedHostName" -DatabaseDeploymentServiceAccount "$DatabaseDeploymentServiceAccount" -DatabaseDeploymentExpectedAccountSid "$DatabaseDeploymentExpectedAccountSid" -DatabaseDeploymentAllowedInstanceNames "$DatabaseDeploymentAllowedInstanceNames" -DatabaseDeploymentApprovedDatabaseNames "$DatabaseDeploymentApprovedDatabaseNames">>,
+    WorkingDirectory: $SourcePath,
+    SuccessExitCode: 0
+);

@@ -126,7 +126,9 @@ function Invoke-ApplicationReleaseStage {
     }
     if ($productId -ceq 'AceCommander' -and -not $experimentalCommander) {
       if ($null -eq $contextDatabase -or
-          $databaseAdmission.PinnedVersion -cne '0.1.20' -or
+          (-not [string]::Equals($databaseAdmission.PinnedVersion, '0.1.20', [StringComparison]::Ordinal) -and
+           -not [string]::Equals($databaseAdmission.PinnedVersion, '0.1.21', [StringComparison]::Ordinal)) -or
+          [string]$databaseAdmission.NupkgSha256 -notmatch '\A[0-9a-fA-F]{64}\z' -or
           [string]$contextDatabase.id -cne $databaseAdmission.Id -or
           [string]$contextDatabase.pinnedVersion -cne $databaseAdmission.PinnedVersion -or
           [string]$contextDatabase.compatibleVersionRange -cne $databaseAdmission.CompatibleVersionRange -or

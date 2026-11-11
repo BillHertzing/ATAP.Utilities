@@ -323,10 +323,15 @@ function Invoke-ApplicationBuildMasterStage {
           $databaseAdmission.NupkgSha256 -ine 'BA6ACB51DA41103D52A99C676096E9F1A35BBD1C9A4016F99633D96CE7828A2D') { throw 'AceCommander requires the exact source-adopted Experimental database admission.' }
       $applicationCeiling = 'Experimental'
     } elseif ($ProductId -ceq 'AceCommander') {
-      if ($databaseAdmission.Id -cne 'ATAPUtilities.Database' -or $databaseAdmission.PinnedVersion -cne '0.1.20' -or
-          $databaseAdmission.CompatibleVersionRange -cne '[0.1.20]' -or $databaseAdmission.LifecycleCeiling -cne 'database-stable' -or
+      $lfCandidateAdmission = [string]::Equals($databaseAdmission.PinnedVersion, '0.1.21', [StringComparison]::Ordinal)
+      $requiredDatabaseVersion = if ($lfCandidateAdmission) { '0.1.21' } else { '0.1.20' }
+      $requiredDatabaseRange = if ($lfCandidateAdmission) { '[0.1.21]' } else { '[0.1.20]' }
+      $requiredDatabaseHash = if ($lfCandidateAdmission) { 'PENDING_VERIFIED_0_1_21_DATABASE_STABLE_SHA256' } else { '33850F533FA266705EC017778BD45A35E9067CC57860E798139992C3C674CFF7' }
+      if ($databaseAdmission.Id -cne 'ATAPUtilities.Database' -or
+          -not [string]::Equals($databaseAdmission.PinnedVersion, $requiredDatabaseVersion, [StringComparison]::Ordinal) -or
+          $databaseAdmission.CompatibleVersionRange -cne $requiredDatabaseRange -or $databaseAdmission.LifecycleCeiling -cne 'database-stable' -or
           $databaseAdmission.Feed -cne 'database-stable' -or
-          $databaseAdmission.NupkgSha256 -ine '33850F533FA266705EC017778BD45A35E9067CC57860E798139992C3C674CFF7') {
+          $databaseAdmission.NupkgSha256 -ine $requiredDatabaseHash) {
         throw 'AceCommander requires the exact source-adopted Production database admission.'
       }
     }

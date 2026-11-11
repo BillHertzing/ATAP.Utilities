@@ -48,8 +48,9 @@ BEGIN TRY
 
     DECLARE @CaptureDefinition nvarchar(max) =
         OBJECT_DEFINITION(OBJECT_ID(N'[Ace].[CaptureAISupervisorAttempt]', N'P'));
+    SET @CaptureDefinition = REPLACE(@CaptureDefinition, NCHAR(13) + NCHAR(10), NCHAR(10));
     DECLARE @CaptureParameterAnchor nvarchar(4000) =
-        N'    @Metrics [Ace].[AISupervisorMetricInput] READONLY' + NCHAR(13) + NCHAR(10) + N'AS';
+        N'    @Metrics [Ace].[AISupervisorMetricInput] READONLY' + NCHAR(10) + N'AS';
     DECLARE @CaptureValidationAnchor nvarchar(4000) =
         N'       OR (@ResponseTokens IS NOT NULL AND @ResponseTokens < 0)';
     DECLARE @CaptureColumnsAnchor nvarchar(4000) =
@@ -58,6 +59,7 @@ BEGIN TRY
         N'            (@AttemptId, @RequestTokens, @ResponseTokens, @AvailabilityCode,';
 
     IF @CaptureDefinition IS NULL
+       OR CHARINDEX(NCHAR(13), @CaptureDefinition) > 0
        OR (LEN(@CaptureDefinition) - LEN(REPLACE(@CaptureDefinition, @CaptureParameterAnchor, N''))) / LEN(@CaptureParameterAnchor) <> 1
        OR (LEN(@CaptureDefinition) - LEN(REPLACE(@CaptureDefinition, @CaptureValidationAnchor, N''))) / LEN(@CaptureValidationAnchor) <> 1
        OR (LEN(@CaptureDefinition) - LEN(REPLACE(@CaptureDefinition, @CaptureColumnsAnchor, N''))) / LEN(@CaptureColumnsAnchor) <> 1
@@ -72,12 +74,12 @@ BEGIN TRY
     SET @CaptureDefinition = REPLACE(
         @CaptureDefinition,
         @CaptureParameterAnchor,
-        N'    @Metrics [Ace].[AISupervisorMetricInput] READONLY,' + NCHAR(13) + NCHAR(10)
-        + N'    @CacheTokens bigint = NULL' + NCHAR(13) + NCHAR(10) + N'AS');
+        N'    @Metrics [Ace].[AISupervisorMetricInput] READONLY,' + NCHAR(10)
+        + N'    @CacheTokens bigint = NULL' + NCHAR(10) + N'AS');
     SET @CaptureDefinition = REPLACE(
         @CaptureDefinition,
         @CaptureValidationAnchor,
-        @CaptureValidationAnchor + NCHAR(13) + NCHAR(10) + N'       OR (@CacheTokens IS NOT NULL AND @CacheTokens < 0)');
+        @CaptureValidationAnchor + NCHAR(10) + N'       OR (@CacheTokens IS NOT NULL AND @CacheTokens < 0)');
     SET @CaptureDefinition = REPLACE(
         @CaptureDefinition,
         @CaptureColumnsAnchor,
@@ -90,10 +92,12 @@ BEGIN TRY
 
     DECLARE @ExchangeTimelineDefinition nvarchar(max) =
         OBJECT_DEFINITION(OBJECT_ID(N'[Ace].[QueryAISupervisorExchangeTimeline]', N'P'));
+    SET @ExchangeTimelineDefinition = REPLACE(@ExchangeTimelineDefinition, NCHAR(13) + NCHAR(10), NCHAR(10));
     DECLARE @ExchangeTimelineAnchor nvarchar(4000) =
         N'           usage.[ResponseTokens], usage.[AvailabilityCode], usage.[AvailabilityReason],';
 
     IF @ExchangeTimelineDefinition IS NULL
+       OR CHARINDEX(NCHAR(13), @ExchangeTimelineDefinition) > 0
        OR (LEN(@ExchangeTimelineDefinition) - LEN(REPLACE(@ExchangeTimelineDefinition, @ExchangeTimelineAnchor, N''))) / LEN(@ExchangeTimelineAnchor) <> 1
        OR CHARINDEX(N'usage.[CacheTokens]', @ExchangeTimelineDefinition) > 0
         THROW 60604, N'QueryAISupervisorExchangeTimeline does not match the V00070 contract.', 1;
@@ -110,12 +114,14 @@ BEGIN TRY
 
     DECLARE @TokenTimelineDefinition nvarchar(max) =
         OBJECT_DEFINITION(OBJECT_ID(N'[Ace].[QueryAISupervisorTokenTimeline]', N'P'));
+    SET @TokenTimelineDefinition = REPLACE(@TokenTimelineDefinition, NCHAR(13) + NCHAR(10), NCHAR(10));
     DECLARE @TokenBucketAnchor nvarchar(4000) =
         N'               usage.[RequestTokens], usage.[ResponseTokens], usage.[AvailabilityCode]';
     DECLARE @TokenSumAnchor nvarchar(4000) =
         N'           SUM([RequestTokens]) AS [RequestTokens], SUM([ResponseTokens]) AS [ResponseTokens],';
 
     IF @TokenTimelineDefinition IS NULL
+       OR CHARINDEX(NCHAR(13), @TokenTimelineDefinition) > 0
        OR (LEN(@TokenTimelineDefinition) - LEN(REPLACE(@TokenTimelineDefinition, @TokenBucketAnchor, N''))) / LEN(@TokenBucketAnchor) <> 1
        OR (LEN(@TokenTimelineDefinition) - LEN(REPLACE(@TokenTimelineDefinition, @TokenSumAnchor, N''))) / LEN(@TokenSumAnchor) <> 1
        OR CHARINDEX(N'[CacheTokens]', @TokenTimelineDefinition) > 0
@@ -136,6 +142,9 @@ BEGIN TRY
     EXEC sys.sp_executesql @TokenTimelineDefinition;
 
     IF COL_LENGTH(N'Ace.AISupervisorUsage', N'CacheTokens') IS NULL
+       OR CHARINDEX(NCHAR(13), OBJECT_DEFINITION(OBJECT_ID(N'[Ace].[CaptureAISupervisorAttempt]', N'P'))) > 0
+       OR CHARINDEX(NCHAR(13), OBJECT_DEFINITION(OBJECT_ID(N'[Ace].[QueryAISupervisorExchangeTimeline]', N'P'))) > 0
+       OR CHARINDEX(NCHAR(13), OBJECT_DEFINITION(OBJECT_ID(N'[Ace].[QueryAISupervisorTokenTimeline]', N'P'))) > 0
        OR OBJECT_DEFINITION(OBJECT_ID(N'[Ace].[CaptureAISupervisorAttempt]', N'P')) NOT LIKE N'%@CacheTokens bigint = NULL%'
        OR CHARINDEX(N'@AttemptId, @RequestTokens, @ResponseTokens, @CacheTokens, @AvailabilityCode', OBJECT_DEFINITION(OBJECT_ID(N'[Ace].[CaptureAISupervisorAttempt]', N'P'))) = 0
        OR CHARINDEX(N'usage.[ResponseTokens], usage.[CacheTokens], usage.[AvailabilityCode]', OBJECT_DEFINITION(OBJECT_ID(N'[Ace].[QueryAISupervisorExchangeTimeline]', N'P'))) = 0

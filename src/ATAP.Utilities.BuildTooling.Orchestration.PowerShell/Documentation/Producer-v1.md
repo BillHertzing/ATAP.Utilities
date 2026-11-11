@@ -82,3 +82,8 @@ The command retains CreateNew/flush/readback exact before/after images and an in
 Failures before entering the atomic writer do not request witness replacement. The existing writer exposes no failure phase, so EVERY error after entering it is conservatively WitnessUpdateOutcomeUncertain, even a possible stage or snapshot failure. The approved change may already exist after an exception. Preserve sidecars/stages, stop cooperative work, and reconcile exact before/after/third-state under separately authorized custody; do not retry, restore or delete evidence automatically. No new durable consumer-hold marker or cross-file/power-loss guarantee is added.
 
 Land and review this command before final release packaging. The new public export, manifest and built module change the final signed installed inventory. This append API cannot update package pins; existing-resource upgrades still require a separate approved compatibility/re-admission procedure. Source tests do not establish installed consumption, FIRST_USE, operational authority or pilot acceptance.
+
+
+## Local recovery history and clean restore
+
+Configure and initialize the protected local history before accepting recovery protection. Export compresses with the reviewed installed 7-Zip by default, while -NoCompression preserves the raw JSON bundle. Restore verifies identity and the retained history before publishing images to clean original paths. It preserves requests, journals and retry identity and returns RestoredHeld. Whole-store restoration requires custodian reconciliation. UTAT01 parity remains deferred. See the procedure in Coordination-v1.md under Local recovery history and clean restore.

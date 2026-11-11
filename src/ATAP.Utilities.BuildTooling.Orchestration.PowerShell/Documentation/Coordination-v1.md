@@ -596,3 +596,69 @@ Remaining D05 engine choices stay deferred to their selected consumers. They
 MUST NOT be silently selected by this clerk contract. Distinct review may identify
 further grammar decisions; that finding holds the affected producer rather than
 inventing an accepted policy. [D: Remaining D05; I: DEP15]
+
+
+## Local recovery history and clean restore
+
+The logon-task Windows account owns the recovery component. Bind
+OrchestrationRecoveryHistoryRootPath to a protected resident nonsynced directory
+outside State and Custody, normally C:/ProgramData/ATAP/AICoordinator/RecoveryHistory.
+Only that custodian, SYSTEM and Administrators may write it. Provision and review
+the directory before initialization. Set the corresponding global config-root
+key and host setting through the existing configuration system.
+
+The feature is opt-in for existing installations. Its activation requires the
+setting, protected directory and a verified initial binding. Missing configuration
+does not establish recovery protection. Restore refuses without a bound retained
+history. A changed configuration, replaced history directory or whole-machine
+restore requires explicit custodian reconciliation against retained evidence.
+
+Under continuous resource custody, initialize once with the module-private
+Write-CoordRecoveryHistory -Action Initialize. The binding retains the current
+Windows SID, host, resource, lineage, original state and custody paths and exact
+pair digests. Initialization refuses an existing store. Every subsequent protected
+state or witness replacement retains a flushed intent before replacement and a
+flushed receipt after exact pair readback. File names carry consecutive ordinals
+and the records form a digest chain. Missing, malformed or unfinished records
+hold normal producer operations. The trusted cooperative operator must keep this
+history outside the State/Custody restore scope. This local design detects old
+pair restoration against retained newer history. It cannot independently detect
+restoration or deletion of the entire history store with the machine.
+
+An interrupted record is retained. A separately reviewed custodian resolution
+binds its exact intent digest and observed Before or After pair through
+Write-CoordRecoveryHistory -Action Resolve -ExpectedIntentDigest ... -Outcome
+Aborted or Committed. This appends a receipt and consumes the ordinal. It never
+deletes an intent or resets request, grant, approval or operation history.
+
+Export-CoordState compresses by default. Bind OrchestrationSevenZipPath to the
+reviewed installed executable and OrchestrationSevenZipSha256 to its exact hash.
+Compression invokes that executable with a fixed ZIP format and a single
+bundle.json entry. Export readback verifies the decoded bundle before publication.
+Supply -NoCompression for the existing Coordination-export-v1 raw JSON format.
+The returned Digest pins the actual backup file and BundleDigest pins its JSON.
+
+Restore-CoordState accepts the actual file digest and exact expected resource,
+lineage, generation and revision. It detects ZIP or raw JSON by contents. ZIP
+reading admits only one ordinary bundle.json entry and limits both input and
+decoded bytes, by default to 64 MiB each. No archive path is extracted. Digests,
+schema, identity, journal image closure, custodian SID and installed package
+inventory are checked before destination publication.
+
+Restore targets clean files at the original configured absolute paths. Preserve
+old physical images separately before an authorized restore. Destination parents
+must exist with approved protection. The retained history must match the backup
+pair exactly, which prevents automatic restoration of an older backup. A restore
+retains one intent, stages each image, flushes and verifies it, and publishes it
+without overwrite. A retry of that same intent skips matching published images
+and restores missing ones. A differing existing image or changed history holds.
+Pending requests, prepared plans, terminal results, reservations, grants and
+original request identity are retained in their original bytes. Restore returns
+RestoredHeld. It does not drain work, grant a pilot or change custody actors.
+Resume pending work through the existing separately authorized recovery flow.
+
+UTAT01 remains deferred. Its parity entry must bind the same promoted package
+version and hash, actual logon-task SID, approved nonsynced local history path,
+7-Zip executable and hash, protected-root configuration and initial binding.
+Repeat raw/compressed clean restore and exact-request retry using its installed
+module before considering parity verified.

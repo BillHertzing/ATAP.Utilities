@@ -20,4 +20,4 @@ foreach ($file in $functionFiles) {
   }
 }
 foreach ($file in $functionFiles) { . $file.FullName }
-Export-ModuleMember -Function @('Get-CoordTask', 'Get-CoordResult', 'Get-CoordClaims', 'Stop-CoordClerk', 'Submit-CoordRequest', 'Invoke-CoordClerk', 'Export-CoordState', 'Update-CoordWitness') -Alias @() -Cmdlet @() -Variable @()
+Export-ModuleMember -Function @('Get-CoordTask', 'Get-CoordResult', 'Get-CoordClaims', 'Stop-CoordClerk', 'Submit-CoordRequest', 'Invoke-CoordClerk', 'Export-CoordState', 'Restore-CoordState', 'Update-CoordWitness') -Alias @() -Cmdlet @() -Variable @()

@@ -1,3 +1,4 @@
+Describe 'Actual coordination producer under disposable protected custody' -Tag 'Integration' {
 BeforeAll {
   Import-Module PSFramework -MinimumVersion 1.14.457 -ErrorAction Stop
   $script:moduleRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
@@ -115,7 +116,6 @@ AfterAll {
       Set-Content -LiteralPath (Join-Path $script:fixtureRoot 'C1687-LockLifetime.json')
   }
 }
-Describe 'Actual coordination producer under disposable protected custody' -Tag 'Integration' {
 
   It 'distinguishes retained custody from interrupted state replacement and recovers after both owners release' -Tag 'C1687' {
     $owner = Read-CoordProducerContext -HolderId Coordinator -SessionId session-1
@@ -296,7 +296,7 @@ Describe 'Actual coordination producer under disposable protected custody' -Tag 
   It 'exports exact pending state and restores retained request identity without another queue effect' {
     $null = Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false
     $exportPath = Join-Path $backupRoot 'recovery.json'
-    $export = Export-CoordState -HolderId Coordinator -SessionId session-1 -DestinationPath $exportPath -Confirm:$false
+    $export = Export-CoordState -HolderId Coordinator -SessionId session-1 -DestinationPath $exportPath -NoCompression -Confirm:$false
     $export.Status | Should -BeExactly 'Exported'
     $snapshot = [IO.File]::ReadAllText($exportPath) | ConvertFrom-Json -AsHashtable -Depth 100
     $snapshot.stateBytesBase64 | Should -BeExactly ([Convert]::ToBase64String([IO.File]::ReadAllBytes($statePath)))
@@ -367,6 +367,71 @@ Describe 'Actual coordination producer under disposable protected custody' -Tag 
     (Read-CoordJsonBytes ([IO.File]::ReadAllBytes($statePath))).GetProperty('requests').GetArrayLength() | Should -Be 0
     ([IO.File]::ReadAllText($witnessPath) | ConvertFrom-Json).pendingWrite | Should -BeNullOrEmpty
   }
+  It 'denies the retired caller and request holder despite an active U+00AD session' -Tag 'C2065SuccessorOrdinalFix' {
+    # The assigned disposable root can be on Dropbox. Keep the real context
+    # and fixture leases, and isolate cloud-tag inspection to this fixture tree.
+    Mock Assert-CoordCloudPlaceholder {
+      if ($Path -ine $script:fixtureRoot -and
+          -not (Test-CoordDescendant $Path $script:fixtureRoot) -and
+          -not (Test-CoordDescendant $script:fixtureRoot $Path)) { throw 'OutsideDisposableFixtureTree' }
+    }
+    $retiredSession = 'retired-session'
+    $activeSession = $retiredSession + [char]0x00AD
+    $witness.actors += @{ holderId = 'Coordinator'; sessionId = $activeSession; windowsSid = $sid; role = 'Coordinator' }
+    $witness.retiredActors = @(@{ holderId = 'Coordinator'; sessionId = $retiredSession; windowsSid = $sid; role = 'Coordinator' })
+    $exactRequest = ConvertTo-CoordCanonicalRequest -EnvelopeBytes $envelope -MaxRequestBytes 65536
+    $retiredRequestValue = Get-CoordMembers $exactRequest.Request
+    $retiredRequestValue.holder = @{ holderId = 'Coordinator'; sessionId = $retiredSession }
+    $retiredRequestValue.requestId = 'retired-request'
+    $retiredRequestValue.authorizationReference = 'grant-retired-request'
+    $draft = ConvertTo-CoordStateBytes (ConvertTo-CoordElement @{ request = $retiredRequestValue; digest = ('0' * 64) })
+    $retiredRequest = ConvertTo-CoordCanonicalRequest -EnvelopeBytes $draft -MaxRequestBytes 65536 -DeferDigestComparison
+    $witness.authorizations += @{
+      reference = 'grant-retired-request'; requestId = 'retired-request'; digest = $retiredRequest.Digest; claimId = 'claim-retired-request'
+    }
+    Write-FixtureJson $witnessPath $witness
+
+    { Read-CoordProducerContext -HolderId Coordinator -SessionId $retiredSession } | Should -Throw 'ActorNotAuthorized'
+    $context = Read-CoordProducerContext -HolderId Coordinator -SessionId $activeSession
+    try {
+      [StringComparer]::Ordinal.Equals($context.Actor.sessionId, $activeSession) | Should -BeTrue
+    } finally {
+      $context.BoardLease.Dispose()
+      $context.Lease.Dispose()
+    }
+    $context = Read-CoordProducerContext -HolderId Coordinator -SessionId session-1
+    try {
+      (Get-CoordRequestGrant $context $exactRequest.Request $exactRequest.Digest).requestId | Should -BeExactly 'request-1'
+      { Get-CoordRequestGrant $context $retiredRequest.Request $retiredRequest.Digest } | Should -Throw 'AuthorityConflict'
+    } finally {
+      $context.BoardLease.Dispose()
+      $context.Lease.Dispose()
+    }
+  }
+
+  It 'denies a grant with a valid digest but U+00AD in the stored <Field>' -Tag 'C2065ExactGrantFix' -ForEach @(
+    @{ Field = 'reference' }
+    @{ Field = 'requestId' }
+  ) {
+    Mock Assert-CoordCloudPlaceholder {
+      if ($Path -ine $script:fixtureRoot -and
+          -not (Test-CoordDescendant $Path $script:fixtureRoot) -and
+          -not (Test-CoordDescendant $script:fixtureRoot $Path)) { throw 'OutsideDisposableFixtureTree' }
+    }
+    $canonical = ConvertTo-CoordCanonicalRequest -EnvelopeBytes $envelope -MaxRequestBytes 65536
+    $witness.authorizations[0][$Field] += [char]0x00AD
+    Write-FixtureJson $witnessPath $witness
+
+    $context = Read-CoordProducerContext -HolderId Coordinator -SessionId session-1
+    try {
+      $context.Record.authorizations[0].digest | Should -BeExactly $canonical.Digest
+      { Get-CoordRequestGrant $context $canonical.Request $canonical.Digest } | Should -Throw 'AuthorityConflict'
+    } finally {
+      $context.BoardLease.Dispose()
+      $context.Lease.Dispose()
+    }
+  }
+
   It 'checks Int64 ordinal overflow before persistence' {
     $null = Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false
     $value = [IO.File]::ReadAllText($statePath) | ConvertFrom-Json -AsHashtable -Depth 100
@@ -376,5 +441,65 @@ Describe 'Actual coordination producer under disposable protected custody' -Tag 
     Write-FixtureJson $witnessPath $witness
     Set-FixtureRequest -Id 'request-2'
     { Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false } | Should -Throw '*QueueOrdinalExhausted*'
+  }
+}
+
+Describe 'Successor witness actor retirement validation in memory' -Tag 'C2065SuccessorGuard' {
+  BeforeAll {
+    $sourceRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
+    . (Join-Path $sourceRoot 'private/CoordProducerJson.ps1')
+    . (Join-Path $sourceRoot 'private/CoordProducer.ps1')
+  }
+
+  BeforeEach {
+    $retired = [ordered]@{ holderId = 'coordinator'; sessionId = 'retired-session'; windowsSid = 'fixture-sid'; role = 'Coordinator' }
+    $witness = [ordered]@{
+      actors = @([ordered]@{ holderId = 'coordinator'; sessionId = 'successor-session'; windowsSid = 'fixture-sid'; role = 'Coordinator' })
+      retiredActors = @($retired)
+    }
+  }
+
+  It 'accepts an independent active successor and a historical retired actor' {
+    { Assert-CoordActorRetirement (ConvertTo-CoordElement $witness) 'fixture-sid' } | Should -Not -Throw
+  }
+
+  It 'leaves legacy actor validation to the existing admission path' {
+    $witness.Remove('retiredActors')
+    $witness.actors = 'legacy-input-without-retirement-validation'
+    { Assert-CoordActorRetirement (ConvertTo-CoordElement $witness) 'fixture-sid' } | Should -Not -Throw
+  }
+
+  It 'rejects a retired session reintroduced as <Session> for <Holder>' -ForEach @(
+    @{ Session = 'retired-session'; Holder = 'coordinator' }
+    @{ Session = 'retired-session'; Holder = 'other-holder' }
+    @{ Session = 'RETIRED-SESSION'; Holder = 'other-holder' }
+  ) {
+    $witness.actors[0].sessionId = $Session
+    $witness.actors[0].holderId = $Holder
+    { Assert-CoordActorRetirement (ConvertTo-CoordElement $witness) 'fixture-sid' } | Should -Throw 'RetiredActorConflict'
+  }
+
+  It 'rejects malformed retirement data: <Fault>' -ForEach @(
+    @{ Fault = 'NullList' }; @{ Fault = 'ObjectList' }; @{ Fault = 'NonObjectEntry' }
+    @{ Fault = 'MissingField' }; @{ Fault = 'UnknownField' }; @{ Fault = 'WrongType' }
+    @{ Fault = 'BlankSession' }; @{ Fault = 'WrongSid' }; @{ Fault = 'WrongRole' }
+    @{ Fault = 'DuplicateSessionAlias' }; @{ Fault = 'MalformedActiveSession' }
+  ) {
+    switch ($Fault) {
+      NullList { $witness.retiredActors = $null }
+      ObjectList { $witness.retiredActors = $retired }
+      NonObjectEntry { $witness.retiredActors = @('retired-session') }
+      MissingField { $retired.Remove('holderId') }
+      UnknownField { $retired.extra = 'unsupported' }
+      WrongType { $retired.holderId = 1 }
+      BlankSession { $retired.sessionId = ' ' }
+      WrongSid { $retired.windowsSid = 'other-sid' }
+      WrongRole { $retired.role = 'Admin' }
+      DuplicateSessionAlias {
+        $witness.retiredActors += [ordered]@{ holderId = 'other-holder'; sessionId = 'RETIRED-SESSION'; windowsSid = 'fixture-sid'; role = 'Worker' }
+      }
+      MalformedActiveSession { $witness.actors[0].sessionId = $null }
+    }
+    { Assert-CoordActorRetirement (ConvertTo-CoordElement $witness) 'fixture-sid' } | Should -Throw 'InvalidActorRetirement'
   }
 }

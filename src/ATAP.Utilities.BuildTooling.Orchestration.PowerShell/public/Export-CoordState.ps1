@@ -8,7 +8,7 @@ function Export-CoordState {
   #>
   [CmdletBinding(SupportsShouldProcess)]
   param([Parameter(Mandatory)][string]$HolderId, [Parameter(Mandatory)][string]$SessionId,
-    [Parameter(Mandatory)][string]$DestinationPath)
+    [Parameter(Mandatory)][string]$DestinationPath, [switch]$NoCompression)
   process {
     if (-not $PSCmdlet.ShouldProcess($DestinationPath, 'Export coordination recovery snapshot')) { return }
     $context = $null
@@ -38,11 +38,55 @@ function Export-CoordState {
         observedOutputs = $outputs
       }
       $bytes = ConvertTo-CoordStateBytes $snapshot
+      if ($bytes.Length -gt 67108864) { throw 'BundleByteLimitExceeded' }
+      $bundleDigest = Get-CoordHash $bytes
+      $work = $null
+      if (-not $NoCompression) {
+        $sevenZip = Get-CoordSevenZip
+        $work = Join-Path $root ('.coord-export-' + [guid]::NewGuid().ToString('N'))
+        $null = [IO.Directory]::CreateDirectory($work)
+        [IO.File]::WriteAllBytes((Join-Path $work 'bundle.json'), $bytes)
+        $archivePath = Join-Path $work 'snapshot.zip'
+        $start = [Diagnostics.ProcessStartInfo]::new()
+        $start.FileName = $sevenZip
+        $start.WorkingDirectory = $work
+        $start.UseShellExecute = $false
+        $start.CreateNoWindow = $true
+        $start.RedirectStandardOutput = $true
+        $start.RedirectStandardError = $true
+        foreach ($arg in @('a','-tzip','-mm=Deflate','-mx=5','-mmt=2','-bsp0','-bso0','-bse0','--',$archivePath,'bundle.json')) {
+          $start.ArgumentList.Add($arg)
+        }
+        $process = [Diagnostics.Process]::Start($start)
+        try {
+          $stdout = $process.StandardOutput.ReadToEndAsync()
+          $stderr = $process.StandardError.ReadToEndAsync()
+          if (-not $process.WaitForExit(30000)) {
+            $process.Kill($true)
+            $process.WaitForExit()
+            throw 'SevenZipDeadlineExpired'
+          }
+          $null = $stdout.GetAwaiter().GetResult()
+          $null = $stderr.GetAwaiter().GetResult()
+          if ($process.ExitCode -ne 0) { throw 'SevenZipCompressionFailed' }
+        } finally { $process.Dispose() }
+        if ([IO.FileInfo]::new($archivePath).Length -gt 67108864) { throw 'BundleByteLimitExceeded' }
+        $archiveDigest = (Get-FileHash -LiteralPath $archivePath).Hash
+        $verification = Read-CoordRecoveryBundle -Path $archivePath -ExpectedSha256 $archiveDigest
+        if ($verification.Digest -cne $bundleDigest) { throw 'CompressedExportReadbackFailed' }
+        $bytes = [IO.File]::ReadAllBytes($archivePath)
+      }
       $stream = [IO.File]::Open($path, 'CreateNew', 'Write', 'None')
       try { $stream.Write($bytes, 0, $bytes.Length); $stream.Flush($true) } finally { $stream.Dispose() }
       if ((Get-CoordHash ([IO.File]::ReadAllBytes($path))) -cne (Get-CoordHash $bytes)) { throw 'ExportReadbackFailed' }
       Assert-CoordProtection $path $context.Record.custodianSid
+      if ($work) {
+        [IO.File]::Delete((Join-Path $work 'bundle.json'))
+        [IO.File]::Delete((Join-Path $work 'snapshot.zip'))
+        [IO.Directory]::Delete($work)
+      }
       [pscustomobject]@{ Status = 'Exported'; Path = $path; Digest = Get-CoordHash $bytes
+        BundleDigest = $bundleDigest; Format = $(if ($NoCompression) { 'JSON' } else { 'ZIP' })
         ResourceId = $context.Record.resourceId; LineageId = $context.Record.lineageId }
     } finally {
       if ($context) { $context.BoardLease.Dispose(); $context.Lease.Dispose() }

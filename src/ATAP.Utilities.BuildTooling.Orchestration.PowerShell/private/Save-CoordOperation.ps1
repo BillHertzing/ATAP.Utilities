@@ -21,7 +21,13 @@ function Invoke-CoordOperationFileIo {
           $stream.Flush($true)
         } finally { if ($null -ne $stream) { $stream.Dispose() } }
       }
-      'Replace' { [IO.File]::Replace($StagePath, $StatePath, [NullString]::Value) }
+      'Replace' {
+        if (Get-Command Invoke-CoordHistoryReplace -ErrorAction SilentlyContinue) {
+          Invoke-CoordHistoryReplace -Path $StatePath -StagePath $StagePath
+        } else {
+          [IO.File]::Replace($StagePath, $StatePath, [NullString]::Value)
+        }
+      }
       'ReadBack' { return ,([IO.File]::ReadAllBytes($StatePath)) }
     }
   }

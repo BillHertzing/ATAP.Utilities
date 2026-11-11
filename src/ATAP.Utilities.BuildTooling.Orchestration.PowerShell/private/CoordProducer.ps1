@@ -95,6 +95,45 @@ function Assert-CoordPackageInventory {
   }
 }
 
+function Assert-CoordActorRetirement {
+  param([Text.Json.JsonElement]$Witness, [string]$CustodianSid)
+
+  $retired = [Text.Json.JsonElement]::new()
+  if (-not $Witness.TryGetProperty('retiredActors', [ref]$retired)) { return }
+  $active = [Text.Json.JsonElement]::new()
+  if ($retired.ValueKind -ne [Text.Json.JsonValueKind]::Array -or
+      -not $Witness.TryGetProperty('actors', [ref]$active) -or
+      $active.ValueKind -ne [Text.Json.JsonValueKind]::Array) { throw 'InvalidActorRetirement' }
+
+  $ordinal = [StringComparer]::Ordinal
+  $retiredSessions = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+  foreach ($entry in $retired.EnumerateArray()) {
+    if ($entry.ValueKind -ne [Text.Json.JsonValueKind]::Object -or @($entry.EnumerateObject()).Count -ne 4) {
+      throw 'InvalidActorRetirement'
+    }
+    foreach ($name in @('holderId', 'sessionId', 'windowsSid', 'role')) {
+      $value = [Text.Json.JsonElement]::new()
+      if (-not $entry.TryGetProperty($name, [ref]$value) -or
+          $value.ValueKind -ne [Text.Json.JsonValueKind]::String -or
+          [string]::IsNullOrWhiteSpace($value.GetString())) { throw 'InvalidActorRetirement' }
+    }
+    $role = $entry.GetProperty('role').GetString()
+    if (-not $ordinal.Equals($entry.GetProperty('windowsSid').GetString(), $CustodianSid) -or
+        (-not $ordinal.Equals($role, 'Coordinator') -and -not $ordinal.Equals($role, 'Worker')) -or
+        -not $retiredSessions.Add($entry.GetProperty('sessionId').GetString())) { throw 'InvalidActorRetirement' }
+  }
+
+  foreach ($entry in $active.EnumerateArray()) {
+    $session = [Text.Json.JsonElement]::new()
+    if ($entry.ValueKind -ne [Text.Json.JsonValueKind]::Object -or
+        -not $entry.TryGetProperty('sessionId', [ref]$session) -or
+        $session.ValueKind -ne [Text.Json.JsonValueKind]::String -or
+        [string]::IsNullOrWhiteSpace($session.GetString())) { throw 'InvalidActorRetirement' }
+    if ($retiredSessions.Contains($session.GetString())) { throw 'RetiredActorConflict' }
+  }
+}
+
+
 function Read-CoordProducerContext {
   [CmdletBinding()]
   param([Parameter(Mandatory)][string]$HolderId, [Parameter(Mandatory)][string]$SessionId,
@@ -120,12 +159,18 @@ function Read-CoordProducerContext {
     $recordBytes = [IO.File]::ReadAllBytes($recordPath)
     $record = Read-CoordJsonBytes $recordBytes
     $r = ConvertFrom-CoordElement $record
-    if ($r.schemaVersion -cne 'Coordination-custody-v1' -or $r.admissionMode -cne 'Established' -or $r.custodianSid -cne $sid) {
+    $ordinal = [StringComparer]::Ordinal
+    if ($r.schemaVersion -cne 'Coordination-custody-v1' -or $r.admissionMode -cne 'Established' -or
+        -not $ordinal.Equals($r.custodianSid, $sid)) {
       throw 'CustodyNotEstablished'
     }
-    $actors = @($r.actors | Where-Object { $_.holderId -ceq $HolderId -and $_.sessionId -ceq $SessionId -and $_.windowsSid -ceq $sid })
-    if ($actors.Count -ne 1 -or $actors[0].role -cnotin @('Coordinator', 'Worker') -or
-        ($Role -ne 'Submit' -and $actors[0].role -cne 'Coordinator')) { throw 'ActorNotAuthorized' }
+    Assert-CoordActorRetirement $record $sid
+    $actors = @($r.actors | Where-Object {
+      $ordinal.Equals($_.holderId, $HolderId) -and $ordinal.Equals($_.sessionId, $SessionId) -and $ordinal.Equals($_.windowsSid, $sid)
+    })
+    if ($actors.Count -ne 1) { throw 'ActorNotAuthorized' }
+    if (-not $ordinal.Equals($actors[0].role, 'Coordinator') -and
+        ($Role -ne 'Submit' -or -not $ordinal.Equals($actors[0].role, 'Worker'))) { throw 'ActorNotAuthorized' }
     $statePath = [IO.Path]::GetFullPath($r.statePath)
     if ([IO.Path]::GetDirectoryName($statePath) -ine $stateRoot) { throw 'StateRootConflict' }
     $null = Assert-CoordOrdinaryPath $statePath -MustExist
@@ -143,6 +188,14 @@ function Read-CoordProducerContext {
     $boardLockPath = [IO.Path]::GetFullPath($r.boardLockPath)
     $null = Assert-CoordOrdinaryPath $boardLockPath -MustExist
     $boardLease = [IO.File]::Open($boardLockPath, 'Open', 'ReadWrite', 'None')
+    if (Get-Command Get-CoordRecoveryHistoryRoot -ErrorAction SilentlyContinue) {
+      $historyRoot = Get-CoordRecoveryHistoryRoot
+      if ($historyRoot) {
+        $historyLease = [IO.File]::Open((Join-Path $historyRoot 'history.lock'), 'Open', 'ReadWrite', 'None')
+        try { Assert-CoordRecoveryPair (Read-CoordRecoveryHistory $historyRoot) }
+        finally { $historyLease.Dispose() }
+      }
+    }
     $limits = @{}
     foreach ($name in @('MaxRequestBytes', 'MaxBatchBytes', 'MaxBatchRequests', 'MaxDrainRequests', 'MaxDrainBatches', 'MaxDrainMilliseconds')) {
       $value = Get-CoordSetting ('Orchestration' + $name)
@@ -166,7 +219,11 @@ function Write-CoordAtomicBytes {
   $stage = $Path + '.stage-' + [guid]::NewGuid().ToString('N')
   $f = [IO.File]::Open($stage, 'CreateNew', 'Write', 'None')
   try { $f.Write($Bytes, 0, $Bytes.Length); $f.Flush($true) } finally { $f.Dispose() }
-  [IO.File]::Replace($stage, $Path, [Management.Automation.Language.NullString]::Value)
+  if (Get-Command Invoke-CoordHistoryReplace -ErrorAction SilentlyContinue) {
+    Invoke-CoordHistoryReplace -Path $Path -StagePath $stage
+  } else {
+    [IO.File]::Replace($stage, $Path, [Management.Automation.Language.NullString]::Value)
+  }
   if ((Get-CoordHash ([IO.File]::ReadAllBytes($Path))) -cne (Get-CoordHash $Bytes)) { throw 'PersistenceFailed' }
 }
 
@@ -190,16 +247,23 @@ function Save-CoordProducerState {
 
 function Get-CoordRequestGrant {
   param($Context, [Text.Json.JsonElement]$Request, [string]$Digest)
+  $ordinal = [StringComparer]::Ordinal
   $holder = $Request.GetProperty('holder')
+  $holderId = $holder.GetProperty('holderId').GetString()
+  $sessionId = $holder.GetProperty('sessionId').GetString()
   $registeredHolder = @($Context.Record.actors | Where-Object {
-    $_.holderId -ceq $holder.GetProperty('holderId').GetString() -and
-    $_.sessionId -ceq $holder.GetProperty('sessionId').GetString() -and $_.windowsSid -ceq $Context.Record.custodianSid })
+    $ordinal.Equals($_.holderId, $holderId) -and $ordinal.Equals($_.sessionId, $sessionId) -and
+      $ordinal.Equals($_.windowsSid, $Context.Record.custodianSid)
+  })
   if ($registeredHolder.Count -ne 1) { throw 'AuthorityConflict' }
+  $authorizationReference = $Request.GetProperty('authorizationReference').GetString()
+  $requestId = $Request.GetProperty('requestId').GetString()
   $grant = @($Context.Record.authorizations | Where-Object {
-    $_.reference -ceq $Request.GetProperty('authorizationReference').GetString() -and
-    $_.requestId -ceq $Request.GetProperty('requestId').GetString() -and $_.digest -ceq $Digest })
+    $ordinal.Equals($_.reference, $authorizationReference) -and $ordinal.Equals($_.requestId, $requestId) -and
+      $ordinal.Equals($_.digest, $Digest)
+  })
   if ($grant.Count -ne 1 -or ($Request.GetProperty('category').GetString() -in @('Claim', 'AcceptChange') -and
-      $Context.Actor.role -cne 'Coordinator')) { throw 'AuthorityConflict' }
+      -not $ordinal.Equals($Context.Actor.role, 'Coordinator'))) { throw 'AuthorityConflict' }
   $grant[0]
 }
 

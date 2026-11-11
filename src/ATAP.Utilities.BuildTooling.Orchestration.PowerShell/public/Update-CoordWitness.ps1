@@ -45,12 +45,14 @@ function Update-CoordWitness {
   begin {
     $fn = 'Update-CoordWitness'
     $mn = 'ATAP.Utilities.BuildTooling.Orchestration.PowerShell'
+    $ordinal = [StringComparer]::Ordinal
     function sameBytes([byte[]]$Left, [byte[]]$Right) {
-      [Convert]::ToBase64String($Left) -ceq [Convert]::ToBase64String($Right)
+      $ordinal.Equals([Convert]::ToBase64String($Left), [Convert]::ToBase64String($Right))
     }
     function requiredText([Text.Json.JsonElement]$Object, [string]$Name) {
-      $v = $Object.GetProperty($Name)
-      if ($v.ValueKind -ne [Text.Json.JsonValueKind]::String -or [string]::IsNullOrWhiteSpace($v.GetString())) {
+      $v = [Text.Json.JsonElement]::new()
+      if (-not $Object.TryGetProperty($Name, [ref]$v) -or
+          $v.ValueKind -ne [Text.Json.JsonValueKind]::String -or [string]::IsNullOrWhiteSpace($v.GetString())) {
         throw 'InvalidWitnessDelta'
       }
       return $v.GetString()
@@ -60,18 +62,20 @@ function Update-CoordWitness {
       $requests = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
       foreach ($entry in $Array.EnumerateArray()) {
         if ($entry.ValueKind -ne [Text.Json.JsonValueKind]::Object) { throw 'InvalidWitnessDelta' }
-        $names = @($entry.EnumerateObject() | ForEach-Object { $_.Name })
-        if ($Kind -ceq 'actors') {
-          if ($names.Count -ne 4 -or @($names | Where-Object { $_ -cnotin @('holderId', 'sessionId', 'windowsSid', 'role') }).Count) { throw 'InvalidWitnessDelta' }
+        $propertyCount = @($entry.EnumerateObject()).Count
+        if ($ordinal.Equals($Kind, 'actors')) {
+          if ($propertyCount -ne 4) { throw 'InvalidWitnessDelta' }
           $holder = requiredText $entry 'holderId'; $session = requiredText $entry 'sessionId'
-          if ((requiredText $entry 'windowsSid') -cne $Sid -or (requiredText $entry 'role') -cnotin @('Coordinator', 'Worker')) { throw 'InvalidWitnessDelta' }
+          $role = requiredText $entry 'role'
+          if (-not $ordinal.Equals((requiredText $entry 'windowsSid'), $Sid) -or
+              (-not $ordinal.Equals($role, 'Coordinator') -and -not $ordinal.Equals($role, 'Worker'))) { throw 'InvalidWitnessDelta' }
           # Length prefix avoids tuple collisions even when IDs contain delimiters.
           if (-not $seen.Add($holder.Length.ToString() + ':' + $holder + $session)) { throw 'InvalidWitnessDelta' }
         } else {
-          if ($names.Count -notin @(3, 4) -or @($names | Where-Object { $_ -cnotin @('reference', 'requestId', 'digest', 'claimId') }).Count) { throw 'InvalidWitnessDelta' }
+          if ($propertyCount -notin @(3, 4)) { throw 'InvalidWitnessDelta' }
           $reference = requiredText $entry 'reference'; $request = requiredText $entry 'requestId'
           if ((requiredText $entry 'digest') -cnotmatch '\A[0-9a-f]{64}\z') { throw 'InvalidWitnessDelta' }
-          if ($names -ccontains 'claimId') { $null = requiredText $entry 'claimId' }
+          if ($propertyCount -eq 4) { $null = requiredText $entry 'claimId' }
           if (-not $seen.Add($reference) -or -not $requests.Add($request)) { throw 'InvalidWitnessDelta' }
         }
       }
@@ -98,9 +102,11 @@ function Update-CoordWitness {
       [byte[]]$expected = $ExpectedWitnessBytes.Clone()
       [byte[]]$proposed = $ProposedWitnessBytes.Clone()
       $context = Read-CoordProducerContext -HolderId $HolderId -SessionId $SessionId -Role Export
-      if ($context.Actor.role -cne 'Coordinator' -or $context.Record.coordinatorId -cne $HolderId -or
-          $context.Actor.holderId -cne $HolderId -or $context.Actor.sessionId -cne $SessionId -or
-          $context.Actor.windowsSid -cne $context.Record.custodianSid) { throw 'ActorNotAuthorized' }
+      if (-not $ordinal.Equals($context.Actor.role, 'Coordinator') -or
+          -not $ordinal.Equals($context.Record.coordinatorId, $HolderId) -or
+          -not $ordinal.Equals($context.Actor.holderId, $HolderId) -or
+          -not $ordinal.Equals($context.Actor.sessionId, $SessionId) -or
+          -not $ordinal.Equals($context.Actor.windowsSid, $context.Record.custodianSid)) { throw 'ActorNotAuthorized' }
       if (-not (sameBytes $context.RecordBytes $expected) -or
           -not (sameBytes (Invoke-CoordOperationFileIo -Phase ReadBack -StatePath $context.RecordPath) $expected)) { throw 'SnapshotMismatch' }
       $before = Read-CoordJsonBytes $expected
@@ -118,19 +124,20 @@ function Update-CoordWitness {
       $appends = 0
       for ($i = 0; $i -lt $beforeProperties.Count; $i++) {
         $left = $beforeProperties[$i]; $right = $afterProperties[$i]
-        if ($left.Name -cne $right.Name) { throw 'InvalidWitnessDelta' }
-        if ($left.Name -cin @('actors', 'authorizations')) {
+        if (-not $ordinal.Equals($left.Name, $right.Name)) { throw 'InvalidWitnessDelta' }
+        if ($ordinal.Equals($left.Name, 'actors') -or $ordinal.Equals($left.Name, 'authorizations')) {
           if ($left.Value.ValueKind -ne [Text.Json.JsonValueKind]::Array -or $right.Value.ValueKind -ne [Text.Json.JsonValueKind]::Array) { throw 'InvalidWitnessDelta' }
           checkEntries $right.Value $left.Name $context.Record.custodianSid
           $old = @($left.Value.EnumerateArray()); $new = @($right.Value.EnumerateArray())
           if ($new.Count -eq $old.Count + 1) { $appends++ }
-          elseif ($left.Value.GetRawText() -cne $right.Value.GetRawText()) { throw 'InvalidWitnessDelta' }
+          elseif (-not $ordinal.Equals($left.Value.GetRawText(), $right.Value.GetRawText())) { throw 'InvalidWitnessDelta' }
           for ($j = 0; $j -lt $old.Count; $j++) {
-            if ($old[$j].GetRawText() -cne $new[$j].GetRawText()) { throw 'InvalidWitnessDelta' }
+            if (-not $ordinal.Equals($old[$j].GetRawText(), $new[$j].GetRawText())) { throw 'InvalidWitnessDelta' }
           }
-        } elseif ($left.Value.GetRawText() -cne $right.Value.GetRawText()) { throw 'InvalidWitnessDelta' }
+        } elseif (-not $ordinal.Equals($left.Value.GetRawText(), $right.Value.GetRawText())) { throw 'InvalidWitnessDelta' }
       }
       if ($appends -ne 1) { throw 'InvalidWitnessDelta' }
+      Assert-CoordActorRetirement $after $context.Record.custodianSid
       [byte[]]$stateBytes = Invoke-CoordOperationFileIo -Phase ReadBack -StatePath $context.StatePath
       if (-not (sameBytes $stateBytes $context.StateBytes) -or (Get-CoordHash $stateBytes) -cne $context.Record.stateSha256) { throw 'SnapshotMismatch' }
       $parent = [IO.Path]::GetDirectoryName($context.RecordPath)

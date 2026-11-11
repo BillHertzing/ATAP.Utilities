@@ -444,4 +444,75 @@ Describe 'Established witness single-append update' -Tag 'Unit', 'C1938' {
   }
 }
 
+
+Describe 'Successor witness append guard with in-memory custody' -Tag 'C2065SuccessorGuard' {
+  BeforeEach {
+    $actor = [ordered]@{ holderId = 'coordinator'; sessionId = 'session-1'; windowsSid = 'fixture-sid'; role = 'Coordinator' }
+    $retired = [ordered]@{ holderId = 'old-holder'; sessionId = 'retired-session'; windowsSid = 'fixture-sid'; role = 'Coordinator' }
+    $stateBytes = [Text.Encoding]::UTF8.GetBytes('{"mutationAdmission":{"status":"Admitted"},"requests":[],"preparedOperations":[]}')
+    $record = [ordered]@{
+      custodianSid = 'fixture-sid'; coordinatorId = 'coordinator'; resourceId = 'fixture-resource'
+      lineageId = 'fixture-lineage'; generation = 'fixture-generation'; pendingWrite = $null
+      stateSha256 = Get-CoordHash $stateBytes; actors = @($actor); retiredActors = @($retired); authorizations = @()
+    }
+    $script:context = [pscustomobject]@{
+      Record = $record; Actor = $actor; RecordPath = 'C:/synthetic-c2065/witness.json'; StatePath = 'C:/synthetic-c2065/state.json'
+      RecordBytes = [Text.Encoding]::UTF8.GetBytes((ConvertTo-CoordElement $record).GetRawText())
+      StateBytes = $stateBytes; State = Read-CoordJsonBytes $stateBytes
+      Lease = New-TestLease; BoardLease = New-TestLease
+    }
+    $script:updateId = [guid]::NewGuid()
+
+    Mock -ModuleName $script:testModuleName Read-CoordProducerContext { return $script:context }
+    Mock -ModuleName $script:testModuleName Write-PSFMessage {}
+    Mock -ModuleName $script:testModuleName Assert-CoordProtection {}
+    Mock -ModuleName $script:testModuleName Assert-CoordOrdinaryPath { return $Path }
+    Mock -ModuleName $script:testModuleName Test-Path { return $false }
+    Mock -ModuleName $script:testModuleName Write-CoordAtomicBytes { throw 'UnexpectedAtomicWrite' }
+    Mock -ModuleName $script:testModuleName Invoke-CoordOperationFileIo {
+      if ($Phase -eq 'Stage') { throw 'ReachedSyntheticAuditStage' }
+      if ($Phase -eq 'ReadBack' -and $StatePath -ceq $script:context.RecordPath) { return ,$script:context.RecordBytes }
+      if ($Phase -eq 'ReadBack' -and $StatePath -ceq $script:context.StatePath) { return ,$script:context.StateBytes }
+      throw 'UnexpectedFixtureIo'
+    }
+  }
+
+  It 'refuses a retired session alias before retaining sidecars or writing' {
+    Set-TestCandidate actors ([ordered]@{ holderId = 'another-holder'; sessionId = 'RETIRED-SESSION'; windowsSid = 'fixture-sid'; role = 'Worker' })
+    { Invoke-TestUpdate } | Should -Throw 'RetiredActorConflict'
+    Should -Invoke Invoke-CoordOperationFileIo -Times 0 -Exactly -Scope It -ModuleName $script:testModuleName -ParameterFilter { $Phase -eq 'Stage' }
+    Should -Invoke Write-CoordAtomicBytes -Times 0 -Exactly -Scope It -ModuleName $script:testModuleName
+    $context.Lease.Disposed | Should -BeTrue
+    $context.BoardLease.Disposed | Should -BeTrue
+  }
+
+  It 'keeps the retired roster frozen during ordinary witness append' {
+    Set-TestCandidate
+    $text = [Text.Encoding]::UTF8.GetString($proposed).Replace('retired-session', 'changed-session')
+    $script:proposed = [Text.Encoding]::UTF8.GetBytes($text)
+    { Invoke-TestUpdate } | Should -Throw 'InvalidWitnessDelta'
+    Should -Invoke Invoke-CoordOperationFileIo -Times 0 -Exactly -Scope It -ModuleName $script:testModuleName -ParameterFilter { $Phase -eq 'Stage' }
+    Should -Invoke Write-CoordAtomicBytes -Times 0 -Exactly -Scope It -ModuleName $script:testModuleName
+  }
+
+  It 'refuses U+00AD in the frozen retirement <Part> during an authorization append' -Tag 'C2065SuccessorOrdinalFix' -ForEach @(
+    @{ Part = 'session value'; Token = 'retired-session' }
+    @{ Part = 'property name'; Token = 'retiredActors' }
+  ) {
+    Set-TestCandidate
+    $text = [Text.Encoding]::UTF8.GetString($proposed).Replace($Token, $Token + [char]0x00AD)
+    $script:proposed = [Text.Encoding]::UTF8.GetBytes($text)
+    { Invoke-TestUpdate } | Should -Throw 'InvalidWitnessDelta'
+    Should -Invoke Invoke-CoordOperationFileIo -Times 0 -Exactly -Scope It -ModuleName $script:testModuleName -ParameterFilter { $Phase -eq 'Stage' }
+    Should -Invoke Write-CoordAtomicBytes -Times 0 -Exactly -Scope It -ModuleName $script:testModuleName
+  }
+
+  It 'lets an unrelated actor append with unchanged retirement data reach the audit boundary' {
+    Set-TestCandidate actors ([ordered]@{ holderId = 'worker'; sessionId = 'worker-session'; windowsSid = 'fixture-sid'; role = 'Worker' })
+    { Invoke-TestUpdate } | Should -Throw 'WitnessAuditPersistenceFailed'
+    Should -Invoke Invoke-CoordOperationFileIo -Times 1 -Exactly -Scope It -ModuleName $script:testModuleName -ParameterFilter { $Phase -eq 'Stage' }
+    Should -Invoke Write-CoordAtomicBytes -Times 0 -Exactly -Scope It -ModuleName $script:testModuleName
+  }
+}
+
 }

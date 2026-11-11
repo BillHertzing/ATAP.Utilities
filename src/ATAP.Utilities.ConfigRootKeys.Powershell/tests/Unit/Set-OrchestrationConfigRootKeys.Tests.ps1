@@ -17,6 +17,9 @@ BeforeAll {
     'OrchestrationStateRootPathConfigRootKey' = 'OrchestrationStateRootPath'
     'OrchestrationCustodyRecordPathConfigRootKey' = 'OrchestrationCustodyRecordPath'
     'OrchestrationProtectedBackupRootPathConfigRootKey' = 'OrchestrationProtectedBackupRootPath'
+    'OrchestrationRecoveryHistoryRootPathConfigRootKey' = 'OrchestrationRecoveryHistoryRootPath'
+    'OrchestrationSevenZipPathConfigRootKey' = 'OrchestrationSevenZipPath'
+    'OrchestrationSevenZipSha256ConfigRootKey' = 'OrchestrationSevenZipSha256'
     'OrchestrationBoardLockRootPathConfigRootKey' = 'OrchestrationBoardLockRootPath'
     'OrchestrationBackupPolicyReferenceConfigRootKey' = 'OrchestrationBackupPolicyReference'
     'OrchestrationResourceRegistryPathConfigRootKey' = 'OrchestrationResourceRegistryPath'
@@ -34,10 +37,10 @@ AfterAll {
 Describe 'Orchestration name registration contract' {
   BeforeEach { $global:configRootKeys = @{} }
 
-  It 'registers exactly the seventeen selected literal mappings' {
+  It 'registers exactly the twenty selected literal mappings' {
     Set-OrchestrationConfigRootKeys -Confirm:$false
 
-    $global:configRootKeys.Count | Should -Be 17
+    $global:configRootKeys.Count | Should -Be 20
     foreach ($entry in $script:expected943.GetEnumerator()) {
       $global:configRootKeys.ContainsKey($entry.Key) | Should -BeTrue
       $global:configRootKeys[$entry.Key] | Should -BeExactly $entry.Value
@@ -71,7 +74,7 @@ Describe 'Orchestration name registration contract' {
 
     [object]::ReferenceEquals($global:configRootKeys, $original) | Should -BeTrue
     [object]::ReferenceEquals($global:configRootKeys.Unrelated, $sentinel) | Should -BeTrue
-    $global:configRootKeys.Count | Should -Be 18
+    $global:configRootKeys.Count | Should -Be 21
   }
 
   It 'fills a partial matching registration and is idempotent on repetition' {
@@ -80,7 +83,7 @@ Describe 'Orchestration name registration contract' {
     Set-OrchestrationConfigRootKeys -Confirm:$false
     Set-OrchestrationConfigRootKeys -Confirm:$false
 
-    $global:configRootKeys.Count | Should -Be 17
+    $global:configRootKeys.Count | Should -Be 20
     foreach ($entry in $script:expected943.GetEnumerator()) {
       $global:configRootKeys[$entry.Key] | Should -BeExactly $entry.Value
     }
@@ -164,7 +167,7 @@ Describe 'Comparer-independent orchestration alias preflight' {
     Set-OrchestrationConfigRootKeys -Confirm:$false
     Set-OrchestrationConfigRootKeys -Confirm:$false
 
-    $global:configRootKeys.Count | Should -Be 17
+    $global:configRootKeys.Count | Should -Be 20
     foreach ($entry in $script:expected943.GetEnumerator()) {
       $global:configRootKeys.ContainsKey($entry.Key) | Should -BeTrue
       $global:configRootKeys[$entry.Key] | Should -BeExactly $entry.Value

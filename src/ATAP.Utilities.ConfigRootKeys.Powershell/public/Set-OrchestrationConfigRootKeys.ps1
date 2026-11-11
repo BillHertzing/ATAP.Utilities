@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Registers the seventeen flat orchestration setting-name constants.
+Registers the twenty flat orchestration setting-name constants.
 .DESCRIPTION
 Requires an initialized Hashtable. Checks every existing orchestration mapping
 before adding missing constants, preserves unrelated keys and is idempotent.
@@ -40,6 +40,9 @@ function Set-OrchestrationConfigRootKeys {
       OrchestrationStateRootPathConfigRootKey = 'OrchestrationStateRootPath'
       OrchestrationCustodyRecordPathConfigRootKey = 'OrchestrationCustodyRecordPath'
       OrchestrationProtectedBackupRootPathConfigRootKey = 'OrchestrationProtectedBackupRootPath'
+      OrchestrationRecoveryHistoryRootPathConfigRootKey = 'OrchestrationRecoveryHistoryRootPath'
+      OrchestrationSevenZipPathConfigRootKey = 'OrchestrationSevenZipPath'
+      OrchestrationSevenZipSha256ConfigRootKey = 'OrchestrationSevenZipSha256'
       OrchestrationBoardLockRootPathConfigRootKey = 'OrchestrationBoardLockRootPath'
       OrchestrationBackupPolicyReferenceConfigRootKey = 'OrchestrationBackupPolicyReference'
       OrchestrationResourceRegistryPathConfigRootKey = 'OrchestrationResourceRegistryPath'
@@ -71,7 +74,7 @@ function Set-OrchestrationConfigRootKeys {
           throw "Ambiguous orchestration key spelling: $($entry.Key)"
         }
       }
-      if ($PSCmdlet.ShouldProcess('$global:configRootKeys', 'Register seventeen orchestration name constants')) {
+      if ($PSCmdlet.ShouldProcess('$global:configRootKeys', 'Register twenty orchestration name constants')) {
         foreach ($entry in $mappings.GetEnumerator()) {
           if (-not $keyTable.ContainsKey($entry.Key)) {
             $keyTable.Add($entry.Key, $entry.Value)

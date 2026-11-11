@@ -124,6 +124,11 @@ Describe 'Established witness single-append update' -Tag 'Unit', 'C1938' {
     }
     Refresh-TestContext
     Set-TestCandidate
+    # Admission is a synthetic disposable pair in these unit cases. Isolate its
+    # optional history configuration from the host's protected live history.
+    # Keep the genuine atomic writer and I/O; configured-history behavior is
+    # exercised separately by the recovery integration fixtures.
+    Mock -ModuleName $script:testModuleName Get-CoordRecoveryHistoryRoot { return $null }
     Mock -ModuleName $script:testModuleName Read-CoordProducerContext {
       if ($Role -cne 'Export' -or $AllowPending -or $HolderId -cne 'coordinator' -or $SessionId -cne 'session-1') { throw 'UnexpectedContextAdmission' }
       if ($script:fault -in @('WitnessLock', 'BoardLock')) { throw 'SyntheticLockUnavailable' }

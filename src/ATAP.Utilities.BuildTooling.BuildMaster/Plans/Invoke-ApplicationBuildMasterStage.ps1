@@ -310,18 +310,25 @@ function Invoke-ApplicationBuildMasterStage {
     })
 
     # 4. Bind the admitted database bytes BEFORE any bundler/archive/upload boundary.
-    $databaseAdmission = Get-ApplicationReleaseDatabaseAdmission -ProductId $ProductId
+    $databaseAdmission = Get-ApplicationReleaseDatabaseAdmission -ProductId $ProductId -DatabasePackagePinnedVersion $DatabasePackagePinnedVersion
     if ($DatabasePackageId -cne $databaseAdmission.Id -or $DatabasePackagePinnedVersion -cne $databaseAdmission.PinnedVersion -or
         ($databaseAdmission.CompatibleVersionRange -and $DatabasePackageCompatibleVersionRange -cne $databaseAdmission.CompatibleVersionRange) -or
         ($databaseAdmission.LifecycleCeiling -and $DatabasePackageLifecycleCeiling -cne $databaseAdmission.LifecycleCeiling) -or
         $DatabasePackageLifecycleCeiling -cne $databaseAdmission.Feed) { throw 'Database reference is outside the admitted application release pin.' }
     $applicationCeiling = 'Production'
-    if ($ProductId -ceq 'AceCommander') {
+    if ($ProductId -ceq 'AceCommander' -and $databaseAdmission.PinnedVersion -ceq '0.1.19-Sprint.1') {
       if ($databaseAdmission.Id -cne 'ATAPUtilities.Database' -or $databaseAdmission.PinnedVersion -cne '0.1.19-Sprint.1' -or
           $databaseAdmission.CompatibleVersionRange -cne '[0.1.19-Sprint.1]' -or $databaseAdmission.LifecycleCeiling -cne 'database-experimental' -or
           $databaseAdmission.Feed -cne 'database-experimental' -or
           $databaseAdmission.NupkgSha256 -ine 'BA6ACB51DA41103D52A99C676096E9F1A35BBD1C9A4016F99633D96CE7828A2D') { throw 'AceCommander requires the exact source-adopted Experimental database admission.' }
       $applicationCeiling = 'Experimental'
+    } elseif ($ProductId -ceq 'AceCommander') {
+      if ($databaseAdmission.Id -cne 'ATAPUtilities.Database' -or $databaseAdmission.PinnedVersion -cne '0.1.20' -or
+          $databaseAdmission.CompatibleVersionRange -cne '[0.1.20]' -or $databaseAdmission.LifecycleCeiling -cne 'database-stable' -or
+          $databaseAdmission.Feed -cne 'database-stable' -or
+          $databaseAdmission.NupkgSha256 -ine '33850F533FA266705EC017778BD45A35E9067CC57860E798139992C3C674CFF7') {
+        throw 'AceCommander requires the exact source-adopted Production database admission.'
+      }
     }
     if ($databaseAdmission.NupkgSha256 -and $databaseAdmission.NupkgSha256 -notmatch '\A[0-9a-fA-F]{64}\z') { throw 'Invalid admitted database package hash.' }
     $baseUrl = $ProGetUrl.TrimEnd('/')

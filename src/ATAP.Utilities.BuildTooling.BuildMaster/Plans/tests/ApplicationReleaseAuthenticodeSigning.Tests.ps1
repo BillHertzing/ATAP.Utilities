@@ -19,6 +19,32 @@ BeforeAll {
 
 Describe 'ApplicationReleaseAuthenticodeSigning boundary (Task 15.196.q, q.1)' {
   Context 'database admission' -Tag 'Admission1729' {
+    It 'selects the exact published Commander 020 digest and required stable lifecycle' {
+      $admission = Get-ApplicationReleaseDatabaseAdmission -ProductId AceCommander -DatabasePackagePinnedVersion '0.1.20'
+      $admission.Id | Should -BeExactly 'ATAPUtilities.Database'
+      $admission.PinnedVersion | Should -BeExactly '0.1.20'
+      $admission.CompatibleVersionRange | Should -BeExactly '[0.1.20]'
+      $admission.Feed | Should -BeExactly 'database-stable'
+      $admission.LifecycleCeiling | Should -BeExactly 'database-stable'
+      $admission.NupkgSha256 | Should -BeExactly '33850F533FA266705EC017778BD45A35E9067CC57860E798139992C3C674CFF7'
+      (Get-ApplicationReleaseDatabaseAdmission -ProductId AceCommander -DatabasePackagePinnedVersion '0.1.19-Sprint.1').Feed | Should -BeExactly 'database-experimental'
+      (Get-ApplicationReleaseDatabaseAdmission -ProductId AceOutpost -DatabasePackagePinnedVersion '0.1.17').PinnedVersion | Should -BeExactly '0.1.17'
+    }
+    It 'refuses the explicit selector variant <Label> instead of falling back' -ForEach @(
+      @{ Label='null'; Product='AceCommander'; Selector=$null },
+      @{ Label='empty'; Product='AceCommander'; Selector='' },
+      @{ Label='whitespace'; Product='AceCommander'; Selector=' ' },
+      @{ Label='leading whitespace'; Product='AceCommander'; Selector=' 0.1.20' },
+      @{ Label='trailing whitespace'; Product='AceCommander'; Selector='0.1.20 ' },
+      @{ Label='NUL suffix'; Product='AceCommander'; Selector=('0.1.20' + [char]0) },
+      @{ Label='soft hyphen suffix'; Product='AceCommander'; Selector=('0.1.20' + [char]0x00AD) },
+      @{ Label='unknown'; Product='AceCommander'; Selector='0.1.21' },
+      @{ Label='version case'; Product='AceCommander'; Selector='0.1.19-sprint.1' },
+      @{ Label='product case'; Product='acecommander'; Selector='0.1.20' },
+      @{ Label='cross product'; Product='AceOutpost'; Selector='0.1.20' }
+    ) {
+      { Get-ApplicationReleaseDatabaseAdmission -ProductId $Product -DatabasePackagePinnedVersion $Selector } | Should -Throw '*no admitted release database pin*'
+    }
     It 'returns only the selected AceCommander experimental database tuple' {
       $admission = Get-ApplicationReleaseDatabaseAdmission -ProductId 'AceCommander'
       $admission.ProductId | Should -BeExactly 'AceCommander'

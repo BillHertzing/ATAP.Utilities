@@ -365,13 +365,20 @@ Describe 'Database bytes are admitted before the immutable application boundary'
     $contextText = [regex]::Match($script:RunnerText, '(?s)(\$contextDatabaseReference = \$databaseReference.Clone\(\).*?)(?=    \$context =)').Groups[1].Value
     if (-not $contextText) { throw 'Expected the production outer-context reference block.' }
     $script:DatabaseContextFragment = [scriptblock]::Create($contextText)
-    function Get-ApplicationReleaseDatabaseAdmission { param($ProductId) $script:dbAdmission }
+    function Get-ApplicationReleaseDatabaseAdmission { param($ProductId, $DatabasePackagePinnedVersion) $script:dbAdmission }
     function Get-SecretATAP { param($SecretName, $SecretStoreType) throw 'Unmocked secret resolution prohibited.' }
     function Invoke-DatabaseBoundaryFixture {
       # Execute the actual parser/binding and parameter code, with no production bundler loaded.
       $ProductId = 'AceCommander'; $DatabasePackageId = 'ATAPUtilities.Database'
       $DatabasePackagePinnedVersion = '0.1.19-Sprint.1'; $DatabasePackageCompatibleVersionRange = '[0.1.19-Sprint.1]'
       $DatabasePackageLifecycleCeiling = 'database-experimental'
+      if ($script:dbProduction) {
+        $DatabasePackagePinnedVersion = '0.1.20'; $DatabasePackageCompatibleVersionRange = '[0.1.20]'
+        $DatabasePackageLifecycleCeiling = 'database-stable'
+      }
+      if ($script:dbVariant -eq 'WrongRange') { $DatabasePackageCompatibleVersionRange = '[0.1.20,0.1.21)' }
+      if ($script:dbVariant -eq 'WrongLifecycle') { $DatabasePackageLifecycleCeiling = 'database-experimental' }
+      if ($script:dbVariant -eq 'WrongReferenceId') { $DatabasePackageId = 'Other.Database' }
       if ($script:dbVariant -eq 'WrongReference') { $DatabasePackagePinnedVersion = '0.1.6' }
       if ($script:dbVariant -eq 'RetiredReference') {
         $DatabasePackagePinnedVersion = '0.1.18-Sprint.1'
@@ -403,6 +410,12 @@ Describe 'Database bytes are admitted before the immutable application boundary'
         finally { $writer.Dispose() }
       } finally { $zip.Dispose() }
     }
+    function Set-ProductionDatabaseFixture {
+      $script:dbProduction = $true
+      Remove-Item -LiteralPath $script:dbPackage -Force
+      Write-DatabaseFixturePackage $script:dbPackage 'ATAPUtilities.Database' '0.1.20'
+      $script:dbAdmission = [pscustomobject]@{ Id='ATAPUtilities.Database'; PinnedVersion='0.1.20'; CompatibleVersionRange='[0.1.20]'; LifecycleCeiling='database-stable'; Feed='database-stable'; NupkgSha256='33850F533FA266705EC017778BD45A35E9067CC57860E798139992C3C674CFF7' }
+    }
   }
   BeforeEach {
     $script:dbFixture = Join-Path $script:FixtureRoot ('database_' + [guid]::NewGuid().ToString('N'))
@@ -410,13 +423,14 @@ Describe 'Database bytes are admitted before the immutable application boundary'
     $script:dbPackage = Join-Path $script:dbFixture 'synthetic.nupkg'
     Write-DatabaseFixturePackage $script:dbPackage 'ATAPUtilities.Database' '0.1.19-Sprint.1'
     $script:dbAdmission = [pscustomobject]@{ Id = 'ATAPUtilities.Database'; PinnedVersion = '0.1.19-Sprint.1'; CompatibleVersionRange = '[0.1.19-Sprint.1]'; LifecycleCeiling = 'database-experimental'; Feed = 'database-experimental'; NupkgSha256 = 'BA6ACB51DA41103D52A99C676096E9F1A35BBD1C9A4016F99633D96CE7828A2D' }
+    $script:dbProduction = $false
     $script:dbVariant = ''; $script:dbEvents = [Collections.Generic.List[string]]::new()
     $script:dbBundlerCalls = 0; $script:dbArchiveCalls = 0; $script:dbUploadCalls = 0
     Mock Get-ApplicationReleaseDatabaseAdmission { $script:dbAdmission }
     Mock Get-SecretATAP { 'SYNTHETIC-NOT-A-CREDENTIAL' }
     Mock Invoke-WebRequest {
       $script:dbEvents.Add('download')
-      $Uri | Should -BeExactly 'https://example.invalid/nuget/database-experimental/v3/flatcontainer/ataputilities.database/0.1.19-Sprint.1/ataputilities.database.0.1.19-Sprint.1.nupkg'
+      $Uri | Should -BeExactly "https://example.invalid/nuget/$($script:dbAdmission.Feed)/v3/flatcontainer/ataputilities.database/$($script:dbAdmission.PinnedVersion)/ataputilities.database.$($script:dbAdmission.PinnedVersion).nupkg"
       if ($script:dbVariant -ne 'MissingPackage') { Copy-Item -LiteralPath $script:dbPackage -Destination $OutFile -Force }
     }
     Mock Get-FileHash {
@@ -433,6 +447,35 @@ Describe 'Database bytes are admitted before the immutable application boundary'
   }
   AfterEach { Remove-StageFixture -Path $script:dbFixture }
 
+  It 'binds exact 020 stable bytes and passes a Production ceiling to the bundler and context' {
+    Set-ProductionDatabaseFixture
+    $actual = Invoke-DatabaseBoundaryFixture
+    $actual.Ceiling | Should -BeExactly 'Production'
+    $actual.Parameters.CeilingTier | Should -BeExactly 'Production'
+    $actual.ContextReference.pinnedVersion | Should -BeExactly '0.1.20'
+    $actual.ContextReference.feed | Should -BeExactly 'database-stable'
+    $actual.ContextReference.nupkgSha256 | Should -BeExactly $script:dbAdmission.NupkgSha256.ToLowerInvariant()
+    ($script:dbEvents -join ',') | Should -BeExactly 'download,hash,bundler,archive,upload'
+    Should -Invoke Get-ApplicationReleaseDatabaseAdmission -Times 1 -Exactly -ParameterFilter { $ProductId -ceq 'AceCommander' -and $DatabasePackagePinnedVersion -ceq '0.1.20' }
+  }
+  It 'refuses Production database variant <Variant> before bundle/archive/upload' -ForEach @(
+    @{Variant='WrongRange'}, @{Variant='WrongLifecycle'}, @{Variant='WrongReferenceId'},
+    @{Variant='MissingAdmissionHash'}, @{Variant='WrongHash'}, @{Variant='MissingPackage'},
+    @{Variant='WrongFeed'}, @{Variant='WrongIdentity'}, @{Variant='WrongVersion'}
+  ) {
+    Set-ProductionDatabaseFixture
+    $script:dbVariant = $Variant
+    if ($Variant -eq 'MissingAdmissionHash') { $script:dbAdmission.NupkgSha256 = $null }
+    if ($Variant -eq 'WrongFeed') { $script:dbAdmission.Feed = 'database-experimental' }
+    if ($Variant -in @('WrongIdentity','WrongVersion')) {
+      Remove-Item -LiteralPath $script:dbPackage -Force
+      $id = if ($Variant -eq 'WrongIdentity') { 'Other.Database' } else { 'ATAPUtilities.Database' }
+      $version = if ($Variant -eq 'WrongVersion') { '0.1.19-Sprint.1' } else { '0.1.20' }
+      Write-DatabaseFixturePackage $script:dbPackage $id $version
+    }
+    { Invoke-DatabaseBoundaryFixture } | Should -Throw
+    $script:dbBundlerCalls | Should -Be 0; $script:dbArchiveCalls | Should -Be 0; $script:dbUploadCalls | Should -Be 0
+  }
   It 'binds before bundle/archive/upload and keeps the manifest reference closed' {
     $actual = Invoke-DatabaseBoundaryFixture
     ($script:dbEvents -join ',') | Should -BeExactly 'download,hash,bundler,archive,upload'

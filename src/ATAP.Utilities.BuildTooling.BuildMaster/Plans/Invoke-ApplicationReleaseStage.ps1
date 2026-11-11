@@ -90,17 +90,21 @@ function Invoke-ApplicationReleaseStage {
     if ((Get-FileHash -LiteralPath $ContextPath -Algorithm SHA256).Hash -ine $ExpectedContextSha256) { throw 'Release context hash mismatch.' }
     $context = Get-Content -LiteralPath $ContextPath -Raw | ConvertFrom-Json
     $productId = [string]$context.productId
+    $contextDatabase = if ($context.PSObject.Properties['databasePackageReference']) { $context.databasePackageReference } else { $null }
+    $databaseSelector = @{}
+    if ($null -ne $contextDatabase -and $contextDatabase.PSObject.Properties['pinnedVersion']) {
+      $databaseSelector.DatabasePackagePinnedVersion = [string]$contextDatabase.pinnedVersion
+    }
     # Evaluate the approval boundary in a child scope so its Set-StrictMode does not leak here.
     $boundaryPath = Join-Path $PSScriptRoot 'ApplicationReleaseAuthenticodeSigning.ps1'
     $databaseAdmission = & {
-      param($Path, $Product)
+      param($Path, $Product, $Selector)
       . $Path
       $null = Get-ApplicationReleaseAuthenticodeContract -ProductId $Product
-      Get-ApplicationReleaseDatabaseAdmission -ProductId $Product
-    } $boundaryPath $productId
+      Get-ApplicationReleaseDatabaseAdmission -ProductId $Product @Selector
+    } $boundaryPath $productId $databaseSelector
     # Stable SemVer only; build metadata is allowed because ProGet keys universal packages by the base version.
     $versionMatch = [regex]::Match([string]$context.version, '\A(?<base>(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*))(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?\z')
-    $contextDatabase = if ($context.PSObject.Properties['databasePackageReference']) { $context.databasePackageReference } else { $null }
     # Unit 845: this exact dependency cannot enter the legacy Production-ceiling path,
     # even if a caller changes its context ceiling or omits the context reference.
     $experimentalCommander = $productId -ceq 'AceCommander' -and (
@@ -119,6 +123,18 @@ function Invoke-ApplicationReleaseStage {
         throw 'AceCommander experimental database requires the exact adopted context reference, feed, hash, and Experimental ceiling.'
       }
       if ($Stage -cne 'Experimental') { throw 'AceCommander experimental database dependency permits only the Experimental stage.' }
+    }
+    if ($productId -ceq 'AceCommander' -and -not $experimentalCommander) {
+      if ($null -eq $contextDatabase -or
+          $databaseAdmission.PinnedVersion -cne '0.1.20' -or
+          [string]$contextDatabase.id -cne $databaseAdmission.Id -or
+          [string]$contextDatabase.pinnedVersion -cne $databaseAdmission.PinnedVersion -or
+          [string]$contextDatabase.compatibleVersionRange -cne $databaseAdmission.CompatibleVersionRange -or
+          [string]$contextDatabase.lifecycleCeiling -cne $databaseAdmission.LifecycleCeiling -or
+          [string]$contextDatabase.feed -cne $databaseAdmission.Feed -or
+          [string]$contextDatabase.nupkgSha256 -ine $databaseAdmission.NupkgSha256) {
+        throw 'AceCommander Production requires the exact source-adopted database context reference, feed, and hash.'
+      }
     }
     if (-not $versionMatch.Success -or (-not $experimentalCommander -and $context.ceilingTier -cne 'Production')) { throw "Expected a stable $productId Production-ceiling context (or its exact admitted Experimental-only dependency)." }
     $feedVersion = $versionMatch.Groups['base'].Value

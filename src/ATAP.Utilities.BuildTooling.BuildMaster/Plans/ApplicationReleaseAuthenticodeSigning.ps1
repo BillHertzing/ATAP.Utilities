@@ -188,18 +188,38 @@ function Get-ApplicationReleaseDatabaseAdmission {
     hash comes from the hash-approved release context, which the build runner records from the
     feed bytes at build time; a non-null value additionally pins it. The Feed is the NuGet feed
     the release stage re-downloads the package from at every tier.
+  .PARAMETER DatabasePackagePinnedVersion
+    Selects one exact source-admitted version. Omission retains the historical
+    product default; explicitly blank, unknown, or differently cased values fail.
+    Admission does not prove that the package has reached its required feed.
   #>
   [CmdletBinding()]
   [OutputType([pscustomobject])]
-  param([Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ProductId)
+  param(
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ProductId,
+    [AllowNull()][AllowEmptyString()][string]$DatabasePackagePinnedVersion
+  )
 
   $admissions = @(
     [pscustomobject]@{ ProductId = 'AceOutpost'; Id = 'ATAPUtilities.Database'; PinnedVersion = '0.1.17'; CompatibleVersionRange = '[0.1.17,0.1.18)'; LifecycleCeiling = 'database-stable'; Feed = 'database-stable'; NupkgSha256 = $null }
     [pscustomobject]@{ ProductId = 'AceCommander'; Id = 'ATAPUtilities.Database'; PinnedVersion = '0.1.19-Sprint.1'; CompatibleVersionRange = '[0.1.19-Sprint.1]'; LifecycleCeiling = 'database-experimental'; Feed = 'database-experimental'; NupkgSha256 = 'BA6ACB51DA41103D52A99C676096E9F1A35BBD1C9A4016F99633D96CE7828A2D' }
+    [pscustomobject]@{ ProductId = 'AceCommander'; Id = 'ATAPUtilities.Database'; PinnedVersion = '0.1.20'; CompatibleVersionRange = '[0.1.20]'; LifecycleCeiling = 'database-stable'; Feed = 'database-stable'; NupkgSha256 = '33850F533FA266705EC017778BD45A35E9067CC57860E798139992C3C674CFF7' }
   )
-  $match = @($admissions | Where-Object { $_.ProductId -ceq $ProductId })
+  # Omission preserves legacy callers; an explicitly empty or unknown selector
+  # must never fall back to an older, less restrictive database contract.
+  $selectedVersion = if ($PSBoundParameters.ContainsKey('DatabasePackagePinnedVersion')) {
+    $DatabasePackagePinnedVersion
+  } elseif ([string]::Equals($ProductId, 'AceCommander', [StringComparison]::Ordinal)) {
+    '0.1.19-Sprint.1'
+  } else {
+    '0.1.17'
+  }
+  $match = @($admissions | Where-Object {
+    [string]::Equals($_.ProductId, $ProductId, [StringComparison]::Ordinal) -and
+    [string]::Equals($_.PinnedVersion, $selectedVersion, [StringComparison]::Ordinal)
+  })
   if ($match.Count -ne 1) {
-    throw "Product '$ProductId' has no admitted release database pin. Admitted: $(($admissions | ForEach-Object ProductId) -join ', ')."
+    throw "Product '$ProductId' has no admitted release database pin for version '$selectedVersion'."
   }
   return $match[0]
 }

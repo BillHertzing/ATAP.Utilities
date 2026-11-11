@@ -1,7 +1,7 @@
 BeforeAll {
   . (Join-Path $PSScriptRoot '../Invoke-ApplicationReleaseStage.ps1')
   function New-ReleaseContextFixture {
-    param([string]$ProductId = 'AceCommander', [string]$Version = '0.1.1')
+    param([string]$ProductId = 'AceCommander', [string]$Version = '0.1.1', [switch]$ProductionDatabase)
     # Same Dropbox exclusion as New-ReleaseBundle.Tests.ps1: fixtures written under a
     # Dropbox-synced path can be locked by the indexer between write and reopen.
     $fixtureBase = if ($env:ARTIFACTS_PATH) { Join-Path $env:ARTIFACTS_PATH 'test-fixtures/ApplicationReleaseStage' }
@@ -26,6 +26,10 @@ BeforeAll {
     if ($ProductId -ceq 'AceCommander') {
       $context.ceilingTier = 'Experimental'
       $context.databasePackageReference = [ordered]@{ id='ATAPUtilities.Database'; pinnedVersion='0.1.19-Sprint.1'; compatibleVersionRange='[0.1.19-Sprint.1]'; lifecycleCeiling='database-experimental'; feed='database-experimental'; nupkgSha256='BA6ACB51DA41103D52A99C676096E9F1A35BBD1C9A4016F99633D96CE7828A2D' }
+      if ($ProductionDatabase) {
+        $context.ceilingTier = 'Production'
+        $context.databasePackageReference = [ordered]@{ id='ATAPUtilities.Database'; pinnedVersion='0.1.20'; compatibleVersionRange='[0.1.20]'; lifecycleCeiling='database-stable'; feed='database-stable'; nupkgSha256='33850F533FA266705EC017778BD45A35E9067CC57860E798139992C3C674CFF7' }
+      }
     }
     $path = Join-Path $root 'context.json'
     $context | ConvertTo-Json -Depth 5 | Set-Content $path
@@ -204,7 +208,8 @@ Describe 'Task 16.78 generalized product admission' {
   ) {
     $fixture = New-ReleaseContextFixture -ProductId AceOutpost -Version '0.1.16'
     $fixture.Context.databasePackageReference[$Field] = $Value; Save-FixtureContext $fixture
-    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 -WhatIf } | Should -Throw '*outside the admitted AceOutpost release pin*'
+    $expected = if ($Field -eq 'pinnedVersion') { '*no admitted release database pin*' } else { '*outside the admitted AceOutpost release pin*' }
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 -WhatIf } | Should -Throw $expected
   }
   It 'refuses an AceOutpost context without a hash-approved database package hash' {
     $fixture = New-ReleaseContextFixture -ProductId AceOutpost -Version '0.1.16'
@@ -259,7 +264,7 @@ Describe 'Unit 845 exact Experimental-only AceCommander database dependency' -Ta
     $fixture.Context.databasePackageReference.compatibleVersionRange = '[0.1.18-Sprint.1]'
     $fixture.Context.databasePackageReference.nupkgSha256 = '789CC87195813DE4B40ED0A2AD4AB0DC9B2520F06149DC914D9C92216CD3269B'
     Save-FixtureContext $fixture
-    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 } | Should -Throw '*exact adopted context*'
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 } | Should -Throw '*no admitted release database pin*'
     Test-Path $fixture.Context.evidenceRoot | Should -BeFalse
   }
   It 'refuses the candidate before any effects in <Stage>' -ForEach @(
@@ -280,7 +285,8 @@ Describe 'Unit 845 exact Experimental-only AceCommander database dependency' -Ta
   ) {
     $fixture = New-ReleaseContextFixture
     $fixture.Context.databasePackageReference[$Field] = $Value; Save-FixtureContext $fixture
-    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 } | Should -Throw '*exact adopted context*'
+    $expected = if ($Field -eq 'pinnedVersion') { '*no admitted release database pin*' } else { '*exact adopted context*' }
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 } | Should -Throw $expected
     Test-Path $fixture.Context.evidenceRoot | Should -BeFalse
   }
   It 'refuses a missing context binding: <Field>' -ForEach @(
@@ -316,5 +322,129 @@ Describe 'Unit 845 exact Experimental-only AceCommander database dependency' -Ta
   It 'retains AceOutpost Production-ceiling admission' {
     $fixture = New-ReleaseContextFixture -ProductId AceOutpost
     { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 -WhatIf } | Should -Not -Throw
+  }
+}
+
+Describe 'Exact 020 Commander Production context preparation' -Tag 'Admission020' {
+  BeforeEach {
+    Mock Import-Module { throw 'Unexpected module import' }
+    Mock Resolve-ApplicationReleaseSecret { throw 'Unexpected secret lookup' }
+    Mock Invoke-WebRequest { throw 'Unexpected download' }
+    Mock Invoke-RestMethod { throw 'Unexpected upload or promotion' }
+    Mock Start-Transcript { throw 'Unexpected transcript' }
+  }
+  AfterEach {
+    Should -Invoke Import-Module -Times 0 -Exactly
+    Should -Invoke Resolve-ApplicationReleaseSecret -Times 0 -Exactly
+    Should -Invoke Invoke-WebRequest -Times 0 -Exactly
+    Should -Invoke Invoke-RestMethod -Times 0 -Exactly
+    Should -Invoke Start-Transcript -Times 0 -Exactly
+  }
+  It 'requires the immediately preceding matching receipt for each tier in order' {
+    $fixture = New-ReleaseContextFixture -ProductionDatabase -Version '0.1.13+23b039f0e2'
+    $tiers = @('Experimental','Development','Integration','QA','Production')
+    $runRoot = Join-Path $fixture.Context.evidenceRoot '42'
+    for ($index=0; $index -lt $tiers.Count; $index++) {
+      $stage = $tiers[$index]
+      if ($index -gt 0) {
+        { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash $stage 42 -WhatIf } | Should -Throw
+        [IO.Directory]::CreateDirectory($runRoot) | Out-Null
+        @{success=$true; contextSha256=$fixture.Hash; bundleSha256=$fixture.Context.bundleSha256; buildId='42';stage=$tiers[$index-1]} | ConvertTo-Json | Set-Content (Join-Path $runRoot ($tiers[$index-1]+'.json'))
+      }
+      { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash $stage 42 -WhatIf } | Should -Not -Throw
+    }
+  }
+  It 'refuses changed Production context field <Field> before effects' -ForEach @(
+    @{Field='id';Value='Other.Database'}, @{Field='pinnedVersion';Value='0.1.21'},
+    @{Field='pinnedVersion';Value=''}, @{Field='compatibleVersionRange';Value='[0.1.20,0.1.21)'},
+    @{Field='lifecycleCeiling';Value='database-experimental'}, @{Field='feed';Value='database-experimental'},
+    @{Field='nupkgSha256';Value=('a'*64)}
+  ) {
+    $fixture = New-ReleaseContextFixture -ProductionDatabase
+    $fixture.Context.databasePackageReference[$Field]=$Value; Save-FixtureContext $fixture
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 } | Should -Throw
+    Test-Path $fixture.Context.evidenceRoot | Should -BeFalse
+  }
+  It 'refuses missing Production binding <Field> before effects' -ForEach @(
+    @{Field='id'}, @{Field='pinnedVersion'}, @{Field='compatibleVersionRange'},
+    @{Field='lifecycleCeiling'}, @{Field='feed'}, @{Field='nupkgSha256'}
+  ) {
+    $fixture = New-ReleaseContextFixture -ProductionDatabase
+    $fixture.Context.databasePackageReference.Remove($Field); Save-FixtureContext $fixture
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 } | Should -Throw
+    Test-Path $fixture.Context.evidenceRoot | Should -BeFalse
+  }
+  It 'refuses a missing reference or changed ceiling instead of inheriting Production' {
+    $fixture = New-ReleaseContextFixture -ProductionDatabase
+    $fixture.Context.Remove('databasePackageReference'); Save-FixtureContext $fixture
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 } | Should -Throw
+    $fixture = New-ReleaseContextFixture -ProductionDatabase
+    $fixture.Context.ceilingTier='Experimental'; Save-FixtureContext $fixture
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 } | Should -Throw
+  }
+}
+
+Describe 'Exact 020 stable feed remains an actual release gate' -Tag 'Admission020' {
+  BeforeAll {
+    function New-ReleaseBundle { param($BundlePath,$VerificationPath,$ManifestSchema) throw 'Unmocked verifier prohibited' }
+  }
+  BeforeEach {
+    $script:release020Fixture=New-ReleaseContextFixture -ProductionDatabase -Version '0.1.13+23b039f0e2'
+    $script:release020Variant=''
+    $script:release020Settings=$global:settings; $script:release020Keys=$global:configRootKeys
+    $global:configRootKeys=@{ServicePlacementMapConfigRootKey='Placement'}
+    $global:settings=@{Placement=@{ProGet='utat022'}}
+    Mock Import-Module { }
+    Mock Write-PSFMessage { }
+    Mock Start-Transcript { }
+    Mock Stop-Transcript { }
+    Mock Resolve-ApplicationReleaseSecret { 'SYNTHETIC-NOT-A-CREDENTIAL' }
+    Mock Invoke-RestMethod { throw 'Unexpected upload/promotion in already-present fixture' }
+    Mock New-ReleaseBundle {
+      [IO.Directory]::CreateDirectory($VerificationPath) | Out-Null
+      @{databasePackageReference=$script:release020Fixture.Context.databasePackageReference; applicationProvenance=@{root=@{qualityTier='Production';version='0.1.13.1+23b039f0e2'};components=@()}} | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $VerificationPath 'manifest.json')
+      [pscustomobject]@{ProductId='AceCommander';BundleVersion=$script:release020Fixture.Context.version;VerificationPath=[IO.DirectoryInfo]::new($VerificationPath);VerifiedEntryCount=1}
+    }
+    Mock Invoke-WebRequest {
+      if ($Uri -like '*/nuget/*') {
+        $Uri | Should -BeExactly 'https://utat022:50000/nuget/database-stable/v3/flatcontainer/ataputilities.database/0.1.20/ataputilities.database.0.1.20.nupkg'
+        if ($script:release020Variant -eq 'MissingStable') { throw 'Synthetic required stable package missing' }
+        Set-Content -LiteralPath $OutFile 'synthetic database bytes'
+      } else {
+        Copy-Item -LiteralPath $script:release020Fixture.Context.bundlePath -Destination $OutFile
+      }
+    }
+    Mock Get-FileHash {
+      $selectedPath = if ($LiteralPath) { [string]@($LiteralPath)[0] } else { [string]@($Path)[0] }
+      [pscustomobject]@{Hash=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([IO.File]::ReadAllBytes($selectedPath)))}
+    }
+    Mock Get-FileHash {
+      [pscustomobject]@{Hash=if($script:release020Variant -eq 'WrongStableBytes'){'A'*64}else{'33850F533FA266705EC017778BD45A35E9067CC57860E798139992C3C674CFF7'}}
+    } -ParameterFilter { [IO.Path]::GetFileName($LiteralPath) -ceq 'database-reference.nupkg' }
+  }
+  AfterEach {
+    $global:settings=$script:release020Settings; $global:configRootKeys=$script:release020Keys
+    Should -Invoke Invoke-RestMethod -Times 0 -Exactly
+  }
+  It 're-downloads the exact stable database at all five ordered idempotent stages' {
+    $fixture=$script:release020Fixture
+    foreach ($stage in @('Experimental','Development','Integration','QA','Production')) {
+      $receipt=Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash $stage 42 -Confirm:$false
+      $receipt.success | Should -BeTrue
+      $receipt.stage | Should -BeExactly $stage
+      $receipt.databaseReferenceVerified | Should -BeTrue
+      $receipt.databaseApplied | Should -BeFalse
+    }
+    Should -Invoke Invoke-WebRequest -Times 5 -Exactly -ParameterFilter { $Uri -like '*/nuget/database-stable/*' }
+  }
+  It 'refuses <Variant> before publishing any application or writing a success receipt' -ForEach @(
+    @{Variant='MissingStable'}, @{Variant='WrongStableBytes'}
+  ) {
+    $script:release020Variant=$Variant; $fixture=$script:release020Fixture
+    $expected = if ($Variant -eq 'MissingStable') { '*Release download failed*' } else { '*Downloaded artifact hash conflicts*' }
+    { Invoke-ApplicationReleaseStage $fixture.Path $fixture.Hash Experimental 42 -Confirm:$false } | Should -Throw $expected
+    Test-Path (Join-Path $fixture.Context.evidenceRoot '42/Experimental.json') | Should -BeFalse
+    Should -Invoke Invoke-WebRequest -Times 1 -Exactly -ParameterFilter { $Uri -like '*/nuget/database-stable/*' }
+    Should -Invoke Invoke-WebRequest -Times 0 -Exactly -ParameterFilter { $Uri -like '*/upack/*' }
   }
 }

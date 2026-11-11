@@ -1,14 +1,63 @@
+BeforeDiscovery {
+  $sourceRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
+  $moduleName = 'ATAP.Utilities.BuildTooling.Orchestration.PowerShell'
+  $promoted = [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'Process')
+  $sourceManifest = Join-Path $sourceRoot ($moduleName + '.psd1')
+  $manifest = if ($null -eq $promoted) { $sourceManifest } else { $promoted }
+  if ([string]::IsNullOrWhiteSpace($manifest) -or -not [IO.Path]::IsPathFullyQualified($manifest) -or
+      [Management.Automation.WildcardPattern]::ContainsWildcardCharacters($manifest) -or
+      -not [string]::Equals([IO.Path]::GetFullPath($manifest), $manifest.Replace('/', '\'), [StringComparison]::OrdinalIgnoreCase)) { throw 'RecoveryTestManifestMustBeCanonical' }
+  if ($null -ne $promoted -and [string]::Equals($manifest, $sourceManifest, [StringComparison]::OrdinalIgnoreCase)) { throw 'RecoveryPromotedManifestCannotBeSource' }
+  for ($part = $manifest; $part; $part = [IO.Path]::GetDirectoryName($part)) {
+    if ((Get-Item -LiteralPath $part -Force -ErrorAction Stop).LinkType) { throw 'RecoveryTestManifestCannotTraverseLinks' }
+  }
+  $item = Get-Item -LiteralPath $manifest -Force -ErrorAction Stop
+  if ($item.PSIsContainer -or $item.Name -cne ($moduleName + '.psd1')) { throw 'RecoveryInvalidSelectedManifest' }
+  $data = Import-PowerShellDataFile -LiteralPath $manifest
+  $sourceVersion = (Import-PowerShellDataFile -LiteralPath $sourceManifest).ModuleVersion
+  if ($data.RootModule -cne ($moduleName + '.psm1') -or $data.ModuleVersion -cne $sourceVersion) { throw 'RecoverySelectedModuleVersionMismatch' }
+  $moduleBase = [IO.Path]::GetDirectoryName($manifest)
+  $modulePath = Join-Path $moduleBase $data.RootModule
+  $loaded = @(Get-Module -Name $moduleName -All)
+  if ($loaded.Count -gt 1 -or @($loaded | Where-Object { $_.Path -ine $modulePath -or $_.Version -ne [version]$data.ModuleVersion }).Count) { throw 'RecoveryConflictingLoadedModule' }
+  $selected = if ($loaded.Count) { $loaded[0] } else { Import-Module -Name $manifest -PassThru -ErrorAction Stop }
+  if ($selected.Name -cne $moduleName -or $selected.Path -ine $modulePath -or $selected.ModuleBase -ine $moduleBase -or $selected.Version -ne [version]$data.ModuleVersion) { throw 'RecoverySelectedModuleIdentityMismatch' }
+  & $selected {
+    param($binding)
+    $script:recoveryTestBinding = $binding
+  } ([pscustomobject]@{ Module = $selected; ModuleBase = $moduleBase; ModulePath = $modulePath; Promoted = ($null -ne $promoted) })
+  $script:recoveryTestModuleName = $moduleName
+}
+
+InModuleScope -ModuleName $script:recoveryTestModuleName {
 Describe 'Filesystem recovery on disposable targets' -Tag 'Integration','CoordRestore' {
   BeforeAll {
     Import-Module PSFramework -RequiredVersion 1.14.457 -ErrorAction Stop
-    $script:moduleRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
-    foreach ($file in Get-ChildItem (Join-Path $moduleRoot 'private') -Filter '*.ps1') { . $file.FullName }
-    foreach ($name in 'Export-CoordState','Restore-CoordState','Submit-CoordRequest') { . (Join-Path $moduleRoot "public/$name.ps1") }
+    $current = @(Get-Module -Name $script:recoveryTestBinding.Module.Name -All)
+    if ($current.Count -ne 1 -or -not [object]::ReferenceEquals($current[0], $script:recoveryTestBinding.Module)) { throw 'RecoverySelectedModuleChanged' }
+    $script:moduleRoot = $script:recoveryTestBinding.ModuleBase
+    foreach ($name in 'Export-CoordState','Restore-CoordState','Submit-CoordRequest','Read-CoordRecoveryHistory','Write-CoordRecoveryHistory','Write-CoordRestoreImage','Assert-CoordOrdinaryPath','Test-CoordDescendant') {
+      $command = Get-Command -Name $name -CommandType Function -ErrorAction Stop
+      if ($null -eq $command.Module -or $command.Module.Path -ine $script:recoveryTestBinding.ModulePath -or
+          -not [IO.Path]::GetFullPath($command.ScriptBlock.File).StartsWith($moduleRoot + '\', [StringComparison]::OrdinalIgnoreCase) -or
+          ($script:recoveryTestBinding.Promoted -and $command.ScriptBlock.File -ine $script:recoveryTestBinding.ModulePath)) { throw 'RecoverySelectedFunctionIdentityMismatch' }
+    }
     $script:sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
     $script:oldSettings = $global:settings
     $script:oldKeys = $global:configRootKeys
-    if (-not $env:COORD_RECOVERY_FIXTURE_ROOT) { throw 'Set COORD_RECOVERY_FIXTURE_ROOT to a disposable nonsynced generated directory.' }
-    $script:fixtureBase = [IO.Path]::GetFullPath($env:COORD_RECOVERY_FIXTURE_ROOT)
+    $defaultFixtureRoot = switch ([Environment]::MachineName.ToUpperInvariant()) {
+      'UTAT022' { 'D:/ATAPArtifacts/_generated/Sprint0017/stream-c-filesystem-recovery-module-20261110/SourceFixtures' }
+      'UTAT01' { 'C:/ATAPArtifacts/_generated/Sprint0017/stream-c-filesystem-recovery-module-20261110/SourceFixtures' }
+      default { throw 'Unknown recovery fixture host; an approved artifact mapping is required.' }
+    }
+    $fixtureRoot = if ([string]::IsNullOrWhiteSpace($env:COORD_RECOVERY_FIXTURE_ROOT)) { $defaultFixtureRoot } else { $env:COORD_RECOVERY_FIXTURE_ROOT }
+    if (-not [IO.Path]::IsPathFullyQualified($fixtureRoot) -or $fixtureRoot.StartsWith('\\', [StringComparison]::Ordinal)) { throw 'RecoveryFixtureRequiresLocalAbsolutePath' }
+    $script:fixtureBase = [IO.Path]::GetFullPath($fixtureRoot)
+    $assignedRoot = [IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($defaultFixtureRoot))
+    if ($fixtureBase -ine $assignedRoot -and -not (Test-CoordDescendant $fixtureBase $assignedRoot)) { throw 'RecoveryFixtureOutsideAssignedRoot' }
+    # The existing helper rejects link targets and recognizes valid CloudFiles
+    # placeholders; a CloudFiles reparse tag alone is not a refusal.
+    $script:fixtureBase = Assert-CoordOrdinaryPath $fixtureBase
     function Protect-RecoveryFixture([string]$Path) {
       $acl = Get-Acl -LiteralPath $Path
       $acl.SetOwner([Security.Principal.SecurityIdentifier]::new($sid))
@@ -270,5 +319,6 @@ Describe 'Filesystem recovery on disposable targets' -Tag 'Integration','CoordRe
     [IO.File]::WriteAllText($statePath,'wrong image')
     { Restore-RecoveryFixture $export } | Should -Throw '*RestoreDestinationNotClean*'
   }
+}
 }
 

@@ -71,13 +71,13 @@ Bill's clarified route reserves `C:/ProgramData/ATAP/AICoordinator` for the spec
 
 ## Established witness updates
 
-Update-CoordWitness -HolderId <coordinator> -SessionId <session> -ExpectedWitnessBytes <before> -ProposedWitnessBytes <after> -UpdateId <guid> -ApprovalReference <reference> appends exactly one actor OR one exact-request authorization. Root must independently verify approval of the exact delta; the reference is audit correlation only. Existing custodian/coordinator admission and both locks are reused, and HolderId must equal coordinatorId. This does not transfer the active writer, establish custody or bootstrap missing state.
+`Update-CoordWitness -HolderId <coordinator> -SessionId <session> -ExpectedWitnessBytes <before> -ProposedWitnessBytes <after> -UpdateId <guid> -ApprovalReference <reference>` appends exactly one actor OR one exact-request authorization. Root must independently verify approval of the exact delta; the reference is audit correlation only. Existing custodian/coordinator admission and both locks are reused, and HolderId must equal coordinatorId. This does not transfer the active writer, establish custody or bootstrap missing state.
 
 All prior entries/order and every other raw JSON subtree (including unknown top-level fields) are frozen. Number lexemes, string escapes and nested whitespace must match literally; top-level property order is also fixed. Actors/grants are closed objects; duplicate holder/session identities, reused reference or request ID, role/SID edits, removals, multi-appends and no-ops refuse. Digests are exact lowercase SHA256; claimId, when supplied, is nonempty. IDs and grants are supplied, never invented. Later request admission still validates the canonical digest and request category.
 
 The resource must be Admitted and idle: pendingWrite must be exactly null; no Pending/Prepared/NeedsRecovery requests or Prepared/NeedsRecovery operations may exist. Historical terminal entries remain unchanged. Supply the next grant only after earlier work has settled. State bytes, watermark, package, paths, lineage, generation and existing journals are untouched.
 
-The command retains CreateNew/flush/readback exact before/after images and an intent beside the protected witness, named custody.json.update-<GUID>.before.bin, .after.bin and .intent.json. It reuses Write-CoordAtomicBytes and checks exact witness readback, protection and unchanged state before retaining a .receipt.json and returning Updated. Files inherit the protected parent; this command never edits ACLs or creates roots. WhatIf performs no admission/file I/O and reports only ProposedOnly, not validated authority.
+The command retains CreateNew/flush/readback exact before/after images and an intent beside the protected witness, named `custody.json.update-<GUID>.before.bin`, .after.bin and .intent.json. It reuses Write-CoordAtomicBytes and checks exact witness readback, protection and unchanged state before retaining a .receipt.json and returning Updated. Files inherit the protected parent; this command never edits ACLs or creates roots. WhatIf performs no admission/file I/O and reports only ProposedOnly, not validated authority.
 
 Failures before entering the atomic writer do not request witness replacement. The existing writer exposes no failure phase, so EVERY error after entering it is conservatively WitnessUpdateOutcomeUncertain, even a possible stage or snapshot failure. The approved change may already exist after an exception. Preserve sidecars/stages, stop cooperative work, and reconcile exact before/after/third-state under separately authorized custody; do not retry, restore or delete evidence automatically. No new durable consumer-hold marker or cross-file/power-loss guarantee is added.
 
@@ -87,3 +87,25 @@ Land and review this command before final release packaging. The new public expo
 ## Local recovery history and clean restore
 
 Configure and initialize the protected local history before accepting recovery protection. Export compresses with the reviewed installed 7-Zip by default, while -NoCompression preserves the raw JSON bundle. Restore verifies identity and the retained history before publishing images to clean original paths. It preserves requests, journals and retry identity and returns RestoredHeld. Whole-store restoration requires custodian reconciliation. UTAT01 parity remains deferred. See the procedure in Coordination-v1.md under Local recovery history and clean restore.
+
+## Custodian successor handoff
+
+Invoke-CoordCustodyHandoff is the separate custodian entry point for a package and
+generation transition. It uses the reviewed SuccessorCustodyPlan-v2 planner to
+retire exactly the named outgoing Coordinator and Worker and admit the named
+successor Coordinator. The packet also binds one final Worker, retained if
+already present or appended through Update-CoordWitness after transition leases
+are released. Every other actor is refused. Ordinary witness append cannot change
+package inventory or generation.
+
+Plan and Inspect return bounded metadata and digests. Apply and Recover require
+independently supplied packet, authority and exclusion SHA256 pins. WhatIf returns
+before packet reads. The selected module's actual inventory, accepted old package
+inventory, custodian SID, protected pair, quartet, boot and UTC interval must match.
+Keep ALL_TASKS and the pilot held; HandoffHeld does not release either hold.
+
+A consumed attempt is never retried as Apply. Inspect reports the exact pair,
+history, Worker subattempt and ordinary receipt state. Obtain fresh recovery
+authority for that observation using the procedure in Coordination-v1.md. Missing
+ordinary Worker receipts require a specifically bound AcknowledgeWorkerAfter;
+the adapter neither forges an ordinary receipt nor replays the append.

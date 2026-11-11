@@ -68,7 +68,7 @@ Describe 'Orchestration selected module manifest' -Tag 'Unit' {
     # Source version.json supplies expectation data only; shipped artifacts need
     # not contain that file, and no source implementation is loaded here.
     $script:version = Get-Content -LiteralPath (Join-Path $script:C1956Binding.SourceRoot 'version.json') -Raw | ConvertFrom-Json
-    $script:expectedExports = @('Export-CoordState', 'Get-CoordClaims', 'Get-CoordResult', 'Get-CoordTask', 'Invoke-CoordClerk', 'Restore-CoordState', 'Stop-CoordClerk', 'Submit-CoordRequest', 'Update-CoordWitness')
+    $script:expectedExports = @('Export-CoordState', 'Get-CoordClaims', 'Get-CoordResult', 'Get-CoordTask', 'Invoke-CoordClerk', 'Invoke-CoordCustodyHandoff', 'Restore-CoordState', 'Stop-CoordClerk', 'Submit-CoordRequest', 'Update-CoordWitness')
   }
   It 'pins the module identity and PowerShell platform' {
     $script:manifest.RootModule | Should -BeExactly 'ATAP.Utilities.BuildTooling.Orchestration.PowerShell.psm1'

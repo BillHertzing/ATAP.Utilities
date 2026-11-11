@@ -662,3 +662,62 @@ version and hash, actual logon-task SID, approved nonsynced local history path,
 7-Zip executable and hash, protected-root configuration and initial binding.
 Repeat raw/compressed clean restore and exact-request retry using its installed
 module before considering parity verified.
+
+## Protected successor transition
+
+Invoke-CoordCustodyHandoff accepts one exact Coordination-custody-handoff-v1
+packet. Bind its raw before state and custody images, reviewed V2 intent, fresh
+generation, old module root and accepted inventory, selected target inventory,
+actual root module digest, one designated final Worker, new Worker update ID and
+approval reference. Keep the packet and all authority/exclusion records immutable.
+Plan and Inspect return digests and checkpoint metadata; they supply no authority.
+
+Apply requires a separately pinned Coordination-custody-handoff-approval-v1 and
+Coordination-writer-exclusion-v1. The authority binds mode, approval ID/reference,
+packet/plan/code/exclusion digests, actual custodian SID, exact observed pair and
+history, and a UTC interval of at most fifteen minutes. Exclusion must span that
+interval and bind the current host boot, UTAT022 and UTAT01, closed Dropbox clients
+and held writers. The coordinator must obtain the actual two-host exclusion
+evidence and continuous operator commitment; a supplied Boolean alone is no
+independent observation. Any reboot or changed writer/package/pair requires a
+fresh bound proposal. Approval is once only and must be explicit before Apply.
+
+The resource lock in the existing protected Custody directory and the witness's
+existing board lock are acquired in that order. Under both leases, the adapter
+rechecks pair, history, quartet, inventories, code and interval before creating a
+durable handoff once record in Custody. That record is the first logical mutation.
+It then retains lossless before images and a G1-verified raw backup. Both that
+backup and the proposed final backup pass pure G1 before attempt consumption.
+No automatic restore, package reinstall or historical record rewrite is performed.
+
+History initialization is explicit in the packet and allowed only for the fixed
+configured protected history root in absent, empty or lock-only condition at the
+Before pair. Existing nonempty history is validated and preserved. Binding-written
+interruption is continued against exact retained history, never reset. Three
+history-aware atomic publications produce the fenced witness, new state and
+target witness. Final Worker append uses the ordinary Update-CoordWitness API
+after transition leases are released and retains its own once record and audit.
+
+On failure preserve every attempt, partial audit and history intent. Inspect and
+obtain a fresh Recover authority binding the prior attempt digest, exact checkpoint,
+history/pending intent and Worker subattempt. ContinueInitialization and
+ContinuePlanner are restricted to their known before or intermediate pairs.
+RetryWorkerBefore requires the exact retained before pair and a new unused update
+ID/reference. AcknowledgeWorkerAfter requires the exact final pair and prior Worker
+attempt/update identity when the ordinary receipt is missing. Finalize requires
+the exact final pair and a complete ordinary receipt when append was necessary.
+Unknown images, malformed history, unrelated pending intents or changed audit are
+held. No consumed approval supplies recovery authority.
+
+G1 permits an old generation only for retained Applied operations with exact
+historical before/after identities, unique matching commit receipt and Applied
+member requests/terminal evidence. Current Prepare/Complete journal operations
+remain constrained to the current generation. Raw JSON and ZIP restore preserve
+the historical images and original request identities without changing their epoch.
+
+Final readback reacquires both leases and verifies final pair, history, unchanged
+quartet, selected inventory and interval. The final receipt is linked to a retained
+consumed authority; a missing ordinary Worker receipt additionally requires the
+specific consumed AcknowledgeWorkerAfter authority. Success returns HandoffHeld.
+Independent final acceptance and separate pilot/ALL_TASKS release are still needed.
+There is no live command or reusable approval embedded in this procedure.

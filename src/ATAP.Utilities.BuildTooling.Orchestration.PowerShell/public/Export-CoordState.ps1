@@ -30,14 +30,7 @@ function Export-CoordState {
         $bytes = [IO.File]::ReadAllBytes($file)
         $outputs[$slot] = @{ path = $file; digest = Get-CoordHash $bytes; bytesBase64 = [Convert]::ToBase64String($bytes) }
       }
-      $snapshot = ConvertTo-CoordElement @{
-        schemaVersion = 'Coordination-export-v1'; resourceId = $context.Record.resourceId; lineageId = $context.Record.lineageId
-        generation = $context.Record.generation; committedRevision = $context.State.GetProperty('committedRevision').GetString()
-        stateBytesBase64 = [Convert]::ToBase64String($context.StateBytes); stateDigest = Get-CoordHash $context.StateBytes
-        custodyBytesBase64 = [Convert]::ToBase64String($context.RecordBytes); custodyDigest = Get-CoordHash $context.RecordBytes
-        observedOutputs = $outputs
-      }
-      $bytes = ConvertTo-CoordStateBytes $snapshot
+      $bytes = New-CoordRecoverySnapshot -StateBytes $context.StateBytes -CustodyBytes $context.RecordBytes -ObservedOutputs $outputs
       if ($bytes.Length -gt 67108864) { throw 'BundleByteLimitExceeded' }
       $bundleDigest = Get-CoordHash $bytes
       $work = $null

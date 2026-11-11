@@ -48,6 +48,79 @@ function Test-CoordRestoreBundle {
       if (-not $ordinal.Equals((Get-CoordHash $bytes), $digest)) { throw "BundleImageDigestMismatch:$BytesMember" }
       [pscustomobject]@{ Bytes = $bytes; Sha256 = $digest }
     }
+
+    function sameValue([Text.Json.JsonElement]$Left, [Text.Json.JsonElement]$Right) {
+      $ordinal.Equals((Get-CoordHash (ConvertTo-CoordStateBytes $Left)), (Get-CoordHash (ConvertTo-CoordStateBytes $Right)))
+    }
+
+    function requireHistoricalApplied([Text.Json.JsonElement]$Operation, $Before, $After) {
+      $operationId = getText $Operation 'operationId'
+      $base = getMember $Operation 'baseHead'
+      $oldGeneration = getText $base 'generation'
+      $fields = @('schemaVersion','resourceId','lineageId','registeredRoots','generation','committedRevision',
+        'committedOutputManifest','custodyEvidence','compatibilityEvidence','admissionEvidence','requests','claims','reservations','mutationAdmission')
+      requireMembers $Before $fields
+      requireMembers $After $fields
+      foreach ($key in $fields | Where-Object { $_ -cnotin @('committedRevision','committedOutputManifest','requests','claims') }) {
+        if (-not (sameValue (getMember $Before $key) (getMember $After $key))) { throw 'HistoricalAppliedImageMismatch' }
+      }
+      $receiptId = getText $Operation 'commitReceiptId'
+      $receipts = @($state.GetProperty('commitReceipts').EnumerateArray() | Where-Object {
+        (getText $_ 'receiptId') -ceq $receiptId -or (getText $_ 'operationId') -ceq $operationId
+      })
+      if ($receipts.Count -ne 1) { throw 'HistoricalAppliedReceiptMismatch' }
+      $receipt = $receipts[0]
+      foreach ($pair in @(@('receiptId',$receiptId),@('operationId',$operationId),@('resourceId',$ExpectedResourceId),
+          @('generation',$oldGeneration),@('committedRevision',(getText $Operation 'nextRevision')))) {
+        if (-not $ordinal.Equals((getText $receipt $pair[0]),$pair[1])) { throw 'HistoricalAppliedReceiptMismatch' }
+      }
+      foreach ($key in 'requestIds','outputManifest','reservations') {
+        if (-not (sameValue (getMember $receipt $key) (getMember $Operation $key))) { throw 'HistoricalAppliedReceiptMismatch' }
+      }
+      if ((getText $Before 'committedRevision') -cne (getText $base 'committedRevision') -or
+          (getText $After 'committedRevision') -cne (getText $Operation 'nextRevision') -or
+          -not (sameValue (getMember $Before 'committedOutputManifest') (getMember $base 'outputManifest')) -or
+          -not (sameValue (getMember $After 'committedOutputManifest') (getMember $Operation 'outputManifest')) -or
+          -not (sameValue (getMember $Before 'reservations') (getMember $Operation 'reservations'))) {
+        throw 'HistoricalAppliedImageMismatch'
+      }
+      $members = @($Operation.GetProperty('requestIds').EnumerateArray())
+      $terminals = @($receipt.GetProperty('terminalEvidence').EnumerateArray())
+      $seen = [Collections.Generic.HashSet[string]]::new($ordinal)
+      if ($members.Count -eq 0 -or $terminals.Count -ne $members.Count) { throw 'HistoricalAppliedRequestMismatch' }
+      $beforeRequests = @($Before.GetProperty('requests').EnumerateArray())
+      $afterRequests = @($After.GetProperty('requests').EnumerateArray())
+      if ($beforeRequests.Count -ne $afterRequests.Count) { throw 'HistoricalAppliedRequestMismatch' }
+      $memberIds = @($members | ForEach-Object { $_.GetString() })
+      for ($index=0; $index -lt $beforeRequests.Count; $index++) {
+        $recordId = getText (getMember $beforeRequests[$index] 'request') 'requestId'
+        if ((getText (getMember $afterRequests[$index] 'request') 'requestId') -cne $recordId -or
+            ($recordId -cnotin $memberIds -and -not (sameValue $beforeRequests[$index] $afterRequests[$index]))) {
+          throw 'HistoricalAppliedRequestMismatch'
+        }
+      }
+      for ($i=0; $i -lt $members.Count; $i++) {
+        $requestId = $members[$i].GetString()
+        if (-not $seen.Add($requestId)) { throw 'HistoricalAppliedRequestMismatch' }
+        $outer = @($state.GetProperty('requests').EnumerateArray() | Where-Object { (getText (getMember $_ 'request') 'requestId') -ceq $requestId })
+        $beforeRecords = @($Before.GetProperty('requests').EnumerateArray() | Where-Object { (getText (getMember $_ 'request') 'requestId') -ceq $requestId })
+        $afterRecords = @($After.GetProperty('requests').EnumerateArray() | Where-Object { (getText (getMember $_ 'request') 'requestId') -ceq $requestId })
+        if ($outer.Count -ne 1 -or $beforeRecords.Count -ne 1 -or $afterRecords.Count -ne 1) { throw 'HistoricalAppliedRequestMismatch' }
+        $prior=$beforeRecords[0]; $applied=$afterRecords[0]; $request=getMember $prior 'request'
+        if ((getText $prior 'status') -cne 'Pending' -or (getText $applied 'status') -cne 'Applied' -or
+            (getText $applied 'preparedOperationId') -cne $operationId -or
+            (getText $request 'resourceId') -cne $ExpectedResourceId -or (getText $request 'generation') -cne $oldGeneration -or
+            (getText $request 'expectedRevision') -cne (getText $base 'committedRevision') -or
+            -not (sameValue $outer[0] $applied)) { throw 'HistoricalAppliedRequestMismatch' }
+        foreach ($key in 'request','digest','originalRequestJson','queueOrdinal') {
+          if (-not (sameValue (getMember $prior $key) (getMember $applied $key))) { throw 'HistoricalAppliedRequestMismatch' }
+        }
+        $terminal=getMember $applied 'terminalEvidence'
+        if ((getText $terminal 'resourceId') -cne $ExpectedResourceId -or (getText $terminal 'requestId') -cne $requestId -or
+            (getText $terminal 'status') -cne 'Applied' -or (getText $terminal 'digest') -cne (getText $prior 'digest') -or
+            -not (sameValue $terminal $terminals[$i])) { throw 'HistoricalAppliedRequestMismatch' }
+      }
+    }
   }
 
   process {
@@ -108,6 +181,11 @@ function Test-CoordRestoreBundle {
 
     $pending = getMember $custody 'pendingWrite'
     $operations = @($state.GetProperty('preparedOperations').EnumerateArray())
+    $retainedIds = [Collections.Generic.HashSet[string]]::new($ordinal)
+    foreach ($operation in $operations) {
+      if (-not $retainedIds.Add((getText $operation 'operationId'))) { throw 'DuplicatePreparedOperation' }
+    }
+    $journalOperationId = $null
     if ($pending.ValueKind -ne [Text.Json.JsonValueKind]::Null) {
       switch -CaseSensitive (getText $pending 'kind') {
         'State' {
@@ -124,6 +202,7 @@ function Test-CoordRestoreBundle {
         'Prepare' {
           requireMembers $pending @('kind','operationJson')
           $operation = Read-CoordJsonBytes ([Text.Encoding]::UTF8.GetBytes((getText $pending 'operationJson')))
+          $journalOperationId = getText $operation 'operationId'
           $schemaObject = $schemaText | ConvertFrom-Json -AsHashtable -Depth 100
           $operationSchema = @{ '$ref' = '#/definitions/statePreparedOperation'; definitions = $schemaObject.definitions } | ConvertTo-Json -Depth 100
           if (-not (Test-Json -Json $operation.GetRawText() -Schema $operationSchema -ErrorAction Stop)) { throw 'InvalidPreparedOperation' }
@@ -131,6 +210,7 @@ function Test-CoordRestoreBundle {
         }
         'Complete' {
           requireMembers $pending @('kind','operationId')
+          $journalOperationId = getText $pending 'operationId'
           if (@($operations | Where-Object { (getText $_ 'operationId') -ceq (getText $pending 'operationId') }).Count -ne 1) {
             throw 'MissingPendingOperation'
           }
@@ -146,23 +226,33 @@ function Test-CoordRestoreBundle {
     }
     $recoveryImages = @{}
     foreach ($operation in $operations) {
-      if ((getText $operation 'resourceId') -cne $ExpectedResourceId -or
-          (getText (getMember $operation 'baseHead') 'generation') -cne $ExpectedGeneration) {
+      $operationId = getText $operation 'operationId'
+      $baseGeneration = getText (getMember $operation 'baseHead') 'generation'
+      $historical = -not $ordinal.Equals($baseGeneration,$ExpectedGeneration)
+      if ((getText $operation 'resourceId') -cne $ExpectedResourceId -or ($historical -and
+          ((getText $operation 'status') -cne 'Applied' -or -not $retainedIds.Contains($operationId) -or
+           $ordinal.Equals($journalOperationId,$operationId)))) {
         throw 'PreparedOperationIdentityMismatch'
       }
+      $logicalImages = @{}
       foreach ($imageName in 'beforeStateImage','afterStateImage') {
         $logicalImage = readImage (getMember $operation $imageName) 'bytesBase64' 'digest'
         $logicalState = Read-CoordJsonBytes $logicalImage.Bytes
+        $logicalImages[$imageName] = $logicalState
         foreach ($key in 'resourceId','lineageId','generation') {
-          if ((getText $logicalState $key) -cne $identity[$key]) { throw 'PreparedImageIdentityMismatch' }
+          $expected = if ($key -ceq 'generation' -and $historical) { $baseGeneration } else { $identity[$key] }
+          if ((getText $logicalState $key) -cne $expected) { throw 'PreparedImageIdentityMismatch' }
         }
       }
+      if ($historical) { requireHistoricalApplied $operation $logicalImages.beforeStateImage $logicalImages.afterStateImage }
       foreach ($slot in $slots) {
         foreach ($side in 'beforeOutputs','afterOutputs') {
           $item = (getMember $operation $side).GetProperty($slot)
           $image = readImage $item 'bytesBase64' 'digest'
           if ((getText $item 'path') -cne $outputs[$slot].Path) { throw 'RecoveryOutputPathMismatch' }
-          $recoveryImages["$slot/$($image.Sha256)"] = $true
+          # Old terminal images are retained evidence, never authority to accept
+          # drift from the current committed quartet in a later generation.
+          if (-not $historical) { $recoveryImages["$slot/$($image.Sha256)"] = $true }
         }
       }
     }

@@ -151,6 +151,41 @@ Describe 'Filesystem recovery on disposable targets' -Tag 'Integration','CoordRe
     function Export-RecoveryFixture([switch]$NoCompression) {
       Export-CoordState -HolderId Coordinator -SessionId session-1 -DestinationPath (Join-Path $backupRoot ([guid]::NewGuid().ToString('N'))) -NoCompression:$NoCompression -Confirm:$false
     }
+    function Set-RecoveryAppliedHistory {
+      $state.claims=@();$state.reservations=@()
+      $before=[ordered]@{}
+      foreach($field in 'schemaVersion','resourceId','lineageId','registeredRoots','generation','committedRevision',
+          'committedOutputManifest','custodyEvidence','compatibilityEvidence','admissionEvidence','requests','claims','reservations','mutationAdmission') {
+        $before[$field]=$state[$field]
+      }
+      $after=$before|ConvertTo-Json -Depth 100|ConvertFrom-Json -AsHashtable -Depth 100
+      $after.committedRevision='head-2'
+      $member=$after.requests[0]
+      $member.Remove('pendingEvidence');$member.status='Applied';$member.preparedOperationId='historical-operation'
+      $member.terminalEvidence=@{resourceId='restore-fixture';requestId='original-request';digest=$member.digest
+        status='Applied';reason='Retained';receipt=@{reference='completed-operation';digest=('2'*64)}}
+      $beforeBytes=ConvertTo-CoordStateBytes (ConvertTo-CoordElement $before) -Logical
+      $afterBytes=ConvertTo-CoordStateBytes (ConvertTo-CoordElement $after) -Logical
+      $images=[ordered]@{}
+      foreach($slot in $state.committedOutputManifest.Keys){
+        $path=$state.committedOutputManifest[$slot].path;$bytes=[IO.File]::ReadAllBytes($path)
+        $images[$slot]=@{path=$path;digest=Get-CoordHash $bytes;bytesBase64=[Convert]::ToBase64String($bytes)}
+      }
+      $operation=@{operationId='historical-operation';resourceId='restore-fixture';status='Applied';commitReceiptId='historical-receipt'
+        baseHead=@{generation='epoch-1';committedRevision='head-1';outputManifest=$state.committedOutputManifest}
+        nextRevision='head-2';requestIds=@('original-request');outputManifest=$state.committedOutputManifest;reservations=@()
+        beforeStateImage=@{bytesBase64=[Convert]::ToBase64String($beforeBytes);digest=Get-CoordHash $beforeBytes}
+        afterStateImage=@{bytesBase64=[Convert]::ToBase64String($afterBytes);digest=Get-CoordHash $afterBytes}
+        beforeOutputs=$images;afterOutputs=$images}
+      $receipt=@{receiptId='historical-receipt';resourceId='restore-fixture';operationId='historical-operation';generation='epoch-1'
+        committedRevision='head-2';requestIds=@('original-request');outputManifest=$state.committedOutputManifest
+        reservations=@();terminalEvidence=@($member.terminalEvidence)}
+      $script:state=$after;$state.generation='epoch-2';$state.preparedOperations=@($operation);$state.commitReceipts=@($receipt)
+      $newState=ConvertTo-CoordStateBytes (ConvertTo-CoordElement $state)
+      Write-CoordAtomicBytes $statePath ([IO.File]::ReadAllBytes($statePath)) $newState
+      $witness.generation='epoch-2';$witness.stateSha256=Get-CoordHash $newState
+      Write-CoordAtomicBytes $custodyPath ([IO.File]::ReadAllBytes($custodyPath)) (ConvertTo-CoordStateBytes (ConvertTo-CoordElement $witness))
+    }
     function Restore-RecoveryFixture($Export) {
       Restore-CoordState -BundlePath $Export.Path -ExpectedSha256 $Export.Digest -ExpectedResourceId restore-fixture -ExpectedLineageId lineage-1 -ExpectedGeneration epoch-1 -ExpectedCommittedRevision head-1 -Confirm:$false
     }
@@ -279,6 +314,76 @@ Describe 'Filesystem recovery on disposable targets' -Tag 'Integration','CoordRe
     $restored.preparedOperations[0].status | Should -BeExactly Prepared
     $restored.requests[1].status | Should -BeExactly Rejected
     (Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false).Decision | Should -BeExactly Retained
+  }
+  It 'roundtrips raw and ZIP retained Applied history after a generation advance without rewriting historical images' {
+    foreach($plain in $true,$false){
+      New-RecoveryFixture
+      Set-RecoveryAppliedHistory
+      $statePin=Get-CoordHash ([IO.File]::ReadAllBytes($statePath))
+      $export=Export-RecoveryFixture -NoCompression:$plain
+      Park-RecoveryImages
+      $restored=Restore-CoordState -BundlePath $export.Path -ExpectedSha256 $export.Digest -ExpectedResourceId restore-fixture `
+        -ExpectedLineageId lineage-1 -ExpectedGeneration epoch-2 -ExpectedCommittedRevision head-2 -Confirm:$false
+      $restored.Status|Should -BeExactly RestoredHeld
+      (Get-CoordHash ([IO.File]::ReadAllBytes($statePath)))|Should -BeExactly $statePin
+      $current=Get-Content -LiteralPath $statePath -Raw|ConvertFrom-Json
+      $current.preparedOperations[0].baseHead.generation|Should -BeExactly epoch-1
+      $current.commitReceipts[0].generation|Should -BeExactly epoch-1
+      $current.requests[0].request.generation|Should -BeExactly epoch-1
+      $current.generation|Should -BeExactly epoch-2
+    }
+  }
+  It 'refuses forged historical receipt, request, image or active journal proofs in pure G1 before restoration' {
+    Set-RecoveryAppliedHistory
+    $export=Export-RecoveryFixture -NoCompression
+    $bundleBytes=[IO.File]::ReadAllBytes($export.Path)
+    foreach($variant in 'Receipt','Request','Image','Journal'){
+      $bundle=Get-Content -LiteralPath $export.Path -Raw|ConvertFrom-Json -AsHashtable -Depth 100
+      $history=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($bundle.stateBytesBase64))|ConvertFrom-Json -AsHashtable -Depth 100
+      switch($variant){
+        Receipt {$history.commitReceipts[0].generation='unbound-generation'}
+        Request {$history.requests[0].terminalEvidence.digest=('3'*64)}
+        Image {
+          $op=$history.preparedOperations[0]
+          $logical=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($op.beforeStateImage.bytesBase64))|ConvertFrom-Json -AsHashtable -Depth 100
+          $logical.generation='unbound-generation'
+          $image=ConvertTo-CoordStateBytes (ConvertTo-CoordElement $logical)
+          $op.beforeStateImage=@{bytesBase64=[Convert]::ToBase64String($image);digest=Get-CoordHash $image}
+        }
+      }
+      $image=ConvertTo-CoordStateBytes (ConvertTo-CoordElement $history)
+      $bundle.stateBytesBase64=[Convert]::ToBase64String($image);$bundle.stateDigest=Get-CoordHash $image
+      $custody=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($bundle.custodyBytesBase64))|ConvertFrom-Json -AsHashtable -Depth 100
+      $custody.stateSha256=$bundle.stateDigest
+      if($variant -ceq 'Journal'){$custody.pendingWrite=@{kind='Complete';operationId='historical-operation'}}
+      $image=ConvertTo-CoordStateBytes (ConvertTo-CoordElement $custody)
+      $bundle.custodyBytesBase64=[Convert]::ToBase64String($image);$bundle.custodyDigest=Get-CoordHash $image
+      $candidate=ConvertTo-CoordStateBytes (ConvertTo-CoordElement $bundle)
+      {Test-CoordRestoreBundle -BundleBytes $candidate -ExpectedSha256 (Get-CoordHash $candidate) -ExpectedResourceId restore-fixture `
+          -ExpectedLineageId lineage-1 -ExpectedGeneration epoch-2 -ExpectedCommittedRevision head-2 -MaxBundleBytes 67108864 `
+          -StateSchemaBytes ([IO.File]::ReadAllBytes((Join-Path $moduleRoot 'schemas/state-v1.schema.json')))}|Should -Throw
+    }
+    (Get-CoordHash ([IO.File]::ReadAllBytes($export.Path)))|Should -BeExactly (Get-CoordHash $bundleBytes)
+  }
+  It 'validates historical output images but refuses to use them as authority for current quartet drift' {
+    Set-RecoveryAppliedHistory
+    $export=Export-RecoveryFixture -NoCompression
+    $bundle=Get-Content -LiteralPath $export.Path -Raw|ConvertFrom-Json -AsHashtable -Depth 100
+    # Advance the current board beyond the old terminal plan in the in-memory
+    # backup. The observed bytes now equal only the retained historical image.
+    $current=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($bundle.stateBytesBase64))|ConvertFrom-Json -AsHashtable -Depth 100
+    $current.committedOutputManifest.markdown.digest=Get-CoordHash ([Text.Encoding]::UTF8.GetBytes('later committed board'))
+    $current.committedRevision='head-3';$bundle.committedRevision='head-3'
+    $image=ConvertTo-CoordStateBytes (ConvertTo-CoordElement $current)
+    $bundle.stateBytesBase64=[Convert]::ToBase64String($image);$bundle.stateDigest=Get-CoordHash $image
+    $record=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($bundle.custodyBytesBase64))|ConvertFrom-Json -AsHashtable -Depth 100
+    $record.stateSha256=$bundle.stateDigest
+    $image=ConvertTo-CoordStateBytes (ConvertTo-CoordElement $record)
+    $bundle.custodyBytesBase64=[Convert]::ToBase64String($image);$bundle.custodyDigest=Get-CoordHash $image
+    $candidate=ConvertTo-CoordStateBytes (ConvertTo-CoordElement $bundle)
+    {Test-CoordRestoreBundle -BundleBytes $candidate -ExpectedSha256 (Get-CoordHash $candidate) -ExpectedResourceId restore-fixture `
+        -ExpectedLineageId lineage-1 -ExpectedGeneration epoch-2 -ExpectedCommittedRevision head-3 -MaxBundleBytes 67108864 `
+        -StateSchemaBytes ([IO.File]::ReadAllBytes((Join-Path $moduleRoot 'schemas/state-v1.schema.json')))}|Should -Throw '*QuartetDriftRequiresJournalProof:markdown*'
   }
   It 'preserves a pending state journal exactly across export and restore' {
     $before=[IO.File]::ReadAllBytes($statePath)

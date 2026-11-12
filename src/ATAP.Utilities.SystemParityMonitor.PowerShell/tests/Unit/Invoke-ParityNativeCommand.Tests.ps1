@@ -18,13 +18,14 @@ Describe 'Invoke-ParityNativeCommand stream separation' -Tag 'Unit' {
   BeforeAll {
     $modulePath = Join-Path $PSScriptRoot '..\..\ATAP.Utilities.SystemParityMonitor.PowerShell.psd1'
     $null = Resolve-ParityFixtureModule -SourceManifest $modulePath
-    $script:pwshPath = (Get-Process -Id $PID).Path
+    # cmd.exe /d skips AutoRun and never loads PowerShell profiles, so profile output cannot reach stdout.
+    $script:nativeCmd = 'cmd.exe'
   }
 
   It 'keeps stdout JSON clean and puts the stderr notice in ErrorOutput' {
-    $r = InModuleScope 'ATAP.Utilities.SystemParityMonitor.PowerShell' -Parameters @{ p = $script:pwshPath } {
+    $r = InModuleScope 'ATAP.Utilities.SystemParityMonitor.PowerShell' -Parameters @{ p = $script:nativeCmd } {
       param($p)
-      Invoke-ParityNativeCommand -Command $p -ArgumentList @('-Command', "[Console]::Out.WriteLine('{""a"":1}'); [Console]::Error.WriteLine('npm notice New major version'); exit 0")
+      Invoke-ParityNativeCommand -Command $p -ArgumentList @('/d', '/c', '(echo {"a":1})&(echo npm notice New major version)1>&2')
     }
     $r.ExitCode | Should -Be 0
     ($r.Output -join '') | Should -Be '{"a":1}'
@@ -33,23 +34,25 @@ Describe 'Invoke-ParityNativeCommand stream separation' -Tag 'Unit' {
   }
 
   It 'preserves a non-zero exit code and empty ErrorOutput when stderr is silent' {
-    $r = InModuleScope 'ATAP.Utilities.SystemParityMonitor.PowerShell' -Parameters @{ p = $script:pwshPath } {
+    $r = InModuleScope 'ATAP.Utilities.SystemParityMonitor.PowerShell' -Parameters @{ p = $script:nativeCmd } {
       param($p)
-      Invoke-ParityNativeCommand -Command $p -ArgumentList @('-Command', 'exit 7')
+      Invoke-ParityNativeCommand -Command $p -ArgumentList @('/d', '/c', 'exit 7')
     }
     $r.ExitCode | Should -Be 7
     @($r.ErrorOutput).Count | Should -Be 0
   }
 
   It 'reports a non-zero exit code alongside stderr text' {
-    $r = InModuleScope 'ATAP.Utilities.SystemParityMonitor.PowerShell' -Parameters @{ p = $script:pwshPath } {
+    $r = InModuleScope 'ATAP.Utilities.SystemParityMonitor.PowerShell' -Parameters @{ p = $script:nativeCmd } {
       param($p)
-      Invoke-ParityNativeCommand -Command $p -ArgumentList @('-Command', "[Console]::Error.WriteLine('boom'); exit 3")
+      Invoke-ParityNativeCommand -Command $p -ArgumentList @('/d', '/c', '(echo boom)1>&2&exit 3')
     }
     $r.ExitCode | Should -Be 3
     ($r.ErrorOutput -join '') | Should -Be 'boom'
     @($r.Output).Count | Should -Be 0
   }
 }
+
+
 
 

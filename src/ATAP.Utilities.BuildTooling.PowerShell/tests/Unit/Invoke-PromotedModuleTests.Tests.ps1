@@ -58,6 +58,9 @@ AfterAll {
 Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
 
     BeforeEach {
+        $script:priorPromotedManifest = [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'Process')
+        $script:priorPromotedVersion = [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_VERSION', 'Process')
+        $script:observedPromotedPair = $null
         # BuildMaster sets this global before invoking the promoted-module gate.
         # Keep unit tests deterministic and opt into the direct ProGet path only
         # in the test that explicitly supplies -ProGetBaseUrl.
@@ -84,6 +87,10 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
         }
         # Default: the delegated Pester run passes.
         Mock Invoke-PSModulePesterTests {
+            $script:observedPromotedPair = @{
+                Manifest = [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'Process')
+                Version = [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_VERSION', 'Process')
+            }
             [PSCustomObject]@{
                 Tier         = $Tier
                 Passed       = 12
@@ -98,6 +105,74 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
                 CoverageFile = $CoverageOutputPath
                 Result       = $null
             }
+        }
+    }
+
+    AfterEach {
+        if ($null -eq $script:priorPromotedManifest) { [Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', [NullString]::Value, 'Process') }
+        else { [Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', $script:priorPromotedManifest, 'Process') }
+        if ($null -eq $script:priorPromotedVersion) { [Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_VERSION', [NullString]::Value, 'Process') }
+        else { [Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_VERSION', $script:priorPromotedVersion, 'Process') }
+    }
+
+    Context 'Independent promoted test context' {
+        It 'passes the caller version independently of the selected manifest and restores the prior pair' {
+            [Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'prior-manifest', 'Process')
+            [Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_VERSION', 'prior-version', 'Process')
+
+            $null = Invoke-PromotedModuleTests -Name Mod -Version '0.1.16-Beta.2+build.7' -Feed powershellget-development `
+                -Tier Development -ResultsPath r -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\fake'
+
+            $script:observedPromotedPair.Manifest | Should -Match 'Mod\.1\.0\.0.*Mod\.psd1'
+            $script:observedPromotedPair.Version | Should -BeExactly '0.1.16-Beta.2+build.7'
+            [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'Process') | Should -BeExactly 'prior-manifest'
+            [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_VERSION', 'Process') | Should -BeExactly 'prior-version'
+        }
+
+        It 'restores an absent pair after delegation' {
+            [Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', [NullString]::Value, 'Process')
+            [Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_VERSION', [NullString]::Value, 'Process')
+            $null = Invoke-PromotedModuleTests -Name Mod -Version '0.1.16' -Feed powershellget-development `
+                -Tier Development -ResultsPath r -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\fake'
+            ($null -eq [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'Process')) | Should -BeTrue
+            ($null -eq [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_VERSION', 'Process')) | Should -BeTrue
+        }
+
+        It 'restores both prior values when delegation throws' {
+            [Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'prior-manifest', 'Process')
+            [Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_VERSION', 'prior-version', 'Process')
+            Mock Invoke-PSModulePesterTests { throw 'DisposableDelegationFailure' }
+            { Invoke-PromotedModuleTests -Name Mod -Version '0.1.16' -Feed powershellget-development `
+                -Tier Development -ResultsPath r -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\fake' } |
+                Should -Throw '*DisposableDelegationFailure*'
+            [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'Process') | Should -BeExactly 'prior-manifest'
+            [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_VERSION', 'Process') | Should -BeExactly 'prior-version'
+        }
+
+        It 'restores the first set and the prior pair when the second context set fails' {
+            [Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'prior-manifest', 'Process')
+            [Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_VERSION', 'prior-version', 'Process')
+            Mock Set-Item { [Environment]::SetEnvironmentVariable($LiteralPath.Substring(4), $Value, 'Process') }
+            Mock Set-Item { throw 'DisposableSecondContextSetFailure' } -ParameterFilter { $LiteralPath -ceq 'Env:ATAP_PROMOTED_MODULE_VERSION' }
+            { Invoke-PromotedModuleTests -Name Mod -Version '0.1.16' -Feed powershellget-development `
+                -Tier Development -ResultsPath r -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\fake' } |
+                Should -Throw '*DisposableSecondContextSetFailure*'
+            Should -Invoke Set-Item -Times 1 -Exactly -Scope It -ParameterFilter { $LiteralPath -ceq 'Env:ATAP_PROMOTED_MODULE_MANIFEST' }
+            Should -Invoke Invoke-PSModulePesterTests -Times 0 -Exactly -Scope It
+            [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'Process') | Should -BeExactly 'prior-manifest'
+            [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_VERSION', 'Process') | Should -BeExactly 'prior-version'
+        }
+
+        It 'restores the prior pair when the first context set fails' {
+            [Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'prior-manifest', 'Process')
+            [Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_VERSION', 'prior-version', 'Process')
+            Mock Set-Item { throw 'DisposableFirstContextSetFailure' }
+            { Invoke-PromotedModuleTests -Name Mod -Version '0.1.16' -Feed powershellget-development `
+                -Tier Development -ResultsPath r -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\fake' } |
+                Should -Throw '*DisposableFirstContextSetFailure*'
+            Should -Invoke Invoke-PSModulePesterTests -Times 0 -Exactly -Scope It
+            [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'Process') | Should -BeExactly 'prior-manifest'
+            [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_VERSION', 'Process') | Should -BeExactly 'prior-version'
         }
     }
 
@@ -461,5 +536,103 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
             $invokedNames | Should -Contain 'Save-Module'
             $invokedNames | Should -Not -Contain 'Save-PSResource'
         }
+    }
+}
+
+Describe 'Recovery discovery version authority on disposable modules' -Tag Unit {
+    BeforeAll {
+        $script:fixtureModuleName = 'ATAP.Utilities.BuildTooling.Orchestration.PowerShell'
+        if (@(Get-Module -Name $script:fixtureModuleName -All).Count) { throw 'RecoveryDiscoveryNeedsFreshProcess' }
+        $script:discoverySourceRoot = Join-Path ([IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))) 'ATAP.Utilities.BuildTooling.Orchestration.PowerShell/tests/Integration'
+        $script:discoveryFixtureBase = [Environment]::GetEnvironmentVariable('ATAP_VERSION_AUTHORITY_TEST_ROOT', 'Process')
+        if (-not $script:discoveryFixtureBase) {
+            $script:discoveryFixtureBase = switch ([Environment]::MachineName.ToUpperInvariant()) {
+                UTAT022 { 'D:/ATAPArtifacts/_generated/Sprint0017/ResidentVersionAuthorityFix' }
+                UTAT01 { 'C:/ATAPArtifacts/_generated/Sprint0017/ResidentVersionAuthorityFix' }
+                default { throw 'RecoveryDiscoveryFixtureHostUnknown' }
+            }
+        }
+        $allowedBase = switch ([Environment]::MachineName.ToUpperInvariant()) {
+            UTAT022 { 'D:\ATAPArtifacts\_generated\Sprint0017\ResidentVersionAuthorityFix' }
+            UTAT01 { 'C:\ATAPArtifacts\_generated\Sprint0017\ResidentVersionAuthorityFix' }
+            default { throw 'RecoveryDiscoveryFixtureHostUnknown' }
+        }
+        $script:discoveryFixtureBase = [IO.Path]::GetFullPath($script:discoveryFixtureBase)
+        if ($script:discoveryFixtureBase -ine $allowedBase -and -not $script:discoveryFixtureBase.StartsWith($allowedBase + '\', [StringComparison]::OrdinalIgnoreCase)) { throw 'RecoveryDiscoveryFixtureOutsideAssignedRoot' }
+        for ($part = $script:discoveryFixtureBase; $part; $part = [IO.Path]::GetDirectoryName($part)) {
+            if ((Test-Path -LiteralPath $part) -and ((Get-Item -LiteralPath $part -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'RecoveryDiscoveryFixtureReparseRefused' }
+        }
+        $null = [IO.Directory]::CreateDirectory($script:discoveryFixtureBase)
+
+        function Invoke-DisposableRecoveryDiscovery {
+            param([string]$Container, [string]$ContextMode, [AllowNull()][AllowEmptyString()][string]$CallerVersion, [string]$SelectedVersion, [string]$SelectedRootModule)
+            $fixture = Join-Path $script:discoveryFixtureBase ([guid]::NewGuid().ToString('N'))
+            $source = Join-Path $fixture 'Source'
+            $promoted = Join-Path $fixture 'Promoted'
+            $null = [IO.Directory]::CreateDirectory((Join-Path $source 'tests/Integration'))
+            $null = [IO.Directory]::CreateDirectory($promoted)
+            foreach ($entry in @(@{ Root = $source; Version = '0.1.15'; RootModule = $script:fixtureModuleName + '.psm1' }, @{ Root = $promoted; Version = $SelectedVersion; RootModule = $SelectedRootModule })) {
+                $manifestText = "@{ RootModule = '$($entry.RootModule)'; ModuleVersion = '$($entry.Version)'; GUID = '01131809-7fd2-4b6d-8a34-f584b55ad4fa'; FunctionsToExport = @() }"
+                [IO.File]::WriteAllText((Join-Path $entry.Root ($script:fixtureModuleName + '.psd1')), $manifestText)
+                [IO.File]::WriteAllText((Join-Path $entry.Root ($script:fixtureModuleName + '.psm1')), '# Disposable empty module; no coordination code or state access.')
+            }
+            $manifestValue = if ($ContextMode -in @('Both', 'ManifestOnly')) { Join-Path $promoted ($script:fixtureModuleName + '.psd1') } else { $null }
+            $versionValue = if ($ContextMode -in @('Both', 'VersionOnly')) { $CallerVersion } else { $null }
+            if ($null -eq $manifestValue) { [Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', [NullString]::Value, 'Process') }
+            else { [Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', $manifestValue, 'Process') }
+            if ($null -eq $versionValue) { [Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_VERSION', [NullString]::Value, 'Process') }
+            else { [Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_VERSION', $versionValue, 'Process') }
+            $parseTokens = $null; $parseErrors = $null
+            $ast = [Management.Automation.Language.Parser]::ParseFile((Join-Path $script:discoverySourceRoot $Container), [ref]$parseTokens, [ref]$parseErrors)
+            if ($parseErrors.Count) { throw 'RecoveryDiscoverySourceParseFailed' }
+            $commands = @($ast.FindAll({ param($node) $node -is [Management.Automation.Language.CommandAst] -and $node.GetCommandName() -ceq 'BeforeDiscovery' }, $true))
+            if ($commands.Count -ne 1) { throw 'RecoveryDiscoveryBlockNotUnique' }
+            $body = $commands[0].CommandElements[1].ScriptBlock.Extent.Text
+            $discoveryPath = Join-Path $source ('tests/Integration/' + $Container)
+            [IO.File]::WriteAllText($discoveryPath, $body.Substring(1, $body.Length - 2))
+            # Execute the actual source discovery block, against only the empty
+            # disposable modules. Never execute Describe/BeforeAll/recovery tests.
+            . $discoveryPath
+            [pscustomobject]@{ Version = $selected.Version.ToString(); Path = $selected.Path; Fixture = $fixture }
+        }
+    }
+
+    BeforeEach {
+        $script:discoveryPriorManifest = [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'Process')
+        $script:discoveryPriorVersion = [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_VERSION', 'Process')
+    }
+
+    AfterEach {
+        foreach ($module in @(Get-Module -Name $script:fixtureModuleName -All)) {
+            if (-not $module.ModuleBase.StartsWith($script:discoveryFixtureBase + '\', [StringComparison]::OrdinalIgnoreCase)) { throw 'RecoveryDiscoveryCleanupOutsideFixture' }
+            Remove-Module -ModuleInfo $module -Force -ErrorAction Stop
+        }
+        if ($null -eq $script:discoveryPriorManifest) { [Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', [NullString]::Value, 'Process') }
+        else { [Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', $script:discoveryPriorManifest, 'Process') }
+        if ($null -eq $script:discoveryPriorVersion) { [Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_VERSION', [NullString]::Value, 'Process') }
+        else { [Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_VERSION', $script:discoveryPriorVersion, 'Process') }
+    }
+
+    It '<Container> <Scenario>' -TestCases @(
+        foreach ($container in @('CoordCustodyHandoff.Tests.ps1', 'CoordRestore.Tests.ps1')) {
+            foreach ($case in @(
+                @{ Scenario = 'accepts independent016 despite source015'; Mode = 'Both'; Caller = '0.1.16'; Selected = '0.1.16'; Error = $null; Expected = '0.1.16' },
+                @{ Scenario = 'maps prerelease and build metadata to module version'; Mode = 'Both'; Caller = '0.1.16-Beta.2+build.7'; Selected = '0.1.16'; Error = $null; Expected = '0.1.16' },
+                @{ Scenario = 'rejects wrong selected version'; Mode = 'Both'; Caller = '0.1.16'; Selected = '0.1.15'; Error = '*RecoverySelectedModuleVersionMismatch*'; Expected = $null },
+                @{ Scenario = 'rejects missing expected version'; Mode = 'ManifestOnly'; Caller = $null; Selected = '0.1.16'; Error = '*RecoveryPromotedContextIncomplete*'; Expected = $null },
+                @{ Scenario = 'rejects version without manifest'; Mode = 'VersionOnly'; Caller = '0.1.16'; Selected = '0.1.16'; Error = '*RecoveryPromotedContextIncomplete*'; Expected = $null },
+                @{ Scenario = 'rejects empty version'; Mode = 'Both'; Caller = ''; Selected = '0.1.16'; Error = '*RecoveryPromotedContext*'; Expected = $null },
+                @{ Scenario = 'rejects whitespace version'; Mode = 'Both'; Caller = ' '; Selected = '0.1.16'; Error = '*RecoveryPromotedContextEmpty*'; Expected = $null },
+                @{ Scenario = 'rejects invalid version'; Mode = 'Both'; Caller = 'invalid'; Selected = '0.1.16'; Error = '*RecoveryPromotedVersionInvalid*'; Expected = $null },
+                @{ Scenario = 'selects source015 only when both values absent'; Mode = 'SourceOnly'; Caller = $null; Selected = '0.1.16'; Error = $null; Expected = '0.1.15' }
+            )) {
+                @{ Container = $container; Scenario = $case.Scenario; ContextMode = $case.Mode; CallerVersion = $case.Caller; SelectedVersion = $case.Selected; ExpectedError = $case.Error; ExpectedVersion = $case.Expected }
+            }
+        }
+    ) {
+        param($Container, $Scenario, $ContextMode, $CallerVersion, $SelectedVersion, $ExpectedError, $ExpectedVersion)
+        $arguments = @{ Container = $Container; ContextMode = $ContextMode; CallerVersion = $CallerVersion; SelectedVersion = $SelectedVersion; SelectedRootModule = $script:fixtureModuleName + '.psm1' }
+        if ($ExpectedError) { { Invoke-DisposableRecoveryDiscovery @arguments } | Should -Throw $ExpectedError }
+        else { (Invoke-DisposableRecoveryDiscovery @arguments).Version | Should -BeExactly $ExpectedVersion }
     }
 }

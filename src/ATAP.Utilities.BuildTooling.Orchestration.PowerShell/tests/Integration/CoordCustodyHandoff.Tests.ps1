@@ -2,6 +2,15 @@ BeforeDiscovery {
   $sourceRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
   $moduleName = 'ATAP.Utilities.BuildTooling.Orchestration.PowerShell'
   $promoted = [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'Process')
+  $promotedVersion = [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_VERSION', 'Process')
+  if (($null -eq $promoted) -ne ($null -eq $promotedVersion)) { throw 'RecoveryPromotedContextIncomplete' }
+  if ($null -ne $promoted) {
+    if ([string]::IsNullOrWhiteSpace($promoted) -or [string]::IsNullOrWhiteSpace($promotedVersion)) { throw 'RecoveryPromotedContextEmpty' }
+    $releaseVersion = $null
+    if ($promotedVersion -cnotmatch '\A[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.+-]+)?\z' -or
+        -not [Management.Automation.SemanticVersion]::TryParse($promotedVersion, [ref]$releaseVersion)) { throw 'RecoveryPromotedVersionInvalid' }
+    $expectedModuleVersion = [version]::new($releaseVersion.Major, $releaseVersion.Minor, $releaseVersion.Patch).ToString()
+  }
   $sourceManifest = Join-Path $sourceRoot ($moduleName + '.psd1')
   $manifest = if ($null -eq $promoted) { $sourceManifest } else { $promoted }
   if ([string]::IsNullOrWhiteSpace($manifest) -or -not [IO.Path]::IsPathFullyQualified($manifest) -or
@@ -14,8 +23,8 @@ BeforeDiscovery {
   $item = Get-Item -LiteralPath $manifest -Force -ErrorAction Stop
   if ($item.PSIsContainer -or $item.Name -cne ($moduleName + '.psd1')) { throw 'RecoveryInvalidSelectedManifest' }
   $data = Import-PowerShellDataFile -LiteralPath $manifest
-  $sourceVersion = (Import-PowerShellDataFile -LiteralPath $sourceManifest).ModuleVersion
-  if ($data.RootModule -cne ($moduleName + '.psm1') -or $data.ModuleVersion -cne $sourceVersion) { throw 'RecoverySelectedModuleVersionMismatch' }
+  if ($null -eq $promoted) { $expectedModuleVersion = (Import-PowerShellDataFile -LiteralPath $sourceManifest).ModuleVersion }
+  if ($data.RootModule -cne ($moduleName + '.psm1') -or $data.ModuleVersion -cne $expectedModuleVersion) { throw 'RecoverySelectedModuleVersionMismatch' }
   $moduleBase = [IO.Path]::GetDirectoryName($manifest)
   $modulePath = Join-Path $moduleBase $data.RootModule
   $loaded = @(Get-Module -Name $moduleName -All)

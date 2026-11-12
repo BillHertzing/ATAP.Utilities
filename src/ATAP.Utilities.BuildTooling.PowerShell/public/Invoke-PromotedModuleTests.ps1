@@ -424,7 +424,7 @@ function Invoke-PromotedModuleTests {
             # immutable artifact under test. The process-scoped value is restored
             # immediately after the delegated run so it cannot leak to later tiers.
             $previousPromotedModuleManifest = [System.Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'Process')
-            [System.Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', $savedModulePath, 'Process')
+            $previousPromotedModuleVersion = [System.Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_VERSION', 'Process')
             # BuildMasterRunContext.Common.ps1 intentionally enables
             # StrictMode for the stage runner. Pester test containers are
             # module-consumer code and must not inherit that runner policy:
@@ -433,6 +433,10 @@ function Invoke-PromotedModuleTests {
             # A child scope keeps the caller's StrictMode unchanged while
             # giving the delegated test run normal PowerShell semantics.
             try {
+                # Pair the selected path with the caller's independent package
+                # version. A failed second set must also restore the first.
+                Set-Item -LiteralPath 'Env:ATAP_PROMOTED_MODULE_MANIFEST' -Value $savedModulePath -ErrorAction Stop
+                Set-Item -LiteralPath 'Env:ATAP_PROMOTED_MODULE_VERSION' -Value $Version -ErrorAction Stop
                 $innerResult = & {
                     Set-StrictMode -Off
                     Invoke-PSModulePesterTests `
@@ -447,7 +451,19 @@ function Invoke-PromotedModuleTests {
                         -ErrorAction Stop
                 }
             } finally {
-                [System.Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', $previousPromotedModuleManifest, 'Process')
+                try {
+                    if ($null -eq $previousPromotedModuleManifest) {
+                        [System.Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', [NullString]::Value, 'Process')
+                    } else {
+                        [System.Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', $previousPromotedModuleManifest, 'Process')
+                    }
+                } finally {
+                    if ($null -eq $previousPromotedModuleVersion) {
+                        [System.Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_VERSION', [NullString]::Value, 'Process')
+                    } else {
+                        [System.Environment]::SetEnvironmentVariable('ATAP_PROMOTED_MODULE_VERSION', $previousPromotedModuleVersion, 'Process')
+                    }
+                }
             }
 
             $passed = if ($null -ne $innerResult) { [int]$innerResult.Passed } else { 0 }

@@ -15,6 +15,8 @@
 | `scripts\Invoke-ParityTaskAndWait.ps1` | Interactive first-run helper; starts one parity task, waits for a newly recorded run, and fails on timeout or a non-zero Task Scheduler result |
 | `scripts\Register-ParityScheduledTasks.ps1` | Registers scheduled tasks, or uses `ConfigurationOnly` to update mappings in an existing profile configuration without changing tasks or dispatchers |
 | `tests\Unit\Parity.Tests.ps1` | Pester suite (journal round-trip, audit snapshot, Chocolatey/pip/npm/NuGet collection, cross-manager conflicts, drift comparison, stale snapshots, token-free wrapper guards, scheduled-task registration contracts) |
+| `tests\Support\Invoke-ParityIsolatedDesktopAuditTask.ps1` | Repository-only, process-owned fixture diagnostic for the two selected UTAT022 desktop products; retained for the next few builds and excluded from normal runtime staging |
+| `tests\Unit\ParityIsolatedDesktopAuditTask.Tests.ps1` | Existing synthetic tests for the isolated desktop diagnostic, its fixture ownership and result publication |
 | `tests\Unit\Task15167SharedDotNetTools.Tests.ps1` | Focused shared .NET tool, consumer identity/evidence, required journal acknowledgement, public comparison, and scheduled-alert regressions |
 | `tests\Unit\PrimaryRole.Tests.ps1` | Focused Pester coverage for canonical DPOM marker creation, validation, idempotence, exit, and WhatIf behavior |
 | `Documentation\Overview.md` | Concept overview: parity journal, audit snapshots, coverage limits, identity-explicit package paths, drift classes, and D-6 alert state |

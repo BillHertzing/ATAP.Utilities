@@ -195,6 +195,25 @@ Chocolatey, configured pip/npm/NuGet-tool paths, and ParityState file names. It 
 **not** inventory installed ATAP PowerShell module names or versions. A clean report
 therefore never proves that the same ATAP module versions are installed on both hosts.
 
+## Repository-only desktop diagnostic
+
+`tests/Support/Invoke-ParityIsolatedDesktopAuditTask.ps1` is retained as a repository
+support tool for the next few module builds while canonical Antigravity and Copilot
+coverage is developed. Its existing tests are in
+`tests/Unit/ParityIsolatedDesktopAuditTask.Tests.ps1`.
+
+It reads the two selected UTAT022 desktop installations and writes a case-local
+result only from an explicitly owned fixture process. It is not a public module
+export or a scheduled audit wrapper, and retaining it does not authorize execution
+or production parity-journal changes.
+
+Normal StageContent does not copy `tests/Support`. The next authorized module build
+must use fresh staging and inspect the actual archive/signature inventory to ensure
+the former `scripts/Invoke-ParityIsolatedDesktopAuditTask.ps1` payload is absent;
+relocating source alone cannot clear stale staging. Review retention when accepted
+canonical coverage replaces this diagnostic. No automatic build-count deletion
+threshold is defined.
+
 ## Functional area
 
 Environment / Workstation Setup - START HERE: SolutionDocumentation\NewComputerSetup.md (link-up added 2026-07-07, Sprint 0012 Task 12.46.f)

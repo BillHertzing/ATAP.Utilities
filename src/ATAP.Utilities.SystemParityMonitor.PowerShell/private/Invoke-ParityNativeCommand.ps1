@@ -14,10 +14,24 @@ function Invoke-ParityNativeCommand {
   }
 
   process {
-    $output = @(& $Command @ArgumentList 2>&1 | ForEach-Object { [string] $_ })
+    # stdout and stderr are captured separately: merging them (2>&1) let an intermittent
+    # stderr notice (e.g. 'npm notice New major version...') corrupt stdout JSON.
+    $errorFile = [System.IO.Path]::GetTempFileName()
+    try {
+      $output = @(& $Command @ArgumentList 2>$errorFile | ForEach-Object { [string] $_ })
+      $exitCode = $LASTEXITCODE
+      $errorOutput = @(Get-Content -LiteralPath $errorFile -ErrorAction SilentlyContinue | ForEach-Object { [string] $_ })
+    }
+    finally {
+      Remove-Item -LiteralPath $errorFile -Force -ErrorAction SilentlyContinue
+    }
+    if ($errorOutput.Count -gt 0) {
+      Write-ParityMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Command '$Command' wrote $($errorOutput.Count) stderr line(s)."
+    }
     [pscustomobject]@{
-      ExitCode = $LASTEXITCODE
+      ExitCode = $exitCode
       Output = $output
+      ErrorOutput = $errorOutput
     }
   }
 

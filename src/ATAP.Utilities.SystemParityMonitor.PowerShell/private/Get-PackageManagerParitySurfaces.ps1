@@ -42,7 +42,7 @@ function Get-PackageManagerParitySurfaces {
       foreach ($profileDefinition in @(
           [pscustomobject]@{ Name = 'pip'; PathProperty = 'PipPath'; Command = 'python'; ArgumentPrefix = @('-m', 'pip', 'list', '--path'); ArgumentSuffix = @('--format=json', '--disable-pip-version-check') },
           [pscustomobject]@{ Name = 'npm'; PathProperty = 'NpmPrefix'; Command = 'npm'; ArgumentPrefix = @('list', '--global', '--prefix'); ArgumentSuffix = @('--depth=0', '--json') },
-          [pscustomobject]@{ Name = 'NuGet'; PathProperty = 'NuGetToolPath'; Command = 'dotnet'; ArgumentPrefix = @('tool', 'list', '--tool-path'); ArgumentSuffix = @() }
+          [pscustomobject]@{ Name = 'NuGet'; PathProperty = 'NuGetToolPath'; Command = 'dotnet'; ArgumentPrefix = @('tool', 'list', '--tool-path'); ArgumentSuffix = @(); ProcessEnvironment = @{ DOTNET_NOLOGO = '1'; DOTNET_SKIP_FIRST_TIME_EXPERIENCE = '1' } }
         )) {
         $profilePath = [string]$profile.($profileDefinition.PathProperty)
         if ([string]::IsNullOrWhiteSpace($profilePath)) {
@@ -64,6 +64,7 @@ function Get-PackageManagerParitySurfaces {
             ProfilePath = $profilePath
             Command = $profileDefinition.Command
             Arguments = @($profileDefinition.ArgumentPrefix) + @($profilePath) + @($profileDefinition.ArgumentSuffix)
+            ProcessEnvironment = $profileDefinition.ProcessEnvironment
           })
       }
     }
@@ -91,7 +92,16 @@ function Get-PackageManagerParitySurfaces {
         continue
       }
 
+      # Process-scope environment for this invocation only (dotnet first-run banner
+      # suppression); prior values are restored in the finally block below.
+      $savedProcessEnvironment = @{}
       try {
+        if ($definition.PSObject.Properties['ProcessEnvironment'] -and $definition.ProcessEnvironment) {
+          foreach ($envName in @($definition.ProcessEnvironment.Keys)) {
+            $savedProcessEnvironment[$envName] = [Environment]::GetEnvironmentVariable($envName, 'Process')
+            [Environment]::SetEnvironmentVariable($envName, [string]$definition.ProcessEnvironment[$envName], 'Process')
+          }
+        }
         $result = Invoke-ParityNativeCommand -Command $command.Source -ArgumentList $definition.Arguments
         if ($definition.Name -eq 'Chocolatey' -and $result.ExitCode -ne 0) {
           # Chocolatey 2.x removed --local-only because `list` is local-only.
@@ -126,9 +136,23 @@ function Get-PackageManagerParitySurfaces {
             }
           }
           'NuGet' {
+            # Parse only the table: rows after the dashed separator that follows the
+            # 'Package Id  Version  Commands' header. Banner text (for example the
+            # first-run 'Welcome to .NET' message) before the header is ignored.
+            $nugetSeenHeader = $false
+            $nugetInTable = $false
             foreach ($line in @($result.Output)) {
-              if ($line -match '^\s*(?<Name>\S+)\s+(?<Version>\S+)\s+.+$' -and
-                $Matches.Name -notmatch '(?i)^(Package|-+)$') {
+              $lineText = [string]$line
+              if (-not $nugetInTable) {
+                if (-not $nugetSeenHeader) {
+                  if ($lineText -match '(?i)^\s*Package\s+Id\s+Version\b') { $nugetSeenHeader = $true }
+                } elseif ($lineText -match '^\s*-{3,}[-\s]*$') {
+                  $nugetInTable = $true
+                }
+                continue
+              }
+              if ([string]::IsNullOrWhiteSpace($lineText)) { continue }
+              if ($lineText -match '^\s*(?<Name>\S+)\s+(?<Version>\S+)\s+.+$') {
                 [pscustomobject]@{ Name = $Matches.Name; Version = $Matches.Version }
               }
             }
@@ -170,6 +194,10 @@ function Get-PackageManagerParitySurfaces {
             Value = "AuditError=$($_.Exception.Message)"
             Source = $command.Source
           })
+      } finally {
+        foreach ($envName in @($savedProcessEnvironment.Keys)) {
+          [Environment]::SetEnvironmentVariable($envName, $savedProcessEnvironment[$envName], 'Process')
+        }
       }
     }
 

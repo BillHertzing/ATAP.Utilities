@@ -3432,6 +3432,261 @@ to `media\videos\test_manim\480p15\HelloManim.mp4` relative to the project folde
 was installed, optionally verify equation rendering with a `MathTex(r"e^{i\pi} + 1 = 0")`
 scene — MiKTeX downloads required LaTeX packages automatically on first run.
 
+## (Optional) AceVideo avatar tooling: VTracer
+
+VTracer converts flat raster images (PNG/JPG) to SVG. The AceVideo avatar pipeline uses it to
+vectorize stylized portraits. See `_Planning` `InformationForTheFuture/Sprint0018/AceCommander/AceVideo/Avatars/`.
+
+- **Direct download only.** As of 2026-11-10 there is no Chocolatey or winget package
+  (based on a web search; re-check with `choco search vtracer` and `winget search vtracer`).
+  The Windows release is a zip containing a single `vtracer.exe`.
+- **Install location: `C:\Program Files\VTracer`, on the Machine `PATH`.** This follows the
+  `bws` pattern in Step 4.6. The pipeline will eventually run under BuildMaster
+  (`SvcBuildMaster`, which starts with `-NoProfile`), and only the Machine `PATH` reaches it.
+  Do not copy `vtracer.exe` into a folder another tool owns, such as
+  `C:\ProgramData\chocolatey\bin` or `System32`.
+- **Pinned build (installed on UTAT022, 2026-11-10):**
+
+  | Field | Value |
+  | --- | --- |
+  | `vtracer --version` | `vtracer 1.0.0-alpha.4` |
+  | `vtracer.exe` size | 2,394,112 bytes |
+  | `vtracer.exe` SHA-256 | `185C20424A5EED31F2ED0CAF9D72B6CC7AE86480BAB05199FD5CBDE55D4B40B1` |
+  | Release | GitHub `visioncortex/vtracer`, tag `1.0.0-alpha.4` (published 2026-08-29) |
+  | Zip asset | `vtracer-x86_64-pc-windows-msvc.zip`, 965,231 bytes (size from the GitHub releases API) |
+  | Zip URL | `https://github.com/visioncortex/vtracer/releases/download/1.0.0-alpha.4/vtracer-x86_64-pc-windows-msvc.zip` |
+
+  The same release also has `VTracer_1.0.0-alpha.4_x64-setup.exe` (about 21 MB), which appears
+  to be the desktop GUI app's installer. This setup uses the zip, because the pinned hash is for
+  the zip's command-line `vtracer.exe`.
+
+Run from an **elevated** PowerShell 7 session:
+
+```powershell
+# Pin the build. Bump these lines to upgrade, and update the table above.
+$vtracerUrl       = 'https://github.com/visioncortex/vtracer/releases/download/1.0.0-alpha.4/vtracer-x86_64-pc-windows-msvc.zip'
+$vtracerExeSha256 = '185C20424A5EED31F2ED0CAF9D72B6CC7AE86480BAB05199FD5CBDE55D4B40B1'
+
+$installDir = 'C:\Program Files\VTracer'
+New-Item -ItemType Directory -Path $installDir -Force | Out-Null
+
+$zipPath = Join-Path $env:TEMP 'vtracer-windows.zip'
+Invoke-WebRequest -Uri $vtracerUrl -OutFile $zipPath
+Expand-Archive -LiteralPath $zipPath -DestinationPath $installDir -Force
+Remove-Item $zipPath -ErrorAction SilentlyContinue
+
+# Fail closed if the executable is not the pinned build.
+$exe = Join-Path $installDir 'vtracer.exe'
+if ((Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash -ne $vtracerExeSha256) {
+  throw "vtracer.exe hash does not match the pinned build; do not use it."
+}
+
+# Add to the Machine PATH (idempotent: appends only if missing).
+$entries = [Environment]::GetEnvironmentVariable('Path', 'Machine') -split ';' | Where-Object { $_ }
+if ($entries -notcontains $installDir) {
+  [Environment]::SetEnvironmentVariable('Path', (($entries + $installDir) -join ';'), 'Machine')
+}
+```
+
+Verify in a **new** PowerShell window:
+
+```powershell
+(Get-Command vtracer).Source      # Expected: C:\Program Files\VTracer\vtracer.exe
+vtracer --version                 # Expected: vtracer 1.0.0-alpha.4
+vtracer --help                    # Prints the option list
+```
+
+> **Flag names changed in 1.0.** This build uses hyphenated flags (`--filter-speckle`,
+> `--color-precision`, `--gradient-step`), `--clustering` in place of `--colormode`, and new
+> options (`--max-colors`, `--palette`, `--simplify`, `--optimize`). Examples written for
+> VTracer 0.6 (`--filter_speckle`, `--colormode`) do not apply. Check `vtracer --help`.
+
+Record the install in the parity journal on the host where it was installed, so the peer
+host gets the same pinned build:
+
+```powershell
+Import-Module ATAP.Utilities.SystemParityMonitor.PowerShell
+
+Add-ParityChangeEntry `
+  -Category       Files `
+  -Item           'VTracer (vtracer.exe) direct-download install' `
+  -OldValue       'not installed' `
+  -NewValue       'C:\Program Files\VTracer\vtracer.exe 1.0.0-alpha.4, SHA-256 185C20424A5EED31F2ED0CAF9D72B6CC7AE86480BAB05199FD5CBDE55D4B40B1; C:\Program Files\VTracer on Machine PATH' `
+  -PeerHostName   'utat01' `
+  -PeerActionKind Manual `
+  -PeerAction     'Install VTracer per NewComputerSetup.md "(Optional) AceVideo avatar tooling: VTracer" with the same pinned build (verify the SHA-256), confirm (Get-Command vtracer).Source and vtracer --version in a new shell, then run Confirm-ParityChangeApplied.' `
+  -Reason         'AceVideo avatar pipeline vectorize step; must resolve from the Machine PATH for BuildMaster.'
+```
+
+`Invoke-ParityAudit` does not yet inventory direct-download executables (only Chocolatey,
+pip, npm and NuGet packages). Until it does, this journal entry is the only parity record
+for VTracer.
+
+## (Optional) AceVideo lip sync tooling: Rhubarb Lip Sync
+
+Rhubarb Lip Sync turns narration audio into timed mouth-shape cues. The AceVideo training-video
+pipeline uses those cues to animate the flat vector presenter avatar. See `_Planning`
+`InformationForTheFuture/Sprint0018/AceCommander/AceVideo/ACE-001-Intro/`.
+
+- **Installed and upgraded only from its GitHub releases page:**
+  <https://github.com/DanielSWolf/rhubarb-lip-sync/releases>. There is no Chocolatey or winget
+  package in use, so nothing updates it automatically. Every install and every upgrade is a manual
+  download of the Windows zip from that page, followed by the steps below, a new pinned-build
+  table, and a new parity journal entry.
+- **Install location: `C:\Program Files\Rhubarb-Lip-Sync`, on the Machine `PATH`**, following the
+  VTracer and `bws` pattern (BuildMaster's `SvcBuildMaster` starts with `-NoProfile`, so only the
+  Machine `PATH` reaches it).
+- **Keep the whole zip together.** `rhubarb.exe` loads its speech models from the `res` folder
+  next to it (about 87 MB). Copying the exe on its own breaks it.
+- **Pinned build (installed on UTAT022 by Bill, 2026-11-11):**
+
+  | Field | Value |
+  | --- | --- |
+  | Release | GitHub `DanielSWolf/rhubarb-lip-sync`, tag `v1.14.0` (published 2025-04-03) |
+  | Zip asset | `Rhubarb-Lip-Sync-1.14.0-Windows.zip`, 87,374,842 bytes (size from the GitHub releases API) |
+  | Zip URL | `https://github.com/DanielSWolf/rhubarb-lip-sync/releases/download/v1.14.0/Rhubarb-Lip-Sync-1.14.0-Windows.zip` |
+  | `rhubarb --version` | `Rhubarb Lip Sync version 1.14.0` |
+  | `rhubarb.exe` size | 2,703,360 bytes |
+  | `rhubarb.exe` SHA-256 | `9E289C6B5939EF6B306A61E8105EC721FD8D52B3CE950D08891EA3CC7DF5718D` |
+  | Install folder | 49 files, 163,088,370 bytes; `res` has 12 files, 86,527,212 bytes |
+
+Run from an **elevated** PowerShell 7 session:
+
+```powershell
+# Pin the build. To upgrade: take the new Windows zip URL from the GitHub releases page,
+# install it on one host, record the new exe hash here, then bump these two lines.
+$rhubarbUrl       = 'https://github.com/DanielSWolf/rhubarb-lip-sync/releases/download/v1.14.0/Rhubarb-Lip-Sync-1.14.0-Windows.zip'
+$rhubarbExeSha256 = '9E289C6B5939EF6B306A61E8105EC721FD8D52B3CE950D08891EA3CC7DF5718D'
+
+$installDir = 'C:\Program Files\Rhubarb-Lip-Sync'
+$stage      = Join-Path $env:TEMP ('rhubarb-' + [guid]::NewGuid())
+New-Item -ItemType Directory -Path $stage | Out-Null
+
+$zipPath = Join-Path $stage 'rhubarb-windows.zip'
+Invoke-WebRequest -Uri $rhubarbUrl -OutFile $zipPath
+Expand-Archive -LiteralPath $zipPath -DestinationPath $stage
+
+# Find the folder that holds rhubarb.exe. The zip's internal layout (one top-level folder or not)
+# was not inspected on 2026-11-11, so don't assume it.
+$exeFile = Get-ChildItem -LiteralPath $stage -Recurse -File -Filter 'rhubarb.exe' | Select-Object -First 1
+if (-not $exeFile) { throw 'rhubarb.exe not found in the zip.' }
+$top = $exeFile.Directory
+if ($top.FullName -eq (Get-Item $stage).FullName) { Remove-Item -LiteralPath $zipPath }   # contents are at the zip root
+$exe = $exeFile.FullName
+if ((Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash -ne $rhubarbExeSha256) {
+  throw 'rhubarb.exe hash does not match the pinned build; do not install it.'
+}
+
+# Upgrade: replace the folder as a whole, so no old res files are left behind.
+if (Test-Path $installDir) { Remove-Item -LiteralPath $installDir -Recurse -Force }
+Move-Item -LiteralPath $top.FullName -Destination $installDir
+Remove-Item -LiteralPath $stage -Recurse -Force
+
+# Add to the Machine PATH once.
+$machinePath = [Environment]::GetEnvironmentVariable('Path', 'Machine')
+if (($machinePath -split ';') -notcontains $installDir) {
+  [Environment]::SetEnvironmentVariable('Path', ($machinePath.TrimEnd(';') + ';' + $installDir), 'Machine')
+}
+```
+
+Verify in a **new** PowerShell window (an already-open shell keeps its old `PATH`):
+
+```powershell
+(Get-Command rhubarb).Source      # Expected: C:\Program Files\Rhubarb-Lip-Sync\rhubarb.exe
+rhubarb --version                 # Expected: Rhubarb Lip Sync version 1.14.0
+
+# Smoke test in both recognisers (English pocketSphinx, and phonetic for other languages)
+$wav = Join-Path $env:TEMP 'rhubarb-smoke.wav'
+ffmpeg -y -loglevel error -f lavfi -i 'sine=frequency=220:sample_rate=16000:duration=1.5' -ac 1 $wav
+rhubarb -f json -o "$wav.json" --extendedShapes GHX $wav                        # exit 0, mouthCues present
+rhubarb -f json -o "$wav.phonetic.json" --recognizer phonetic $wav              # exit 0
+```
+
+Record the install in the parity journal on the host where it was installed:
+
+```powershell
+Import-Module ATAP.Utilities.SystemParityMonitor.PowerShell
+
+Add-ParityChangeEntry `
+  -Category       Files `
+  -Item           'Rhubarb Lip Sync (rhubarb.exe + res) direct-download install' `
+  -OldValue       'not installed' `
+  -NewValue       'C:\Program Files\Rhubarb-Lip-Sync 1.14.0, rhubarb.exe SHA-256 9E289C6B5939EF6B306A61E8105EC721FD8D52B3CE950D08891EA3CC7DF5718D; on Machine PATH' `
+  -PeerHostName   'utat01' `
+  -PeerActionKind Manual `
+  -PeerAction     'Install Rhubarb Lip Sync per NewComputerSetup.md "(Optional) AceVideo lip sync tooling: Rhubarb Lip Sync" from its GitHub releases page with the same pinned build (verify the exe SHA-256), keep res next to the exe, confirm (Get-Command rhubarb).Source and rhubarb --version in a new shell, then run Confirm-ParityChangeApplied.' `
+  -Reason         'AceVideo lip sync for the presenter avatar; installed and upgraded only from GitHub releases; must resolve from the Machine PATH for BuildMaster.'
+```
+
+As with VTracer, `Invoke-ParityAudit` does not yet inventory direct-download tools, so the journal
+entry is the only parity record for Rhubarb Lip Sync.
+
+## (Optional) AceVideo narration voices: Windows French and Spanish text-to-speech
+
+The AceVideo pipeline narrates its training videos in English, French and Spanish with **local
+Windows voices** through `System.Speech` (decision of 2026-11-11; Azure neural voices are a later
+upgrade, SC-0551). Windows ships only the English (`en-US`) voices: Microsoft David, Zira and Mark.
+**French (France) and Spanish (Mexico) must be added on every computer that renders videos.**
+
+| Language | Windows capability | Voices it adds (confirmed on UTAT022, 2026-11-11) |
+| --- | --- | --- |
+| French (France) | `Language.TextToSpeech~~~fr-FR~0.0.1.0` | Microsoft Hortense, Julie, Paul, plus Hortense Desktop |
+| Spanish (Mexico) | `Language.TextToSpeech~~~es-MX~0.0.1.0` | Microsoft Sabina, Raul, plus Sabina Desktop |
+
+The pipeline uses **Microsoft Mark** (en-US), **Microsoft Paul** (fr-FR) and **Microsoft Raul** (es-MX).
+No restart was needed on UTAT022. A script version of the install below, with a log and a JSON
+result, is `Install-AceVideoVoices.ps1` (`_Planning` `_generated/Sprint0017/TrainingVideos/ACE-001-Intro/`).
+
+**Install with PowerShell (preferred, repeatable).** From an **elevated** PowerShell 7 session:
+
+```powershell
+$voiceCapabilities = @(
+  'Language.TextToSpeech~~~fr-FR~0.0.1.0'
+  'Language.TextToSpeech~~~es-MX~0.0.1.0'
+)
+foreach ($name in $voiceCapabilities) {
+  $cap = Get-WindowsCapability -Online -Name $name
+  if ($cap.State -ne 'Installed') { Add-WindowsCapability -Online -Name $name }
+}
+Get-WindowsCapability -Online -Name 'Language.TextToSpeech*' | Where-Object State -eq 'Installed' |
+  Select-Object Name, State
+```
+
+This downloads from Windows Update, so it needs internet access, and it can take several minutes.
+A restart or sign-out may be needed before the voices appear.
+
+**Or install through Settings:** Settings → Time & language → Speech → Manage voices → Add voices,
+then add French (France) and Spanish (Mexico). On 2026-11-11 on UTAT022, adding voices this way did
+not leave the French or Spanish capability installed, so always run the check below afterwards. The
+Settings page can also offer Narrator "natural" voices; those are separate app packages that
+`System.Speech` cannot use.
+
+**Verify** in a new, unelevated PowerShell 7 window:
+
+```powershell
+Add-Type -AssemblyName System.Speech
+$s = New-Object System.Speech.Synthesis.SpeechSynthesizer
+$s.GetInstalledVoices() | ForEach-Object { '{0} | {1}' -f $_.VoiceInfo.Name, $_.VoiceInfo.Culture }
+$s.Dispose()
+# Expected: at least one fr-FR voice and one es-MX voice, as well as the en-US voices
+```
+
+Record the change in the parity journal on the host where the voices were installed:
+
+```powershell
+Import-Module ATAP.Utilities.SystemParityMonitor.PowerShell
+
+Add-ParityChangeEntry `
+  -Category       WindowsFeatures `
+  -Item           'Windows text-to-speech voices fr-FR and es-MX (Language.TextToSpeech capabilities)' `
+  -OldValue       'en-US voices only' `
+  -NewValue       'Language.TextToSpeech~~~fr-FR~0.0.1.0 and Language.TextToSpeech~~~es-MX~0.0.1.0 Installed; voices visible to System.Speech: <list them>' `
+  -PeerHostName   'utat01' `
+  -PeerActionKind Command `
+  -PeerAction     'Run the elevated install in NewComputerSetup.md "(Optional) AceVideo narration voices", then the System.Speech check in a new shell, then Confirm-ParityChangeApplied.' `
+  -Reason         'AceVideo narration in French and Spanish with local Windows voices.'
+```
+
 ## Google Antigravity setup on a new Windows 11 computer
 
 Use the steps in this section to install Google Antigravity on a new workstation and connect it to the current sprint's local repositories.

@@ -41,10 +41,13 @@ function New-CoordQuartetCandidate {
     renders once; no replacement callback, retry or cleanup is provided.
     LF-only UTF8 without BOM is required for Markdown and rendered HTML; final
     newline presence is preserved, including the renderer's NoNewline output.
-    Companion bytes are opaque and preserved exactly. WhatIf/unchanged paths
+    Annotation companion bytes are opaque and preserved exactly. Completion's
+    typed pinned records append one escaped section before each HTML body close;
+    strict UTF8/LF, before digests and absence of that record marker are required.
+    WhatIf/unchanged paths
     perform no metadata/content/staging or renderer operations.
   .PARAMETER Preview
-    Exact eleven-field ProposedNotPrepared object from New-CoordBoardChange.
+    Exact eleven-field annotation preview, or that preview plus Completion.
   .PARAMETER BeforeImages
     Existing closed stateQuartetImages JsonElement, with canonical base64/SHA256.
   .PARAMETER ScratchRoot
@@ -155,6 +158,8 @@ function New-CoordQuartetCandidate {
       }
       $names = @('Stage', 'RequestId', 'TaskId', 'Generation', 'BaseRevision', 'BeforeSha256',
         'AfterSha256', 'BeforeBytes', 'AfterBytes', 'AfterText', 'Reservations')
+      $isCompletion = $null -ne $Preview.PSObject.Properties['Completion']
+      if ($isCompletion) { $names += 'Completion' }
       $properties = @($Preview.PSObject.Properties)
       if ($properties.Count -ne $names.Count) { throw 'InvalidPreview' }
       foreach ($property in $properties) {
@@ -175,6 +180,49 @@ function New-CoordQuartetCandidate {
           -not (sameText (lfText $previewAfter) $Preview.AfterText)) { throw 'PreviewBindingMismatch' }
       $null = lfText $previewBefore
       $null = lfText $decoded.boardHtml -AllowEmpty
+      if ($isCompletion) {
+        $typed = $Preview.Completion
+        if ($typed -isnot [pscustomobject] -or @($typed.PSObject.Properties).Count -ne 2 -or
+            $null -eq $typed.PSObject.Properties['Record'] -or $null -eq $typed.PSObject.Properties['RecordSha256'] -or
+            $typed.Record -isnot [Text.Json.JsonElement] -or $typed.RecordSha256 -isnot [string] -or
+            $typed.RecordSha256 -cnotmatch '\A[0-9a-f]{64}\z') { throw 'InvalidPreview' }
+        $record = $typed.Record
+        closedObject $record @('kind', 'resourceId', 'sprintId', 'generation', 'taskId', 'claimId',
+          'beforeMarkdownSha256', 'annotation', 'acceptance', 'readback', 'companions')
+        # This is a trusted preview seam, not an independent authority validator.
+        if ($record.GetProperty('kind').GetString() -cne 'Coordination-CompletionRecord-v1' -or
+            $record.GetProperty('taskId').GetString() -cne $Preview.TaskId -or
+            $record.GetProperty('generation').GetString() -cne $Preview.Generation -or
+            $record.GetProperty('beforeMarkdownSha256').GetString() -cne $Preview.BeforeSha256) { throw 'InvalidPreview' }
+        $entries = $record.GetProperty('companions')
+        closedObject $entries @('accomplishedHtml', 'proceduralDetailsHtml')
+        foreach ($slot in @('accomplishedHtml', 'proceduralDetailsHtml')) {
+          $entry = $entries.GetProperty($slot)
+          closedObject $entry @('beforeSha256', 'text')
+          if ($entry.GetProperty('beforeSha256').GetString() -cne $after[$slot].digest) { throw 'CompanionBindingMismatch' }
+          $text = $entry.GetProperty('text').GetString()
+          if ([string]::IsNullOrWhiteSpace($text) -or $text.Length -gt 4096 -or $text -match '[\x00-\x1f\x7f\u0085\u2028\u2029]') { throw 'InvalidPreview' }
+          $original = lfText $decoded[$slot]
+          $closes = [regex]::Matches($original, '(?i)</body>')
+          if ($closes.Count -ne 1 -or $original -notmatch '(?i)</body>\s*</html>\s*\z') { throw 'UnsupportedCompanionGrammar' }
+          $marker = 'coord-completion-' + $typed.RecordSha256 + '-' + $slot
+          if ($original.Contains($marker)) { throw 'DuplicateCompletionRecord' }
+          $section = '<section data-coordination-completion="' + $marker + '"><h2>Task ' +
+            [Net.WebUtility]::HtmlEncode($Preview.TaskId) + '</h2><p>' + [Net.WebUtility]::HtmlEncode($text) + '</p>'
+          foreach ($proofName in @('acceptance', 'readback')) {
+            $proof = $record.GetProperty($proofName)
+            closedObject $proof @('reference', 'digest')
+            closedObject $proof.GetProperty('digest') @('algorithm', 'value')
+            $section += '<p>' + $proofName + ': <code>' + [Net.WebUtility]::HtmlEncode($proof.GetProperty('reference').GetString()) +
+              '</code> SHA256 <code>' + [Net.WebUtility]::HtmlEncode($proof.GetProperty('digest').GetProperty('value').GetString()) + '</code></p>'
+          }
+          $section += "</section>`n"
+          $updated = $original.Insert($closes[0].Index, $section)
+          [byte[]]$updatedBytes = $utf8.GetBytes($updated)
+          $after[$slot].bytesBase64 = [Convert]::ToBase64String($updatedBytes)
+          $after[$slot].digest = sha $updatedBytes
+        }
+      }
       $root = canonicalPath $ScratchRoot
       if (-not $root.StartsWith('D:\ATAPArtifacts\', [StringComparison]::OrdinalIgnoreCase)) { throw 'InvalidScratchRoot' }
       foreach ($path in $paths.Values) {

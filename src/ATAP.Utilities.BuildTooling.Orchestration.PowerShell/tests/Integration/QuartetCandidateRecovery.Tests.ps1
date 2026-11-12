@@ -2,7 +2,7 @@
 param(
   [Parameter()][ValidateNotNullOrEmpty()][string]$FixtureRoot = $(
     if ([Environment]::MachineName -ieq 'UTAT022') {
-      'D:/ATAPArtifacts/Sprint0017/Task17.30.b/CandidateRecovery679/Fixtures-' + [guid]::NewGuid().ToString('N')
+      'D:/ATAPArtifacts/_generated/Sprint0017/Task17.30.b/CandidateRecovery679/Fixtures-' + [guid]::NewGuid().ToString('N')
     } else {
       throw 'FixtureRoot must be supplied explicitly on this host; no default mapping is approved.'
     }
@@ -18,7 +18,7 @@ param(
 # The preview is caller-constructed; preview provenance is assumed.
 BeforeAll {
   if (-not $IsWindows) { throw 'This integration container requires Windows publication semantics.' }
-  $allowed = [IO.Path]::GetFullPath('D:/ATAPArtifacts/Sprint0017/Task17.30.b/CandidateRecovery679').TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
+  $allowed = [IO.Path]::GetFullPath('D:/ATAPArtifacts/_generated/Sprint0017/Task17.30.b/CandidateRecovery679').TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
   if (-not [IO.Path]::IsPathFullyQualified($FixtureRoot)) { throw 'Fully qualified FixtureRoot required.' }
   $script:runRoot = [IO.Path]::GetFullPath($FixtureRoot).TrimEnd('\', '/')
   if (-not $runRoot.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase)) { throw 'FixtureRoot must descend from the registered D-only packet.' }
@@ -88,12 +88,12 @@ BeforeAll {
     $text = @('# Current Sprint: fixture', '', '## Goal', 'Synthetic quartet publication.', '',
       '## Stream C - fixture', '- [ ] **Task 17.30** [ATAP.Utilities] - Fixture', '  - Status: Planned.', '') -join [char]10
     [byte[]]$beforeMarkdown = $enc.GetBytes($text)
-    [byte[]]$afterMarkdown = $enc.GetBytes($text.Replace('Planned.', 'CLAIMED.'))
+    [byte[]]$afterMarkdown = $enc.GetBytes($text.Replace('- [ ] **Task 17.30**', '- [x] **Task 17.30**').Replace('Planned.', 'Completed with accepted evidence.'))
     $files = [ordered]@{
       markdown = @{name = 'Tasks.Sprint0017.md'; bytes = $beforeMarkdown}
       boardHtml = @{name = 'Tasks.Sprint0017.html'; bytes = [byte[]]@()}
-      proceduralDetailsHtml = @{name = 'Tasks.Sprint0017.ProceduralDetails.html'; bytes = [byte[]]@(239, 187, 191, 13, 10, 0, 255)}
-      accomplishedHtml = @{name = 'Tasks.Sprint0017.Accomplished.html'; bytes = [byte[]]@()}
+      proceduralDetailsHtml = @{name = 'Tasks.Sprint0017.ProceduralDetails.html'; bytes = $enc.GetBytes("<html><body>Prior procedure</body></html>`n")}
+      accomplishedHtml = @{name = 'Tasks.Sprint0017.Accomplished.html'; bytes = $enc.GetBytes("<html><body>Prior outcome</body></html>`n")}
     }
     $manifest = [ordered]@{}; $beforeOutputs = [ordered]@{}
     foreach ($slot in $slotNames) {
@@ -131,6 +131,21 @@ BeforeAll {
       BeforeBytes = $beforeMarkdown.Clone(); AfterBytes = $afterMarkdown.Clone(); AfterText = $enc.GetString($afterMarkdown)
       Reservations = (Test-Recovery679Element (Test-Recovery679Bytes $state.reservations))
     }
+    $closeout = @{
+      kind = 'Coordination-CompletionRecord-v1'; resourceId = 'board-S17'; sprintId = '0017'
+      taskId = '17.30'; generation = 'epoch-A'; claimId = 'synthetic-claim'
+      beforeMarkdownSha256 = $preview.BeforeSha256; annotation = 'Completed with accepted evidence.'
+      acceptance = @{ reference = 'synthetic-accepted-proof'; digest = @{ algorithm = 'SHA256'; value = '1' * 64 } }
+      readback = @{ reference = 'synthetic-readback'; digest = @{ algorithm = 'SHA256'; value = '2' * 64 } }
+      companions = @{
+        proceduralDetailsHtml = @{ beforeSha256 = $manifest.proceduralDetailsHtml.digest; text = 'Resume the retained four images without another renderer.' }
+        accomplishedHtml = @{ beforeSha256 = $manifest.accomplishedHtml.digest; text = 'Accepted synthetic consuming result.' }
+      }
+    }
+    $recordBytes = Test-Recovery679Bytes $closeout
+    $preview | Add-Member -NotePropertyName Completion -NotePropertyValue ([pscustomobject]@{
+      Record = Test-Recovery679Element $recordBytes; RecordSha256 = Test-Recovery679Sha $recordBytes
+    })
     $path = Join-Path $root 'state.json'
     [byte[]]$raw = Test-Recovery679Bytes $state
     [IO.File]::WriteAllBytes($path, $raw)
@@ -182,7 +197,7 @@ function Assert-Recovery679Plan($Fixture, $Retained) {
 }
 
 Describe 'Actual quartet candidate recovery after Windows sharing refusal (synthetic custody)' -Tag 'Integration' {
-  It 'resumes the exact rendered candidate after board replacement refusal without replaying its published prefix' {
+  It 'resumes the exact completion quartet after companion replacement refusal without replaying its published prefix' -Tag 'CompletionCapability' {
     $f = New-Recovery679Fixture
     $beforeImages = Test-Recovery679Element (Test-Recovery679Bytes $f.BeforeOutputs)
     $scratch = Join-Path $runRoot 'Candidate'
@@ -213,9 +228,9 @@ Describe 'Actual quartet candidate recovery after Windows sharing refusal (synth
 
     $handle = $null
     try {
-      # Real OS handle admits readers but denies replacement/deletion of boardHtml.
-      $handle = Open-Recovery679ReadHandle $operation.beforeOutputs.boardHtml.path
-      (Get-Recovery679Raw $operation.beforeOutputs.boardHtml.path) | Should -BeExactly $operation.beforeOutputs.boardHtml.bytesBase64
+      # Both MD and rendered HTML commit before the changed procedure companion.
+      $handle = Open-Recovery679ReadHandle $operation.beforeOutputs.proceduralDetailsHtml.path
+      (Get-Recovery679Raw $operation.beforeOutputs.proceduralDetailsHtml.path) | Should -BeExactly $operation.beforeOutputs.proceduralDetailsHtml.bytesBase64
       $held = Complete-CoordOperation -StatePath $f.Path -ExpectedStateBytes ([IO.File]::ReadAllBytes($f.Path)) -OperationId 'op-explicit' -Confirm:$false -ErrorAction Stop
       $held.Stage | Should -BeExactly 'NeedsRecovery'
       $held.Action | Should -BeExactly 'Held'
@@ -240,7 +255,7 @@ Describe 'Actual quartet candidate recovery after Windows sharing refusal (synth
       $observed = $state.preparedOperations[0].recoveryEvidence.observedOutputs
       $observed.Count | Should -Be 4
       foreach ($slot in $slotNames) {
-        $expected = if ($slot -eq 'markdown') { $operation.afterOutputs[$slot] } else { $operation.beforeOutputs[$slot] }
+        $expected = if ($slot -in @('markdown', 'boardHtml')) { $operation.afterOutputs[$slot] } else { $operation.beforeOutputs[$slot] }
         (Get-Recovery679Raw $expected.path) | Should -BeExactly $expected.bytesBase64
         $evidence = @($observed | Where-Object {$_.path -ceq $expected.path})
         $evidence.Count | Should -Be 1
@@ -249,7 +264,7 @@ Describe 'Actual quartet candidate recovery after Windows sharing refusal (synth
       }
       $stages = @([IO.Directory]::GetFiles($f.Root, '*.output.tmp'))
       $stages.Count | Should -Be 1
-      (Get-Recovery679Raw $stages[0]) | Should -BeExactly $operation.afterOutputs.boardHtml.bytesBase64
+      (Get-Recovery679Raw $stages[0]) | Should -BeExactly $operation.afterOutputs.proceduralDetailsHtml.bytesBase64
     } finally {
       if ($null -ne $handle) { $handle.Dispose() }
     }
@@ -259,13 +274,16 @@ Describe 'Actual quartet candidate recovery after Windows sharing refusal (synth
     $handles = [Collections.Generic.List[IO.FileStream]]::new()
     try {
       $handles.Add((Open-Recovery679ReadHandle $operation.afterOutputs.markdown.path))
+      $handles.Add((Open-Recovery679ReadHandle $operation.afterOutputs.boardHtml.path))
       $prefixTime = [IO.File]::GetLastWriteTimeUtc($operation.afterOutputs.markdown.path).Ticks
+      $boardPrefixTime = [IO.File]::GetLastWriteTimeUtc($operation.afterOutputs.boardHtml.path).Ticks
       foreach ($pin in $scratchPins) { $handles.Add((Open-Recovery679ReadHandle $pin.Path)) }
       $resumed = Complete-CoordOperation -StatePath $f.Path -ExpectedStateBytes ([IO.File]::ReadAllBytes($f.Path)) -OperationId 'op-explicit' -Resume -Confirm:$false -ErrorAction Stop
       $resumed.Stage | Should -BeExactly 'Applied'
       $resumed.Action | Should -BeExactly 'Completed'
       $resumed.CommitReceiptId | Should -BeExactly 'op-explicit'
       [IO.File]::GetLastWriteTimeUtc($operation.afterOutputs.markdown.path).Ticks | Should -Be $prefixTime
+      [IO.File]::GetLastWriteTimeUtc($operation.afterOutputs.boardHtml.path).Ticks | Should -Be $boardPrefixTime
       foreach ($pin in $scratchPins) {
         (Get-Recovery679Raw $pin.Path) | Should -BeExactly $pin.Raw
         [IO.File]::GetLastWriteTimeUtc($pin.Path).Ticks | Should -Be $pin.WriteTicks
@@ -301,6 +319,6 @@ Describe 'Actual quartet candidate recovery after Windows sharing refusal (synth
     }
     $candidate.AfterOutputs.GetRawText() | Should -BeExactly $candidateJson
     [IO.File]::Exists($stages[0]) | Should -BeTrue
-    (Get-Recovery679Raw $stages[0]) | Should -BeExactly $operation.afterOutputs.boardHtml.bytesBase64
+    (Get-Recovery679Raw $stages[0]) | Should -BeExactly $operation.afterOutputs.proceduralDetailsHtml.bytesBase64
   }
 }

@@ -1,14 +1,17 @@
 function New-CoordBoardChange {
   <#
   .SYNOPSIS
-    Previews one existing task's Status-value annotation without preparing it.
+    Previews one existing task annotation or explicitly evidenced leaf completion.
   .DESCRIPTION
-    Annotation-only first slice. AcceptChange.approvedChange must contain exactly
-    annotation; every status/checkbox/completion operation is UnsupportedChange.
+    Ordinary AcceptChange.approvedChange contains exactly annotation. Completion
+    requires exactly status=done and annotation, plus a caller-loaded, hash-bound
+    CompletionRecord-v1. It checks one existing unchecked/partial task, never a
+    parent cascade. Caller proves leaf registration, live claim and evidence files.
     Replaces exactly one active "  - Status: " value in the selected task, retaining
     its prefix, line ending and all outside text/bytes. Fenced/HTML task blocks,
     ambiguous/missing Status lines and unsupported annotation grammar are refused.
-    The derived open/partial/closed category must remain unchanged. This pure
+    For ordinary annotations the derived open/partial/closed category must remain
+    unchanged. This pure
     policy mirror is bound to SprintLifecycle converter 0.1.60: x/X is closed,
     ~ is partial, otherwise Status containing partial|blocked|in-progress is
     partial (case-insensitive substring), else open. Inline text normalization
@@ -51,7 +54,8 @@ function New-CoordBoardChange {
     reservations absent from the board. It is cloned unchanged, never allocated,
     filtered, freed or inferred from visible tasks. Neither tasks nor state are
     mutated. Only the adjacent parser file is read; no renderer, revision or
-    preparation receipt is produced.
+    preparation receipt is produced. Completion adds a typed Completion property
+    to the otherwise unchanged eleven-field preview; ordinary annotations do not.
   .PARAMETER Snapshot
     Original caller-bound Read-CoordBoard object with Text/RawBytes/Sha256/Tasks.
   .PARAMETER Request
@@ -68,6 +72,10 @@ function New-CoordBoardChange {
     unchanged cloned Reservations. It is not publication or feature completion.
   .NOTES
     WhatIf/Confirm exist by convention; this pure preview has no durable mutation.
+  .PARAMETER CompletionRecord
+    Optional private caller-loaded Coordination-CompletionRecord-v1 JsonElement.
+    Required only for status=done. Caller must hash the precise bytes it loads
+    against evidence[0]; this preview validates the typed bindings, not authority.
   #>
   [CmdletBinding(SupportsShouldProcess = $true)]
   [OutputType([PSCustomObject])]
@@ -76,7 +84,8 @@ function New-CoordBoardChange {
     [Parameter(Mandatory)] [System.Text.Json.JsonElement]$Request,
     [Parameter(Mandatory)] [System.Text.Json.JsonElement]$AppliedReport,
     [Parameter(Mandatory)] [System.Text.Json.JsonElement]$Context,
-    [Parameter(Mandatory)] [System.Text.Json.JsonElement]$Reservations
+    [Parameter(Mandatory)] [System.Text.Json.JsonElement]$Reservations,
+    [Parameter()] [System.Text.Json.JsonElement]$CompletionRecord
   )
 
   begin {
@@ -176,13 +185,16 @@ function New-CoordBoardChange {
       $payload = $Request.GetProperty('payload')
       $change = $payload.GetProperty('approvedChange')
       $changeNames = @($change.EnumerateObject() | ForEach-Object { $_.Name })
-      if ($changeNames.Count -ne 1 -or -not (equalText $changeNames[0] 'annotation')) { throw 'UnsupportedChange' }
+      $completion = $changeNames.Count -eq 2 -and 'status' -cin $changeNames -and 'annotation' -cin $changeNames
+      if ($completion) {
+        if (-not (equalText (textValue $change 'status') 'done')) { throw 'UnsupportedChange' }
+      } elseif ($changeNames.Count -ne 1 -or -not (equalText $changeNames[0] 'annotation')) { throw 'UnsupportedChange' }
       $annotation = textValue $change 'annotation'
       if (-not [regex]::IsMatch($annotation, '\A[A-Za-z0-9][A-Za-z0-9 .,:;/()_=@+!?-]*\z') -or
           [regex]::IsMatch($annotation, '\A(?:Task|Status|Files|Risk|Dependency|Acceptance|Goal|Stream) *:',
             [System.Text.RegularExpressions.RegexOptions]::IgnoreCase -bor [System.Text.RegularExpressions.RegexOptions]::CultureInvariant) -or
-          [regex]::IsMatch($annotation, '\b(?:done|complete|completed|closed|finished|accomplished|deployed)\b',
-            [System.Text.RegularExpressions.RegexOptions]::IgnoreCase -bor [System.Text.RegularExpressions.RegexOptions]::CultureInvariant)) { throw 'UnsupportedAnnotation' }
+          (-not $completion -and [regex]::IsMatch($annotation, '\b(?:done|complete|completed|closed|finished|accomplished|deployed)\b',
+            [System.Text.RegularExpressions.RegexOptions]::IgnoreCase -bor [System.Text.RegularExpressions.RegexOptions]::CultureInvariant))) { throw 'UnsupportedAnnotation' }
 
       foreach ($name in @('resourceId', 'sprintId', 'generation', 'taskId', 'authorizationReference')) {
         if (-not (equalText (textValue $Request $name) (textValue $Context $name))) { throw 'BindingMismatch' }
@@ -222,6 +234,45 @@ function New-CoordBoardChange {
       if (-not $foundPredecessor) { throw 'ReportMismatch' }
       if ($Reservations.ValueKind -ne [System.Text.Json.JsonValueKind]::Array) { throw 'InvalidInput' }
 
+      if ($completion) {
+        # Explicit coordinator grant covers this record's digest and both proofs.
+        # source-ready alone is never an acceptance or a completion instruction.
+        if (-not (equalText (textValue $reportPayload 'outcome') 'source-ready')) { throw 'ReportMismatch' }
+        closedMembers $CompletionRecord @('kind', 'resourceId', 'sprintId', 'generation', 'taskId',
+          'claimId', 'beforeMarkdownSha256', 'annotation', 'acceptance', 'readback', 'companions')
+        if (-not (equalText (textValue $CompletionRecord 'kind') 'Coordination-CompletionRecord-v1') -or
+            -not (equalText (textValue $CompletionRecord 'annotation') $annotation)) { throw 'ReportMismatch' }
+        foreach ($name in @('resourceId', 'sprintId', 'generation', 'taskId', 'claimId')) {
+          if (-not (equalText (textValue $CompletionRecord $name) (textValue $Context $name))) { throw 'ReportMismatch' }
+        }
+        $evidence = $payload.GetProperty('evidence')
+        if ($evidence.GetArrayLength() -ne 3) { throw 'ReportMismatch' }
+        $references = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+        foreach ($item in $evidence.EnumerateArray()) {
+          if (-not $references.Add((textValue $item 'reference'))) { throw 'ReportMismatch' }
+        }
+        $index = 1
+        foreach ($name in @('acceptance', 'readback')) {
+          $proof = $CompletionRecord.GetProperty($name)
+          closedMembers $proof @('reference', 'digest')
+          closedMembers $proof.GetProperty('digest') @('algorithm', 'value')
+          if (-not (equalText (textValue $proof 'reference') (textValue $evidence[$index] 'reference'))) { throw 'ReportMismatch' }
+          foreach ($key in @('algorithm', 'value')) {
+            if (-not (equalText (textValue $proof.GetProperty('digest') $key) (textValue $evidence[$index].GetProperty('digest') $key))) { throw 'ReportMismatch' }
+          }
+          $index++
+        }
+        $companions = $CompletionRecord.GetProperty('companions')
+        closedMembers $companions @('accomplishedHtml', 'proceduralDetailsHtml')
+        foreach ($slot in @('accomplishedHtml', 'proceduralDetailsHtml')) {
+          $entry = $companions.GetProperty($slot)
+          closedMembers $entry @('beforeSha256', 'text')
+          $text = textValue $entry 'text'
+          if ((textValue $entry 'beforeSha256') -cnotmatch '\A[0-9a-f]{64}\z' -or
+              $text.Length -gt 4096 -or $text -match '[\x00-\x1f\x7f\u0085\u2028\u2029]') { throw 'UnsupportedChange' }
+        }
+      }
+
       if ($Snapshot.RawBytes -isnot [byte[]] -or $Snapshot.Text -isnot [string] -or $Snapshot.Tasks -isnot [array]) { throw 'SnapshotMismatch' }
       [byte[]]$beforeBytes = $Snapshot.RawBytes.Clone()
       $beforeText = $utf8.GetString($beforeBytes)
@@ -250,6 +301,8 @@ function New-CoordBoardChange {
         if (equalText $task.Id $taskId) { $target = $task }
       }
       if ($null -eq $target) { throw 'UnknownTask' }
+      if ($completion -and ($target.Checkbox -in @('x', 'X') -or
+          -not (equalText (textValue $CompletionRecord 'beforeMarkdownSha256') $beforeSha))) { throw 'SnapshotMismatch' }
       if ([regex]::IsMatch($target.Text, '(?m)^[ \t]*(?:\x60{3,}|~{3,}|<!--|</?[A-Za-z])')) { throw 'UnsupportedGrammar' }
       $lines = @([regex]::Matches($target.Text, '[^\r\n]*(?:\r\n|\r|\n|\z)') | Where-Object { $_.Length -gt 0 })
       if ($lines.Count -eq 0) { throw 'SnapshotMismatch' }
@@ -279,12 +332,18 @@ function New-CoordBoardChange {
       }
       $beforeStatus = derivedStatus $target.Checkbox $valueGroup.Value
       $afterStatus = derivedStatus $target.Checkbox $annotation
-      if (-not (equalText $beforeStatus $afterStatus)) { throw 'UnsupportedChange' }
+      if (-not $completion -and -not (equalText $beforeStatus $afterStatus)) { throw 'UnsupportedChange' }
       $start = $target.StartOffset + $selected.Line.Index + $valueGroup.Index
       $end = $start + $valueGroup.Length
       $afterText = $beforeText.Substring(0, $start) + $annotation + $beforeText.Substring($end)
+      if ($completion) {
+        $headingMatch = [regex]::Match($target.Heading, $taskPattern)
+        if (-not $headingMatch.Success) { throw 'UnsupportedGrammar' }
+        $checkboxOffset = $target.StartOffset + $headingMatch.Groups['checkbox'].Index
+        $afterText = $afterText.Substring(0, $checkboxOffset) + 'x' + $afterText.Substring($checkboxOffset + 1)
+      }
       [byte[]]$afterBytes = $utf8.GetBytes($afterText)
-      [PSCustomObject]@{
+      $result = [PSCustomObject]@{
         Stage = 'ProposedNotPrepared'
         RequestId = textValue $Request 'requestId'
         TaskId = $taskId
@@ -297,6 +356,13 @@ function New-CoordBoardChange {
         AfterText = $afterText
         Reservations = $Reservations.Clone()
       }
+      if ($completion) {
+        $result | Add-Member -NotePropertyName Completion -NotePropertyValue ([pscustomobject]@{
+          Record = $CompletionRecord.Clone()
+          RecordSha256 = textValue ($payload.GetProperty('evidence')[0].GetProperty('digest')) 'value'
+        })
+      }
+      $result
     } catch {
       $code = $_.Exception.Message
       $allowed = @('InvalidInput', 'UnsupportedChange', 'UnsupportedAnnotation', 'BindingMismatch',

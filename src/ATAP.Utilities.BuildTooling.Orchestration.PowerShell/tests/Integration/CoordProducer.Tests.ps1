@@ -107,6 +107,69 @@ BeforeAll {
     }
     Set-FixtureRequest
   }
+  function Start-CompletionReport([string]$Fault = '') {
+    # Fresh synthetic custody only. Seed proper companion HTML and an unrelated
+    # existing task before the first request; never patch a committed live head.
+    $board = [IO.Path]::GetDirectoryName($state.committedOutputManifest.markdown.path)
+    [IO.File]::AppendAllText($state.committedOutputManifest.markdown.path,
+      "`n- [ ] **Task 17.25** [ATAP.Utilities] - Unrelated`n  - Status: Planned.`n")
+    foreach ($slot in @('accomplishedHtml', 'proceduralDetailsHtml')) {
+      [IO.File]::WriteAllText($state.committedOutputManifest[$slot].path, "<html><body><p>Historical $slot</p></body></html>`n")
+    }
+    foreach ($slot in $state.committedOutputManifest.Keys) {
+      $state.committedOutputManifest[$slot].digest = Get-CoordHash ([IO.File]::ReadAllBytes($state.committedOutputManifest[$slot].path))
+    }
+    Write-FixtureJson $statePath $state
+    $witness.stateSha256 = Get-CoordHash ([IO.File]::ReadAllBytes($statePath))
+    $witness.existingTasks += @{ taskId = '17.25'; ancestorTaskIds = @() }
+    $witness.scratchRoot = Join-Path $fixtureRoot ('scratch-' + [guid]::NewGuid().ToString('N'))
+    $null = [IO.Directory]::CreateDirectory($witness.scratchRoot)
+    Write-FixtureJson $witnessPath $witness
+    $null = Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false
+    $null = Invoke-CoordClerk -HolderId Coordinator -SessionId session-1 -Confirm:$false
+    $proofs = @(foreach ($name in @('acceptance', 'readback')) {
+      $path = Join-Path $board ($name + '.json')
+      [IO.File]::WriteAllText($path, ('{"synthetic":"' + $name + ' accepted existing-task proof"}'))
+      @{ reference = $path; digest = @{ algorithm = 'SHA256'; value = Get-CoordHash ([IO.File]::ReadAllBytes($path)) } }
+    })
+    $script:completionRecord = @{
+      kind = 'Coordination-CompletionRecord-v1'; resourceId = 'board-S17'; sprintId = '0017'; generation = 'epoch-1'
+      taskId = '17.24'; claimId = 'claim-request-1'; beforeMarkdownSha256 = $state.committedOutputManifest.markdown.digest
+      annotation = 'Completed with independently accepted consuming evidence.'
+      acceptance = $proofs[0]; readback = $proofs[1]
+      companions = @{
+        accomplishedHtml = @{ beforeSha256 = $state.committedOutputManifest.accomplishedHtml.digest; text = 'Observed consuming result <accepted> & retained.' }
+        proceduralDetailsHtml = @{ beforeSha256 = $state.committedOutputManifest.proceduralDetailsHtml.digest; text = 'Use one attempt and independent final readback.' }
+      }
+    }
+    switch ($Fault) {
+      StaleCompanion { $completionRecord.companions.accomplishedHtml.beforeSha256 = '0' * 64 }
+      ExtraEdit { $completionRecord.extraReplacement = 'Change unrelated task' }
+    }
+    $recordPath = Join-Path $board 'completion-record.json'
+    Write-FixtureJson $recordPath $completionRecord
+    $script:completionEvidence = @(@{ reference = $recordPath; digest = @{ algorithm = 'SHA256'; value = Get-CoordHash ([IO.File]::ReadAllBytes($recordPath)) } }) + $proofs
+    Set-FixtureRequest -Id 'completion-report' -Category ReportResult -Predecessors @('request-1') -Payload @{
+      claimId = 'claim-request-1'; outcome = $(if ($Fault -eq 'FailedReport') { 'failed' } else { 'source-ready' })
+      evidence = $completionEvidence; statedLimits = 'Bookkeeping of immutable synthetic accepted proof; no new pilot.' }
+    $null = Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false
+    (Invoke-CoordClerk -HolderId Coordinator -SessionId session-1 -Confirm:$false).Applied | Should -Be 1
+    if ($Fault -eq 'StaleProof') { [IO.File]::AppendAllText($proofs[0].reference, 'changed after report') }
+    if ($Fault -eq 'ReleasedClaim') {
+      Set-FixtureRequest -Id 'early-release' -Category Release -Predecessors @('completion-report') -Payload @{
+        claimId = 'claim-request-1'; releaseReason = 'Fixture release before completion admission.' }
+      $null = Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false
+      $null = Invoke-CoordClerk -HolderId Coordinator -SessionId session-1 -Confirm:$false
+    }
+    if ($Fault -eq 'ParentTarget') {
+      $script:witness = Get-Content -LiteralPath $witnessPath -Raw | ConvertFrom-Json -AsHashtable -Depth 100
+      $witness.existingTasks[1].ancestorTaskIds = @('17.24')
+      Write-FixtureJson $witnessPath $witness
+    }
+    Set-FixtureRequest -Id 'completion-accept' -Category AcceptChange -Predecessors @('completion-report') -Payload @{
+      reportRequestId = 'completion-report'; evidence = $completionEvidence
+      approvedChange = @{ status = 'done'; annotation = $completionRecord.annotation } }
+  }
 }
 AfterAll {
   $global:settings = $script:priorSettings
@@ -245,6 +308,89 @@ AfterAll {
       if ($env:C1754_FIXTURE_ROOT) { [IO.File]::WriteAllText((Join-Path $fixtureRoot 'C1754-annotation-failure.txt'), ($_.Exception.ToString() + "`n" + $_.ScriptStackTrace)) }
       throw
     }
+  }
+
+  It 'completes one existing leaf and both companions through real serialization renderer and durable publication once' -Tag 'CompletionCapability' {
+    Start-CompletionReport
+    $paths = $state.committedOutputManifest
+    $before = @{}
+    foreach ($slot in $paths.Keys) { $before[$slot] = [IO.File]::ReadAllText($paths[$slot].path) }
+    [byte[]]$acceptEnvelope = $envelope.Clone()
+    $null = Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false
+    (Invoke-CoordClerk -HolderId Coordinator -SessionId session-1 -Confirm:$false).Applied | Should -Be 1
+    $after = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json -AsHashtable -Depth 100
+    # Only the target Status is replaced; the unrelated task remains byte exact.
+    $expected = $before.markdown.Replace('- [ ] **Task 17.24** [ATAP.Utilities] - Fixture' + "`n  - Status: Planned.",
+      '- [x] **Task 17.24** [ATAP.Utilities] - Fixture' + "`n  - Status: " + $completionRecord.annotation)
+    [IO.File]::ReadAllText($paths.markdown.path) | Should -BeExactly $expected
+    [IO.File]::ReadAllText($paths.boardHtml.path) | Should -Match 'Completed with independently accepted consuming evidence'
+    foreach ($slot in @('accomplishedHtml', 'proceduralDetailsHtml')) {
+      $text = [IO.File]::ReadAllText($paths[$slot].path)
+      $text | Should -Match ([regex]::Escape("<p>Historical $slot</p>"))
+      @([regex]::Matches($text, 'data-coordination-completion=')).Count | Should -Be 1
+      $text | Should -Match ([regex]::Escape([Net.WebUtility]::HtmlEncode($completionRecord.companions[$slot].text)))
+    }
+    $receipt = $after.commitReceipts[-1]
+    foreach ($slot in $paths.Keys) {
+      $hash = Get-CoordHash ([IO.File]::ReadAllBytes($paths[$slot].path))
+      $hash | Should -BeExactly $after.committedOutputManifest[$slot].digest
+      $hash | Should -BeExactly $receipt.outputManifest[$slot].digest
+      $hash | Should -Not -BeExactly $state.committedOutputManifest[$slot].digest
+    }
+    $published = @{}; $ticks = @{}
+    foreach ($slot in $paths.Keys) {
+      $published[$slot] = Get-CoordHash ([IO.File]::ReadAllBytes($paths[$slot].path))
+      $ticks[$slot] = [IO.File]::GetLastWriteTimeUtc($paths[$slot].path).Ticks
+    }
+    (Submit-CoordRequest -EnvelopeBytes $acceptEnvelope -HolderId Coordinator -SessionId session-1 -Confirm:$false).Decision | Should -BeExactly 'Retained'
+    (Invoke-CoordClerk -HolderId Coordinator -SessionId session-1 -Confirm:$false).Applied | Should -Be 0
+    foreach ($slot in $paths.Keys) {
+      (Get-CoordHash ([IO.File]::ReadAllBytes($paths[$slot].path))) | Should -BeExactly $published[$slot]
+      [IO.File]::GetLastWriteTimeUtc($paths[$slot].path).Ticks | Should -Be $ticks[$slot]
+    }
+    Set-FixtureRequest -Id 'completion-release' -Category Release -Predecessors @('completion-accept') -Payload @{
+      claimId = 'claim-request-1'; releaseReason = 'Accepted bookkeeping complete.' }
+    $null = Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false
+    (Invoke-CoordClerk -HolderId Coordinator -SessionId session-1 -Confirm:$false).Applied | Should -Be 1
+    $final = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json -Depth 100
+    $final.claims.Count | Should -Be 0
+    $final.commitReceipts.Count | Should -Be 4
+    $report = @($final.requests | Where-Object { $_.request.requestId -eq 'completion-report' })[0]
+    $report.request.payload.evidence[0].digest.value | Should -BeExactly $completionEvidence[0].digest.value
+  }
+
+  It 'refuses completion <Fault> before any quartet publication' -Tag 'CompletionCapability' -ForEach @(
+    @{ Fault = 'StaleProof' }; @{ Fault = 'StaleCompanion' }; @{ Fault = 'ExtraEdit' }; @{ Fault = 'FailedReport' }
+    @{ Fault = 'ReleasedClaim' }; @{ Fault = 'ParentTarget' }
+  ) {
+    Start-CompletionReport -Fault $Fault
+    $before = @{}
+    foreach ($slot in $state.committedOutputManifest.Keys) { $before[$slot] = Get-CoordHash ([IO.File]::ReadAllBytes($state.committedOutputManifest[$slot].path)) }
+    $null = Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false
+    $result = Invoke-CoordClerk -HolderId Coordinator -SessionId session-1 -Confirm:$false
+    $result.Applied | Should -Be 0
+    $result.Rejected | Should -Be 1
+    foreach ($slot in $before.Keys) { (Get-CoordHash ([IO.File]::ReadAllBytes($state.committedOutputManifest[$slot].path))) | Should -BeExactly $before[$slot] }
+    $final = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json -Depth 100
+    $final.commitReceipts.Count | Should -Be $(if ($Fault -eq 'ReleasedClaim') { 3 } else { 2 })
+    $final.claims.Count | Should -Be $(if ($Fault -eq 'ReleasedClaim') { 0 } else { 1 })
+  }
+
+  It 'rejects a completion mixed with <OtherChange> without losing either companion delta' -Tag 'CompletionCapability' -ForEach @(
+    @{ OtherChange = 'annotation' }; @{ OtherChange = 'completion' }
+  ) {
+    Start-CompletionReport
+    $null = Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false
+    $change = if ($OtherChange -eq 'annotation') { @{ annotation = 'Evidence observed.' } }
+      else { @{ status = 'done'; annotation = $completionRecord.annotation } }
+    Set-FixtureRequest -Id 'mixed-change' -Category AcceptChange -Predecessors @('completion-report') -Payload @{
+      reportRequestId = 'completion-report'; evidence = $completionEvidence; approvedChange = $change }
+    $null = Submit-CoordRequest -EnvelopeBytes $envelope -HolderId Coordinator -SessionId session-1 -Confirm:$false
+    $result = Invoke-CoordClerk -HolderId Coordinator -SessionId session-1 -Confirm:$false
+    $result.Applied | Should -Be 0
+    $result.Rejected | Should -Be 2
+    [IO.File]::ReadAllText($state.committedOutputManifest.markdown.path) | Should -Not -Match '\[x\]'
+    [IO.File]::ReadAllText($state.committedOutputManifest.accomplishedHtml.path) | Should -Not -Match 'data-coordination-completion='
   }
 
   It 'recovers a durable pending queue write forward after interruption' -Tag 'C1637' {

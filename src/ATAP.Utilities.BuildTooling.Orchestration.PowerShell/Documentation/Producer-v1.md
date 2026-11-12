@@ -1,6 +1,6 @@
 # Producer, drain and recovery v1
 
-The development source manifest and version.json report version 0.1.10. This is not the final shipping version or authority to release. Source/disposable fixture results do not mean installed or live-board acceptance.
+The development source manifest prepares version 0.1.15 for the completion capability below. The existing version.json/release tooling must resolve the final immutable shipping version during an authorized release. This is not authority to build or release. Source/disposable fixture results do not mean installed or live-board acceptance.
 
 ## Actual entrypoints
 
@@ -46,7 +46,7 @@ The exact installed package file inventory can be constructed by enumerating tho
 
 ## First use and consuming pilot — root only
 
-1. Root resolves the release and runtime boundaries before a consuming pilot. C1927 is prepared, not ready: the module application mapping is absent, the pinned SprintLifecycle 0.1.71 renderer dependency closure is unverified, and the final version and release authority are unbound. Resolve the final NBGV version and approved release/install route before testing the exact package. Worker source evidence is not deployment.
+1. Historical initial-use procedure: C1927 recorded then-unresolved release and renderer gates; do not rerun bootstrap or a pilot against an established resource. The current completion candidate calls installed SprintLifecycle 0.1.61, and its actual source/disposable renderer proof was independently accepted; 0.1.71 is not its tested dependency. The retained 0.1.14 release used ATAP.Utilities-PowerShell on global::PowerShellModule-5Stage. For the new capability, resolve the post-commit NBGV version, exact compiled/signed package and actual 0.1.61 dependency closure, obtain separate release/install authority and consuming-package proof, then review controlled custody readmission and ordinary bookkeeping closeout. Historical release success and source evidence do not grant current release or live-board authority.
 2. The approved empty protected directories and configuration source establish the intended state root `C:/ProgramData/ATAP/AICoordinator/State` and custody record `C:/ProgramData/ATAP/AICoordinator/Custody/custody.json`; configuration source and IAC remain development work. These empty directories are not initialized state or a witness. With actual Bill approval for the concrete baseline and imports, establish the required protected backup path and existing generated scratch parent, bind the current Windows SID, and obtain the manual board handoff while holding the existing coordinator lock.
 3. Before initial state creation, durably consume the unique FIRST_USE/bootstrap ID in the protected witness as Establishing. Preserve it on interruption. An absent directory or missing state never authorizes re-bootstrap.
 4. Establish the accepted state-v1 baseline with exact quartet digests, registered roots, imported claims/reservations and immutable lineage/epoch. Bind package files and actor/grant registry. Publish Established only after validating the state and its exact stateSha256. No module public command silently performs these setup steps.
@@ -59,7 +59,42 @@ Submission starts queue ordinals at string0, uses checked signed-Int64 capacity 
 
 State writes first retain the exact proposed image in the protected external pendingWrite journal, then atomically replace/flush/read back state and advance the witness watermark. Prepare/Complete phases instead retain their exact immutable plan/operation identity before calling the existing Save-CoordOperation/Complete-CoordOperation seams. A later authorized clerk resumes that SAME work; third-state outputs hold recovery. No directory-loss reset, renumbering, identity reuse, delete cleanup or implicit retry is added.
 
-Independent eligible requests share a base head and are selected by durable ordinal with explicit task/scope/reservation conflicts. Causal chains wait for already Applied predecessors. Claim/release use Update-CoordClaim; report validates its owned claim and actual file SHA256 evidence. AcceptChange currently supports the EXISTING annotation-only New-CoordBoardChange contract, not arbitrary checkbox/status/completion edits. Multiple annotation previews compose before one installed SprintLifecycle0.1.71 candidate render; unchanged quartet batches render zero times. Existing Save/Complete retain immutable prepared plans and receipts.
+Independent eligible requests share a base head and are selected by durable ordinal with explicit task/scope/reservation conflicts. Causal chains wait for already Applied predecessors. Claim/release use Update-CoordClaim; report validates its owned claim and actual file SHA256 evidence. AcceptChange supports the existing annotation-only contract and the explicit existing-leaf completion contract below. Multiple ordinary annotation previews compose before one installed SprintLifecycle0.1.61 candidate render; unchanged quartet batches render zero times. Existing Save/Complete retain immutable prepared plans and receipts.
+
+## Explicit existing-leaf completion (source candidate 0.1.15)
+
+Use the existing serialized AcceptChange request: `approvedChange` must contain exactly `status: done` and `annotation`. Other status tokens, missing annotation and arbitrary replacement fields refuse. A source-ready ReportResult by itself does not complete anything. The exact coordinator authorization digest must cover this explicit completion request and its matching report evidence. The report must be Applied, source-ready, and still own its matching active claim. The target must be an existing unchecked/partial leaf according to the admitted task registry; no parent cascade, task creation or implicit release occurs.
+
+Freeze one new normal bookkeeping claim/report for already accepted consuming proof. Do not alter a historical pilot report or weaken matching-evidence rules to reuse it. Both report and approval carry exactly three ordered, distinct ordinary registered-root file references with SHA256 digests: the UTF8 completion record, the coordinator-accepted proof, and its final readback. The producer validates all three actual hashes, then rechecks the precise record bytes while reading them (maximum 65536 bytes). Proof documents remain immutable opaque evidence: the coordinator must review their meaning and acceptance scope before authorizing the exact completion request. This mechanism authenticates the granted bindings, not the truth of arbitrary prose or deployed state.
+
+The record is a closed JSON object (no duplicate/extra properties):
+
+```json
+{
+  "kind": "Coordination-CompletionRecord-v1",
+  "resourceId": "admitted resource",
+  "sprintId": "admitted sprint",
+  "generation": "current generation",
+  "taskId": "existing leaf",
+  "claimId": "current bookkeeping claim",
+  "beforeMarkdownSha256": "exact lowercase SHA256 before image",
+  "annotation": "Exact approved single-line annotation.",
+  "acceptance": { "reference": "exact second evidence path", "digest": { "algorithm": "SHA256", "value": "exact proof digest" } },
+  "readback": { "reference": "exact third evidence path", "digest": { "algorithm": "SHA256", "value": "exact readback digest" } },
+  "companions": {
+    "accomplishedHtml": { "beforeSha256": "exact lowercase SHA256", "text": "Observed accepted result and its practical limits." },
+    "proceduralDetailsHtml": { "beforeSha256": "exact lowercase SHA256", "text": "Reusable procedure established by that result." }
+  }
+}
+```
+
+The preview checks resource/sprint/generation/task/claim, original ordered evidence and scope, current MD hash and exact annotation. It changes only the target checkbox to x and its one Status value. Annotation grammar remains single-line ASCII prose with the existing character allowlist; completion permits explicit completion words. Companion text is nonblank single-line text of at most 4096 characters, with controls/line separators refused. Each companion must be valid UTF8 without BOM/CR, with exactly one closing body and a final closing html element. Before hashes must match both the committed manifest and actual candidate before images. Unsupported legacy formats require a separately reviewed conversion, never silent replacement.
+
+The typed preview adds only `Completion` with `Record` and `RecordSha256` to the existing eleven fields. Candidate construction inserts one deterministic HTML-escaped section immediately before each body close; it includes the two proof references/digests and a marker derived from the record digest and slot. All unrelated bytes remain exact. A pre-existing marker refuses. The installed 0.1.61 renderer generates only the main board HTML. All four after images then use the same existing durable Prepare/Complete, receipt and recovery path. A transaction containing a completion cannot merge another completion or ordinary annotation preview: all pending AcceptChange requests in that mixed set refuse with BatchConflict. Non-overlapping non-board operations retain their existing rules.
+
+Exact retained request retry returns its original outcome without rendering or appending again. A different request cannot re-complete an already checked task. Publication interruption retains the exact four images for forward recovery; it does not re-render or reconstruct companion entries. This source candidate changes no journal, state/request schema, canonicalizer, custody planner, ACL or renderer implementation.
+
+Release gates remain independent: review this focused diff and disposable proof; resolve the actual immutable version and signed inventory; authorize promotion/installation and supported custody/package migration; verify the installed consuming scope; then bind a fresh current protected pair, quartet, active bookkeeping report, exact grants, before/after images, sole-writer exclusion and one-attempt interval for live closeout approval. Same-version handoff guards remain intact. A version bump is justified by actual new capability, never used merely to bypass custody checks. Pilot03 acceptance remains historical accepted proof and is not repeated. Both Dropbox clients, manual writer activation, ALL_TASKS, general pilot and unrelated live work stay held.
 
 Exports contain exact state/custody byte images plus all observed quartet bytes, including pending/prepared/recovery history. Export is not restore approval. An incomplete protected write or prepared operation cannot be reported as a drained queue, even if cancellation arrives after a state receipt.
 

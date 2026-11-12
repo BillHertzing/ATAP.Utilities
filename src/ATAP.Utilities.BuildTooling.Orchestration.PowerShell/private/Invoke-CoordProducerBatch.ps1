@@ -8,6 +8,13 @@ function Invoke-CoordProducerBatch {
   $rejected = @{}
   $working = $Context.State.Clone()
   $preview = $null
+  # Do not merge typed companion deltas using the annotation-only MD merge.
+  $pendingChanges = @($pending | Where-Object { $_.GetProperty('request').GetProperty('category').GetString() -ceq 'AcceptChange' })
+  $pendingCompletions = @($pendingChanges | Where-Object {
+    $member = [Text.Json.JsonElement]::new()
+    $_.GetProperty('request').GetProperty('payload').GetProperty('approvedChange').TryGetProperty('status', [ref]$member)
+  })
+  $mixedCompletion = $pendingCompletions.Count -gt 0 -and $pendingChanges.Count -gt 1
   $boardPath = $Context.State.GetProperty('committedOutputManifest').GetProperty('markdown').GetProperty('path').GetString()
   $snapshot = Read-CoordBoard -PlanningRoot ([IO.Path]::GetDirectoryName($boardPath)) -SprintNumber ([int]$Context.Record.sprintId)
   $registryIds = @($Context.Record.existingTasks | ForEach-Object { $_.taskId })
@@ -59,6 +66,7 @@ function Invoke-CoordProducerBatch {
           Assert-CoordEvidence $Context $request.GetProperty('payload').GetProperty('evidence')
         }
         'AcceptChange' {
+          if ($mixedCompletion) { throw 'BatchConflict' }
           $payload = $request.GetProperty('payload')
           Assert-CoordEvidence $Context $payload.GetProperty('evidence')
           $reportId = $payload.GetProperty('reportRequestId').GetString()
@@ -66,6 +74,33 @@ function Invoke-CoordProducerBatch {
             $_.GetProperty('request').GetProperty('requestId').GetString() -ceq $reportId -and $_.GetProperty('status').GetString() -ceq 'Applied' })
           if ($reports.Count -ne 1) { throw 'ResultConflict' }
           $report = $reports[0]
+          $completionRecord = [Text.Json.JsonElement]::new()
+          $statusToken = [Text.Json.JsonElement]::new()
+          $isCompletion = $payload.GetProperty('approvedChange').TryGetProperty('status', [ref]$statusToken)
+          if ($isCompletion) {
+            $null = Get-CoordOwnedClaim $Context $report.GetProperty('request') $working
+            $taskId = $request.GetProperty('taskId').GetString()
+            foreach ($registered in $Context.Record.existingTasks) {
+              if ($taskId -cin @($registered.ancestorTaskIds)) { throw 'UnsupportedChange' }
+            }
+            $inventory = $payload.GetProperty('evidence')
+            if ($inventory.GetArrayLength() -ne 3) { throw 'ReportMismatch' }
+            $reference = $inventory[0]
+            # Assert-CoordEvidence already checked containment/ordinary paths.
+            # Recheck the exact bytes parsed here, closing a check/read mismatch.
+            $stream = [IO.File]::Open($reference.GetProperty('reference').GetString(), 'Open', 'Read', 'Read')
+            try {
+              if ($stream.Length -gt 65536) { throw 'ReportMismatch' }
+              $bytes = [byte[]]::new([int]$stream.Length)
+              $stream.ReadExactly($bytes)
+            } finally { $stream.Dispose() }
+            if ((Get-CoordHash $bytes) -cne $reference.GetProperty('digest').GetProperty('value').GetString()) { throw 'EvidenceMismatch' }
+            $completionRecord = Read-CoordJsonBytes $bytes
+            foreach ($slot in @('accomplishedHtml', 'proceduralDetailsHtml')) {
+              if ($completionRecord.GetProperty('companions').GetProperty($slot).GetProperty('beforeSha256').GetString() -cne
+                  $Context.State.GetProperty('committedOutputManifest').GetProperty($slot).GetProperty('digest').GetString()) { throw 'EvidenceMismatch' }
+            }
+          }
           $binding = ConvertTo-CoordElement @{
             coordinatorId = $Context.Record.coordinatorId; resourceId = $Context.Record.resourceId; sprintId = $Context.Record.sprintId
             generation = $Context.Record.generation; committedRevision = $Context.State.GetProperty('committedRevision').GetString()
@@ -77,7 +112,7 @@ function Invoke-CoordProducerBatch {
             # Truthful whole-file provenance, including Authenticode; the preview separately pins parser code.
             snapshotParserSha256 = (Get-FileHash (Join-Path $Context.ModuleRoot 'private/Read-CoordBoard.ps1') -Algorithm SHA256).Hash.ToLowerInvariant()
           }
-          $next = New-CoordBoardChange -Snapshot $snapshot -Request $request -AppliedReport $report -Context $binding -Reservations $Context.State.GetProperty('reservations') -Confirm:$false
+          $next = New-CoordBoardChange -Snapshot $snapshot -Request $request -AppliedReport $report -Context $binding -Reservations $Context.State.GetProperty('reservations') -CompletionRecord $completionRecord -Confirm:$false
           if ($null -eq $preview) { $preview = $next } else {
             $preview.AfterBytes = $next.AfterBytes; $preview.AfterText = $next.AfterText; $preview.AfterSha256 = $next.AfterSha256
           }

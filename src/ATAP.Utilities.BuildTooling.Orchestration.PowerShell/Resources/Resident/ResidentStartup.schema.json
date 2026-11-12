@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Held-by-default installed resident clerk startup binding",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "mode", "hostName", "windowsSid"],
+  "properties": {
+    "schemaVersion": { "const": "CoordResidentStartup-v1" },
+    "mode": { "enum": ["Held", "Active"], "default": "Held" },
+    "hostName": { "type": "string", "minLength": 1 },
+    "windowsSid": { "type": "string", "pattern": "^S-1-5-21-[0-9-]+$" },
+    "holderId": { "type": "string", "minLength": 1 },
+    "sessionId": { "type": "string", "minLength": 1 },
+    "resourceId": { "type": "string", "minLength": 1 },
+    "lineageId": { "type": "string", "minLength": 1 },
+    "generation": { "type": "string", "minLength": 1 },
+    "statePath": { "type": "string", "minLength": 3 },
+    "custodyPath": { "type": "string", "minLength": 3 },
+    "leasePath": { "type": "string", "minLength": 3 },
+    "stopPath": { "type": "string", "minLength": 3 },
+    "module": {
+      "type": "object", "additionalProperties": false,
+      "required": ["version", "manifestPath", "rootModulePath", "manifestSha256", "rootModuleSha256", "hostScriptSha256", "signerThumbprint"],
+      "properties": {
+        "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "manifestPath": { "type": "string", "minLength": 3 },
+        "rootModulePath": { "type": "string", "minLength": 3 },
+        "manifestSha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+        "rootModuleSha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+        "hostScriptSha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+        "signerThumbprint": { "type": "string", "pattern": "^[0-9a-fA-F]{40}$" }
+      }
+    },
+    "activation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["reference", "exclusionReference", "notBeforeUtc", "notAfterUtc"],
+      "properties": {
+        "reference": { "type": "string", "minLength": 1 },
+        "exclusionReference": { "type": "string", "minLength": 1 },
+        "notBeforeUtc": { "type": "string", "pattern": "^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), [0-9]{2} [A-Z][a-z]{2} [0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2} GMT$" },
+        "notAfterUtc": { "type": "string", "pattern": "^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), [0-9]{2} [A-Z][a-z]{2} [0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2} GMT$" }
+      }
+    }
+  },
+  "allOf": [{
+    "if": { "properties": { "mode": { "const": "Active" } } },
+    "then": { "required": ["holderId", "sessionId", "resourceId", "lineageId", "generation", "statePath", "custodyPath", "leasePath", "stopPath", "module", "activation"] }
+  }]
+}

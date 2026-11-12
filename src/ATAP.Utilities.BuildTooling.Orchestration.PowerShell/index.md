@@ -6,6 +6,11 @@
 - [Configuration](Documentation/Configuration-v1.md)
 - [Public commands](public)
 - [Focused integration fixtures](tests/Integration/CoordProducer.Tests.ps1)
+- [Held resident host](Resources/Resident/Invoke-CoordClerkResident.ps1)
+- [Resident startup descriptor](Resources/Resident/ResidentStartup.schema.json)
+- [Disabled same-user logon registrar](Resources/Resident/Register-CoordClerkLogonTask.ps1)
+- [Resident focused tests](tests/Unit/ResidentHost.Tests.ps1)
+- [Logon registrar focused tests](tests/Unit/ResidentLogonTask.Tests.ps1)
 
 ## Orchestration flowcharts
 

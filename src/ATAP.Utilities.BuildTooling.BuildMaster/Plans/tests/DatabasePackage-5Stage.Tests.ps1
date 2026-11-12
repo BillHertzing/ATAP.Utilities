@@ -13,6 +13,75 @@ BeforeAll {
     $script:RunnerText = Get-Content -LiteralPath $script:RunnerPath -Raw
 }
 
+Describe 'LF Capture and Resume preserve historical contexts' -Tag 'LF021NoPrune' {
+    BeforeAll {
+        $tokens = $null; $errors = $null
+        $runnerAst = [Management.Automation.Language.Parser]::ParseFile($script:RunnerPath, [ref]$tokens, [ref]$errors)
+        if ($errors.Count) { throw 'Runner parse failed' }
+        $selection = @($runnerAst.FindAll({
+            param($node) $node -is [Management.Automation.Language.AssignmentStatementAst] -and
+                $node.Left.Extent.Text -ceq '$contextRetentionDays'
+        }, $true))
+        $initialization = @($runnerAst.FindAll({
+            param($node) $node -is [Management.Automation.Language.AssignmentStatementAst] -and
+                $node.Left.Extent.Text -ceq '$contextDirectory' -and
+                $node.Right.Extent.Text -match '^Initialize-BuildMasterRunContextDirectory\s'
+        }, $true))
+        if ($selection.Count -ne 1 -or $initialization.Count -ne 1) { throw 'Expected one actual runner retention selection and initializer call' }
+        $script:noPruneInitialization = [scriptblock]::Create(
+            $selection[0].Extent.Text + "`n" + $initialization[0].Extent.Text + "`n" + '$contextDirectory')
+
+        # Load the real path/initializer/sweep definitions, without running the stage entrypoint.
+        $commonAst = [Management.Automation.Language.Parser]::ParseFile(
+            (Join-Path $script:PlansDir 'BuildMasterRunContext.Common.ps1'), [ref]$tokens, [ref]$errors)
+        if ($errors.Count) { throw 'Common source parse failed' }
+        foreach ($name in @('Resolve-BuildMasterRunContextPath', 'Clear-OldBuildMasterRunContexts', 'Initialize-BuildMasterRunContextDirectory')) {
+            $definition = @($commonAst.FindAll({
+                param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq $name
+            }, $true))
+            if ($definition.Count -ne 1) { throw 'Expected one real Common helper definition' }
+            . ([scriptblock]::Create($definition[0].Extent.Text))
+        }
+        $script:noPruneFixtureRoot = $env:ATAP_NO_PRUNE_TEST_ROOT
+        if ([string]::IsNullOrWhiteSpace($script:noPruneFixtureRoot)) {
+            $script:noPruneFixtureRoot = Join-Path $script:fixtureSource631 '_generated/tests/LF021NoPrune'
+        }
+        if (-not [IO.Path]::IsPathFullyQualified($script:noPruneFixtureRoot) -or
+            $script:noPruneFixtureRoot -notmatch '[/\\]_generated[/\\]') { throw 'Disposable fixture root must be absolute under _generated' }
+    }
+
+    BeforeEach { Mock Write-PSFMessage {} }
+
+    It '<Phase> keeps the expected historical siblings through the actual initializer' -ForEach @(
+        @{ Phase = 'Capture'; PreserveOld = $true }
+        @{ Phase = 'Resume'; PreserveOld = $true }
+        @{ Phase = 'Normal'; PreserveOld = $false }
+    ) {
+        # Each source root is disposable; the real _generated/buildmaster root is never passed.
+        $SourcePath = Join-Path $script:noPruneFixtureRoot ([guid]::NewGuid().ToString('N'))
+        $BuildMasterBuildId = 'fresh-build'
+        $LFReleasePhase = $Phase
+        $oldPath = Join-Path $SourcePath '_generated/buildmaster/old-build'
+        $recentPath = Join-Path $SourcePath '_generated/buildmaster/recent-build'
+        [void](New-Item -ItemType Directory -Path $oldPath, $recentPath -Force)
+        $payloadPath = Join-Path $oldPath 'synthetic.txt'
+        [IO.File]::WriteAllText($payloadPath, 'retained synthetic evidence')
+        [IO.Directory]::SetLastWriteTimeUtc($oldPath, [DateTime]::UtcNow.AddDays(-30))
+        [IO.Directory]::SetLastWriteTimeUtc($recentPath, [DateTime]::UtcNow.AddDays(-10))
+        $oldTime = [IO.Directory]::GetLastWriteTimeUtc($oldPath)
+        $contextDirectory = & $script:noPruneInitialization
+
+        $contextDirectory | Should -BeExactly ([IO.Path]::GetFullPath((Join-Path $SourcePath '_generated/buildmaster/fresh-build')))
+        Test-Path -LiteralPath $contextDirectory -PathType Container | Should -BeTrue
+        Test-Path -LiteralPath $recentPath -PathType Container | Should -BeTrue
+        Test-Path -LiteralPath $oldPath -PathType Container | Should -Be $PreserveOld
+        if ($PreserveOld) {
+            [IO.File]::ReadAllText($payloadPath) | Should -BeExactly 'retained synthetic evidence'
+            [IO.Directory]::GetLastWriteTimeUtc($oldPath) | Should -Be $oldTime
+        }
+    }
+}
+
 Describe 'Organization boundary stage forwarding' -Tag 'UL1617' {
     BeforeEach {
         $script:seenOrganization1617 = $null

@@ -1247,7 +1247,9 @@ function Invoke-DatabasePackageBuildMasterStage {
       }
     }
 
-    $contextDirectory = Initialize-BuildMasterRunContextDirectory -SourcePath $SourcePath -BuildMasterBuildId $BuildMasterBuildId
+    # LF Capture/Resume retain every historical context; Normal keeps its existing sweep.
+    $contextRetentionDays = if ($LFReleasePhase -in @('Capture', 'Resume')) { 0 } else { 14 }
+    $contextDirectory = Initialize-BuildMasterRunContextDirectory -SourcePath $SourcePath -BuildMasterBuildId $BuildMasterBuildId -RetentionDays $contextRetentionDays
 
     # Resolve database build context (this validates that Database/<App>/version.json exists).
     $contextParameters = @{

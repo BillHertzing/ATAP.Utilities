@@ -13,12 +13,31 @@ BeforeAll {
   }
   function Connect-DbaInstance { param($SqlInstance,[switch]$TrustServerCertificate,[switch]$AllowTrustServerCertificate) throw 'Unmocked connection forbidden' }
   function Copy-DbaDatabase { [CmdletBinding(SupportsShouldProcess)] param($Source,$Destination,$Database,$NewName,[switch]$BackupRestore,$SharedPath,[switch]$WithReplace,[switch]$Force,[switch]$EnableException) throw 'Unmocked copy forbidden' }
+  # The rehearsal calls the captured Invoke-Flyway CommandInfo on the organization path, and a Pester
+  # mock does not intercept a captured command. This double therefore records each call itself and
+  # delegates to a per-test behaviour ($script:flywayDouble), so the behaviour is still exercised.
   function Invoke-Flyway {
     [CmdletBinding(SupportsShouldProcess)]
     param([object]$SqlConnection,$DatabaseName,$ExpectedDatabaseName,$Environment,$FlywayCommand,
       $FlywayBasePath,$FlywaySqlMigrationsPath,$FlywayDataPath,$FlywayTomlPath,$PackageName,$PackageVersion,
       [string[]]$FlywayAdditionalArgs,$FlywayExecutablePath)
-    throw 'Unmocked Flyway forbidden'
+    $script:flywayCalls.Add([pscustomobject]@{ FlywayCommand = $FlywayCommand; ExpectedDatabaseName = $ExpectedDatabaseName
+        FlywayAdditionalArgs = @($FlywayAdditionalArgs); SqlConnection = $SqlConnection })
+    if ($null -eq $script:flywayDouble) { throw 'Unmocked Flyway forbidden' }
+    & $script:flywayDouble
+  }
+  function Test-FlywayCallFilter {
+    param($Call, [scriptblock]$Filter)
+    $FlywayCommand = $Call.FlywayCommand
+    $ExpectedDatabaseName = $Call.ExpectedDatabaseName
+    $FlywayAdditionalArgs = $Call.FlywayAdditionalArgs
+    $SqlConnection = $Call.SqlConnection
+    [bool](& $Filter)
+  }
+  function Assert-FlywayCalls {
+    param([int]$Times, [scriptblock]$Filter = { $true })
+    $matched = @($script:flywayCalls | Where-Object { Test-FlywayCallFilter -Call $_ -Filter $Filter })
+    $matched.Count | Should -Be $Times
   }
   function Invoke-AceCommanderLoginFixtureSequence {
     [CmdletBinding(SupportsShouldProcess)]
@@ -117,7 +136,8 @@ Describe 'Incremental clone lifetime' -Tag @('UL1617','UL1617Lifecycle') {
       if ($script:fault1617 -ceq $phase) { throw "Verifier $phase failed" }
       [pscustomobject]@{ FixturePhase = $phase + '210' }
     }
-    Mock Invoke-Flyway {
+    $script:flywayCalls = [Collections.Generic.List[object]]::new()
+    $script:flywayDouble = {
       $script:events1617.Add($FlywayCommand)
       [pscustomobject]@{ Success = ($script:fault1617 -cne $FlywayCommand) }
     }
@@ -131,7 +151,7 @@ Describe 'Incremental clone lifetime' -Tag @('UL1617','UL1617Lifecycle') {
     $r = Invoke-FlywayRehearsal @script:helperParameters1617
     $r.Success | Should -BeTrue
     ($script:events1617 -join '|') | Should -BeExactly 'Copy|Open|Before|validate|migrate|validate|After|Close|Dispose|Drop'
-    Should -Invoke Invoke-Flyway -Times 1 -Exactly -ParameterFilter {
+    Assert-FlywayCalls -Times 1 -Filter {
       $FlywayCommand -ceq 'migrate' -and $ExpectedDatabaseName -ceq 'ATAPUtilities-rehearsal-1617-Experimental' -and
       ($FlywayAdditionalArgs -join '|') -ceq '-defaultSchema=dbo|-table=flyway_schema_history|-target=00210' -and
       [object]::ReferenceEquals($SqlConnection,$script:verifier1617)
@@ -142,7 +162,7 @@ Describe 'Incremental clone lifetime' -Tag @('UL1617','UL1617Lifecycle') {
     $script:fault1617=$Failure
     { Invoke-FlywayRehearsal @script:helperParameters1617 } | Should -Throw '*failed*'
     ($script:events1617 | Select-Object -Last 3) -join '|' | Should -BeExactly 'Close|Dispose|Drop'
-    if ($Failure -in @('Before','validate')) { Should -Invoke Invoke-Flyway -Times 0 -Exactly -ParameterFilter { $FlywayCommand -ceq 'migrate' } }
+    if ($Failure -in @('Before','validate')) { Assert-FlywayCalls -Times 0 -Filter { $FlywayCommand -ceq 'migrate' } }
   }
   It 'refuses an existing clone before copy or drop' {
     $script:present1617=$true
@@ -173,12 +193,12 @@ Describe 'Incremental clone lifetime' -Tag @('UL1617','UL1617Lifecycle') {
     (Invoke-FlywayRehearsal @legacy).Success | Should -BeTrue
     ($script:events1617 -join '|') | Should -BeExactly 'Drop|Copy|Open|Legacy|Close|Dispose|Drop'
     Should -Invoke Invoke-AceCommanderLoginFixtureSequence -Times 1 -Exactly
-    Should -Invoke Invoke-Flyway -Times 0 -Exactly
+    $script:flywayCalls.Count | Should -Be 0
     Should -Invoke Invoke-DatabaseSqlQuery -Times 0 -Exactly
   }
   It 'allows pending only before migrate and explicitly validates strictly afterward' -Tag 'Pending1636' {
     $script:operations1636 = [Collections.Generic.List[object]]::new()
-    Mock Invoke-Flyway {
+    $script:flywayDouble = {
       $script:operations1636.Add([pscustomobject]@{ Command=$FlywayCommand; Arguments=@($FlywayAdditionalArgs) })
       [pscustomobject]@{ Success=$true }
     }
@@ -190,17 +210,17 @@ Describe 'Incremental clone lifetime' -Tag @('UL1617','UL1617Lifecycle') {
     ($script:events1617 | Select-Object -Last 3) -join '|' | Should -BeExactly 'Close|Dispose|Drop'
   }
   It 'still blocks a nonpending pre-validation failure without any migrate' -Tag 'Pending1636' {
-    Mock Invoke-Flyway { [pscustomobject]@{ Success=$false; ValidateOutput='Synthetic checksum mismatch' } }
+    $script:flywayDouble = { [pscustomobject]@{ Success=$false; ValidateOutput='Synthetic checksum mismatch' } }
     { Invoke-FlywayRehearsal @script:helperParameters1617 } | Should -Throw '*validate failed*'
-    Should -Invoke Invoke-Flyway -Times 1 -Exactly -ParameterFilter {
+    Assert-FlywayCalls -Times 1 -Filter {
       $FlywayCommand -ceq 'validate' -and $FlywayAdditionalArgs -contains '-ignoreMigrationPatterns=*:pending'
     }
-    Should -Invoke Invoke-Flyway -Times 0 -Exactly -ParameterFilter { $FlywayCommand -ceq 'migrate' }
+    Assert-FlywayCalls -Times 0 -Filter { $FlywayCommand -ceq 'migrate' }
     ($script:events1617 | Select-Object -Last 3) -join '|' | Should -BeExactly 'Close|Dispose|Drop'
   }
   It 'rejects a strict post-migration failure and cleans the clone without post-state success' -Tag 'Pending1636' {
     $script:validations1636=0
-    Mock Invoke-Flyway {
+    $script:flywayDouble = {
       if ($FlywayCommand -ceq 'validate') {
         $script:validations1636++
         return [pscustomobject]@{ Success=($script:validations1636 -eq 1) }
@@ -208,8 +228,8 @@ Describe 'Incremental clone lifetime' -Tag @('UL1617','UL1617Lifecycle') {
       [pscustomobject]@{ Success=$true }
     }
     { Invoke-FlywayRehearsal @script:helperParameters1617 } | Should -Throw '*validate failed*'
-    Should -Invoke Invoke-Flyway -Times 1 -Exactly -ParameterFilter { $FlywayCommand -ceq 'migrate' }
-    Should -Invoke Invoke-Flyway -Times 1 -Exactly -ParameterFilter {
+    Assert-FlywayCalls -Times 1 -Filter { $FlywayCommand -ceq 'migrate' }
+    Assert-FlywayCalls -Times 1 -Filter {
       $FlywayCommand -ceq 'validate' -and $FlywayAdditionalArgs -contains '-ignoreMigrationPatterns='
     }
     $script:events1617 | Should -Not -Contain 'After'

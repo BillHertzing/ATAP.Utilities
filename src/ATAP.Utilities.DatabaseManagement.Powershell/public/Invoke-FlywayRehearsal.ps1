@@ -563,7 +563,7 @@ END;
               $history = @(Invoke-DatabaseSqlQuery -SqlConnection $verifier -CommandText 'SELECT [version], [success] FROM dbo.flyway_schema_history ORDER BY [installed_rank];' -ErrorAction Stop)
               $expectedVersions = @('00010', '00030', '00040', '00050', '00060', '00070', '00080', '00090',
                 '00100', '00110', '00120', '00130', '00140', '00150', '00160', '00170', '00180', '00190', '00200', '00210')
-              if ($history.Count -notin @(14, 16, 20)) { throw 'Organization rehearsal requires a V150, V170 or V210 baseline.' }
+              if ($history.Count -notin @(13, 14, 16, 20)) { throw 'Organization rehearsal requires a V140, V150, V170 or V210 baseline.' }
               for ($historyIndex = 0; $historyIndex -lt $history.Count; $historyIndex++) {
                 if ($history[$historyIndex].version -isnot [string] -or
                     $history[$historyIndex].version -cne $expectedVersions[$historyIndex] -or
@@ -572,6 +572,35 @@ END;
                 }
               }
               $predecessorPhases = @()
+              if ($history.Count -eq 13) {
+                # V140 baseline (a tier that never applied V150): bring the clone to exactly V150
+                # first, then continue through the unchanged V150 path below. V00150 carries its own
+                # V70-contract guards (60603-60605) and postcondition (60606).
+                $v150Parameters = $sequenceParams.Clone()
+                $v150Parameters.SqlConnection = $verifier
+                foreach ($operation in @('validate', 'migrate', 'validate')) {
+                  $v150Parameters.FlywayCommand = $operation
+                  # V160-V210 stay pending above the 00150 target in this step only.
+                  $v150Parameters.FlywayAdditionalArgs = @('-defaultSchema=dbo', '-table=flyway_schema_history', '-target=00150', '-ignoreMigrationPatterns=*:pending')
+                  $v150Summaries = @(& $fixtureFlywayCommand @v150Parameters -Confirm:$false -ErrorAction Stop)
+                  if ($v150Summaries.Count -ne 1 -or $v150Summaries[0].Success -isnot [bool] -or -not $v150Summaries[0].Success) {
+                    throw "V140 baseline V150 step $operation failed."
+                  }
+                }
+                if ($verifier.State -cne 'Open' -or $verifier.ClientConnectionId -ne $clientConnectionId) {
+                  throw 'V150 step verifier session changed.'
+                }
+                $history = @(Invoke-DatabaseSqlQuery -SqlConnection $verifier -CommandText 'SELECT [version], [success] FROM dbo.flyway_schema_history ORDER BY [installed_rank];' -ErrorAction Stop)
+                if ($history.Count -ne 14) { throw 'V140 baseline V150 step must leave exactly fourteen history rows.' }
+                for ($historyIndex = 0; $historyIndex -lt $history.Count; $historyIndex++) {
+                  if ($history[$historyIndex].version -isnot [string] -or
+                      $history[$historyIndex].version -cne $expectedVersions[$historyIndex] -or
+                      $history[$historyIndex].success -isnot [bool] -or -not $history[$historyIndex].success) {
+                    throw 'V140 baseline V150 step must leave exact successful V150 history.'
+                  }
+                }
+                $predecessorPhases = @('validate150', 'migrate150', 'validate150')
+              }
               if ($history.Count -eq 14) {
                 if (-not $legacyFixtureRequested) { throw 'V150 organization rehearsal requires paired Login/Decrypt fixture paths.' }
                 $predecessor = @(Invoke-AceCommanderLoginFixtureSequence -SqlConnection $verifier `
@@ -580,7 +609,7 @@ END;
                 if ($predecessor.Count -ne 1 -or $predecessor[0].Success -isnot [bool] -or -not $predecessor[0].Success) {
                   throw 'Login/Decrypt predecessor sequence did not report success.'
                 }
-                $predecessorPhases = @($predecessor[0].CompletedPhases)
+                $predecessorPhases = @($predecessorPhases) + @($predecessor[0].CompletedPhases)
                 if ($verifier.State -cne 'Open' -or $verifier.ClientConnectionId -ne $clientConnectionId) {
                   throw 'Organization predecessor verifier session changed.'
                 }

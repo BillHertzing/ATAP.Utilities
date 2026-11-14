@@ -495,6 +495,65 @@ Describe 'Fixture sequence inside captured clone lifetime (605)' -Tag 'Unit' {
       ($script:events605 | Select-Object -Last 3) -join '|' | Should -BeExactly 'Close|Dispose|DROP'
     }
 
+    Context 'V140 baseline (a tier that never applied V150)' {
+      BeforeEach {
+        # 13 successful rows (00010-00140). The clone reports 14 rows only after a
+        # migrate call targeted at 00150, unless the fault leaves history unchanged.
+        $script:v140Fault = ''
+        $script:history1745 = @($script:versions1745[0..12] | ForEach-Object { [pscustomobject]@{ version = $_; success = $true } })
+        Mock Invoke-DatabaseSqlQuery {
+          if ($CommandText -like '*DB_ID(@CloneName)*') { return [pscustomobject]@{ Absent = 1 } }
+          if ($CommandText -ceq 'SELECT [version], [success] FROM dbo.flyway_schema_history ORDER BY [installed_rank];') {
+            $script:events605.Add('History')
+            $migrated150 = @($script:routeCalls1745 | Where-Object { $_.FlywayAdditionalArgs -contains '-target=00150' }).Count -ge 2
+            if ($migrated150 -and $script:v140Fault -ne 'HistoryUnchanged') {
+              return @($script:versions1745[0..13] | ForEach-Object { [pscustomobject]@{ version = $_; success = $true } })
+            }
+            return $script:history1745
+          }
+          if ($CommandText.StartsWith("DECLARE @VerificationPhase nvarchar(8)=N'Before';")) {
+            $script:events605.Add('Before210'); return [pscustomobject]@{ FixturePhase = 'Before210' }
+          }
+          if ($CommandText.StartsWith("DECLARE @VerificationPhase nvarchar(8)=N'After';")) {
+            $script:events605.Add('After210'); return [pscustomobject]@{ FixturePhase = 'After210' }
+          }
+          throw 'Unexpected organization query'
+        }
+      }
+
+      It 'Invoke-FlywayRehearsal_V140Baseline_MigratesCloneToV150ThenFollowsTheV150Path' {
+        # Arrange: done in BeforeEach. Act
+        $result = Invoke-ExactRehearsal553Fixture $script:inputs605
+        # Assert
+        $result.Success | Should -BeTrue
+        ($script:events605 -join '|') | Should -BeExactly ('Copy|Allocate|Configure|Open|History|validate|migrate|validate|History|' +
+          'Login160|Decrypt170|Before210|validate|migrate|validate|After210|Close|Dispose|DROP')
+        $script:routeCalls1745.Count | Should -Be 6
+        foreach ($call in $script:routeCalls1745[0..2]) {
+          $call.FlywayAdditionalArgs | Should -Contain '-target=00150'
+          $call.FlywayAdditionalArgs | Should -Contain '-ignoreMigrationPatterns=*:pending'
+          [object]::ReferenceEquals($call.SqlConnection, $script:verifier605) | Should -BeTrue
+        }
+        foreach ($call in $script:routeCalls1745[3..5]) { $call.FlywayAdditionalArgs | Should -Contain '-target=00210' }
+        Should -Invoke Invoke-AceCommanderLoginFixtureSequence -Times 1 -Exactly -Scope It
+      }
+
+      It 'Invoke-FlywayRehearsal_V140BaselineStepLeavesWrongHistory_RefusesBeforePredecessorAndCleansClone' {
+        $script:v140Fault = 'HistoryUnchanged'
+        { Invoke-ExactRehearsal553Fixture $script:inputs605 } | Should -Throw '*exactly fourteen history rows*'
+        Should -Invoke Invoke-AceCommanderLoginFixtureSequence -Times 0 -Exactly -Scope It
+        $script:events605 | Should -Not -Contain 'Before210'
+        ($script:events605 | Select-Object -Last 3) -join '|' | Should -BeExactly 'Close|Dispose|DROP'
+      }
+
+      It 'Invoke-FlywayRehearsal_TwelveRowBaseline_IsStillRefusedBeforeMigrations' {
+        $script:history1745 = @($script:versions1745[0..11] | ForEach-Object { [pscustomobject]@{ version = $_; success = $true } })
+        { Invoke-ExactRehearsal553Fixture $script:inputs605 } | Should -Throw '*Organization rehearsal requires*'
+        $script:routeCalls1745.Count | Should -Be 0
+        ($script:events605 | Select-Object -Last 3) -join '|' | Should -BeExactly 'Close|Dispose|DROP'
+      }
+    }
+
     It 'refuses V150 without predecessor paths before migrations and still cleans the clone' {
       $script:inputs605.Remove('LoginFixturePath'); $script:inputs605.Remove('DecryptFixturePath')
       { Invoke-ExactRehearsal553Fixture $script:inputs605 } | Should -Throw '*requires paired Login/Decrypt*'

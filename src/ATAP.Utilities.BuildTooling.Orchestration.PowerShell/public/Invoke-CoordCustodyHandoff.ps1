@@ -8,7 +8,30 @@ function Invoke-CoordCustodyHandoff {
     Recover needs fresh authority for one exact observed boundary. ALL_TASKS and
     pilot holds remain external; the planner preserves mutationAdmission=Admitted.
   .PARAMETER Mode
-    Plan, Inspect, Apply, or an explicitly approved Recover continuation.
+    Plan, Inspect, Apply, or an explicitly approved Recover continuation. ApplyPackage and
+    RecoverPackage are the package-only transition (Package parameter set): they change only
+    custody.package plus one history entry under the standing custody.autoPackageAdmission
+    policy. They never write state.json or any board file, need no operator approval window,
+    planner intent, Worker update or two-host Dropbox exclusion, and any failure or
+    uncertainty disables the policy when that write is itself safe, otherwise holds fenced.
+  .PARAMETER OperationId
+    Package set. Fresh GUID naming one package admission. RecoverPackage takes only this.
+  .PARAMETER AttestationPath
+    Package set, ApplyPackage only. The Coordination-package-attestation-v1 file.
+  .PARAMETER ExpectedAttestationSha256
+    Package set, ApplyPackage only. Mandatory independently supplied digest of that file.
+    Busy collisions (PendingWritePresent, OperationInFlight, MutationNotAdmitted, quartet
+    changed before the attempt) refuse without disabling the policy; every trust or
+    uncertainty failure still disables it when that write is safe.
+  .PARAMETER NupkgPath
+    Package set, ApplyPackage only. The nupkg whose SHA-256 must equal the attested archive.
+  .PARAMETER CandidateModuleRoot
+    Package set, ApplyPackage only, MANDATORY. The installed root of the NEW package to admit.
+    This command, which must be running from the currently admitted module and never the
+    candidate, verifies and inventories that root and reads its schema from it; no code of the
+    candidate is imported or run. It must exist and differ from the running module's root, so
+    the running code can never vouch for itself. RecoverPackage reads the root recorded in the
+    once file and refuses an attempt that has none.
   .PARAMETER PacketPath
     Pinned protected snapshot/intent/target-package and designated-Worker packet.
   .PARAMETER ExpectedPacketSha256
@@ -33,15 +56,24 @@ function Invoke-CoordCustodyHandoff {
   .LINK
     ../Documentation/Coordination-v1.md
   #>
-  [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+  [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = 'Handoff')]
   param(
-    [Parameter(Mandatory)][ValidateSet('Plan','Inspect','Apply','Recover', IgnoreCase=$false)][string]$Mode,
-    [Parameter(Mandatory)][string]$PacketPath,
-    [Parameter(Mandatory)][ValidatePattern('\A[0-9a-fA-F]{64}\z')][string]$ExpectedPacketSha256,
-    [string]$ApprovalPath,
-    [ValidatePattern('\A[0-9a-fA-F]{64}\z')][string]$ExpectedApprovalSha256,
-    [string]$ExclusionPath,
-    [ValidatePattern('\A[0-9a-fA-F]{64}\z')][string]$ExpectedExclusionSha256
+    [Parameter(Mandatory, ParameterSetName = 'Handoff')]
+    [Parameter(Mandatory, ParameterSetName = 'Package')]
+    [Parameter(Mandatory, ParameterSetName = 'PackageRecover')]
+    [ValidateSet('Plan','Inspect','Apply','Recover','ApplyPackage','RecoverPackage', IgnoreCase=$false)][string]$Mode,
+    [Parameter(Mandatory, ParameterSetName = 'Handoff')][string]$PacketPath,
+    [Parameter(Mandatory, ParameterSetName = 'Handoff')][ValidatePattern('\A[0-9a-fA-F]{64}\z')][string]$ExpectedPacketSha256,
+    [Parameter(ParameterSetName = 'Handoff')][string]$ApprovalPath,
+    [Parameter(ParameterSetName = 'Handoff')][ValidatePattern('\A[0-9a-fA-F]{64}\z')][string]$ExpectedApprovalSha256,
+    [Parameter(ParameterSetName = 'Handoff')][string]$ExclusionPath,
+    [Parameter(ParameterSetName = 'Handoff')][ValidatePattern('\A[0-9a-fA-F]{64}\z')][string]$ExpectedExclusionSha256,
+    [Parameter(Mandatory, ParameterSetName = 'Package')]
+    [Parameter(Mandatory, ParameterSetName = 'PackageRecover')][string]$OperationId,
+    [Parameter(Mandatory, ParameterSetName = 'Package')][string]$AttestationPath,
+    [Parameter(Mandatory, ParameterSetName = 'Package')][ValidatePattern('\A[0-9a-fA-F]{64}\z')][string]$ExpectedAttestationSha256,
+    [Parameter(Mandatory, ParameterSetName = 'Package')][string]$NupkgPath,
+    [Parameter(Mandatory, ParameterSetName = 'Package')][string]$CandidateModuleRoot
   )
   begin {
     $fn = 'Invoke-CoordCustodyHandoff'
@@ -313,8 +345,351 @@ function Invoke-CoordCustodyHandoff {
         throw 'HandoffFinalReceiptAcknowledgementMismatch'
       }
     }
+    # ---- Package-only custody transition helpers (ApplyPackage / RecoverPackage) ----
+    function pkgUtc { [DateTimeOffset]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ',[Globalization.CultureInfo]::InvariantCulture) }
+    function pkgDisabledImage([byte[]]$Witness) {
+      # The same witness with only the policy switched off and any pendingWrite cleared.
+      $members = Get-CoordMembers (Read-CoordJsonBytes $Witness)
+      $policy = $members['autoPackageAdmission']
+      if ($null -eq $policy -or $policy.ValueKind -ne [Text.Json.JsonValueKind]::Object) { throw 'PackagePolicyAbsent' }
+      $policyMembers = Get-CoordMembers $policy
+      $policyMembers['enabled'] = $false
+      $members['autoPackageAdmission'] = $policyMembers
+      $members['pendingWrite'] = $null
+      return ,(ConvertTo-SuccessorPlanBytes $members)
+    }
+    function pkgCheckpoint {
+      $stateDigest = Get-CoordHash (handoffRead $statePath)
+      $witnessDigest = Get-CoordHash (handoffRead $recordPath)
+      if ($stateDigest -cne $pkgPlan.Pairs.Before.State) { return 'ThirdState' }
+      if ($witnessDigest -ceq $pkgPlan.Pairs.Before.Witness) { return 'Before' }
+      if ($witnessDigest -ceq $pkgPlan.Pairs.Fenced.Witness) { return 'Fenced' }
+      if ($witnessDigest -ceq $pkgPlan.Pairs.Target.Witness) { return 'Target' }
+      foreach ($pair in @(@('Before',$pkgBeforeWitness),@('Fenced',$pkgPlan.FencedWitness),@('Target',$pkgPlan.TargetWitness))) {
+        if ((Get-CoordHash (pkgDisabledImage $pair[1])) -ceq $witnessDigest) { return ('Disabled' + $pair[0]) }
+      }
+      'ThirdState'
+    }
+    function pkgQuartet($StateElement, $Expected, [string]$Failure = 'PackageQuartetChanged') {
+      # Reads every board file under the held lease and compares it to the published head
+      # recorded in state.json and, when supplied, to the digests captured earlier.
+      $outputs = [ordered]@{}
+      foreach ($slot in 'markdown','boardHtml','proceduralDetailsHtml','accomplishedHtml') {
+        $entry = $StateElement.GetProperty('committedOutputManifest').GetProperty($slot)
+        $path = Get-SuccessorPlanText $entry 'path'
+        $digest = Get-CoordHash (handoffRead $path)
+        if ($digest -cne (Get-SuccessorPlanText $entry 'digest')) { throw $Failure }
+        if ($Expected -and $digest -cne $Expected[$slot].digest) { throw $Failure }
+        $outputs[$slot] = [ordered]@{ path = $path; digest = $digest }
+      }
+      $outputs
+    }
+    function pkgTryDisable([string]$Reason) {
+      # Switches custody.autoPackageAdmission.enabled off, but only when that single custody
+      # write is itself safe: the witness is one of this operation's known images, state.json
+      # still matches it, any pendingWrite is this operation's own fence, and recovery history
+      # is complete and coherent. Otherwise nothing is written and the record is left as found.
+      try {
+        $current = handoffRead $recordPath
+        if ($pkgKnown -cnotcontains (Get-CoordHash $current)) { return 'DisableUnsafe_UnknownWitness_HeldAsFound' }
+        $element = Read-CoordJsonBytes $current
+        if ($element.GetProperty('custodianSid').GetString() -cne $sid) { return 'DisableUnsafe_CustodianMismatch_HeldAsFound' }
+        if ((Get-CoordHash (handoffRead $statePath)) -cne $element.GetProperty('stateSha256').GetString()) { return 'DisableUnsafe_StateMismatch_HeldAsFound' }
+        $pending = $element.GetProperty('pendingWrite')
+        if ($pending.ValueKind -ne [Text.Json.JsonValueKind]::Null -and
+            ($pending.ValueKind -ne [Text.Json.JsonValueKind]::Object -or
+             (Get-SuccessorPlanText $pending 'kind') -cne 'PackageAdmission' -or
+             (Get-SuccessorPlanText $pending 'operationId') -cne $id)) { return 'DisableUnsafe_ForeignPendingWrite_HeldAsFound' }
+        $policy = [Text.Json.JsonElement]::new()
+        if (-not $element.TryGetProperty('autoPackageAdmission',[ref]$policy) -or $policy.ValueKind -ne [Text.Json.JsonValueKind]::Object) { return 'DisableNotApplicable_PolicyAbsent' }
+        if ($policy.GetProperty('enabled').ValueKind -eq [Text.Json.JsonValueKind]::False) { return 'AlreadyDisabled' }
+        Assert-CoordRecoveryPair (Read-CoordRecoveryHistory $historyRoot)
+        $disabled = pkgDisabledImage $current
+        Write-CoordAtomicBytes -Path $recordPath -ExpectedBytes $current -Bytes $disabled
+        if ((Get-CoordHash (handoffRead $recordPath)) -cne (Get-CoordHash $disabled)) { return 'DisableReadbackFailed_Held' }
+        try {
+          handoffNew ($pkgPrefix + '.disabled.json') (handoffBytes ([ordered]@{kind='Coordination-package-admission-disabled-v1';operationId=$id
+            reason=$Reason;disabledAtUtc=(pkgUtc);beforeWitnessDigest=(Get-CoordHash $current);afterWitnessDigest=(Get-CoordHash $disabled)}))
+        } catch {}
+        'Disabled'
+      } catch { 'DisableUnsafeOrFailed_Held' }
+    }
+    $pkgNotNowCodes = @('PendingWritePresent','OperationInFlight','MutationNotAdmitted','PackageQuartetChangedBeforeAttempt')
+    $pkgDisableConfirmed = @('Disabled','AlreadyDisabled','NotDisabled_NotNowRefusal')
+    function pkgHeld { [IO.File]::Exists($holdPath) -or [IO.Directory]::Exists($holdPath) }
+    function pkgWriteHold([string]$Code,[string]$DisableOutcome) {
+      # When the policy could not be switched off safely, a durable custodian-side marker makes every
+      # later ApplyPackage refuse until a human reviews and removes it. Never silently skipped:
+      # the outcome (Written, AlreadyHeld, WriteFailed) is reported in the thrown error's structured data.
+      try {
+        if (pkgHeld) { return 'AlreadyHeld' }
+        handoffNew $holdPath (handoffBytes ([ordered]@{kind='Coordination-package-admission-hold-v1';operationId=$id;code=$Code
+          policyDisable=$DisableOutcome;heldAtUtc=(pkgUtc)}))
+        'Written'
+      } catch { 'WriteFailed' }
+    }
   }
   process {
+    $expectedSet = switch -CaseSensitive ($Mode) { 'ApplyPackage' { 'Package' } 'RecoverPackage' { 'PackageRecover' } default { 'Handoff' } }
+    if ($PSCmdlet.ParameterSetName -cne $expectedSet) { throw 'HandoffPackageModeParameterSetMismatch' }
+    if ($Mode -cin @('ApplyPackage','RecoverPackage')) {
+      $pkgApply = $Mode -ceq 'ApplyPackage'
+      foreach ($value in $AttestationPath,$NupkgPath) { if ($pkgApply -and [string]::IsNullOrWhiteSpace($value)) { throw 'PackageApplyRequiresAttestationAndNupkgPaths' } }
+      if (-not $PSCmdlet.ShouldProcess($OperationId,"$Mode one package-only custody admission")) {
+        return [pscustomobject]@{Status='ProposedOnly';LiveAdmission=$false}
+      }
+      $ErrorActionPreference='Stop'
+      $null=Get-Command Write-PSFMessage -ErrorAction Stop
+      $module=$MyInvocation.MyCommand.Module
+      if(-not $module){throw 'HandoffRequiresSelectedModule'}
+      $moduleRoot=$module.ModuleBase
+      $codeDigest=Get-CoordHash (handoffRead $module.Path)
+      # The root whose bytes are verified and admitted: always a separate root (mandatory for ApplyPackage), so the
+      # running module can never be the thing that vouches for itself. RecoverPackage reads it from the once file.
+      $candidateRoot=$null
+      if($pkgApply){
+        if([string]::IsNullOrWhiteSpace($CandidateModuleRoot) -or -not [IO.Directory]::Exists($CandidateModuleRoot)){throw 'PackageCandidateModuleRootMissing'}
+        $candidateFull=[IO.Path]::GetFullPath($CandidateModuleRoot).TrimEnd('\')
+        if($candidateFull -ieq [IO.Path]::GetFullPath($moduleRoot).TrimEnd('\')){throw 'PackageCandidateMustDifferFromRunningModule'}
+        $null=Assert-CoordOrdinaryPath $candidateFull -MustExist
+        $candidateRoot=$candidateFull
+      }
+      $id=handoffGuid $OperationId
+      $identity=[Security.Principal.WindowsIdentity]::GetCurrent()
+      try{$sid=$identity.User.Value}finally{$identity.Dispose()}
+      $stateRoot=[IO.Path]::GetFullPath((Get-CoordSetting 'OrchestrationStateRootPath'))
+      $statePath=Join-Path $stateRoot 'state.json'
+      $recordPath=[IO.Path]::GetFullPath((Get-CoordSetting 'OrchestrationCustodyRecordPath'))
+      $recordDirectory=[IO.Path]::GetDirectoryName($recordPath)
+      $programData=Get-CoordProgramDataPath
+      $firstWitness=Read-CoordJsonBytes (handoffRead $recordPath)
+      if(-not (Test-CoordDescendant $stateRoot $programData) -or -not (Test-CoordDescendant $recordPath $programData) -or
+          (Test-CoordDescendant $recordPath $stateRoot) -or $firstWitness.GetProperty('statePath').GetString() -ine $statePath){throw 'HandoffProtectedLocationMismatch'}
+      if($firstWitness.GetProperty('custodianSid').GetString() -cne $sid){throw 'HandoffCustodianMismatch'}
+      foreach($path in $stateRoot,$recordDirectory,$statePath,$recordPath){$null=Assert-CoordOrdinaryPath $path -MustExist;Assert-CoordProtection $path $sid}
+      $boardLockPath=[IO.Path]::GetFullPath($firstWitness.GetProperty('boardLockPath').GetString())
+      $historyRoot=[IO.Path]::GetFullPath((Get-CoordSetting 'OrchestrationRecoveryHistoryRootPath'))
+      if(-not (Test-CoordDescendant $historyRoot $programData) -or
+          $historyRoot -ieq $stateRoot -or (Test-CoordDescendant $historyRoot $stateRoot) -or (Test-CoordDescendant $stateRoot $historyRoot) -or
+          $historyRoot -ieq $recordDirectory -or (Test-CoordDescendant $historyRoot $recordDirectory) -or
+          (Test-CoordDescendant $recordDirectory $historyRoot)){throw 'HandoffHistoryLocationMismatch'}
+      $null=Assert-CoordOrdinaryPath $historyRoot
+      Assert-CoordProtection ([IO.Path]::GetDirectoryName($historyRoot)) $sid
+      $pkgPrefix=Join-Path $recordDirectory ('package-'+$id)
+      $holdPath=Join-Path $recordDirectory 'package-admission.hold.json'
+      $oncePath=$pkgPrefix+'.once.json'
+      $auditRoot=$pkgPrefix
+      $receiptPath=Join-Path $auditRoot 'final.receipt.json'
+      $leases=$null;$consumed=$false;$disableEligible=$false
+      $pkgPlan=$null;$pkgBeforeWitness=$null
+      $pkgKnown=[Collections.Generic.List[string]]::new()
+      try {
+        $leases=handoffTakeLeases
+        $pkgBeforeWitness=handoffRead $recordPath
+        $beforeState=handoffRead $statePath
+        $witnessElement=Read-CoordJsonBytes $pkgBeforeWitness
+        $stateElement=Read-CoordJsonBytes $beforeState
+        if($witnessElement.GetProperty('custodianSid').GetString() -cne $sid){throw 'HandoffCustodianMismatch'}
+        if((Get-CoordHash $beforeState) -cne $witnessElement.GetProperty('stateSha256').GetString()){throw 'CustodyBindingConflict'}
+        $pkgKnown.Add((Get-CoordHash $pkgBeforeWitness))
+        $policyElement=[Text.Json.JsonElement]::new()
+        if(-not $witnessElement.TryGetProperty('autoPackageAdmission',[ref]$policyElement) -or
+            $policyElement.ValueKind -eq [Text.Json.JsonValueKind]::Null){throw 'PackagePolicyAbsent'}
+        if($policyElement.ValueKind -ne [Text.Json.JsonValueKind]::Object -or
+            ($policyElement.GetProperty('enabled').ValueKind -ne [Text.Json.JsonValueKind]::True -and
+             $policyElement.GetProperty('enabled').ValueKind -ne [Text.Json.JsonValueKind]::False)){throw 'InvalidPackagePolicy'}
+        if($policyElement.GetProperty('enabled').ValueKind -eq [Text.Json.JsonValueKind]::False){throw 'PackagePolicyDisabled'}
+        # A hold marker means an earlier failure could not switch the policy off safely: only a human clears it.
+        if($pkgApply -and (pkgHeld)){throw 'PackageAdmissionHeldUnsafeDisable'}
+        # An already consumed or unknown operation is a plain refusal, not an attestation failure.
+        if($pkgApply){
+          if([IO.File]::Exists($oncePath) -or [IO.Directory]::Exists($auditRoot)){throw 'PackageApplyNotFresh'}
+        } elseif(-not [IO.File]::Exists($oncePath)){throw 'PackageRecoveryHasNoKnownOrigin'}
+        $disableEligible=$true
+        $custodyVersion=Get-SuccessorPlanText ($witnessElement.GetProperty('package')) 'moduleVersion'
+        # Hash the board quartet under the held leases before anything is consumed.
+        $outputs=pkgQuartet $stateElement $null 'PackageQuartetChangedBeforeAttempt'
+        if($pkgApply){
+          $history=handoffHistory
+          if($history.condition -cne 'Ready'){throw 'PackageRequiresReadyRecoveryHistory'}
+          Assert-CoordRecoveryPair (Read-CoordRecoveryHistory $historyRoot)
+          $attBytes=handoffRead $AttestationPath $ExpectedAttestationSha256 4194304
+          $attFileDigest=Get-CoordHash $attBytes
+          $attestation=ConvertFrom-CoordElement (Read-CoordJsonBytes $attBytes)
+          $nupkgFull=Assert-CoordOrdinaryPath $NupkgPath -MustExist
+          $verdict=Test-CoordPackageAttestation -ModuleRoot $candidateRoot -AttestationPath $AttestationPath `
+            -Policy ([pscustomobject](ConvertFrom-CoordElement $policyElement)) -NupkgPath $nupkgFull -CurrentVersion $custodyVersion
+          if(-not $verdict.Valid){throw ('PackageAttestationRejected:'+$verdict.ReasonCode)}
+          if((Get-CoordHash (handoffRead $AttestationPath)) -cne $attFileDigest){throw 'PackageAttestationChangedDuringVerification'}
+          # Read only after verification: the verified inventory covers this file.
+          $schema=handoffRead (Join-Path $candidateRoot 'schemas/state-v1.schema.json')
+          $admittedAtUtc=pkgUtc
+          $pkgPlan=New-CoordPackageAdmissionPlan -StateBytes $beforeState -WitnessBytes $pkgBeforeWitness -StateSchemaBytes $schema `
+            -Attestation $attestation -ObservedSid $sid -OperationId $id -AdmittedAtUtc $admittedAtUtc
+        } else {
+          $onceBytes=handoffRead $oncePath
+          $once=ConvertFrom-CoordElement (Read-CoordJsonBytes $onceBytes)
+          if($once.kind -cne 'Coordination-package-admission-attempt-v1' -or $once.operationId -cne $id -or
+              $once.codeDigest -cne $codeDigest){throw 'PackageRecoveryBindingMismatch'}
+          $attBytes=handoffBase64 $once.attestationBase64
+          $attFileDigest=Get-CoordHash $attBytes
+          if($attFileDigest -cne $once.attestationFileSha256){throw 'PackageRecoveryAttestationMismatch'}
+          $attestation=ConvertFrom-CoordElement (Read-CoordJsonBytes $attBytes)
+          $originalWitness=handoffBase64 $once.beforeWitnessBase64
+          if((Get-CoordHash $originalWitness) -cne $once.pairs.before.witness -or
+              (Get-CoordHash $beforeState) -cne $once.pairs.before.state){throw 'PackageRecoveryThirdState'}
+          # Recovery re-verifies the same candidate the apply attempt recorded; an attempt without one is not recoverable.
+          if(-not $once.Contains('candidateModuleRoot') -or [string]::IsNullOrWhiteSpace([string]$once.candidateModuleRoot)){throw 'PackageRecoveryCandidateRootMissing'}
+          $candidateRoot=[IO.Path]::GetFullPath([string]$once.candidateModuleRoot).TrimEnd('\')
+          if($candidateRoot -ieq [IO.Path]::GetFullPath($moduleRoot).TrimEnd('\')){throw 'PackageCandidateMustDifferFromRunningModule'}
+          $null=Assert-CoordOrdinaryPath $candidateRoot -MustExist
+          $schema=handoffRead (Join-Path $candidateRoot 'schemas/state-v1.schema.json')
+          $admittedAtUtc=[string]$once.admittedAtUtc
+          $pkgPlan=New-CoordPackageAdmissionPlan -StateBytes $beforeState -WitnessBytes $originalWitness -StateSchemaBytes $schema `
+            -Attestation $attestation -ObservedSid $sid -OperationId $id -AdmittedAtUtc $admittedAtUtc
+          $pkgBeforeWitness=$originalWitness
+        }
+        $pairs=[ordered]@{
+          before=[ordered]@{state=$pkgPlan.Pairs.Before.State;witness=$pkgPlan.Pairs.Before.Witness}
+          fenced=[ordered]@{state=$pkgPlan.Pairs.Fenced.State;witness=$pkgPlan.Pairs.Fenced.Witness}
+          target=[ordered]@{state=$pkgPlan.Pairs.Target.State;witness=$pkgPlan.Pairs.Target.Witness}}
+        $planDigest=Get-CoordHash (handoffBytes ([ordered]@{kind='Coordination-package-admission-plan-v1';operationId=$id;admittedAtUtc=$admittedAtUtc
+          fromVersion=$pkgPlan.FromVersion;toVersion=$pkgPlan.ToVersion;attestationSha256=$pkgPlan.AttestationSha256;pairs=$pairs}))
+        foreach($digest in $pairs.fenced.witness,$pairs.target.witness){if($pkgKnown -cnotcontains $digest){$pkgKnown.Add($digest)}}
+        if($pkgApply){
+          $once=[ordered]@{kind='Coordination-package-admission-attempt-v1';operationId=$id;admittedAtUtc=$admittedAtUtc;codeDigest=$codeDigest
+            attestationFileSha256=$attFileDigest;attestationBase64=[Convert]::ToBase64String($attBytes);nupkgPath=$nupkgFull;candidateModuleRoot=$candidateRoot
+            fromVersion=$pkgPlan.FromVersion;toVersion=$pkgPlan.ToVersion;beforeWitnessBase64=[Convert]::ToBase64String($pkgBeforeWitness)
+            pairs=$pairs;planDigest=$planDigest;quartet=$outputs;history=$history}
+          handoffNew $oncePath (handoffBytes $once)
+          $consumed=$true
+        } else {
+          if($once.planDigest -cne $planDigest -or $once.pairs.fenced.witness -cne $pairs.fenced.witness -or
+              $once.pairs.target.witness -cne $pairs.target.witness){throw 'PackageRecoveryPlanDrift'}
+          $outputs=pkgQuartet $stateElement $once.quartet 'PackageQuartetChangedBeforeAttempt'
+          $markers=@(Get-ChildItem -LiteralPath $recordDirectory -Filter ('package-'+$id+'.recover-*.once.json') -File -ErrorAction Stop)
+          if($markers.Count -ge 16){throw 'PackageRecoveryAttemptLimit'}
+          # Resolve an interrupted custody write's pending history only against exact observed bytes.
+          $history=handoffHistory
+          if($history.condition -ceq 'Pending'){
+            $pending=(Read-CoordRecoveryHistory $historyRoot).Pending.Record
+            $images=@($pkgBeforeWitness,$pkgPlan.FencedWitness,$pkgPlan.TargetWitness)
+            $edges=@(
+              ,@($pairs.before.witness,$pairs.fenced.witness)
+              ,@($pairs.fenced.witness,$pairs.target.witness))
+            foreach($image in $images){$edges+=,@((Get-CoordHash $image),(Get-CoordHash (pkgDisabledImage $image)))}
+            $known=$false
+            foreach($edge in $edges){
+              if($pending.before.state -ceq $pairs.before.state -and $pending.after.state -ceq $pairs.before.state -and
+                  $pending.before.custody -ceq $edge[0] -and $pending.after.custody -ceq $edge[1]){$known=$true}
+            }
+            if(-not $known){throw 'PackageRecoveryUnrelatedPendingHistory'}
+            $observed=handoffPair
+            $outcome=if($observed.witness -ceq $pending.after.custody -and $observed.state -ceq $pending.after.state){'Committed'}
+              elseif($observed.witness -ceq $pending.before.custody -and $observed.state -ceq $pending.before.state){'Aborted'}
+              else{throw 'PackageRecoveryPendingHistoryPairMismatch'}
+            $null=Write-CoordRecoveryHistory -Action Resolve -ExpectedIntentDigest $history.pendingDigest -Outcome $outcome -Confirm:$false
+            $history=handoffHistory
+          }
+          if($history.condition -cne 'Ready'){throw 'PackageRequiresReadyRecoveryHistory'}
+          $nupkgFull=Assert-CoordOrdinaryPath ([string]$once.nupkgPath) -MustExist
+          $pending=$null
+          $marker=[ordered]@{kind='Coordination-package-admission-recovery-v1';operationId=$id;originDigest=(Get-CoordHash $onceBytes);codeDigest=$codeDigest}
+          $current=pkgCheckpoint
+          if($current -cin @('DisabledBefore','DisabledFenced','DisabledTarget')){throw 'PackageAdmissionTerminalPolicyDisabled'}
+          if($current -ceq 'ThirdState'){throw 'PackageRecoveryThirdState'}
+          handoffNew ($pkgPrefix+'.recover-'+[guid]::NewGuid().ToString('D')+'.once.json') (handoffBytes $marker)
+          $consumed=$true
+        }
+        Assert-CoordRecoveryPair (Read-CoordRecoveryHistory $historyRoot)
+        if(-not [IO.Directory]::Exists($auditRoot)){handoffCreateProtectedDirectory $auditRoot}
+        Assert-CoordProtection $auditRoot $sid
+        foreach($item in @(@('before.witness.bin',$pkgBeforeWitness),@('before.state.bin',$beforeState),@('attestation.json',$attBytes))){
+          $path=Join-Path $auditRoot $item[0]
+          if([IO.File]::Exists($path)){
+            if((Get-CoordHash (handoffRead $path)) -cne (Get-CoordHash $item[1])){throw 'PackageRetainedImageMismatch'}
+          }else{handoffNew $path $item[1]}
+        }
+        if(-not $pkgApply){
+          # Re-verify the retained attestation against the installed package before completing.
+          $verdict=Test-CoordPackageAttestation -ModuleRoot $candidateRoot -AttestationPath (Join-Path $auditRoot 'attestation.json') `
+            -Policy ([pscustomobject](ConvertFrom-CoordElement ((Read-CoordJsonBytes $pkgBeforeWitness).GetProperty('autoPackageAdmission')))) `
+            -NupkgPath $nupkgFull -CurrentVersion ([string]$once.fromVersion)
+          if(-not $verdict.Valid){throw ('PackageAttestationRejected:'+$verdict.ReasonCode)}
+        }
+        $current=pkgCheckpoint
+        foreach($step in @(
+          @{Before='Before';After='Fenced';Expected=$pkgBeforeWitness;Bytes=$pkgPlan.FencedWitness},
+          @{Before='Fenced';After='Target';Expected=$pkgPlan.FencedWitness;Bytes=$pkgPlan.TargetWitness})){
+          if($current -cne $step.Before){continue}
+          Write-CoordAtomicBytes -Path $recordPath -ExpectedBytes $step.Expected -Bytes $step.Bytes
+          $current=pkgCheckpoint
+          if($current -cne $step.After){throw 'PackageCheckpointReadbackFailed'}
+        }
+        if($current -cne 'Target'){throw 'PackageUnknownCheckpoint'}
+        # Fail closed on any change after the write: state, quartet, history and package.
+        if((Get-CoordHash (handoffRead $statePath)) -cne $pkgPlan.Pairs.Before.State){throw 'PackageStateChanged'}
+        $null=pkgQuartet (Read-CoordJsonBytes (handoffRead $statePath)) $outputs
+        Assert-CoordRecoveryPair (Read-CoordRecoveryHistory $historyRoot)
+        $finalWitnessBytes=handoffRead $recordPath
+        $targetElement=Read-CoordJsonBytes $finalWitnessBytes
+        $targetPackage=ConvertFrom-CoordElement ($targetElement.GetProperty('package'))
+        Assert-CoordPackageInventory -ModuleRoot $candidateRoot -Package $targetPackage
+        if((Get-CoordHash (handoffRead $module.Path)) -cne $codeDigest){throw 'PackageCodeChanged'}
+        $afterPath=Join-Path $auditRoot 'after.witness.bin'
+        if([IO.File]::Exists($afterPath)){
+          if((Get-CoordHash (handoffRead $afterPath)) -cne (Get-CoordHash $finalWitnessBytes)){throw 'PackageRetainedImageMismatch'}
+        }else{handoffNew $afterPath $finalWitnessBytes}
+        $history=handoffHistory
+        if($history.condition -cne 'Ready'){throw 'PackageRequiresReadyRecoveryHistory'}
+        $receipt=[ordered]@{kind='Coordination-package-admission-receipt-v1';status='PackageAdmitted';operationId=$id
+          fromVersion=$pkgPlan.FromVersion;toVersion=$pkgPlan.ToVersion;attestationSha256=$pkgPlan.AttestationSha256
+          attestationFileSha256=$attFileDigest;planDigest=$planDigest;codeDigest=$codeDigest
+          generation=$targetElement.GetProperty('generation').GetString();stateChanged=$false;generationChanged=$false
+          finalPair=handoffPair;quartet=$outputs;history=$history}
+        if([IO.File]::Exists($receiptPath)){
+          $existing=ConvertFrom-CoordElement (Read-CoordJsonBytes (handoffRead $receiptPath))
+          if($existing.kind -cne $receipt.kind -or $existing.operationId -cne $id -or $existing.planDigest -cne $planDigest -or
+              $existing.finalPair.state -cne $receipt.finalPair.state -or $existing.finalPair.witness -cne $receipt.finalPair.witness){throw 'PackageFinalReceiptMismatch'}
+        }else{handoffNew $receiptPath (handoffBytes $receipt)}
+        # An exact, completed recovery of the very operation that left the hold marker reconciles it.
+        $holdCleared=$false
+        if(-not $pkgApply -and [IO.File]::Exists($holdPath)){
+          try{
+            $hold=ConvertFrom-CoordElement (Read-CoordJsonBytes (handoffRead $holdPath))
+            if($hold.kind -ceq 'Coordination-package-admission-hold-v1' -and $hold.operationId -ceq $id){[IO.File]::Delete($holdPath);$holdCleared=$true}
+          }catch{}
+        }
+        return [pscustomobject]@{Status='PackageAdmitted';Recovered=(-not $pkgApply);OperationId=$id;FromVersion=$pkgPlan.FromVersion;ToVersion=$pkgPlan.ToVersion
+          ReceiptPath=$receiptPath;ReceiptSha256=(Get-CoordHash (handoffRead $receiptPath));PlanDigest=$planDigest
+          FinalPair=handoffPair;StateChanged=$false;GenerationChanged=$false;History=$history;HoldCleared=$holdCleared}
+      } catch {
+        $primaryFailure=$_
+        $disableOutcome='NotAttempted'
+        # Busy collisions are ordinary concurrent activity: refuse without disabling the standing policy.
+        $failureCode=([regex]::Match($primaryFailure.Exception.Message,'\A[A-Za-z][A-Za-z0-9_]*')).Value
+        if(-not $failureCode){$failureCode='UnclassifiedApplyFailure'}
+        $notNow=$primaryFailure.Exception.Message -cin $pkgNotNowCodes
+        if($disableEligible -and $notNow){$disableOutcome='NotDisabled_NotNowRefusal'}
+        elseif($disableEligible){$disableOutcome=pkgTryDisable $primaryFailure.Exception.Message}
+        # M6: a disable that did not provably happen is never silent. It leaves a durable hold marker
+        # that every later ApplyPackage refuses on, and the outcome travels in the error's structured data.
+        $holdMarker='NotRequired'
+        if($disableEligible -and $disableOutcome -cnotin $pkgDisableConfirmed){$holdMarker=pkgWriteHold $failureCode $disableOutcome}
+        try{Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "Package-only custody admission refused or held (policyDisable=$disableOutcome; holdMarker=$holdMarker); preserve consumed records and reconcile exact images/history before continuation."}catch{}
+        $text=$primaryFailure.Exception.Message+' [policyDisable='+$disableOutcome+']'
+        if($holdMarker -cne 'NotRequired'){$text+=' [holdMarker='+$holdMarker+']'}
+        $thrown=if($consumed){[InvalidOperationException]::new('PackageAdmissionAttemptConsumed_HeldForExactReconciliation: '+$text,$primaryFailure.Exception)}
+          else{[InvalidOperationException]::new($text,$primaryFailure.Exception)}
+        # L4: callers classify by these structured values, never by parsing the message text.
+        $thrown.Data['CoordPackageCode']=$failureCode
+        $thrown.Data['CoordPackageClass']=$(if($notNow -and -not $consumed){'NotNow'}else{'Held'})
+        $thrown.Data['CoordPackageConsumed']=[bool]$consumed
+        $thrown.Data['CoordPackagePolicyDisable']=$disableOutcome
+        $thrown.Data['CoordPackageHoldMarker']=$holdMarker
+        throw $thrown
+      } finally {handoffRelease $leases}
+    }
     if($Mode -cin @('Apply','Recover') -and -not $PSCmdlet.ShouldProcess($PacketPath,"$Mode one approved custody handoff")) {
       return [pscustomobject]@{Status='ProposedOnly';LiveAdmission=$false}
     }
@@ -410,6 +785,8 @@ function Invoke-CoordCustodyHandoff {
       beforeGeneration=$r.generation;targetGeneration=$targetRecord.generation;plannerPairs=$plan.Pairs
       finalPair=@{state=$plan.Pairs.Target.State;witness=$finalWitnessDigest};workerAppendRequired=$needsWorker
       backupDigest=Get-CoordHash $backup;proposedFinalBackupDigest=Get-CoordHash $finalBackup;targetPackageDigest=$p.targetPackageSha256}
+    # Visible only when the intent explicitly sets or clears the standing policy; without it the plan digest is unchanged.
+    if($plan.PolicyAction -cne 'CarriedForward'){$metadata['policyAction']=$plan.PolicyAction}
     $planDigest=Get-CoordHash (handoffBytes $metadata)
     $current=handoffCheckpoint
     $history=handoffHistory

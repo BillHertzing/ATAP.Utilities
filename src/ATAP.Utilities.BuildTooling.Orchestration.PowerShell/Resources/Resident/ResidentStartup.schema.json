@@ -1,49 +1,83 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Held-by-default installed resident clerk startup binding",
-  "type": "object",
-  "additionalProperties": false,
-  "required": ["schemaVersion", "mode", "hostName", "windowsSid"],
-  "properties": {
-    "schemaVersion": { "const": "CoordResidentStartup-v1" },
-    "mode": { "enum": ["Held", "Active"], "default": "Held" },
-    "hostName": { "type": "string", "minLength": 1 },
-    "windowsSid": { "type": "string", "pattern": "^S-1-5-21-[0-9-]+$" },
-    "holderId": { "type": "string", "minLength": 1 },
-    "sessionId": { "type": "string", "minLength": 1 },
-    "resourceId": { "type": "string", "minLength": 1 },
-    "lineageId": { "type": "string", "minLength": 1 },
-    "generation": { "type": "string", "minLength": 1 },
-    "statePath": { "type": "string", "minLength": 3 },
-    "custodyPath": { "type": "string", "minLength": 3 },
-    "leasePath": { "type": "string", "minLength": 3 },
-    "stopPath": { "type": "string", "minLength": 3 },
-    "module": {
-      "type": "object", "additionalProperties": false,
-      "required": ["version", "manifestPath", "rootModulePath", "manifestSha256", "rootModuleSha256", "hostScriptSha256", "signerThumbprint"],
+  "title": "Held-by-default installed resident clerk startup binding (v1 pinned, v2 identity-and-paths)",
+  "description": "v1 pins the module package and activation window inside the hashed descriptor. v2 binds identity and paths only; the host reads the package and generation from custody and the window from a separate Coordination-activation-v1 record. A document must match exactly one version; mixed keys are refused.",
+  "oneOf": [
+    { "$ref": "#/$defs/v1" },
+    { "$ref": "#/$defs/v2" }
+  ],
+  "$defs": {
+    "rfc1123": { "type": "string", "pattern": "^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), [0-9]{2} [A-Z][a-z]{2} [0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2} GMT$" },
+    "v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "mode", "hostName", "windowsSid"],
       "properties": {
-        "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
-        "manifestPath": { "type": "string", "minLength": 3 },
-        "rootModulePath": { "type": "string", "minLength": 3 },
-        "manifestSha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
-        "rootModuleSha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
-        "hostScriptSha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
-        "signerThumbprint": { "type": "string", "pattern": "^[0-9a-fA-F]{40}$" }
-      }
+        "schemaVersion": { "const": "CoordResidentStartup-v1" },
+        "mode": { "enum": ["Held", "Active"], "default": "Held" },
+        "hostName": { "type": "string", "minLength": 1 },
+        "windowsSid": { "type": "string", "pattern": "^S-1-5-21-[0-9-]+$" },
+        "holderId": { "type": "string", "minLength": 1 },
+        "sessionId": { "type": "string", "minLength": 1 },
+        "resourceId": { "type": "string", "minLength": 1 },
+        "lineageId": { "type": "string", "minLength": 1 },
+        "generation": { "type": "string", "minLength": 1 },
+        "statePath": { "type": "string", "minLength": 3 },
+        "custodyPath": { "type": "string", "minLength": 3 },
+        "leasePath": { "type": "string", "minLength": 3 },
+        "stopPath": { "type": "string", "minLength": 3 },
+        "module": {
+          "type": "object", "additionalProperties": false,
+          "required": ["version", "manifestPath", "rootModulePath", "manifestSha256", "rootModuleSha256", "hostScriptSha256", "signerThumbprint"],
+          "properties": {
+            "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+            "manifestPath": { "type": "string", "minLength": 3 },
+            "rootModulePath": { "type": "string", "minLength": 3 },
+            "manifestSha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+            "rootModuleSha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+            "hostScriptSha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+            "signerThumbprint": { "type": "string", "pattern": "^[0-9a-fA-F]{40}$" }
+          }
+        },
+        "activation": {
+          "type": "object", "additionalProperties": false,
+          "required": ["reference", "exclusionReference", "notBeforeUtc", "notAfterUtc"],
+          "properties": {
+            "reference": { "type": "string", "minLength": 1 },
+            "exclusionReference": { "type": "string", "minLength": 1 },
+            "notBeforeUtc": { "$ref": "#/$defs/rfc1123" },
+            "notAfterUtc": { "$ref": "#/$defs/rfc1123" }
+          }
+        }
+      },
+      "allOf": [{
+        "if": { "properties": { "mode": { "const": "Active" } } },
+        "then": { "required": ["holderId", "sessionId", "resourceId", "lineageId", "generation", "statePath", "custodyPath", "leasePath", "stopPath", "module", "activation"] }
+      }]
     },
-    "activation": {
-      "type": "object", "additionalProperties": false,
-      "required": ["reference", "exclusionReference", "notBeforeUtc", "notAfterUtc"],
+    "v2": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "mode", "hostName", "windowsSid"],
       "properties": {
-        "reference": { "type": "string", "minLength": 1 },
-        "exclusionReference": { "type": "string", "minLength": 1 },
-        "notBeforeUtc": { "type": "string", "pattern": "^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), [0-9]{2} [A-Z][a-z]{2} [0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2} GMT$" },
-        "notAfterUtc": { "type": "string", "pattern": "^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), [0-9]{2} [A-Z][a-z]{2} [0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2} GMT$" }
-      }
+        "schemaVersion": { "const": "CoordResidentStartup-v2" },
+        "mode": { "enum": ["Held", "Active"], "default": "Held" },
+        "hostName": { "type": "string", "minLength": 1 },
+        "windowsSid": { "type": "string", "pattern": "^S-1-5-21-[0-9-]+$" },
+        "holderId": { "type": "string", "minLength": 1 },
+        "sessionId": { "type": "string", "minLength": 1 },
+        "resourceId": { "type": "string", "minLength": 1 },
+        "lineageId": { "type": "string", "minLength": 1 },
+        "statePath": { "type": "string", "minLength": 3 },
+        "custodyPath": { "type": "string", "minLength": 3 },
+        "leasePath": { "type": "string", "minLength": 3 },
+        "stopPath": { "type": "string", "minLength": 3 },
+        "activationPath": { "type": "string", "minLength": 3 }
+      },
+      "allOf": [{
+        "if": { "properties": { "mode": { "const": "Active" } } },
+        "then": { "required": ["holderId", "sessionId", "resourceId", "lineageId", "statePath", "custodyPath", "leasePath", "stopPath", "activationPath"] }
+      }]
     }
-  },
-  "allOf": [{
-    "if": { "properties": { "mode": { "const": "Active" } } },
-    "then": { "required": ["holderId", "sessionId", "resourceId", "lineageId", "generation", "statePath", "custodyPath", "leasePath", "stopPath", "module", "activation"] }
-  }]
+  }
 }

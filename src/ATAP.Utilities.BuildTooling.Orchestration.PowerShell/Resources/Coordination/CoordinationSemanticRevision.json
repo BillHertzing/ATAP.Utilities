@@ -1,0 +1,5 @@
+{
+  "kind": "CoordinationSemanticRevision-v1",
+  "coordinationSemanticRevision": "1",
+  "description": "Coordination semantic revision for package attestation and autoPackageAdmission policy matching. Increment only when coordination semantics or journal format change; a mismatch forces a human-approved v2 handoff. Packaged with the module (version.json is not)."
+}

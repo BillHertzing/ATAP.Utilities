@@ -458,6 +458,46 @@ version alone is insufficient. Unknown tuples, changed bytes under a version,
 implicit migrations and unapproved rollback pairs hold IncompatibleState before
 any mutation. Actual version/digest matrix rows await the real release producer.
 
+Exact-bytes trust is retained in every version. Package admission never trusts a
+version label alone, and no code is admitted to act on the protected board unless
+a record covers its exact bytes.
+
+**0.1.17 (planned): policy-governed package admission.** Until 0.1.17 ships, each
+new package version still needs its own approved compatibility record, and this
+paragraph does not describe current behavior. 0.1.17 changes who approves the
+exact-bytes record and how that approval is made:
+
+- A release process emits a `Coordination-package-attestation-v1` after the final
+  Production-tier test receipt. It records the version, archive SHA, every
+  non-test file path and hash, the signer, the state, request and result schema
+  hashes, the `CoordinationSemanticRevision`, build and execution IDs, and the
+  receipt digests.
+- A standing `autoPackageAdmission` policy in custody holds
+  `{enabled, signer, minVersion, schemaHashes, semanticRevision}`. An ordinary
+  human-approved v2 handoff sets it once, and the same kind of handoff can change
+  it. Kill switch: set `enabled` to false. Any failed or uncertain apply also sets
+  it to false and holds.
+- A package-only transition (`PackageAdmissionPlan-v1`) admits a matching
+  attestation without a per-version human approval. All six guards must pass:
+  1. Authenticode is `Valid` on every signed file, and the signer equals the
+     policy thumbprint.
+  2. The attestation is bound to the final Production-tier test receipt. Its
+     archive SHA equals the installed nupkg and every feed copy. Feed presence
+     alone is not a trigger.
+  3. The installed inventory exactly equals the attestation inventory.
+  4. The schema hashes and semantic revision are equal, the version does not go
+     down, and the version is at least `minVersion`.
+  5. The policy is `enabled`. Any failure disables it and holds.
+  6. An append-only history entry and receipt, with before and after witness
+     images.
+- A package-only transition changes only `custody.package` and adds a history
+  entry. It has no retirements and keeps the same generation, and it leaves
+  `state.json` untouched, so claims, reservations and held tasks survive byte for
+  byte. Journal quiescence still applies: `pendingWrite` must be null, with no
+  Prepared or NeedsRecovery operations.
+- A `CoordinationSemanticRevision` mismatch falls back to a human-approved v2
+  handoff. Nothing else is admitted automatically.
+
 Import validation must verify the approved export digest and schema, exact
 resource/lineage/head, complete quartet/images/manifest consistency, unique
 request IDs and canonical digests, immutable terminal outcomes, active claims,
@@ -522,6 +562,22 @@ as sole coordinator. Test both directions. Task creation outside the initial
 grammar requires stopped admission, reconciled pending operations, coordinated
 manual addition and explicit re-admission with compatible state/generation.
 [D: Pilot ownership and coordinator transfer; I: DEP08; P: line 147]
+
+**Writer exclusion by transition type (0.1.17 planned).** The two-host Dropbox
+exclusion still applies to v2 custody handoffs that change actors or generation.
+Those handoffs rebind authority, so a delayed replica or a second-host writer
+matters. The exclusion does not apply to package-only transitions, because they
+write one custody file and change no state, generation, actor or board-visible
+content. The design judgement behind this, pending review and tests:
+
+- The resource lease and the board lock serialise same-host writers.
+- The before and after re-hash of the four board files fails closed if a remote
+  edit lands during the transition.
+- A failed or uncertain apply disables the policy and holds.
+
+The residual risk is a remote write that lands just after the final re-hash. That
+is the same exposure as ordinary clerk operation today. The local-lock rule above
+still governs all board writes.
 
 ## Semantic examples for later verification
 

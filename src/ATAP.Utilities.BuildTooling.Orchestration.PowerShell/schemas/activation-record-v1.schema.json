@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Coordination-activation-v1 resident activation record",
+  "description": "Separately approved activation window for one exact CoordResidentStartup-v2 descriptor. Kept outside the hashed descriptor so a renewed window leaves the descriptor hash and the registered task unchanged. The host re-reads it from a protected location before every drain.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "descriptorSha256", "approvalReference", "notBeforeUtc", "notAfterUtc", "maximumDrains"],
+  "properties": {
+    "schemaVersion": { "const": "Coordination-activation-v1" },
+    "descriptorSha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$", "description": "SHA-256 of the exact v2 descriptor bytes this window applies to." },
+    "approvalReference": { "type": "string", "minLength": 1, "description": "Operator approval that authorizes this window." },
+    "exclusionReference": { "type": "string", "minLength": 1, "description": "Optional writer-exclusion or hold reference bound to the approval." },
+    "notBeforeUtc": { "type": "string", "pattern": "^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), [0-9]{2} [A-Z][a-z]{2} [0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2} GMT$" },
+    "notAfterUtc": { "type": "string", "pattern": "^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), [0-9]{2} [A-Z][a-z]{2} [0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2} GMT$", "description": "Window end. notAfterUtc minus notBeforeUtc must not exceed 12 hours; the host refuses a longer window (ResidentActivationWindowTooLong). JSON Schema cannot express the difference, so the reader enforces it." },
+    "maximumDrains": { "type": "integer", "minimum": 0, "maximum": 2147483647, "description": "Drain limit per host process; 0 means bounded only by the window." }
+  }
+}

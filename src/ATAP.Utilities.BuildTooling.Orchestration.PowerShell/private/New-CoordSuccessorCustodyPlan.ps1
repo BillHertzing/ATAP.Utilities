@@ -81,6 +81,40 @@ function Get-SuccessorPlanIntentKind {
   $kind
 }
 
+function ConvertTo-SuccessorPolicyBlock {
+  # Validates the optional custody.autoPackageAdmission block a v2 intent may carry (0.1.17 slice 5)
+  # and returns it in canonical member order. Every malformed shape has its own error code.
+  param([Text.Json.JsonElement]$Policy)
+  if ($Policy.ValueKind -ne [Text.Json.JsonValueKind]::Object -or @($Policy.EnumerateObject()).Count -ne 5) { throw 'InvalidPolicyShape' }
+  $members = @{}
+  foreach ($name in 'enabled', 'signer', 'minVersion', 'schemaHashes', 'semanticRevision') {
+    $value = [Text.Json.JsonElement]::new()
+    if (-not $Policy.TryGetProperty($name, [ref]$value)) { throw 'InvalidPolicyShape' }
+    $members[$name] = $value
+  }
+  if ($members.enabled.ValueKind -ne [Text.Json.JsonValueKind]::True -and $members.enabled.ValueKind -ne [Text.Json.JsonValueKind]::False) { throw 'InvalidPolicyEnabled' }
+  if ($members.signer.ValueKind -ne [Text.Json.JsonValueKind]::String -or $members.signer.GetString() -cnotmatch '\A[0-9A-Fa-f]{40}\z') { throw 'InvalidPolicySigner' }
+  $parsed = $null
+  if ($members.minVersion.ValueKind -ne [Text.Json.JsonValueKind]::String -or
+      -not [version]::TryParse($members.minVersion.GetString(), [ref]$parsed) -or
+      -not [StringComparer]::Ordinal.Equals($members.minVersion.GetString(), $parsed.ToString())) { throw 'InvalidPolicyMinVersion' }
+  $hashes = $members.schemaHashes
+  if ($hashes.ValueKind -ne [Text.Json.JsonValueKind]::Object -or @($hashes.EnumerateObject()).Count -ne 3) { throw 'InvalidPolicySchemaHashes' }
+  $canonicalHashes = [ordered]@{}
+  foreach ($name in 'state', 'request', 'result') {
+    $hash = [Text.Json.JsonElement]::new()
+    if (-not $hashes.TryGetProperty($name, [ref]$hash) -or $hash.ValueKind -ne [Text.Json.JsonValueKind]::String -or
+        $hash.GetString() -cnotmatch '\A[0-9a-f]{64}\z') { throw 'InvalidPolicySchemaHashes' }
+    $canonicalHashes[$name] = $hash.GetString()
+  }
+  if ($members.semanticRevision.ValueKind -ne [Text.Json.JsonValueKind]::String -or
+      [string]::IsNullOrWhiteSpace($members.semanticRevision.GetString())) { throw 'InvalidPolicySemanticRevision' }
+  [ordered]@{
+    enabled = ($members.enabled.ValueKind -eq [Text.Json.JsonValueKind]::True); signer = $members.signer.GetString()
+    minVersion = $members.minVersion.GetString(); schemaHashes = $canonicalHashes; semanticRevision = $members.semanticRevision.GetString()
+  }
+}
+
 function New-CoordSuccessorCustodyPlan {
   [CmdletBinding()]
   param(
@@ -105,6 +139,15 @@ function New-CoordSuccessorCustodyPlan {
   if (-not $ordinal.Equals((Get-CoordHash $IntentBytes), $ExpectedIntentSha256)) { throw 'IntentPinMismatch' }
   $intent = Read-CoordJsonBytes $IntentBytes
   $intentKind = Get-SuccessorPlanIntentKind $intent
+  # Optional standing-policy block: absent carries the witness policy forward unchanged,
+  # null clears it, an object sets or replaces it (enabled=false is the kill switch).
+  $policyAction = 'CarriedForward'
+  $policyBlock = $null
+  $policyIntent = [Text.Json.JsonElement]::new()
+  if ($intent.TryGetProperty('autoPackageAdmission', [ref]$policyIntent)) {
+    if ($policyIntent.ValueKind -eq [Text.Json.JsonValueKind]::Null) { $policyAction = 'Cleared' }
+    else { $policyBlock = ConvertTo-SuccessorPolicyBlock $policyIntent; $policyAction = 'Set' }
+  }
   $stateDigest = Get-CoordHash $StateBytes
   $witnessDigest = Get-CoordHash $WitnessBytes
   if (-not $ordinal.Equals($stateDigest, (Get-SuccessorPlanText $intent 'beforeStateSha256')) -or
@@ -121,6 +164,14 @@ function New-CoordSuccessorCustodyPlan {
   $state = Read-CoordJsonBytes $StateBytes
   $witness = Read-CoordJsonBytes $WitnessBytes
   $package = Read-CoordJsonBytes $TargetPackageBytes
+  # A policy carried forward unchanged is held to the same rules as a newly supplied one,
+  # so a human handoff never silently carries a malformed policy into the new custody record.
+  if ($ordinal.Equals($policyAction, 'CarriedForward')) {
+    $carriedPolicy = [Text.Json.JsonElement]::new()
+    if ($witness.TryGetProperty('autoPackageAdmission', [ref]$carriedPolicy) -and $carriedPolicy.ValueKind -ne [Text.Json.JsonValueKind]::Null) {
+      $null = ConvertTo-SuccessorPolicyBlock $carriedPolicy
+    }
+  }
   if (-not $ordinal.Equals((Get-CoordHash ([Text.Encoding]::UTF8.GetBytes($package.GetRawText()))),
       (Get-SuccessorPlanText $intent 'targetPackageSha256'))) { throw 'TargetPackageImageMismatch' }
   if (-not (Test-Json -Json $state.GetRawText() -Schema $schema -ErrorAction SilentlyContinue)) { throw 'InvalidBeforeState' }
@@ -298,6 +349,8 @@ function New-CoordSuccessorCustodyPlan {
   $witnessTarget.generation = $nextGeneration
   $witnessTarget.stateSha256 = $targetStateDigest
   $witnessTarget.package = $package
+  if ($ordinal.Equals($policyAction, 'Set')) { $witnessTarget['autoPackageAdmission'] = $policyBlock }
+  elseif ($ordinal.Equals($policyAction, 'Cleared')) { $witnessTarget.Remove('autoPackageAdmission') }
   $targetWitness = ConvertTo-SuccessorPlanBytes $witnessTarget
   Assert-CoordActorRetirement (Read-CoordJsonBytes $targetWitness) $custodianSid
   $targetWitnessDigest = Get-CoordHash $targetWitness
@@ -311,7 +364,7 @@ function New-CoordSuccessorCustodyPlan {
   $fencedWitness = ConvertTo-SuccessorPlanBytes $fence
   $fenceDigest = Get-CoordHash $fencedWitness
   [pscustomobject]@{
-    Status = 'PlannedOnly'; ManualQuartetHold = 'ALL_TASKS'; FreshPilotAuthorized = $false
+    Status = 'PlannedOnly'; ManualQuartetHold = 'ALL_TASKS'; FreshPilotAuthorized = $false; PolicyAction = $policyAction
     FencedWitness = $fencedWitness; TargetState = $targetState; TargetWitness = $targetWitness
     Pairs = [ordered]@{
       Before = @{ State = $stateDigest; Witness = $witnessDigest }

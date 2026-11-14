@@ -156,7 +156,10 @@ BEGIN
             SET @Rows=NULL;
             SET @Check=N'SELECT @Rows=(SELECT * FROM ACE.'+QUOTENAME(@TableName)+N' ORDER BY '+@OrderBy+N' FOR JSON PATH,INCLUDE_NULL_VALUES);';
             EXEC sys.sp_executesql @Check,N'@Rows nvarchar(max) OUTPUT',@Rows=@Rows OUTPUT;
-            IF @Rows IS NULL OR @Shape IS NULL THROW 62912, N'Complete populated-state rows and shape required.', 1;
+            -- FOR JSON returns NULL for an empty table. A V210 catalog that never ran the organization
+            -- bootstrap is a valid state, so snapshot it as an empty array; Before/After still compare exactly.
+            IF @Rows IS NULL SET @Rows = N'[]';
+            IF @Shape IS NULL THROW 62912, N'Complete populated-state rows and shape required.', 1;
             IF @VerificationPhase = N'Before'
                 INSERT #Organization210Data VALUES (@TableName,@OrderBy,@Shape,@Rows);
             ELSE IF NOT EXISTS (SELECT 1 FROM #Organization210Data WHERE TableName=@TableName

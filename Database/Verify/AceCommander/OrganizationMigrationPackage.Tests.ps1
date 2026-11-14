@@ -78,6 +78,9 @@ Describe 'Forward organization migration source package' {
       $organizationVerifier | Should -Match ('DATALENGTH\(' + $snapshot + '\)')
     }
     $organizationVerifier | Should -Match 'Complete populated-state snapshot required'
+    # An un-bootstrapped V210 catalog (empty organization tables) snapshots as an empty array, not a failure.
+    $organizationVerifier | Should -Match "IF @Rows IS NULL SET @Rows = N'\[\]';"
+    $organizationVerifier | Should -Not -Match 'IF @Rows IS NULL OR @Shape IS NULL THROW'
     $organizationVerifier | Should -Match 'Populated organization or account state changed'
   }
 

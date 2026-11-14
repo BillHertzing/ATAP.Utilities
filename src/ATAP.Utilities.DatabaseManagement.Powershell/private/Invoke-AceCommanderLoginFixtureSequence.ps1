@@ -149,7 +149,12 @@ function Invoke-AceCommanderLoginFixtureSequence {
         if (-not [string]::Equals($actual, $Hash, [StringComparison]::Ordinal)) { throw 'FixturePinMismatch' }
         return $utf8.GetString($bytes)
       }
-      $login = readPinnedFixture $LoginFixturePath '91DD6DE9CC3D89A573F19757FCBA3E4454B5DB0B0402C6A2414070D78AFF01BF'
+      # Pin = current Verify_Login_V00160_ExactCatalog.sql (SHA-256 E4B145AD...), which carries the corrected
+      # V00150 checksum 155333537 from the approved LF-only release (0.1.21). Decision: Sprint0018
+      # AceCommander/LFOnlyDatabaseReleaseDecision-20261111.md, "Historical checksum exception".
+      # The old checksum 910403273 (pin 91DD6DE9...) belongs to pre-repair tiers only; they are reconciled
+      # by the approved maintenance window before any run against them. Do not restore the old pin.
+      $login = readPinnedFixture $LoginFixturePath 'E4B145ADCBD1140ED9599B371537A08855F7160FE968084B5DF1A2B12DB335A5'
       $decrypt = readPinnedFixture $DecryptFixturePath 'CD79D47FDD8DF818B7C70A6B2FB8183D99C6CD8AC79CFA70E9255442225E0433'
 
       function assertSession([switch]$BeforeBinding) {

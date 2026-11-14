@@ -12,7 +12,7 @@
     RootModule           = 'ATAP.Utilities.BuildTooling.PowerShell.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '0.1.13'
+    ModuleVersion        = '0.1.89'
 
     # Supported PSEditions
     CompatiblePSEditions = @('Core')
@@ -123,7 +123,7 @@
     'Invoke-SprintEndOverviewClose',
     'Invoke-SprintEndLifecycle',
     'Invoke-PairedTierPromotion',
-    'Invoke-PromotedModuleTests', 'Invoke-PromotedPackageTests',
+    'Invoke-PromotedModuleTests', 'Invoke-PromotedPackageTests', 'New-PackageAttestation',
     'Invoke-PSModulePesterTests', 'Invoke-PSModulePSScriptAnalyzer',
     'Invoke-WithFileLock', 'List-ProGetApiKeys', 'List-ProGetConnectors',
     'List-ProGetFeeds', 'Merge-PesterConfiguration',

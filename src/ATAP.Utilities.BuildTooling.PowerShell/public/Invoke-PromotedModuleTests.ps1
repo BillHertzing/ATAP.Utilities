@@ -124,6 +124,10 @@
       - CoverageFile     : JaCoCo coverage path, or $null on WhatIf.
       - Passed / Failed / SkippedCount / TotalCount : Pester counts, or 0.
       - ResponseSummary  : Short human-readable summary.
+      - ArchiveSha256    : Lowercase SHA-256 of the exact .nupkg bytes the delegated
+                           tests were run against (the direct ProGet download, which is
+                           also the bytes extracted for import). $null when the restore
+                           used Save-Module (the bytes are not kept) or on WhatIf.
       - InnerResult      : The full object returned by
                            Invoke-PSModulePesterTests, or $null on WhatIf.
 
@@ -259,6 +263,7 @@ function Invoke-PromotedModuleTests {
                 TotalCount      = 0
                 ResponseSummary = "WhatIf: would restore $target from feed '$Feed' and run $testDescription"
                 InnerResult     = $null
+                ArchiveSha256   = $null
             }
         }
 
@@ -295,6 +300,7 @@ function Invoke-PromotedModuleTests {
             }
             New-Item -ItemType Directory -Path $restorePath -Force | Out-Null
 
+            $archiveSha256 = $null
             Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Restoring promoted module $target from feed '$Feed' to '$restorePath'"
             if (-not [string]::IsNullOrWhiteSpace($ProGetBaseUrl)) {
                 $trimmedBaseUrl = $ProGetBaseUrl.TrimEnd('/')
@@ -329,6 +335,8 @@ function Invoke-PromotedModuleTests {
                         }
                     }
                 }
+                # The hash is taken from the same file that is extracted and tested below.
+                $archiveSha256 = (Get-FileHash -LiteralPath $nupkgPath -Algorithm SHA256).Hash.ToLowerInvariant()
                 if (Test-Path -LiteralPath $extractPath) {
                     Remove-Item -LiteralPath $extractPath -Recurse -Force
                 }
@@ -497,6 +505,7 @@ function Invoke-PromotedModuleTests {
                 TotalCount      = $total
                 ResponseSummary = $summary
                 InnerResult     = $innerResult
+                ArchiveSha256   = $archiveSha256
             }
         } catch {
             $errMsg = "Failed to run promoted-module tests for $target against feed '$Feed': $($_.Exception.Message)"

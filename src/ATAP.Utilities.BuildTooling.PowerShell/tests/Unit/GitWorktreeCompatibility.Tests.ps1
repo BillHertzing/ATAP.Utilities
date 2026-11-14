@@ -18,7 +18,7 @@ Describe 'GitWorktree compatibility parent rewire' {
         Select-Object -ExpandProperty Name | Sort-Object -Unique)
 
     $actual | Should -Be $script:expectedFunctions
-    $actual.Count | Should -Be 201
+    $actual.Count | Should -Be $script:expectedFunctions.Count
   }
 
   It 're-exports every legacy GitWorktree command with its parameter contract' {

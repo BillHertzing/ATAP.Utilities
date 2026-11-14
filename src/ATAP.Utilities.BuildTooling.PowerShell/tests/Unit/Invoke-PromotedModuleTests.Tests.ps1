@@ -77,6 +77,8 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
         Mock Invoke-WebRequest { }
         Mock Start-Sleep { }
         Mock Expand-Archive { }
+        # The ProGet branch hashes the downloaded nupkg; the mocked download writes no file.
+        Mock Get-FileHash { [pscustomobject]@{ Hash = ('AB' * 32) } }
         Mock Remove-Module { }
         Mock Get-Module { @() }
         Mock Import-Module { }
@@ -433,6 +435,27 @@ Describe 'Invoke-PromotedModuleTests' -Tag 'Unit' {
                 $LiteralPath -eq 'C:\fake\_generated\_promoted-modules\Mod.1.0.0-Alpha001.powershellget-development\Mod.1.0.0-Alpha001.nupkg' -and
                 $DestinationPath -eq 'C:\fake\_generated\_promoted-modules\Mod.1.0.0-Alpha001.powershellget-development\package'
             }
+        }
+
+        It 'reports the lowercase SHA-256 of the downloaded nupkg it extracted and tested' {
+            $result = Invoke-PromotedModuleTests -Name 'Mod' -Version '1.0.0-Alpha001' `
+                -Feed 'powershellget-development' -Tier 'Development' -ResultsPath 'r' `
+                -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\fake' `
+                -ProGetBaseUrl 'https://utat022:50000/' -ProGetApiKeySecretName 'Test.ProGet.API.Key'
+
+            $result.ArchiveSha256 | Should -Be ('ab' * 32)
+            Should -Invoke Get-FileHash -Times 1 -Exactly -Scope It -ParameterFilter {
+                $LiteralPath -eq 'C:\fake\_generated\_promoted-modules\Mod.1.0.0-Alpha001.powershellget-development\Mod.1.0.0-Alpha001.nupkg' -and
+                $Algorithm -eq 'SHA256'
+            }
+        }
+
+        It 'reports no archive hash when the restore used Save-Module, because the bytes are not kept' {
+            $result = Invoke-PromotedModuleTests -Name 'Mod' -Version '1.0.0' -Feed 'powershellget-development' `
+                -Tier 'Development' -ResultsPath 'r' -ModuleSourceRoot 'C:\fake\src\Mod' -WorkingDirectory 'C:\fake'
+
+            $result.ArchiveSha256 | Should -BeNullOrEmpty
+            Should -Invoke Get-FileHash -Times 0 -Exactly -Scope It
         }
 
         It 'Retries direct ProGet package download while the promoted package becomes available' {

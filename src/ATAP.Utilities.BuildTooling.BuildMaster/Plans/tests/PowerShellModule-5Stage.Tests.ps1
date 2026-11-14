@@ -37,7 +37,7 @@ BeforeAll {
     }
 }
 
-Describe 'V4-B02 plan shape: PowerShellModule-5Stage.otter is a thin -NoProfile runner plan' {
+Describe 'V4-B02 plan shape: PowerShellModule-5Stage.otter is a thin runner plan without -NoProfile' {
 
     It 'plan and runner files both exist' {
         $script:PlanPath   | Should -Exist
@@ -53,9 +53,11 @@ Describe 'V4-B02 plan shape: PowerShellModule-5Stage.otter is a thin -NoProfile 
         $execMatches.Count | Should -Be 1
     }
 
-    It 'the single Exec invokes pwsh -NoProfile -File with the runner script' {
+    It 'the single Exec invokes pwsh -File with the runner script and never passes -NoProfile' {
+        # Workspace rule: never pass -NoProfile. The plan therefore must not carry it.
         $script:PlanText | Should -Match 'FileName:\s*pwsh'
-        $script:PlanText | Should -Match '-NoProfile\s+-File\s+"\$InvokePowerShellModuleStageScript"'
+        $script:PlanText | Should -Match '-File\s+"\$InvokePowerShellModuleStageScript"'
+        $script:PlanText | Should -Not -Match '(?i)-NoProfile'
     }
 
     It 'plan contains no inline pwsh -Command blocks' {
@@ -369,5 +371,86 @@ try {
     It 'loads Get-SecretATAP from the extracted Secrets child module' {
         $script:RunnerText | Should -Match "FunctionName = 'Get-SecretATAP'; ModuleName = 'ATAP\.Utilities\.BuildTooling\.Secrets\.PowerShell'"
         $script:RunnerText | Should -Not -Match "FunctionName = 'Get-SecretATAP'; ModuleName = 'ATAP\.Utilities\.BuildTooling\.PowerShell'"
+    }
+}
+
+Describe 'Production package attestation contract: Invoke-PowerShellModuleBuildMasterStage.ps1' {
+
+    BeforeAll {
+        $script:RunnerAst = [System.Management.Automation.Language.Parser]::ParseFile($script:RunnerPath, [ref]$null, [ref]$null)
+    }
+
+    It 'defines the emission helper exactly once' {
+        ([regex]::Matches($script:RunnerText, '(?m)^function Invoke-PackageAttestationEmission\s*\{')).Count | Should -Be 1
+    }
+
+    It 'has exactly one call site for the emission helper' {
+        ([regex]::Matches($script:RunnerText, '\$attestationEmission = Invoke-PackageAttestationEmission')).Count | Should -Be 1
+    }
+
+    It 'calls the emission only for the Production tier at the Production ceiling' {
+        $guard = 'if ($tierToRun -ceq ''Production'' -and $ceilingTier -ceq ''Production'') {'
+        $call = '$attestationEmission = Invoke-PackageAttestationEmission'
+        $script:RunnerText.IndexOf($guard) | Should -BeGreaterThan -1
+        $script:RunnerText.IndexOf($call) | Should -BeGreaterThan $script:RunnerText.IndexOf($guard)
+    }
+
+    It 'emits the attestation before the Production completion marker, so a refusal leaves the stage retryable' {
+        $call = $script:RunnerText.IndexOf('$attestationEmission = Invoke-PackageAttestationEmission')
+        $marker = $script:RunnerText.IndexOf('Set-PowerShellModuleStageCompleted -ContextDirectory $contextDirectory -ModuleName $ModuleName -Tier $tierToRun -PackageVersion $packageVersionForRun -ExecutionId $ExecutionId')
+        $call | Should -BeGreaterThan -1
+        $marker | Should -BeGreaterThan $call
+    }
+
+    It 'fails the stage closed and logs the reason when the emitter refuses' {
+        $script:RunnerText | Should -Match '(?s)FAILED closed: package attestation refused.*?\n\s*throw\s*\n'
+    }
+
+    It 'records ExecutionId in the completion marker and reads older markers without it' {
+        $script:RunnerText | Should -Match 'ExecutionId\s+=\s+\$ExecutionId'
+        $script:RunnerText | Should -Match '\$marker\.PSObject\.Properties\.Name -ccontains ''ExecutionId'''
+    }
+
+    It 'loads the emitter by path from the BuildTooling module root, as the other BuildTooling helpers are loaded' {
+        $script:RunnerText | Should -Match 'public\\New-PackageAttestation\.ps1'
+    }
+
+    It 'the emission helper reads no profile-dependent settings' {
+        $fnText = ($script:RunnerAst.Find({
+                    param($node)
+                    $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+                    $node.Name -eq 'Invoke-PackageAttestationEmission'
+                }, $true)).Extent.Text
+        $fnText | Should -Not -BeNullOrEmpty
+        $fnText | Should -Not -Match '\$global:settings|Get-PVal|configRootKeys'
+    }
+
+    It 'writes ProductionReceiptBinding.json after the Production Pester run and before the attestation emitter' {
+        $promoted = $script:RunnerText.IndexOf('$testResult = Invoke-PromotedModuleTests')
+        $binding = $script:RunnerText.IndexOf("Join-Path -Path `$resultsPath -ChildPath 'ProductionReceiptBinding.json'")
+        $emitter = $script:RunnerText.IndexOf('$attestationEmission = Invoke-PackageAttestationEmission')
+        $promoted | Should -BeGreaterThan -1
+        $binding | Should -BeGreaterThan $promoted
+        $emitter | Should -BeGreaterThan $binding
+    }
+
+    It 'writes the binding only for the Production tier and fails closed without a tested archive hash' {
+        $script:RunnerText | Should -Match "if \(\`$Tier -ceq 'Production'\) \{\s*\r?\n\s*# Production receipt binding"
+        $script:RunnerText | Should -Match 'ProductionReceiptBindingUnavailable: the Production test result'
+    }
+
+    It 'the binding carries the kind, the tested archive SHA-256, the promoted version and the JUnit digest' {
+        $script:RunnerText | Should -Match "kind\s+=\s+'ProductionReceiptBinding-v1'"
+        $script:RunnerText | Should -Match 'archiveSha256\s+=\s+\(\[string\]\$testResult\.ArchiveSha256\)\.ToLowerInvariant\(\)'
+        $script:RunnerText | Should -Match 'moduleVersion\s+=\s+\$PromotedPackageVersion'
+        $script:RunnerText | Should -Match 'junitSha256\s+=\s+\(Get-FileHash -LiteralPath \(\[string\]\$testResult\.OutputFile\)'
+    }
+
+    It 'Invoke-PromotedModuleTests hashes the downloaded nupkg it extracts and returns it as ArchiveSha256' {
+        $cmdlet = Join-Path $script:PlansDir '..\..\ATAP.Utilities.BuildTooling.PowerShell\public\Invoke-PromotedModuleTests.ps1'
+        Test-Path -LiteralPath $cmdlet -PathType Leaf | Should -BeTrue
+        $text = Get-Content -LiteralPath $cmdlet -Raw
+        $text | Should -Match '\$archiveSha256 = \(Get-FileHash -LiteralPath \$nupkgPath -Algorithm SHA256\)\.Hash\.ToLowerInvariant\(\)'
+        $text | Should -Match 'ArchiveSha256\s+=\s+\$archiveSha256'
     }
 }

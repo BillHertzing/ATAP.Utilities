@@ -760,7 +760,8 @@ function Set-PowerShellModuleStageCompleted {
     [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ContextDirectory,
     [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ModuleName,
     [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$Tier,
-    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$PackageVersion
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$PackageVersion,
+    [AllowEmptyString()][string]$ExecutionId = ''
   )
 
   BEGIN {
@@ -775,6 +776,7 @@ function Set-PowerShellModuleStageCompleted {
       Tier           = $Tier
       PackageVersion = $PackageVersion
       CompletedUtc   = [datetime]::UtcNow.ToString('o')
+      ExecutionId    = $ExecutionId
     }
     if ($PSCmdlet.ShouldProcess($markerPath, 'Write stage completion marker')) {
       $payload | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $markerPath -Encoding utf8
@@ -971,6 +973,92 @@ function Resolve-PowerShellModuleArtifactDirectory {
   }
 
   END {}
+}
+
+function Invoke-PackageAttestationEmission {
+  <#
+  .SYNOPSIS
+    Collects the receipts of a Production-ceiling run and calls New-PackageAttestation.
+  .DESCRIPTION
+    Called only for the Production tier at the Production ceiling, after the Production tests passed and before the
+    Production completion marker is written. The emitter refuses by throwing; the caller fails the stage.
+  .NOTES
+    AI assisted using Powershell.instructions.md as guidelines
+  #>
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$BuildToolingModuleRoot,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ContextDirectory,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ArtifactDirectory,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$SourcePath,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ModuleName,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$PackageName,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$PackageVersion,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$NupkgPathFile,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$CeilingTier,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$BuildMasterBuildId,
+    [AllowEmptyString()][string]$ExecutionId = '',
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$CodeSigningCertificateThumbprint,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ProGetUrl,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ProductionFeed,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ProGetApiKeySecretName
+  )
+
+  BEGIN {
+    $fn = 'Invoke-PackageAttestationEmission'
+    $mn = 'ATAP.Utilities.BuildTooling.BuildMaster'
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Starting $fn for '$ModuleName' '$PackageVersion' (BuildId='$BuildMasterBuildId')"
+  }
+
+  PROCESS {
+    $tierOrder = @('Experimental', 'Development', 'Integration', 'QA', 'Production')
+    $tierReceiptPaths = @{}
+    $markerExecutionIds = @()
+    foreach ($tier in $tierOrder) {
+      $markerPath = Get-PowerShellModuleStageCompletionMarkerPath -ContextDirectory $ContextDirectory -ModuleName $ModuleName -Tier $tier
+      if ($tier -ceq 'Experimental') {
+        $tierReceiptPaths[$tier] = $markerPath
+      } else {
+        $tierReceiptPaths[$tier] = Join-Path -Path $ArtifactDirectory -ChildPath "test-results/$tier/PesterResults.xml"
+      }
+      # Older markers have no ExecutionId; they stay readable and simply contribute nothing.
+      if (Test-Path -LiteralPath $markerPath -PathType Leaf) {
+        $marker = Get-Content -LiteralPath $markerPath -Raw | ConvertFrom-Json
+        if ($marker.PSObject.Properties.Name -ccontains 'ExecutionId') {
+          $markerExecutionIds += [string]$marker.ExecutionId
+        }
+      }
+    }
+    $executionIds = @($markerExecutionIds + @($ExecutionId))
+    $nupkgPath = (Get-Content -LiteralPath $NupkgPathFile -Raw).Trim()
+    $repoEvidenceDirectory = Join-Path -Path $SourcePath -ChildPath "_generated\build-deploy-module\$ModuleName\$PackageVersion\Production"
+    $emitterPath = Join-Path -Path $BuildToolingModuleRoot -ChildPath 'public\New-PackageAttestation.ps1'
+    if (-not (Test-Path -LiteralPath $emitterPath -PathType Leaf)) {
+      throw "PackageAttestationRefused|EmitterMissing|$emitterPath"
+    }
+    # Same path-based load the runner uses for its other BuildTooling helpers.
+    . $emitterPath
+
+    New-PackageAttestation `
+      -ModuleName $ModuleName `
+      -PackageName $PackageName `
+      -ModuleVersion $PackageVersion `
+      -NupkgPath $nupkgPath `
+      -CeilingTier $CeilingTier `
+      -SignerThumbprint $CodeSigningCertificateThumbprint `
+      -BuildId $BuildMasterBuildId `
+      -ExecutionIds $executionIds `
+      -TierReceiptPaths $tierReceiptPaths `
+      -OutputDirectory (Join-Path -Path $ArtifactDirectory -ChildPath 'attestation') `
+      -RepoEvidenceDirectory $repoEvidenceDirectory `
+      -ProGetBaseUrl $ProGetUrl `
+      -FeedName $ProductionFeed `
+      -ProGetApiKeySecretName $ProGetApiKeySecretName
+  }
+
+  END {
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Finished $fn"
+  }
 }
 
 function Invoke-PowerShellModuleBuildMasterStage {
@@ -1338,6 +1426,27 @@ function Invoke-PowerShellModuleBuildMasterStage {
         Assert-BuildMasterOperationSucceeded -Result $testResult -OperationName 'Invoke-PromotedModuleTests'
         Add-BuildMasterPublishTrace -Path $promotionTracePath -Message $testResult.ResponseSummary
 
+        if ($Tier -ceq 'Production') {
+          # Production receipt binding (Orch017-Fix-H3). Written here, after the Production Pester run and before the
+          # attestation emitter. It records the SHA-256 of the feed copy the Production tests installed and tested, the
+          # promoted version, and the digest of this run's JUnit receipt. The emitter refuses without it (fail closed).
+          if ([string]::IsNullOrWhiteSpace([string]$testResult.ArchiveSha256)) {
+            throw "ProductionReceiptBindingUnavailable: the Production test result for '$PackageName' '$PromotedPackageVersion' carries no tested archive SHA-256."
+          }
+          if (-not (Test-Path -LiteralPath ([string]$testResult.OutputFile) -PathType Leaf)) {
+            throw "ProductionReceiptBindingUnavailable: the Production JUnit receipt is missing at '$($testResult.OutputFile)'."
+          }
+          $productionBinding = [ordered]@{
+            kind          = 'ProductionReceiptBinding-v1'
+            archiveSha256 = ([string]$testResult.ArchiveSha256).ToLowerInvariant()
+            moduleVersion = $PromotedPackageVersion
+            junitSha256   = (Get-FileHash -LiteralPath ([string]$testResult.OutputFile) -Algorithm SHA256).Hash.ToLowerInvariant()
+          }
+          $productionBindingPath = Join-Path -Path $resultsPath -ChildPath 'ProductionReceiptBinding.json'
+          [IO.File]::WriteAllText($productionBindingPath, (($productionBinding | ConvertTo-Json -Depth 4) -replace "`r`n", "`n") + "`n", [Text.UTF8Encoding]::new($false))
+          Write-PSFMessage -FunctionName $f -ModuleName $m -Level Important -Message "Wrote Production receipt binding for '$PackageName' '$PromotedPackageVersion' (archive $($productionBinding.archiveSha256))."
+        }
+
         Write-PSFMessage -FunctionName $f -ModuleName $m -Level Important -Message "Promoted '$PackageName' version '$PromotedPackageVersion' to '$destinationFeed' and passed $Tier tests. Ceiling='$ceilingTier'."
       }
       END {}
@@ -1463,7 +1572,33 @@ function Invoke-PowerShellModuleBuildMasterStage {
         if ([string]::IsNullOrWhiteSpace($packageVersionForRun)) {
           $packageVersionForRun = Get-PowerShellModulePackageVersionForRun -ContextDirectory $contextDirectory -NupkgPathFile $NupkgPathFile -PackageName $PackageName
         }
-        Set-PowerShellModuleStageCompleted -ContextDirectory $contextDirectory -ModuleName $ModuleName -Tier $tierToRun -PackageVersion $packageVersionForRun
+        if ($tierToRun -ceq 'Production' -and $ceilingTier -ceq 'Production') {
+          # Fail closed (D4): the attestation is emitted before the Production marker, so a refusal leaves the stage retryable.
+          try {
+            $attestationEmission = Invoke-PackageAttestationEmission `
+              -BuildToolingModuleRoot $script:buildToolingRoot `
+              -ContextDirectory $contextDirectory `
+              -ArtifactDirectory $artifactDirectory `
+              -SourcePath $SourcePath `
+              -ModuleName $ModuleName `
+              -PackageName $PackageName `
+              -PackageVersion $packageVersionForRun `
+              -NupkgPathFile $NupkgPathFile `
+              -CeilingTier $ceilingTier `
+              -BuildMasterBuildId $BuildMasterBuildId `
+              -ExecutionId $ExecutionId `
+              -CodeSigningCertificateThumbprint $CodeSigningCertificateThumbprint `
+              -ProGetUrl $ProGetUrl `
+              -ProductionFeed $ProductionFeed `
+              -ProGetApiKeySecretName $ProGetApiKeySecretName
+          }
+          catch {
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "PowerShell module stage 'Production' FAILED closed: package attestation refused for '$ModuleName' '$packageVersionForRun'. Reason: $($_.Exception.Message)"
+            throw
+          }
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Package attestation for '$ModuleName' '$packageVersionForRun': emitted=$($attestationEmission.Emitted); reason=$($attestationEmission.ReasonCode)."
+        }
+        Set-PowerShellModuleStageCompleted -ContextDirectory $contextDirectory -ModuleName $ModuleName -Tier $tierToRun -PackageVersion $packageVersionForRun -ExecutionId $ExecutionId
 
         $completedTierIndex = $tierOrder.IndexOf($tierToRun)
         if ($completedTierIndex -lt $ceilingTierIndex) {

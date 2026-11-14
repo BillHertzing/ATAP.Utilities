@@ -511,6 +511,23 @@ Or install individually as needed during setup. After installing VS Code, open a
 terminal so the `code` command is on `PATH`, then verify with `code --version`. (The `nbgv`
 .NET global tool is installed machine-wide separately in Step 4.4.)
 
+#### 2.2.1 Register AI desktop apps for UTAT022-class workstations
+
+Record these apps separately from the Chocolatey package list. Use the vendor's
+Windows package for the workstation architecture when that product is selected
+for installation.
+
+| Desktop app | Vendor package or installation route | UTAT022 verification on 2026-11-07 |
+| --- | --- | --- |
+| GitHub Copilot app | GitHub publishes Windows x64 and ARM64 installers. The verified x64 reference is `GitHub-Copilot-windows-x64.msi` from v1.1.35. [GitHub release assets](https://github.com/github/app/releases/expanded_assets/v1.1.35) | No desktop registration found in the inspected uninstall, Appx and Start inventories. GitHub Copilot CLI and Microsoft Copilot are separate products. |
+| Google Antigravity App | Select **Antigravity App** for Windows from Google's download page. [Google Antigravity downloads](https://antigravity.google/download) | Version 2.29.0 was observed installed per user and running. The operator reported downloading it directly from Google. Authenticode reported the installed executable as `NotSigned`. Antigravity IDE and Antigravity CLI are separate products. |
+
+After installation, record the product name, version, publisher, installation
+scope, and installer source. Check Windows Installed Apps and confirm the desktop
+executable or package identity. If a query cannot establish the version or scope,
+record it as unknown. Confirm installed-version parity separately using the
+isolated parity workflow before rolling out to UTAT01.
+
 ### 2.3 Install Sysinternals Suite
 
 Install the pinned Sysinternals Suite release with WinGet. The suite is part of the
@@ -3690,6 +3707,12 @@ Add-ParityChangeEntry `
 ## Google Antigravity setup on a new Windows 11 computer
 
 Use the steps in this section to install Google Antigravity on a new workstation and connect it to the current sprint's local repositories.
+
+Use the [AI desktop app registration](#221-register-ai-desktop-apps-for-utat022-class-workstations)
+to select the standalone App. Add the active sprint's approved repository folders
+through the App's project controls. The configuration-file and lifecycle automation
+below describes a proposed integration that requires a verified interface for the
+installed App. [Google Antigravity project setup](https://www.antigravity.google/docs/getting-started)
 
 ### Install prerequisites
 

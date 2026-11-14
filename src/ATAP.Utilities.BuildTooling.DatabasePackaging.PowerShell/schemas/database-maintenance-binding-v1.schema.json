@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DatabaseMaintenanceBinding-v1",
+  "description": "Hashed, approval-bound input for one database maintenance window attempt on one tier, shared by Invoke-DatabaseMaintenanceWindow and Senior Dev #1's pinned capture and write runners. The specific job is the declared OperationSet and its Operations[]; every tier value is checked against the module's fixed tier map. Field names follow Senior Dev #1's DatabaseMaintenancePinnedSqlBinding-v1 proposal plus the window fields.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "SchemaVersion", "Tier", "Mode", "Attempt", "HostName", "SqlInstance", "AllowedDataSources", "Catalog",
+    "CloneName", "CloneDataPath", "CloneLogPath", "BackupPath", "EvidenceRoot",
+    "ExpectedLogin", "ExpectedSid", "MasterSecretName", "DatabaseSecretName",
+    "ApprovalReference", "NotBeforeUtc", "ExpiresUtc", "BuildId", "PackageSha256",
+    "DatabaseManagementVersion", "SqlClient", "PauseList", "OperationSet", "Operations"
+  ],
+  "properties": {
+    "SchemaVersion": { "const": "DatabaseMaintenanceBinding-v1" },
+    "Description": { "type": "string", "maxLength": 2000 },
+    "FilledFromBindingSha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$", "description": "Set only by New-PinnedRecoveryBinding on the filled recovery copy: the SHA-256 of the binding it was filled from." },
+    "FilledValue": { "type": "string", "description": "Set only by New-PinnedRecoveryBinding: the value written into the Recover operation's FillPattern slot." },
+    "Tier": { "enum": ["Experimental", "Development", "Integration", "QA", "Production"], "description": "Experimental is the operator's by-hand window (Senior Dev #1's runners); Invoke-DatabaseMaintenanceWindow refuses it." },
+    "Mode": { "enum": ["PrecheckOnly", "BackupOnly", "Full", "DropClone"] },
+    "Attempt": { "type": "string", "pattern": "^A[0-9]{2}$" },
+    "HostName": { "type": "string", "pattern": "^[A-Za-z0-9-]{1,15}$" },
+    "SqlInstance": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,15}\\\\[A-Za-z0-9_$-]{1,16}$" },
+    "AllowedDataSources": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^[A-Za-z0-9_.-]{1,64}\\\\[A-Za-z0-9_$-]{1,16}$" } },
+    "Catalog": { "const": "ATAPUtilities" },
+    "CloneName": { "type": "string", "pattern": "^ATAPUtilities_[A-Za-z][A-Za-z0-9]{0,23}Clone_((Development|Integration|QA|Production)_)?A[0-9]{2}$" },
+    "CloneDataPath": { "type": "string", "pattern": "^[A-Za-z]:\\\\[^\"*?<>|]+\\.mdf$" },
+    "CloneLogPath": { "type": "string", "pattern": "^[A-Za-z]:\\\\[^\"*?<>|]+_log\\.ldf$" },
+    "BackupPath": { "type": "string", "pattern": "^[A-Za-z]:\\\\[^\"*?<>|]+\\.bak$" },
+    "EvidenceRoot": { "type": "string", "pattern": "^[A-Za-z]:\\\\[^\"*?<>|]+$" },
+    "ExpectedLogin": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,15}\\\\[A-Za-z0-9_.$-]{1,64}$" },
+    "ExpectedSid": { "type": "string", "pattern": "^S-1-5-21-[0-9]+-[0-9]+-[0-9]+-[0-9]+$" },
+    "MasterSecretName": { "type": "string", "pattern": "^dbConnectionString\\.[A-Za-z0-9_.-]{1,180}$" },
+    "DatabaseSecretName": { "type": "string", "pattern": "^dbConnectionString\\.[A-Za-z0-9_.-]{1,180}$" },
+    "ApprovalReference": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "NotBeforeUtc": { "type": ["string", "null"], "format": "date-time", "description": "Null until approval fills it. Every runner refuses to run while it or ExpiresUtc is null, or when now is outside them." },
+    "ExpiresUtc": { "type": ["string", "null"], "format": "date-time" },
+    "BuildId": { "type": "string", "pattern": "^[0-9]{1,10}$" },
+    "PackageSha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+    "DatabaseManagementVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "SqlClient": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["Path", "Sha256"],
+      "properties": {
+        "Path": { "type": "string", "pattern": "^[A-Za-z]:\\\\[^\"*?<>|]+\\\\Microsoft\\.Data\\.SqlClient\\.dll$" },
+        "Sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" }
+      }
+    },
+    "PauseList": { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1 },
+    "ProductionPauseRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["Path", "Sha256"],
+      "properties": {
+        "Path": { "type": "string", "pattern": "^[A-Za-z]:\\\\[^\"*?<>|]+$" },
+        "Sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" }
+      }
+    },
+    "OperationSet": {
+      "description": "The declared job, for example Name 'LF021' (line-ending repair for package 0.1.21). It names the clone and the backup.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["Name", "Description"],
+      "properties": {
+        "Name": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9]{0,23}$" },
+        "Description": { "type": "string", "minLength": 1, "maxLength": 400 }
+      }
+    },
+    "Operations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/operation" }
+    }
+  },
+  "allOf": [
+    { "if": { "properties": { "Tier": { "const": "Production" } } }, "then": { "required": ["ProductionPauseRecord"] } },
+    { "if": { "properties": { "Tier": { "const": "Experimental" } } },
+      "then": { "properties": { "CloneName": { "pattern": "^ATAPUtilities_[A-Za-z][A-Za-z0-9]{0,23}Clone_A[0-9]{2}$" } } },
+      "else": { "properties": { "CloneName": { "pattern": "^ATAPUtilities_[A-Za-z][A-Za-z0-9]{0,23}Clone_(Development|Integration|QA|Production)_A[0-9]{2}$" } } } }
+  ],
+  "$defs": {
+    "moduleAlter": {
+      "description": "One pinned LF-only module normalization: the stored definition must hash to BeforeUtf16Sha256 before, the package CREATE form normalized to LF hashes to LfCreateUtf16Sha256, and the stored definition after the ALTER must hash to PostAlterUtf16Sha256.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["Schema", "Name", "Type", "ObjectId", "BeforeUtf16Sha256", "LfCreateUtf16Sha256", "PostAlterUtf16Sha256", "PermissionMetadataSha256", "AnsiNulls", "QuotedIdentifier"],
+      "properties": {
+        "Schema": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,127}$" },
+        "Name": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,127}$" },
+        "Type": { "enum": ["P", "FN", "IF", "TF", "V", "TR"] },
+        "ObjectId": { "type": "integer" },
+        "BeforeUtf16Sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+        "LfCreateUtf16Sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+        "PostAlterUtf16Sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+        "PermissionMetadataSha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+        "AnsiNulls": { "type": "boolean" },
+        "QuotedIdentifier": { "type": "boolean" }
+      }
+    },
+    "flywayRepairTarget": {
+      "description": "One already-applied migration whose history checksum the Flyway repair may change, and only that field.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["Version", "OldChecksum", "NewChecksum"],
+      "properties": {
+        "Version": { "type": "string", "pattern": "^[0-9]{5}$" },
+        "OldChecksum": { "type": "integer" },
+        "NewChecksum": { "type": "integer" }
+      }
+    },
+    "operation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["Name", "Kind", "Path", "Sha256", "Database", "Secret", "TimeoutSeconds", "TransactionAllowed"],
+      "properties": {
+        "Name": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,63}$" },
+        "Kind": { "enum": ["Read", "Backup", "Restore", "Recover", "DropClone", "LfLineEndingRepair", "Other-reviewed"] },
+        "Path": { "type": ["string", "null"], "pattern": "^[A-Za-z]:\\\\[^\"*?<>|]+$" },
+        "Sha256": { "type": ["string", "null"], "pattern": "^[0-9a-fA-F]{64}$" },
+        "Database": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "Secret": { "enum": ["Master", "Database"] },
+        "TimeoutSeconds": { "type": "integer", "minimum": 1, "maximum": 86400 },
+        "TransactionAllowed": { "type": "boolean" },
+        "TemplatePath": { "type": "string", "pattern": "^[A-Za-z]:\\\\[^\"*?<>|]+$" },
+        "TemplateSha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+        "FillPattern": { "type": "string", "minLength": 1 },
+        "FillEmptyValue": { "type": "string" },
+        "ReviewReference": { "type": "string", "minLength": 1 },
+        "ModuleAlters": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/moduleAlter" } },
+        "FlywayRepairTargets": { "type": "array", "items": { "$ref": "#/$defs/flywayRepairTarget" } }
+      },
+      "allOf": [
+        { "if": { "properties": { "Kind": { "not": { "const": "Recover" } } } }, "then": { "properties": { "Path": { "type": "string" }, "Sha256": { "type": "string" } } } },
+        { "if": { "properties": { "Kind": { "const": "LfLineEndingRepair" } } }, "then": { "required": ["ModuleAlters", "FlywayRepairTargets"] }, "else": { "not": { "anyOf": [ { "required": ["ModuleAlters"] }, { "required": ["FlywayRepairTargets"] } ] } } },
+        { "if": { "properties": { "Kind": { "enum": ["Backup", "Restore", "Recover", "DropClone"] } } }, "then": { "properties": { "TransactionAllowed": { "const": false } } } },
+        { "if": { "properties": { "Kind": { "const": "Recover" } } }, "then": { "required": ["TemplatePath", "TemplateSha256", "FillPattern", "FillEmptyValue"] } },
+        { "if": { "properties": { "Kind": { "const": "Other-reviewed" } } }, "then": { "required": ["ReviewReference"] } }
+      ]
+    }
+  }
+}

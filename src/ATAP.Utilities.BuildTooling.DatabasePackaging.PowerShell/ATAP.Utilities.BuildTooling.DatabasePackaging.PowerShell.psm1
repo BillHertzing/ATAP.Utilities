@@ -9,6 +9,7 @@ Export-ModuleMember -Function @(
   'Get-DatabasePackageBuildContext'
   'Initialize-ProGetSqlServiceLogin'
   'Invoke-BuildToolingSqlQuery'
+  'Invoke-DatabaseMaintenanceWindow'
   'New-DeveloperSqlServerInstances'
   'Parse-SQLFile'
   'Remove-DeveloperSqlServerInstances'

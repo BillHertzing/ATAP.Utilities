@@ -69,7 +69,8 @@ Describe 'Elevation broker artifacts' {
   It 'registers the scheduled task with highest privileges and a drain-and-exit action' {
     $xml = [xml](Get-Content -LiteralPath $script:TaskXml -Raw)
     $xml.Task.Principals.Principal.RunLevel | Should -Be 'HighestAvailable'
-    $xml.Task.Triggers.BootTrigger.Enabled | Should -Be 'true'
+    # The shipped task deliberately disables its boot trigger (see Documentation\ElevationBroker.md).
+    $xml.Task.Triggers.BootTrigger.Enabled | Should -Be 'false'
     $xml.Task.Actions.Exec.Command | Should -Be 'pwsh.exe'
     # -Once matters: without it an elevated process would sit resident indefinitely.
     $xml.Task.Actions.Exec.Arguments | Should -Match '-Once'
@@ -471,8 +472,9 @@ Describe 'Get-BrokerConfig' {
     $p = Join-Path $TestDrive 'good.json'
     Copy-Item -LiteralPath $script:ConfigTemplate -Destination $p
     $config = Get-BrokerConfig -Path $p
-    @($config.installers).Count | Should -Be 3
+    @($config.installers).Count | Should -Be 4
     @($config.installers.id) | Should -Contain 'install-atap-module-allusers'
+    @($config.installers.id) | Should -Contain 'install-coord-resident-launcher'
     @($config.installers.id) | Should -Contain 'seal-gather-call-record-segment'
   }
 

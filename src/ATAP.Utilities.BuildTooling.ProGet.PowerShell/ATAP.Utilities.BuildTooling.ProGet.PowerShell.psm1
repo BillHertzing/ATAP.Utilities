@@ -14,6 +14,7 @@ Export-ModuleMember -Function @(
   'Get-TierFromNBGVLabel'
   'Get-TierOrder'
   'Grant-ElevationBrokerStartRights'
+  'Install-ATAPCoordResidentLauncher'
   'Install-ATAPModuleAllUsers'
   'Invoke-MalwareScan'
   'Invoke-PairedTierPromotion'

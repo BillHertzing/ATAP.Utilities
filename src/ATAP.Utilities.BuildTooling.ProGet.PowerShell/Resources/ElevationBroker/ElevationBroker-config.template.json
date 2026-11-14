@@ -101,6 +101,38 @@
       ]
     },
     {
+      "id": "install-coord-resident-launcher",
+      "description": "Copy the Orchestration resident's signed stable launcher from one installed AllUsers version to its fixed Program Files path (Orchestration 0.1.17 design, slice 7, route (a)).",
+      "commandType": "module",
+      "moduleName": "ATAP.Utilities.BuildTooling.ProGet.PowerShell",
+      "commandName": "Install-ATAPCoordResidentLauncher",
+      "minimumModuleVersion": "0.1.27",
+      "trustedModuleRoots": [
+        "C:\\Program Files\\PowerShell\\Modules"
+      ],
+      "allowedParameters": [
+        {
+          "name": "ModuleVersion",
+          "required": true,
+          "pattern": "\\A\\d+\\.\\d+\\.\\d+\\z",
+          "_comment": "Exact installed Orchestration version. It becomes a directory name under the fixed AllUsers module root, so no separators, ranges or prerelease labels."
+        },
+        {
+          "name": "ExpectedSha256",
+          "required": true,
+          "pattern": "^[0-9A-Fa-f]{64}$",
+          "_comment": "Hash of the bundled Resources\\Resident\\Start-CoordClerkResident.ps1 the requester approved (normally the custody-admitted inventory digest). The command re-hashes and also requires the policy signer before writing."
+        }
+      ],
+      "_deliberatelyNotAllowed": [
+        "No source path, module name, destination or receipt folder is a parameter. The command fixes",
+        "the source as C:\\Program Files\\PowerShell\\Modules\\ATAP.Utilities.BuildTooling.Orchestration.PowerShell\\<ModuleVersion>\\Resources\\Resident\\Start-CoordClerkResident.ps1",
+        "and the destination as C:\\Program Files\\ATAP\\Orchestration\\Start-CoordClerkResident.ps1.",
+        "A caller who could choose either path could have the broker place arbitrary bytes in Program Files",
+        "as an administrator, or replace a different file there."
+      ]
+    },
+    {
       "id": "seal-gather-call-record-segment",
       "description": "Seal one hash-pinned JSONL gather record through the privileged corpus boundary (Task 15.191).",
       "commandType": "module",

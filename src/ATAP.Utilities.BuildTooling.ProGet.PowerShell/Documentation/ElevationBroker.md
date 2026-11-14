@@ -107,3 +107,77 @@ After a successful broker result, verify the exact version at the AllUsers modul
 location and in a fresh shell. Report any earlier `PSModulePath` entry that
 shadows it. Source tests, a local package, or pipeline submission alone do not
 prove stable-feed promotion, installation or use by the consuming shell.
+
+## Install the Orchestration resident stable launcher
+
+Entry `install-coord-resident-launcher` runs `Install-ATAPCoordResidentLauncher`
+(from this module's release that first ships it, `minimumModuleVersion` 0.1.27).
+It belongs to the Orchestration 0.1.17 design, slice 7, route (a). It copies exactly
+one file:
+
+- from
+  `C:\Program Files\PowerShell\Modules\ATAP.Utilities.BuildTooling.Orchestration.PowerShell\<ModuleVersion>\Resources\Resident\Start-CoordClerkResident.ps1`
+- to the fixed path `C:\Program Files\ATAP\Orchestration\Start-CoordClerkResident.ps1`
+
+**Parameters.** A request supplies only `ModuleVersion` (`^\d+\.\d+\.\d+$`) and
+`ExpectedSha256` (64 hex characters). The source root, module name, destination and
+receipt folder are fixed in the command and are deliberately absent from
+`allowedParameters`, in the same way `install-atap-module-allusers` withholds
+`ModulesRoot` and `DeployRoot`.
+
+**Before writing, the command requires:**
+
+1. elevation;
+2. exactly one AllUsers folder for that version, whose manifest declares that
+   version;
+3. the bundled launcher to hash to `ExpectedSha256`;
+4. a `Valid` Authenticode signature from the policy signer
+   `3B5E16C0498E1F5A92F95B9AA17FD6A40E9C406E`;
+5. no reparse point on any existing ancestor of the source or destination.
+
+**How it writes.**
+
+- It copies to a temp file in the destination folder and re-checks the hash.
+- It applies the protected ACL: owner Administrators; Administrators and SYSTEM
+  FullControl; Users ReadAndExecute; inheritance disabled.
+- It replaces the existing copy atomically (`File.Replace`), or moves the file into
+  place when none exists.
+- It re-applies and verifies the ACL, then re-hashes the result.
+- An existing copy is first preserved as a hash-named preimage under
+  `_generated\deploy`.
+- Every run, successful or refused, writes a JSON receipt there with the before and
+  after hashes.
+
+**Refusal codes.** Each refusal throws one distinct code, which the broker records
+as the request's error:
+
+- `CoordLauncherNotElevated`
+- `CoordLauncherModuleNotInstalled`
+- `CoordLauncherInstallAmbiguous`
+- `CoordLauncherSourceHashMismatch`
+- `CoordLauncherSignatureInvalid`
+- `CoordLauncherSignerMismatch`
+- `CoordLauncherReparsePathRefused`
+- `CoordLauncherCopyVerificationFailed`
+- `CoordLauncherAclVerificationFailed`
+- `CoordLauncherUnexpectedFailure`
+
+```powershell
+$result = Request-ElevatedInstall -InstallerId 'install-coord-resident-launcher' -Parameters @{
+  ModuleVersion  = '<custody-admitted Orchestration version>'
+  ExpectedSha256 = '<custody inventory digest of Resources/Resident/Start-CoordClerkResident.ps1>'
+}
+```
+
+**Enabling the entry is a separate, operator-gated step.** The entry is present in
+`ElevationBroker-config.template.json` only. A host's broker honours it only after
+the operator-gated edit of `C:\ProgramData\ATAP\ElevationBroker\config.json`, the
+Administrators-only trust anchor, which adds this entry. The broker module release
+that exports the command must also be installed first. Neither step follows from
+this documentation or from the template change.
+
+In the 0.1.17 apply order, the request is made after custody admits the new
+Orchestration version, and only when that version's bundled launcher hash differs
+from the fixed copy. The launcher's own self-check refuses
+(`LauncherSelfNotAdmitted`) if the fixed copy does not match the custody-admitted
+inventory.

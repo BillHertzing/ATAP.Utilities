@@ -1,6 +1,6 @@
 @{
   RootModule           = 'ATAP.Utilities.BuildTooling.ProGet.PowerShell.psm1'
-  ModuleVersion        = '0.1.0'
+  ModuleVersion        = '0.1.27'
   GUID                 = '35EE8B2A-E1D7-4668-8B4A-A6E9F5767303'
   Author               = 'Bill Hertzing for ATAPUtilities.org'
   CompanyName          = 'ATAPUtilities.org'
@@ -25,6 +25,7 @@
     'Get-TierFromNBGVLabel'
     'Get-TierOrder'
     'Grant-ElevationBrokerStartRights'
+    'Install-ATAPCoordResidentLauncher'
     'Install-ATAPModuleAllUsers'
     'Invoke-MalwareScan'
     'Invoke-PairedTierPromotion'

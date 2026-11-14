@@ -34,9 +34,12 @@ function Invoke-Flyway {
   and no reserved catalog placeholder is emitted. This parameter grants no authority.
 
   .PARAMETER Environment
-  The target environment: 'Development', 'Testing', 'Production', or 'Experimental'.
+  The target environment: 'Experimental', 'Development', 'Integration', 'QA', or 'Production'.
+  'Testing' is accepted as a deprecated alias with identical behaviour.
+  Integration, QA and Testing all resolve to the Flyway 'testing' environment (TEST URL prefix),
+  so flyway.toml keeps a single test environment.
   This parameter drives the value of SqlInstance:
-  - Development, Testing, Production: SqlInstance is set to match the Environment value
+  - Development, Testing, Integration, QA, Production: SqlInstance is set to match the Environment value
   - Experimental: SqlInstance is left blank (uses default instance)
 
   .PARAMETER DatabaseHost
@@ -334,7 +337,7 @@ function Invoke-Flyway {
       throw 'Resolved database does not match ExpectedDatabaseName.'
     }
 
-    $Environment = Get-PVal -ParameterName 'Environment' -originalPSBoundParameters $PSBoundParameters -DefaultValue $Environment -ValidValues @('Production', 'Testing', 'Development', 'Experimental') -AllowMissing
+    $Environment = Get-PVal -ParameterName 'Environment' -originalPSBoundParameters $PSBoundParameters -DefaultValue $Environment -ValidValues @('Production', 'Testing', 'Integration', 'QA', 'Development', 'Experimental') -AllowMissing
     $DBConnectionStringSecretName = Get-PVal -ParameterName 'DBConnectionStringSecretName' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DBConnectionStringSecretName" -Settings $databasesCollection -DefaultValue $DBConnectionStringSecretName -AllowMissing
     $DBConnectionStringDBSecretName = Get-PVal -ParameterName 'DBConnectionStringDBSecretName' -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DBConnectionStringDBSecretName" -Settings $databasesCollection -DefaultValue $DBConnectionStringDBSecretName -AllowMissing
     if ([string]::IsNullOrWhiteSpace($DBConnectionStringDBSecretName)) {
@@ -516,8 +519,14 @@ function Invoke-Flyway {
       $env:FLYWAY_TRUSTSERVERCERT = 'true'
 
       # Set FLYWAY_URL from the JDBC connection string
-      $environmentKey = $Environment.ToLowerInvariant()
-      $envPrefix = switch ($Environment) {
+      # Runtime tier names Integration and QA, and the deprecated alias Testing, share one Flyway environment.
+      $flywayEnvironment = switch ($Environment) {
+        'Integration' { 'Testing' }
+        'QA' { 'Testing' }
+        default { $Environment }
+      }
+      $environmentKey = $flywayEnvironment.ToLowerInvariant()
+      $envPrefix = switch ($flywayEnvironment) {
         'Production' { 'PROD' }
         'Testing' { 'TEST' }
         'Development' { 'DEV' }

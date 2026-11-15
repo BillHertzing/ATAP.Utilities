@@ -1,6 +1,6 @@
 param([string]$ServerInstance = $env:ATAP_V00150_TEST_SERVER)
 
-Describe 'V00150 newline recovery against an authorized predecessor' -Skip:([string]::IsNullOrWhiteSpace($ServerInstance)) {
+Describe 'V00150 newline recovery against an authorized predecessor' -Tag 'Integration', 'RequiresSql' -Skip:([string]::IsNullOrWhiteSpace($ServerInstance)) {
   BeforeAll {
     $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '../../..')).Path
     . (Join-Path $repoRoot 'Database/Powershell/public/Repair-AISupervisorV00150Newlines.ps1')

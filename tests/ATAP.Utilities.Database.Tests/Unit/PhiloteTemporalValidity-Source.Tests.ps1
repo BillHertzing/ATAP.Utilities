@@ -47,7 +47,10 @@ BeforeAll {
   if (-not (Test-Path -LiteralPath $scriptDomPath -PathType Leaf)) {
     throw "SQL Server ScriptDom is required for source verification: $scriptDomPath"
   }
-  Add-Type -LiteralPath $scriptDomPath
+  # Load only when no ScriptDom parser type is present yet: a second copy in one process cannot load.
+  if (-not ('Microsoft.SqlServer.TransactSql.ScriptDom.TSql160Parser' -as [type])) {
+    Add-Type -LiteralPath $scriptDomPath
+  }
 
   function Parse-TemporalSql {
     [CmdletBinding()]

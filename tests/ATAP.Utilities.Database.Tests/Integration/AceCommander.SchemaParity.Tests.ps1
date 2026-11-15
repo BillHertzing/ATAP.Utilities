@@ -1,9 +1,10 @@
 # AI assisted using Powershell.instructions.md as guidelines
 
-$SqlInstance = if ($env:ATAPUTILITIES_SQLINSTANCE) { $env:ATAPUTILITIES_SQLINSTANCE } else { 'localhost' }
+# Live-database test: runs only when ATAPUTILITIES_SQLINSTANCE names an instance explicitly (no silent localhost default).
+$SqlInstance = $env:ATAPUTILITIES_SQLINSTANCE
 $DatabaseName = 'ATAPUtilities'
 
-Describe 'AceCommander schema and user data parity checks' {
+Describe 'AceCommander schema and user data parity checks' -Tag 'Integration', 'RequiresSql' -Skip:([string]::IsNullOrWhiteSpace($env:ATAPUTILITIES_SQLINSTANCE)) {
   BeforeAll {
     if (-not (Get-Module -ListAvailable -Name dbatools)) {
       throw 'dbatools module is required for this test. Install-Module dbatools -Scope CurrentUser'

@@ -616,7 +616,8 @@ SELECT
 '@
 }
 
-Describe 'V00080 database acceptance fixture offline contract' {
+# Offline contract (no SQL): tagged Integration only, so it runs wherever the Integration folder runs.
+Describe 'V00080 database acceptance fixture offline contract' -Tag 'Integration' {
     It 'loads a deterministic fixture bound to the frozen migration lineage' {
         $fixture.schemaVersion | Should -Be '1.0'
         $fixture.target.migration | Should -Be 'V00080__Create_ATAPUtilities_V4_Core_Identity_And_Overlay.sql'
@@ -785,7 +786,7 @@ Describe 'V00080 database acceptance fixture offline contract' {
     }
 }
 
-Describe 'V00080 guarded disposable database acceptance' {
+Describe 'V00080 guarded disposable database acceptance' -Tag 'Integration', 'RequiresSql' {
     $requested = -not [string]::IsNullOrEmpty(
         [Environment]::GetEnvironmentVariable('ATAP_TASK15140C_V4_DISPOSABLE_AUTHORIZATION', 'Process'))
 

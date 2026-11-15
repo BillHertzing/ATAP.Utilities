@@ -17,6 +17,11 @@ Describe 'Forward organization migration source package' {
       @{ Version = '00210'; File = 'V00210__Create_ReadOrganizationProject_Procedure.sql'; Source = 'ReadOrganizationProject.sql'; Batches = 1 }
     )
     if (-not ('Microsoft.SqlServer.TransactSql.ScriptDom.TSql160Parser' -as [type])) {
+      if (-not $ScriptDomAssemblyPath) {
+        # Default to the installed SqlServer module copy (the same DLL the sibling source tests use).
+        $sqlServerModule = Get-Module -ListAvailable -Name SqlServer | Sort-Object Version -Descending | Select-Object -First 1
+        if ($sqlServerModule) { $ScriptDomAssemblyPath = Join-Path $sqlServerModule.ModuleBase 'coreclr\Microsoft.SqlServer.TransactSql.ScriptDom.dll' }
+      }
       if (-not $ScriptDomAssemblyPath -or -not (Test-Path -LiteralPath $ScriptDomAssemblyPath -PathType Leaf)) {
         throw 'Supply an existing ScriptDomAssemblyPath through New-PesterContainer -Data; no install or SQL connection is performed.'
       }

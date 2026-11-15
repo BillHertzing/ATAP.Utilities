@@ -142,7 +142,7 @@ BeforeAll {
   }
 }
 
-Describe 'Philote temporal-validity disposable-database verification' -Skip:(
+Describe 'Philote temporal-validity disposable-database verification' -Tag 'Integration', 'RequiresSql' -Skip:(
   [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable('PHILOTE_TEMPORAL_VALIDITY_DATABASE_NAME', 'Process')) -or
   [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable('PHILOTE_TEMPORAL_VALIDITY_DATABASE_SECRET_NAME', 'Process'))
 ) {

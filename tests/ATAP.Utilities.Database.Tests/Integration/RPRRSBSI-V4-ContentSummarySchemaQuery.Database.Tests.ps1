@@ -3,7 +3,7 @@
 
 Set-StrictMode -Version Latest
 
-Describe 'V00110 guarded disposable fresh, V00100-upgrade, and recovery acceptance' {
+Describe 'V00110 guarded disposable fresh, V00100-upgrade, and recovery acceptance' -Tag 'Integration', 'RequiresSql' {
   $authorization = [Environment]::GetEnvironmentVariable('ATAP_CONTENTSUMMARY_V110_DISPOSABLE_AUTHORIZATION', 'Process')
   $localInstance = [Environment]::GetEnvironmentVariable('ATAP_CONTENTSUMMARY_V110_DISPOSABLE_SQL_INSTANCE', 'Process')
   $requested = -not [string]::IsNullOrEmpty($authorization)

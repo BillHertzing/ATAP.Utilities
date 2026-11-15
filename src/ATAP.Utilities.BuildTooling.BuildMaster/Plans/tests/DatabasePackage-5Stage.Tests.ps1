@@ -1119,3 +1119,89 @@ Describe 'Selected stage fixture forwarding (631)' -Tag 'Unit' {
         foreach ($effect631 in $effects631) { $effect631.Extent.StartOffset | Should -BeGreaterThan $guards631[1].Extent.StartOffset }
     }
 }
+
+Describe 'Database Unit test gate before the Experimental build (plan 7.5, G-T warn-only)' -Tag 'DatabaseUnitTestGate' {
+    BeforeAll {
+        $tokens = $null; $errors = $null
+        $runnerAst = [Management.Automation.Language.Parser]::ParseFile($script:RunnerPath, [ref]$tokens, [ref]$errors)
+        if ($errors.Count) { throw 'Runner parse failed' }
+        foreach ($name in @('Invoke-DatabaseUnitTestGate', 'Add-DatabasePackagePublishTrace')) {
+            $definition = @($runnerAst.FindAll({
+                param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq $name
+            }, $false))
+            if ($definition.Count -ne 1) { throw "Expected one top-level $name" }
+            . ([scriptblock]::Create($definition[0].Extent.Text))
+        }
+        $script:runnerMainUnitGate = @($runnerAst.FindAll({
+            param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq 'Invoke-DatabasePackageBuildMasterStage'
+        }, $false))[0]
+        function New-SyntheticDatabaseSuite([string]$Body) {
+            $root = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
+            $unit = Join-Path $root 'tests/ATAP.Utilities.Database.Tests/Unit'
+            $null = New-Item -ItemType Directory -Path $unit -Force
+            if ($null -ne $Body) { [IO.File]::WriteAllText((Join-Path $unit 'Synthetic.Tests.ps1'), $Body) }
+            $root
+        }
+    }
+    BeforeEach { Mock Write-PSFMessage {} }
+
+    It 'passes a green suite and records the summary (<Mode>)' -ForEach @(@{ Mode = 'Warn'; Block = $false }, @{ Mode = 'Block'; Block = $true }) {
+        $root = New-SyntheticDatabaseSuite "Describe 'ok' { It 'passes' { 1 | Should -Be 1 } }"
+        $summaryPath = Join-Path $TestDrive "green-$Mode.json"
+        $trace = Join-Path $TestDrive "green-$Mode.log"
+        $result = Invoke-DatabaseUnitTestGate -SourcePath $root -SummaryPath $summaryPath -TracePath $trace -BlockOnDatabaseUnitTestFailure:$Block
+        $result.Passed | Should -BeTrue
+        $result.Mode | Should -BeExactly $Mode
+        (Get-Content -LiteralPath $summaryPath -Raw | ConvertFrom-Json).Result | Should -BeExactly 'Passed'
+        Get-Content -LiteralPath $trace -Raw | Should -Match 'suite passed'
+    }
+
+    It 'excludes RequiresSql tests from the child run' {
+        $root = New-SyntheticDatabaseSuite "Describe 'live' -Tag 'RequiresSql' { It 'needs SQL' { throw 'should not run' } }; Describe 'ok' { It 'passes' { 1 | Should -Be 1 } }"
+        (Invoke-DatabaseUnitTestGate -SourcePath $root -SummaryPath (Join-Path $TestDrive 'tagged.json')).Passed | Should -BeTrue
+    }
+
+    It 'warns and continues by default on <Label>' -ForEach @(
+        @{ Label = 'a failing test'; Body = "Describe 'bad' { It 'fails' { 1 | Should -Be 2 } }"; Expect = '*Failed=1*' }
+        @{ Label = 'a container that fails to load'; Body = "BeforeAll { throw 'load failure' }; Describe 'x' { It 'y' { 1 | Should -Be 1 } }"; Expect = '*did not pass*' }
+        @{ Label = 'a missing suite folder'; Body = $null; Expect = '*not found*' }
+    ) {
+        $root = if ($null -eq $Body) { Join-Path $TestDrive ([guid]::NewGuid().ToString('N')) } else { New-SyntheticDatabaseSuite $Body }
+        $trace = Join-Path $TestDrive ([guid]::NewGuid().ToString('N') + '.log')
+        $result = Invoke-DatabaseUnitTestGate -SourcePath $root -SummaryPath (Join-Path $TestDrive ([guid]::NewGuid().ToString('N') + '.json')) -TracePath $trace
+        $result.Passed | Should -BeFalse
+        $result.Blocked | Should -BeFalse
+        $result.Mode | Should -BeExactly 'Warn'
+        $result.Reason | Should -BeLike $Expect
+        Get-Content -LiteralPath $trace -Raw | Should -Match 'WARNING Database Unit test gate \(warn-only, G-T open\)'
+    }
+
+    It 'blocks the stage on <Label> only with -BlockOnDatabaseUnitTestFailure' -ForEach @(
+        @{ Label = 'a failing test'; Body = "Describe 'bad' { It 'fails' { 1 | Should -Be 2 } }" }
+        @{ Label = 'a missing suite folder'; Body = $null }
+    ) {
+        $root = if ($null -eq $Body) { Join-Path $TestDrive ([guid]::NewGuid().ToString('N')) } else { New-SyntheticDatabaseSuite $Body }
+        { Invoke-DatabaseUnitTestGate -SourcePath $root -SummaryPath (Join-Path $TestDrive ([guid]::NewGuid().ToString('N') + '.json')) -BlockOnDatabaseUnitTestFailure } |
+            Should -Throw '*Database Unit test gate blocked the stage*'
+    }
+
+    It 'stops a run that exceeds the timeout' {
+        $root = New-SyntheticDatabaseSuite "Describe 'slow' { It 'sleeps' { Start-Sleep -Seconds 120 } }"
+        $result = Invoke-DatabaseUnitTestGate -SourcePath $root -SummaryPath (Join-Path $TestDrive 'slow.json') -TimeoutSeconds 30
+        $result.Passed | Should -BeFalse
+        $result.Reason | Should -BeLike '*exceeded 30s*'
+    }
+
+    It 'runs the gate in Experimental before New-DatabaseChangePackage, and the 5-Stage plan stays warn-only' {
+        $calls = @($script:runnerMainUnitGate.FindAll({ param($n) $n -is [Management.Automation.Language.CommandAst] -and
+                    $n.GetCommandName() -in @('Invoke-DatabaseUnitTestGate', 'New-DatabaseChangePackage') }, $true))
+        $gate = @($calls | Where-Object { $_.GetCommandName() -ceq 'Invoke-DatabaseUnitTestGate' })
+        $build = @($calls | Where-Object { $_.GetCommandName() -ceq 'New-DatabaseChangePackage' })
+        $gate.Count | Should -Be 1
+        $build.Count | Should -Be 1
+        $gate[0].Extent.StartOffset | Should -BeLessThan $build[0].Extent.StartOffset
+        $gate[0].Extent.Text | Should -Match '-BlockOnDatabaseUnitTestFailure:\$BlockOnDatabaseUnitTestFailure'
+        $script:RunnerText | Should -Match '-BlockOnDatabaseUnitTestFailure:\$BlockOnDatabaseUnitTestFailure `'
+        $script:PlanText | Should -Not -Match 'BlockOnDatabaseUnitTestFailure'
+    }
+}

@@ -107,6 +107,13 @@
   promotions only; logged as a warning. Experimental rejects this switch
   because its exact-package rehearsal is mandatory before apply.
 
+.PARAMETER BlockOnDatabaseUnitTestFailure
+  Experimental only. Before building the package, the stage runs the offline Database Unit test suite
+  (tests/ATAP.Utilities.Database.Tests/Unit, -ExcludeTag RequiresSql) in a child pwsh. Gate G-T is an open
+  operator decision, so by default a failed suite is WARN-ONLY (logged and traced; the stage continues).
+  With this switch a failed suite blocks the stage before any build or publish. The 5-Stage .otter plan does
+  not pass it, so BuildMaster runs warn-only until the operator decides G-T.
+
 .PARAMETER SkipApply
   Retained for caller compatibility but rejected by the stage preflight.
   A ProGet tier cannot pass unless the exact package is applied to its
@@ -247,6 +254,8 @@ param(
   [AllowEmptyString()][string]$LFReleaseApprovalSha256 = '',
 
   [switch]$SkipRehearsal,
+
+  [switch]$BlockOnDatabaseUnitTestFailure,
 
   [switch]$SkipApply
 )
@@ -872,6 +881,142 @@ function Invoke-DatabasePackageTierRehearsal {
   }
 }
 
+function Invoke-DatabaseUnitTestGate {
+  <#
+  .SYNOPSIS
+    Runs the offline Database Unit test suite before the Experimental package build (Sprint 0017, plan section 7.5).
+  .DESCRIPTION
+    Runs Pester 6.2.0 on <SourcePath>/tests/ATAP.Utilities.Database.Tests/Unit with -ExcludeTag RequiresSql in a
+    child pwsh (Pester never runs in the stage process), bounded by a timeout, and writes the summary to SummaryPath.
+
+    The suite fails when the run Result is not Passed, when any test or block failed, or when any container
+    failed to load (Result and Containers are checked, never FailedCount alone). A missing suite folder, a missing
+    Pester 6.2.0, a child crash or a timeout also count as failure.
+
+    Gate G-T is an open operator decision, so the default is WARN-ONLY: a failed suite is logged and traced and
+    the stage continues. Pass -BlockOnDatabaseUnitTestFailure (stage-runner switch of the same name) to make a
+    failed suite stop the stage before any package is built or published.
+  .PARAMETER SourcePath
+    Absolute source root ($SourcePath of the stage).
+  .PARAMETER SummaryPath
+    Absolute path of the JSON summary written by the child run.
+  .PARAMETER TracePath
+    Stage trace file (Add-DatabasePackagePublishTrace).
+  .PARAMETER TimeoutSeconds
+    Upper bound for the child run.
+  .PARAMETER BlockOnDatabaseUnitTestFailure
+    Throw (block the stage) when the suite fails. Default: warn and continue.
+  .OUTPUTS
+    [PSCustomObject] Passed, Blocked, Mode, Reason, SummaryPath.
+  .NOTES
+    AI assisted using Powershell.instructions.md as guidelines
+  #>
+  [CmdletBinding()]
+  [OutputType([PSCustomObject])]
+  param(
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$SourcePath,
+    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$SummaryPath,
+    [AllowEmptyString()][string]$TracePath = '',
+    [ValidateRange(30, 3600)][int]$TimeoutSeconds = 900,
+    [switch]$BlockOnDatabaseUnitTestFailure
+  )
+
+  BEGIN {
+    $fn = 'Invoke-DatabaseUnitTestGate'
+    $mn = 'ATAP.Utilities.BuildTooling.BuildMaster'
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Starting $fn"
+    $mode = if ($BlockOnDatabaseUnitTestFailure) { 'Block' } else { 'Warn' }
+  }
+
+  PROCESS {
+    $suitePath = Join-Path $SourcePath 'tests/ATAP.Utilities.Database.Tests/Unit'
+    $reason = $null
+    if (-not (Test-Path -LiteralPath $suitePath -PathType Container)) {
+      $reason = "Database Unit test suite not found at '$suitePath'."
+    }
+    else {
+      $summaryDirectory = Split-Path -Parent $SummaryPath
+      if (-not (Test-Path -LiteralPath $summaryDirectory -PathType Container)) { $null = New-Item -ItemType Directory -Path $summaryDirectory -Force }
+      if (Test-Path -LiteralPath $SummaryPath) { Remove-Item -LiteralPath $SummaryPath -Force }
+      # The child reads its inputs from two environment variables, so no path is ever spliced into script text.
+      $childScript = @'
+$ErrorActionPreference = 'Stop'
+$summary = [ordered]@{ Utc = [DateTime]::UtcNow.ToString('o'); Result = 'NotRun'; Passed = 0; Failed = 0; Skipped = 0; NotRun = 0; FailedBlocks = 0; FailedContainers = @(); FailedTests = @(); Error = $null }
+try {
+  Import-Module Pester -RequiredVersion 6.2.0 -ErrorAction Stop
+  $configuration = New-PesterConfiguration
+  $configuration.Run.Path = @($env:ATAP_DATABASE_UNIT_TEST_PATH)
+  $configuration.Run.PassThru = $true
+  $configuration.Filter.ExcludeTag = @('RequiresSql')
+  $configuration.Output.Verbosity = 'Normal'
+  $run = Invoke-Pester -Configuration $configuration
+  $summary.Result = [string]$run.Result
+  $summary.Passed = $run.PassedCount; $summary.Failed = $run.FailedCount; $summary.Skipped = $run.SkippedCount
+  $summary.NotRun = $run.NotRunCount; $summary.FailedBlocks = @($run.FailedBlocks).Count
+  $summary.FailedContainers = @($run.Containers | Where-Object Result -eq 'Failed' | ForEach-Object { [string]$_.Item })
+  $summary.FailedTests = @($run.Failed | Select-Object -First 50 | ForEach-Object { [string]$_.ExpandedPath })
+}
+catch { $summary.Result = 'Error'; $summary.Error = $_.Exception.Message }
+$summary | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $env:ATAP_DATABASE_UNIT_TEST_SUMMARY -Encoding utf8
+'@
+      $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($childScript))
+      $stdout = "$SummaryPath.stdout.log"
+      $stderr = "$SummaryPath.stderr.log"
+      $priorPath = $env:ATAP_DATABASE_UNIT_TEST_PATH
+      $priorSummary = $env:ATAP_DATABASE_UNIT_TEST_SUMMARY
+      $process = $null
+      try {
+        $env:ATAP_DATABASE_UNIT_TEST_PATH = $suitePath
+        $env:ATAP_DATABASE_UNIT_TEST_SUMMARY = $SummaryPath
+        $pwshPath = (Get-Process -Id $PID).Path
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Running Database Unit suite '$suitePath' in a child pwsh (timeout ${TimeoutSeconds}s)."
+        $process = Start-Process -FilePath $pwshPath -ArgumentList @('-NoLogo', '-NonInteractive', '-EncodedCommand', $encoded) `
+          -RedirectStandardOutput $stdout -RedirectStandardError $stderr -NoNewWindow -PassThru
+        if (-not $process.WaitForExit($TimeoutSeconds * 1000)) {
+          try { $process.Kill($true) } catch { $null = $_ }
+          $reason = "Database Unit test suite exceeded ${TimeoutSeconds}s and was stopped."
+        }
+      }
+      catch { $reason = "Database Unit test suite could not run: $($_.Exception.Message)" }
+      finally {
+        $env:ATAP_DATABASE_UNIT_TEST_PATH = $priorPath
+        $env:ATAP_DATABASE_UNIT_TEST_SUMMARY = $priorSummary
+        if ($null -ne $process) { $process.Dispose() }
+      }
+      if ($null -eq $reason) {
+        if (-not (Test-Path -LiteralPath $SummaryPath -PathType Leaf)) {
+          $reason = 'Database Unit test suite wrote no summary (child process failed before Pester ran).'
+        }
+        else {
+          $summary = Get-Content -LiteralPath $SummaryPath -Raw | ConvertFrom-Json
+          if ($summary.Result -cne 'Passed' -or [int]$summary.Failed -ne 0 -or [int]$summary.FailedBlocks -ne 0 -or @($summary.FailedContainers).Count -ne 0) {
+            $reason = "Database Unit test suite did not pass: Result=$($summary.Result) Passed=$($summary.Passed) Failed=$($summary.Failed) FailedBlocks=$($summary.FailedBlocks) FailedContainers=$(@($summary.FailedContainers).Count)$(if ($summary.Error) { " Error=$($summary.Error)" })."
+          }
+          else {
+            $message = "Database Unit test suite passed: Passed=$($summary.Passed) Skipped=$($summary.Skipped) (mode $mode)."
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $message
+            if (-not [string]::IsNullOrWhiteSpace($TracePath)) { Add-DatabasePackagePublishTrace -Path $TracePath -Message $message }
+            return [PSCustomObject]@{ Passed = $true; Blocked = $false; Mode = $mode; Reason = $null; SummaryPath = $SummaryPath }
+          }
+        }
+      }
+    }
+
+    if ($BlockOnDatabaseUnitTestFailure) {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "BLOCKED: $reason"
+      if (-not [string]::IsNullOrWhiteSpace($TracePath)) { Add-DatabasePackagePublishTrace -Path $TracePath -Message "Database Unit test gate BLOCKED the stage: $reason" }
+      throw "Database Unit test gate blocked the stage: $reason Summary: '$SummaryPath'."
+    }
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "WARNING (gate G-T is warn-only; stage continues): $reason"
+    if (-not [string]::IsNullOrWhiteSpace($TracePath)) { Add-DatabasePackagePublishTrace -Path $TracePath -Message "WARNING Database Unit test gate (warn-only, G-T open): $reason" }
+    return [PSCustomObject]@{ Passed = $false; Blocked = $false; Mode = $mode; Reason = $reason; SummaryPath = $SummaryPath }
+  }
+
+  END {
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Finished $fn"
+  }
+}
+
 function Invoke-DatabasePackageTierApply {
   <#
   .SYNOPSIS
@@ -1152,6 +1297,7 @@ function Invoke-DatabasePackageBuildMasterStage {
     [AllowEmptyString()][string]$LFReleaseApprovalPath = '',
     [AllowEmptyString()][string]$LFReleaseApprovalSha256 = '',
     [switch]$SkipRehearsal,
+    [switch]$BlockOnDatabaseUnitTestFailure,
     [switch]$SkipApply
   )
 
@@ -1526,6 +1672,12 @@ function Invoke-DatabasePackageBuildMasterStage {
         return
       }
 
+      # Offline Database Unit suite before the first build (plan 7.5). Warn-only unless the operator
+      # passes -BlockOnDatabaseUnitTestFailure (gate G-T). A resumed Experimental run skips it above.
+      $null = Invoke-DatabaseUnitTestGate -SourcePath $SourcePath `
+        -SummaryPath (Join-Path $contextDirectory "$databasePackageId.experimental.unit-tests.json") `
+        -TracePath $tracePath -BlockOnDatabaseUnitTestFailure:$BlockOnDatabaseUnitTestFailure
+
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important `
         -Message "Database stage 'Experimental' building and publishing '$databasePackageId' from '$databasePackageSourcePath'."
       Add-DatabasePackagePublishTrace -Path $tracePath -Message "Build and publish '$databasePackageId' version '$resolvedVersion' to '$ExperimentalFeed'."
@@ -1754,4 +1906,5 @@ Invoke-DatabasePackageBuildMasterStage `
   -LFReleaseApprovalPath $LFReleaseApprovalPath `
   -LFReleaseApprovalSha256 $LFReleaseApprovalSha256 `
   -SkipRehearsal:$SkipRehearsal `
+  -BlockOnDatabaseUnitTestFailure:$BlockOnDatabaseUnitTestFailure `
   -SkipApply:$SkipApply

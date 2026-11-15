@@ -590,7 +590,7 @@ AfterAll {
   }
 }
 
-Describe 'Successor witness actor retirement validation in memory' -Tag 'C2065SuccessorGuard' {
+Describe 'Successor witness actor retirement validation in memory' -Tag 'Integration','C2065SuccessorGuard' {
   BeforeAll {
     $sourceRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
     . (Join-Path $sourceRoot 'private/CoordProducerJson.ps1')

@@ -450,7 +450,7 @@ Describe 'Established witness single-append update' -Tag 'Unit', 'C1938' {
 }
 
 
-Describe 'Successor witness append guard with in-memory custody' -Tag 'C2065SuccessorGuard' {
+Describe 'Successor witness append guard with in-memory custody' -Tag 'Unit','C2065SuccessorGuard' {
   BeforeEach {
     $actor = [ordered]@{ holderId = 'coordinator'; sessionId = 'session-1'; windowsSid = 'fixture-sid'; role = 'Coordinator' }
     $retired = [ordered]@{ holderId = 'old-holder'; sessionId = 'retired-session'; windowsSid = 'fixture-sid'; role = 'Coordinator' }

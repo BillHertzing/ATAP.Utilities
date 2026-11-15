@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageId": "ATAPUtilities.Database",
-  "sourceVersion": "0.1.25",
+  "sourceVersion": "0.1.26",
   "files": [
     {
       "path": "SQL/V00010__Create_ATAPUtilities_Initial_Schema_And_Seed.sql",
@@ -102,6 +102,11 @@
       "path": "SQL/V00210__Create_ReadOrganizationProject_Procedure.sql",
       "kind": "migration",
       "sha256": "766F0C02571364808D05C4BD76810A2906C8B72E4F68A1C3D9D311066A79F4DB"
+    },
+    {
+      "path": "SQL/V00220__Create_AceCommander_Role.sql",
+      "kind": "migration",
+      "sha256": "F9A4A10774248496C4ADBFDE15587114E1DCB8EF8EA430C167405DF254614697"
     },
     {
       "path": "Data/BuildSet.csv",

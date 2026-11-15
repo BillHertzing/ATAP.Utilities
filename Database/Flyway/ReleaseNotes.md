@@ -1,5 +1,25 @@
 # ATAPUtilities.Database release notes
 
+## 0.1.26
+
+Status: source prepared for Sprint 0017 Task 17.68.dev (Plan r4, operator
+design decision 2026-11-15); not yet built by BuildMaster, published or
+deployed to any tier.
+
+- Adds V00220, one additive security migration. It creates the single
+  database role `AceCommander` with the least privilege AceCommanderService
+  uses (contract `Database/Verify/AceCommander/AceCommanderRole.Contract.json`,
+  one source file:line per grant) and makes the host's Windows account
+  `<MachineName>\SvcAceCommander` a member. No server login is created.
+- Folds in the exact grants of AceCommanderTimelineReader (V00070) and of the
+  hand-provisioned AceCommanderGraphReader and AceCommanderTagsTraversalReader
+  roles; those roles are left in place for a later, separately approved
+  retirement migration.
+- Includes VIEW DEFINITION on the Ace and ATAPUtilities schemas in a marked
+  optional block (gate G6): default include, pending explicit operator
+  confirmation.
+- Retains immutable V00010 through V00210 migration bytes.
+
 ## 0.1.17
 
 Status: source corrected after the 0.1.16 Experimental rehearsal failed;

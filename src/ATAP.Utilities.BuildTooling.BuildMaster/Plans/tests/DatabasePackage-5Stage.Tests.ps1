@@ -1120,7 +1120,7 @@ Describe 'Selected stage fixture forwarding (631)' -Tag 'Unit' {
     }
 }
 
-Describe 'Database Unit test gate before the Experimental build (plan 7.5, G-T warn-only)' -Tag 'DatabaseUnitTestGate' {
+Describe 'Database Unit test gate before the Experimental build (plan 7.5, G-T blocking in the 5-Stage plan)' -Tag 'DatabaseUnitTestGate' {
     BeforeAll {
         $tokens = $null; $errors = $null
         $runnerAst = [Management.Automation.Language.Parser]::ParseFile($script:RunnerPath, [ref]$tokens, [ref]$errors)
@@ -1192,7 +1192,7 @@ Describe 'Database Unit test gate before the Experimental build (plan 7.5, G-T w
         $result.Reason | Should -BeLike '*exceeded 30s*'
     }
 
-    It 'runs the gate in Experimental before New-DatabaseChangePackage, and the 5-Stage plan stays warn-only' {
+    It 'runs the gate in Experimental before New-DatabaseChangePackage, and the 5-Stage plan makes it blocking (G-T)' {
         $calls = @($script:runnerMainUnitGate.FindAll({ param($n) $n -is [Management.Automation.Language.CommandAst] -and
                     $n.GetCommandName() -in @('Invoke-DatabaseUnitTestGate', 'New-DatabaseChangePackage') }, $true))
         $gate = @($calls | Where-Object { $_.GetCommandName() -ceq 'Invoke-DatabaseUnitTestGate' })
@@ -1202,6 +1202,9 @@ Describe 'Database Unit test gate before the Experimental build (plan 7.5, G-T w
         $gate[0].Extent.StartOffset | Should -BeLessThan $build[0].Extent.StartOffset
         $gate[0].Extent.Text | Should -Match '-BlockOnDatabaseUnitTestFailure:\$BlockOnDatabaseUnitTestFailure'
         $script:RunnerText | Should -Match '-BlockOnDatabaseUnitTestFailure:\$BlockOnDatabaseUnitTestFailure `'
-        $script:PlanText | Should -Not -Match 'BlockOnDatabaseUnitTestFailure'
+        # Gate G-T is closed: the 5-Stage plan passes the bare switch (no value) inside its single Exec Arguments block.
+        [regex]::Matches($script:PlanText, '-BlockOnDatabaseUnitTestFailure').Count | Should -Be 1
+        $script:PlanText | Should -Match '(?s)Arguments:\s*>>.*\s-BlockOnDatabaseUnitTestFailure>>'
+        $script:PlanText | Should -Not -Match '-BlockOnDatabaseUnitTestFailure[:\s]+["\$]'
     }
 }

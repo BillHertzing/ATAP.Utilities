@@ -200,10 +200,26 @@ Describe 'Task 15.180 empty lifecycle branch safeguard' -Tag 'Integration', '5Ti
 
 Describe 'Task 15.180 exact VersionOverride fixture allowlist' -Tag 'Unit', 'CPM' -Skip:(-not $script:repositoryContractTestsAvailable) {
   It 'contains exactly the four ratified conditional local enables' {
-    $actual = @(Get-ChildItem -LiteralPath $script:repoRoot -Recurse -Filter *.csproj -File |
-        Where-Object {
-          $_.FullName.Substring($script:repoRoot.Length + 1) -notmatch '(^|[\\/])(bin|obj|_generated|OpenHardwareMonitorLib)([\\/]|$)'
-        } |
+    # Prune excluded directories while walking, so protected or stale content under
+    # _generated (or bin/obj) is never enumerated by the service account.
+    $excludedNames = @('bin', 'obj', '_generated', 'OpenHardwareMonitorLib', '.git')
+    $pending = [System.Collections.Generic.Stack[string]]::new()
+    $pending.Push($script:repoRoot)
+    $projectFiles = [System.Collections.Generic.List[System.IO.FileInfo]]::new()
+    while ($pending.Count -gt 0) {
+      $directory = $pending.Pop()
+      foreach ($file in [System.IO.Directory]::GetFiles($directory, '*.csproj')) {
+        $projectFiles.Add([System.IO.FileInfo]::new($file))
+      }
+      foreach ($child in [System.IO.Directory]::GetDirectories($directory)) {
+        # Match Get-ChildItem -Recurse: do not follow junctions or directory symlinks.
+        # Test LinkTarget, not the ReparsePoint attribute: Dropbox cloud-file
+        # placeholders carry ReparsePoint but are ordinary directories.
+        $isLink = $null -ne [System.IO.DirectoryInfo]::new($child).LinkTarget
+        if (-not $isLink -and $excludedNames -notcontains [System.IO.Path]::GetFileName($child)) { $pending.Push($child) }
+      }
+    }
+    $actual = @($projectFiles |
         ForEach-Object {
           [xml] $project = Get-Content -LiteralPath $_.FullName -Raw
           $enabled = @($project.SelectNodes('//CentralPackageVersionOverrideEnabled') | Where-Object {

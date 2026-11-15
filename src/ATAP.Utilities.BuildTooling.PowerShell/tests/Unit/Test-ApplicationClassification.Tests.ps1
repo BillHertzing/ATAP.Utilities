@@ -224,7 +224,12 @@ Describe 'Test-ApplicationClassification topology and policy gates' -Tag 'Unit',
     $manifest = Get-ClassificationManifest $root
     $manifest.applications[0].publish.publishTrimmed = $true
     Set-ClassificationManifest $root $manifest
-    { Invoke-ClassificationCase $root } | Should -Throw '*publishTrimmed*'
+    # The central schema constrains publishTrimmed, so schema validation (ATAPAPP001)
+    # may reject the manifest before the AG02-specific publishTrimmed check runs.
+    $message = $null
+    try { Invoke-ClassificationCase $root } catch { $message = $_.Exception.Message }
+    $message | Should -Not -BeNullOrEmpty
+    $message | Should -Match 'publishTrimmed|ATAPAPP001'
   }
 
   It 'rejects any OpenHardwareMonitorLib manifest entry' {

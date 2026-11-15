@@ -8,14 +8,19 @@ Describe 'V00150 Ace AISupervisor CacheTokens static contract' {
     $migration = Get-Content -LiteralPath $migrationPath -Raw
     $version = Get-Content -LiteralPath (Join-Path $repoRoot 'Database\Flyway\version.json') -Raw | ConvertFrom-Json
     $allowlist = Get-Content -LiteralPath (Join-Path $repoRoot 'Database\Flyway\package-content-allowlist.json') -Raw | ConvertFrom-Json
+    . (Join-Path $PSScriptRoot '..\Helpers\DatabasePackageExpectations.ps1')
+    $package = Get-DatabasePackageExpectation -RepositoryRoot $repoRoot
   }
 
   It 'uses the unique next migration version without editing V00070' {
     $active = @(Get-ChildItem -LiteralPath (Split-Path $migrationPath) -File -Filter 'V*.sql' | Sort-Object Name)
     @($active.Name | Where-Object { $_ -match '^V00150__' }) | Should -Be @('V00150__Add_AISupervisor_CacheTokens.sql')
     @($active.Name | Where-Object { $_ -match '^V00150__' }).Count | Should -Be 1
-    (Get-FileHash -LiteralPath (Join-Path (Split-Path $migrationPath) 'V00070__Create_Ace_AISupervisor_Telemetry.sql') -Algorithm SHA256).Hash |
-      Should -BeExactly '501B2C9486C81C706C7C07BB8912053FBE91A5559865C43B57527DDB7E5453C8'
+    # V00070 is applied: its allowlisted bytes must be on disk and its logical content must equal the applied record.
+    $v70 = 'V00070__Create_Ace_AISupervisor_Telemetry.sql'
+    $v70Path = Join-Path (Split-Path $migrationPath) $v70
+    (Get-FileHash -LiteralPath $v70Path -Algorithm SHA256).Hash | Should -BeExactly @($package.Migrations | Where-Object Name -CEQ $v70)[0].Sha256
+    Get-LogicalContentSha256 -LiteralPath $v70Path | Should -BeExactly (Get-AppliedMigrationLogicalHash -Name $v70)
   }
 
   It 'adds one nullable non-negative CacheTokens column transactionally' {
@@ -46,9 +51,10 @@ Describe 'V00150 Ace AISupervisor CacheTokens static contract' {
     $migration | Should -Match 'SUM\(\[CacheTokens\]\) AS \[CacheTokens\]'
   }
 
-  It 'binds package version 0.1.17 to the exact V00150 bytes' {
-    $version.version | Should -BeExactly '0.1.17'
-    $allowlist.sourceVersion | Should -BeExactly '0.1.17'
+  It 'binds the current package version to the exact V00150 bytes' {
+    # The version is whatever version.json says; it must equal the allowlist that binds the bytes.
+    $allowlist.sourceVersion | Should -BeExactly $version.version
+    $package.SourceVersion | Should -BeExactly $version.version
     $entry = @($allowlist.files | Where-Object path -EQ 'SQL/V00150__Add_AISupervisor_CacheTokens.sql')
     $entry.Count | Should -Be 1
     $entry[0].kind | Should -BeExactly 'migration'

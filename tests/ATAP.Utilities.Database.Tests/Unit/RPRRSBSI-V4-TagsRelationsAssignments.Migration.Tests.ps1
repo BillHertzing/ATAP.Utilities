@@ -25,17 +25,19 @@ Describe 'V00090 RPRRSBSI V4 Tags relation and assignment static contract' {
     }
   }
 
-  It 'allocates V00090 as the unique current migration head' {
-    @($activeMigrations.Name) | Should -Be @(
-      'V00010__Create_ATAPUtilities_Initial_Schema_And_Seed.sql'
-      'V00030__Create_AceOutpostContentSummaryPrototype.sql'
-      'V00040__Add_PhiloteValidityPeriod_SameIdentity_Key.sql'
-      'V00050__Create_ATAPUtilities_Tag_Root.sql'
-      'V00060__Create_Ace_GatherContent_Submission.sql'
-      'V00070__Create_Ace_AISupervisor_Telemetry.sql'
-      'V00080__Create_ATAPUtilities_V4_Core_Identity_And_Overlay.sql'
-      $migrationName
-    )
+  It 'allocates V00090 as the unique successor of its deployed predecessors' {
+    # Position invariant: V00090 immediately follows its deployed predecessors; later migrations may follow it.
+    . (Join-Path $PSScriptRoot '..\Helpers\DatabasePackageExpectations.ps1')
+    $package = Get-DatabasePackageExpectation -RepositoryRoot (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
+    @($activeMigrations.Name) | Should -Be @($package.Migrations.Name)
+    { Assert-MigrationLineagePosition -Expectation $package -Name $migrationName -Predecessors @(
+        'V00010__Create_ATAPUtilities_Initial_Schema_And_Seed.sql'
+        'V00030__Create_AceOutpostContentSummaryPrototype.sql'
+        'V00040__Add_PhiloteValidityPeriod_SameIdentity_Key.sql'
+        'V00050__Create_ATAPUtilities_Tag_Root.sql'
+        'V00060__Create_Ace_GatherContent_Submission.sql'
+        'V00070__Create_Ace_AISupervisor_Telemetry.sql'
+        'V00080__Create_ATAPUtilities_V4_Core_Identity_And_Overlay.sql') } | Should -Not -Throw
     @($activeMigrations.Name | ForEach-Object {
         if ($_ -notmatch '^(V\d+)__') { throw "Invalid migration name: $_" }
         $matches[1]
@@ -125,7 +127,7 @@ Describe 'V00090 RPRRSBSI V4 Tags relation and assignment static contract' {
     $migration | Should -Match 'Classification only; never grants capability or authorization\.'
   }
 
-  It 'binds package 0.1.8 to every exact migration and seed byte' {
+  It 'binds the current package version to every exact migration and seed byte' {
     $version = Get-Content -LiteralPath (Join-Path $flywayRoot 'version.json') -Raw | ConvertFrom-Json
     $allowlist = Get-Content -LiteralPath (Join-Path $flywayRoot 'package-content-allowlist.json') -Raw | ConvertFrom-Json
     $expectedPaths = @(
@@ -133,7 +135,6 @@ Describe 'V00090 RPRRSBSI V4 Tags relation and assignment static contract' {
       @(Get-ChildItem -LiteralPath (Join-Path $flywayRoot 'Data') -File -Filter '*.csv' |
         Sort-Object Name | ForEach-Object { 'Data/' + $_.Name })
     )
-    $version.version | Should -Be $fixture.packageVersion
     $allowlist.sourceVersion | Should -Be $version.version
     @($allowlist.files.path) | Should -Be $expectedPaths
     foreach ($entry in $allowlist.files) {

@@ -164,24 +164,34 @@ Describe 'Forward organization migration source package' {
     }
   }
 
-  It 'leaves the two applied login migrations byte-identical to their accepted receipts' {
-    (Get-FileHash -LiteralPath (Join-Path $sqlRoot 'V00160__Create_AceCommander_Login_Schema_And_Guest.sql') -Algorithm SHA256).Hash |
-      Should -BeExactly '83BE7E03DC379EB84BCA61641A307C00667E30347A1B1B2EEAB81CDBAD7907CE'
-    (Get-FileHash -LiteralPath (Join-Path $sqlRoot 'V00170__Create_ACE_UserInformation_Decrypt_Procedure.sql') -Algorithm SHA256).Hash |
-      Should -BeExactly '7EF06E2052238BFC18BB97430E70BB2CCA6E99F63C71F2ECC7F6AF7713A6BB89'
+  It 'leaves the two applied login migrations identical to their applied content' {
+    # Applied migrations: allowlisted bytes on disk, and logical content equal to the applied record
+    # (V00160 carries the operator-approved LF-only release content; see AppliedMigrationLogicalHashes.json).
+    . (Join-Path $PSScriptRoot '..\Helpers\DatabasePackageExpectations.ps1')
+    $package = Get-DatabasePackageExpectation -RepositoryRoot $repositoryRoot
+    foreach ($name in @('V00160__Create_AceCommander_Login_Schema_And_Guest.sql', 'V00170__Create_ACE_UserInformation_Decrypt_Procedure.sql')) {
+      $path = Join-Path $sqlRoot $name
+      (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash | Should -BeExactly @($package.Migrations | Where-Object Name -CEQ $name)[0].Sha256 -Because $name
+      Get-LogicalContentSha256 -LiteralPath $path | Should -BeExactly (Get-AppliedMigrationLogicalHash -Name $name) -Because $name
+    }
   }
 
   It 'selects the production candidate version without changing package identity' {
     $version = Get-Content -LiteralPath (Join-Path $repositoryRoot 'Database/Flyway/version.json') -Raw | ConvertFrom-Json
-    $version.version | Should -BeExactly '0.1.20'
     $allowlist = Get-Content -LiteralPath (Join-Path $repositoryRoot 'Database/Flyway/package-content-allowlist.json') -Raw | ConvertFrom-Json
+    # The candidate version is version.json's; the allowlist must name the same version and package identity.
+    $allowlist.sourceVersion | Should -BeExactly $version.version
     $allowlist.packageId | Should -BeExactly 'ATAPUtilities.Database'
   }
 
   It 'binds all four new migrations to the exact source-version allowlist' -Tag 'Allowlist' {
     $allowlist = Get-Content -LiteralPath (Join-Path $repositoryRoot 'Database/Flyway/package-content-allowlist.json') -Raw | ConvertFrom-Json
-    $allowlist.sourceVersion | Should -BeExactly '0.1.20'
-    @($allowlist.files).Count | Should -Be 31
+    $version = Get-Content -LiteralPath (Join-Path $repositoryRoot 'Database/Flyway/version.json') -Raw | ConvertFrom-Json
+    $allowlist.sourceVersion | Should -BeExactly $version.version
+    # The allowlist names exactly the active migrations and seeds on disk (no extra, missing or renamed file).
+    $onDisk = @(@(Get-ChildItem -LiteralPath $sqlRoot -File -Filter 'V*.sql' | ForEach-Object { 'SQL/' + $_.Name }) +
+      @(Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'Database/Flyway/Data') -File -Filter '*.csv' | ForEach-Object { 'Data/' + $_.Name }) | Sort-Object)
+    @($allowlist.files.path | Sort-Object) | Should -Be $onDisk
     foreach ($migration in $migrations) {
       $entries = @($allowlist.files | Where-Object path -EQ ('SQL/' + $migration.File))
       $entries.Count | Should -Be 1

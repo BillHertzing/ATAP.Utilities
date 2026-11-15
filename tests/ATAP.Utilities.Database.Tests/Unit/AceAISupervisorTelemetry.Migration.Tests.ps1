@@ -20,6 +20,8 @@ Describe 'V00070 Ace AISupervisor telemetry static contract' {
     if (-not ('Microsoft.SqlServer.TransactSql.ScriptDom.TSql160Parser' -as [type])) {
       Add-Type -LiteralPath $scriptDomPath
     }
+    . (Join-Path $PSScriptRoot '..\Helpers\DatabasePackageExpectations.ps1')
+    $package = Get-DatabasePackageExpectation -RepositoryRoot $repoRoot
   }
 
   It 'allocates the unique next active version after deployed V00060' {
@@ -29,16 +31,15 @@ Describe 'V00070 Ace AISupervisor telemetry static contract' {
         $matches[1]
       })
 
-    $names | Should -Be @(
-      'V00010__Create_ATAPUtilities_Initial_Schema_And_Seed.sql'
-      'V00030__Create_AceOutpostContentSummaryPrototype.sql'
-      'V00040__Add_PhiloteValidityPeriod_SameIdentity_Key.sql'
-      'V00050__Create_ATAPUtilities_Tag_Root.sql'
-      'V00060__Create_Ace_GatherContent_Submission.sql'
-      $migrationName
-      'V00080__Create_ATAPUtilities_V4_Core_Identity_And_Overlay.sql'
-      'V00090__Create_ATAPUtilities_Tag_Relations_Assignments_And_Rules.sql'
-    )
+    # Position invariant: V00070 follows exactly its deployed predecessors; later migrations may follow it.
+    $names | Should -Be @($package.Migrations.Name)
+    { Assert-MigrationLineagePosition -Expectation $package -Name $migrationName -Predecessors @(
+        'V00010__Create_ATAPUtilities_Initial_Schema_And_Seed.sql'
+        'V00030__Create_AceOutpostContentSummaryPrototype.sql'
+        'V00040__Add_PhiloteValidityPeriod_SameIdentity_Key.sql'
+        'V00050__Create_ATAPUtilities_Tag_Root.sql'
+        'V00060__Create_Ace_GatherContent_Submission.sql'
+      ) } | Should -Not -Throw
     @($versions | Group-Object | Where-Object Count -gt 1).Count | Should -Be 0
   }
 
@@ -148,8 +149,8 @@ Describe 'V00070 Ace AISupervisor telemetry static contract' {
         Sort-Object Name | ForEach-Object { 'Data/' + $_.Name })
     )
 
-    $version.version | Should -Be '0.1.8'
-    $allowlist.sourceVersion | Should -Be $version.version
+    # The package version is a parameter of the release (version.json), never a literal here.
+    $allowlist.sourceVersion | Should -BeExactly $version.version
     @($allowlist.files.path) | Should -Be $expectedPaths
     foreach ($entry in $allowlist.files) {
       $literalPath = Join-Path $flywayRoot ($entry.path -replace '/', [IO.Path]::DirectorySeparatorChar)
@@ -157,8 +158,8 @@ Describe 'V00070 Ace AISupervisor telemetry static contract' {
       (Get-FileHash -LiteralPath $literalPath -Algorithm SHA256).Hash |
         Should -Be $entry.sha256 -Because $entry.path
     }
-    ($allowlist.files | Where-Object path -EQ 'SQL/V00070__Create_Ace_AISupervisor_Telemetry.sql').sha256 |
-      Should -Be '501B2C9486C81C706C7C07BB8912053FBE91A5559865C43B57527DDB7E5453C8'
+    # Applied V00070 must keep its recorded logical content (line-ending independent).
+    Get-LogicalContentSha256 -LiteralPath $migrationPath | Should -BeExactly (Get-AppliedMigrationLogicalHash -Name $migrationName)
   }
 }
 

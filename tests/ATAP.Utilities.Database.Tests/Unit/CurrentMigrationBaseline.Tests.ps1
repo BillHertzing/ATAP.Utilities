@@ -8,7 +8,11 @@ BeforeAll {
     'V00010__Create_ATAPUtilities_Initial_Schema_And_Seed.sql' = '401313150D8DCD68E86FDE5E51A6B45D6A03F91389C43EAB5206F8F4115EF962'
     'V00030__Create_AceOutpostContentSummaryPrototype.sql' = '98C0018A4A92A1A8095CA329D93706A4B426016C1C42B69BC3F7CFB865B38179'
   }
-  $expectedActiveMigrationNames = @(
+  . (Join-Path $PSScriptRoot '..\Helpers\DatabasePackageExpectations.ps1')
+  $package = Get-DatabasePackageExpectation -RepositoryRoot $repoRoot
+  # The T0 lineage is fixed as the first eight active migrations; later releases append after it.
+  # The full active inventory is the package allowlist (bound byte-for-byte by New-DatabaseChangePackage).
+  $t0LineagePrefix = @(
     'V00010__Create_ATAPUtilities_Initial_Schema_And_Seed.sql'
     'V00030__Create_AceOutpostContentSummaryPrototype.sql'
     'V00040__Add_PhiloteValidityPeriod_SameIdentity_Key.sql'
@@ -18,6 +22,7 @@ BeforeAll {
     'V00080__Create_ATAPUtilities_V4_Core_Identity_And_Overlay.sql'
     'V00090__Create_ATAPUtilities_Tag_Relations_Assignments_And_Rules.sql'
   )
+  $expectedActiveMigrationNames = @($package.Migrations.Name)
   $expectedV00010Tables = @(
     'BuildSet'
     'BuildSetRuleSet'
@@ -146,6 +151,7 @@ Describe 'Task 15.140.c.T0 immutable current migration baseline' {
 
     # Assert
     $actualNames | Should -Be $expectedNames
+    @($actualNames | Select-Object -First $t0LineagePrefix.Count) | Should -Be $t0LineagePrefix
     @($versions | Group-Object | Where-Object Count -gt 1).Count | Should -Be 0
   }
 

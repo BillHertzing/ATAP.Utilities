@@ -1,0 +1,89 @@
+{
+  "$comment": "Line-ending-normalized (CRLF/CR to LF) SHA-256 of every migration applied on all five UTAT022 tiers (history at 00210, read-only check 2026-11-15). An applied migration must never change: tests compare these values, which survive line-ending normalization and carry no package version. Add an entry when a new migration is applied to the tiers; never edit an existing entry except through an approved release decision.",
+  "schemaVersion": 1,
+  "appliedThrough": "00210",
+  "migrations": [
+    {
+      "name": "V00010__Create_ATAPUtilities_Initial_Schema_And_Seed.sql",
+      "logicalSha256": "401313150D8DCD68E86FDE5E51A6B45D6A03F91389C43EAB5206F8F4115EF962"
+    },
+    {
+      "name": "V00030__Create_AceOutpostContentSummaryPrototype.sql",
+      "logicalSha256": "98C0018A4A92A1A8095CA329D93706A4B426016C1C42B69BC3F7CFB865B38179"
+    },
+    {
+      "name": "V00040__Add_PhiloteValidityPeriod_SameIdentity_Key.sql",
+      "logicalSha256": "85EB6D5FC4DCD72A59EA11186FE561FCECDBC912D64D42D7DE2A69B33AC76D14"
+    },
+    {
+      "name": "V00050__Create_ATAPUtilities_Tag_Root.sql",
+      "logicalSha256": "3BB2369A24A6A8FE77C8D11A9879D756ECE971CB112752C1A76FBB816F61017F"
+    },
+    {
+      "name": "V00060__Create_Ace_GatherContent_Submission.sql",
+      "logicalSha256": "953705FEE9678B532FFF52D780182AA8A7EF3D000DB96873DB9EB58AAAEB46FB"
+    },
+    {
+      "name": "V00070__Create_Ace_AISupervisor_Telemetry.sql",
+      "logicalSha256": "887006D66FD6519FFC840552B798BDD159CBDEF322BF82BC418F552CDAF3524C"
+    },
+    {
+      "name": "V00080__Create_ATAPUtilities_V4_Core_Identity_And_Overlay.sql",
+      "logicalSha256": "F7BDAA9688D081DCD61E57466AFAD8AEDB1C256F0223BE6C9C8B5C2FE2B01763"
+    },
+    {
+      "name": "V00090__Create_ATAPUtilities_Tag_Relations_Assignments_And_Rules.sql",
+      "logicalSha256": "34A0EC2A1CE485BECBC0497BD4A726BFEC45CD2DBA7D39E26A753A8A6C594DEB"
+    },
+    {
+      "name": "V00100__Create_ATAPUtilities_ContentSummary_And_Query.sql",
+      "logicalSha256": "0C2CD88699304D7CC9EF10303CFB4900969159A4A2E90B52C2A175AA1C69262C"
+    },
+    {
+      "name": "V00110__Create_ContentSummary_DAB_Principal_Facade.sql",
+      "logicalSha256": "2AF141C60C16551DE54696B2A9DC20F91D6B6416C029A6B2F80722857FED38B4"
+    },
+    {
+      "name": "V00120__Add_ContentSummary_Provisioning_And_Correction.sql",
+      "logicalSha256": "5C6C02336F2EA1A4938EE83A02E314C3B939486B0E1EAFEAAEB440CAFA85D18E"
+    },
+    {
+      "name": "V00130__Create_ContentSummary_Runtime_Query_Boundary.sql",
+      "logicalSha256": "CACB55C4C1D1ED7598F34BFEB2DF38DFCDF06C681DC358CF990E571A4C54940E"
+    },
+    {
+      "name": "V00140__Correct_ContentSummary_Runtime_Query_Denials.sql",
+      "logicalSha256": "D8707B00E8E303BC9735EF6107A2D6D6B990293D456ADE1C407349C73559E5CB"
+    },
+    {
+      "name": "V00150__Add_AISupervisor_CacheTokens.sql",
+      "logicalSha256": "2FCDC455AFC41B7CA3EAC584CBF496EC8EB6579F4BE4183CA5DA0757D4B4809C",
+      "note": "Content changed once by the operator-approved LF-only release (commit 19f651400; Sprint0018 AceCommander/LFOnlyDatabaseReleaseDecision-20261111.md); tiers were checksum-repaired in maintenance windows. This value is the post-decision content."
+    },
+    {
+      "name": "V00160__Create_AceCommander_Login_Schema_And_Guest.sql",
+      "logicalSha256": "DDFF8A101221C26EF49B2C27A542B067C449971CD3D8FE178FC7ED1C310001A8",
+      "note": "Content changed once by the operator-approved LF-only release (commit 19f651400; Sprint0018 AceCommander/LFOnlyDatabaseReleaseDecision-20261111.md); tiers were checksum-repaired in maintenance windows. This value is the post-decision content."
+    },
+    {
+      "name": "V00170__Create_ACE_UserInformation_Decrypt_Procedure.sql",
+      "logicalSha256": "7EF06E2052238BFC18BB97430E70BB2CCA6E99F63C71F2ECC7F6AF7713A6BB89"
+    },
+    {
+      "name": "V00180__Create_Organization_Eligibility_Schema.sql",
+      "logicalSha256": "7E3C794B7642497E933E7556B85E50AEA6A1388E975092D7D0C5816ED575C829"
+    },
+    {
+      "name": "V00190__Create_ReadOrganizationEligibility_Procedure.sql",
+      "logicalSha256": "51E6DEE5A6EDF82EE15674BCDA9B2A14A20C755A3CB6E910021BDBA1E135B6F2"
+    },
+    {
+      "name": "V00200__Create_Organization_Bootstrap.sql",
+      "logicalSha256": "07CBDBF635CCC08473348C4C14051D25DFE1E1F5D0D669ADEEE8146D8C583A21"
+    },
+    {
+      "name": "V00210__Create_ReadOrganizationProject_Procedure.sql",
+      "logicalSha256": "766F0C02571364808D05C4BD76810A2906C8B72E4F68A1C3D9D311066A79F4DB"
+    }
+  ]
+}

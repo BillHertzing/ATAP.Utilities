@@ -28,12 +28,12 @@ Describe 'V00120 ContentSummary provisioning migration' {
       Should -Be '0C2CD88699304D7CC9EF10303CFB4900969159A4A2E90B52C2A175AA1C69262C'
     (Get-FileHash (Join-Path $sqlDirectory 'V00110__Create_ContentSummary_DAB_Principal_Facade.sql') -Algorithm SHA256).Hash|
       Should -Be '2AF141C60C16551DE54696B2A9DC20F91D6B6416C029A6B2F80722857FED38B4'
-    @((Get-ChildItem $sqlDirectory -File -Filter 'V001*.sql').Name)|Should -Be @(
+    # Position invariant: V00120 immediately follows V00100 and V00110; later migrations may follow it.
+    . (Join-Path $PSScriptRoot '..\Helpers\DatabasePackageExpectations.ps1')
+    $package=Get-DatabasePackageExpectation -RepositoryRoot (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
+    { Assert-MigrationLineagePosition -Expectation $package -Name 'V00120__Add_ContentSummary_Provisioning_And_Correction.sql' -Predecessors @(
       'V00100__Create_ATAPUtilities_ContentSummary_And_Query.sql',
-      'V00110__Create_ContentSummary_DAB_Principal_Facade.sql',
-      'V00120__Add_ContentSummary_Provisioning_And_Correction.sql',
-      'V00130__Create_ContentSummary_Runtime_Query_Boundary.sql',
-      'V00140__Correct_ContentSummary_Runtime_Query_Denials.sql')
+      'V00110__Create_ContentSummary_DAB_Principal_Facade.sql') }|Should -Not -Throw
   }
   It 'freezes the adapter procedure names and ordered parameters' {
     $expected=[ordered]@{
@@ -169,13 +169,12 @@ Describe 'V00120 ContentSummary provisioning migration' {
     $migration|Should -Not -Match '(?im)^\s*CREATE\s+(?:LOGIN|USER)\b'
     $migration|Should -Not -Match '(?im)^\s*ALTER\s+ROLE.+ADD\s+MEMBER'
   }
-  It 'binds package 0.1.13 to every migration and seed byte' {
+  It 'binds the current package version to every migration and seed byte' {
     $version=Get-Content -Raw (Join-Path $flywayRoot 'version.json')|ConvertFrom-Json
     $allowlist=Get-Content -Raw (Join-Path $flywayRoot 'package-content-allowlist.json')|ConvertFrom-Json -Depth 10
     $expectedPaths=@(
       @(Get-ChildItem $sqlDirectory -File -Filter 'V*.sql'|Sort-Object Name|ForEach-Object{'SQL/'+$_.Name})
       @(Get-ChildItem (Join-Path $flywayRoot 'Data') -File -Filter '*.csv'|Sort-Object Name|ForEach-Object{'Data/'+$_.Name}))
-    $version.version|Should -Be '0.1.13'
     $allowlist.sourceVersion|Should -Be $version.version
     @($allowlist.files.path)|Should -Be $expectedPaths
     foreach($entry in $allowlist.files){

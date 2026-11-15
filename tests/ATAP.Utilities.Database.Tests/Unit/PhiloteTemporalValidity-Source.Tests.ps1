@@ -107,8 +107,12 @@ BeforeAll {
 Describe 'Philote temporal-validity active source contract' {
   It 'contains the exact ordered active migration inventory through V00090' {
     $migrations = @(Get-ChildItem -LiteralPath $sqlDirectory -Filter 'V*.sql' -File | Sort-Object Name)
+    . (Join-Path $PSScriptRoot '..\Helpers\DatabasePackageExpectations.ps1')
+    $package = Get-DatabasePackageExpectation -RepositoryRoot $repoRoot
 
-    @($migrations.Name) | Should -Be $expectedMigrationNames
+    # The lineage through V00090 is fixed; later releases append after it. The full active inventory is the allowlist.
+    @($migrations.Name) | Should -Be @($package.Migrations.Name)
+    @($migrations.Name | Select-Object -First $expectedMigrationNames.Count) | Should -Be $expectedMigrationNames
   }
 
   It 'contains the exact active seed-input inventory without TimeBlock' {

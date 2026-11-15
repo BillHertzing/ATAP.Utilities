@@ -42,7 +42,7 @@ Describe 'V00140 ContentSummary runtime query denial correction source contract'
     $migration | Should -Not -Match '(?im)^\s*ALTER\s+ROLE.+ADD\s+MEMBER'
   }
 
-  It 'binds package 0.1.13 to every migration and seed byte' {
+  It 'binds the current package version to every migration and seed byte' {
     $version = Get-Content -Raw (Join-Path $flywayRoot 'version.json') | ConvertFrom-Json
     $allowlist = Get-Content -Raw (Join-Path $flywayRoot 'package-content-allowlist.json') |
       ConvertFrom-Json -Depth 10
@@ -51,7 +51,6 @@ Describe 'V00140 ContentSummary runtime query denial correction source contract'
           Sort-Object Name | ForEach-Object { 'SQL/' + $_.Name })
       @(Get-ChildItem (Join-Path $flywayRoot 'Data') -File -Filter '*.csv' |
           Sort-Object Name | ForEach-Object { 'Data/' + $_.Name }))
-    $version.version | Should -Be '0.1.13'
     $allowlist.sourceVersion | Should -Be $version.version
     @($allowlist.files.path) | Should -Be $expectedPaths
     foreach ($entry in $allowlist.files) {

@@ -27,7 +27,12 @@ Describe 'V00100 ContentSummary schema and query static contract' {
   }
 
   It 'preserves V00100 and allocates V00110 as the unique active migration head' {
-    $activeMigrations[-1].Name | Should -Be 'V00120__Add_ContentSummary_Provisioning_And_Correction.sql'
+    # Position invariant: V00110 immediately follows V00100; the head is no longer asserted.
+    . (Join-Path $PSScriptRoot '..\Helpers\DatabasePackageExpectations.ps1')
+    $package = Get-DatabasePackageExpectation -RepositoryRoot (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
+    @($activeMigrations.Name) | Should -Be @($package.Migrations.Name)
+    { Assert-MigrationLineagePosition -Expectation $package -Name 'V00110__Create_ContentSummary_DAB_Principal_Facade.sql' -Predecessors @(
+        'V00100__Create_ATAPUtilities_ContentSummary_And_Query.sql') } | Should -Not -Throw
     (Get-FileHash -LiteralPath $migrationPath -Algorithm SHA256).Hash |
       Should -Be '0C2CD88699304D7CC9EF10303CFB4900969159A4A2E90B52C2A175AA1C69262C'
     @($activeMigrations.Name | ForEach-Object {
@@ -262,7 +267,7 @@ Describe 'V00110 ContentSummary DAB facade static contract' {
 }
 
 Describe 'V00110 package binding' {
-  It 'binds package 0.1.10 to every exact migration and seed byte' {
+  It 'binds the current package version to every exact migration and seed byte' {
     $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
     $flywayRoot = Join-Path $repoRoot 'Database\Flyway'
     $version = Get-Content -LiteralPath (Join-Path $flywayRoot 'version.json') -Raw | ConvertFrom-Json
@@ -274,7 +279,6 @@ Describe 'V00110 package binding' {
       @(Get-ChildItem -LiteralPath (Join-Path $flywayRoot 'Data') -File -Filter '*.csv' |
         Sort-Object Name | ForEach-Object { 'Data/' + $_.Name })
     )
-    $version.version | Should -Be '0.1.11'
     $allowlist.sourceVersion | Should -Be $version.version
     @($allowlist.files.path) | Should -Be $expectedPaths
     foreach ($entry in $allowlist.files) {

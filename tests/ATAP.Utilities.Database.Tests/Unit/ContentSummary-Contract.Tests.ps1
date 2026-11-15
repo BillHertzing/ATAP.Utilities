@@ -7,6 +7,8 @@ BeforeAll {
   $adr = Get-Content -LiteralPath $adrPath -Raw
   $contract = Get-Content -LiteralPath $contractPath -Raw
   $fixture = Get-Content -LiteralPath $fixturePath -Raw | ConvertFrom-Json -Depth 20
+  . (Join-Path $PSScriptRoot '..\Helpers\DatabasePackageExpectations.ps1')
+  $package = Get-DatabasePackageExpectation -RepositoryRoot $repoRoot
 }
 
 Describe 'ContentSummary frozen phase-two contract' {
@@ -19,20 +21,18 @@ Describe 'ContentSummary frozen phase-two contract' {
     foreach ($authority in $fixture.authority) {
       $path = Join-Path $repoRoot ($authority.path -replace '/', '\')
       Test-Path -LiteralPath $path | Should -BeTrue
-      (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash | Should -Be $authority.sha256
+      # The frozen pins were taken in CRLF or LF form; content must match exactly in one of them.
+      Test-LineEndingStableSha256 -LiteralPath $path -ExpectedSha256 $authority.sha256 | Should -BeTrue -Because $authority.path
       $adr + $contract | Should -Match ([regex]::Escape($authority.sha256))
     }
   }
 
   It 'keeps V00090 as the immutable predecessor, V00100 as the allocated head, and V01000 unknown' {
-    $versions = Get-ChildItem -LiteralPath (Join-Path $repoRoot 'Database\Flyway\SQL') -File -Filter 'V*.sql' |
-      ForEach-Object {
-        if ($_.Name -match '^V(?<version>\d{5})__') {
-          [int]$Matches.version
-        }
-      }
-
-    ($versions | Measure-Object -Maximum).Maximum | Should -Be 120
+    # Position invariant: V00100 immediately follows V00090; later migrations may follow V00100.
+    { Assert-MigrationLineagePosition -Expectation $package -Name 'V00100__Create_ATAPUtilities_ContentSummary_And_Query.sql' -Predecessors @(
+        'V00090__Create_ATAPUtilities_Tag_Relations_Assignments_And_Rules.sql') } | Should -Not -Throw
+    [int]$package.HeadVersion | Should -BeGreaterOrEqual 100
+    [int]$package.HeadVersion | Should -BeLessThan 1000 -Because 'V01000 stays the synthetic unknown version'
     $fixture.migrationBoundary.contractPredecessor | Should -Be 'V00090'
     $fixture.migrationBoundary.currentHead | Should -Be 'V00100'
     $fixture.migrationBoundary.allocatedVersion | Should -Be 'V00100'

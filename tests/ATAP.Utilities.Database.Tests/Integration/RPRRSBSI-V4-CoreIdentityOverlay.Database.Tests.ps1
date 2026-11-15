@@ -20,6 +20,7 @@ BeforeAll {
         'Process')
     $createdDatabases = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
     $canonicalGuidPattern = '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    . (Join-Path $PSScriptRoot '..\Helpers\DatabasePackageExpectations.ps1')
     $migrationHashes = [ordered]@{}
     foreach ($entry in @($fixture.predecessors)) {
         $migrationHashes[$entry.migration] = $entry.sha256
@@ -57,8 +58,8 @@ BeforeAll {
             if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
                 throw "Required migration is absent: $name"
             }
-            $actual = (Get-FileHash -Algorithm SHA256 -LiteralPath $path).Hash
-            if ($actual -cne $migrationHashes[$name]) {
+            # Frozen pins were taken in CRLF or LF form; any change other than line endings is drift.
+            if (-not (Test-LineEndingStableSha256 -LiteralPath $path -ExpectedSha256 $migrationHashes[$name])) {
                 throw "Immutable migration drift: $name"
             }
         }

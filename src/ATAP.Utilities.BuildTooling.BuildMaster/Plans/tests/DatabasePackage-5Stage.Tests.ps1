@@ -123,6 +123,25 @@ Describe 'V4-E08 plan shape: DatabaseChangePackage-5Stage.otter is a thin runner
         $script:RunnerPath | Should -Exist
     }
 
+    It 'every pwsh launch passes -NonInteractive as a pwsh option, before -File' {
+        # BuildMaster never writes to or closes stdin, so a prompt would hang the stage forever
+        # (execution 22999). Arguments after -File go to the script, so the switch must precede -File.
+        $fileNames = [regex]::Matches($script:PlanText, '(?im)^\s*FileName:\s*(?<exe>[^,\r\n]+?)\s*,\s*$')
+        $fileNames.Count | Should -BeGreaterThan 0 -Because 'the plan must launch at least one process'
+        foreach ($m in $fileNames) {
+            $m.Groups['exe'].Value | Should -Match '(?i)^"?(pwsh|powershell)(\.exe)?"?$' -Because 'an unrecognized launcher would escape this check'
+        }
+        $launches = [regex]::Matches($script:PlanText, '(?ims)^\s*FileName:\s*"?(?:pwsh|powershell)(?:\.exe)?"?\s*,\s*\r?\n\s*Arguments:\s*>>(?<args>.*?)>>')
+        $launches.Count | Should -Be $fileNames.Count -Because 'every FileName line must be followed by its Arguments block'
+        foreach ($l in $launches) {
+            $a = $l.Groups['args'].Value
+            $fileAt = $a.IndexOf('-File', [StringComparison]::OrdinalIgnoreCase)
+            $fileAt | Should -BeGreaterOrEqual 0
+            $a.Substring(0, $fileAt) | Should -Match '(?i)(^|\s)-NonInteractive(\s|$)'
+            $a | Should -Not -Match '(?i)-NoProfile'
+        }
+    }
+
     It 'plan contains no Stage blocks (runner owns stage branching)' {
         $script:PlanText | Should -Not -Match '(?im)^\s*stage\s+\w+\s*\{'
     }

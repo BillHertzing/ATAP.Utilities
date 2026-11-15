@@ -60,6 +60,27 @@ Describe 'V4-B02 plan shape: PowerShellModule-5Stage.otter is a thin runner plan
         $script:PlanText | Should -Not -Match '(?i)-NoProfile'
     }
 
+    It 'every pwsh launch passes -NonInteractive as a pwsh option, before -File' {
+        # Execution 22999 hung forever: BuildMaster never writes to or closes stdin, so a
+        # prompt (for example a missing mandatory parameter) waits for ever. -NonInteractive
+        # makes such a prompt fail the stage instead. Arguments after -File go to the script,
+        # so the switch must come before -File to reach pwsh.
+        $fileNames = [regex]::Matches($script:PlanText, '(?im)^\s*FileName:\s*(?<exe>[^,\r\n]+?)\s*,\s*$')
+        $fileNames.Count | Should -BeGreaterThan 0 -Because 'the plan must launch at least one process'
+        foreach ($m in $fileNames) {
+            $m.Groups['exe'].Value | Should -Match '(?i)^"?(pwsh|powershell)(\.exe)?"?$' -Because 'an unrecognized launcher would escape this check'
+        }
+        $launches = [regex]::Matches($script:PlanText, '(?ims)^\s*FileName:\s*"?(?:pwsh|powershell)(?:\.exe)?"?\s*,\s*\r?\n\s*Arguments:\s*>>(?<args>.*?)>>')
+        $launches.Count | Should -Be $fileNames.Count -Because 'every FileName line must be followed by its Arguments block'
+        foreach ($l in $launches) {
+            $a = $l.Groups['args'].Value
+            $fileAt = $a.IndexOf('-File', [StringComparison]::OrdinalIgnoreCase)
+            $fileAt | Should -BeGreaterOrEqual 0
+            $a.Substring(0, $fileAt) | Should -Match '(?i)(^|\s)-NonInteractive(\s|$)'
+            $a | Should -Not -Match '(?i)-NoProfile'
+        }
+    }
+
     It 'plan contains no inline pwsh -Command blocks' {
         $script:PlanText | Should -Not -Match '(?i)-NoProfile\s+-Command\s'
     }

@@ -67,10 +67,13 @@ set $BuildMasterBuildId = $BuildMasterId(build);
 set $BuildMasterBuildNumber = $BuildNumber;
 set $BuildMasterExecutionId = $ExecutionId;
 
+# -NonInteractive is required: BuildMaster never writes to or closes stdin, so any
+# prompt (for example a missing mandatory parameter) hangs the stage forever
+# (execution 22999). Profiles must still load: add no profile-suppressing switch.
 Exec
 (
     FileName: pwsh,
-    Arguments: >>-File "$InvokePowerShellModuleStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -ModuleName "$ModuleName" -PackageName "$PackageName" -ModulePath "$ModulePath" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName" -CodeSigningCertificateThumbprint "$CodeSigningCertificateThumbprint" -TimestampServerUri "$TimestampServerUri">>,
+    Arguments: >>-NonInteractive -File "$InvokePowerShellModuleStageScript" -BuildToolingModulePath "$BuildToolingModuleManifest" -SourcePath "$SourcePath" -BuildMasterBuildId "$BuildMasterBuildId" -BuildNumber "$BuildMasterBuildNumber" -ExecutionId "$BuildMasterExecutionId" -ApplicationName "$ApplicationName" -ModuleName "$ModuleName" -PackageName "$PackageName" -ModulePath "$ModulePath" -Branch "$Branch" -Stage "$PipelineStageName" -ProGetUrl "$ProGetUrl" -ProGetApiKeySecretName "$ProGetApiKeySecretName" -CodeSigningCertificateThumbprint "$CodeSigningCertificateThumbprint" -TimestampServerUri "$TimestampServerUri">>,
     WorkingDirectory: $SourcePath,
     SuccessExitCode: 0
 );

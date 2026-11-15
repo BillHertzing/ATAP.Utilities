@@ -41,7 +41,7 @@ INSERT @Expected VALUES
       (N'00190',N'V00190__Create_ReadOrganizationEligibility_Procedure.sql',-507530288),
       (N'00200',N'V00200__Create_Organization_Bootstrap.sql',2085240197),
       (N'00210',N'V00210__Create_ReadOrganizationProject_Procedure.sql',-1323700875),
-      (N'00220',N'V00220__Create_AceCommander_Role.sql',-1500945638);
+      (N'00220',N'V00220__Create_AceCommander_Role.sql',-979164069);
 
 IF @VerificationPhase = N'Before'
 BEGIN

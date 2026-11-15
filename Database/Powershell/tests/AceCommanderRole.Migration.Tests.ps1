@@ -67,7 +67,7 @@ Describe 'V00220 AceCommander role static contract' {
     $crc = [uint32]::MaxValue
     $lines = [regex]::Split($migration.TrimEnd("`n"), "\r\n|\n|\r")
     foreach ($line in $lines) { foreach ($b in [Text.Encoding]::UTF8.GetBytes($line)) { $crc = [uint32]($table[($crc -bxor $b) -band 0xFF] -bxor ($crc -shr 8)) } }
-    [BitConverter]::ToInt32([BitConverter]::GetBytes([uint32]($crc -bxor [uint32]::MaxValue)), 0) | Should -Be -1500945638
+    [BitConverter]::ToInt32([BitConverter]::GetBytes([uint32]($crc -bxor [uint32]::MaxValue)), 0) | Should -Be -979164069
   }
 
   It 'is LF-only ASCII without a byte-order mark' {
@@ -82,8 +82,19 @@ Describe 'V00220 AceCommander role static contract' {
     $migration | Should -Match 'BEGIN TRANSACTION;'
     $migration | Should -Match 'COMMIT TRANSACTION;'
     $migration | Should -Match 'IF XACT_STATE\(\) <> 0 ROLLBACK TRANSACTION;\s+THROW;'
-    $migration | Should -Match "IF DB_NAME\(\) <> N'ATAPUtilities'"
     $migration | Should -Match 'THROW 62209'
+  }
+
+  It 'binds the catalog with the exact V00160 placeholder guard, so rehearsal clones can run it' {
+    # A literal N'ATAPUtilities' check refused every rehearsal clone (ATAPUtilities-rehearsal-<BuildId>).
+    $v160 = [IO.File]::ReadAllText((Join-Path (Split-Path -Parent $migrationPath) 'V00160__Create_AceCommander_Login_Schema_And_Guest.sql'))
+    $guardPattern = "(?s)DECLARE @RequiredCatalog nvarchar\(128\) = N'\$\{atap_required_catalog\}';\s+IF @RequiredCatalog IS NULL.*?OR DATALENGTH\(DB_NAME\(\)\) <> DATALENGTH\(@RequiredCatalog\)"
+    $guard = [regex]::Match($migration, $guardPattern)
+    $guard.Success | Should -BeTrue
+    $guard.Value | Should -BeExactly ([regex]::Match($v160, $guardPattern).Value)
+    $migration | Should -Not -Match "DB_NAME\(\) <> N'ATAPUtilities'"
+    @([regex]::Matches($migration, '\$\{')).Count | Should -Be 1 -Because 'the only Flyway placeholder is the catalog binding'
+    $migration | Should -Match 'THROW 62200'
   }
 
   It 'is additive: no drop, revoke, deny, data change, login or server-level statement' {
@@ -91,7 +102,9 @@ Describe 'V00220 AceCommander role static contract' {
     $code = [regex]::Replace($code, '(?m)--.*$', '')
     foreach ($forbidden in @('\bDROP\b', '\bREVOKE\b', '\bDENY\b', '\bDELETE\b', '\bUPDATE\s+\[', '\bINSERT\s+INTO\b', '\bTRUNCATE\b',
         '\bALTER\s+TABLE\b', '\bCREATE\s+LOGIN\b', '\bALTER\s+LOGIN\b', '\bALTER\s+SERVER\b', 'sp_addsrvrolemember', '\bFOR\s+LOGIN\b',
-        'AceCommanderTimelineReader', 'AceCommanderGraphReader', 'AceCommanderTagsTraversalReader', '\$\{')) {
+        'AceCommanderTimelineReader', 'AceCommanderGraphReader', 'AceCommanderTagsTraversalReader',
+        # The only admitted Flyway placeholder is the V00160 catalog binding (F-A1); any other is refused.
+        '\$\{(?!atap_required_catalog\})')) {
       $code | Should -Not -Match $forbidden -Because "V00220 must stay additive ($forbidden)"
     }
   }

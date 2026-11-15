@@ -7,8 +7,10 @@
   <MachineName>\SvcAceCommander a member. The grant set is the reviewed contract
   Database/Verify/AceCommander/AceCommanderRole.Contract.json (source file:line per
   grant). Identical bytes on every tier: the member account is derived at run time
-  from SERVERPROPERTY('MachineName'); no Flyway placeholder, no server login is
-  created (instances admit the account through their existing Windows group login).
+  from SERVERPROPERTY('MachineName'); no server login is created (instances admit the
+  account through their existing Windows group login). The catalog guard is the V00160
+  guard on the atap_required_catalog Flyway placeholder, which Invoke-Flyway binds to
+  the expected catalog: ATAPUtilities on a tier, the clone name in a rehearsal.
 
   No DROP, no REVOKE, no data change. The pre-existing roles AceCommanderTimelineReader,
   AceCommanderGraphReader and AceCommanderTagsTraversalReader are left untouched; a
@@ -20,8 +22,12 @@ SET NOCOUNT ON;
 BEGIN TRY
     BEGIN TRANSACTION;
 
-    IF DB_NAME() <> N'ATAPUtilities'
-        THROW 62200, N'V00220 must run in the ATAPUtilities database.', 1;
+    DECLARE @RequiredCatalog nvarchar(128) = N'${atap_required_catalog}';
+    IF @RequiredCatalog IS NULL OR DATALENGTH(@RequiredCatalog) = 0
+       OR DB_NAME() IS NULL
+       OR DB_NAME() COLLATE Latin1_General_100_BIN2 <> @RequiredCatalog COLLATE Latin1_General_100_BIN2
+       OR DATALENGTH(DB_NAME()) <> DATALENGTH(@RequiredCatalog)
+        THROW 62200, N'V00220 requires the exact approved catalog binding.', 1;
 
     -- Preconditions: every securable in the contract exists (lineage through V00210).
     IF OBJECT_ID(N'[Ace].[User]', N'U') IS NULL OR OBJECT_ID(N'[Ace].[UserInformation]', N'U') IS NULL

@@ -106,7 +106,7 @@
     {
       "path": "SQL/V00220__Create_AceCommander_Role.sql",
       "kind": "migration",
-      "sha256": "F9A4A10774248496C4ADBFDE15587114E1DCB8EF8EA430C167405DF254614697"
+      "sha256": "3ABC6C2F0AD2C782974E05660D523BD4F80A21BBBAB59D1F37EEF6477E95485E"
     },
     {
       "path": "Data/BuildSet.csv",

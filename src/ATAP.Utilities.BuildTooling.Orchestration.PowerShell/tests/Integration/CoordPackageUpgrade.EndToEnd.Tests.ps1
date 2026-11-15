@@ -11,15 +11,44 @@
 # Authenticode). Nothing touches C:\ProgramData, Program Files or a live task.
 
 BeforeDiscovery {
+  # Promoted-module runs (Invoke-PromotedModuleTests) set ATAP_PROMOTED_MODULE_MANIFEST/VERSION and
+  # pre-load the promoted package; select and bind that package instead of the source tree.
+  # Same validation as CoordCustodyHandoff(.PackageOnly).Tests.ps1. Source runs are unchanged.
   $sourceRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
   $moduleName = 'ATAP.Utilities.BuildTooling.Orchestration.PowerShell'
-  $manifest = Join-Path $sourceRoot ($moduleName + '.psd1')
+  $promoted = [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_MANIFEST', 'Process')
+  $promotedVersion = [Environment]::GetEnvironmentVariable('ATAP_PROMOTED_MODULE_VERSION', 'Process')
+  if (($null -eq $promoted) -ne ($null -eq $promotedVersion)) { throw 'UpgradeTestPromotedContextIncomplete' }
+  if ($null -ne $promoted) {
+    if ([string]::IsNullOrWhiteSpace($promoted) -or [string]::IsNullOrWhiteSpace($promotedVersion)) { throw 'UpgradeTestPromotedContextEmpty' }
+    $releaseVersion = $null
+    if ($promotedVersion -cnotmatch '\A[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.+-]+)?\z' -or
+        -not [Management.Automation.SemanticVersion]::TryParse($promotedVersion, [ref]$releaseVersion)) { throw 'UpgradeTestPromotedVersionInvalid' }
+    $expectedModuleVersion = [version]::new($releaseVersion.Major, $releaseVersion.Minor, $releaseVersion.Patch).ToString()
+  }
+  $sourceManifest = Join-Path $sourceRoot ($moduleName + '.psd1')
+  $manifest = if ($null -eq $promoted) { $sourceManifest } else { $promoted }
+  if ([string]::IsNullOrWhiteSpace($manifest) -or -not [IO.Path]::IsPathFullyQualified($manifest) -or
+      [Management.Automation.WildcardPattern]::ContainsWildcardCharacters($manifest) -or
+      -not [string]::Equals([IO.Path]::GetFullPath($manifest), $manifest.Replace('/', '\'), [StringComparison]::OrdinalIgnoreCase)) { throw 'UpgradeTestManifestMustBeCanonical' }
+  if ($null -ne $promoted -and [string]::Equals($manifest, $sourceManifest, [StringComparison]::OrdinalIgnoreCase)) { throw 'UpgradeTestPromotedManifestCannotBeSource' }
+  for ($part = $manifest; $part; $part = [IO.Path]::GetDirectoryName($part)) {
+    if ((Get-Item -LiteralPath $part -Force -ErrorAction Stop).LinkType) { throw 'UpgradeTestManifestCannotTraverseLinks' }
+  }
+  $item = Get-Item -LiteralPath $manifest -Force -ErrorAction Stop
+  if ($item.PSIsContainer -or $item.Name -cne ($moduleName + '.psd1')) { throw 'UpgradeTestInvalidSelectedManifest' }
   $data = Import-PowerShellDataFile -LiteralPath $manifest
-  $modulePath = Join-Path $sourceRoot $data.RootModule
+  if ($null -eq $promoted) { $expectedModuleVersion = (Import-PowerShellDataFile -LiteralPath $sourceManifest).ModuleVersion }
+  if ($data.RootModule -cne ($moduleName + '.psm1') -or $data.ModuleVersion -cne $expectedModuleVersion) { throw 'UpgradeTestSelectedModuleVersionMismatch' }
+  $moduleBase = [IO.Path]::GetDirectoryName($manifest)
+  $modulePath = Join-Path $moduleBase $data.RootModule
   $loaded = @(Get-Module -Name $moduleName -All)
-  if ($loaded.Count -gt 1 -or @($loaded | Where-Object { $_.Path -ine $modulePath }).Count) { throw 'UpgradeTestConflictingLoadedModule' }
+  if ($loaded.Count -gt 1 -or @($loaded | Where-Object { $_.Path -ine $modulePath -or $_.Version -ne [version]$data.ModuleVersion }).Count) { throw 'UpgradeTestConflictingLoadedModule' }
   $selected = if ($loaded.Count) { $loaded[0] } else { Import-Module -Name $manifest -PassThru -ErrorAction Stop }
-  & $selected { param($binding) $script:upgradeTestBinding = $binding } ([pscustomobject]@{ ModuleBase = $sourceRoot; ModulePath = $modulePath; Version = $data.ModuleVersion })
+  if ($selected.Name -cne $moduleName -or $selected.Path -ine $modulePath -or $selected.ModuleBase -ine $moduleBase -or $selected.Version -ne [version]$data.ModuleVersion) { throw 'UpgradeTestSelectedModuleIdentityMismatch' }
+  # ModulePath is the loaded module's own Path (equal to $modulePath ignoring case, checked above), so
+  # the later -BeExactly assertions compare against what Get-Command reports.
+  & $selected { param($binding) $script:upgradeTestBinding = $binding } ([pscustomobject]@{ ModuleBase = $moduleBase; ModulePath = $selected.Path; Version = $data.ModuleVersion; Promoted = ($null -ne $promoted) })
   $script:upgradeTestModuleName = $moduleName
 }
 

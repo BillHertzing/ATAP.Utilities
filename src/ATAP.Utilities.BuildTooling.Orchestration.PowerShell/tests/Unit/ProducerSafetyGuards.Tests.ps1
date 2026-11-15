@@ -66,8 +66,17 @@ BeforeAll {
   $moduleRoot = $script:C1956Binding.SourceRoot
   $FixtureRoot = $script:C1956Binding.FixtureRoot
   $script:testModuleName = $script:C1956Binding.Module.Name
+  $script:producerRunRoot = $null
   if ([string]::IsNullOrWhiteSpace($FixtureRoot)) {
-    $FixtureRoot = Join-Path ([IO.Path]::GetFullPath((Join-Path $moduleRoot '../..'))) '_generated/Sprint0017/C1935'
+    # The default lives under the host's artifacts root, never inside the Dropbox-synced source worktree (a held file
+    # failed BuildMaster execution 23001). Unique per run; AfterAll removes it. Unknown hosts fail closed.
+    $script:producerScratchBase = switch ([Environment]::MachineName.ToUpperInvariant()) {
+      'UTAT022' { 'D:/ATAPArtifacts/_generated/Sprint0017/C1935' }
+      'UTAT01' { 'C:/ATAPArtifacts/_generated/Sprint0017/C1935' }
+      default { throw 'Unknown C1935 scratch host: pass -FixtureRoot or supply an approved artifacts-root mapping' }
+    }
+    $script:producerRunRoot = Join-Path $script:producerScratchBase ('Run-' + [guid]::NewGuid().ToString('N'))
+    $FixtureRoot = $script:producerRunRoot
   }
   $script:fixtureBase = [IO.Path]::GetFullPath($FixtureRoot)
   New-Item -ItemType Directory -Path $script:fixtureBase -Force | Out-Null
@@ -81,6 +90,13 @@ BeforeAll {
       @{ path = [IO.Path]::GetRelativePath($root, $_.FullName).Replace('\', '/'); digest = Get-CoordHash ([IO.File]::ReadAllBytes($_.FullName)) }
     })
     [pscustomobject]@{ Root = $root; Package = @{ moduleVersion = '1.0.0'; files = $pins } }
+  }
+}
+AfterAll {
+  # Removes only the default per-run root (never a caller-supplied -FixtureRoot), and the shared parent when empty.
+  if ($script:producerRunRoot -and (Test-Path -LiteralPath $script:producerRunRoot)) { Remove-Item -LiteralPath $script:producerRunRoot -Recurse -Force -ErrorAction SilentlyContinue }
+  if ($script:producerRunRoot -and $script:producerScratchBase -and (Test-Path -LiteralPath $script:producerScratchBase) -and -not @(Get-ChildItem -LiteralPath $script:producerScratchBase -Force).Count) {
+    Remove-Item -LiteralPath $script:producerScratchBase -Force -ErrorAction SilentlyContinue
   }
 }
 

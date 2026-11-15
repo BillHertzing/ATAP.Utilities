@@ -4,7 +4,18 @@
 BeforeAll {
   . (Join-Path $PSScriptRoot '../../Resources/Resident/Invoke-CoordClerkResident.ps1')
   function Write-PSFMessage { param($FunctionName, $ModuleName, $Level, $Message) }
-  $residentTestsRoot = if ($env:ATAP_RESIDENT_TEST_ROOT) { $env:ATAP_RESIDENT_TEST_ROOT } else { [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../../../_generated/Sprint0017/ResidentTests')) }
+  # The default lives under the host's artifacts root, never inside the Dropbox-synced source worktree (a held file
+  # failed BuildMaster execution 23001). Unique per run; AfterAll removes it. Unknown hosts fail closed.
+  $script:residentRunRoot = $null
+  $residentTestsRoot = if ($env:ATAP_RESIDENT_TEST_ROOT) { $env:ATAP_RESIDENT_TEST_ROOT } else {
+    $script:residentScratchBase = switch ([Environment]::MachineName.ToUpperInvariant()) {
+      'UTAT022' { 'D:/ATAPArtifacts/_generated/Sprint0017/ResidentTests' }
+      'UTAT01' { 'C:/ATAPArtifacts/_generated/Sprint0017/ResidentTests' }
+      default { throw 'Unknown ResidentTests scratch host: set ATAP_RESIDENT_TEST_ROOT or supply an approved artifacts-root mapping' }
+    }
+    $script:residentRunRoot = Join-Path $script:residentScratchBase ('Run-' + [guid]::NewGuid().ToString('N'))
+    $script:residentRunRoot
+  }
   $null = New-Item -ItemType Directory -Path $residentTestsRoot -Force
   function New-ResidentFixture {
     $root = Join-Path $residentTestsRoot ([guid]::NewGuid().ToString('N'))
@@ -22,6 +33,15 @@ BeforeAll {
     $path = Join-Path $root 'binding.json'
     [IO.File]::WriteAllText($path, ($binding | ConvertTo-Json -Depth 20))
     @{ Root = $root; Binding = $binding; Path = $path; Digest = (Get-FileHash -LiteralPath $path).Hash }
+  }
+}
+
+AfterAll {
+  # Removes only the default per-run root (never an ATAP_RESIDENT_TEST_ROOT supplied by the caller), and the shared
+  # parent when nothing else is left.
+  if ($script:residentRunRoot -and (Test-Path -LiteralPath $script:residentRunRoot)) { Remove-Item -LiteralPath $script:residentRunRoot -Recurse -Force -ErrorAction SilentlyContinue }
+  if ($script:residentRunRoot -and $script:residentScratchBase -and (Test-Path -LiteralPath $script:residentScratchBase) -and -not @(Get-ChildItem -LiteralPath $script:residentScratchBase -Force).Count) {
+    Remove-Item -LiteralPath $script:residentScratchBase -Force -ErrorAction SilentlyContinue
   }
 }
 

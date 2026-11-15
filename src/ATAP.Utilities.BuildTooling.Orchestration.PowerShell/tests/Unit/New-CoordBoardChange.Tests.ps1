@@ -1,7 +1,15 @@
 BeforeAll {
   $null = Get-Command -Name 'Write-PSFMessage' -ErrorAction Stop
   $script:sourceReader1618 = Join-Path $PSScriptRoot '../../private/Read-CoordBoard.ps1'
-  $script:identityRoot1618 = Join-Path ([IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../../..'))) ('_generated/Sprint0017/CloseStreams/C1618/Unit-' + [guid]::NewGuid().ToString('N'))
+  # Scratch lives under the host's artifacts root, never inside the Dropbox-synced source worktree, where an indexer,
+  # scanner or sync client can hold a freshly written copy and fail Copy-Item (BuildMaster execution 23001).
+  # Unique per run; removed in AfterAll. Unknown hosts fail closed.
+  $script:scratchBase1618 = switch ([Environment]::MachineName.ToUpperInvariant()) {
+    'UTAT022' { 'D:/ATAPArtifacts/_generated/Sprint0017/CloseStreams/C1618' }
+    'UTAT01' { 'C:/ATAPArtifacts/_generated/Sprint0017/CloseStreams/C1618' }
+    default { throw 'Unknown C1618 scratch host: supply an approved artifacts-root mapping' }
+  }
+  $script:identityRoot1618 = Join-Path $script:scratchBase1618 ('Unit-' + [guid]::NewGuid().ToString('N'))
   $private1618 = Join-Path $script:identityRoot1618 'private'
   $null = New-Item -ItemType Directory -Path $private1618 -Force
   $script:readerCopy1618 = Join-Path $private1618 'Read-CoordBoard.ps1'
@@ -74,6 +82,14 @@ BeforeAll {
 
   function Invoke-TestBoardPreview {
     New-CoordBoardChange -Snapshot $script:snapshot -Request (ConvertTo-BoardElement $script:request) -AppliedReport (ConvertTo-BoardElement $script:report) -Context (ConvertTo-BoardElement $script:context) -Reservations (ConvertTo-BoardElement $script:reservations)
+  }
+}
+
+AfterAll {
+  # Remove this run's scratch folder (and the shared parent when nothing else is left), even after failures.
+  if ($script:identityRoot1618 -and (Test-Path -LiteralPath $script:identityRoot1618)) { Remove-Item -LiteralPath $script:identityRoot1618 -Recurse -Force -ErrorAction SilentlyContinue }
+  if ($script:scratchBase1618 -and (Test-Path -LiteralPath $script:scratchBase1618) -and -not @(Get-ChildItem -LiteralPath $script:scratchBase1618 -Force).Count) {
+    Remove-Item -LiteralPath $script:scratchBase1618 -Force -ErrorAction SilentlyContinue
   }
 }
 

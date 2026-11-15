@@ -1,24 +1,39 @@
 param(
   [Parameter()]
   [ValidateNotNullOrEmpty()]
-  [string]$FixtureRoot = (Join-Path ([IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../../..'))) '_generated/Sprint0017/CloseStreams/C1618/PreviewIntegration')
+  [string]$FixtureRoot
 )
 
 # Integration test: a GENUINE Read-CoordBoard snapshot is passed straight into the
 # GENUINE New-CoordBoardChange, and the genuine output bytes are read back through
 # Read-CoordBoard. Neither helper is mocked; only PSFramework logging is mocked.
-# FixtureRoot stays beneath this repository's _generated directory.
+# FixtureRoot never points at an arbitrary path: it must sit strictly beneath the host's artifacts _generated
+# directory or, for an explicit override, this repository's _generated directory (never either root itself).
+# The default is a per-run folder under the artifacts root, outside the Dropbox-synced worktree, where a held copy
+# of Read-CoordBoard.ps1 failed BuildMaster execution 23001. AfterAll removes only that default run folder; an
+# override is never deleted.
 
 BeforeAll {
   $null = Get-Command -Name 'Write-PSFMessage' -ErrorAction Stop
-  $allowedRoot = Join-Path ([IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../../..'))) '_generated'
+  $repositoryGenerated = Join-Path ([IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../../..'))) '_generated'
+  $artifactsGenerated = switch ([Environment]::MachineName.ToUpperInvariant()) {
+    'UTAT022' { 'D:\ATAPArtifacts\_generated' }
+    'UTAT01' { 'C:\ATAPArtifacts\_generated' }
+    default { $null }
+  }
+  $script:previewRunRoot = $null
+  if ([string]::IsNullOrEmpty($FixtureRoot)) {
+    if (-not $artifactsGenerated) { throw 'Unknown C1618 PreviewIntegration scratch host: pass -FixtureRoot or supply an approved artifacts-root mapping' }
+    $script:previewRunRoot = Join-Path $artifactsGenerated ('Sprint0017\CloseStreams\C1618\PreviewIntegration\Run-' + [guid]::NewGuid().ToString('N'))
+    $FixtureRoot = $script:previewRunRoot
+  }
   if (-not [System.IO.Path]::IsPathFullyQualified($FixtureRoot)) {
-    throw 'FixtureRoot must be an explicit absolute repository-generated directory.'
+    throw 'FixtureRoot must be an explicit absolute directory beneath an approved _generated root.'
   }
   $resolvedRoot = [System.IO.Path]::GetFullPath($FixtureRoot).TrimEnd('\')
-  if (-not ($resolvedRoot.Equals($allowedRoot, [System.StringComparison]::OrdinalIgnoreCase) -or
-      $resolvedRoot.StartsWith($allowedRoot + '\', [System.StringComparison]::OrdinalIgnoreCase))) {
-    throw "FixtureRoot must be $allowedRoot or beneath it."
+  $allowedRoots = @($artifactsGenerated, $repositoryGenerated | Where-Object { $_ } | ForEach-Object { [System.IO.Path]::GetFullPath($_).TrimEnd('\') })
+  if (-not @($allowedRoots | Where-Object { $resolvedRoot.StartsWith($_ + '\', [System.StringComparison]::OrdinalIgnoreCase) }).Count) {
+    throw "FixtureRoot must be strictly beneath one of: $($allowedRoots -join ', ')."
   }
   $script:fixtureBase = Join-Path $resolvedRoot ([guid]::NewGuid().ToString('N'))
   $null = New-Item -ItemType Directory -Path $script:fixtureBase -Force
@@ -229,6 +244,18 @@ BeforeAll {
       $result.StatusCounts.PSObject.Properties[$status].Value | Should -Be $expected
     }
     Test-Path -LiteralPath $output | Should -BeFalse
+  }
+}
+
+AfterAll {
+  # Removes only the default per-run root (never a caller-supplied -FixtureRoot), then the PreviewIntegration and C1618
+  # parents when nothing else is left in them.
+  if ($script:previewRunRoot) {
+    if (Test-Path -LiteralPath $script:previewRunRoot) { Remove-Item -LiteralPath $script:previewRunRoot -Recurse -Force -ErrorAction SilentlyContinue }
+    $parent = Split-Path -Parent $script:previewRunRoot
+    foreach ($directory in $parent, (Split-Path -Parent $parent)) {
+      if ((Test-Path -LiteralPath $directory) -and -not @(Get-ChildItem -LiteralPath $directory -Force).Count) { Remove-Item -LiteralPath $directory -Force -ErrorAction SilentlyContinue }
+    }
   }
 }
 

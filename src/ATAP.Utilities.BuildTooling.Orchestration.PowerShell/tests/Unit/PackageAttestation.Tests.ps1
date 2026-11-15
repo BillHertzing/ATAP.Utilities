@@ -116,7 +116,7 @@ BeforeAll {
   }
 }
 
-Describe 'Test-CoordPackageAttestation' {
+Describe 'Test-CoordPackageAttestation' -Tag 'Unit' {
   BeforeEach {
     # Mock every signature. The certificate stores are never touched.
     Mock Get-AuthenticodeSignature {

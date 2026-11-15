@@ -60,7 +60,12 @@ The markdown documentation and test consistently use `ATAPUtilities` schema, sug
 
 ---
 
-### 3. `tests/ATAP.Utilities.Database.Tests/Integration/Generate-HelloWorldFromRules.Tests.ps1` — Variable Scope Bugs
+### 3. `Generate-HelloWorldFromRules.Tests.ps1` — Variable Scope Bugs
+
+> **Removed 2026-11-15 (Sprint 0017).** The test asserted tables that exist only in the archived pre-V3 lineage, so it
+> failed with or without a database. It was deleted from `tests/ATAP.Utilities.Database.Tests/Integration/` (last
+> version: ATAP.Utilities commit `f3c528ff4`). Rebuilding the generator and its test against the V3 RRSBS schema is
+> scope-creep item **SC-0569**. The analysis below is kept as history.
 
 **Shortfall: Three `$script:` prefixes are missing, causing test assertions to compare against `$null`.**
 

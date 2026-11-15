@@ -34,8 +34,10 @@ Describe 'V00150 Ace AISupervisor CacheTokens static contract' {
   }
 
   It 'keeps old capture callers compatible and writes CacheTokens with the other counts' {
-    $migration | Should -Match '@Metrics \[Ace\]\.\[AISupervisorMetricInput\] READONLY,'' \+ NCHAR\(13\) \+ NCHAR\(10\)\s*\+ N''    @CacheTokens bigint = NULL'''
-    $migration | Should -Not -Match "@CaptureParameterAnchor \+ NCHAR\(13\) \+ NCHAR\(10\) \+ N'    @CacheTokens"
+    # The LF-only release (0.1.21) normalizes definitions to LF before matching, so the anchor uses NCHAR(10) only.
+    $migration | Should -Match '@Metrics \[Ace\]\.\[AISupervisorMetricInput\] READONLY,'' \+ NCHAR\(10\)\s*\+ N''    @CacheTokens bigint = NULL'''
+    $migration | Should -Not -Match "@CaptureParameterAnchor \+ NCHAR\(10\) \+ N'    @CacheTokens"
+    $migration | Should -Not -Match 'READONLY,'' \+ NCHAR\(13\)'
     $migration | Should -Match '@CacheTokens IS NOT NULL AND @CacheTokens < 0'
     $migration | Should -Match '\[RequestTokens\], \[ResponseTokens\], \[CacheTokens\], \[AvailabilityCode\]'
     $migration | Should -Match '@RequestTokens, @ResponseTokens, @CacheTokens, @AvailabilityCode'

@@ -85,6 +85,8 @@ Describe 'LF Capture and Resume preserve historical contexts' -Tag 'LF021NoPrune
 Describe 'Organization boundary stage forwarding' -Tag 'UL1617' {
     BeforeEach {
         $script:seenOrganization1617 = $null
+        # The package version is a parameter, never a literal the stage depends on.
+        $script:packageVersion1617 = 'synthetic-1617.0-param'
         Mock Write-PSFMessage {}
         Mock Test-Path { $true }
         Mock Invoke-DatabasePackageRehearsal {
@@ -92,17 +94,25 @@ Describe 'Organization boundary stage forwarding' -Tag 'UL1617' {
             [pscustomobject]@{ Success = $true }
         }
     }
-    It 'supplies the explicit organization verifier and raw immutable identity to the package selector' {
-        Invoke-DatabasePackageTierRehearsal -NupkgPath 'C:/mock1617.nupkg' -Application ATAPUtilities -Tier Experimental -BuildId 1617 -ConnectionStringSecretName Test.Secret -ExpectedDatabaseName ATAPUtilities -SourcePath $script:fixtureSource631 -ExpectedPackageName ATAPUtilities.Database -ExpectedPackageVersion '0.1.19-Sprint.1' -Confirm:$false | Out-Null
-        $script:seenOrganization1617.OrganizationFixturePath | Should -BeExactly (Join-Path $script:fixtureSource631 'Database/Verify/AceCommander/Verify_Organization_V00210.sql')
-        $script:seenOrganization1617.ExpectedPackageVersion | Should -BeExactly '0.1.19-Sprint.1'
-        $script:seenOrganization1617.LoginFixturePath | Should -Not -BeNullOrEmpty
-        $script:seenOrganization1617.DecryptFixturePath | Should -Not -BeNullOrEmpty
+    It 'supplies the rehearsal boundary contract and raw immutable identity to the package selector' {
+        Invoke-DatabasePackageTierRehearsal -NupkgPath 'C:/mock1617.nupkg' -Application ATAPUtilities -Tier Experimental -BuildId 1617 -ConnectionStringSecretName Test.Secret -ExpectedDatabaseName ATAPUtilities -SourcePath $script:fixtureSource631 -ExpectedPackageName ATAPUtilities.Database -ExpectedPackageVersion $script:packageVersion1617 -Confirm:$false | Out-Null
+        $script:seenOrganization1617.FixtureContractPath | Should -BeExactly (Join-Path $script:fixtureSource631 'Database/Verify/RehearsalBoundaries.json')
+        $script:seenOrganization1617.ExpectedPackageVersion | Should -BeExactly $script:packageVersion1617
+        foreach ($legacyKey1617 in @('LoginFixturePath', 'DecryptFixturePath', 'OrganizationFixturePath')) {
+            $script:seenOrganization1617.ContainsKey($legacyKey1617) | Should -BeFalse
+        }
         Should -Invoke Invoke-DatabasePackageRehearsal -Times 1 -Exactly
     }
     It 'blocks the stage when incremental rehearsal reports failure' {
         Mock Invoke-DatabasePackageRehearsal { [pscustomobject]@{ Success = $false; ValidateOutput = 'synthetic failure' } }
-        { Invoke-DatabasePackageTierRehearsal -NupkgPath 'C:/mock1617.nupkg' -Application ATAPUtilities -Tier Experimental -BuildId 1617 -ConnectionStringSecretName Test.Secret -ExpectedDatabaseName ATAPUtilities -SourcePath $script:fixtureSource631 -ExpectedPackageName ATAPUtilities.Database -ExpectedPackageVersion '0.1.19-Sprint.1' -Confirm:$false } | Should -Throw '*rehearsal FAILED*'
+        { Invoke-DatabasePackageTierRehearsal -NupkgPath 'C:/mock1617.nupkg' -Application ATAPUtilities -Tier Experimental -BuildId 1617 -ConnectionStringSecretName Test.Secret -ExpectedDatabaseName ATAPUtilities -SourcePath $script:fixtureSource631 -ExpectedPackageName ATAPUtilities.Database -ExpectedPackageVersion $script:packageVersion1617 -Confirm:$false } | Should -Throw '*rehearsal FAILED*'
+    }
+    It 'wires a contract file that exists in this source tree' {
+        $contract1617 = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../../../Database/Verify/RehearsalBoundaries.json'))
+        Test-Path -LiteralPath $contract1617 -PathType Leaf | Should -BeTrue
+        $stageText1617 = Get-Content -LiteralPath (Join-Path $PSScriptRoot '../Invoke-DatabasePackageBuildMasterStage.ps1') -Raw
+        $stageText1617 | Should -Match ([regex]::Escape("FixtureContractPath = Join-Path `$validatedFixture.SourcePath 'Database/Verify/RehearsalBoundaries.json'"))
+        $stageText1617 | Should -Not -Match 'Verify_(Login|Decrypt|Organization)_V00'
     }
 }
 
@@ -1006,8 +1016,9 @@ Describe 'Selected stage fixture forwarding (631)' -Tag 'Unit' {
         @{ Label = 'promotion'; Tier631 = 'Development'; Build631 = 'promote631' }
     ) {
         Invoke-DatabasePackageTierRehearsal -NupkgPath 'D:/ATAPArtifacts/mock631.nupkg' -Application ATAPUtilities -Tier $Tier631 -BuildId $Build631 -ConnectionStringSecretName Test.Secret -ExpectedDatabaseName ATAPUtilities -SourcePath $script:fixtureSource631 -ExpectedPackageName ATAPUtilities.Database -ExpectedPackageVersion '1.2.3-immutable631' -Confirm:$false | Out-Null
-        $script:seen631.LoginFixturePath | Should -BeExactly (Join-Path $script:fixtureSource631 'Database/Verify/AceCommander/Verify_Login_V00160_ExactCatalog.sql')
-        $script:seen631.DecryptFixturePath | Should -BeExactly (Join-Path $script:fixtureSource631 'Database/Verify/AceCommander/Verify_Decrypt_V00170_ExactCatalog.sql')
+        $script:seen631.FixtureContractPath | Should -BeExactly (Join-Path $script:fixtureSource631 'Database/Verify/RehearsalBoundaries.json')
+        $script:seen631.ContainsKey('LoginFixturePath') | Should -BeFalse
+        $script:seen631.ContainsKey('DecryptFixturePath') | Should -BeFalse
         $script:seen631.ExpectedPackageName | Should -BeExactly 'ATAPUtilities.Database'
         $script:seen631.ExpectedPackageVersion | Should -BeExactly '1.2.3-immutable631'
         $script:seen631.ExpectedSourceDatabaseName | Should -BeExactly 'ATAPUtilities'
@@ -1020,7 +1031,7 @@ Describe 'Selected stage fixture forwarding (631)' -Tag 'Unit' {
 
     It 'keeps all fixture keys omitted for generic rehearsal' {
         Invoke-DatabasePackageTierRehearsal -NupkgPath 'D:/ATAPArtifacts/mock631.nupkg' -Application Other -Tier Experimental -BuildId 631 -ConnectionStringSecretName Test.Secret -Confirm:$false | Out-Null
-        foreach ($key631 in @('ExpectedSourceDatabaseName', 'LoginFixturePath', 'DecryptFixturePath', 'ExpectedPackageName', 'ExpectedPackageVersion', 'FlywayAdditionalArgs')) {
+        foreach ($key631 in @('ExpectedSourceDatabaseName', 'LoginFixturePath', 'DecryptFixturePath', 'FixtureContractPath', 'ExpectedPackageName', 'ExpectedPackageVersion', 'FlywayAdditionalArgs')) {
             $script:seen631.ContainsKey($key631) | Should -BeFalse
         }
     }

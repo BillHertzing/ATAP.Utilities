@@ -55,8 +55,12 @@ BeforeAll {
 
 Describe 'Incremental package manifest selection' -Tag 'UL1617' {
   BeforeEach {
+    # A legacy target-210 package holds exactly the migrations through V00210; later migrations
+    # (V00220 onward) belong to contract-mode packages, covered by Invoke-DatabasePackageRehearsal.Contract.Tests.ps1.
     $script:manifest1617 = [pscustomobject]@{ dbChangeUnit = 'ATAPUtilities.Database'; appVersion = '0.1.19-Sprint.1'; flywayTargetVersion = '00210'
-      files = @(Get-ChildItem (Join-Path $repositoryRoot 'Database/Flyway/SQL') -Filter 'V*.sql' | ForEach-Object { [pscustomobject]@{ kind = 'migration'; path = 'db/migrations/' + $_.Name } }) }
+      files = @(Get-ChildItem (Join-Path $repositoryRoot 'Database/Flyway/SQL') -Filter 'V*.sql' |
+          Where-Object { [string]::CompareOrdinal($_.Name.Substring(0, 6), 'V00210') -le 0 } |
+          ForEach-Object { [pscustomobject]@{ kind = 'migration'; path = 'db/migrations/' + $_.Name } }) }
     $script:forwarded1617 = $null
     Mock Write-PSFMessage {}
     Mock Test-Path { $true }

@@ -798,9 +798,7 @@ function Invoke-DatabasePackageTierRehearsal {
       $validatedFixture = Get-DatabasePackageFixtureRehearsalParameters -SourcePath $SourcePath `
         -ExpectedPackageName $ExpectedPackageName -ExpectedPackageVersion $ExpectedPackageVersion
       $fixtureParameters = @{
-        LoginFixturePath = Join-Path $validatedFixture.SourcePath 'Database/Verify/AceCommander/Verify_Login_V00160_ExactCatalog.sql'
-        DecryptFixturePath = Join-Path $validatedFixture.SourcePath 'Database/Verify/AceCommander/Verify_Decrypt_V00170_ExactCatalog.sql'
-        OrganizationFixturePath = Join-Path $validatedFixture.SourcePath 'Database/Verify/AceCommander/Verify_Organization_V00210.sql'
+        FixtureContractPath = Join-Path $validatedFixture.SourcePath 'Database/Verify/RehearsalBoundaries.json'
         ExpectedPackageName = $validatedFixture.ExpectedPackageName
         ExpectedPackageVersion = $validatedFixture.ExpectedPackageVersion
       }

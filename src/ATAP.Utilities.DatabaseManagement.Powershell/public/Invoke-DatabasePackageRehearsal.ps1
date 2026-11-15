@@ -72,6 +72,15 @@ function Invoke-DatabasePackageRehearsal {
     target00210 and exact four organization migration names; older boundaries
     retain the paired Login/Decrypt flow. No new package is built here.
 
+.PARAMETER FixtureContractPath
+    Absolute path to the rehearsal boundary contract (Database/Verify/RehearsalBoundaries.json).
+    Replaces LoginFixturePath/DecryptFixturePath/OrganizationFixturePath, which must not also be
+    bound. Requires ExpectedSourceDatabaseName, ExpectedPackageName and ExpectedPackageVersion.
+    The manifest migration list must equal the contract boundaries exactly and the manifest
+    flywayTargetVersion must equal the contract head; otherwise the rehearsal is refused before
+    any clone exists. The package version is never a literal: it is ExpectedPackageVersion,
+    which must equal the manifest appVersion.
+
 .PARAMETER ExpectedPackageName
     Actual nonempty trim-exact string expected in raw manifest dbChangeUnit.
     Required only for fixture opt-in; compared Ordinal before invoking the helper.
@@ -149,6 +158,7 @@ function Invoke-DatabasePackageRehearsal {
     [string]$LoginFixturePath,
     [string]$DecryptFixturePath,
     [string]$OrganizationFixturePath,
+    [string]$FixtureContractPath,
     [object]$ExpectedPackageName,
     [object]$ExpectedPackageVersion
   )
@@ -160,16 +170,39 @@ function Invoke-DatabasePackageRehearsal {
     $fixtureRequested = $PSBoundParameters.ContainsKey('LoginFixturePath') -or
       $PSBoundParameters.ContainsKey('DecryptFixturePath') -or
       $PSBoundParameters.ContainsKey('OrganizationFixturePath') -or
+      $PSBoundParameters.ContainsKey('FixtureContractPath') -or
       $PSBoundParameters.ContainsKey('ExpectedPackageName') -or
       $PSBoundParameters.ContainsKey('ExpectedPackageVersion')
+    $contractRequested = $PSBoundParameters.ContainsKey('FixtureContractPath')
+    if ($contractRequested -and ($PSBoundParameters.ContainsKey('LoginFixturePath') -or
+        $PSBoundParameters.ContainsKey('DecryptFixturePath') -or $PSBoundParameters.ContainsKey('OrganizationFixturePath'))) {
+      throw 'Contract rehearsal derives its verifier paths from the contract; do not also pass Login, Decrypt or Organization fixture paths.'
+    }
     if ($fixtureRequested) {
-      foreach ($fixtureParameter in @('LoginFixturePath', 'DecryptFixturePath', 'ExpectedSourceDatabaseName', 'ExpectedPackageName', 'ExpectedPackageVersion')) {
+      $requiredFixtureParameters = if ($contractRequested) {
+        @('FixtureContractPath', 'ExpectedSourceDatabaseName', 'ExpectedPackageName', 'ExpectedPackageVersion')
+      }
+      else {
+        @('LoginFixturePath', 'DecryptFixturePath', 'ExpectedSourceDatabaseName', 'ExpectedPackageName', 'ExpectedPackageVersion')
+      }
+      foreach ($fixtureParameter in $requiredFixtureParameters) {
         $fixtureValue = $PSBoundParameters[$fixtureParameter]
         if (-not $PSBoundParameters.ContainsKey($fixtureParameter) -or $fixtureValue -isnot [string] -or
             [string]::IsNullOrWhiteSpace($fixtureValue) -or
             -not [string]::Equals($fixtureValue, $fixtureValue.Trim(), [StringComparison]::Ordinal)) {
           throw "Fixture rehearsal requires explicit nonempty trim-exact '$fixtureParameter'."
         }
+      }
+      if ($contractRequested) {
+        if (-not [IO.Path]::IsPathFullyQualified($FixtureContractPath)) {
+          throw 'Contract rehearsal requires an absolute FixtureContractPath.'
+        }
+        # Bind the sibling private loader when absent or module-backed; no installed fallback.
+        $contractCommand = Get-Command Read-RehearsalBoundaryContract -CommandType Function -ErrorAction SilentlyContinue
+        if ($null -eq $contractCommand -or -not [string]::IsNullOrEmpty($contractCommand.ModuleName)) {
+          . (Join-Path (Split-Path -Parent $PSScriptRoot) 'private/Read-RehearsalBoundaryContract.ps1')
+        }
+        $null = Get-Command Read-RehearsalBoundaryContract -CommandType Function -ErrorAction Stop
       }
     }
   }
@@ -220,7 +253,21 @@ function Invoke-DatabasePackageRehearsal {
       }
 
       $organizationRequested = $false
-      if ($fixtureRequested -and ($PSBoundParameters.ContainsKey('OrganizationFixturePath') -or
+      if ($contractRequested) {
+        # Contract mode: the manifest must be exactly the contract's boundary migrations and its
+        # declared target must be the contract head. No migration boundary is a literal here.
+        $manifestMigrationNames = @($manifest.files | Where-Object kind -CEQ 'migration' | ForEach-Object { [IO.Path]::GetFileName([string]$_.path) })
+        if ($manifestMigrationNames.Count -eq 0) { throw 'Contract rehearsal requires manifest migration entries.' }
+        $boundaryContract = Read-RehearsalBoundaryContract -Path $FixtureContractPath -MigrationNames $manifestMigrationNames -ErrorAction Stop
+        if ($boundaryContract.PackageId -cne $ExpectedPackageName -or $boundaryContract.SourceDatabaseName -cne $ExpectedSourceDatabaseName) {
+          throw 'Contract rehearsal package or source catalog does not match the rehearsal boundary contract.'
+        }
+        if ($manifest.PSObject.Properties.Name -notcontains 'flywayTargetVersion' -or
+            [string]$manifest.flywayTargetVersion -cne $boundaryContract.TargetVersion) {
+          throw 'Selected fixture rehearsal does not support this manifest migration boundary.'
+        }
+      }
+      elseif ($fixtureRequested -and ($PSBoundParameters.ContainsKey('OrganizationFixturePath') -or
           $manifest.PSObject.Properties.Name -contains 'flywayTargetVersion')) {
         $target = [string]$manifest.flywayTargetVersion
         if ($target -ceq '00210') {
@@ -289,7 +336,10 @@ function Invoke-DatabasePackageRehearsal {
         if ($PSBoundParameters.ContainsKey('FlywayAdditionalArgs')) { $rehearsalParams['FlywayAdditionalArgs'] = $FlywayAdditionalArgs }
         if ($PSBoundParameters.ContainsKey('ExpectedSourceDatabaseName')) { $rehearsalParams['ExpectedSourceDatabaseName'] = $ExpectedSourceDatabaseName }
         if ($fixtureRequested) {
-          if ($organizationRequested) {
+          if ($contractRequested) {
+            $rehearsalParams['FixtureContractPath'] = $FixtureContractPath
+          }
+          elseif ($organizationRequested) {
             $rehearsalParams['OrganizationFixturePath'] = $OrganizationFixturePath
             $rehearsalParams['LoginFixturePath'] = $LoginFixturePath
             $rehearsalParams['DecryptFixturePath'] = $DecryptFixturePath

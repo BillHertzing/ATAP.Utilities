@@ -1,0 +1,81 @@
+{
+  "$comment": "Rehearsal boundary contract for ATAPUtilities.Database. Read by Read-RehearsalBoundaryContract (DatabaseManagement). Each new migration release adds its boundary (and verifier, with its SHA-256) here in the same change. Verifier paths are relative to this folder and must stay inside it.",
+  "schemaVersion": 1,
+  "packageId": "ATAPUtilities.Database",
+  "sourceDatabaseName": "ATAPUtilities",
+  "floor": {
+    "version": "00140",
+    "migrationCount": 13
+  },
+  "boundaries": [
+    {
+      "version": "00150",
+      "kind": "Plain",
+      "newMigrations": [
+        "V00150__Add_AISupervisor_CacheTokens.sql"
+      ]
+    },
+    {
+      "version": "00170",
+      "kind": "LoginDecrypt",
+      "newMigrations": [
+        "V00160__Create_AceCommander_Login_Schema_And_Guest.sql",
+        "V00170__Create_ACE_UserInformation_Decrypt_Procedure.sql"
+      ],
+      "verifiers": [
+        {
+          "role": "Login",
+          "path": "AceCommander/Verify_Login_V00160_ExactCatalog.sql",
+          "sha256": "E4B145ADCBD1140ED9599B371537A08855F7160FE968084B5DF1A2B12DB335A5"
+        },
+        {
+          "role": "Decrypt",
+          "path": "AceCommander/Verify_Decrypt_V00170_ExactCatalog.sql",
+          "sha256": "CD79D47FDD8DF818B7C70A6B2FB8183D99C6CD8AC79CFA70E9255442225E0433"
+        }
+      ]
+    },
+    {
+      "version": "00210",
+      "kind": "BeforeAfter",
+      "phaseTag": "210",
+      "sessionContextKey": "ATAP.Organization210.ExpectedCatalog",
+      "newMigrations": [
+        "V00180__Create_Organization_Eligibility_Schema.sql",
+        "V00190__Create_ReadOrganizationEligibility_Procedure.sql",
+        "V00200__Create_Organization_Bootstrap.sql",
+        "V00210__Create_ReadOrganizationProject_Procedure.sql"
+      ],
+      "verifiers": [
+        {
+          "role": "BeforeAfter",
+          "path": "AceCommander/Verify_Organization_V00210.sql",
+          "sha256": "9384234D55151777A72726610B468932CC56679D7C04CF98B8D25952F5CFB12B"
+        }
+      ]
+    },
+    {
+      "version": "00220",
+      "kind": "BeforeAfter",
+      "phaseTag": "220",
+      "sessionContextKey": "ATAP.AceCommanderRole220.ExpectedCatalog",
+      "newMigrations": [
+        "V00220__Create_AceCommander_Role.sql"
+      ],
+      "verifiers": [
+        {
+          "role": "BeforeAfter",
+          "path": "AceCommander/Verify_AceCommanderRole_V00220.sql",
+          "sha256": "10B85F8772B1910185FAD5F132C8D0F3D5A0551D8F9BAA50D5B5235F1EC652F1"
+        }
+      ]
+    }
+  ],
+  "admittedBaselines": [
+    "00140",
+    "00150",
+    "00170",
+    "00210",
+    "00220"
+  ]
+}

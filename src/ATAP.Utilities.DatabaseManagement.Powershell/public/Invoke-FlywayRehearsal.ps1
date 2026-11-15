@@ -62,6 +62,17 @@ function Invoke-FlywayRehearsal {
     V170-to-V210 before/after verifier, run on the same dedicated clone connection.
     A V150 clone first requires the paired Login/Decrypt verifiers to reach V170;
     an already-V170 or V210 clone keeps the existing organization sequence.
+
+.PARAMETER FixtureContractPath
+    Absolute path to the rehearsal boundary contract (Database/Verify/RehearsalBoundaries.json).
+    Contract mode replaces the explicit Login/Decrypt/Organization verifier paths (which must
+    not also be passed). The package migrations folder must match the contract exactly; its
+    head migration is the Flyway target. From the clone's admitted baseline the rehearsal walks
+    every contract boundary up to that target on one dedicated verifier session: Plain
+    (validate/migrate/validate), LoginDecrypt (the pinned private sequence) and BeforeAfter
+    (Before<tag> verifier, validate/migrate/validate, After<tag> verifier). Exact successful
+    history is re-proved after every boundary. Requires ExpectedSourceDatabaseName and
+    PackageName equal to the contract's sourceDatabaseName and packageId.
 #>
   [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', 'CredentialsKey',
     Justification = 'CredentialsKey is a vault lookup key name, not a credential')]
@@ -171,6 +182,7 @@ function Invoke-FlywayRehearsal {
     [string]$LoginFixturePath,
     [string]$DecryptFixturePath,
     [string]$OrganizationFixturePath,
+    [string]$FixtureContractPath,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'ConnectionParts')]
     [switch]$IntegratedSecurity = $true,
@@ -185,7 +197,10 @@ function Invoke-FlywayRehearsal {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering $fn" -Tag 'Trace'
     $legacyFixtureRequested = $PSBoundParameters.ContainsKey('LoginFixturePath') -or $PSBoundParameters.ContainsKey('DecryptFixturePath')
     $organizationRequested = $PSBoundParameters.ContainsKey('OrganizationFixturePath')
-    $fixtureRequested = $legacyFixtureRequested -or $organizationRequested
+    $contractRequested = $PSBoundParameters.ContainsKey('FixtureContractPath')
+    $fixtureRequested = $legacyFixtureRequested -or $organizationRequested -or $contractRequested
+    # Organization and contract rehearsals both require a previously absent, exclusively owned clone.
+    $exclusiveCloneRequested = $organizationRequested -or $contractRequested
     if (-not $fixtureRequested) {
       # Use the original string parameter binder, not raw-object truthiness or an array-joining cast.
       function Convert-GenericRehearsalPackageMetadata623 {
@@ -203,8 +218,16 @@ function Invoke-FlywayRehearsal {
     if ($fixtureRequested) {
       $fixtureKeys = @('ExpectedSourceDatabaseName', 'PackageName', 'PackageVersion',
         'FlywayBasePath', 'FlywaySqlMigrationsPath', 'FlywayDataPath', 'FlywayTomlPath')
-      $fixtureKeys += if ($organizationRequested) { @('OrganizationFixturePath') } else { @('LoginFixturePath', 'DecryptFixturePath') }
-      if ($organizationRequested -and $legacyFixtureRequested) { $fixtureKeys += @('LoginFixturePath', 'DecryptFixturePath') }
+      if ($contractRequested) {
+        if ($legacyFixtureRequested -or $organizationRequested) {
+          throw 'Contract rehearsal derives its verifier paths from the contract; do not also pass Login, Decrypt or Organization fixture paths.'
+        }
+        $fixtureKeys += @('FixtureContractPath')
+      }
+      else {
+        $fixtureKeys += if ($organizationRequested) { @('OrganizationFixturePath') } else { @('LoginFixturePath', 'DecryptFixturePath') }
+        if ($organizationRequested -and $legacyFixtureRequested) { $fixtureKeys += @('LoginFixturePath', 'DecryptFixturePath') }
+      }
       foreach ($fixtureKey in $fixtureKeys) {
         $fixtureValue = $PSBoundParameters[$fixtureKey]
         if (-not $PSBoundParameters.ContainsKey($fixtureKey) -or $fixtureValue -isnot [string] -or
@@ -236,7 +259,27 @@ function Invoke-FlywayRehearsal {
         $organizationVerifier = [IO.File]::ReadAllText($OrganizationFixturePath)
         if ([string]::IsNullOrWhiteSpace($organizationVerifier)) { throw 'Organization verifier is empty.' }
       }
-      if ($legacyFixtureRequested) {
+      if ($contractRequested) {
+        # Bind the sibling private loader when absent or module-backed; no installed fallback.
+        $contractCommand = Get-Command Read-RehearsalBoundaryContract -CommandType Function -ErrorAction SilentlyContinue
+        if ($null -eq $contractCommand -or -not [string]::IsNullOrEmpty($contractCommand.ModuleName)) {
+          . (Join-Path (Split-Path -Parent $PSScriptRoot) 'private/Read-RehearsalBoundaryContract.ps1')
+        }
+        $null = Get-Command Read-RehearsalBoundaryContract -CommandType Function -ErrorAction Stop
+        if (-not (Test-Path -LiteralPath $FlywaySqlMigrationsPath -PathType Container)) {
+          throw 'Contract rehearsal requires the package migrations folder.'
+        }
+        $packageMigrationNames = @(Get-ChildItem -LiteralPath $FlywaySqlMigrationsPath -File -ErrorAction Stop | ForEach-Object Name)
+        if ($packageMigrationNames.Count -eq 0 -or @($packageMigrationNames | Where-Object { $_ -cnotmatch '\AV[0-9]{5}__[A-Za-z0-9_]+\.sql\z' }).Count -ne 0) {
+          throw 'Contract rehearsal requires a migrations folder that holds only versioned migrations.'
+        }
+        # The contract proves the folder is exactly the ordered boundary migrations; its head is the target.
+        $rehearsalContract = Read-RehearsalBoundaryContract -Path $FixtureContractPath -MigrationNames $packageMigrationNames -ErrorAction Stop
+        if ($rehearsalContract.PackageId -cne $PackageName -or $rehearsalContract.SourceDatabaseName -cne $ExpectedSourceDatabaseName) {
+          throw 'Contract rehearsal package or source catalog does not match the rehearsal boundary contract.'
+        }
+      }
+      if ($legacyFixtureRequested -or $contractRequested) {
         # Bind the sibling source when absent or module-backed; no installed fallback.
         $sequenceCommand = Get-Command Invoke-AceCommanderLoginFixtureSequence -CommandType Function -ErrorAction SilentlyContinue
         if ($null -eq $sequenceCommand -or -not [string]::IsNullOrEmpty($sequenceCommand.ModuleName)) {
@@ -445,7 +488,7 @@ function Invoke-FlywayRehearsal {
     $errorText = $null
 
     try {
-      if ($organizationRequested) {
+      if ($exclusiveCloneRequested) {
         $presence = @(Invoke-DatabaseSqlQuery -SqlConnection $resolvedSqlConnection `
           -CommandText 'SELECT CASE WHEN DB_ID(@CloneName) IS NULL THEN 1 ELSE 0 END AS Absent;' `
           -Parameters @{ CloneName = $RehearsalDb } -ErrorAction Stop)
@@ -464,7 +507,7 @@ END;
 
       if ($PSCmdlet.ShouldProcess("$serverInstance/$RehearsalDb", 'Prepare ephemeral Flyway rehearsal database')) {
         if (-not [string]::IsNullOrWhiteSpace($SourceDatabaseName)) {
-          if (-not $organizationRequested) {
+          if (-not $exclusiveCloneRequested) {
             [void](Invoke-DatabaseSqlNonQuery -SqlConnection $resolvedSqlConnection -CommandText $dropExistingQuery)
           }
           $stagingRoot = $env:ATAP_DATABASE_PACKAGE_STAGING_ROOT
@@ -483,8 +526,8 @@ END;
           $copyParameters = @{ Source = $rehearsalServer; Destination = $rehearsalServer
             Database = $SourceDatabaseName; NewName = $RehearsalDb; BackupRestore = $true
             SharedPath = $stagingRoot; EnableException = $true; Confirm = $false }
-          if (-not $organizationRequested) { $copyParameters.WithReplace = $true; $copyParameters.Force = $true }
-          if ($organizationRequested) { $organizationCloneAttempted = $true }
+          if (-not $exclusiveCloneRequested) { $copyParameters.WithReplace = $true; $copyParameters.Force = $true }
+          if ($exclusiveCloneRequested) { $organizationCloneAttempted = $true }
           Copy-DbaDatabase @copyParameters | Out-Null
         }
         else {
@@ -556,7 +599,145 @@ END;
               FlywayAdditionalArgs = @('-defaultSchema=dbo', '-table=flyway_schema_history')
             }
             if ($FlywayExecutablePath) { $sequenceParams.FlywayExecutablePath = $FlywayExecutablePath }
-            if ($organizationRequested) {
+            if ($contractRequested) {
+              # Contract chain: every boundary from the clone's admitted baseline up to the package
+              # head, on this one dedicated verifier session. No boundary literal lives in code.
+              $clientConnectionId = $verifier.ClientConnectionId
+              $historyQuery = 'SELECT [version], [success] FROM dbo.flyway_schema_history ORDER BY [installed_rank];'
+              $contractVersions = [string[]]$rehearsalContract.MigrationVersions
+              $contractTarget = [string]$rehearsalContract.TargetVersion
+              $prefixLength = {
+                param([string]$Version)
+                @($contractVersions | Where-Object { [string]::CompareOrdinal($_, $Version) -le 0 }).Count
+              }
+              $assertHistory = {
+                param([object[]]$Rows, [int]$Length, [string]$Message)
+                if ($Rows.Count -ne $Length) { throw $Message }
+                for ($historyIndex = 0; $historyIndex -lt $Rows.Count; $historyIndex++) {
+                  if ($Rows[$historyIndex].version -isnot [string] -or
+                      $Rows[$historyIndex].version -cne $contractVersions[$historyIndex] -or
+                      $Rows[$historyIndex].success -isnot [bool] -or -not $Rows[$historyIndex].success) {
+                    throw $Message
+                  }
+                }
+              }
+              $assertSession = {
+                param([string]$Message)
+                if ($verifier.State -cne 'Open' -or $verifier.ClientConnectionId -ne $clientConnectionId) { throw $Message }
+              }
+              $history = @(Invoke-DatabaseSqlQuery -SqlConnection $verifier -CommandText $historyQuery -ErrorAction Stop)
+              $baselineVersion = $null
+              foreach ($candidate in $rehearsalContract.AdmittedBaselines) {
+                if ($contractVersions -ccontains $candidate -and (& $prefixLength $candidate) -eq $history.Count) {
+                  $baselineVersion = $candidate
+                }
+              }
+              if ($null -eq $baselineVersion) {
+                throw 'Contract rehearsal requires an admitted clone baseline at or below the package target.'
+              }
+              & $assertHistory $history $history.Count 'Contract rehearsal requires exact successful predecessor versions.'
+              # Boundaries above the baseline run in order; a BeforeAfter boundary equal to the
+              # baseline is re-verified (its verifier admits its own already-applied state).
+              $steps = @($rehearsalContract.Boundaries | Where-Object {
+                  [string]::CompareOrdinal($_.Version, $contractTarget) -le 0 -and
+                  ([string]::CompareOrdinal($_.Version, $baselineVersion) -gt 0 -or
+                   ($_.Version -ceq $baselineVersion -and $_.Kind -ceq 'BeforeAfter'))
+                })
+              if ($steps.Count -eq 0) { throw 'Contract rehearsal has no boundary step from this baseline to the package target.' }
+              $completedPhases = [Collections.Generic.List[string]]::new()
+              foreach ($step in $steps) {
+                $isFinalStep = $step.Version -ceq $contractTarget
+                $stepTarget = '-target=' + $step.Version
+                switch -CaseSensitive ($step.Kind) {
+                  'Plain' {
+                    $plainParameters = $sequenceParams.Clone()
+                    $plainParameters.SqlConnection = $verifier
+                    foreach ($operation in @('validate', 'migrate', 'validate')) {
+                      $plainParameters.FlywayCommand = $operation
+                      # Later boundary migrations stay pending above this step's target.
+                      $plainParameters.FlywayAdditionalArgs = @('-defaultSchema=dbo', '-table=flyway_schema_history', $stepTarget, '-ignoreMigrationPatterns=*:pending')
+                      $plainSummaries = @(& $fixtureFlywayCommand @plainParameters -Confirm:$false -ErrorAction Stop)
+                      if ($plainSummaries.Count -ne 1 -or $plainSummaries[0].Success -isnot [bool] -or -not $plainSummaries[0].Success) {
+                        throw "Contract rehearsal boundary $($step.Version) $operation failed."
+                      }
+                      $completedPhases.Add($operation + $step.PhaseTag)
+                    }
+                  }
+                  'LoginDecrypt' {
+                    $loginVerifier = @($step.Verifiers | Where-Object Role -CEQ 'Login')
+                    $decryptVerifier = @($step.Verifiers | Where-Object Role -CEQ 'Decrypt')
+                    if ($loginVerifier.Count -ne 1 -or $decryptVerifier.Count -ne 1) { throw "Contract rehearsal boundary $($step.Version) requires one Login and one Decrypt verifier." }
+                    $sequence = @(Invoke-AceCommanderLoginFixtureSequence -SqlConnection $verifier `
+                        -LoginFixturePath $loginVerifier[0].Path -DecryptFixturePath $decryptVerifier[0].Path `
+                        -LoginFixtureSha256 $loginVerifier[0].Sha256 -DecryptFixtureSha256 $decryptVerifier[0].Sha256 `
+                        -FlywayParameters $sequenceParams -Confirm:$false -ErrorAction Stop)
+                    if ($sequence.Count -ne 1 -or $sequence[0].Success -isnot [bool] -or -not $sequence[0].Success) {
+                      throw "Contract rehearsal boundary $($step.Version) Login/Decrypt sequence did not report success."
+                    }
+                    foreach ($phase in @($sequence[0].CompletedPhases)) { $completedPhases.Add([string]$phase) }
+                  }
+                  'BeforeAfter' {
+                    $boundaryVerifier = @($step.Verifiers | Where-Object Role -CEQ 'BeforeAfter')
+                    if ($boundaryVerifier.Count -ne 1) { throw "Contract rehearsal boundary $($step.Version) requires one BeforeAfter verifier." }
+                    $bindingCommand = $null
+                    try {
+                      $bindingCommand = New-DatabaseSqlCommand -SqlConnection $verifier -CommandText "IF SESSION_CONTEXT(@ContextKey) IS NOT NULL THROW 62911, N'Fresh verifier required.', 1; EXEC sys.sp_set_session_context @key=@ContextKey, @value=@ExpectedCatalog, @read_only=1;" -Parameters @{ ContextKey = $step.SessionContextKey; ExpectedCatalog = $RehearsalDb } -ErrorAction Stop
+                      foreach ($bindingParameter in @('@ContextKey', '@ExpectedCatalog')) {
+                        $bindingCommand.Parameters[$bindingParameter].SqlDbType = [Data.SqlDbType]::NVarChar
+                        $bindingCommand.Parameters[$bindingParameter].Size = 128
+                      }
+                      [void]$bindingCommand.ExecuteNonQuery()
+                    }
+                    finally { if ($null -ne $bindingCommand) { $bindingCommand.Dispose() } }
+                    # Plain batches keep the verifier's temporary snapshots in this session.
+                    $before = @(Invoke-DatabaseSqlQuery -SqlConnection $verifier `
+                        -CommandText ("DECLARE @VerificationPhase nvarchar(8)=N'Before';" + [Environment]::NewLine + $boundaryVerifier[0].Text) -ErrorAction Stop)
+                    if ($before.Count -ne 1 -or $before[0].FixturePhase -cne ('Before' + $step.PhaseTag)) {
+                      throw "Contract rehearsal boundary $($step.Version) predecessor verification failed."
+                    }
+                    $completedPhases.Add('before' + $step.PhaseTag)
+                    $boundaryParameters = $sequenceParams.Clone()
+                    $boundaryParameters.SqlConnection = $verifier
+                    $firstValidation = $true
+                    foreach ($operation in @('validate', 'migrate', 'validate')) {
+                      $boundaryParameters.FlywayCommand = $operation
+                      $boundaryParameters.FlywayAdditionalArgs = @('-defaultSchema=dbo', '-table=flyway_schema_history', $stepTarget)
+                      if ($firstValidation) {
+                        # Only the first validate may ignore this boundary's own pending migrations.
+                        $boundaryParameters.FlywayAdditionalArgs += '-ignoreMigrationPatterns=*:pending'
+                      }
+                      elseif ($operation -ceq 'validate') {
+                        # Final boundary: clear inherited ignore patterns (nothing may stay pending).
+                        # Intermediate boundary: later boundaries' migrations stay pending above the target.
+                        $boundaryParameters.FlywayAdditionalArgs += $(if ($isFinalStep) { '-ignoreMigrationPatterns=' } else { '-ignoreMigrationPatterns=*:pending' })
+                      }
+                      $firstValidation = $false
+                      $boundarySummaries = @(& $fixtureFlywayCommand @boundaryParameters -Confirm:$false -ErrorAction Stop)
+                      if ($boundarySummaries.Count -ne 1 -or $boundarySummaries[0].Success -isnot [bool] -or -not $boundarySummaries[0].Success) {
+                        throw "Contract rehearsal boundary $($step.Version) $operation failed."
+                      }
+                      $completedPhases.Add($(if ($operation -ceq 'migrate') { 'migrate' + $step.PhaseTag } else { 'validate' }))
+                    }
+                    & $assertSession "Contract rehearsal verifier session changed at boundary $($step.Version)."
+                    $after = @(Invoke-DatabaseSqlQuery -SqlConnection $verifier `
+                        -CommandText ("DECLARE @VerificationPhase nvarchar(8)=N'After';" + [Environment]::NewLine + $boundaryVerifier[0].Text) -ErrorAction Stop)
+                    if ($after.Count -ne 1 -or $after[0].FixturePhase -cne ('After' + $step.PhaseTag)) {
+                      throw "Contract rehearsal boundary $($step.Version) post-state verification failed."
+                    }
+                    $completedPhases.Add('after' + $step.PhaseTag)
+                  }
+                  default { throw "Contract rehearsal boundary kind '$($step.Kind)' is not supported." }
+                }
+                & $assertSession "Contract rehearsal verifier session changed at boundary $($step.Version)."
+                $history = @(Invoke-DatabaseSqlQuery -SqlConnection $verifier -CommandText $historyQuery -ErrorAction Stop)
+                & $assertHistory $history (& $prefixLength $step.Version) "Contract rehearsal boundary $($step.Version) must leave exact successful history through $($step.Version)."
+              }
+              $flywayResult = [pscustomobject]@{
+                Success = $true; CompletedPhases = $completedPhases.ToArray()
+                BaselineVersion = $baselineVersion; TargetVersion = $contractTarget
+              }
+            }
+            elseif ($organizationRequested) {
               $clientConnectionId = $verifier.ClientConnectionId
               # Route only the three admitted boundaries. The existing pinned
               # verifiers still prove exact history/checksums and schema/data shape.
@@ -692,7 +873,7 @@ BEGIN
 END
 "@
       try {
-        if ((-not $organizationRequested -or $organizationCloneAttempted) -and
+        if ((-not $exclusiveCloneRequested -or $organizationCloneAttempted) -and
             $PSCmdlet.ShouldProcess("$serverInstance/$RehearsalDb", 'Drop ephemeral Flyway rehearsal database')) {
           [void](Invoke-DatabaseSqlNonQuery -SqlConnection $resolvedSqlConnection -CommandText $dropQuery)
           $dropped = $true

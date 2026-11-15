@@ -249,14 +249,23 @@ Describe 'Package-only custody transition on disposable selected-module fixtures
   It 'keeps the v2 and package modes in separate parameter sets and requires the attestation pin' {
     { Invoke-CoordCustodyHandoff -Mode ApplyPackage -PacketPath $attestationPath -ExpectedPacketSha256 $attestationPin -Confirm:$false } | Should -Throw
     { Invoke-CoordCustodyHandoff -Mode Apply -OperationId $opId -Confirm:$false } | Should -Throw
-    { Invoke-CoordCustodyHandoff -Mode RecoverPackage -OperationId $opId -NupkgPath $nupkgPath -Confirm:$false } | Should -Throw
-    { Invoke-CoordCustodyHandoff -Mode ApplyPackage -OperationId $opId -AttestationPath $attestationPath -NupkgPath $nupkgPath -Confirm:$false -ErrorAction Stop } | Should -Throw
+    # Never leave a mandatory parameter of the resolved set unbound here: an interactive host prompts for it instead of
+    # throwing, and the BuildMaster runner (pwsh without -NonInteractive, stdin an open pipe) then waits forever. Each
+    # call binds every mandatory parameter of the set it resolves to, so it fails fast in any host; "required" and
+    # "not in this set" are checked from metadata below.
+    $candidateArg = Join-Path $script:fixtureRoot 'Candidate'
+    { Invoke-CoordCustodyHandoff -Mode RecoverPackage -OperationId $opId -AttestationPath $attestationPath -ExpectedAttestationSha256 $attestationPin -NupkgPath $nupkgPath -CandidateModuleRoot $candidateArg -Confirm:$false } | Should -Throw '*HandoffPackageModeParameterSetMismatch*'
+    { Invoke-CoordCustodyHandoff -Mode ApplyPackage -OperationId $opId -AttestationPath $attestationPath -ExpectedAttestationSha256 '' -NupkgPath $nupkgPath -CandidateModuleRoot $candidateArg -Confirm:$false -ErrorAction Stop } | Should -Throw '*ExpectedAttestationSha256*'
     { Invoke-CoordCustodyHandoff -Mode RecoverPackage -OperationId $opId -Confirm:$false } | Should -Throw '*PackageRecoveryHasNoKnownOrigin*'
     { Invoke-CoordCustodyHandoff -Mode ApplyPackage -OperationId $opId -AttestationPath $attestationPath -ExpectedAttestationSha256 ('0' * 64) -NupkgPath $nupkgPath -CandidateModuleRoot (New-CandidateCopy) -Confirm:$false } | Should -Throw '*HandoffInputPinMismatch*'
-    # The candidate root is mandatory for ApplyPackage and absent from RecoverPackage's set (checked by metadata: no prompt).
-    $attributes = @((Get-Command Invoke-CoordCustodyHandoff).Parameters['CandidateModuleRoot'].Attributes | Where-Object { $_ -is [Management.Automation.ParameterAttribute] })
-    @($attributes | Where-Object { $_.ParameterSetName -ceq 'Package' -and $_.Mandatory }).Count | Should -Be 1
-    @($attributes | Where-Object { $_.ParameterSetName -ceq 'PackageRecover' }).Count | Should -Be 0
+    # Checked by metadata (no prompt): the candidate root, attestation pin and nupkg are mandatory for ApplyPackage only,
+    # and none of them belongs to RecoverPackage's set.
+    $parameters = (Get-Command Invoke-CoordCustodyHandoff).Parameters
+    foreach ($name in 'CandidateModuleRoot', 'ExpectedAttestationSha256', 'NupkgPath') {
+      $attributes = @($parameters[$name].Attributes | Where-Object { $_ -is [Management.Automation.ParameterAttribute] })
+      @($attributes | Where-Object { $_.ParameterSetName -ceq 'Package' -and $_.Mandatory }).Count | Should -Be 1 -Because $name
+      @($attributes | Where-Object { $_.ParameterSetName -ceq 'PackageRecover' }).Count | Should -Be 0 -Because $name
+    }
     Test-Path -LiteralPath (Join-Path $custodyRoot ('package-' + $opId + '.once.json')) | Should -BeFalse
   }
   It 'refuses a disabled policy without writing anything' {

@@ -28,7 +28,7 @@ no application or automation callers outside that self-contained legacy family.
 - `Database/Flyway/SQL/V00010__Create_ATAPUtilities_Initial_Schema_And_Seed.sql`
   — transition comment names the replaced contract; active DDL contains only
   `PhiloteValidityPeriod`.
-- `Database/Powershell/tests/PhiloteTemporalValidity-Source.Tests.ps1` — negative
+- `tests/ATAP.Utilities.Database.Tests/Unit/PhiloteTemporalValidity-Source.Tests.ps1` — negative
   source guard proves the retired CSV is absent.
 - `src/ATAP.Utilities.DateTime.Model/ItensoTemporalPeriodCalculator.cs` — sole
   approved private vendor adapter.

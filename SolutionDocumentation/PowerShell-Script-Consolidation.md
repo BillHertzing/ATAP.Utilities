@@ -100,7 +100,7 @@ The interesting bucket — and the focus of this doc — is **C**.
 | `Database/Powershell/public/Export-RuleToTextFile.ps1` | C/A    | Schema rule export                             | **Retired 2026-08-09** — the promoted command depended on the superseded pre-V3 result shape. |
 | `Database/Powershell/public/Rebuild-All.ps1`           | C      | Flyway rebuild orchestrator                    | Keep — not a function                      |
 | `Database/Powershell/public/Example-RuleExport.ps1`    | C      | Demo / docs example                            | **Retired 2026-08-09** with the unsupported command. |
-| `Database/Powershell/tests/*.Tests.ps1`                | B      | Pester tests for the un-modularized DB scripts | Move with the promotion                    |
+| `tests/ATAP.Utilities.Database.Tests/**/*.Tests.ps1`   | B      | Pester tests for the un-modularized DB scripts | **Moved 2026-11-15** (Sprint 0017) from `Database/Powershell/tests/`; move with the promotion |
 | `OlderDBsForReference/**/*.ps1`                        | n/a    | Archive — pre-Flyway era                       | **Delete in sprint-0007**                  |
 | `src/.../public/Obsolete/*.ps1`                        | n/a    | Marked obsolete years ago                      | **Delete in sprint-0007**                  |
 

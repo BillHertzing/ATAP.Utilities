@@ -135,7 +135,7 @@ A VS Code extension for AI-assisted development, implemented in TypeScript/JavaS
 - **Test fixtures** (`src/ATAP.Utilities.Testing.*`): DI fixtures, serialization fixtures (shims for each serializer), database fixtures
 - **Unit tests** (`tests/`): xUnit-based tests for most library projects
 - **Integration tests** (`tests/ATAP.Utilities.RabbitMQ.IntegrationTests/`)
-- **Pester tests** for PowerShell modules (`Database/Powershell/tests/`)
+- **Pester tests** for PowerShell modules (Database scripts and migrations: `tests/ATAP.Utilities.Database.Tests/`)
 
 #### 2.9 Documentation Infrastructure
 

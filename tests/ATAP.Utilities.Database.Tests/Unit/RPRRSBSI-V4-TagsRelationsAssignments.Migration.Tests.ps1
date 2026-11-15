@@ -12,7 +12,7 @@ Describe 'V00090 RPRRSBSI V4 Tags relation and assignment static contract' {
     $migrationPath = Join-Path $sqlDirectory $migrationName
     $migration = Get-Content -LiteralPath $migrationPath -Raw
     $fixture = Get-Content -LiteralPath (
-      Join-Path $PSScriptRoot 'Fixtures\RPRRSBSI-V4-TagsRelationsAssignments.json') -Raw |
+      Join-Path $PSScriptRoot '..\Fixtures\RPRRSBSI-V4-TagsRelationsAssignments.json') -Raw |
       ConvertFrom-Json -Depth 16
     $activeMigrations = @(Get-ChildItem -LiteralPath $sqlDirectory -File -Filter 'V*.sql' | Sort-Object Name)
     $dynamicBodies = @([regex]::Matches(

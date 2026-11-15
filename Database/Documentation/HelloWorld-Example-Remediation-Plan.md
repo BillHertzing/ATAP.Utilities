@@ -60,7 +60,7 @@ The markdown documentation and test consistently use `ATAPUtilities` schema, sug
 
 ---
 
-### 3. `Database/Powershell/tests/Generate-HelloWorldFromRules.Tests.ps1` — Variable Scope Bugs
+### 3. `tests/ATAP.Utilities.Database.Tests/Integration/Generate-HelloWorldFromRules.Tests.ps1` — Variable Scope Bugs
 
 **Shortfall: Three `$script:` prefixes are missing, causing test assertions to compare against `$null`.**
 

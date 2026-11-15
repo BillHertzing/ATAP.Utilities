@@ -13,7 +13,7 @@ Describe 'V00100 ContentSummary schema and query static contract' {
     $migration = Get-Content -LiteralPath $migrationPath -Raw
     $facadeMigrationName = 'V00110__Create_ContentSummary_DAB_Principal_Facade.sql'
     $fixture = Get-Content -LiteralPath (
-      Join-Path $PSScriptRoot 'Fixtures\ContentSummaryContract.V1.json') -Raw |
+      Join-Path $PSScriptRoot '..\Fixtures\ContentSummaryContract.V1.json') -Raw |
       ConvertFrom-Json -Depth 20
     $activeMigrations = @(Get-ChildItem -LiteralPath $sqlDirectory -File -Filter 'V*.sql' | Sort-Object Name)
     $dynamicBodies = @([regex]::Matches(

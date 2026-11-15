@@ -9,7 +9,7 @@ Describe 'Forward organization migration source package' {
     $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '../../..')).Path
     $sqlRoot = Join-Path $repositoryRoot 'Database/Flyway/SQL'
     $componentRoot = Join-Path $repositoryRoot 'Database/Schema/ACE'
-    $organizationVerifier = [IO.File]::ReadAllText((Join-Path $PSScriptRoot 'Verify_Organization_V00210.sql'))
+    $organizationVerifier = [IO.File]::ReadAllText((Join-Path $repositoryRoot 'Database/Verify/AceCommander/Verify_Organization_V00210.sql'))
     $migrations = @(
       @{ Version = '00180'; File = 'V00180__Create_Organization_Eligibility_Schema.sql'; Source = 'OrganizationEligibility.sql'; Batches = 1 },
       @{ Version = '00190'; File = 'V00190__Create_ReadOrganizationEligibility_Procedure.sql'; Source = 'ReadOrganizationEligibility.sql'; Batches = 1 },

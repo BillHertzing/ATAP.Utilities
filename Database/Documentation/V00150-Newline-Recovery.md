@@ -22,7 +22,7 @@ The command is an explicit source runbook tool, not a changed installed PowerShe
 
 ## Regression coverage and rollback
 
-`Database/Powershell/tests/AISupervisorV00150Newlines.Recovery.Tests.ps1` uses an explicitly opted-in developer predecessor at V00140 via `ATAP_V00150_TEST_SERVER`. It runs LF/CRLF/mixed/bare-CR variants, stable second calls, drift rejection and preview in rolled-back transactions. Do not run this predecessor fixture on a database already at V00150. Six cases passed on UTAT022 before application.
+`tests/ATAP.Utilities.Database.Tests/Integration/AISupervisorV00150Newlines.Recovery.Tests.ps1` uses an explicitly opted-in developer predecessor at V00140 via `ATAP_V00150_TEST_SERVER`. It runs LF/CRLF/mixed/bare-CR variants, stable second calls, drift rejection and preview in rolled-back transactions. Do not run this predecessor fixture on a database already at V00150. Six cases passed on UTAT022 before application.
 
 The repair transaction rolls back on mismatches. After V00150 succeeds, do not revert the procedure to V00070 or remove history: the schema is now forward migrated. A future behavioral defect needs a new reviewed migration. No migration files, package manifests, ProGet versions, credentials or installed module versions were changed by this recovery.
 

@@ -7,7 +7,7 @@ BeforeAll {
     $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
     $sqlDirectory = Join-Path $repoRoot 'Database\Flyway\SQL'
     $flywayConfig = Join-Path $repoRoot 'Database\Flyway\flyway.toml'
-    $fixturePath = Join-Path $PSScriptRoot 'Fixtures\RPRRSBSI-V4-CoreIdentityOverlay.DatabaseFixtures.json'
+    $fixturePath = Join-Path $PSScriptRoot '..\Fixtures\RPRRSBSI-V4-CoreIdentityOverlay.DatabaseFixtures.json'
     $fixtureText = Get-Content -LiteralPath $fixturePath -Raw
     $fixture = $fixtureText | ConvertFrom-Json -Depth 20
     $targetMigrationPath = Join-Path $sqlDirectory $fixture.target.migration

@@ -2,7 +2,7 @@ BeforeAll {
   $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
   $adrPath = Join-Path $repoRoot 'SolutionDocumentation\RRSBS-ADR-190-ContentSummary-Reconciliation.md'
   $contractPath = Join-Path $repoRoot 'Database\Documentation\RPRRSBSI-V4-2-25-ContentSummary-Data-Contract.md'
-  $fixturePath = Join-Path $PSScriptRoot 'Fixtures\ContentSummaryContract.V1.json'
+  $fixturePath = Join-Path $PSScriptRoot '..\Fixtures\ContentSummaryContract.V1.json'
 
   $adr = Get-Content -LiteralPath $adrPath -Raw
   $contract = Get-Content -LiteralPath $contractPath -Raw

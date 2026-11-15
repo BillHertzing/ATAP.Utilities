@@ -36,7 +36,7 @@ After the exact-target and destructive-action gates are recorded:
 3. Apply the unchanged `ATAPUtilities.Database` `0.1.0` package through the
    approved Flyway runner.
 4. Run Flyway `validate`.
-5. Run `Database/Powershell/tests/PhiloteTemporalValidity-Source.Tests.ps1` and
+5. Run `tests/ATAP.Utilities.Database.Tests/Unit/PhiloteTemporalValidity-Source.Tests.ps1` and
    the authorized database suite.
 6. Verify the exact 11-table, 45-column, 72-constraint, eight-procedure,
    one-table-type, 22-Philote, and 22-validity-period contract.

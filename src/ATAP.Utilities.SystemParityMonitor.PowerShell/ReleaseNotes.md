@@ -1,5 +1,32 @@
 # Release Notes — ATAP.Utilities.SystemParityMonitor.PowerShell
 
+## 0.1.32 (source only, not released)
+
+- Add the consumer-evidence refresh tasks for the shared `dotnet-trace` check (SC-0518;
+  plan `senior3-probe-refresh-aceoutpost\Plan.md`, SHA-256 8510CC89…, phase P1).
+- New public `Register-ParityConsumerProbeTasks`. For each EvidenceFile consumer in
+  `SharedDotNetTools.v1.json` it:
+  - writes a version-independent dispatcher under `C:\Program Files\ATAP\ParityDispatchers`,
+    after checking that broad identities cannot write to that folder;
+  - registers `\ATAP\ATAP-ParityConsumerProbe-<LogicalIdentity>` as the consumer's own account,
+    with **no triggers**: S4U by default, or Password when the caller supplies a credential
+    (for hosts that refuse S4U, such as UTAT01);
+  - grants the scheduler identity (default `<host>\SvcAceOutpost`) start-only rights (`GRGX`) on
+    that task, saving the prior SDDL first.
+
+  It supports `-WhatIf` and is idempotent. CurrentProcess consumers are skipped.
+- New task script `scripts\Invoke-ParityConsumerProbeTask.ps1`:
+  - runs `Invoke-SharedDotNetToolConsumerProbe` into a temporary file;
+  - replaces the evidence only when every `--version`/`--help` check exits 0 and the version
+    matches, so a failed check never advances `CapturedAtUtc`;
+  - writes a result record under `TaskResults\`, which is not a top-level ParityState file, so
+    the ParityState surface is unchanged.
+- The consumer probe task action and its dispatcher start pwsh **with profiles loading** (no
+  `-NoProfile`), by operator decision. The existing ParityAudit and ParityCompare tasks are
+  unchanged.
+- Nothing is registered, released or installed by this source change. The AceOutpost scheduler
+  (P2) and the audit surfaces that check these tasks (P6) are separate.
+
 ## 0.1.28 (source only)
 
 - Add a configuration-only update for explicit package-manager identity mappings

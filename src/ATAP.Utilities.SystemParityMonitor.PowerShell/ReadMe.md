@@ -20,6 +20,7 @@ Sprint 0012 Task 12.46; public function names are unchanged.
 | `Confirm-ParityChangeApplied` | Acknowledge a peer change as applied locally |
 | `Invoke-ParityAudit` | Capture local configuration surfaces, including Chocolatey, pip, npm, and NuGet-managed package versions and cross-manager ownership conflicts |
 | `Compare-ParityAudits` | Compare two hosts' snapshots and classify drift (declared / whitelisted / undeclared / stale) |
+| `Register-ParityConsumerProbeTasks` | Register one trigger-less task per shared .NET tool EvidenceFile consumer, running as that consumer, plus its dispatcher, and grant the scheduler identity (AceOutpost) start-only rights (SC-0518) |
 
 ## Layout
 

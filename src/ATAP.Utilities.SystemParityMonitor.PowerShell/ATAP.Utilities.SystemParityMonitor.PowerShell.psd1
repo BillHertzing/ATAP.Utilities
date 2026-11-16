@@ -1,6 +1,6 @@
 @{
   RootModule = 'ATAP.Utilities.SystemParityMonitor.PowerShell.psm1'
-  ModuleVersion = '0.1.32'
+  ModuleVersion = '0.1.33'
   GUID = '6884a1da-0f50-4e7a-afb1-5f8dcb5965f9'
   Author = 'ATAP'
   CompanyName = 'ATAP'

@@ -4,8 +4,11 @@
 
 Describe 'Consumer probe refresh: start-right SDDL' -Tag 'Unit' {
   BeforeAll {
-    $modulePath = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'ATAP.Utilities.SystemParityMonitor.PowerShell.psd1'
-    Import-Module -Name $modulePath -Force
+    # Never force a second copy: the promoted-package harness has already loaded the package
+    # module, and a duplicate same-named module breaks InModuleScope here and in later files.
+    if (-not (Get-Module -Name 'ATAP.Utilities.SystemParityMonitor.PowerShell')) {
+      Import-Module -Name (Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'ATAP.Utilities.SystemParityMonitor.PowerShell.psd1')
+    }
   }
 
   It 'appends a start-only GRGX ACE for the SID' {
@@ -51,8 +54,11 @@ Describe 'Consumer probe refresh: start-right SDDL' -Tag 'Unit' {
 
 Describe 'Consumer probe refresh: dispatcher content' -Tag 'Unit' {
   BeforeAll {
-    $modulePath = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'ATAP.Utilities.SystemParityMonitor.PowerShell.psd1'
-    Import-Module -Name $modulePath -Force
+    # Never force a second copy: the promoted-package harness has already loaded the package
+    # module, and a duplicate same-named module breaks InModuleScope here and in later files.
+    if (-not (Get-Module -Name 'ATAP.Utilities.SystemParityMonitor.PowerShell')) {
+      Import-Module -Name (Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'ATAP.Utilities.SystemParityMonitor.PowerShell.psd1')
+    }
   }
 
   It 'runs the task script with -File and the consumer arguments, loads profiles (no -NoProfile), and propagates the exit code' {
@@ -105,8 +111,15 @@ Describe 'Consumer probe refresh: dispatcher content' -Tag 'Unit' {
 
 Describe 'Consumer probe refresh: Register-ParityConsumerProbeTasks' -Tag 'Unit' {
   BeforeAll {
-    $script:moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-    Import-Module -Name (Join-Path $script:moduleRoot 'ATAP.Utilities.SystemParityMonitor.PowerShell.psd1') -Force
+    # Never force a second copy: the promoted-package harness has already loaded the package
+    # module, and a duplicate same-named module breaks InModuleScope here and in later files.
+    if (-not (Get-Module -Name 'ATAP.Utilities.SystemParityMonitor.PowerShell')) {
+      Import-Module -Name (Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'ATAP.Utilities.SystemParityMonitor.PowerShell.psd1')
+    }
+    $loadedModules = @(Get-Module -Name 'ATAP.Utilities.SystemParityMonitor.PowerShell')
+    if ($loadedModules.Count -ne 1) { throw "Expected exactly one loaded SystemParityMonitor module; found $($loadedModules.Count)." }
+    # Use the loaded copy (source tree locally, feed package under the promoted-module harness).
+    $script:moduleRoot = $loadedModules[0].ModuleBase
 
     function script:New-ProbePolicyFile {
       param([string] $Path, [object[]] $Consumers)
@@ -256,8 +269,15 @@ Describe 'Consumer probe refresh: Register-ParityConsumerProbeTasks' -Tag 'Unit'
 
 Describe 'Consumer probe refresh: Invoke-ParityConsumerProbeTask (fail-closed)' -Tag 'Unit' {
   BeforeAll {
-    $script:moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-    Import-Module -Name (Join-Path $script:moduleRoot 'ATAP.Utilities.SystemParityMonitor.PowerShell.psd1') -Force
+    # Never force a second copy: the promoted-package harness has already loaded the package
+    # module, and a duplicate same-named module breaks InModuleScope here and in later files.
+    if (-not (Get-Module -Name 'ATAP.Utilities.SystemParityMonitor.PowerShell')) {
+      Import-Module -Name (Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'ATAP.Utilities.SystemParityMonitor.PowerShell.psd1')
+    }
+    $loadedModules = @(Get-Module -Name 'ATAP.Utilities.SystemParityMonitor.PowerShell')
+    if ($loadedModules.Count -ne 1) { throw "Expected exactly one loaded SystemParityMonitor module; found $($loadedModules.Count)." }
+    # Use the loaded copy (source tree locally, feed package under the promoted-module harness).
+    $script:moduleRoot = $loadedModules[0].ModuleBase
     # Dot-sourcing defines the function; the &-proof guard keeps the task body from running.
     . (Join-Path $script:moduleRoot 'scripts\Invoke-ParityConsumerProbeTask.ps1')
   }

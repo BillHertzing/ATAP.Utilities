@@ -1,6 +1,14 @@
 # Release Notes — ATAP.Utilities.SystemParityMonitor.PowerShell
 
-## 0.1.32 (source only, not released)
+## 0.1.33 (source only, not released)
+
+- Re-release of 0.1.32's consumer-probe refresh with a **test-only** fix. No product code changed.
+- **0.1.32 failed release** at its Development tier: BuildMaster release 10441, build 21622, execution 23007, 136 of 156 tests passed.
+- **Cause:** the new `tests\Unit\ParityConsumerProbeRefresh.Tests.ps1` used `Import-Module <source psd1> -Force`. The promoted-package harness had already loaded the feed package, so a second module with the same name appeared and `InModuleScope` failed in that file and in `Task15167SharedDotNetTools.Tests.ps1`, which ran after it.
+- **Fix:** the file now imports the module only when none is loaded, the guard 0.1.23 introduced. It takes script paths from the loaded module's `ModuleBase`.
+- **0.1.32 is burned:** it exists in `powershellget-experimental` and `powershellget-development` only and was never promoted further.
+
+## 0.1.32 (failed release; superseded by 0.1.33)
 
 - Add the consumer-evidence refresh tasks for the shared `dotnet-trace` check (SC-0518;
   plan `senior3-probe-refresh-aceoutpost\Plan.md`, SHA-256 8510CC89…, phase P1).

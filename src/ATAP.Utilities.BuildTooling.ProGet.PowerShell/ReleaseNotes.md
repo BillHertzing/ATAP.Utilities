@@ -1,5 +1,18 @@
 # Release notes
 
+## 0.1.28
+
+- `Register-ATAPParityScheduledTasks`: the generated parity dispatcher launches the approved
+  SystemParityMonitor script WITHOUT `-NoProfile`, so the audit and compare run with the machine
+  and SvcParityAudit PowerShell profiles (operator decision 2026-11-15, Option A). The task action
+  that starts the dispatcher is unchanged, so live tasks still match the canonical action and a
+  repoint stays dispatcher-only: no Task Scheduler mutation and no run-as password.
+- The dispatcher sets `ATAP_PARITY_REQUIRE_PROFILE_SETTINGS=1` for the parity process.
+  SystemParityMonitor 0.1.35 fails the run visibly when the profile did not populate
+  `$global:settings` and `$global:configRootKeys`. Older parity versions ignore it.
+- This release is paired with SystemParityMonitor 0.1.35. Changing live dispatcher targets
+  remains a separate operational change from module deployment.
+
 ## 0.1.24
 
 - Add `Sync-ProGetPowerShellModules` for validated synchronization of exact module versions

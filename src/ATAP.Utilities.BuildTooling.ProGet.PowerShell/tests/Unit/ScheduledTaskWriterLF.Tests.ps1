@@ -205,7 +205,11 @@ AfterAll {
           [Convert]::ToHexString($bytes[0..2]) | Should -Not -Be 'EFBBBF'
           $body = [Text.UTF8Encoding]::new($false, $true).GetString($bytes)
           $body | Should -Match '9\.8\.7'
-          $body | Should -Match '\-NoProfile -NonInteractive -ExecutionPolicy Bypass -File'
+          # Profiles load in the parity process (operator decision 2026-11-15, Option A), and
+          # the dispatcher asks the parity script to fail when the profile left no settings.
+          $body | Should -Match "pwsh\.exe' -NonInteractive -ExecutionPolicy Bypass -File '"
+          $body | Should -Not -Match '(?i)-NoProfile'
+          $body | Should -Match ([regex]::Escape("`$env:ATAP_PARITY_REQUIRE_PROFILE_SETTINGS = '1'"))
           $body | Should -Match 'exit \$LASTEXITCODE\n\z'
           if ($item.TaskName -eq 'ATAP-ParityAudit') {
             $body | Should -Match ([regex]::Escape("-HostName '$HostName'")) -Because 'audit identity arguments must survive'

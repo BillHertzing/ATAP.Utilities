@@ -163,12 +163,16 @@ Describe 'Consumer probe refresh: Register-ParityConsumerProbeTasks' -Tag 'Unit'
 
   It 'registers one trigger-less S4U task per EvidenceFile consumer, writes its dispatcher, and grants the scheduler start rights' {
     InModuleScope ATAP.Utilities.SystemParityMonitor.PowerShell -Parameters @{ Common = $common; DispatcherDirectory = $dispatcherDirectory } {
+      # This positive registration case isolates task behavior from the agent's inherited TEMP ACL.
+      # The dedicated broad-writable-directory case below exercises the real production guard.
+      Mock Assert-ParityTrustedDirectory { }
       Mock Resolve-ParityAccountSid { 'S-1-5-21-1-2-3-' + [Math]::Abs($AccountName.GetHashCode() % 10000) }
       Mock Register-ParityConsumerProbeTaskDefinition { }
       Mock Grant-ParityScheduledTaskStartRight { [pscustomobject]@{ Changed = $true } }
 
       $results = @(Register-ParityConsumerProbeTasks @Common -Confirm:$false)
 
+      Should -Invoke Assert-ParityTrustedDirectory -Times 1 -Exactly -ParameterFilter { $Path -eq $Common.DispatcherDirectory }
       $results.Count | Should -Be 2
       ($results.LogicalIdentity | Sort-Object) | Should -Be @('BuildMaster', 'Developer')
       $results | ForEach-Object { $_.LogonType | Should -Be 'S4U'; $_.StartRight | Should -Be 'Granted'; $_.Applied | Should -BeTrue }
@@ -203,6 +207,8 @@ Describe 'Consumer probe refresh: Register-ParityConsumerProbeTasks' -Tag 'Unit'
 
   It 'uses Password logon only for the consumer whose credential is supplied' {
     InModuleScope ATAP.Utilities.SystemParityMonitor.PowerShell -Parameters @{ Common = $common } {
+      # Keep the TEMP-ACL fixture correction local to this positive registration case.
+      Mock Assert-ParityTrustedDirectory { }
       Mock Resolve-ParityAccountSid { 'S-1-5-21-1-2-3-1015' }
       Mock Register-ParityConsumerProbeTaskDefinition { }
       Mock Grant-ParityScheduledTaskStartRight { [pscustomobject]@{ Changed = $false } }
@@ -210,6 +216,7 @@ Describe 'Consumer probe refresh: Register-ParityConsumerProbeTasks' -Tag 'Unit'
 
       $results = @(Register-ParityConsumerProbeTasks @Common -Credential $credential -Confirm:$false)
 
+      Should -Invoke Assert-ParityTrustedDirectory -Times 1 -Exactly -ParameterFilter { $Path -eq $Common.DispatcherDirectory }
       ($results | Where-Object LogicalIdentity -eq 'BuildMaster').LogonType | Should -Be 'Password'
       ($results | Where-Object LogicalIdentity -eq 'Developer').LogonType | Should -Be 'S4U'
       $results | ForEach-Object { $_.StartRight | Should -Be 'AlreadyGranted' }

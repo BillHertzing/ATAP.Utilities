@@ -1,6 +1,26 @@
 # Release Notes — ATAP.Utilities.SystemParityMonitor.PowerShell
 
-## 0.1.33 (source only, not released)
+## 0.1.35
+
+- Combine the consumer-probe refresh feature and its single-module test bootstrap with the
+  approved Option A audit/compare profile-loading changes. The intermediate test-only 0.1.34
+  reservation is superseded by the approved combined 0.1.35 identity.
+- Fresh audit/compare registrations load profiles and pass `-RequireProfileSettings`. The task
+  scripts also honor `ATAP_PARITY_REQUIRE_PROFILE_SETTINGS=1` from the ProGet 0.1.28 dispatcher,
+  recording failure when either global settings table is missing or empty.
+- Isolate the two positive consumer-probe registration tests from the test agent's TEMP ACL.
+  The production trusted-directory guard and its dedicated broad-writable negative test remain
+  unchanged. The profile guard test reuses the one preloaded module and complete audit fixtures.
+- Task registration, dispatcher repoint, profile deployment and AceOutpost scheduler rollout
+  remain separately approved operational changes after module deployment.
+
+## 0.1.33 (failed Development release; superseded by 0.1.35)
+
+- BuildMaster release 10442, build 21623, execution 23009 passed 154 of 156 tests. The two
+  positive consumer-registration cases encountered the real trusted-directory guard because
+  the agent's TEMP inherited Authenticated Users Modify. The production guard correctly refused
+  those dispatcher directories. Experimental/Development publication consumed this version;
+  it was not promoted further or installed by that attempt.
 
 - Re-release of 0.1.32's consumer-probe refresh with a **test-only** fix. No product code changed.
 - **0.1.32 failed release** at its Development tier: BuildMaster release 10441, build 21622, execution 23007, 136 of 156 tests passed.

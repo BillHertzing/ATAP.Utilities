@@ -76,7 +76,8 @@ Describe 'SystemParityMonitor scheduled package-manager profile configuration' -
       param($UserId, $LogonType, $RunLevel)
       [pscustomobject]@{ UserId = $UserId; LogonType = $LogonType; RunLevel = $RunLevel }
     }
-    Mock -CommandName Register-ScheduledTask -MockWith {
+    # Synthetic action/trigger/principal objects must reach this fixture, not native CIM binding.
+    Mock -CommandName Register-ScheduledTask -RemoveParameterType @('Action', 'Trigger', 'Settings', 'Principal') -MockWith {
       param($TaskName, $TaskPath, $Action, $Trigger, $Settings, $Principal, [switch] $Force, $ErrorAction)
       $script:scheduledTaskRegistrations += [pscustomobject]@{
         TaskName = $TaskName
@@ -331,8 +332,23 @@ Describe 'SystemParityMonitor scheduled package-manager profile configuration' -
       $script:s4uRegistrations | Should -HaveCount 1
       $arguments = $script:s4uRegistrations[0].Arguments
       $arguments | Should -Match ('-PackageManagerProfilesPath "' + [regex]::Escape($configurationPath) + '"')
-      $arguments | Should -Match '-NoProfile'
+      # Profiles load (operator decision 2026-11-15, Option A); the run fails if they left no settings.
+      $arguments | Should -Not -Match '(?i)-NoProfile'
+      $arguments | Should -Match '-NonInteractive -ExecutionPolicy Bypass -File '
+      $arguments | Should -Match ' -RequireProfileSettings$'
       $arguments | Should -Not -Match 'ATAP\\Developer|SchemaVersion|\{'
+    }
+
+    It 'registers the Task Scheduler cmdlet path with profiles loading and the settings guard' {
+      Register-ParityScheduledTasks -TaskSet AuditAndCompare -StatePath $statePath -HostName 'utat022' -Confirm:$false
+
+      $script:s4uRegistrations | Should -HaveCount 0
+      $script:scheduledTaskRegistrations | Should -HaveCount 2
+      foreach ($registration in $script:scheduledTaskRegistrations) {
+        $registration.Action.Arguments | Should -Not -Match '(?i)-NoProfile'
+        $registration.Action.Arguments | Should -Match '-NonInteractive -ExecutionPolicy Bypass -File "'
+        $registration.Action.Arguments | Should -Match ' -RequireProfileSettings$'
+      }
     }
 
     It 'materializes an explicitly empty array for fail-closed downstream handling' {

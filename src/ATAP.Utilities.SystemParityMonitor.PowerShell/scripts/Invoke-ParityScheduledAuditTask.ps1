@@ -70,7 +70,10 @@ function Invoke-ParityScheduledAuditTask {
 
     [string] $EventLogName = 'Application',
 
-    [string] $EventSource = 'ATAP.SystemParityMonitor'
+    [string] $EventSource = 'ATAP.SystemParityMonitor',
+
+    # Fail the run when the profile did not load $global:settings (also on via ATAP_PARITY_REQUIRE_PROFILE_SETTINGS=1).
+    [switch] $RequireProfileSettings
   )
 
   Set-StrictMode -Version Latest
@@ -90,6 +93,7 @@ function Invoke-ParityScheduledAuditTask {
   $resultPath = Join-Path $ResultDirectory "ParityAuditTaskResult.$($HostName.ToLowerInvariant()).$stamp.json"
 
   try {
+    Assert-ParityProfileSettingsLoaded -Required:$RequireProfileSettings
     $auditParameters = @{
       StatePath = $StatePath
       HostName = $HostName

@@ -17,6 +17,11 @@
   must authenticate to a peer SMB share. That Windows logon credential is solely for task
   registration and peer SMB access; it is not a vault credential.
 
+  Registered actions load PowerShell profiles (no -NoProfile; operator decision 2026-11-15)
+  and pass -RequireProfileSettings, so a run fails visibly when the profile did not load
+  $global:settings. The live hosts use the broker's version-independent dispatchers
+  (BuildTooling.ProGet Register-ATAPParityScheduledTasks), which do the same.
+
 .NOTES
   Dual-purpose script guard: registration only fires under `pwsh -File`; dot-sourcing
   or module import defines the function without side effects (module-loading standard).
@@ -583,9 +588,14 @@ function Register-ParityScheduledTasks {
       # ScheduledTasks module. Credential-backed S4U registration uses Task Scheduler
       # COM exclusively, so do not resolve any ScheduledTasks cmdlet on that path.
       $usesComS4URegistration = $LogonType -eq 'S4U' -and $null -ne $Credential
+      # PowerShell profiles load (no -NoProfile), by operator decision 2026-11-15 ("I would
+      # rather not start any tasks without the profile"). -RequireProfileSettings makes the run
+      # fail visibly if the profile did not populate $global:settings. One string serves both
+      # registration paths so they cannot drift apart.
+      $actionArguments = "-NonInteractive -ExecutionPolicy Bypass -File `"$scriptPath`" $($definition.Arguments) -RequireProfileSettings"
       if (-not $usesComS4URegistration) {
         $action = New-ScheduledTaskAction -Execute $pwshPath `
-          -Argument "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$scriptPath`" $($definition.Arguments)"
+          -Argument $actionArguments
         $trigger = New-ParityScheduledTaskTrigger -Cadence $Cadence -At $definition.At -BiWeeklyDaysOfWeek $BiWeeklyDaysOfWeek
         $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable `
           -AllowStartIfOnBatteries `
@@ -598,7 +608,7 @@ function Register-ParityScheduledTasks {
         if ($usesComS4URegistration) {
           Register-ParityScheduledTaskS4U `
             -TaskName $definition.TaskName -TaskPath $TaskPath -PwshPath $pwshPath `
-            -Arguments "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$scriptPath`" $($definition.Arguments)" `
+            -Arguments $actionArguments `
             -Cadence $Cadence -At $definition.At -BiWeeklyDaysOfWeek $BiWeeklyDaysOfWeek `
             -UserId $UserId -Credential $Credential -RunLevel $RunLevel
         } elseif ($Credential) {

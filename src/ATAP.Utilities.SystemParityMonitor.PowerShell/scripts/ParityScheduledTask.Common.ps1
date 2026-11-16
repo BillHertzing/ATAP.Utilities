@@ -328,3 +328,44 @@ function Set-ParityScheduledTaskNotificationOutcome {
     RecoveryErrorType = $current.RecoveryErrorType
   }
 }
+
+function Assert-ParityProfileSettingsLoaded {
+  <#
+  .SYNOPSIS
+    Fails a scheduled parity run whose PowerShell profile did not load the ATAP settings.
+  .DESCRIPTION
+    The parity tasks load the machine and SvcParityAudit profiles (operator decision 2026-11-15,
+    Option A). A profile error does not stop pwsh from running the -File script, so without this
+    check a broken profile would let the audit run silently without $global:settings.
+
+    The check is on when -Required is set (the fresh-registration path passes
+    -RequireProfileSettings) or when the environment variable ATAP_PARITY_REQUIRE_PROFILE_SETTINGS
+    is '1' (the broker dispatcher sets it, BuildTooling.ProGet 0.1.28+). Otherwise it does nothing,
+    so interactive and test invocations without a profile keep working.
+  .OUTPUTS
+    None. Throws when the check is on and either global is missing or empty.
+  #>
+  [CmdletBinding()]
+  param(
+    [switch] $Required
+  )
+
+  $isRequired = $Required.IsPresent -or ([Environment]::GetEnvironmentVariable('ATAP_PARITY_REQUIRE_PROFILE_SETTINGS', 'Process') -eq '1')
+  if (-not $isRequired) {
+    return
+  }
+
+  # Get-Variable rather than $global:x, which throws under Set-StrictMode when never assigned.
+  $missing = @(foreach ($name in 'settings', 'configRootKeys') {
+      $variable = Get-Variable -Name $name -Scope Global -ErrorAction SilentlyContinue
+      if ($null -eq $variable -or $null -eq $variable.Value -or
+        ($variable.Value -is [System.Collections.ICollection] -and $variable.Value.Count -eq 0)) {
+        "`$global:$name"
+      }
+    })
+  if ($missing.Count -gt 0) {
+    throw ("The PowerShell profile did not load the ATAP settings ({0} missing or empty). The parity task requires " +
+      'the machine and SvcParityAudit profiles; check $PSHOME\profile.ps1, its HostSettings.ps1 link, and the ' +
+      'SvcParityAudit profile.') -f ($missing -join ', ')
+  }
+}

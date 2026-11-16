@@ -45,7 +45,10 @@ function Invoke-ParityScheduledCompareTask {
 
     [string] $EventLogName = 'Application',
 
-    [string] $EventSource = 'ATAP.SystemParityMonitor'
+    [string] $EventSource = 'ATAP.SystemParityMonitor',
+
+    # Fail the run when the profile did not load $global:settings (also on via ATAP_PARITY_REQUIRE_PROFILE_SETTINGS=1).
+    [switch] $RequireProfileSettings
   )
 
   Set-StrictMode -Version Latest
@@ -65,6 +68,7 @@ function Invoke-ParityScheduledCompareTask {
   $resultPath = Join-Path $ResultDirectory "ParityCompareTaskResult.$($LeftHostName.ToLowerInvariant()).$($RightHostName.ToLowerInvariant()).$stamp.json"
 
   try {
+    Assert-ParityProfileSettingsLoaded -Required:$RequireProfileSettings
     $comparisonParameters = @{
       LeftStatePath = $LeftStatePath
       RightStatePath = $RightStatePath

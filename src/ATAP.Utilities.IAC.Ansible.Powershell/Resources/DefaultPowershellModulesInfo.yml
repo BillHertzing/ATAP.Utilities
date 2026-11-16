@@ -94,10 +94,6 @@ Plaster:
   Notes:
   AllowPrerelease: false
   Version: Latest
-platyPS:
-  Notes:
-  AllowPrerelease: false
-  Version: Latest
 powershell-yaml:
   Notes:
   AllowPrerelease: false

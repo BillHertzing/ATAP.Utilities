@@ -33,7 +33,7 @@ Copyright = '(c) Bill Hertzing for ATAPUtilities.org. All rights reserved.'
 Description = 'BuildTooling ATAP.Utilities.BuildTooling.SprintLifecycle.PowerShell child module.'
 
 # Minimum version of the PowerShell engine required by this module
-PowerShellVersion = '7.0'
+PowerShellVersion = '7.4'
 
 # Name of the PowerShell host required by this module
 # PowerShellHostName = ''
@@ -52,6 +52,7 @@ PowerShellVersion = '7.0'
 
 # Modules that must be imported into the global environment prior to importing this module
 RequiredModules = @(
+  @{ ModuleName = 'PSFramework'; ModuleVersion = '1.14.457' },
   @{ ModuleName = 'ATAP.Utilities.BuildTooling.AiRendering.PowerShell'; ModuleVersion = '0.1.0' },
   @{ ModuleName = 'ATAP.Utilities.BuildTooling.BuildMaster.PowerShell'; ModuleVersion = '0.1.0' },
   @{ ModuleName = 'ATAP.Utilities.BuildTooling.Common.PowerShell'; ModuleVersion = '0.1.7' },
@@ -78,6 +79,7 @@ RequiredModules = @(
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
 FunctionsToExport = @(
+  'Initialize-SprintStreamProgress', 'Import-SprintChatActivity', 'Update-SprintStreamProgress',
   'Clear-SprintGeneratedArtifacts', 'Complete-GatherCallRecordSegment', 'Convert-TasksMdToSprintBoard', 'Get-SprintEndApprovalPlan',
   'Get-SprintEndContext',
   'Get-SprintHistoryReconstruction', 'Initialize-CorpusStorageBoundary', 'Initialize-DownstreamSprintFromSharedVSCode',

@@ -258,3 +258,12 @@ handoff; UTAT01 remains separately scoped under Task16.64.
 Version 0.1.48 bounds retries of transient atomic receipt-replacement failures
 without repeating worktree removal. Persistent denial preserves the prior receipt
 and fails closed after six attempts; no permission or attribute changes are made.
+
+## Stream progress page
+
+The source command surface now includes `Initialize-SprintStreamProgress`,
+`Import-SprintChatActivity` and `Update-SprintStreamProgress`. See
+[Stream progress commands](Documentation/StreamProgress.md) for the pinned-input
+contracts, review-only import, manual publication and deferred orchestrator
+adapter. The new commands are source/manual verified; immutable package release
+and AllUsers installation are separate deployment steps.

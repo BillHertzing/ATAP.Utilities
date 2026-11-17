@@ -555,8 +555,24 @@ function Reset-SprintDatabases {
           -DefaultValue $null `
           -AllowMissing `
           -AsType ([string])
+        # Default file layout: the instance's own Data and Log folders, one sub-folder per
+        # database (C:\LocalDBs\<INSTANCE>\Data\<db> and ...\Log\<db>). This is the
+        # Task 14.74 layout standard that Test-ParitySqlPathsConform checks, and the same
+        # shape Rebuild-All-AllInstances uses. A per-database sub-folder (never the Data
+        # or Log folder itself) is required because DatabaseProvisioning -Force deletes
+        # the path it is given recursively.
         if ([string]::IsNullOrWhiteSpace($resolvedDatabasePath)) {
-          $resolvedDatabasePath = Join-Path (Join-Path 'C:\LocalDBs' $instanceName) $db
+          $resolvedDatabasePath = Join-Path (Join-Path (Join-Path 'C:\LocalDBs' $instanceName) 'Data') $db
+        }
+
+        $resolvedDatabaseLogPath = Resolve-ResetSprintDatabaseSetting `
+          -Name 'DatabaseLogPath' `
+          -DottedPath "$db.$environment.DatabaseLogPath" `
+          -DefaultValue $null `
+          -AllowMissing `
+          -AsType ([string])
+        if ([string]::IsNullOrWhiteSpace($resolvedDatabaseLogPath)) {
+          $resolvedDatabaseLogPath = Join-Path (Join-Path (Join-Path 'C:\LocalDBs' $instanceName) 'Log') $db
         }
 
         $resolvedProvisioningScriptsPath = Resolve-ResetSprintDatabaseSetting `
@@ -704,6 +720,9 @@ function Reset-SprintDatabases {
           }
           if (-not [string]::IsNullOrWhiteSpace($resolvedDatabasePath) -and $buildDatabaseWithFlywayParameters -contains 'DatabasePath') {
             $buildParams['DatabasePath'] = $resolvedDatabasePath
+          }
+          if (-not [string]::IsNullOrWhiteSpace($resolvedDatabaseLogPath) -and $buildDatabaseWithFlywayParameters -contains 'DatabaseLogPath') {
+            $buildParams['DatabaseLogPath'] = $resolvedDatabaseLogPath
           }
           if (-not [string]::IsNullOrWhiteSpace($resolvedProvisioningScriptsPath) -and $buildDatabaseWithFlywayParameters -contains 'ProvisioningScriptsPath') {
             $buildParams['ProvisioningScriptsPath'] = $resolvedProvisioningScriptsPath

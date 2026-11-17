@@ -79,6 +79,7 @@ BeforeAll {
       [string]$ApplicationName,
       [switch]$UseTrustedConnection,
       [string]$DatabasePath,
+      [string]$DatabaseLogPath,
       [string]$ProvisioningScriptsPath,
       [string]$FlywayBasePath,
       [string]$FlywayTomlPath,
@@ -182,7 +183,24 @@ Describe 'Reset-SprintDatabases [public]' {
     [string]::IsNullOrWhiteSpace($call['DBConnectionStringDBSecretName']) | Should -BeTrue
   }
 
-  It 'uses an instance-scoped default database path when settings do not provide one' {
+  It 'derives default file paths that satisfy the parity SQL layout rule and are never the Data or Log folder itself' {
+    Reset-SprintDatabases `
+      -InstanceNames @('DEVWHERTZING') `
+      -Databases @('ATAPUtilities') `
+      -FlywayBasePath $script:flywayBase `
+      -RepositoryRoot $script:tempRepoRoot `
+      -Confirm:$false | Out-Null
+
+    $call = $global:DatabasePackagingFlywayCalls | Where-Object { $_['SqlInstance'] -eq 'DEVWHERTZING' } | Select-Object -First 1
+    # The same -like tests Test-ParitySqlPathsConform applies to every database file.
+    ($call['DatabasePath'] + '\ATAPUtilities.mdf') | Should -BeLike 'C:\LocalDBs\DEVWHERTZING\Data\*'
+    ($call['DatabaseLogPath'] + '\ATAPUtilities_log.ldf') | Should -BeLike 'C:\LocalDBs\DEVWHERTZING\Log\*'
+    # DatabaseProvisioning -Force removes the given folder recursively, so it must be a per-database sub-folder.
+    $call['DatabasePath'].TrimEnd('\') | Should -Not -BeLike 'C:\LocalDBs\DEVWHERTZING\Data'
+    $call['DatabaseLogPath'].TrimEnd('\') | Should -Not -BeLike 'C:\LocalDBs\DEVWHERTZING\Log'
+  }
+
+  It 'defaults sprint database files to the instance Data and Log folders when settings do not provide paths' {
     Reset-SprintDatabases `
       -InstanceNames @('Devtester', 'Exptester') `
       -Databases @('ATAPUtilities') `
@@ -190,8 +208,8 @@ Describe 'Reset-SprintDatabases [public]' {
       -RepositoryRoot $script:tempRepoRoot `
       -Confirm:$false | Out-Null
 
-    @($global:DatabasePackagingFlywayCalls | Where-Object { $_['SqlInstance'] -eq 'Devtester' -and $_['DatabasePath'] -eq 'C:\LocalDBs\Devtester\ATAPUtilities' }).Count | Should -Be 1
-    @($global:DatabasePackagingFlywayCalls | Where-Object { $_['SqlInstance'] -eq 'Exptester' -and $_['DatabasePath'] -eq 'C:\LocalDBs\Exptester\ATAPUtilities' }).Count | Should -Be 1
+    @($global:DatabasePackagingFlywayCalls | Where-Object { $_['SqlInstance'] -eq 'Devtester' -and $_['DatabasePath'] -eq 'C:\LocalDBs\Devtester\Data\ATAPUtilities' -and $_['DatabaseLogPath'] -eq 'C:\LocalDBs\Devtester\Log\ATAPUtilities' }).Count | Should -Be 1
+    @($global:DatabasePackagingFlywayCalls | Where-Object { $_['SqlInstance'] -eq 'Exptester' -and $_['DatabasePath'] -eq 'C:\LocalDBs\Exptester\Data\ATAPUtilities' -and $_['DatabaseLogPath'] -eq 'C:\LocalDBs\Exptester\Log\ATAPUtilities' }).Count | Should -Be 1
   }
 
   It 'prefers an explicitly supplied current provisioning-script path over stale settings' {
@@ -231,7 +249,8 @@ Describe 'Reset-SprintDatabases [public]' {
           CredentialsKey               = 'legacy-credentials-key'
           DBConnectionStringMasterSecretName = 'ATAPUtilitiesDevelopmentMasterConnectionString'
           DBConnectionStringDBSecretName = 'ATAPUtilitiesDevelopmentDBConnectionString'
-          DatabasePath                 = 'C:\LocalDBs\Development\ATAPUtilities'
+          DatabasePath                 = 'C:\LocalDBs\Devtester\Data\ATAPUtilities'
+          DatabaseLogPath              = 'C:\LocalDBs\Devtester\Log\ATAPUtilities'
           ProvisioningScriptsPath      = $settingsProvisioningPath
           FlywayBasePath               = $settingsFlywayBasePath
           FlywaySqlMigrationsPath      = (Join-Path $settingsFlywayBasePath 'SQL')
@@ -255,7 +274,8 @@ Describe 'Reset-SprintDatabases [public]' {
     $call['DBConnectionStringMasterSecretName'] | Should -Be 'ATAPUtilitiesDevelopmentMasterConnectionString'
     $call['DBConnectionStringDBSecretName'] | Should -Be 'ATAPUtilitiesDevelopmentDBConnectionString'
     [string]::IsNullOrWhiteSpace($call['DBConnectionStringSecretName']) | Should -BeTrue
-    $call['DatabasePath'] | Should -Be 'C:\LocalDBs\Development\ATAPUtilities'
+    $call['DatabasePath'] | Should -Be 'C:\LocalDBs\Devtester\Data\ATAPUtilities'
+    $call['DatabaseLogPath'] | Should -Be 'C:\LocalDBs\Devtester\Log\ATAPUtilities'
     $call['ProvisioningScriptsPath'] | Should -Be $settingsProvisioningPath
     $call['FlywayBasePath'] | Should -Be $settingsFlywayBasePath
     $call['FlywaySqlMigrationsPath'] | Should -Be (Join-Path $settingsFlywayBasePath 'SQL')

@@ -7,6 +7,7 @@ BeforeAll {
 Describe 'SprintLifecycle module dependency contract' -Tag 'Unit' {
   It 'declares every frozen direct child dependency at its deployed minimum version' {
     $expectedDependencies = [ordered]@{
+      'PSFramework'                                             = [version]'1.14.457'
       'ATAP.Utilities.BuildTooling.AiRendering.PowerShell'       = [version]'0.1.0'
       'ATAP.Utilities.BuildTooling.BuildMaster.PowerShell'       = [version]'0.1.0'
       'ATAP.Utilities.BuildTooling.Common.PowerShell'            = [version]'0.1.7'
@@ -52,3 +53,4 @@ Describe 'SprintLifecycle module dependency contract' -Tag 'Unit' {
     @($script:manifest.VariablesToExport).Count | Should -Be 0
   }
 }
+

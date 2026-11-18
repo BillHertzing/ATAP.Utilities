@@ -77,6 +77,10 @@ Describe 'Set-GlobalConfigRootKeys population' -Tag 'Unit' {
     $global:configRootKeys['SystemParityMonitorPackageManagerProfilesConfigRootKey'] | Should -BeExactly 'PackageManagerProfiles'
     $global:configRootKeys['SystemParityMonitorSharedDotNetToolPolicyConfigRootKey'] | Should -BeExactly 'SharedDotNetToolPolicy'
     $global:configRootKeys['SystemParityMonitorExpectedSurfaceMinimumCountsConfigRootKey'] | Should -BeExactly 'ExpectedSurfaceMinimumCounts'
+    $global:configRootKeys['PackageOwnershipConfigRootKey'] | Should -BeExactly 'PackageOwnership'                       # Set-PackageOwnershipConfigRootKeys
+    $global:configRootKeys['PackageOwnershipSchemaVersionConfigRootKey'] | Should -BeExactly 'SchemaVersion'
+    $global:configRootKeys['PackageOwnershipManagerOwnershipConfigRootKey'] | Should -BeExactly 'ManagerOwnership'
+    $global:configRootKeys.ContainsKey('PackageOwnershipDotNetBaselineConfigRootKey') | Should -BeFalse                  # deferred (WinGet Plan r21 R19.4)
     $global:configRootKeys.ContainsKey('BuildMasterBaseUrlConfigRootKey') | Should -BeTrue                # Set-BuildMasterConfigRootKeys
     $global:configRootKeys.ContainsKey('BuildMasterApplicationByModuleConfigRootKey') | Should -BeTrue    # Set-BuildMasterConfigRootKeys (module->application map)
     $global:configRootKeys.ContainsKey('RulesManagementDatabaseHostConfigRootKey') | Should -BeTrue       # Set-RulesManagementConfigRootKeys
@@ -124,6 +128,33 @@ Describe 'Set-GlobalConfigRootKeys population' -Tag 'Unit' {
     $parityIndex | Should -BeGreaterThan $sqlIndex
     $buildMasterIndex | Should -BeGreaterThan $parityIndex
   }
+
+  It 'keeps the PackageOwnership section after SystemParityMonitor and before BuildMaster' {
+    $source = Get-Content -LiteralPath (Join-Path $script:publicDir 'Set-GlobalConfigRootKeys.ps1') -Raw
+    $parityIndex = $source.IndexOf("'Set-SystemParityMonitorConfigRootKeys'", [StringComparison]::Ordinal)
+    $ownershipIndex = $source.IndexOf("'Set-PackageOwnershipConfigRootKeys'", [StringComparison]::Ordinal)
+    $buildMasterIndex = $source.IndexOf("'Set-BuildMasterConfigRootKeys'", [StringComparison]::Ordinal)
+
+    $ownershipIndex | Should -BeGreaterThan $parityIndex
+    $buildMasterIndex | Should -BeGreaterThan $ownershipIndex
+  }
+
+  It 'repopulates the same exact PackageOwnership contract on repeated global initialization' {
+    Set-GlobalConfigRootKeys -Confirm:$false
+    $first = @(
+      $global:configRootKeys['PackageOwnershipConfigRootKey']
+      $global:configRootKeys['PackageOwnershipSchemaVersionConfigRootKey']
+      $global:configRootKeys['PackageOwnershipManagerOwnershipConfigRootKey']
+    )
+
+    { Set-GlobalConfigRootKeys -Confirm:$false } | Should -Not -Throw
+
+    @(
+      $global:configRootKeys['PackageOwnershipConfigRootKey']
+      $global:configRootKeys['PackageOwnershipSchemaVersionConfigRootKey']
+      $global:configRootKeys['PackageOwnershipManagerOwnershipConfigRootKey']
+    ) | Should -Be $first
+  }
 }
 
 Describe 'Set-GlobalConfigRootKeys in-module sibling resolution' -Tag 'Unit' {
@@ -159,6 +190,7 @@ Describe 'Set-GlobalConfigRootKeys in-module sibling resolution' -Tag 'Unit' {
       'Add-DatabasesConfigRootKeys'
       'Set-SqlInstanceTopologyConfigRootKeys'
       'Set-SystemParityMonitorConfigRootKeys'
+      'Set-PackageOwnershipConfigRootKeys'
       'Set-BuildMasterConfigRootKeys'
       'Set-RulesManagementConfigRootKeys'
       'Add-PackageRepositoriesConfigRootKeys'
@@ -193,6 +225,7 @@ Describe 'ConfigRootKeys section functions precondition guard' -Tag 'Unit' {
     . (Join-Path $script:publicDir 'Add-DatabasesConfigRootKeys.ps1')
     . (Join-Path $script:publicDir 'Set-SqlInstanceTopologyConfigRootKeys.ps1')
     . (Join-Path $script:publicDir 'Set-SystemParityMonitorConfigRootKeys.ps1')
+    . (Join-Path $script:publicDir 'Set-PackageOwnershipConfigRootKeys.ps1')
   }
 
   It 'Set-BuildMasterConfigRootKeys throws when $global:configRootKeys is null' {
@@ -214,10 +247,21 @@ Describe 'ConfigRootKeys section functions precondition guard' -Tag 'Unit' {
     $global:configRootKeys = $null
     { Set-SystemParityMonitorConfigRootKeys -Confirm:$false } | Should -Throw -ExpectedMessage '*not initialized*'
   }
+
+  It 'Set-PackageOwnershipConfigRootKeys throws when $global:configRootKeys is null' {
+    $global:configRootKeys = $null
+    { Set-PackageOwnershipConfigRootKeys -Confirm:$false } | Should -Throw -ExpectedMessage '*not initialized*'
+  }
+
+  It 'Set-PackageOwnershipConfigRootKeys adds nothing under -WhatIf' {
+    $global:configRootKeys = @{}
+    Set-PackageOwnershipConfigRootKeys -WhatIf
+    $global:configRootKeys.Count | Should -Be 0
+  }
 }
 
 Describe 'Orchestration section source integration' -Tag 'Unit' {
-  It 'orders Orchestration immediately after Core while preserving the prior seven sections' {
+  It 'orders Orchestration immediately after Core while preserving the other sections' {
     $source = Get-Content -LiteralPath (Join-Path $script:publicDir 'Set-GlobalConfigRootKeys.ps1') -Raw
     $block = [regex]::Match($source, '(?s)\$configRootKeySectionFunctions\s*=\s*@\((.*?)\)').Groups[1].Value
     $sections = @([regex]::Matches($block, "'([^']+)'") | ForEach-Object { $_.Groups[1].Value })
@@ -227,6 +271,7 @@ Describe 'Orchestration section source integration' -Tag 'Unit' {
       'Add-DatabasesConfigRootKeys'
       'Set-SqlInstanceTopologyConfigRootKeys'
       'Set-SystemParityMonitorConfigRootKeys'
+      'Set-PackageOwnershipConfigRootKeys'
       'Set-BuildMasterConfigRootKeys'
       'Set-RulesManagementConfigRootKeys'
       'Add-PackageRepositoriesConfigRootKeys'

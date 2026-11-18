@@ -38,9 +38,10 @@ Every file in `public/` is an **eponymous advanced function** (cmdlet shape with
 | `public/Set-DatabasesAceCommanderConfigRootKeys.ps1`  |  3b   | Per-database section function for the AceCommander database name key.                              |
 | `public/Set-SqlInstanceTopologyConfigRootKeys.ps1`    |  4    | Host-invariant schema keys for the ATAP.IAC SQL host/instance topology map (identity, lifecycle, paths, and fixed TCP port fields). |
 | `public/Set-SystemParityMonitorConfigRootKeys.ps1` | 5 | SystemParityMonitor schema and package-profile key constants. |
-| `public/Set-BuildMasterConfigRootKeys.ps1`            |  6    | BuildMaster automation paths, endpoint, and the module→application map (`BuildMasterApplicationByModuleConfigRootKey`) key constants. |
-| `public/Set-RulesManagementConfigRootKeys.ps1`        |  7    | Rules-Management framework key constants.                                                          |
-| `public/Add-PackageRepositoriesConfigRootKeys.ps1`    |  8    | **Single source of truth** for ProGet / NuGet / PowerShellGet feed key constants, including canonical ProGet admin and BuildMaster API-key SecretName setting keys. Five-tier canonical set (Experimental / Development / Integration / QA / Stable). Loads no sub-fragments. |
+| `public/Set-PackageOwnershipConfigRootKeys.ps1` | 6 | Package-manager ownership key constants: `PackageOwnershipConfigRootKey` → `PackageOwnership`, `PackageOwnershipSchemaVersionConfigRootKey` → `SchemaVersion`, `PackageOwnershipManagerOwnershipConfigRootKey` → `ManagerOwnership` (WinGet Plan r21 R19.4 narrow contract; no DotNetBaseline key yet). Values come from ATAP.IAC `HostSettings.IAC.Fragment.PackageOwnership.ps1`. |
+| `public/Set-BuildMasterConfigRootKeys.ps1`            |  7    | BuildMaster automation paths, endpoint, and the module→application map (`BuildMasterApplicationByModuleConfigRootKey`) key constants. |
+| `public/Set-RulesManagementConfigRootKeys.ps1`        |  8    | Rules-Management framework key constants.                                                          |
+| `public/Add-PackageRepositoriesConfigRootKeys.ps1`    |  9    | **Single source of truth** for ProGet / NuGet / PowerShellGet feed key constants, including canonical ProGet admin and BuildMaster API-key SecretName setting keys. Five-tier canonical set (Experimental / Development / Integration / QA / Stable). Loads no sub-fragments. |
 
 ### Explicit loading — no fragment discovery
 

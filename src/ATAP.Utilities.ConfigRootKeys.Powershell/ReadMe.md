@@ -22,7 +22,7 @@ function — `Set-CoreConfigRootKeys`, `Set-OrchestrationConfigRootKeys`, then
 `Add-DatabasesConfigRootKeys` (which in turn
 invokes the per-database `Set-Databases*ConfigRootKeys` functions),
 `Set-SqlInstanceTopologyConfigRootKeys`, `Set-SystemParityMonitorConfigRootKeys`,
-`Set-BuildMasterConfigRootKeys`,
+`Set-PackageOwnershipConfigRootKeys`, `Set-BuildMasterConfigRootKeys`,
 `Set-RulesManagementConfigRootKeys`, and
 `Add-PackageRepositoriesConfigRootKeys` — **by name, in a fixed order**.
 
@@ -36,6 +36,15 @@ mutate the dictionary.
 The SQL topology section defines only host-invariant schema keys. ATAP.IAC's
 `HostSettings.IAC.Fragment.SqlInstanceTopology.ps1` remains the single source of
 truth for current/planned hosts, instance names, filesystem paths, and TCP ports.
+
+The package-ownership section defines three keys only: the section root
+`PackageOwnership`, its `SchemaVersion`, and `ManagerOwnership`. This is the
+narrow contract of WinGet Plan r21 section R19.4. ATAP.IAC's
+`HostSettings.IAC.Fragment.PackageOwnership.ps1` supplies the values; on both
+hosts, WinGet owns `SQLite.SQLite` and `PDQ.PDQInventory`, and Chocolatey ids
+matching `^sqlite$` or `^pdq-inventory$` are excluded. Consumers read
+`$global:settings[$crk['PackageOwnershipConfigRootKey']][$crk['PackageOwnershipManagerOwnershipConfigRootKey']]`.
+The broader plan's `DotNetBaseline` key is deliberately not registered yet.
 
 The package-repository section also defines canonical settings keys for ProGet
 credential **SecretName references**: `ProGetAdminApiKeySecretName` and

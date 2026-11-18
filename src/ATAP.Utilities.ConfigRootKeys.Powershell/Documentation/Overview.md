@@ -22,3 +22,12 @@ orchestration name constants only. An initialized Hashtable is required; all
 conflicts are checked before additions, equivalent repeat calls are idempotent,
 and `-WhatIf` leaves keys unchanged. The candidate has not been deployed and
 establishes no host settings, defaults, measurements or operational admission.
+
+`Set-PackageOwnershipConfigRootKeys` runs after the SystemParityMonitor section
+and before BuildMaster. It registers the package-manager ownership vocabulary:
+`PackageOwnership` (section), `SchemaVersion` and `ManagerOwnership`. ATAP.IAC
+publishes the values per host. SystemParityMonitor reads `ManagerOwnership`
+(`WinGet` package ids and `ChocolateyExcluded` regex patterns) so that drift
+remediation never hands a WinGet-owned package back to Chocolatey. Until the
+release that contains these keys is installed, ATAP.IAC's `Hosts.ps1` defers the
+PackageOwnership fragment rather than failing profile load.

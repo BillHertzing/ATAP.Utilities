@@ -12,7 +12,7 @@
     RootModule           = 'ATAP.Utilities.ConfigRootKeys.Powershell.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '0.1.19'
+    ModuleVersion        = '0.1.20'
 
     # Supported PSEditions
     CompatiblePSEditions = 'Desktop', 'Core'
@@ -85,6 +85,7 @@
     'Set-DatabasesATAPUtilitiesConfigRootKeys',
     'Set-GlobalConfigRootKeys',
     'Set-OrchestrationConfigRootKeys',
+    'Set-PackageOwnershipConfigRootKeys',
     'Set-RulesManagementConfigRootKeys',
     'Set-SqlInstanceTopologyConfigRootKeys',
     'Set-SystemParityMonitorConfigRootKeys'

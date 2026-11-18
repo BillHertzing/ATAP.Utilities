@@ -22,9 +22,11 @@ Invocation order (each step depends on the hashtable created by the first):
                                          per-database section functions.
   4. Set-SqlInstanceTopologyConfigRootKeys — SQL host/instance topology schema keys.
   5. Set-SystemParityMonitorConfigRootKeys — parity schema and package-profile keys.
-  6. Set-BuildMasterConfigRootKeys     — BuildMaster automation-path / endpoint keys.
-  7. Set-RulesManagementConfigRootKeys — Rules-Management framework keys.
-  8. Add-PackageRepositoriesConfigRootKeys — ProGet / NuGet / PowerShellGet keys.
+  6. Set-PackageOwnershipConfigRootKeys — package-manager ownership keys (root,
+                                         schema version, ManagerOwnership).
+  7. Set-BuildMasterConfigRootKeys     — BuildMaster automation-path / endpoint keys.
+  8. Set-RulesManagementConfigRootKeys — Rules-Management framework keys.
+  9. Add-PackageRepositoriesConfigRootKeys — ProGet / NuGet / PowerShellGet keys.
 
 In-module sibling resolution (development-from-source guard)
 ------------------------------------------------------------
@@ -100,6 +102,7 @@ function Set-GlobalConfigRootKeys {
       'Add-DatabasesConfigRootKeys'
       'Set-SqlInstanceTopologyConfigRootKeys'
       'Set-SystemParityMonitorConfigRootKeys'
+      'Set-PackageOwnershipConfigRootKeys'
       'Set-BuildMasterConfigRootKeys'
       'Set-RulesManagementConfigRootKeys'
       'Add-PackageRepositoriesConfigRootKeys'

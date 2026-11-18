@@ -1,6 +1,13 @@
 # Release notes
 
-## 0.1.4
+## 0.1.5
+
+- Same code as 0.1.4. The runner-identity refusal test now uses a binding naming the
+  Nobody SID (`S-1-0-0`), so it holds under SvcBuildmaster in BuildMaster too.
+- 0.1.4 is burned: it failed at the Experimental stage (BuildMaster build 21628)
+  and reached only the experimental and development feeds.
+
+## 0.1.4 (burned, not released)
 
 - `Reset-SprintDatabases` places sprint database data and log files in the
   target instance's default Data and Log folders (parity fix G7).

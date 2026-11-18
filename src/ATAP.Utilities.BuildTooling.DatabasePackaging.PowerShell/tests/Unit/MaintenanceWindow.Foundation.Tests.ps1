@@ -411,12 +411,15 @@ Describe 'Invoke-DatabaseMaintenanceWindow (PrecheckOnly)' -Tag 'Unit', 'Mainten
     }
   }
   It 'refuses when the process is not the binding runner, before any SQL' {
-    $t = New-TestBinding
-    InModuleScope $script:moduleName -Parameters @{ p = $t.Path; h = $t.Sha256 } {
-      param($p, $h)
+    # The binding names the well-known Nobody SID (S-1-0-0), which is never a process token user.
+    # A real binding must name SvcBuildmaster, and BuildMaster runs these tests as SvcBuildmaster,
+    # so a New-TestBinding binding would match the runner there (Release-DatabasePackaging-G7, build 21628).
+    InModuleScope $script:moduleName {
+      $binding = [pscustomobject]@{ attempt = 'A01'; expectedSid = 'S-1-0-0'; evidenceRoot = 'unused'; databaseManagementVersion = '0.1.26' }
+      Mock Assert-MaintenanceWindowBinding { [pscustomobject]@{ Binding = $binding; BindingSha256 = ('B' * 64); TierMap = (Get-MaintenanceWindowTierMap -Tier Development); RehearsalName = 'r' } }
       Mock Assert-MaintenanceWindowDependency { [pscustomobject]@{ ModuleBase = 'X' } }
       Mock Invoke-MaintenanceSqlDataSet { throw 'must not run' }
-      { Invoke-DatabaseMaintenanceWindow -Tier Development -Mode PrecheckOnly -BindingPath $p -ExpectedBindingSha256 $h } | Should -Throw 'MaintenanceWindowRunnerIdentityMismatch|*'
+      { Invoke-DatabaseMaintenanceWindow -Tier Development -Mode PrecheckOnly -BindingPath 'unused' -ExpectedBindingSha256 ('B' * 64) } | Should -Throw 'MaintenanceWindowRunnerIdentityMismatch|*'
       Should -Invoke Invoke-MaintenanceSqlDataSet -Times 0 -Exactly
     }
   }

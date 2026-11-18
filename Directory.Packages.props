@@ -149,10 +149,6 @@
     <!-- Task Parallel (TPL) Library -->
     <PackageVersion Include="System.Threading.Tasks.Dataflow" Version="9.0.0" />
   </ItemGroup>
-  <ItemGroup Label="Object Mapping">
-    <!-- The Automapper Package (13.0.1 had high severity vulnerability GHSA-rvv3-g6hj-g44x) -->
-    <PackageVersion Include="AutoMapper" Version="13.0.2" />
-  </ItemGroup>
   <ItemGroup Label="MSBuild Custom Tasks">
     <!-- Packages used for custom build tasks -->
     <PackageVersion Include="docfx.console" Version="2.48.1" />

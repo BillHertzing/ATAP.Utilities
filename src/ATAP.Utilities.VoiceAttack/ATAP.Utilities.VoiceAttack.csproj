@@ -85,10 +85,11 @@
     <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>
 
-  <!-- The Automapper Package -->
-  <ItemGroup>
-    <PackageReference Include="AutoMapper" />
-  </ItemGroup>
+  <!-- AutoMapper removed 2026-11-18: 14.0.0 had high severity GHSA-rvv3-g6hj-g44x, GHSA-gpwp-5797-mjff
+       and GHSA-6vhm-j9h7-f9gh, and the fixed releases (15.1.4+) are commercially licensed. This project
+       is out of every solution and is not built; DataVA.cs, MessageQueuePayloadVAGameAOE.cs and
+       PluginVAGameAOE.cs still use AutoMapper and will not compile until the mapping is replaced.
+       To be revisited as a possible Ace Outpost bolt-on. -->
 
   <!-- Configuration Settings files -->
   <ItemGroup>

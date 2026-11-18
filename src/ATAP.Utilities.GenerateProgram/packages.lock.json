@@ -502,11 +502,6 @@
         "resolved": "4.7.0",
         "contentHash": "VybpaOQQhqE6siHppMktjfGBw1GCwvCqiufqmP8F1nj7fTUNtW35LOEt3UZTEsECfo+ELAl/9o9nJx3U91i7vA=="
       },
-      "System.Security.Cryptography.Pkcs": {
-        "type": "Transitive",
-        "resolved": "9.0.4",
-        "contentHash": "cUFTcMlz/Qw9s90b2wnWSCvHdjv51Bau9FQqhsr4TlwSe1OX+7SoXUqphis5G74MLOvMOCghxPPlEqOdCrVVGA=="
-      },
       "atap.utilities.collection.extensions": {
         "type": "Project",
         "dependencies": {
@@ -620,6 +615,12 @@
         "requested": "[5.0.0, )",
         "resolved": "5.0.0",
         "contentHash": "erBZjkQHWL9jpasCE/0qKAryzVBJFxGHVBAvgRN1bzM0q2s1S4oYREEEL0Vb+1kA/6BKb5FjUZMp5VXmy+gzkQ=="
+      },
+      "System.Security.Cryptography.Pkcs": {
+        "type": "CentralTransitive",
+        "requested": "[10.0.15, )",
+        "resolved": "10.0.15",
+        "contentHash": "4jEv/lXDuQkh60lPU3hlwASErXdv1ZMKmsxVuBfZWiVKT5Q2QGo58kTa6rN519+PU+m4Hsj1m3yT8fN+Xw0XZw=="
       },
       "System.Security.Cryptography.ProtectedData": {
         "type": "CentralTransitive",
@@ -769,8 +770,11 @@
       },
       "Microsoft.Bcl.Cryptography": {
         "type": "Transitive",
-        "resolved": "8.0.0",
-        "contentHash": "Y3t/c7C5XHJGFDnohjf1/9SYF3ZOfEU1fkNQuKg/dGf9hN18yrQj2owHITGfNS3+lKJdW6J4vY98jYu57jCO8A=="
+        "resolved": "10.0.15",
+        "contentHash": "hJw6ERV3MBPjI/nhGPAUQMLBhc0xu2UPxcUuKPgrhsGiV0uKEcZknXICvo14PL+v37U9SdZFCUYo19qbkvLg3A==",
+        "dependencies": {
+          "System.Formats.Asn1": "10.0.15"
+        }
       },
       "Microsoft.Build.Tasks.Git": {
         "type": "Transitive",
@@ -1109,6 +1113,11 @@
         "resolved": "9.0.0",
         "contentHash": "qd01+AqPhbAG14KtdtIqFk+cxHQFZ/oqRSCoxU1F+Q6Kv0cl726sl7RzU9yLFGd4BUOKdN4XojXF0pQf/R6YeA=="
       },
+      "System.Formats.Asn1": {
+        "type": "Transitive",
+        "resolved": "10.0.15",
+        "contentHash": "v74r4sIPf6jj80nBIISv4duxjrEvuyAOPQFHb7EePO7elvjfjGsdMpG8lbTm1nG+osyvXLg80A9qsygaTfsjrQ=="
+      },
       "System.IdentityModel.Tokens.Jwt": {
         "type": "Transitive",
         "resolved": "7.7.1",
@@ -1132,11 +1141,6 @@
         "type": "Transitive",
         "resolved": "8.0.1",
         "contentHash": "BVYuec3jV23EMRDeR7Dr1/qhx7369dZzJ9IWy2xylvb4YfXsrUxspWc4UWYid/tj4zZK58uGZqn2WQiaDMhmAg=="
-      },
-      "System.Security.Cryptography.Pkcs": {
-        "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA=="
       },
       "System.Text.Encodings.Web": {
         "type": "Transitive",
@@ -1255,6 +1259,16 @@
         "requested": "[5.0.0, )",
         "resolved": "5.0.0",
         "contentHash": "erBZjkQHWL9jpasCE/0qKAryzVBJFxGHVBAvgRN1bzM0q2s1S4oYREEEL0Vb+1kA/6BKb5FjUZMp5VXmy+gzkQ=="
+      },
+      "System.Security.Cryptography.Pkcs": {
+        "type": "CentralTransitive",
+        "requested": "[10.0.15, )",
+        "resolved": "10.0.15",
+        "contentHash": "4jEv/lXDuQkh60lPU3hlwASErXdv1ZMKmsxVuBfZWiVKT5Q2QGo58kTa6rN519+PU+m4Hsj1m3yT8fN+Xw0XZw==",
+        "dependencies": {
+          "Microsoft.Bcl.Cryptography": "10.0.15",
+          "System.Formats.Asn1": "10.0.15"
+        }
       },
       "System.Security.Cryptography.ProtectedData": {
         "type": "CentralTransitive",
@@ -1413,8 +1427,8 @@
       },
       "Microsoft.Bcl.Cryptography": {
         "type": "Transitive",
-        "resolved": "9.0.4",
-        "contentHash": "YgZYAWzyNuPVtPq6WNm0bqOWNjYaWgl5mBWTGZyNoXitYBUYSp6iUB9AwK0V1mo793qRJUXz2t6UZrWITZSvuQ=="
+        "resolved": "10.0.15",
+        "contentHash": "hJw6ERV3MBPjI/nhGPAUQMLBhc0xu2UPxcUuKPgrhsGiV0uKEcZknXICvo14PL+v37U9SdZFCUYo19qbkvLg3A=="
       },
       "Microsoft.Build.Tasks.Git": {
         "type": "Transitive",
@@ -1750,6 +1764,11 @@
         "resolved": "9.0.4",
         "contentHash": "getRQEXD8idlpb1KW56XuxImMy0FKp2WJPDf3Qr0kI/QKxxJSftqfDFVo0DZ3HCJRLU73qHSruv5q2l5O47jQQ=="
       },
+      "System.Formats.Asn1": {
+        "type": "Transitive",
+        "resolved": "10.0.15",
+        "contentHash": "v74r4sIPf6jj80nBIISv4duxjrEvuyAOPQFHb7EePO7elvjfjGsdMpG8lbTm1nG+osyvXLg80A9qsygaTfsjrQ=="
+      },
       "System.IdentityModel.Tokens.Jwt": {
         "type": "Transitive",
         "resolved": "7.7.1",
@@ -1768,11 +1787,6 @@
         "type": "Transitive",
         "resolved": "8.0.1",
         "contentHash": "BVYuec3jV23EMRDeR7Dr1/qhx7369dZzJ9IWy2xylvb4YfXsrUxspWc4UWYid/tj4zZK58uGZqn2WQiaDMhmAg=="
-      },
-      "System.Security.Cryptography.Pkcs": {
-        "type": "Transitive",
-        "resolved": "9.0.4",
-        "contentHash": "cUFTcMlz/Qw9s90b2wnWSCvHdjv51Bau9FQqhsr4TlwSe1OX+7SoXUqphis5G74MLOvMOCghxPPlEqOdCrVVGA=="
       },
       "atap.utilities.collection.extensions": {
         "type": "Project",
@@ -1886,6 +1900,16 @@
         "requested": "[5.0.0, )",
         "resolved": "5.0.0",
         "contentHash": "erBZjkQHWL9jpasCE/0qKAryzVBJFxGHVBAvgRN1bzM0q2s1S4oYREEEL0Vb+1kA/6BKb5FjUZMp5VXmy+gzkQ=="
+      },
+      "System.Security.Cryptography.Pkcs": {
+        "type": "CentralTransitive",
+        "requested": "[10.0.15, )",
+        "resolved": "10.0.15",
+        "contentHash": "4jEv/lXDuQkh60lPU3hlwASErXdv1ZMKmsxVuBfZWiVKT5Q2QGo58kTa6rN519+PU+m4Hsj1m3yT8fN+Xw0XZw==",
+        "dependencies": {
+          "Microsoft.Bcl.Cryptography": "10.0.15",
+          "System.Formats.Asn1": "10.0.15"
+        }
       },
       "System.Security.Cryptography.ProtectedData": {
         "type": "CentralTransitive",

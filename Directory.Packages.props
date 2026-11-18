@@ -158,8 +158,9 @@
     <PackageVersion Include="Nerdbank.GitVersioning" Version="3.9.50" />
   </ItemGroup>
   <ItemGroup Label="Source Link">
-    <!-- Microsoft Source Link -->
-    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
+    <!-- Microsoft Source Link. 10.0.404 pulls Microsoft.Build.Tasks.Git 10.0.404, outside every
+         range of GHSA-23fw-v26w-5fgq (8.0.0 has no patch; NU1902 failed restore). -->
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.404" />
   </ItemGroup>
   <ItemGroup Label="Serilog Logging Suite">
     <!-- Seq Extensions for Microsoft.Extensions.Logging -->
